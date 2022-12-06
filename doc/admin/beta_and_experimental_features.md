@@ -24,6 +24,8 @@ If a feature is labeled `Experimental`, this specifically means:
 - The feature may be primarily supported by the product engineering team rather than our customer support team
 - The feature may have limited support and no documentation in the Sourcegraph docs
 - The feature will have to be deliberately enabled
+- The customer engineering team may not be aware or proficient in introducing this feature
+- We think there's about a 50% chance this makes it to Beta
 
 ## Beta features
 
@@ -32,3 +34,5 @@ If a feature is labeled `Beta`, this specifically means:
 - The feature will have documentation on docs.sourcegraph.com
 - The feature will be primarily supported by the customer support team
 - The feature may require intentional setup, or it may be widely available to all users by default 
+- The customer engineering team is aware of this feature, but may rely on product managers to introduce it to customers
+- We think there's about a 90% chance this makes it to GA

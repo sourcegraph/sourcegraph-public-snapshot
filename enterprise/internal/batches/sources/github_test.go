@@ -730,7 +730,7 @@ type mockGithubClientFork struct {
 
 var _ githubClientFork = &mockGithubClientFork{}
 
-func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string) (*github.Repository, error) {
+func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*github.Repository, error) {
 	if (mock.wantOrg == nil && org != nil) || (mock.wantOrg != nil && org == nil) || (mock.wantOrg != nil && org != nil && *mock.wantOrg != *org) {
 		return nil, errors.Newf("unexpected organisation: have=%v want=%v", org, mock.wantOrg)
 	}

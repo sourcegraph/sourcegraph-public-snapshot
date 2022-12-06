@@ -48,9 +48,7 @@ import {
 
 import styles from './OrgPendingInvites.module.scss'
 
-interface Props extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
-    onOrgGetStartedRefresh: () => void
-}
+interface Props extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 interface OrganizationInvitation {
     id: string
     recipientEmail?: string
@@ -261,7 +259,6 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
 export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
-    onOrgGetStartedRefresh,
 }) => {
     const orgId = org.id
     const query = useQueryStringParameters()
@@ -282,22 +279,20 @@ export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChild
 
     const onInviteSent = useCallback(
         async (result: IModalInviteResult) => {
-            onOrgGetStartedRefresh()
             setInvite(result)
             await refetch({ id: orgId })
         },
-        [setInvite, orgId, refetch, onOrgGetStartedRefresh]
+        [setInvite, orgId, refetch]
     )
 
     const onInviteResentRevoked = useCallback(
         async (recipient: string, revoked?: boolean) => {
-            onOrgGetStartedRefresh()
             const message = `${revoked ? 'Revoked' : 'Resent'} invite for ${recipient}`
             setNotification(message)
             setPage(1)
             await refetch({ id: orgId })
         },
-        [setNotification, orgId, refetch, onOrgGetStartedRefresh]
+        [setNotification, orgId, refetch]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {

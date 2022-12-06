@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { from, Subject, Subscription } from 'rxjs'
@@ -224,7 +224,11 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                         className={this.props.className}
                         tabIndex={this.props.tabIndex}
                     >
-                        {content}
+                        {this.props.action?.title === '?' ? (
+                            <Icon aria-hidden={true} svgPath={mdiHelpCircleOutline} />
+                        ) : (
+                            content
+                        )}
                     </span>
                 </Tooltip>
             )

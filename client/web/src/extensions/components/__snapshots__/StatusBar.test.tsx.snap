@@ -10,8 +10,8 @@ exports[`StatusBar renders correctly 1`] = `
         class="d-flex align-items-center px-2 items"
       >
         <a
+          aria-disabled="false"
           class="h-100 d-flex align-items-center px-1 item text-decoration-none itemNoop"
-          data-state="closed"
           href=""
           role="button"
           tabindex="-1"
@@ -23,8 +23,8 @@ exports[`StatusBar renders correctly 1`] = `
           </small>
         </a>
         <a
+          aria-disabled="false"
           class="h-100 d-flex align-items-center px-1 item text-decoration-none itemNoop"
-          data-state="closed"
           href=""
           role="button"
           tabindex="-1"

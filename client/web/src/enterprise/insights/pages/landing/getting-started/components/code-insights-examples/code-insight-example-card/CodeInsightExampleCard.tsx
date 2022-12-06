@@ -1,13 +1,10 @@
 import { FunctionComponent, useContext } from 'react'
 
-import classNames from 'classnames'
-
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
+import { Button, Link, LegendItem, LegendList, ParentSize, LegendItemPoint } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
-import { useCodeInsightsState } from '../../../../../../../../stores'
 import {
     InsightCard,
     InsightCardHeader,
@@ -16,7 +13,6 @@ import {
     SeriesChart,
 } from '../../../../../../components'
 import { InsightType } from '../../../../../../core'
-import { useUiFeatures } from '../../../../../../hooks'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
 import {
     CodeInsightsLandingPageContext,
@@ -53,7 +49,6 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
-    const { licensed } = useUiFeatures()
 
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -90,7 +85,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>
@@ -109,8 +104,9 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
 
             <LegendList className={styles.legend}>
                 {content.series.map(series => (
-                    <LegendItem key={series.id as string} color={series.color} name={series.name}>
-                        <span className={classNames(styles.legendItem, 'flex-shrink-0 mr-2')}>{series.name}</span>
+                    <LegendItem key={series.id as string}>
+                        <LegendItemPoint color={series.color} />
+                        <span className={styles.legendItem}>{series.name}</span>
                         <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={series.query} />
                     </LegendItem>
                 ))}
@@ -134,8 +130,6 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
         telemetryService,
     } = props
     const seriesToggleState = useSeriesToggle()
-
-    const { licensed } = useCodeInsightsState()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
@@ -169,7 +163,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>

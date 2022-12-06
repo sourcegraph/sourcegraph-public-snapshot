@@ -201,9 +201,9 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <div className="d-flex my-3" ref={reference}>
+            <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
-                    className={classNames('flex-0 mr-3', styles.sidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

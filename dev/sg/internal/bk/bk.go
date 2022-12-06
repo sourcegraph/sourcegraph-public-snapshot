@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -162,6 +163,19 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	}
 
 	return artifacts, nil
+}
+
+// DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
+func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
+	url := artifact.DownloadURL
+	if url == nil {
+		return errors.New("unable to download artifact, nil download url")
+	}
+	_, err := c.bk.Artifacts.DownloadArtifactByURL(*url, w)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetJobAnnotationByBuildNumber retrieves all annotations that are present on a build and maps them to the job ID that the

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/hexops/autogold"
 	"golang.org/x/time/rate"
 
@@ -27,7 +28,7 @@ import (
 )
 
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
@@ -37,7 +38,7 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 				RecordTime:  &recordDate,
 			})
 		}
-		return ctx, &req, jobs, nil
+		return &req, jobs, nil
 	}
 }
 
@@ -60,13 +61,13 @@ func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.
 	}
 }
 
-func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for _, job := range jobs {
 		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
 		points = append(points, newPoints...)
 	}
-	return ctx, reqContext, points, nil
+	return reqContext, points, nil
 }
 
 type testRunCounts struct {
@@ -87,7 +88,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			got := testRunCounts{}
-			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error) {
+			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
 				for _, p := range points {
 					got.resultCount++
 					got.totalCount += int(p.Point.Value)
@@ -95,7 +96,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 				return reqContext, nil
 			}
 
-			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister)
+			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister, glock.NewMockClock())
 			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 			tc.want.Equal(t, got)
 		})
@@ -279,7 +280,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
-			_, _, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
+			_, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
 			got := []string{}
 			// sorted jobs to make test stable
 			sort.SliceStable(jobs, func(i, j int) bool {
@@ -328,7 +329,6 @@ func TestMakeRunSearch(t *testing.T) {
 		workers     int
 		cancled     bool
 		handlers    map[types.GenerationMethod]queryrunner.InsightsHandler
-		incomingErr error
 		jobs        []*queryrunner.SearchJob
 		want        autogold.Value
 	}{
@@ -364,15 +364,7 @@ func TestMakeRunSearch(t *testing.T) {
 			handlers:    defaultHandlers,
 			cancled:     true,
 			jobs:        jobs,
-			want:        autogold.Want("canceled context", []string{"error occurred: false"}),
-		},
-		{
-			backfillReq: backfillReq,
-			workers:     1,
-			handlers:    defaultHandlers,
-			incomingErr: errors.New("earlier error"),
-			jobs:        jobs,
-			want:        autogold.Want("incoming error", []string{"error occurred: true"}),
+			want:        autogold.Want("canceled context", []string{"error occurred: true"}),
 		},
 		{
 			backfillReq: backfillReq,
@@ -400,7 +392,7 @@ func TestMakeRunSearch(t *testing.T) {
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
 
-			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
+			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs)
 
 			got := []string{}
 			// sorted points to make test stable

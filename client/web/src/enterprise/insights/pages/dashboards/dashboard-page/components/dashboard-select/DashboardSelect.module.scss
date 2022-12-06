@@ -3,6 +3,7 @@
     align-items: center;
     background-color: var(--input-bg);
     font-weight: normal;
+    max-width: 22rem;
 
     &--text {
         display: flex;
@@ -43,6 +44,7 @@
     flex-direction: column;
     height: 100%;
     max-width: 25rem;
+    min-width: 22rem;
 
     &-unchanged {
         [data-user-value] {

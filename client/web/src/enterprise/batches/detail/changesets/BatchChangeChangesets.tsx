@@ -19,7 +19,7 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourceg
 import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
-import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -162,7 +162,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         [changesetFilters, batchChangeID, onlyArchived]
     )
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangeChangesetsResult,
         BatchChangeChangesetsVariables,
         ExternalChangesetFields | HiddenExternalChangesetFields
@@ -280,7 +280,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList as="div" className={styles.batchChangeChangesetsGrid}>
+                    <ConnectionList className={styles.batchChangeChangesetsGrid} aria-label="changesets">
                         {connection?.nodes?.length ? (
                             <BatchChangeChangesetsHeader
                                 allSelected={showSelectRow && areAllVisibleSelected()}

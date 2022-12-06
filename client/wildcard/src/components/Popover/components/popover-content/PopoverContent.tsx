@@ -2,70 +2,84 @@ import { forwardRef, useContext, useEffect, useState, FC, PropsWithChildren } fr
 
 import classNames from 'classnames'
 import FocusLock from 'react-focus-lock'
-import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { useKeyboard, useOnClickOutside } from '../../../../hooks'
 import { ForwardReferenceComponent } from '../../../../types'
 import { PopoverContext } from '../../contexts/internal-context'
 import { PopoverRoot } from '../../contexts/public-context'
-import { PopoverOpenEventReason } from '../../Popover'
+import { PopoverOpenEvent, PopoverOpenEventReason } from '../../types'
 import { FloatingPanel, FloatingPanelProps } from '../floating-panel/FloatingPanel'
 
 import styles from './PopoverContent.module.scss'
 
 export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     isOpen?: boolean
-    focusLocked?: boolean
+    target?: HTMLElement | null
+    tail?: HTMLElement | null
     autoFocus?: boolean
-    targetElement?: HTMLElement | null
+    focusLocked?: boolean
     returnTargetFocus?: boolean
+
+    onOpenChange?: (event: PopoverOpenEvent) => void
 }
 
 export const PopoverContent = forwardRef(function PopoverContent(props, reference) {
     const {
-        isOpen,
         children,
-        targetElement: propertyTargetElement = null,
+        as: Component = 'div',
+        target: targetProp,
+        tail: tailProp,
+        isOpen: isControlledOpen,
         focusLocked = true,
         autoFocus = true,
         returnTargetFocus = true,
-        as: Component = 'div',
-        role = 'dialog',
         'aria-modal': ariaModal = true,
+        role = 'dialog',
+        onOpenChange: onOpenChangeProp,
         ...otherProps
     } = props
 
     const { renderRoot } = useContext(PopoverRoot)
 
-    const { isOpen: isOpenContext, targetElement: contextTargetElement, tailElement, anchor, setOpen } = useContext(
-        PopoverContext
-    )
+    const {
+        anchor,
+        isOpen: isOpenContext,
+        tailElement: tailContextElement,
+        targetElement: contextTargetElement,
+        setOpen,
+    } = useContext(PopoverContext)
 
-    const targetElement = contextTargetElement ?? propertyTargetElement
-    const anchorOrTargetElement = anchor?.current ?? targetElement
-    const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
-    const tooltipReferenceCallback = useCallbackRef<HTMLDivElement>(null, setTooltipElement)
-    const mergeReference = useMergeRefs([tooltipReferenceCallback, reference])
+    // Support controlled (higher priority) and context based open state
+    const isOpen = isControlledOpen ?? isOpenContext
+    const handleOpenChange = onOpenChangeProp ?? setOpen
+
+    const target = targetProp ?? contextTargetElement
+    const visualAnchor = anchor?.current ?? target
+    const tail = tailProp ?? tailContextElement
+
+    const [popover, setPopover] = useState<HTMLDivElement | null>(null)
+    const mergeReference = useMergeRefs([setPopover, reference])
 
     // Catch any outside click of the popover content element
     useOnClickOutside(mergeReference, event => {
-        if (anchorOrTargetElement?.contains(event.target as Node)) {
+        if (target?.contains(event.target as Node)) {
             return
         }
 
-        setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
+        handleOpenChange({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
     })
 
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, () => {
         // Only fire if we can be sure that the popover is open.
         // Both for controlled and uncontrolled popovers.
-        if (isOpen || isOpenContext) {
-            setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc })
+        if (isOpen) {
+            handleOpenChange({ isOpen: false, reason: PopoverOpenEventReason.Esc })
         }
     })
 
-    if (!isOpenContext && !isOpen) {
+    if (!isOpen) {
         return null
     }
 
@@ -74,8 +88,8 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
             {...otherProps}
             as={Component}
             ref={mergeReference}
-            target={anchorOrTargetElement}
-            marker={tailElement}
+            target={visualAnchor}
+            marker={tail}
             role={role}
             aria-modal={ariaModal}
             rootRender={renderRoot}
@@ -85,8 +99,8 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
                 autoFocus={true}
                 returnTargetFocus={returnTargetFocus}
                 focusLocked={focusLocked}
-                popoverElement={tooltipElement}
-                targetElement={targetElement}
+                popoverElement={popover}
+                targetElement={target}
             >
                 {children}
             </FloatingPanelContent>

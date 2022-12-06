@@ -8,38 +8,15 @@
     margin: 0 0 0 auto;
     padding: 0;
     height: 100%;
-    &:first-child {
-        margin-left: 0;
-    }
-    &:last-child {
-        margin-right: 0;
+    gap: 1rem;
+
+    @media (--xs-breakpoint-down) {
+        gap: 0.5rem;
     }
 }
 
 .action {
     display: flex;
     align-items: center;
-    margin: 0 0.5rem;
     padding: 0;
-    height: 100%;
-    &:first-of-type {
-        margin-left: 0;
-    }
-    &:last-of-type {
-        margin-right: 0;
-    }
-    @media (--xs-breakpoint-down) {
-        margin: 0 0.25rem;
-    }
-}
-
-// Global rule is necessary because the elements used as action items are handling margin/padding as part of their own styles.
-:is(.action) :global(.nav-link),
-:is(.action) :global(.btn-link) {
-    margin: 0;
-    padding: 0;
-    color: var(--icon-color);
-    &:hover {
-        color: var(--body-color);
-    }
 }

@@ -1,14 +1,13 @@
 import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
-import { SeriesSortDirection } from '@sourcegraph/shared/src/schema'
-
 import {
     InsightViewNode,
     SeriesSortMode,
     GroupByField,
     TimeIntervalStepInput,
     TimeIntervalStepUnit,
+    SeriesSortDirection,
 } from '../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { MAX_NUMBER_OF_SERIES } from '../../../../constants'

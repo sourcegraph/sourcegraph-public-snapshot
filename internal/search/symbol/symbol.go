@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -29,9 +28,6 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	if !conf.SearchIndexEnabled() {
-		return ""
-	}
 	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -117,14 +113,12 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  policy.ShouldTrace(ctx),
-		MaxWallTime:            3 * time.Second,
-		ShardMaxMatchCount:     match * 25,
-		TotalMaxMatchCount:     match * 25,
-		ShardMaxImportantMatch: match * 25,
-		TotalMaxImportantMatch: match * 25,
-		MaxDocDisplayCount:     match,
-		ChunkMatches:           true,
+		Trace:              policy.ShouldTrace(ctx),
+		MaxWallTime:        3 * time.Second,
+		ShardMaxMatchCount: match * 25,
+		TotalMaxMatchCount: match * 25,
+		MaxDocDisplayCount: match,
+		ChunkMatches:       true,
 	})
 	if err != nil {
 		return nil, err

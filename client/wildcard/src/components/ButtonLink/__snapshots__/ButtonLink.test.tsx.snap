@@ -3,8 +3,8 @@
 exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
 <DocumentFragment>
   <a
+    aria-disabled="true"
     class="anchorLink btn btnSecondary btnLg disabled"
-    disabled=""
     href=""
     role="button"
     tabindex="-1"

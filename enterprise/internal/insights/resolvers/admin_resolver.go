@@ -2,13 +2,18 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
+
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -70,10 +75,35 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 			status.Query = series.Query
 			status.Enabled = series.Enabled
 		}
-
 		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{status: status})
 	}
 	return resolvers, nil
+}
+
+func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	var viewId string
+	err := relay.UnmarshalSpec(args.Id, &viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authorization
+	viewSeries, err := r.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, err
+	}
+
+	resolver := &insightViewDebugResolver{
+		insightViewID:   viewId,
+		viewSeries:      viewSeries,
+		workerBaseStore: r.workerBaseStore,
+		backfillStore:   scheduler.NewBackfillStore(r.insightsDB),
+	}
+	return resolver, nil
 }
 
 type insightSeriesMetadataPayloadResolver struct {
@@ -134,4 +164,86 @@ func (i *insightSeriesQueryStatusResolver) Failed(ctx context.Context) (int32, e
 
 func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, error) {
 	return int32(i.status.Queued), nil
+}
+
+type insightViewDebugResolver struct {
+	insightViewID   string
+	viewSeries      []types.InsightViewSeries
+	workerBaseStore *basestore.Store
+	backfillStore   *scheduler.BackfillStore
+}
+
+func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
+
+	type queueDebug struct {
+		types.InsightSeriesStatus
+		searchErrors []types.InsightSearchFailure
+	}
+
+	type insightDebugInfo struct {
+		QueueStatus queueDebug
+		Backfills   []scheduler.SeriesBackfillDebug
+	}
+
+	ids := make([]string, 0, len(r.viewSeries))
+	for i := 0; i < len(r.viewSeries); i++ {
+		ids = append(ids, r.viewSeries[i].SeriesID)
+	}
+
+	// this will get the queue information from the primary postgres database
+	seriesStatus, err := queryrunner.QuerySeriesStatus(ctx, r.workerBaseStore, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// index the metadata by seriesId to perform lookups
+	queueStatusBySeries := make(map[string]*types.InsightSeriesStatus)
+	for i, status := range seriesStatus {
+		queueStatusBySeries[status.SeriesId] = &seriesStatus[i]
+	}
+
+	var viewDebug []string
+	// we will treat the results from the queue as the "secondary" and left join it to the series metadata.
+
+	for _, series := range r.viewSeries {
+		// Build the Queue Info
+		status := types.InsightSeriesStatus{
+			SeriesId: series.SeriesID,
+			Query:    series.Query,
+			Enabled:  true,
+		}
+		if tmpStatus, ok := queueStatusBySeries[series.SeriesID]; ok {
+			status.Completed = tmpStatus.Completed
+			status.Enabled = tmpStatus.Enabled
+			status.Errored = tmpStatus.Errored
+			status.Failed = tmpStatus.Failed
+			status.Queued = tmpStatus.Queued
+			status.Processing = tmpStatus.Processing
+		}
+		seriesErrors, err := queryrunner.QuerySeriesSearchFailures(ctx, r.workerBaseStore, series.SeriesID, 100)
+		if err != nil {
+			return nil, err
+		}
+
+		// Build the Backfill Info
+		backfillDebugInfo, err := r.backfillStore.LoadSeriesBackfillsDebugInfo(ctx, series.InsightSeriesID)
+		if err != nil {
+			return nil, err
+		}
+
+		seriesDebug := insightDebugInfo{
+			QueueStatus: queueDebug{
+				searchErrors:        seriesErrors,
+				InsightSeriesStatus: status,
+			},
+			Backfills: backfillDebugInfo,
+		}
+		debugJson, err := json.Marshal(seriesDebug)
+		if err != nil {
+			return nil, err
+		}
+		viewDebug = append(viewDebug, string(debugJson))
+
+	}
+	return viewDebug, nil
 }

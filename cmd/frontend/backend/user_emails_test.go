@@ -2,16 +2,22 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -177,8 +183,10 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	db := database.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
+	logger := logtest.Scoped(t)
 
-	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), logtest.Scoped(t), db, 123, "updated password"); err != nil {
+	svc := NewUserEmailsService(db, logger)
+	if err := svc.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {
 		t.Fatal(err)
 	}
 	if sent == nil {
@@ -205,4 +213,280 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 
 	mockrequire.Called(t, userEmails.GetPrimaryEmailFunc)
 	mockrequire.Called(t, users.GetByIDFunc)
+}
+
+func TestUserEmailsAddRemove(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const email2 = "user.secondary@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	svc := NewUserEmailsService(db, logger)
+
+	// Unauthenticated user should fail
+	assert.Error(t, svc.Add(ctx, createdUser.ID, email2))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
+	assert.Error(t, svc.Add(ctx, createdUser.ID, email2))
+
+	// Add as a site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(context.Background())
+	// Add secondary e-mail
+	assert.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+
+	// Add reset code
+	code, err := db.Users().RenewPasswordResetCode(ctx, createdUser.ID)
+	assert.NoError(t, err)
+
+	// Remove as unauthenticated user should fail
+	ctx = context.Background()
+	assert.Error(t, svc.Remove(ctx, createdUser.ID, email2))
+
+	// Remove as different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
+	assert.Error(t, svc.Remove(ctx, createdUser.ID, email2))
+
+	// Remove as a site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(context.Background())
+	assert.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+
+	// Trying to change the password with the old code should fail
+	changed, err := db.Users().SetPassword(ctx, createdUser.ID, code, "some-amazing-new-password")
+	assert.NoError(t, err)
+	assert.False(t, changed)
+
+	// Can't remove primary e-mail
+	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
+}
+
+func TestUserEmailsSetPrimary(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	svc := NewUserEmailsService(db, logger)
+
+	// Unauthenticated user should fail
+	assert.Error(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
+	assert.Error(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
+
+	// As site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(ctx)
+	// Need to set e-mail as verified
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+	assert.NoError(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
+
+	fromDB, verified, err := db.UserEmails().GetPrimaryEmail(ctx, createdUser.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, email, fromDB)
+	assert.True(t, verified)
+}
+
+func TestUserEmailsSetVerified(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const email2 = "user.secondary@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	svc := NewUserEmailsService(db, logger)
+	// Unauthenticated user should fail
+	assert.Error(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
+
+	// As site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(ctx)
+	// Need to set e-mail as verified
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+
+	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
+	assert.NoError(t, err)
+	assert.Len(t, emails, 1)
+	assert.Equal(t, email, emails[0].Email)
+}
+
+func TestUserEmailsResendVerificationEmail(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	oldSend := txemail.MockSend
+	t.Cleanup(func() {
+		txemail.MockSend = oldSend
+	})
+	var sendCalled bool
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sendCalled = true
+		return nil
+	}
+	assertSendCalled := func(want bool) {
+		assert.Equal(t, want, sendCalled)
+		// Reset to false
+		sendCalled = false
+	}
+
+	const email = "user@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	svc := NewUserEmailsService(db, logger)
+	now := time.Now()
+
+	// Set that we sent the initial e-mail
+	assert.NoError(t, db.UserEmails().SetLastVerification(ctx, createdUser.ID, email, verificationCode, now))
+
+	// Unauthenticated user should fail
+	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
+	assertSendCalled(false)
+
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
+	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
+	assertSendCalled(false)
+
+	// As site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(ctx)
+	// Set in the future so that we can resend
+	now = now.Add(5 * time.Minute)
+	assert.NoError(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
+	assertSendCalled(true)
+
+	// Trying to send again too soon should fail
+	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now.Add(1*time.Second)))
+	assertSendCalled(false)
+
+	// Invalid e-mail
+	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
+	assertSendCalled(false)
+
+	// Manually mark as verified
+	assert.NoError(t, db.UserEmails().SetVerified(ctx, createdUser.ID, email, true))
+
+	// Trying to send verification e-mail now should be a noop since we are already
+	// verified
+	assert.NoError(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now.Add(10*time.Minute)))
+	assertSendCalled(false)
+}
+
+func TestDeleteStaleExternalAccount(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const email2 = "user.secondary@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	svc := NewUserEmailsService(db, logger)
+	ctx = actor.WithInternalActor(ctx)
+	assert.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+
+	t.Run("Perforce", func(t *testing.T) {
+		spec := extsvc.AccountSpec{
+			ServiceType: extsvc.TypePerforce,
+			ServiceID:   "test-instance",
+			// We use the email address as the account id for Perforce
+			AccountID: email2,
+		}
+		perforceData := perforce.AccountData{
+			Username: "user",
+			Email:    email2,
+		}
+		serializedData, err := json.Marshal(perforceData)
+		assert.NoError(t, err)
+		data := extsvc.AccountData{
+			Data: extsvc.NewUnencryptedData(serializedData),
+		}
+		assert.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+
+		// Confirm that the external account was added
+		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			UserID:      createdUser.ID,
+			ServiceType: extsvc.TypePerforce,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, accounts, 1)
+
+		// Remove the email
+		assert.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+
+		// Confirm that the external account is gone
+		accounts, err = db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			UserID:      createdUser.ID,
+			ServiceType: extsvc.TypePerforce,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, accounts, 0)
+	})
 }

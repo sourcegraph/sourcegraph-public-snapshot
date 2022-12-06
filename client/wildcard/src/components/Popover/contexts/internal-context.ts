@@ -2,7 +2,7 @@ import { createContext, MutableRefObject } from 'react'
 
 import { noop } from 'lodash'
 
-import { PopoverOpenEvent } from '../Popover'
+import { PopoverOpenEvent } from '../types'
 
 export interface PopoverInternalContextData {
     isOpen: boolean

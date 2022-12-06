@@ -137,6 +137,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 			Key:     filter.Key,
 			Value:   filter.Value,
 			Negated: filter.Negated,
+			KeyOnly: filter.KeyOnly,
 		})
 	}
 
@@ -175,7 +176,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		options.SearchContextID = searchContext.ID
 		options.UserID = searchContext.NamespaceUserID
 		options.OrgID = searchContext.NamespaceOrgID
-		options.IncludeUserPublicRepos = searchContext.ID == 0 && searchContext.NamespaceUserID != 0
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
@@ -745,17 +745,16 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		IncludePatterns: includePatterns,
 		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-		NoForks:                op.NoForks,
-		OnlyForks:              op.OnlyForks,
-		NoArchived:             op.NoArchived,
-		OnlyArchived:           op.OnlyArchived,
-		NoPrivate:              op.Visibility == query.Public,
-		OnlyPrivate:            op.Visibility == query.Private,
-		SearchContextID:        searchContext.ID,
-		UserID:                 searchContext.NamespaceUserID,
-		OrgID:                  searchContext.NamespaceOrgID,
-		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+		LimitOffset:     &database.LimitOffset{Limit: limit + 1},
+		NoForks:         op.NoForks,
+		OnlyForks:       op.OnlyForks,
+		NoArchived:      op.NoArchived,
+		OnlyArchived:    op.OnlyArchived,
+		NoPrivate:       op.Visibility == query.Public,
+		OnlyPrivate:     op.Visibility == query.Private,
+		SearchContextID: searchContext.ID,
+		UserID:          searchContext.NamespaceUserID,
+		OrgID:           searchContext.NamespaceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)

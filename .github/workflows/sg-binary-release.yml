@@ -23,6 +23,7 @@ env:
 
 jobs:
   touch_sg:
+    if: github.repository == 'sourcegraph/sourcegraph'
     name: Touch sourcegraph/sg
     runs-on: ubuntu-latest
     steps:
@@ -96,7 +97,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18
+          go-version: 1.19
 
       - name: Build and upload macOS
         if: startsWith(matrix.os, 'macos-') == true

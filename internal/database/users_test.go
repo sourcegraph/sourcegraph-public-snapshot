@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -328,6 +328,37 @@ func TestUsers_ListCount(t *testing.T) {
 	} else if len(users) > 0 {
 		t.Errorf("got %d, want empty", len(users))
 	}
+
+	// Create a Sourcegraph Operator user and should be excluded when desired
+	_, err = db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+	count, err := db.Users().Count(
+		ctx,
+		&UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+	users, err := db.Users().List(
+		ctx,
+		&UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
+	require.NoError(t, err)
+	assert.Len(t, users, 0)
 }
 
 func TestUsers_Update(t *testing.T) {
@@ -565,20 +596,6 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Create external service owned by the user
-			confGet := func() *conf.Unified {
-				return &conf.Unified{}
-			}
-			err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-				NamespaceUserID: user.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			// Create settings for the user, and for another user authored by this user.
 			if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
@@ -615,7 +632,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create and update a webhook
-			webhook, err := db.Webhooks(nil).Create(ctx, extsvc.KindGitHub, testURN, user.ID, types.NewUnencryptedSecret("testSecret"))
+			webhook, err := db.Webhooks(nil).Create(ctx, "github webhook", extsvc.KindGitHub, testURN, user.ID, types.NewUnencryptedSecret("testSecret"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -657,17 +674,6 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			} else if settings.AuthorUserID != nil {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
-			}
-
-			// User's external services no longer exist
-			ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-				NamespaceUserID: user.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(ess) > 0 {
-				t.Errorf("got %d external services, want 0", len(ess))
 			}
 
 			// Can't delete already-deleted user.

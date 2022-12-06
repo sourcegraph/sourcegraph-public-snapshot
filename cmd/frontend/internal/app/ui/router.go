@@ -129,8 +129,13 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
+	homeRouteMethods := []string{"GET"}
+	if envvar.SourcegraphDotComMode() {
+		homeRouteMethods = append(homeRouteMethods, "HEAD")
+	}
+
 	// Top-level routes.
-	r.Path("/").Methods("GET").Name(routeHome)
+	r.Path("/").Methods(homeRouteMethods...).Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)

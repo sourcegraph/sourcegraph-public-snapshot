@@ -6,12 +6,12 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -25,7 +25,7 @@ const siteAdminCustomerFragment = gql`
 `
 
 interface SiteAdminCustomerNodeProps {
-    node: Pick<GQL.IUser, 'id' | 'username' | 'displayName'>
+    node: CustomerFields
 }
 
 /**
@@ -46,7 +46,7 @@ const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<Sit
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    Pick<GQL.IUser, 'id' | 'username' | 'displayName'>,
+    CustomerFields,
     Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
 > {}
 
@@ -81,7 +81,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
+function queryCustomers(args: Partial<CustomersVariables>): Observable<CustomersResult['users']> {
     return queryGraphQL(
         gql`
             query Customers($first: Int, $query: String) {
@@ -100,7 +100,7 @@ function queryCustomers(args: { first?: number; query?: string }): Observable<GQ
         {
             first: args.first,
             query: args.query,
-        } as GQL.IUsersOnQueryArguments
+        }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users || (errors && errors.length > 0)) {

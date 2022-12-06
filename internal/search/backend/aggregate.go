@@ -24,23 +24,14 @@ var (
 // Note: It aggregates Progress as well, and expects that the
 // MaxPendingPriority it receives are monotonically decreasing.
 type collectSender struct {
-	aggregate          *zoekt.SearchResult
-	maxDocDisplayCount int
-	useDocumentRanks   bool
-	sizeBytes          uint64
+	aggregate *zoekt.SearchResult
+	opts      *zoekt.SearchOptions
+	sizeBytes uint64
 }
 
-type collectOpts struct {
-	maxDocDisplayCount int
-	flushWallTime      time.Duration
-	useDocumentRanks   bool
-	maxSizeBytes       int
-}
-
-func newCollectSender(opts *collectOpts) *collectSender {
+func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
 	return &collectSender{
-		maxDocDisplayCount: opts.maxDocDisplayCount,
-		useDocumentRanks:   opts.useDocumentRanks,
+		opts: opts,
 	}
 }
 
@@ -81,22 +72,43 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 	c.aggregate = nil
 	c.sizeBytes = 0
 
-	zoekt.SortFiles(agg.Files, c.useDocumentRanks)
+	zoekt.SortFiles(agg.Files, c.opts)
 
-	if max := c.maxDocDisplayCount; max > 0 && len(agg.Files) > max {
+	if max := c.opts.MaxDocDisplayCount; max > 0 && len(agg.Files) > max {
 		agg.Files = agg.Files[:max]
 	}
 
+	hoistMaxScore(agg.Files, 10)
+
 	return agg, true
+}
+
+// hoistMaxScore swaps the top scoring result within fm[:n] to the top.
+func hoistMaxScore(fm []zoekt.FileMatch, n int) {
+	if n > len(fm) {
+		n = len(fm)
+	}
+
+	maxIdx := 0
+	for i := 1; i < n; i++ {
+		if fm[i].Score > fm[maxIdx].Score {
+			maxIdx = i
+		}
+	}
+
+	for maxIdx > 0 {
+		fm[maxIdx-1], fm[maxIdx] = fm[maxIdx], fm[maxIdx-1]
+		maxIdx--
+	}
 }
 
 // newFlushCollectSender creates a sender which will collect and rank results
 // until opts.flushWallTime. After that it will stream each result as it is
 // sent.
-func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender, func()) {
+func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender zoekt.Sender) (zoekt.Sender, func()) {
 	// We don't need to do any collecting, so just pass back the sender to use
 	// directly.
-	if opts.flushWallTime == 0 {
+	if opts.FlushWallTime == 0 {
 		return sender, func() {}
 	}
 
@@ -113,13 +125,14 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 	// stopCollectingAndFlush will send what we have collected and all future
 	// sends will go via sender directly.
-	stopCollectingAndFlush := func(reason string) {
+	stopCollectingAndFlush := func(reason zoekt.FlushReason) {
 		if collectSender == nil {
 			return
 		}
 
 		if agg, ok := collectSender.Done(); ok {
-			metricFinalAggregateSize.WithLabelValues(reason).Observe(float64(len(agg.Files)))
+			metricFinalAggregateSize.WithLabelValues(reason.String()).Observe(float64(len(agg.Files)))
+			agg.FlushReason = reason
 			sender.Send(agg)
 		}
 
@@ -132,13 +145,13 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 	// Wait flushWallTime to call stopCollecting.
 	go func() {
-		timer := time.NewTimer(opts.flushWallTime)
+		timer := time.NewTimer(opts.FlushWallTime)
 		select {
 		case <-timerCancel:
 			timer.Stop()
 		case <-timer.C:
 			mu.Lock()
-			stopCollectingAndFlush("timer_expired")
+			stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 			mu.Unlock()
 		}
 	}()
@@ -150,8 +163,8 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 				// Protect against too large aggregates. This should be the exception and only
 				// happen for queries yielding an extreme number of results.
-				if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
-					stopCollectingAndFlush("max_size_reached")
+				if maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(maxSizeBytes) {
+					stopCollectingAndFlush(zoekt.FlushReasonMaxSize)
 
 				}
 			} else {
@@ -160,7 +173,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 			mu.Unlock()
 		}), func() {
 			mu.Lock()
-			stopCollectingAndFlush("final_flush")
+			stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
 			mu.Unlock()
 		}
 }

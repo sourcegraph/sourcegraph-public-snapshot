@@ -103,6 +103,8 @@ func assertAuditField(t *testing.T, field map[string]any) {
 func assertEventField(t *testing.T, field map[string]any) {
 	t.Helper()
 	assert.NotEmpty(t, field["URL"])
+	assert.NotNil(t, field["UserID"])
+	assert.NotNil(t, field["AnonymousUserID"])
 	assert.NotEmpty(t, field["source"])
 	assert.NotEmpty(t, field["argument"])
 	assert.NotEmpty(t, field["version"])

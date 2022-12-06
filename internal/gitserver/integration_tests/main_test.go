@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 var root string
@@ -70,8 +71,9 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
-			Logger:   sglog.Scoped("server", "the gitserver service"),
-			ReposDir: filepath.Join(root, "repos"),
+			Logger:         sglog.Scoped("server", "the gitserver service"),
+			ObservationCtx: &observation.TestContext,
+			ReposDir:       filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil
 			},
@@ -103,7 +105,7 @@ var Times = []string{
 func InitGitRepository(t testing.TB, cmds ...string) string {
 	t.Helper()
 	remotes := filepath.Join(root, "remotes")
-	if err := os.MkdirAll(remotes, 0700); err != nil {
+	if err := os.MkdirAll(remotes, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	dir, err := os.MkdirTemp(remotes, strings.ReplaceAll(t.Name(), "/", "__"))

@@ -5,7 +5,6 @@ import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
 export type FeatureFlagName =
-    | 'open-beta-enabled'
     | 'quick-start-tour-for-authenticated-users'
     | 'new-repo-page'
     | 'insight-polling-enabled'
@@ -16,6 +15,8 @@ export type FeatureFlagName =
     | 'admin-analytics-cache-disabled'
     | 'search-input-show-history'
     | 'user-management-disabled'
+    | 'search-results-keyboard-navigation'
+    | 'enable-streaming-git-blame'
 
 interface OrgFlagOverride {
     orgID: string

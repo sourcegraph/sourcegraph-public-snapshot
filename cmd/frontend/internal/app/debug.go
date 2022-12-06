@@ -234,10 +234,10 @@ func addSentry(r *mux.Router) {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return
 			}
+			resp.Body.Close()
 		}()
 
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 
@@ -250,7 +250,6 @@ func addNoJaegerHandler(r *mux.Router, db database.DB) {
 
 func addJaeger(r *mux.Router, db database.DB) {
 	if len(jaegerURLFromEnv) > 0 {
-		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
 		if err != nil {
 			log.Printf("failed to parse JAEGER_SERVER_URL=%s: %v", jaegerURLFromEnv, err)

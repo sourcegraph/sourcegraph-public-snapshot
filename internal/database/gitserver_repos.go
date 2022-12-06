@@ -28,8 +28,8 @@ type GitserverRepoStore interface {
 	// IterateRepoGitserverStatus iterates over the status of all repos by joining
 	// our repo and gitserver_repos table. It is impossible for us not to have a
 	// corresponding row in gitserver_repos because of the trigger on repos table.
-	// repoFn will be called once for each row. If it returns an error we'll abort iteration.
-	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
+	// Use cursors and limit batch size to paginate through the full set.
+	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error)
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
@@ -237,13 +237,11 @@ type IterateRepoGitserverStatusOptions struct {
 	// If true, also include deleted repos. Note that their repo name will start with
 	// 'DELETED-'
 	IncludeDeleted bool
+	BatchSize      int
+	NextCursor     int
 }
 
-func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) (err error) {
-	if repoFn == nil {
-		return errors.New("nil repoFn")
-	}
-
+func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error) {
 	preds := []*sqlf.Query{}
 
 	if !options.IncludeDeleted {
@@ -254,39 +252,51 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		preds = append(preds, sqlf.Sprintf("gr.shard_id = ''"))
 	}
 
+	if options.NextCursor > 0 {
+		preds = append(preds, sqlf.Sprintf("gr.repo_id > %s", options.NextCursor))
+		// Performance improvement: Postgres picks a more optimal strategy when we also constrain
+		// set of potential joins.
+		preds = append(preds, sqlf.Sprintf("repo.id > %s", options.NextCursor))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(preds, "AND"))
+	var limitOffset *LimitOffset
+	if options.BatchSize > 0 {
+		limitOffset = &LimitOffset{Limit: options.BatchSize}
+	}
+
+	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(preds, "AND"), limitOffset.SQL())
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "fetching gitserver status")
+		return rs, nextCursor, errors.Wrap(err, "fetching gitserver status")
 	}
 	defer func() {
 		err = basestore.CloseRows(rows, err)
 	}()
 
+	rs = make([]types.RepoGitserverStatus, 0, options.BatchSize)
+
 	for rows.Next() {
 		gr, name, err := scanGitserverRepo(rows)
 		if err != nil {
-			return errors.Wrap(err, "scanning row")
+			return rs, nextCursor, errors.Wrap(err, "scanning row")
 		}
+
+		nextCursor = int(gr.RepoID)
 
 		rgs := types.RepoGitserverStatus{
 			ID:            gr.RepoID,
 			Name:          name,
 			GitserverRepo: gr,
 		}
-
-		if err := repoFn(rgs); err != nil {
-			// Abort
-			return errors.Wrap(err, "calling repoFn")
-		}
+		rs = append(rs, rgs)
 	}
 
-	return nil
+	return rs, nextCursor, nil
 }
 
 const iterateRepoGitserverQuery = `
@@ -303,6 +313,8 @@ SELECT
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
+ORDER BY repo_id ASC
+%s
 `
 
 func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
@@ -311,6 +323,7 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 		if err == sql.ErrNoRows {
 			return nil, &errGitserverRepoNotFound{}
 		}
+		return nil, err
 	}
 	return repo, nil
 }

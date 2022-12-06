@@ -41,11 +41,12 @@ upgrade \
 **Notes**:
 
 - Successive invocations of this command will re-attempt the last failed or attempted (but incomplete) migration. This command run as if the `-ignore-single-{dirty,pending}-log` flags supplied by the commands `up`, `upto`, and `downto` were enabled.
+- This command checks that the schema of the database is in the correct state for the current version, if schema drift is detected it must be resolved before completing the upgrade. [Learn more here.](./schema-drift.md).
 - Successive invocations of this command may *cause* database drift when partial progress is made. When making a subsequent upgrade attempt, invoke this command with `-skip-drift-check` ignore the failing startup check.
 
 ### drift
 
-The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity.
+The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity. [Learn more here.](./schema-drift.md)
 
 ```
 drift \
@@ -56,7 +57,7 @@ drift \
 
 **Required arguments**:
 
-- `-db`: The target schema to inspect.
+- `-db`: The target schema to inspect. *Ex: frontend, codeintel, codeinsights*
 
 **Mutually exclusive arguments**:
 
@@ -265,7 +266,7 @@ Run the following commands in the root of your `deploy-sourcegraph` fork.
 
 First, modify the `migrator` manifest to update two fields: the `spec.template.spec.containers[0].args` field, which selects the target operation, and the `spec.template.spec.containers[0].image` field, which controls the version of the migrator binary (and, consequently, the set of embedded migration definitions).
 
-The following example uses `yq`, but these values can also be updated manually in thee `configure/migrator/migrator.Job.yaml` file.
+The following example uses `yq`, but these values may also be updated manually by opening the `configure/migrator/migrator.Job.yaml` file in an editor of your choice and editing the `image` and `args` key value pairs.
 
 ```bash
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
@@ -280,6 +281,14 @@ yq eval -i \
 yq eval -i \
   '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"]' \
   configure/migrator/migrator.Job.yaml
+```
+
+The above `yq` commands alter the `configure/migrator/migrator.Job.yaml` file. For example producing the following key pairs:
+```yaml
+image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
+```
+```yaml
+args: ["upgrade", "--from=3.40.2", "--to=4.1.2"]
 ```
 
 Next, apply the job and wait for it to complete.

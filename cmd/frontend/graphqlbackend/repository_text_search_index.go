@@ -12,17 +12,12 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !conf.SearchIndexEnabled() {
-		return nil
-	}
-
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
 		client: search.Indexed(),
@@ -81,7 +76,7 @@ func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
-	return BigInt{r.entry.Stats.ContentBytes}
+	return BigInt(r.entry.Stats.ContentBytes)
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
@@ -213,7 +208,7 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 	// with "NOT-INDEXED: <reason>"
 	expr, err := syntax.Parse("^NOT-INDEXED: ", syntax.Perl)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
 	q := &zoektquery.And{[]zoektquery.Q{
@@ -230,10 +225,10 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 			stats.Add(sr.Stats)
 		}),
 	); err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
-	return BigInt{int64(stats.FileCount)}, nil
+	return BigInt(stats.FileCount), nil
 }
 
 func (r *skippedIndexedResolver) Query() string {

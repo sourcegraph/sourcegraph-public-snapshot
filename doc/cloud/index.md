@@ -6,16 +6,20 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 
 ## Start a Sourcegraph Cloud trial
 
-<div class="grid">
-  <!-- Sourcegraph Cloud -->
-  <a class="btn-app btn" href="http://signup.sourcegraph.com">
-			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
-			<h3>Sourcegraph Cloud</h3>
-		  <p>Sign up for a trial</p>
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
   </a>
 </div>
 
-Use the button above to sign up for a free 30-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
+Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
 ## Trial limitations
 

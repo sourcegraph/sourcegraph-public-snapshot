@@ -30,6 +30,7 @@ type EventContentMatch struct {
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Debug           string           `json:"debug,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -154,6 +155,8 @@ type EventCommitMatch struct {
 	Message         string     `json:"message"`
 	AuthorName      string     `json:"authorName"`
 	AuthorDate      time.Time  `json:"authorDate"`
+	CommitterName   string     `json:"committerName"`
+	CommitterDate   time.Time  `json:"committerDate"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Content         string     `json:"content"`

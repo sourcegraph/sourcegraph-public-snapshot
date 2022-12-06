@@ -2,9 +2,11 @@ package openidconnect
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/coreos/go-oidc"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +18,7 @@ func TestAllowSignup(t *testing.T) {
 	disallow := false
 	tests := map[string]struct {
 		allowSignup       *bool
+		usernamePrefix    string
 		shouldAllowSignup bool
 	}{
 		"nil": {
@@ -30,25 +33,45 @@ func TestAllowSignup(t *testing.T) {
 			allowSignup:       &disallow,
 			shouldAllowSignup: false,
 		},
+		"with username prefix": {
+			allowSignup:       &disallow,
+			shouldAllowSignup: false,
+			usernamePrefix:    "sourcegraph-operator-",
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-				if test.shouldAllowSignup != op.CreateIfNotExist {
-					t.Fatalf("op.CreateIfNotExist: want %v got %v\n", test.shouldAllowSignup, op.CreateIfNotExist)
-				}
+				require.Equal(t, test.shouldAllowSignup, op.CreateIfNotExist)
+				require.True(
+					t,
+					strings.HasPrefix(op.UserProps.Username, test.usernamePrefix),
+					"The username %q does not have prefix %q", op.UserProps.Username, test.usernamePrefix,
+				)
 				return 0, "", nil
 			}
-			p := &provider{config: schema.OpenIDConnectAuthProvider{
-				ClientID:           testClientID,
-				ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
-				RequireEmailDomain: "example.com",
-				AllowSignup:        test.allowSignup,
-			}, oidc: &oidcProvider{}}
-			_, _, err := getOrCreateUser(context.Background(), database.NewStrictMockDB(), p, &oidc.IDToken{}, &oidc.UserInfo{Email: "foo@bar.com", EmailVerified: true}, &userClaims{})
-			if err != nil {
-				t.Errorf("err: expected nil, got %v\n", err)
+			p := &Provider{
+				config: schema.OpenIDConnectAuthProvider{
+					ClientID:           testClientID,
+					ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
+					RequireEmailDomain: "example.com",
+					AllowSignup:        test.allowSignup,
+				},
+				oidc: &oidcProvider{},
 			}
+			_, _, err := getOrCreateUser(
+				context.Background(),
+				database.NewStrictMockDB(),
+				p,
+				&oidc.IDToken{},
+				&oidc.UserInfo{
+					Email:         "foo@bar.com",
+					EmailVerified: true,
+				},
+				&userClaims{},
+				test.usernamePrefix,
+			)
+			require.NoError(t, err)
 		})
 	}
 }

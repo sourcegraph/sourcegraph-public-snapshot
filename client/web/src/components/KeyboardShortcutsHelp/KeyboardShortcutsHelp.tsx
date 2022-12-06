@@ -3,11 +3,8 @@ import React from 'react'
 import { mdiClose } from '@mdi/js'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { isMacPlatform } from '@sourcegraph/common'
-import { Keybinding, KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
-import { getModKey } from '@sourcegraph/shared/src/react-shortcuts/ShortcutManager'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
 
@@ -28,19 +25,6 @@ const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
         keybindings: [{ ordered: ['y'] }],
     },
 }
-
-const SHORTCUT_KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
-    Mod: ((modKey: string) => (modKey === 'Meta' ? (isMacPlatform() ? '⌘' : 'Cmd') : 'Ctrl'))(getModKey()),
-    Meta: isMacPlatform() ? '⌘' : 'Cmd',
-    Shift: isMacPlatform() ? '⇧' : 'Shift',
-    Control: 'Ctrl',
-    '†': 't',
-}
-
-export function renderShortcutKey(key: string): string {
-    return SHORTCUT_KEY_TO_NAME[key] ?? key
-}
-
 const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'
 
 export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -51,7 +35,6 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
         'characterKeyShortcuts.enabled',
         true
     )
-
     return (
         <Modal
             position="center"
@@ -104,7 +87,7 @@ export function plaintextKeybindings(keybindings: Keybinding[]): string {
     return keybindings
         .map<string>(keybinding => {
             const ordered = keybinding.ordered.map(key => key.toUpperCase())
-            return [...(keybinding.held || []), ...ordered].map(key => renderShortcutKey(key)).join('')
+            return [...(keybinding.held || []), ...ordered].map(key => shortcutDisplayName(key)).join('')
         })
         .join(' or ')
 }
@@ -116,7 +99,7 @@ export const Keybindings: React.FunctionComponent<KeybindingProps> = ({ keybindi
                 <span key={index}>
                     {index !== 0 && ' or '}
                     {[...(keybinding.held || []), ...ordered].map((key, index) => (
-                        <kbd key={index}>{renderShortcutKey(key)}</kbd>
+                        <kbd key={index}>{shortcutDisplayName(key)}</kbd>
                     ))}
                 </span>
             )

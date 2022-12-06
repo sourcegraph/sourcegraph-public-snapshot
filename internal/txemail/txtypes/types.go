@@ -5,6 +5,13 @@ import (
 	texttemplate "text/template"
 )
 
+// InternalAPIMessage describes an email message to be sent via the 'internal.send-email'
+// endpoint.
+type InternalAPIMessage struct {
+	Source string
+	Message
+}
+
 // Message describes an email message to be sent.
 type Message struct {
 	FromName   string   // email "From" address proper name

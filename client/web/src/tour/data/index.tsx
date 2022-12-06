@@ -198,7 +198,7 @@ export const visitorsTasks: TourTaskType[] = [
                 },
                 // This is done to mimic user creating an account, and signed in there is a different tour
                 completeAfterEvents: ['non-existing-event'],
-            }
+            },
         ],
     },
 ]

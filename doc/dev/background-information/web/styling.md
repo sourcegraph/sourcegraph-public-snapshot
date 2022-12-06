@@ -27,7 +27,7 @@ An example of this is `<HoverOverlay/>`: see how [the different props it accepts
 They are defined for each code host referencing CSS class names **that the code host defines in its own styles**:
 
 - for [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/github/codeHost.ts#L353-361) using the class names from GitHub's [Primer design system](https://primer.style/react/Buttons)
-- for [Gitlab](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/gitlab/codeHost.ts#L203-211) using class names from Gitlab's [Pajamas design system](https://design.gitlab.com/components/button)
+- for [GitLab](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/gitlab/codeHost.ts#L203-211) using class names from Gitlab's [Pajamas design system](https://design.gitlab.com/components/button)
 - for [Bitbucket](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/bitbucket/codeHost.tsx#L235-242) using the class names from [Atlassian UI](https://aui.atlassian.com/aui/7.10/docs/buttons.html)
 - for [Phabricator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/phabricator/codeHost.ts#L195-202) using class names found in the Phabricator UI with the browser dev tools (it doesn't have a documented design system, but is easy to reverse-engineer).
 

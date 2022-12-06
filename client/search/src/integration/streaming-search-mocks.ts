@@ -1,9 +1,9 @@
 /* eslint-disable no-template-curly-in-string */
-import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
+import { SearchGraphQlOperations } from '..'
 import { SymbolKind } from '../graphql-operations'
 
 export const diffSearchStreamEvents: SearchEvent[] = [
@@ -16,6 +16,8 @@ export const diffSearchStreamEvents: SearchEvent[] = [
                 message: 'build: set up test deps and scripts\n',
                 authorName: 'Quinn Slack',
                 authorDate: '2019-10-29T20:59:15Z',
+                committerName: 'Committer Slack',
+                committerDate: '2020-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep',
@@ -59,6 +61,8 @@ export const commitSearchStreamEvents: SearchEvent[] = [
                 message: 'add more tests, use the Sourcegraph stubs api and improve repo matching. (#13)',
                 authorName: 'Vanesa',
                 authorDate: '2019-10-29T20:59:15Z',
+                committerName: 'Committer Vanesa',
+                committerDate: '2020-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-sentry',

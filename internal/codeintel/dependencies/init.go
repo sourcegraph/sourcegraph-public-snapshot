@@ -4,44 +4,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetService creates or returns an already-initialized dependencies service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(db database.DB, gitserver GitserverClient) *Service {
-	svc, _ := initServiceMemo.Init(serviceDependencies{
-		db,
-		gitserver,
-	})
-
-	return svc
+func NewService(observationCtx *observation.Context, db database.DB) *Service {
+	return newService(scopedContext("service", observationCtx), store.New(scopedContext("store", observationCtx), db))
 }
 
 type serviceDependencies struct {
-	db        database.DB
-	gitserver GitserverClient
+	db             database.DB
+	observationCtx *observation.Context
 }
-
-var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	store := store.New(deps.db, scopedContext("store"))
-	externalServiceStore := deps.db.ExternalServices()
-	backgroundJob := background.New(deps.gitserver, externalServiceStore, scopedContext("background"))
-
-	svc := newService(store, backgroundJob, scopedContext("service"))
-	backgroundJob.SetDependenciesService(svc)
-
-	return svc, nil
-})
 
 // TestService creates a new dependencies service with noop observation contexts.
 func TestService(db database.DB, gitserver GitserverClient) *Service {
-	store := store.New(db, &observation.TestContext)
+	store := store.New(&observation.TestContext, db)
 
-	return newService(store, nil, &observation.TestContext)
+	return newService(&observation.TestContext, store)
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "dependencies", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "dependencies", component, parent)
+}
+
+func CrateSyncerJob(observationCtx *observation.Context, dependenciesSvc background.DependenciesService, gitserverClient background.GitserverClient, extSvcStore background.ExternalServiceStore) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewCrateSyncer(observationCtx, dependenciesSvc, gitserverClient, extSvcStore),
+	}
 }

@@ -10,16 +10,17 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -199,6 +200,8 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
+const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
+
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
@@ -216,11 +219,26 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return *in
 	}
 
+	actor := actor.FromContext(ctx)
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return err
+		}
+
+		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
+		publicArgument := coalesce(event.PublicArgument)
+		if actor.SourcegraphOperator {
+			result, err := jsonc.Edit(
+				string(publicArgument),
+				true,
+				EventLogsSourcegraphOperatorKey,
+			)
+			publicArgument = json.RawMessage(result)
+			if err != nil {
+				return errors.Wrap(err, `edit "public_argument" for Sourcegraph operator`)
+			}
 		}
 
 		rowValues <- []any{
@@ -233,7 +251,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.AnonymousUserID,
 			event.Source,
 			coalesce(event.Argument),
-			coalesce(event.PublicArgument),
+			publicArgument,
 			version.Version(),
 			event.Timestamp.UTC(),
 			featureFlags,
@@ -459,7 +477,13 @@ type CommonUsageOptions struct {
 	// are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
 	// Exclude Sourcegraph (employee) admins.
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
 	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
@@ -558,6 +582,8 @@ func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf
 		// This method of filtering is imperfect and may still incur false positives, but
 		// the two together should help prevent that in the majority of cases, and we
 		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		//
+		// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 		if opt.ExcludeSourcegraphAdmins {
 			conds = append(conds, sqlf.Sprintf(`
 -- No matching user exists
@@ -577,6 +603,10 @@ OR NOT(
 			AND user_emails.email ILIKE '%%@sourcegraph.com')
 )
 `))
+		}
+
+		if opt.ExcludeSourcegraphOperators {
+			conds = append(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_argument @> '{"%s": true}'`, EventLogsSourcegraphOperatorKey)))
 		}
 	}
 	return conds
@@ -832,9 +862,10 @@ type SiteUsageOptions struct {
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
 		CommonUsageOptions{
-			ExcludeSystemUsers:       true,
-			ExcludeNonActiveUsers:    true,
-			ExcludeSourcegraphAdmins: true,
+			ExcludeSystemUsers:          true,
+			ExcludeNonActiveUsers:       true,
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
 		},
 	})
 }

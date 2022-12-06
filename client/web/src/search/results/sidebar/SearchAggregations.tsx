@@ -58,6 +58,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         proactive,
         caseSensitive,
         extendedTimeout,
+        telemetryService,
     })
 
     // When query is updated reset extendedTimeout as per business rules
@@ -112,7 +113,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     }
 
     return (
-        <article className="pt-2">
+        <div className="pt-2">
             <AggregationModeControls
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
@@ -153,6 +154,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                     </footer>
                 </>
             )}
-        </article>
+        </div>
     )
 })
+
+SearchAggregations.displayName = 'SearchAggregations'

@@ -61,7 +61,7 @@ func TestQueueShim_Dequeue_Error(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "failed", err.Error())
 	assert.False(t, dequeued)
-	assert.Nil(t, record)
+	assert.Equal(t, executor.Job{}, record)
 
 	mock.AssertExpectationsForObjects(t, queueStore)
 }
@@ -74,12 +74,14 @@ func TestQueueShim_Heartbeat(t *testing.T) {
 	}
 
 	queueStore.On("Heartbeat", mock.Anything, "test-queue", []int{1, 2, 3}).
-		Return([]int{4}, nil)
+		Return([]int{4, 5}, []int{4}, nil)
 
-	ids, err := shim.Heartbeat(context.Background(), []int{1, 2, 3})
+	ids, canceled, err := shim.Heartbeat(context.Background(), []int{1, 2, 3})
 	assert.NoError(t, err)
-	assert.Len(t, ids, 1)
-	assert.Equal(t, []int{4}, ids)
+	assert.Len(t, ids, 2)
+	assert.Equal(t, []int{4, 5}, ids)
+	assert.Len(t, canceled, 1)
+	assert.Equal(t, []int{4}, canceled)
 
 	mock.AssertExpectationsForObjects(t, queueStore)
 }
@@ -242,24 +244,6 @@ func TestQueueShim_MarkFailed_Error(t *testing.T) {
 	mock.AssertExpectationsForObjects(t, queueStore)
 }
 
-func TestQueueShim_CanceledJobs(t *testing.T) {
-	queueStore := new(queueStoreMock)
-	shim := store.QueueShim{
-		Name:  "test-queue",
-		Store: queueStore,
-	}
-
-	queueStore.On("CanceledJobs", mock.Anything, "test-queue", []int{1, 2, 3}).
-		Return([]int{4, 5}, nil)
-
-	ids, err := shim.CanceledJobs(context.Background(), []int{1, 2, 3})
-	assert.NoError(t, err)
-	assert.Len(t, ids, 2)
-	assert.Equal(t, []int{4, 5}, ids)
-
-	mock.AssertExpectationsForObjects(t, queueStore)
-}
-
 type queueStoreMock struct {
 	mock.Mock
 }
@@ -294,12 +278,7 @@ func (m *queueStoreMock) MarkFailed(ctx context.Context, queueName string, jobID
 	return args.Error(0)
 }
 
-func (m *queueStoreMock) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
+func (m *queueStoreMock) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
 	args := m.Called(ctx, queueName, jobIDs)
-	return args.Get(0).([]int), args.Error(1)
-}
-
-func (m *queueStoreMock) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
-	args := m.Called(ctx, queueName, knownIDs)
-	return args.Get(0).([]int), args.Error(1)
+	return args.Get(0).([]int), args.Get(1).([]int), args.Error(2)
 }

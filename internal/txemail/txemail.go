@@ -25,7 +25,7 @@ type Message = txtypes.Message
 var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_email_send",
 	Help: "Number of emails sent.",
-}, []string{"success"})
+}, []string{"success", "email_source"})
 
 // render returns the rendered message contents without sending email.
 func render(message Message) (*email.Email, error) {
@@ -67,21 +67,18 @@ func render(message Message) (*email.Email, error) {
 	return &m, nil
 }
 
-// Send sends a transactional email.
+// Send sends a transactional email. Source is used to categorize metrics, and should
+// indicate the product feature that is sending this email.
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
 // instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func Send(ctx context.Context, message Message) (err error) {
+func Send(ctx context.Context, source string, message Message) (err error) {
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
 	if disableSilently {
 		return nil
 	}
-
-	defer func() {
-		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
-	}()
 
 	conf := conf.Get()
 	if conf.EmailAddress == "" {
@@ -90,6 +87,12 @@ func Send(ctx context.Context, message Message) (err error) {
 	if conf.EmailSmtp == nil {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
+
+	// Previous errors are configuration errors, do not track as error. Subsequent errors
+	// are delivery errors.
+	defer func() {
+		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
+	}()
 
 	m, err := render(message)
 	if err != nil {

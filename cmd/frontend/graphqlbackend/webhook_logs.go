@@ -30,6 +30,7 @@ type webhookLogsArgs struct {
 	OnlyErrors *bool
 	Since      *time.Time
 	Until      *time.Time
+	WebhookID  *graphql.ID
 }
 
 // webhookLogsExternalServiceID is used to represent an external service ID,
@@ -79,6 +80,18 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 
 	if args.OnlyErrors != nil && *args.OnlyErrors {
 		opts.OnlyErrors = true
+	}
+
+	// Both nil and "-1" webhook IDs should be resolved to nil WebhookID
+	// WebhookLogListOpts option
+	if args.WebhookID != nil {
+		id, err := unmarshalWebhookID(*args.WebhookID)
+		if err != nil {
+			return opts, errors.Wrap(err, "unmarshalling webhook ID")
+		}
+		if id > 0 {
+			opts.WebhookID = &id
+		}
 	}
 
 	return opts, nil
@@ -258,16 +271,8 @@ type webhookLogMessageResolver struct {
 	message *types.WebhookLogMessage
 }
 
-func (r *webhookLogMessageResolver) Headers() []*webhookLogHeaderResolver {
-	headers := make([]*webhookLogHeaderResolver, 0, len(r.message.Header))
-	for k, v := range r.message.Header {
-		headers = append(headers, &webhookLogHeaderResolver{
-			name:   k,
-			values: v,
-		})
-	}
-
-	return headers
+func (r *webhookLogMessageResolver) Headers() ([]*HttpHeaders, error) {
+	return newHttpHeaders(r.message.Header)
 }
 
 func (r *webhookLogMessageResolver) Body() string {
@@ -290,15 +295,11 @@ func (r *webhookLogRequestResolver) Version() string {
 	return r.message.Version
 }
 
-type webhookLogHeaderResolver struct {
-	name   string
-	values []string
+func marshalWebhookID(id int32) graphql.ID {
+	return relay.MarshalID("Webhook", id)
 }
 
-func (r *webhookLogHeaderResolver) Name() string {
-	return r.name
-}
-
-func (r *webhookLogHeaderResolver) Values() []string {
-	return r.values
+func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
+	err = relay.UnmarshalSpec(id, &hookID)
+	return
 }

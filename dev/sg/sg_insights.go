@@ -18,27 +18,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	insightsCommand = &cli.Command{
-		Name:     "insights",
-		Usage:    "Tools to interact with Code Insights data",
-		Category: CategoryDev,
-		Subcommands: []*cli.Command{
-			{
-				Name:        "decode-id",
-				Usage:       "Decodes an encoded insight ID found on the frontend into a view unique_id",
-				Description: `Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries`,
-				Action:      decodeInsightIDAction,
-			},
-			{
-				Name:        "series-ids",
-				Usage:       "Gets all insight series ID from the base64 encoded frontend ID",
-				Description: `Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs`,
-				Action:      getInsightSeriesIDsAction,
-			},
+var insightsCommand = &cli.Command{
+	Name:     "insights",
+	Usage:    "Tools to interact with Code Insights data",
+	Category: CategoryDev,
+	Subcommands: []*cli.Command{
+		{
+			Name:        "decode-id",
+			Usage:       "Decodes an encoded insight ID found on the frontend into a view unique_id",
+			Description: `Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries`,
+			Action:      decodeInsightIDAction,
 		},
-	}
-)
+		{
+			Name:        "series-ids",
+			Usage:       "Gets all insight series ID from the base64 encoded frontend ID",
+			Description: `Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs`,
+			Action:      getInsightSeriesIDsAction,
+		},
+	},
+}
 
 func decodeInsightIDAction(cmd *cli.Context) error {
 	ids := cmd.Args().Slice()
@@ -73,7 +71,7 @@ func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.EnsureNewCodeInsightsDB(postgresdsn.New("", "", conf.GetEnv), "insights", &observation.TestContext)
+	conn, err := connections.EnsureNewCodeInsightsDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "insights")
 	if err != nil {
 		return err
 	}
@@ -119,5 +117,5 @@ func decodeIDIntoUniqueViewID(id string) (string, error) {
 	if !strings.Contains(sDecoded, "insight_view") {
 		return "", errors.Newf("decoded id is not an insight_view id: %s", sDecoded)
 	}
-	return strings.Trim(strings.TrimLeft(sDecoded, "insight_view:"), "\""), nil
+	return strings.Trim(strings.TrimPrefix(sDecoded, "insight_view:"), "\""), nil
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
 import classNames from 'classnames'
@@ -51,24 +51,25 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-            <PopoverTrigger
-                as={Button}
-                className={classNames(
-                    styles.toggle,
-                    smartStyles.button,
-                    className,
-                    !!disabledRule && styles.disabled,
-                    isActive && styles.toggleActive,
-                    !interactive && styles.toggleNonInteractive
-                )}
-                variant="icon"
-                aria-checked={isActive}
-                {...interactiveProps}
-            >
-                <Tooltip content={tooltipValue} placement="bottom">
+            <Tooltip content={tooltipValue} placement="bottom">
+                <PopoverTrigger
+                    as={Button}
+                    className={classNames(
+                        'a11y-ignore',
+                        styles.toggle,
+                        smartStyles.button,
+                        className,
+                        !!disabledRule && styles.disabled,
+                        isActive && styles.toggleActive,
+                        !interactive && styles.toggleNonInteractive
+                    )}
+                    variant="icon"
+                    aria-checked={isActive}
+                    {...interactiveProps}
+                >
                     <Icon aria-label={tooltipValue} svgPath={smartSearchIconSvgPath} />
-                </Tooltip>
-            </PopoverTrigger>
+                </PopoverTrigger>
+            </Tooltip>
 
             <SmartSearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
         </Popover>
@@ -79,6 +80,9 @@ const SmartSearchToggleMenu: React.FunctionComponent<
     Pick<SmartSearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
 > = ({ onSelect, isActive, closeMenu }) => {
     const [visibleIsEnabled, setVisibleIsEnabled] = useState(isActive)
+    useEffect(() => {
+        setVisibleIsEnabled(isActive)
+    }, [isActive])
 
     const onChange = useCallback(
         (value: boolean) => {

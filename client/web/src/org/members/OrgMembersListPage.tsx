@@ -45,9 +45,8 @@ import styles from './OrgMembersListPage.module.scss'
 
 interface Props
     extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
-        RouteComponentProps {
-    onOrgGetStartedRefresh: () => void
-}
+        RouteComponentProps {}
+
 export interface Member {
     id: string
     username: string
@@ -188,7 +187,6 @@ const MembersResultHeader: React.FunctionComponent<React.PropsWithChildren<{ tot
 export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
-    onOrgGetStartedRefresh,
     history,
 }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
@@ -218,9 +216,8 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
     const onInviteSent = useCallback(
         (result: IModalInviteResult) => {
             setInvite(result)
-            onOrgGetStartedRefresh()
         },
-        [setInvite, onOrgGetStartedRefresh]
+        [setInvite]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -235,9 +232,8 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
         async (username: string) => {
             setNotification(`You succesfully added ${username} to ${org.name}`)
             await onShouldRefetch()
-            onOrgGetStartedRefresh()
         },
-        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
+        [setNotification, onShouldRefetch, org.name]
     )
 
     const onMemberRemoved = useCallback(
@@ -248,10 +244,9 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
                 setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
                 setPage(1)
                 await onShouldRefetch()
-                onOrgGetStartedRefresh()
             }
         },
-        [org.name, onShouldRefetch, onOrgGetStartedRefresh, history, authenticatedUser.username]
+        [org.name, onShouldRefetch, history, authenticatedUser.username]
     )
 
     const onNotificationDismiss = useCallback(() => {

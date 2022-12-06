@@ -6,8 +6,9 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
-import { QueryUpdate, SearchContextProps, SearchMode } from '@sourcegraph/search'
-import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
+import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -19,10 +20,12 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
@@ -73,6 +76,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', false)
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
@@ -96,6 +100,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const extensionHostAPI =
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
+    const featureOverrides = useDeepMemo(
+        // Nested use memo here is used for avoiding extra object calculation step on each render
+        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+    )
 
     const options: StreamSearchOptions = useMemo(
         () => ({
@@ -103,10 +111,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
+            featureOverrides,
+            searchMode,
             chunkMatches: true,
         }),
-        [caseSensitive, patternType, searchMode, trace]
+        [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
@@ -414,6 +423,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
+                            enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                         />
                     </div>
                 </>

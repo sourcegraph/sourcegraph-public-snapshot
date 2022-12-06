@@ -163,10 +163,10 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return BigInt{Int: 0}, err
+		return 0, err
 	}
 
-	return BigInt{Int: info.RepoSizeBytes}, err
+	return BigInt(info.RepoSizeBytes), err
 }
 
 func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
@@ -181,7 +181,11 @@ func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, erro
 		return nil, err
 	}
 
-	return &info.ShardID, err
+	if info.ShardID == "" {
+		return nil, nil
+	}
+
+	return &info.ShardID, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {

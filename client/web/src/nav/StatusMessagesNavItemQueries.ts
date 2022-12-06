@@ -9,6 +9,13 @@ export const STATUS_MESSAGES = gql`
                 message
             }
 
+            ... on IndexingProgress {
+                __typename
+
+                notIndexed
+                indexed
+            }
+
             ... on SyncError {
                 __typename
 

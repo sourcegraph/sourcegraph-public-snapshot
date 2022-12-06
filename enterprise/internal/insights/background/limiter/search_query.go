@@ -3,8 +3,9 @@ package limiter
 import (
 	"sync"
 
-	"github.com/sourcegraph/log"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -19,30 +20,37 @@ func SearchQueryRate() *ratelimit.InstrumentedLimiter {
 	searchOnce.Do(func() {
 		searchLogger = log.Scoped("insights.search.ratelimiter", "")
 		defaultRateLimit := rate.Limit(20.0)
-		getRateLimit := getSearchQueryRateLimit(defaultRateLimit)
-		searchLimiter = ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
+		defaultBurst := 20
+		getRateLimit := getSearchQueryRateLimit(defaultRateLimit, defaultBurst)
+		searchLimiter = ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit()))
 
 		go conf.Watch(func() {
-			val := getRateLimit()
-			searchLogger.Info("Updating insights/query-worker rate limit", log.Int("value", int(val)))
-			searchLimiter.SetLimit(val)
+			limit, burst := getRateLimit()
+			searchLogger.Info("Updating insights/query-worker ", log.Int("rate limit", int(limit)), log.Int("burst", burst))
+			searchLimiter.SetLimit(limit)
+			searchLimiter.SetBurst(burst)
 		})
 	})
 
 	return searchLimiter
 }
 
-func getSearchQueryRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsQueryWorkerRateLimit
+func getSearchQueryRateLimit(defaultRate rate.Limit, defaultBurst int) func() (rate.Limit, int) {
+	return func() (rate.Limit, int) {
+		limit := conf.Get().InsightsQueryWorkerRateLimit
+		burst := conf.Get().InsightsQueryWorkerRateLimitBurst
 
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
+		var rateLimit rate.Limit
+		if limit == nil {
+			rateLimit = defaultRate
 		} else {
-			result = rate.Limit(*val)
+			rateLimit = rate.Limit(*limit)
 		}
 
-		return result
+		if burst <= 0 {
+			burst = defaultBurst
+		}
+
+		return rateLimit, burst
 	}
 }

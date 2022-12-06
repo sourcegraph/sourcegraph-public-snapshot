@@ -1,22 +1,31 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, MouseEvent, useCallback, useMemo, useState } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
+import {
+    Link,
+    Button,
+    Icon,
+    BarChart,
+    LegendItem,
+    LegendList,
+    LegendItemPoint,
+    ScrollBox,
+    Tooltip,
+    TooltipOpenEvent,
+    TooltipOpenChangeReason,
+} from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, InsightContent } from '../../../../../../core'
+import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
-
-function getLineColor(series: Series<any>): string {
-    return series.color ?? 'var(--gray-07)'
-}
 
 /**
  * If width of the chart is less than this var width value we should put the legend
@@ -54,7 +63,6 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
     const { ref, width = 0 } = useResizeObserver()
-    const { setHoveredId } = seriesToggleState
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
@@ -96,7 +104,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         onDatumClick={onDatumClick}
                                         zeroYAxisMin={zeroYAxisMin}
                                         seriesToggleState={seriesToggleState}
-                                        {...data.content}
+                                        series={data.content.series}
                                     />
                                 ) : (
                                     <BarChart
@@ -111,7 +119,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                     </ParentSize>
 
                     {isSeriesLikeInsight && (
-                        <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
+                        <ScrollBox className={styles.legendListContainer}>
                             <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
                         </ScrollBox>
                     )}
@@ -142,38 +150,118 @@ const hasNoData = (data: InsightContent<any>): boolean => {
 }
 
 interface SeriesLegendsProps {
-    series: Series<any>[]
+    series: BackendInsightSeries<any>[]
     seriesToggleState: UseSeriesToggleReturn
 }
 
 const SeriesLegends: FC<SeriesLegendsProps> = props => {
     const { series, seriesToggleState } = props
 
+    // Non-interactive static legend list
+    if (series.length <= 1) {
+        return (
+            <LegendList className={styles.legendList}>
+                {series.map(item => (
+                    <LegendItem key={item.id as string} color={item.color}>
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                        {item.errored && <BackendInsightTimeoutIcon />}
+                    </LegendItem>
+                ))}
+            </LegendList>
+        )
+    }
+
     const { setHoveredId, isSeriesSelected, isSeriesHovered, toggle } = seriesToggleState
 
+    // Interactive legends list
     return (
-        <LegendList className={styles.legendList}>
+        <LegendList
+            className={styles.legendList}
+            // Prevent accidental dragging events
+            onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
+        >
             {series.map(item => (
                 <LegendItem
                     key={item.id as string}
-                    color={getLineColor(item)}
-                    name={item.name}
-                    selected={isSeriesSelected(`${item.id}`)}
-                    hovered={isSeriesHovered(`${item.id}`)}
-                    className={classNames(styles.legendListItem, {
-                        [styles.clickable]: series.length > 1,
-                    })}
-                    onClick={() =>
-                        toggle(
-                            `${item.id}`,
-                            series.map(series => `${series.id}`)
-                        )
-                    }
-                    onMouseEnter={() => setHoveredId(`${item.id}`)}
-                    // prevent accidental dragging events
-                    onMouseDown={event => event.stopPropagation()}
-                />
+                    active={isSeriesHovered(`${item.id}`) || isSeriesSelected(`${item.id}`)}
+                >
+                    <Button
+                        role="checkbox"
+                        aria-checked={isSeriesSelected(`${item.id}`)}
+                        className={styles.legendListItem}
+                        onPointerEnter={() => setHoveredId(`${item.id}`)}
+                        onPointerLeave={() => setHoveredId(undefined)}
+                        onFocus={() => setHoveredId(`${item.id}`)}
+                        onBlur={() => setHoveredId(undefined)}
+                        onClick={() =>
+                            toggle(
+                                `${item.id}`,
+                                series.map(series => `${series.id}`)
+                            )
+                        }
+                    >
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                    </Button>
+                    {item.errored && <BackendInsightTimeoutIcon />}
+                </LegendItem>
             ))}
         </LegendList>
+    )
+}
+
+interface BackendInsightTimeoutIconProps {
+    timeoutLevel?: 'series' | 'insight'
+}
+
+/**
+ * Renders timeout icon and interactive tooltip with addition info about timeout
+ * error. Note: It's exported because it's also used in the backend insight card.
+ */
+export const BackendInsightTimeoutIcon: FC<BackendInsightTimeoutIconProps> = props => {
+    const { timeoutLevel = 'series' } = props
+    const [open, setOpen] = useState(false)
+
+    const handleIconClick = (event: MouseEvent<HTMLButtonElement>): void => {
+        // Catch event and prevent bubbling in order to prevent series toggle on/off
+        // series action.
+        event.stopPropagation()
+        setOpen(!open)
+    }
+
+    const handleOpenChange = useCallback((event: TooltipOpenEvent): void => {
+        switch (event.reason) {
+            case TooltipOpenChangeReason.Esc:
+            case TooltipOpenChangeReason.ClickOutside: {
+                setOpen(event.isOpen)
+            }
+        }
+    }, [])
+
+    return (
+        <Tooltip
+            open={open}
+            content={
+                <>
+                    {timeoutLevel === 'series'
+                        ? 'Some points of this data series exceeded the time limit. Results may be incomplete.'
+                        : 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'}{' '}
+                    <Link
+                        to="/help/code_insights/how-tos/Troubleshooting"
+                        target="_blank"
+                        rel="noopener"
+                        className={styles.troubleshootLink}
+                    >
+                        Troubleshoot
+                    </Link>
+                </>
+            }
+            onOpenChange={handleOpenChange}
+        >
+            <Button variant="icon" className={styles.timeoutIcon} onClick={handleIconClick}>
+                <Icon aria-label="Insight is timeout" svgPath={mdiAlertCircle} color="var(--icon-color)" />
+            </Button>
+        </Tooltip>
     )
 }

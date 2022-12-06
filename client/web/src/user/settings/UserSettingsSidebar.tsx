@@ -1,6 +1,7 @@
-import * as React from 'react'
+import React, { useState, useCallback } from 'react'
 
-import { mdiPlus } from '@mdi/js'
+import { mdiMenu, mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
@@ -8,7 +9,6 @@ import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sour
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemDescriptor } from '../../util/contributions'
@@ -21,7 +21,6 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
     user: UserSettingsAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
-    openBetaEnabled: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -43,7 +42,8 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+    const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
 
     if (!props.authenticatedUser) {
         return null
@@ -58,55 +58,84 @@ export const UserSettingsSidebar: React.FunctionComponent<
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        openBetaEnabled: isOpenBetaEnabled,
     }
 
     return (
-        <div className={props.className}>
-            <SidebarGroup>
-                <SidebarGroupHeader label="Account" />
-                {props.items.map(
-                    ({ label, to, exact, status, condition = () => true }) =>
-                        condition(context) && (
-                            <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
-                            </SidebarNavItem>
-                        )
-                )}
-            </SidebarGroup>
-            {!isOpenBetaEnabled && (props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+        <>
+            <Button className="d-sm-none align-self-start mb-3" onClick={() => setIsMobileExpanded(!isMobileExpanded)}>
+                <Icon aria-hidden={true} svgPath={mdiMenu} className="mr-2" />
+                {isMobileExpanded ? 'Hide' : 'Show'} menu
+            </Button>
+            <div className={classNames(props.className, 'd-sm-block', !isMobileExpanded && 'd-none')}>
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Your organizations" />
-                    {props.user.organizations.nodes.map(org => (
-                        <SidebarNavItem
-                            key={org.id}
-                            to={`/organizations/${org.name}/settings`}
-                            className="text-truncate text-nowrap align-items-center"
-                        >
-                            <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
-                        </SidebarNavItem>
-                    ))}
-                    {!siteAdminViewingOtherUser &&
-                        (window.context.sourcegraphDotComMode &&
-                        !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
-                            <SidebarNavItem to={`${props.match.path}/about-organizations`}>
-                                About organizations
-                            </SidebarNavItem>
-                        ) : (
-                            <div className={styles.newOrgBtnWrapper}>
-                                <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
-                                </Button>
-                            </div>
-                        ))}
+                    <SidebarGroupHeader label="Account" />
+                    {props.items.map(
+                        ({ label, to, exact, status, condition = () => true }) =>
+                            condition(context) && (
+                                <SidebarNavItem
+                                    key={label}
+                                    to={props.match.path + to}
+                                    exact={exact}
+                                    onClick={collapseMobileSidebar}
+                                >
+                                    {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
+                                </SidebarNavItem>
+                            )
+                    )}
                 </SidebarGroup>
-            )}
-            <SidebarGroup>
-                <SidebarGroupHeader label="Other actions" />
-                {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
-                {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-            </SidebarGroup>
-            <div>Version: {window.context.version}</div>
-        </div>
+                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+                    <SidebarGroup>
+                        <SidebarGroupHeader label="Your organizations" />
+                        {props.user.organizations.nodes.map(org => (
+                            <SidebarNavItem
+                                key={org.id}
+                                to={`/organizations/${org.name}/settings`}
+                                className="text-truncate text-nowrap align-items-center"
+                                onClick={collapseMobileSidebar}
+                            >
+                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
+                            </SidebarNavItem>
+                        ))}
+                        {!siteAdminViewingOtherUser &&
+                            (window.context.sourcegraphDotComMode &&
+                            !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
+                                <SidebarNavItem
+                                    to={`${props.match.path}/about-organizations`}
+                                    onClick={collapseMobileSidebar}
+                                >
+                                    About organizations
+                                </SidebarNavItem>
+                            ) : (
+                                <div className={styles.newOrgBtnWrapper}>
+                                    <Button
+                                        to="/organizations/new"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
+                                        onClick={collapseMobileSidebar}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
+                                    </Button>
+                                </div>
+                            ))}
+                    </SidebarGroup>
+                )}
+                <SidebarGroup>
+                    <SidebarGroupHeader label="Other actions" />
+                    {!siteAdminViewingOtherUser && (
+                        <SidebarNavItem to="/api/console" onClick={collapseMobileSidebar}>
+                            API console
+                        </SidebarNavItem>
+                    )}
+                    {props.authenticatedUser.siteAdmin && (
+                        <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
+                            Site admin
+                        </SidebarNavItem>
+                    )}
+                </SidebarGroup>
+                <div>Version: {window.context.version}</div>
+            </div>
+        </>
     )
 }

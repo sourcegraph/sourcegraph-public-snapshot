@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // dataVersion is used for releases that change type structure for
@@ -23,7 +25,7 @@ const dataVersionToDelete = "v1"
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
-	return deleteKeysWithPrefix(c, dataVersionToDelete)
+	return deleteAllKeysWithPrefix(c, dataVersionToDelete)
 }
 
 // Cache implements httpcache.Cache
@@ -47,6 +49,8 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 		ttlSeconds: ttlSeconds,
 	}
 }
+
+func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 func (r *Cache) GetMulti(keys ...string) [][]byte {
 	c := pool.Get()
@@ -167,15 +171,70 @@ func (r *Cache) Increase(key string) {
 	}
 }
 
+// DeleteMulti deletes the given keys.
+func (r *Cache) DeleteMulti(keys ...string) {
+	for _, key := range keys {
+		r.Delete(key)
+	}
+}
+
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
 	c := pool.Get()
-	defer c.Close()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
 
 	_, err := c.Do("DEL", r.rkeyPrefix()+key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
+}
+
+// ListKeys lists all keys associated with this cache.
+// Use with care if you have long TTLs or no TTL configured.
+func (r *Cache) ListKeys(ctx context.Context) (results []string, err error) {
+	var c redis.Conn
+	c, err = pool.GetContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "get redis conn")
+	}
+	defer func(c redis.Conn) {
+		if tempErr := c.Close(); err == nil {
+			err = tempErr
+		}
+	}(c)
+
+	cursor := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
+		}
+
+		res, err := redis.Values(
+			c.Do("SCAN", cursor,
+				"MATCH", r.rkeyPrefix()+"*",
+				"COUNT", 100),
+		)
+		if err != nil {
+			return results, errors.Wrap(err, "redis scan")
+		}
+
+		cursor, _ = redis.Int(res[0], nil)
+		keys, _ := redis.Strings(res[1], nil)
+		for i, k := range keys {
+			keys[i] = k[len(r.rkeyPrefix()):]
+		}
+
+		results = append(results, keys...)
+
+		if cursor == 0 {
+			break
+		}
+	}
+	return
 }
 
 // rkeyPrefix generates the actual key prefix we use on redis.
@@ -219,7 +278,7 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := deleteKeysWithPrefix(c, globalPrefix)
+	err := deleteAllKeysWithPrefix(c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
@@ -232,7 +291,7 @@ func SetupForTest(t TB) {
 // See https://www.lua.org/source/5.1/luaconf.h.html
 var deleteBatchSize = 5000
 
-func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
+func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
 	const script = `
 redis.replicate_commands()
 local cursor = '0'

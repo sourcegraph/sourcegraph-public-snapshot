@@ -29,7 +29,7 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
@@ -169,7 +169,7 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = performPurge(ctx, postgres, insightsDB, time.Now())
+	err = performPurge(ctx, postgres, insightsDB, logger, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

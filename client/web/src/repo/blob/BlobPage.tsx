@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect } from 'react-router'
 import { Observable, of } from 'rxjs'
@@ -18,28 +19,40 @@ import {
     reactManualTracer,
 } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    ButtonLink,
+    Icon,
+    LoadingSpinner,
+    Text,
+    useEventObservable,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
+import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -102,17 +115,29 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
-    const { repoName, revision, repoID, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    const enableTokenKeyboardNavigation =
+
+    // Before we introduced experimentaFeatures.codeNavigation='link-driven', we
+    // used a non-experimental name codeIntel.blobKeyboardNavigation='token',
+    // which was a mistake because the feature was very experimental in nature.
+    // To correct the mistake, we moved the setting under 'experimentalFeatures'
+    // and updated the description of 'codeIntel.blobKeyboardNavigation' to say
+    // it has moved to experimentaFeatures.codeNavigation='link-driven'.
+    const isLegacyLinkDrivenFeatureFlagEnabled =
         props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
         props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
+    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
+    const enableLinkDrivenCodeNavigation =
+        !enableSelectionDrivenCodeNavigation &&
+        (isLegacyLinkDrivenFeatureFlagEnabled || experimentalCodeNavigation === 'link-driven')
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -203,6 +228,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
+                                lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                                externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                             }
 
                             fetchSpan.end()
@@ -262,6 +289,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                         }
                         return blobInfo
                     }),
@@ -271,13 +300,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     )
 
-    /**
-     * Fetches stencil ranges for the current document.
-     * Used to provide keyboard navigation within the blob view.
-     */
+    // Fetches stencil ranges for the current document.  Only used for
+    // link-driven keyboard navigatio.
     const stencil = useObservable(
         useMemo(() => {
-            if (!enableTokenKeyboardNavigation) {
+            if (!enableLinkDrivenCodeNavigation) {
                 return of(undefined)
             }
 
@@ -286,7 +313,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 revision,
                 filePath,
             })
-        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
+        }, [enableLinkDrivenCodeNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -313,7 +340,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     }
 
     const [isBlameVisible] = useBlameVisibility()
-    const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+    const blameDecorations = useBlameHunks(
+        { repoName, revision, filePath, enableCodeMirror },
+        props.platformContext.sourcegraphURL
+    )
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -433,6 +463,40 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     }
 
+    // LFS file:
+    if (blobInfoOrError.lfs) {
+        const externalUrl = blobInfoOrError.externalURLs?.[0]
+        const externalService = externalUrl && serviceKindDisplayNameAndIcon(externalUrl.serviceKind)
+
+        return (
+            <div className={styles.placeholder}>
+                <HeroPage
+                    icon={FileAlertIcon}
+                    title="Stored with Git LFS"
+                    subtitle={
+                        <div>
+                            <Text className={styles.lfsText}>
+                                This file is stored in Git Large File Storage and cannot be viewed inside Sourcegraph.
+                            </Text>
+                            {externalUrl && externalService && (
+                                <ButtonLink
+                                    variant="secondary"
+                                    to={externalUrl.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-3"
+                                >
+                                    <Icon as={externalService.icon} aria-hidden={true} className="mr-1" />
+                                    View file on {externalService.displayName}
+                                </ButtonLink>
+                            )}
+                        </div>
+                    }
+                />
+            </div>
+        )
+    }
+
     const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
 
     return (
@@ -515,7 +579,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
-                        tokenKeyboardNavigation={enableTokenKeyboardNavigation}
+                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
+                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
             )}

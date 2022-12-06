@@ -22,9 +22,10 @@ import { createRoot, Root } from 'react-dom/client'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
-import { Keybindings, renderShortcutKey } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
+import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
 
 import { Container } from './react-interop'
@@ -33,7 +34,7 @@ import { blobPropsFacet } from '.'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
-const platformKeycombo = renderShortcutKey('Mod') + '+F'
+const platformKeycombo = shortcutDisplayName('Mod+F')
 const tooltipContent = `When enabled, ${platformKeycombo} searches the file only. Disable to search the page, and press ${platformKeycombo} for changes to apply.`
 const searchKeybindingTooltip = (
     <Tooltip content={tooltipContent}>

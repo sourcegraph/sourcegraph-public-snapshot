@@ -36,4 +36,5 @@ RUN apk update && apk add --no-cache \
 # Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
 # PR: https://github.com/sourcegraph/sourcegraph/pull/32682
 # @TODO: Remove this with the next release of Alpine
-RUN apk add --upgrade --no-cache 'libcrypto1.1>=1.1.1n-r0' 'libssl1.1>=1.1.1n-r0'
+RUN apk add --upgrade --no-cache 'libcrypto1.1>=1.1.1n-r0' 'libssl1.1>=1.1.1n-r0' \
+    'libxml2>=2.9.14-r2'  # CVE-2022-40303 CVE-2022-40304

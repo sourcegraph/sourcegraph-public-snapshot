@@ -10,8 +10,6 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -28,6 +26,7 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -99,7 +98,6 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 			err := handler.Handle(ctx)
 			if !errors.Is(err, test.expectErr) {
 				t.Errorf("unexpected error from Handle function, expected error: %v, received: %s", test.expectErr, err.Error())
-
 			}
 		})
 	}
@@ -443,12 +441,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
 	mockEnvVars(t, true)
 
-	obsContext := &observation.Context{
-		Logger:       logger,
-		Tracer:       nil,
-		Registerer:   metrics.TestRegisterer,
-		HoneyDataset: nil,
-	}
+	obsContext := observation.TestContextTB(t)
 
 	t.Run("handle fails when missing project name", func(t *testing.T) {
 		projectName = ""
@@ -696,10 +689,7 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 
 	logger := logtest.Scoped(t)
 
-	obsContext := &observation.Context{
-		Logger:     logger,
-		Registerer: metrics.TestRegisterer,
-	}
+	obsContext := observation.TestContextTB(t)
 
 	return &telemetryHandler{
 		logger:             logger,

@@ -65,7 +65,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 			return nil, err
 		}
 		c.Type = ChangesetSpecTypeBranch
-		c.Diff = []byte(diff)
+		c.Diff = diff
 		c.HeadRef = spec.HeadRef
 		c.BaseRev = spec.BaseRev
 		c.BaseRef = spec.BaseRef

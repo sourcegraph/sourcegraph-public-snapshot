@@ -20,7 +20,7 @@ import (
 )
 
 func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
 		Template: resetPasswordEmailTemplates,
 		Data: struct {
@@ -130,7 +130,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()
-	if err := txemail.Send(ctx, txemail.Message{
+	if err := txemail.Send(ctx, "password_set", txemail.Message{
 		To:       []string{e},
 		Template: setPasswordEmailTemplates,
 		Data: struct {
@@ -208,7 +208,7 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
 
 		if conf.CanSendEmail() {
-			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, db, params.UserID, "reset the password"); err != nil {
+			if err := backend.NewUserEmailsService(db, logger).SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
 				logger.Warn("Failed to send email to inform user of password reset", log.Error(err))
 			}
 		}

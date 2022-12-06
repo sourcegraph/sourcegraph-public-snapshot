@@ -5,7 +5,7 @@ import { createUrlFunction, WordSensitiveFuzzySearch } from '../../fuzzyFinder/W
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
 // - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
-const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80_000
+const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 100_000
 
 /**
  * The fuzzy finder modal is implemented as a state machine with the following transitions:

@@ -39,7 +39,7 @@ func TestHandle(t *testing.T) {
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
-			"test.txt": {Content: "<file payload>"},
+			"test.txt": {Content: []byte("<file payload>")},
 		},
 		DockerSteps: []executor.DockerStep{
 			{
@@ -72,7 +72,7 @@ func TestHandle(t *testing.T) {
 	filesStore := NewMockFilesStore()
 
 	h := &handler{
-		store:      NewMockStore(),
+		store:      NewMockStore[executor.Job](),
 		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
@@ -148,7 +148,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
-			"test.txt":  {Content: "<file payload>"},
+			"test.txt":  {Content: []byte("<file payload>")},
 			"script.sh": {Bucket: "batch-changes", Key: "123/abc", ModifiedAt: virtualFileModifiedAt},
 		},
 		DockerSteps: []executor.DockerStep{
@@ -185,7 +185,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	filesStore.GetFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("echo foo"))), nil)
 
 	h := &handler{
-		store:      NewMockStore(),
+		store:      NewMockStore[executor.Job](),
 		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
 		options: Options{

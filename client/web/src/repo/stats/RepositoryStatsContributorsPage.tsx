@@ -9,11 +9,10 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionList,
     ConnectionContainer,
@@ -59,7 +58,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     path,
     globbing,
 }) => {
-    const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
+    const commit = node.commits.nodes[0] as RepositoryContributorNodeFields['commits']['nodes'][number] | undefined
 
     const query: string = [
         searchQueryForRepoRevision(repoName, globbing),
@@ -203,7 +202,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const [after, setAfter] = useState(spec.after)
     const [path, setPath] = useState(spec.path)
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryContributorsResult,
         RepositoryContributorsVariables,
         RepositoryContributorNodeFields

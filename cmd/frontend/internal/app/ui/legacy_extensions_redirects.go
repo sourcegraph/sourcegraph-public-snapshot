@@ -5,8 +5,7 @@ import (
 )
 
 func ShouldRedirectLegacyExtensionEndpoints() bool {
-	cfg := conf.Get()
-	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableLegacyExtensions != nil && *cfg.ExperimentalFeatures.EnableLegacyExtensions == true {
+	if conf.ExperimentalFeatures().EnableLegacyExtensions {
 		return false
 	}
 	return true

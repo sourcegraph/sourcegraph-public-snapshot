@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"mime"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
 )
 
 // initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
@@ -375,4 +377,31 @@ c.go`
 			t.Errorf("Want %q in body, but got %q", want, body)
 		}
 	})
+}
+
+func Test_serveRawRepoCloning(t *testing.T) {
+	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+		return &Common{
+			Repo: nil,
+		}, nil
+	}
+	t.Cleanup(func() {
+		mockNewCommon = nil
+	})
+	// Fail git server calls, as they should not be invoked for a cloning repo.
+	initHTTPTestGitServer(t, http.StatusInternalServerError, "{should not be invoked}")
+	gsClient := gitserver.NewMockClient()
+	gsClient.StatFunc.SetDefaultReturn(nil, fmt.Errorf("should not be invoked"))
+
+	req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+	w := httptest.NewRecorder()
+	db := database.NewMockDB()
+	// Former implementation would sleep awaiting repository to be available.
+	// Await request to be served with a timeout by racing done channel with time.After.
+	err := serveRaw(db, gsClient)(w, req)
+	if err != nil {
+		t.Fatalf("Failed to invoke serveRaw: %v", err)
+	}
+	assert.Equal(t, http.StatusNotFound, w.Code, "http response status")
+	assert.Equal(t, "Repository unavailable while cloning.", string(w.Body.Bytes()), "http response body")
 }

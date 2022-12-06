@@ -121,6 +121,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group"
             >
               <button
+                aria-disabled="false"
                 class="btn btnPrimary btnBlock"
                 type="submit"
               >
@@ -173,7 +174,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="/sign-up"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Sign up
           </a>
@@ -297,6 +300,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group"
             >
               <button
+                aria-disabled="false"
                 class="btn btnPrimary btnBlock"
                 type="submit"
               >
@@ -349,7 +353,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="/sign-up"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Sign up
           </a>
@@ -473,6 +479,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 2 providers
               class="form-group"
             >
               <button
+                aria-disabled="false"
                 class="btn btnPrimary btnBlock"
                 type="submit"
               >
@@ -525,7 +532,9 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 2 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="/sign-up"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Sign up
           </a>
@@ -649,6 +658,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
               class="form-group"
             >
               <button
+                aria-disabled="false"
                 class="btn btnPrimary btnBlock"
                 type="submit"
               >
@@ -711,7 +721,9 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="/sign-up"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Sign up
           </a>
@@ -835,6 +847,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
               class="form-group"
             >
               <button
+                aria-disabled="false"
                 class="btn btnPrimary btnBlock"
                 type="submit"
               >
@@ -897,7 +910,9 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="/sign-up?sourcegraph-operator"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Sign up
           </a>

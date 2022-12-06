@@ -48,7 +48,7 @@ func NewProvider(cli *bitbucketserver.Client, urn string, pluginPerm bool) *Prov
 	}
 }
 
-// Validate validates that the Provider has access to the Bitbucket Server API
+// ValidateConnection validates that the Provider has access to the Bitbucket Server API
 // with the OAuth credentials it was configured with.
 func (p *Provider) ValidateConnection(ctx context.Context) []string {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -139,8 +139,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
-	var user bitbucketserver.User
-	if err := encryption.DecryptJSON(ctx, account.Data, &user); err != nil {
+	user, err := encryption.DecryptJSON[bitbucketserver.User](ctx, account.Data)
+	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

@@ -4,12 +4,10 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 
 To connect GitHub to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitHub**.
-1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
+1. Go to **Site admin > Manage code hosts**
+2. Select **GitHub**.
+3. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Press **Add repositories**.
 
 In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
 
@@ -23,8 +21,6 @@ In this example, the kubernetes public repository on GitHub is added by selectin
   ]
 }
 ```
-
-> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -191,22 +187,3 @@ If you would like to sync all public repositories while omitting archived repos,
     ]
 }
 ```
-### repositoryQuery returns first 1000 results only
-
-GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three pre-defined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
-
-```jsonx
-{
-  // ...
-  "repositoryQuery": [
-    "org:Microsoft fork:no created:>=2019",
-    "org:Microsoft fork:no created:2018",
-    "org:Microsoft fork:no created:2016..2017",
-    "org:Microsoft fork:no created:<2016"
-  ]
-}
-```
-
-If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
-
-See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.

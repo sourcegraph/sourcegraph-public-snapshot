@@ -53,6 +53,7 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         caseSensitive,
         proactive: true,
         extendedTimeout,
+        telemetryService,
     })
 
     const handleCollapseClick = (): void => {

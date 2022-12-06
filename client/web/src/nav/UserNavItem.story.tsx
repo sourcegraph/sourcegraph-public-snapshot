@@ -76,6 +76,7 @@ const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
     position: Position.bottomStart,
     showKeyboardShortcutsHelp: () => undefined,
+    showFeedbackModal: () => undefined,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{

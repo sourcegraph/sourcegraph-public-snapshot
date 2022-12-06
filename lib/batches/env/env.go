@@ -107,6 +107,18 @@ func (e Environment) IsStatic() bool {
 	return true
 }
 
+// OuterVars returns the list of environment variables that depend on any
+// environment variable defined in the global env.
+func (e Environment) OuterVars() []string {
+	outer := []string{}
+	for _, v := range e.vars {
+		if v.value == nil {
+			outer = append(outer, v.name)
+		}
+	}
+	return outer
+}
+
 // Resolve resolves the environment, using values from the given outer
 // environment to fill in environment values as needed. If an environment
 // variable doesn't exist in the outer environment, then an empty string will be

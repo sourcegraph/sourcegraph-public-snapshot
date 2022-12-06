@@ -38,3 +38,5 @@ func classifiedError(messages []string, streamingType types.GenerationMethod) er
 	}
 	return errors.Errorf(stringifyStreamingError(messages, streamingType, false))
 }
+
+var SearchTimeoutError = errors.New("search timeout")

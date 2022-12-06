@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { BadgeProps, Badge } from './Badge'
@@ -56,18 +57,41 @@ export type ProductStatusBadgeProps = BaseProductStatusBadgeProps | PossibleLink
 export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren<ProductStatusBadgeProps>> = props => {
     const variant = STATUS_VARIANT_MAPPING[props.status]
     const className = classNames(styles.productStatusBadge, props.className)
+    const label =
+        props.status === 'beta'
+            ? 'This feature is currently in beta'
+            : props.status === 'prototype'
+            ? 'This feature is a prototype'
+            : props.status === 'experimental'
+            ? 'This feature is experimental'
+            : props.status === 'wip'
+            ? 'This feature is a work in progress'
+            : props.status === 'new'
+            ? 'This feature is new'
+            : ''
 
     if ('linkToDocs' in props) {
         return (
-            <Badge href={STATUS_LINK_MAPPING[props.status]} variant={variant} className={className}>
-                {props.status}
-            </Badge>
+            <>
+                <VisuallyHidden>{label}</VisuallyHidden>
+                <Badge
+                    href={STATUS_LINK_MAPPING[props.status]}
+                    variant={variant}
+                    className={className}
+                    aria-hidden={true}
+                >
+                    {props.status}
+                </Badge>
+            </>
         )
     }
 
     return (
-        <Badge {...props} variant={variant} className={className}>
-            {props.status}
-        </Badge>
+        <>
+            <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
+            <Badge {...props} variant={variant} className={className} aria-hidden={true}>
+                {props.status}
+            </Badge>
+        </>
     )
 }

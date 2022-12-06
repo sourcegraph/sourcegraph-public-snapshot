@@ -226,10 +226,9 @@ func strptrptr(s string) **string {
 }
 
 func enableLegacyExtensions() {
-	enableLegacyExtensionsVar := true
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableLegacyExtensions: &enableLegacyExtensionsVar,
+			EnableLegacyExtensions: true,
 		},
 	}})
 }

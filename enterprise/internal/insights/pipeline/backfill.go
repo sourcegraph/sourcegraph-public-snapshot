@@ -5,6 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derision-test/glock"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -15,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,7 +33,8 @@ type BackfillRequest struct {
 }
 
 type requestContext struct {
-	backfillRequest *BackfillRequest
+	backfillRequest    *BackfillRequest
+	compressionSavings float64
 }
 
 type Backfiller interface {
@@ -41,9 +46,9 @@ type GitCommitClient interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
-type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
+type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
+type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
+type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error)
 
 type BackfillerConfig struct {
 	CommitClient    GitCommitClient
@@ -62,15 +67,16 @@ func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
 	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
-	return newBackfiller(searchJobGenerator, searchRunner, persister)
+	return newBackfiller(searchJobGenerator, searchRunner, persister, glock.NewRealClock())
 
 }
 
-func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister) Backfiller {
+func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister, clock glock.Clock) Backfiller {
 	return &backfiller{
 		searchJobGenerator: jobGenerator,
 		searchRunner:       searchRunner,
 		persister:          resultsPersister,
+		clock:              clock,
 	}
 
 }
@@ -80,22 +86,52 @@ type backfiller struct {
 	searchJobGenerator SearchJobGenerator
 	searchRunner       SearchRunner
 	persister          ResultsPersister
+
+	clock glock.Clock
 }
 
+var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
+
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
-	_, err := b.persister(b.searchRunner(b.searchJobGenerator(ctx, requestContext{backfillRequest: &req})))
-	return err
+
+	//setup
+	startingReqContext := requestContext{backfillRequest: &req}
+	start := b.clock.Now()
+
+	step1ReqContext, searchJobs, jobErr := b.searchJobGenerator(ctx, startingReqContext)
+	endGenerateJobs := b.clock.Now()
+	backfillMetrics.Observe(endGenerateJobs.Sub(start).Seconds(), 1, &jobErr, "generate_jobs")
+	if jobErr != nil {
+		return jobErr
+	}
+
+	step2ReqContext, recordings, searchErr := b.searchRunner(ctx, step1ReqContext, searchJobs)
+	endSearchRunner := b.clock.Now()
+	backfillMetrics.Observe(endSearchRunner.Sub(endGenerateJobs).Seconds(), 1, &searchErr, "run_searches")
+	if searchErr != nil {
+		return searchErr
+	}
+
+	_, saveErr := b.persister(ctx, step2ReqContext, recordings)
+	endPersister := b.clock.Now()
+	backfillMetrics.Observe(endPersister.Sub(endSearchRunner).Seconds(), 1, &saveErr, "save_results")
+	return saveErr
 }
 
 // Implementation of steps for Backfill process
+var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_insights_backfill_searches_per_frame",
+	Help:    "the ratio of searches per frame for insights backfills",
+	Buckets: prometheus.LinearBuckets(.1, .1, 10),
+}, []string{"preempted"})
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
-	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
-		jobs := make([]*queryrunner.SearchJob, 0, 12)
+	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
+		numberOfFrames := len(reqContext.backfillRequest.Frames)
+		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
 		if reqContext.backfillRequest == nil {
-			return ctx, &reqContext, jobs, errors.New("backfill request provided")
+			return &reqContext, jobs, errors.New("backfill request provided")
 		}
-
 		req := reqContext.backfillRequest
 		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
 		logger.Debug("making search plan")
@@ -104,14 +140,22 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		if err != nil {
 			if errors.Is(err, discovery.EmptyRepoErr) {
 				// This is fine it's empty there is no work to be done
-				return ctx, &reqContext, jobs, nil
+				compressionSavingsMetric.
+					With(prometheus.Labels{"preempted": "true"}).
+					Observe(0)
+				return &reqContext, jobs, nil
 			}
 
-			return ctx, &reqContext, jobs, err
+			return &reqContext, jobs, err
 		}
-
 		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
-
+		var ratio float64 = 1.0
+		if numberOfFrames > 0 {
+			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
+		}
+		compressionSavingsMetric.
+			With(prometheus.Labels{"preempted": "false"}).
+			Observe(ratio)
 		mu := &sync.Mutex{}
 
 		groupContext, groupCancel := context.WithCancel(ctx)
@@ -145,7 +189,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		if err != nil {
 			jobs = nil
 		}
-		return ctx, &reqContext, jobs, err
+		return &reqContext, jobs, err
 	}
 }
 
@@ -243,12 +287,8 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 }
 
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
-	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-		// early return
-		if incomingErr != nil || ctx.Err() != nil {
-			return ctx, reqContext, points, incomingErr
-		}
 		series := reqContext.backfillRequest.Series
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)
@@ -277,15 +317,12 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 		if err != nil {
 			points = nil
 		}
-		return ctx, reqContext, points, err
+		return reqContext, points, err
 	}
 }
 
 func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) ResultsPersister {
-	return func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, incomingErr error) (*requestContext, error) {
-		if incomingErr != nil {
-			return reqContext, incomingErr
-		}
+	return func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
 		if ctx.Err() != nil {
 			return reqContext, ctx.Err()
 		}

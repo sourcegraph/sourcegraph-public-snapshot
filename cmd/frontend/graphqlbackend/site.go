@@ -190,7 +190,6 @@ func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
-func (r *siteResolver) EnableLegacyExtensions(ctx context.Context) bool {
-	c := conf.Get()
-	return *c.ExperimentalFeatures.EnableLegacyExtensions
+func (r *siteResolver) EnableLegacyExtensions() bool {
+	return conf.ExperimentalFeatures().EnableLegacyExtensions
 }

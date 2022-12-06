@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -142,13 +143,20 @@ WHERE repo_id = %s
 
 // GetByUser fetches all sub repo perms for a user keyed by repo.
 func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+	enforceForSiteAdmins := conf.Get().AuthzEnforceForSiteAdmins
+
 	q := sqlf.Sprintf(`
-SELECT r.name, paths
-FROM sub_repo_permissions
-JOIN repo r on r.id = repo_id
-WHERE user_id = %s
-  AND version = %s
-`, userID, SubRepoPermsVersion)
+	SELECT r.name, paths
+	FROM sub_repo_permissions
+	JOIN repo r on r.id = repo_id
+	JOIN users u on u.id = user_id
+	WHERE user_id = %s
+	AND version = %s
+	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
+	-- we want to return zero results. This causes us to fall back to
+	-- repo level checks and allows access to all paths in all repos.
+	AND NOT (u.site_admin AND NOT %t)
+	`, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {

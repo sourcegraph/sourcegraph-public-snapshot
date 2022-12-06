@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,17 +25,22 @@ import (
 func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	seriesStore := store.New(insightsDB, permStore)
+
 	config := JobMonitorConfig{
-		InsightsDB: insightsDB,
-		RepoStore:  repos,
-		ObsContext: &observation.TestContext,
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
+		InsightStore:   seriesStore,
 	}
 	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)
@@ -57,10 +64,12 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	handler := newBackfillHandler{
-		workerStore:   monitor.newBackfillStore,
-		backfillStore: bfs,
-		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, repos),
+		workerStore:     monitor.newBackfillStore,
+		backfillStore:   bfs,
+		seriesReader:    store.NewInsightStore(insightsDB),
+		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos),
+		costAnalyzer:    *config.CostAnalyzer,
+		timeseriesStore: seriesStore,
 	}
 	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)
@@ -77,6 +86,11 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	if !inProgressFound {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := inProgressDequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
+	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
+
+	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
+	require.NoError(t, err)
+	if len(recordingTimes.RecordingTimes) == 0 {
+		t.Fatal(errors.New("recording times should have been saved after success"))
+	}
 }
