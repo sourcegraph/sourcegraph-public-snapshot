@@ -19,7 +19,8 @@ import (
 )
 
 type randomizeUserPasswordResult struct {
-	resetURL *url.URL
+	resetURL  *url.URL
+	emailSent bool
 }
 
 func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
@@ -30,7 +31,9 @@ func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
 	return &urlStr
 }
 
-func sendEmail(ctx context.Context, db database.DB, userID int32, resetURL *url.URL) error {
+func (r *randomizeUserPasswordResult) EmailSent() bool { return r.emailSent }
+
+func sendPasswordResetURLToPrimaryEmail(ctx context.Context, db database.DB, userID int32, resetURL *url.URL) error {
 	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -87,13 +90,17 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	}
 
 	// If email is enabled, we also send this reset URL to the user via email.
+	var emailSent bool
 	var emailSendErr error
 	if conf.CanSendEmail() {
 		logger.Debug("sending password reset URL in email")
-		if emailSendErr = sendEmail(ctx, r.db, userID, resetURL); emailSendErr != nil {
+		if emailSendErr = sendPasswordResetURLToPrimaryEmail(ctx, r.db, userID, resetURL); emailSendErr != nil {
 			// This is not a hard error - if the email send fails, we still want to
 			// provide the reset URL to the caller, so we just log it here.
 			logger.Error("failed to send password reset URL", log.Error(emailSendErr))
+		} else {
+			// Email was sent to an email address associated with the user.
+			emailSent = true
 		}
 	}
 
@@ -108,5 +115,8 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		}
 	}
 
-	return &randomizeUserPasswordResult{resetURL: resetURL}, nil
+	return &randomizeUserPasswordResult{
+		resetURL:  resetURL,
+		emailSent: emailSent,
+	}, nil
 }
