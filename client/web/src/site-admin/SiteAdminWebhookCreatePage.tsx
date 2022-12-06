@@ -50,7 +50,6 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
         telemetryService.logPageView('SiteAdminWebhookCreatePage')
     }, [telemetryService])
 
-    const [kinds, setKinds] = useState<ExternalServiceKind[]>([])
     const [webhook, setWebhook] = useState<Webhook>({
         name: '',
         codeHostKind: null,
@@ -88,7 +87,6 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
             // If there are no external services, then the warning is shown and webhook creation is blocked
             if (kindToUrlMap.size > 0) {
                 const kindsArray = Array.from(kindToUrlMap.keys())
-                setKinds(kindsArray)
                 const currentKind = kindsArray[0]
                 // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
                 // is handled is an Input and during GraphQL query creation.
@@ -172,10 +170,10 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                                     label={<span className="small">Code host type</span>}
                                     required={true}
                                     onChange={onCodeHostTypeChange}
-                                    disabled={loading || kinds.length === 0}
+                                    disabled={loading || kindsToUrls.size === 0}
                                 >
-                                    {kinds.length > 0 &&
-                                        kinds.map(kind => (
+                                    {kindsToUrls.size > 0 &&
+                                        Array.from(kindsToUrls.keys()).map(kind => (
                                             <option value={kind} key={kind}>
                                                 {prettyPrintExternalServiceKind(kind)}
                                             </option>
