@@ -63,9 +63,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     } = useNavbarQueryState(selectQueryState, shallow)
 
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
@@ -104,7 +101,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
-                showSearchContextManagement={showSearchContextManagement}
+                showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}

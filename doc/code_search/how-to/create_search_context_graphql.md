@@ -18,7 +18,6 @@ Step 1: Add to global configuration (must be site-admin):
 {
     "experimentalFeatures": {
       "showSearchContext": true,
-      "showSearchContextManagement": true
   }
 }
 ```
