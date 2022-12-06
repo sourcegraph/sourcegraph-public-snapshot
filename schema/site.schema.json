@@ -1162,7 +1162,7 @@
           "description": "Disable TLS verification",
           "type": "boolean"
         },
-        "headers": {
+        "additionalHeaders": {
           "description": "Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.",
           "type": "array",
           "items": {

@@ -112,7 +112,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	}
 
 	// Apply header configuration to message
-	for _, header := range conf.EmailSmtp.Headers {
+	for _, header := range conf.EmailSmtp.AdditionalHeaders {
 		m.Headers.Add(header.Key, header.Value)
 	}
 

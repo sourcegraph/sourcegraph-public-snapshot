@@ -1686,12 +1686,12 @@ type SAMLAuthProvider struct {
 // SMTPServerConfig description: The SMTP server used to send transactional emails.
 // Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
+	// AdditionalHeaders description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
+	AdditionalHeaders []*Header `json:"additionalHeaders,omitempty"`
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
 	Domain string `json:"domain,omitempty"`
-	// Headers description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
-	Headers []*Header `json:"headers,omitempty"`
 	// Host description: The SMTP server host.
 	Host string `json:"host"`
 	// NoVerifyTLS description: Disable TLS verification
