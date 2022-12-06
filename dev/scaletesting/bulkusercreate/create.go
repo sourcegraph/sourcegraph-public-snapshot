@@ -17,6 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+// create executes a number of steps:
+// 1. Creates the amount of users and teams as defined in the flags.
+// 2. Assigns the users to the teams in equal shares.
+// 3. Assigns the externally created repositories to the orgs, teams, and users to replicate different scale variations.
 func create(ctx context.Context, orgs []*org, cfg config) {
 	var err error
 
@@ -161,6 +165,8 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	}
 }
 
+// executeCreateOrg checks whether the org already exists. If it does not, it is created.
+// The result is stored in the local state.
 func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *int64) {
 	if o.Created && o.Failed == "" {
 		atomic.AddInt64(orgsDone, 1)
@@ -210,6 +216,8 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	//writeSuccess(out, "Created org with login %s", o.Login)
 }
 
+// executeCreateTeam checks whether the team already exists. If it does not, it is created.
+// The result is stored in the local state.
 func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 	if t.Created && t.Failed == "" {
 		atomic.AddInt64(teamsDone, 1)
@@ -261,6 +269,8 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 	}
 }
 
+// executeCreateUser checks whether the user already exists. If it does not, it is created.
+// The result is stored in the local state.
 func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 	if u.Created && u.Failed == "" {
 		atomic.AddInt64(usersDone, 1)
@@ -308,6 +318,10 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 	//writeSuccess(out, "Created user with login %s", u.Login)
 }
 
+// executeCreateTeamMembershipsForTeam does the following per user:
+// 1. It sets the user as a member of the team's parent org. This is an idempotent operation.
+// 2. It adds the user to the team. This is an idempotent operation.
+// 3. The result is stored in the local state.
 func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*user, membershipsDone *int64) {
 	// users need to be member of the team's parent org to join the team
 	userState := "active"
@@ -341,7 +355,6 @@ func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*
 			}
 			continue
 		}
-		// this is an idempotent operation so no need to check existing membership
 		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
 			time.Sleep(30 * time.Second)
 			goto retryAddTeamMembership
@@ -357,13 +370,14 @@ func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*
 	}
 }
 
+// categorizeOrgRepos takes the complete list of repos and assigns 1% of it to the specified amount of sub-orgs.
+// The remainder is assigned to the main org.
 func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org][]*repo) {
 	repoCategories := make(map[*org][]*repo)
 
 	// 1% of repos divided equally over sub-orgs
 	var mainOrg *org
 	var subOrgs []*org
-	reposPerSubOrg := (len(repos) / 100) / cfg.subOrgCount
 	for _, o := range orgs {
 		if strings.HasPrefix(o.Login, "sub-org") {
 			subOrgs = append(subOrgs, o)
@@ -372,17 +386,25 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 		}
 	}
 
-	for i, o := range subOrgs {
-		subOrgRepos := repos[i*reposPerSubOrg : (i+1)*reposPerSubOrg]
-		repoCategories[o] = subOrgRepos
-	}
+	if cfg.subOrgCount != 0 {
+		reposPerSubOrg := (len(repos) / 100) / cfg.subOrgCount
+		for i, o := range subOrgs {
+			subOrgRepos := repos[i*reposPerSubOrg : (i+1)*reposPerSubOrg]
+			repoCategories[o] = subOrgRepos
+		}
 
-	// rest assigned to main org
-	repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
+		// rest assigned to main org
+		repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
+	} else {
+		// no sub-orgs defined, so everything can be assigned to the main org
+		repoCategories[mainOrg] = repos
+	}
 
 	return mainOrg, repoCategories
 }
 
+// executeAssignOrgRepos transfers the repos categorised per org from the import org to the new owner.
+// If sub-orgs are defined, they immediately get assigned 2000 users. The sub-orgs are used for org-level permission syncing.
 func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, users []*user, reposDone *int64, g group.Group) {
 	for o, repos := range reposPerOrg {
 		currentOrg := o
@@ -473,6 +495,10 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 	}
 }
 
+// categorizeTeamRepos divides the provided repos over the teams as follows:
+// 1. 95% of teams get a 'small' (remainder of total) amount of repos
+// 2. 4% of teams get a 'medium' (0.04% of total) amount of repos
+// 3. 1% of teams get a 'large' (0.5% of total) amount of repos
 func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
 	// 1% of teams
 	teamsLarge := int(math.Ceil(float64(cfg.teamCount) * 0.01))
@@ -533,6 +559,7 @@ func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*t
 	return teamCategories
 }
 
+// executeAssignTeamRepos adds the provided teams as members of the categorised repos.
 func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo, reposDone *int64, g group.Group) {
 	for t, repos := range reposPerTeam {
 		currentTeam := t
@@ -582,6 +609,7 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 	}
 }
 
+// categorizeUserRepos matches 3 unique users to the provided repos.
 func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user {
 	repoUsers := make(map[*repo][]*user)
 	usersPerRepo := 3
@@ -593,6 +621,7 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 	return repoUsers
 }
 
+// executeAssignUserRepos adds the categorised users as collaborators to the matched repos.
 func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user, reposDone *int64, g group.Group) {
 	for r, users := range usersPerRepo {
 		currentRepo := r
