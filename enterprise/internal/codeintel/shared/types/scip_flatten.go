@@ -41,7 +41,7 @@ func FlattenSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation
 			continue
 		}
 
-		existing.Documentation = append(existing.Documentation, symbol.Documentation...)
+		existing.Documentation = combineDocumentation(existing.Documentation, symbol.Documentation)
 		existing.Relationships = append(existing.Relationships, symbol.Relationships...)
 	}
 
@@ -104,4 +104,26 @@ func FlattenRelationship(relationships []*scip.Relationship) []*scip.Relationshi
 	}
 
 	return flattened
+}
+
+// combineDocumentation merges documentation components from two separate symbol information objects.
+func combineDocumentation(existing, additional []string) []string {
+	filtered := make([]string, 0, len(additional))
+	for _, s := range additional {
+		if !stringSliceContains(existing, s) {
+			filtered = append(filtered, s)
+		}
+	}
+
+	return append(existing, filtered...)
+}
+
+func stringSliceContains(slice []string, target string) bool {
+	for _, candidate := range slice {
+		if target == candidate {
+			return true
+		}
+	}
+
+	return false
 }
