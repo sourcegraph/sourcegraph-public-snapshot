@@ -44,9 +44,7 @@ export const AddCodeHostWidget: React.FunctionComponent<AddCodeHostWidgetProps> 
         <Text
             as={Link}
             to="/site-admin/external-services/new"
-            rel="noopener noreferrer"
             className="d-inline-flex align-items-center"
-            target="_blank"
             weight="medium"
             onClick={() => telemetryService.log('OnboardingWidget:ConnectCodeHost:Clicked')}
         >
