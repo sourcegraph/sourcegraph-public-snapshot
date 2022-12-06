@@ -12,6 +12,7 @@ import (
 
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	github "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	iterator "github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 // MockClient is a mock implementation of the client interface (from the
@@ -95,7 +96,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ListAffiliatedRepositoriesFunc: &ClientListAffiliatedRepositoriesFunc{
-			defaultHook: func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) (r0 []*github.Repository, r1 bool, r2 int, r3 error) {
+			defaultHook: func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) (r0 *iterator.Iterator[[]*github.Repository]) {
 				return
 			},
 		},
@@ -167,7 +168,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ListAffiliatedRepositoriesFunc: &ClientListAffiliatedRepositoriesFunc{
-			defaultHook: func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
+			defaultHook: func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
 				panic("unexpected invocation of MockClient.ListAffiliatedRepositories")
 			},
 		},
@@ -218,7 +219,7 @@ type surrogateMockClient interface {
 	GetAuthenticatedUserTeams(context.Context, int) ([]*github.Team, bool, int, error)
 	GetOrganization(context.Context, string) (*github.OrgDetails, error)
 	GetRepository(context.Context, string, string) (*github.Repository, error)
-	ListAffiliatedRepositories(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)
+	ListAffiliatedRepositories(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository]
 	ListOrgRepositories(context.Context, string, int, string) ([]*github.Repository, bool, int, error)
 	ListOrganizationMembers(context.Context, string, int, bool) ([]*github.Collaborator, bool, error)
 	ListRepositoryCollaborators(context.Context, string, string, int, github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error)
@@ -841,24 +842,24 @@ func (c ClientGetRepositoryFuncCall) Results() []interface{} {
 // ListAffiliatedRepositories method of the parent MockClient instance is
 // invoked.
 type ClientListAffiliatedRepositoriesFunc struct {
-	defaultHook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)
-	hooks       []func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)
+	defaultHook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository]
+	hooks       []func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository]
 	history     []ClientListAffiliatedRepositoriesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListAffiliatedRepositories delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockClient) ListAffiliatedRepositories(v0 context.Context, v1 github.Visibility, v2 int, v3 ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-	r0, r1, r2, r3 := m.ListAffiliatedRepositoriesFunc.nextHook()(v0, v1, v2, v3...)
-	m.ListAffiliatedRepositoriesFunc.appendCall(ClientListAffiliatedRepositoriesFuncCall{v0, v1, v2, v3, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockClient) ListAffiliatedRepositories(v0 context.Context, v1 github.Visibility, v2 int, v3 ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
+	r0 := m.ListAffiliatedRepositoriesFunc.nextHook()(v0, v1, v2, v3...)
+	m.ListAffiliatedRepositoriesFunc.appendCall(ClientListAffiliatedRepositoriesFuncCall{v0, v1, v2, v3, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // ListAffiliatedRepositories method of the parent MockClient instance is
 // invoked and the hook queue is empty.
-func (f *ClientListAffiliatedRepositoriesFunc) SetDefaultHook(hook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)) {
+func (f *ClientListAffiliatedRepositoriesFunc) SetDefaultHook(hook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository]) {
 	f.defaultHook = hook
 }
 
@@ -867,7 +868,7 @@ func (f *ClientListAffiliatedRepositoriesFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ClientListAffiliatedRepositoriesFunc) PushHook(hook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)) {
+func (f *ClientListAffiliatedRepositoriesFunc) PushHook(hook func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository]) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -875,20 +876,20 @@ func (f *ClientListAffiliatedRepositoriesFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientListAffiliatedRepositoriesFunc) SetDefaultReturn(r0 []*github.Repository, r1 bool, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-		return r0, r1, r2, r3
+func (f *ClientListAffiliatedRepositoriesFunc) SetDefaultReturn(r0 *iterator.Iterator[[]*github.Repository]) {
+	f.SetDefaultHook(func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientListAffiliatedRepositoriesFunc) PushReturn(r0 []*github.Repository, r1 bool, r2 int, r3 error) {
-	f.PushHook(func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-		return r0, r1, r2, r3
+func (f *ClientListAffiliatedRepositoriesFunc) PushReturn(r0 *iterator.Iterator[[]*github.Repository]) {
+	f.PushHook(func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
+		return r0
 	})
 }
 
-func (f *ClientListAffiliatedRepositoriesFunc) nextHook() func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
+func (f *ClientListAffiliatedRepositoriesFunc) nextHook() func(context.Context, github.Visibility, int, ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -936,16 +937,7 @@ type ClientListAffiliatedRepositoriesFuncCall struct {
 	Arg3 []github.RepositoryAffiliation
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*github.Repository
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result0 *iterator.Iterator[[]*github.Repository]
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -964,7 +956,7 @@ func (c ClientListAffiliatedRepositoriesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListAffiliatedRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0}
 }
 
 // ClientListOrgRepositoriesFunc describes the behavior when the

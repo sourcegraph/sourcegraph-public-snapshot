@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -566,13 +567,8 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // page is the page of results to return, and is 1-indexed (so the first call should be
 // for page 1).
 // visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) (
-	repos []*Repository,
-	hasNextPage bool,
-	rateLimitCost int,
-	err error,
-) {
-	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) *iterator.Iterator[[]*Repository] {
+	path := "user/repos?sort=created&visibility=%s&page=%d&per_page=100"
 	if len(affiliations) > 0 {
 		affilationsStrings := make([]string, 0, len(affiliations))
 		for _, affiliation := range affiliations {
@@ -580,9 +576,24 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 		}
 		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
 	}
-	repos, hasNextPage, err = c.listRepositories(ctx, path)
 
-	return repos, hasNextPage, 1, err
+	hasNextPage := true
+	var repos []*Repository
+	var err error
+	currentPage := page - 1
+	it := iterator.New(func() ([][]*Repository, error) {
+		if !hasNextPage {
+			return nil, nil
+		}
+
+		currentPage = currentPage + 1
+		path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+
+		repos, hasNextPage, err = c.listRepositories(ctx, path)
+		return [][]*Repository{repos}, err
+	})
+
+	return it
 }
 
 // ListOrgRepositories lists GitHub repositories from the specified organization.

@@ -142,12 +142,13 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
 			defer save()
 
-			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, test.affiliations...)
-			if err != nil {
-				t.Fatal(err)
+			it := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, test.affiliations...)
+			it.Next()
+			if it.Err() != nil {
+				t.Fatal(it.Err())
 			}
 
-			if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+			if diff := cmp.Diff(test.wantRepos, it.Current()); diff != "" {
 				t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 			}
 		})

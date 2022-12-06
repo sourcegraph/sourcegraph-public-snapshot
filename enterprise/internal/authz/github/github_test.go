@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 //nolint:unparam // unparam complains that `u` always has same value across call-sites, but that's OK
@@ -109,20 +110,28 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 
 		//nolint:unparam // Returning constant value for 'int' result is OK
-		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-			switch page {
-			case 1:
-				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
-				}, true, 1, nil
-			case 2:
-				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
-				}, false, 1, nil
-			}
+		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
+			currentPage := page - 1
+			return iterator.New(func() ([][]*github.Repository, error) {
+				if currentPage > 2 {
+					return nil, nil
+				}
+				currentPage += 1
 
-			return []*github.Repository{}, false, 1, nil
+				switch currentPage {
+				case 1:
+					return [][]*github.Repository{{
+						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+					}}, nil
+				case 2:
+					return [][]*github.Repository{{
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+					}}, nil
+				default:
+					return nil, nil
+				}
+			})
 		}
 
 		mockOrgNoRead  = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
@@ -176,7 +185,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("cache disabled", func(t *testing.T) {
 		mockClient := newMockClientWithTokenMock()
 		mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(
-			func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) *iterator.Iterator[[]*github.Repository] {
 				if len(affiliations) != 0 {
 					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
 				}
@@ -551,14 +560,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgRead.Login,
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 			// cache populated from user-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgNoRead.Login,
 				Team:         "ns-team-2",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 
 			// run a sync
@@ -1165,14 +1176,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				Org:          "org",
 				Team:         "team1",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 			// cache populated from repo-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          "org",
 				Team:         "team2",
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 
 			// run a sync

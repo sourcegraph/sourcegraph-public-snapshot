@@ -700,7 +700,9 @@ func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubR
 		if s.useGitHubApp {
 			return s.v3Client.ListInstallationRepositories(ctx, page)
 		}
-		return s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+		it := s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+		hasNextPage := it.Next()
+		return it.Current(), hasNextPage, 1, it.Err()
 	})
 }
 
@@ -839,7 +841,6 @@ func (s *repositoryQuery) Next() bool {
 // to avoid hitting the GitHub search API 1000 results limit, which would cause
 // use to miss matches.
 func (s *repositoryQuery) Refine() bool {
-
 	if s.Created.Size() < 2*time.Second {
 		// Can't refine further than 1 second
 		return false
@@ -1016,7 +1017,9 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		if s.useGitHubApp {
 			repos, hasNextPage, _, err = s.v3Client.ListInstallationRepositories(ctx, page)
 		} else {
-			repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+			it := s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+			hasNextPage = it.Next()
+			repos, err = it.Current(), it.Err()
 		}
 		if err != nil {
 			return nil, err

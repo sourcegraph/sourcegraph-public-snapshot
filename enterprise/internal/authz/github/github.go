@@ -223,13 +223,11 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	}
 
 	// Sync direct affiliations
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
-		if err != nil {
-			return perms, errors.Wrap(err, "list repos for user")
+	it := client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, 1, affiliations...)
+	for it.Next() {
+		repos := it.Current()
+		if it.Err() != nil {
+			return perms, errors.Wrap(it.Err(), "list repos for user")
 		}
 
 		for _, r := range repos {
@@ -281,7 +279,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		// Perform full sync. Start with instantiating the repos slice.
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 		isOrg := group.Team == ""
-		hasNextPage = true
+		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var repos []*github.Repository
 			if isOrg {
