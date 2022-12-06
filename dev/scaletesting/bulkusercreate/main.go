@@ -426,14 +426,14 @@ func main() {
 		g.Wait()
 
 	case "validate":
-		localOrgs, err := store.loadOrgs()
-		if err != nil {
-			log.Fatal("Failed to load orgs", err)
-		}
-
 		localTeams, err := store.loadTeams()
 		if err != nil {
 			log.Fatal("Failed to load teams", err)
+		}
+
+		localRepos, err := store.loadRepos()
+		if err != nil {
+			log.Fatal("Failed to load repos", err)
 		}
 
 		teamSizes := make(map[int]int)
@@ -453,12 +453,65 @@ func main() {
 		}
 
 		remoteOrgs := getGitHubOrgs(ctx)
-		remoteTeams := getGitHubTeams(ctx, localOrgs)
 		remoteUsers := getGitHubUsers(ctx)
 
 		writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
-		writeInfo(out, "Total teams on instance: %d", len(remoteTeams))
 		writeInfo(out, "Total users on instance: %d", len(remoteUsers))
+
+		g3 := group.New().WithMaxConcurrency(1000)
+
+		var orgRepoCount int64
+		var teamRepoCount int64
+		var userRepoCount int64
+
+		for i, r := range localRepos {
+			cI := i
+			cR := r
+
+			g3.Go(func() {
+				writeInfo(out, "Processing repo %d", cI)
+			retryRepoContributors:
+				contributors, res, err := gh.Repositories.ListContributors(ctx, cR.Owner, cR.Name, &github.ListContributorsOptions{
+					Anon:        "false",
+					ListOptions: github.ListOptions{},
+				})
+				if err != nil {
+					log.Fatalf("Failed getting contributors for repo %s/%s: %s", cR.Owner, cR.Name, err)
+				}
+				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					time.Sleep(30 * time.Second)
+					goto retryRepoContributors
+				}
+				if len(contributors) != 0 {
+					// Permissions assigned on user level
+					atomic.AddInt64(&userRepoCount, 1)
+					return
+				}
+
+			retryRepoTeams:
+				teams, res, err := gh.Repositories.ListTeams(ctx, cR.Owner, cR.Name, &github.ListOptions{})
+				if err != nil {
+					log.Fatalf("Failed getting teams for repo %s/%s: %s", cR.Owner, cR.Name, err)
+				}
+				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					time.Sleep(30 * time.Second)
+					goto retryRepoTeams
+				}
+				if len(teams) != 0 {
+					// Permissions assigned on user level
+					atomic.AddInt64(&teamRepoCount, 1)
+					return
+				}
+
+				// If we get this far the repo is org-wide
+				atomic.AddInt64(&orgRepoCount, 1)
+			})
+		}
+		g3.Wait()
+
+		writeInfo(out, "Total org-scoped repos: %d", orgRepoCount)
+		writeInfo(out, "Total team-scoped repos: %d", teamRepoCount)
+		writeInfo(out, "Total user-scoped repos: %d", userRepoCount)
 	}
 
 	end := time.Now()
