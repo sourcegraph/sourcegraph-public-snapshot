@@ -11,14 +11,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewCommitGraphUpdater(store store.Store, locker Locker, gitserverClient GitserverClient, interval time.Duration, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) goroutine.BackgroundRoutine {
+func NewCommitGraphUpdater(
+	store store.Store,
+	locker Locker,
+	gitserverClient GitserverClient,
+	interval time.Duration,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
+) goroutine.BackgroundRoutine {
 	updater := &commitGraphUpdater{
 		store:           store,
 		locker:          locker,
 		gitserverClient: gitserverClient,
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("commitgraph-updater", func(ctx context.Context) error {
 		return updater.UpdateAllDirtyCommitGraphs(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
 	}))
 }
@@ -57,14 +64,6 @@ func (s *commitGraphUpdater) UpdateAllDirtyCommitGraphs(ctx context.Context, max
 // lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
 // update procedure for this repository. If the lock is already held, this method will simply do nothing.
 func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
-	// ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
-	// 	LogFields: []log.Field{
-	// 		log.Int("repositoryID", repositoryID),
-	// 		log.Int("dirtyToken", dirtyToken),
-	// 	},
-	// })
-	// defer endObservation(1, observation.Args{})
-
 	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "locker.Lock")
@@ -86,13 +85,11 @@ func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Co
 	if err != nil {
 		return err
 	}
-	// trace.Log(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
 
 	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.RefDescriptions")
 	}
-	// trace.Log(log.Int("numRefDescriptions", len(refDescriptions)))
 
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well

@@ -37,7 +37,7 @@ func NewUploadExpirer(
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 	}
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("upload-expirer", func(ctx context.Context) error {
 		return expirer.HandleExpiredUploadsBatch(ctx, NewExpirationMetrics(observationCtx), config)
 	}))
 }

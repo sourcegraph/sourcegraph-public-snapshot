@@ -23,7 +23,7 @@ func NewRepositoryIndexer(
 		symbolsClient:   symbolsClient,
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("pagerank-repo-indexer", func(ctx context.Context) error {
 		return indexer.indexRepositories(ctx)
 	}))
 }

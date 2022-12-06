@@ -60,7 +60,7 @@ func NewScheduler(
 		)
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("autoindexing-background-scheduler", func(ctx context.Context) error {
 		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
 	}), observationCtx.Operation(observation.Op{
 		Name:              "codeintel.indexing.HandleIndexSchedule",
@@ -187,7 +187,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 }
 
 func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("autoindexing-ondemand-scheduler", func(ctx context.Context) error {
 		if !autoIndexingEnabled() {
 			return nil
 		}

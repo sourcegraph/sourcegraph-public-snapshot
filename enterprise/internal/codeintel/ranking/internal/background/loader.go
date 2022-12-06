@@ -47,7 +47,7 @@ func NewRankLoader(
 		metrics:       newLoaderMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("pagerank-loader", func(ctx context.Context) error {
 		return loader.loadRanks(ctx, config)
 	}))
 }

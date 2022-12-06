@@ -44,7 +44,7 @@ func NewRankMerger(
 		metrics:       newMergerMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("pagerank-merger", func(ctx context.Context) error {
 		return merger.mergeRanks(ctx, config)
 	}))
 }

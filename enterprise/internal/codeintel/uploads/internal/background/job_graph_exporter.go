@@ -14,7 +14,7 @@ func NewRankingGraphExporter(
 	numRankingRoutines int,
 	interval time.Duration,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("pagerank-graph-exporter", func(ctx context.Context) error {
 		if err := uploadsService.SerializeRankingGraph(ctx, numRankingRoutines); err != nil {
 			return err
 		}

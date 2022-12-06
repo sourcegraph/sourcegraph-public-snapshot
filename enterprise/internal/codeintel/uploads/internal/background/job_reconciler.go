@@ -29,7 +29,7 @@ func NewReconciler(
 		operations: newOperations(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("codeintel-reconciler", func(ctx context.Context) error {
 		return job.handleReconcile(ctx, batchSize)
 	}))
 }

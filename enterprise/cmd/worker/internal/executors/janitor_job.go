@@ -31,7 +31,7 @@ func (j *janitorJob) Routines(startupCtx context.Context, observationCtx *observ
 	}
 
 	routines := []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), janitorConfigInst.CleanupTaskInterval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		goroutine.NewPeriodicGoroutine(context.Background(), janitorConfigInst.CleanupTaskInterval, goroutine.NewHandlerWithErrorMessage("executor-heartbeat-janitor", func(ctx context.Context) error {
 			return db.Executors().DeleteInactiveHeartbeats(ctx, janitorConfigInst.HeartbeatRecordsMaxAge)
 		})),
 	}

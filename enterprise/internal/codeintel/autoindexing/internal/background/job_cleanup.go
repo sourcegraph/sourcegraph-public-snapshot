@@ -40,7 +40,7 @@ func NewJanitor(
 	config JanitorConfig,
 ) goroutine.BackgroundRoutine {
 	metrics := NewJanitorMetrics(observationCtx)
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("autoindexing-janitor", func(ctx context.Context) error {
 		job := janitorJob{
 			store:           store,
 			gitserverClient: gitserverClient,
