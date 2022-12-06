@@ -2,10 +2,12 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog } from '@mdi/js'
 import classNames from 'classnames'
+import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -70,16 +72,22 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
 
     useMemo(() => {
         if (extSvcKindsOrError && !isErrorLike(extSvcKindsOrError)) {
-            const kindToUrlMap = extSvcKindsOrError.nodes.reduce(
-                (svcMap, extSvc) =>
-                    svcMap.set(extSvc.kind, (svcMap.get(extSvc.kind) || []).concat([JSON.parse(extSvc.config).url])),
-                new Map<ExternalServiceKind, string[]>()
-            )
+            const kindToUrlMap = new Map<ExternalServiceKind, string[]>()
+
+            for (const extSvc of extSvcKindsOrError.nodes) {
+                if (!supportedExternalServiceKind(extSvc.kind)) {
+                    continue
+                }
+                const conf = parseJSONC(extSvc.config)
+                if (conf.url) {
+                    kindToUrlMap.set(extSvc.kind, (kindToUrlMap.get(extSvc.kind) || []).concat([conf.url]))
+                }
+            }
+
             setKindsToUrls(kindToUrlMap)
             // If there are no external services, then the warning is shown and webhook creation is blocked
             if (kindToUrlMap.size > 0) {
-                const extSvcKinds = new Set(extSvcKindsOrError.nodes.map(node => node.kind))
-                const kindsArray = Array.from(extSvcKinds)
+                const kindsArray = Array.from(kindToUrlMap.keys())
                 setKinds(kindsArray)
                 const currentKind = kindsArray[0]
                 // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
@@ -130,113 +138,126 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 headingElement="h2"
             />
 
-            {isErrorLike(extSvcKindsOrError) && (
-                <Alert variant="danger" className="mt-2">
-                    Error during getting external services.
-                </Alert>
-            )}
-            {!isErrorLike(extSvcKindsOrError) && kindsToUrls.size === 0 && (
-                <Alert variant="warning" className="mt-2">
-                    Please add an external service to proceed with webhooks creation.
-                </Alert>
-            )}
-            {!isErrorLike(extSvcKindsOrError) && kindsToUrls.size > 0 && (
-                <div>
-                    <H2>Information</H2>
-                    <Form
-                        onSubmit={event => {
-                            event.preventDefault()
-                            createWebhook({ variables: convertWebhookToCreateWebhookVariables(webhook) }).catch(noop)
-                        }}
-                    >
-                        <div className={styles.grid}>
-                            <Input
-                                className={classNames(styles.first, 'flex-1 mb-0')}
-                                label={<span className="small">Webhook name</span>}
-                                pattern="^[a-zA-Z0-9_'\-\/\.\s]+$"
-                                required={true}
-                                onChange={event => {
-                                    onNameChange(event.target.value)
-                                }}
-                                maxLength={100}
-                            />
-                            <Select
-                                id="code-host-type-select"
-                                className={classNames(styles.first, 'flex-1 mb-0')}
-                                label={<span className="small">Code host type</span>}
-                                required={true}
-                                onChange={onCodeHostTypeChange}
-                                disabled={loading || kinds.length === 0}
-                            >
-                                {kinds.length > 0 &&
-                                    kinds.map(kind => (
-                                        <option value={kind} key={kind}>
-                                            {prettyPrintExternalServiceKind(kind)}
-                                        </option>
-                                    ))}
-                                {kinds.length === 0 && <option>Please create external service</option>}
-                            </Select>
-                            <Select
-                                id="code-host-urn-select"
-                                className={classNames(styles.second, 'flex-1 mb-0')}
-                                label={<span className="small">Code host URN</span>}
-                                required={true}
-                                onChange={onCodeHostUrnChange}
-                                disabled={loading || !webhook.codeHostKind}
-                            >
-                                {webhook.codeHostKind &&
-                                    kindsToUrls.get(webhook.codeHostKind) &&
-                                    kindsToUrls.get(webhook.codeHostKind)?.map(urn => (
-                                        <option value={urn} key={urn}>
-                                            {urn}
-                                        </option>
-                                    ))}
-                            </Select>
-                            <Input
-                                className={classNames(styles.first, 'flex-1 mb-0')}
-                                message={
-                                    webhook.codeHostKind &&
-                                    webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ? (
-                                        <small>Bitbucket Cloud doesn't support secrets.</small>
-                                    ) : (
-                                        <small>Randomly generated. Alter as required.</small>
-                                    )
-                                }
-                                label={<span className="small">Secret</span>}
-                                disabled={
-                                    webhook.codeHostKind !== null &&
-                                    webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
-                                }
-                                pattern="^[a-zA-Z0-9]+$"
-                                onChange={event => {
-                                    onSecretChange(event.target.value)
-                                }}
-                                value={
-                                    webhook.codeHostKind && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
-                                        ? ''
-                                        : webhook.secret || ''
-                                }
-                                maxLength={100}
-                            />
-                        </div>
-                        <Button
-                            className="mt-2"
-                            type="submit"
-                            variant="primary"
-                            disabled={creationLoading || webhook.name.trim() === ''}
+            {isErrorLike(extSvcKindsOrError) && <ErrorAlert error={extSvcKindsOrError} />}
+            {!isErrorLike(extSvcKindsOrError) &&
+                (kindsToUrls.size === 0 ? (
+                    <Alert variant="warning" className="mt-2">
+                        Please add a code host connection in order to create a webhook.
+                    </Alert>
+                ) : (
+                    <div>
+                        <H2>Information</H2>
+                        <Form
+                            onSubmit={event => {
+                                event.preventDefault()
+                                createWebhook({ variables: convertWebhookToCreateWebhookVariables(webhook) }).catch(
+                                    noop
+                                )
+                            }}
                         >
-                            Create
-                        </Button>
-                        {createWebhookError && (
-                            <Alert variant="danger" className="mt-2">
-                                Failed to create webhook: {createWebhookError.message}
-                            </Alert>
-                        )}
-                    </Form>
-                </div>
-            )}
+                            <div className={styles.grid}>
+                                <Input
+                                    className={classNames(styles.first, 'flex-1 mb-0')}
+                                    label={<span className="small">Webhook name</span>}
+                                    pattern="^[a-zA-Z0-9_'\-\/\.\s]+$"
+                                    required={true}
+                                    onChange={event => {
+                                        onNameChange(event.target.value)
+                                    }}
+                                    maxLength={100}
+                                />
+                                <Select
+                                    id="code-host-type-select"
+                                    className={classNames(styles.first, 'flex-1 mb-0')}
+                                    label={<span className="small">Code host type</span>}
+                                    required={true}
+                                    onChange={onCodeHostTypeChange}
+                                    disabled={loading || kinds.length === 0}
+                                >
+                                    {kinds.length > 0 &&
+                                        kinds.map(kind => (
+                                            <option value={kind} key={kind}>
+                                                {prettyPrintExternalServiceKind(kind)}
+                                            </option>
+                                        ))}
+                                </Select>
+                                <Select
+                                    id="code-host-urn-select"
+                                    className={classNames(styles.second, 'flex-1 mb-0')}
+                                    label={<span className="small">Code host URN</span>}
+                                    required={true}
+                                    onChange={onCodeHostUrnChange}
+                                    disabled={loading || !webhook.codeHostKind}
+                                >
+                                    {webhook.codeHostKind &&
+                                        kindsToUrls.get(webhook.codeHostKind) &&
+                                        kindsToUrls.get(webhook.codeHostKind)?.map(urn => (
+                                            <option value={urn} key={urn}>
+                                                {urn}
+                                            </option>
+                                        ))}
+                                </Select>
+                                <Input
+                                    className={classNames(styles.first, 'flex-1 mb-0')}
+                                    message={
+                                        webhook.codeHostKind &&
+                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ? (
+                                            <small>Bitbucket Cloud doesn't support secrets.</small>
+                                        ) : (
+                                            <small>Randomly generated. Alter as required.</small>
+                                        )
+                                    }
+                                    label={<span className="small">Secret</span>}
+                                    disabled={
+                                        webhook.codeHostKind !== null &&
+                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                    }
+                                    pattern="^[a-zA-Z0-9]+$"
+                                    onChange={event => {
+                                        onSecretChange(event.target.value)
+                                    }}
+                                    value={
+                                        webhook.codeHostKind &&
+                                        webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                            ? ''
+                                            : webhook.secret || ''
+                                    }
+                                    maxLength={100}
+                                />
+                            </div>
+                            <Button
+                                className="mt-2"
+                                type="submit"
+                                variant="primary"
+                                disabled={creationLoading || webhook.name.trim() === ''}
+                            >
+                                Create
+                            </Button>
+                            {createWebhookError && (
+                                <Alert variant="danger" className="mt-2">
+                                    Failed to create webhook: {createWebhookError.message}
+                                </Alert>
+                            )}
+                        </Form>
+                    </div>
+                ))}
         </Container>
     )
+}
+
+function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
+    switch (kind) {
+        case ExternalServiceKind.BITBUCKETSERVER:
+            return true
+        case ExternalServiceKind.BITBUCKETCLOUD:
+            return true
+        case ExternalServiceKind.GITHUB:
+            return true
+        case ExternalServiceKind.GITLAB:
+            return true
+        default:
+            return false
+    }
 }
 
 function prettyPrintExternalServiceKind(kind: ExternalServiceKind): string {
