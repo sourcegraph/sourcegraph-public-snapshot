@@ -21,11 +21,11 @@ CREATE OR REPLACE FUNCTION update_codeintel_scip_documents_schema_versions_inser
     AS $$ BEGIN
     INSERT INTO codeintel_scip_documents_schema_versions
     SELECT
-        metadata_shard_id,
-        MIN(schema_version) as min_schema_version,
-        MAX(schema_version) as max_schema_version
+        newtab.metadata_shard_id,
+        MIN(codeintel_scip_documents.schema_version) as min_schema_version,
+        MAX(codeintel_scip_documents.schema_version) as max_schema_version
     FROM newtab
-    JOIN codeintel_scip_documents ON codeintel_scip_documents.id = newtab.document_id
+    JOIN codeintel_scip_documents ON codeintel_scip_documents.metadata_shard_id = newtab.metadata_shard_id
     GROUP BY newtab.metadata_shard_id
     ON CONFLICT (metadata_shard_id) DO UPDATE SET
         -- Update with min(old_min, new_min) and max(old_max, new_max)
@@ -34,6 +34,7 @@ CREATE OR REPLACE FUNCTION update_codeintel_scip_documents_schema_versions_inser
     RETURN NULL;
 END $$;
 
+DROP TRIGGER IF EXISTS codeintel_scip_documents_schema_versions_insert ON codeintel_scip_documents;
 DROP TRIGGER IF EXISTS codeintel_scip_documents_schema_versions_insert ON codeintel_scip_documents_schema_versions;
-CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions
+CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents
 REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
