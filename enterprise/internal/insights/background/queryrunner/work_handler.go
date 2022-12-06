@@ -124,7 +124,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 
 	recordings, err := executableHandler(ctx, &job.SearchJob, series, recordTime)
 	if err != nil {
-		if !r.baseWorkerStore.WillRetry(job) && isGlobal {
+		if !r.baseWorkerStore.WillRetry(job) && isGlobal && job.PersistMode == string(store.RecordMode) {
 			reason := TranslateIncompleteReasons(err)
 			logger.Debug("insights recording global query timeout",
 				log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID),
