@@ -572,7 +572,8 @@ SELECT
 			repository_id = %s AND
 			commit = %s AND
 			state NOT IN ('deleting', 'deleted') AND
-			associated_index_id IS NULL
+			associated_index_id IS NULL AND
+			NOT u.should_reindex
 	)
 
 	OR
