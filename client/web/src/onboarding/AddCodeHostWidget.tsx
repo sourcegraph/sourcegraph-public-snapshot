@@ -40,7 +40,7 @@ export const AddCodeHostWidget: React.FunctionComponent<AddCodeHostWidgetProps> 
         wrapperClassName={classNames('mt-3 mx-auto', className, styles.container)}
         contentClassName={classNames(styles.innerContainer, 'p-4 d-flex flex-column align-items-baseline')}
     >
-        <H3 className="mr-2">Let’s start by adding your code</H3>
+        <H3 className="mr-2 mb-1">Let’s start by adding your code</H3>
         <Text
             as={Link}
             to="/site-admin/external-services/new"
@@ -51,8 +51,8 @@ export const AddCodeHostWidget: React.FunctionComponent<AddCodeHostWidgetProps> 
             Connect code host
             <Icon svgPath={mdiChevronRight} className="ml-1" size="md" aria-label="Arrow right icon" />
         </Text>
-        <div className={classNames(styles.divider, 'w-100 my-2')} />
-        <div className="d-flex">
+        <div className={classNames(styles.divider, 'w-100 my-3')} />
+        <div className="d-flex mb-2">
             <Icon svgPath={mdiCodeBraces} size="md" className="mr-2" aria-label="Code brace icon" />
             <div>
                 <Text weight="bold" className="mb-1">
