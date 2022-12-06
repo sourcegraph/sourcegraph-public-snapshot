@@ -74,6 +74,18 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 	}
 	change.AMConfig.Global.SMTPRequireTLS = !email.SMTP.NoVerifyTLS
 
+	// apply headers to all email receivers. receiver changes are applied before smtp
+	// changes, so this will be up to date.
+	if len(email.SMTP.Headers) > 0 {
+		for _, receiver := range change.AMConfig.Receivers {
+			for _, emailReceiver := range receiver.EmailConfigs {
+				for _, h := range email.SMTP.Headers {
+					emailReceiver.Headers[h.Key] = h.Value
+				}
+			}
+		}
+	}
+
 	return
 }
 
