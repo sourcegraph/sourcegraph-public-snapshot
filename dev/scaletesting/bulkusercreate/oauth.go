@@ -20,7 +20,7 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 	for _, u := range users {
 		currentU := u
 		tg.Go(func() userToken {
-			token := executeCreateUserImpersonationToken(ctx, currentU)
+			token := currentU.executeCreateImpersonationToken(ctx)
 			atomic.AddInt64(&tokensDone, 1)
 			progress.SetValue(5, float64(tokensDone))
 			return userToken{
@@ -55,8 +55,8 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 	}
 }
 
-// executeCreateUserImpersonationToken creates a user impersonation OAuth token for the given user.
-func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
+// executeCreateImpersonationToken creates a user impersonation OAuth token for the given user.
+func (u *user) executeCreateImpersonationToken(ctx context.Context) string {
 	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo", "read:org", "read:user_email"}})
 	if err != nil {
 		log.Fatal(err)
