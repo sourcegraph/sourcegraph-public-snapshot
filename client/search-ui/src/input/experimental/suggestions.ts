@@ -533,9 +533,6 @@ export const suggestionSource = Facet.define<Source, Source>({
     ],
 })
 
-// TODO:
-//  - fix "open quote problem" (stretch goal)
-
 export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [
     suggestionsConfig.of({ history, id }),
     suggestionSource.of(source),

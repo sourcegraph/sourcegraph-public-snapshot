@@ -49,11 +49,10 @@ export const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>(
 /**
  * Returns the token at the current position (if any)
  */
-export function tokenAt(state: EditorState, position: number): Token | undefined {
-    const query = state.facet(queryTokens)
+export function tokenAt(tokens: Token[], position: number): Token | undefined {
     // We do a exclusive end check for whitespace tokens so that the token that
     // possibly follows the whitespace token is picked instead.
-    return query.tokens.find(({ range, type }) =>
+    return tokens.find(({ range, type }) =>
         range.start <= position && type === 'whitespace' ? range.end > position : range.end >= position
     )
 }

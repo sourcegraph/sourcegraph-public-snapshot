@@ -219,7 +219,8 @@ function filterValueSuggestions(token: Token | undefined): ReturnType<Source> | 
         const to = token.value?.range.end
 
         function valid(state: EditorState, position: number): boolean {
-            return token === tokenAt(state, position)
+            const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
+            return token === tokenAt(tokens, position)
         }
 
         switch (resolvedFilter?.definition.suggestions) {
@@ -245,12 +246,86 @@ function filterValueSuggestions(token: Token | undefined): ReturnType<Source> | 
     return null
 }
 
+// Helper function to convert filter values that start with a quote but are not
+// closed yet (e.g. author:"firstname lastna|) to a single filter token to
+// prevent irrelevant suggestions.
+function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
+    const result: Token[] = []
+    let openFilter: Filter | null = null
+    let hold: Token[] = []
+
+    function mergeFilter(filter: Filter, values: Token[]): Filter {
+        if (!filter.value?.value) {
+            // For simplicity but this should never occure
+            return filter
+        }
+        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
+        return {
+            ...filter,
+            range: {
+                start: filter.range.start,
+                end,
+            },
+            value: {
+                ...filter.value,
+                range: {
+                    start: filter.value.range.start,
+                    end,
+                },
+                value:
+                    filter.value.value + values.map(token => input.slice(token.range.start, token.range.end)).join(''),
+            },
+        }
+    }
+
+    for (const token of tokens) {
+        switch (token.type) {
+            case 'filter':
+                {
+                    if (token.value?.value.startsWith('"') && !token.value.quoted) {
+                        openFilter = token
+                    } else {
+                        if (openFilter?.value) {
+                            result.push(mergeFilter(openFilter, hold))
+                            openFilter = null
+                            hold = []
+                        }
+                        result.push(token)
+                    }
+                }
+                break
+            case 'pattern':
+            case 'whitespace':
+                if (openFilter) {
+                    hold.push(token)
+                } else {
+                    result.push(token)
+                }
+                break
+            default:
+                if (openFilter?.value) {
+                    result.push(mergeFilter(openFilter, hold))
+                    openFilter = null
+                    hold = []
+                }
+                result.push(token)
+        }
+    }
+
+    if (openFilter?.value) {
+        result.push(mergeFilter(openFilter, hold))
+    }
+
+    return result
+}
+
 export const suggestions: Source = (state, pos) => {
-    const tokens = queryTokens(state)
-    const token = tokenAt(state, pos)
+    const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
+    const token = tokenAt(tokens, pos)
 
     function valid(state: EditorState, position: number): boolean {
-        return token === tokenAt(state, position)
+        const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
+        return token === tokenAt(tokens, position)
     }
 
     const result: Group[] = []
