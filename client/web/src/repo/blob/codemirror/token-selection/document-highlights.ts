@@ -35,7 +35,7 @@ async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): 
     cache.set(occurrence, promise)
     return await promise
 }
-export function documentHighlightsForOccurrence(view: EditorView, occurrence: Occurrence): void {
+export function getDocumentHighlightsForOccurrence(view: EditorView, occurrence: Occurrence): void {
     getDocumentHighlights(view, occurrence).then(
         result => view.dispatch({ effects: setDocumentHighlights.of(result) }),
         () => {}
