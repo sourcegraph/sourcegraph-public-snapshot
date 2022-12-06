@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"

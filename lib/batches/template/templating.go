@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"

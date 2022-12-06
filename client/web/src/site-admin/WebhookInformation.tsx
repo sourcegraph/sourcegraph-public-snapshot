@@ -32,7 +32,7 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
                 <tr>
                     <th className={styles.tableHeader}>Webhook endpoint</th>
                     <td className={styles.contentCell}>
-                        <CopyableText text={webhook.url} size={webhook.url.length} />
+                        <CopyableText text={webhook.url} size={60} />
                     </td>
                 </tr>
                 <tr>

@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetMonikersByPosition returns all monikers attached ranges containing the given position. If multiple

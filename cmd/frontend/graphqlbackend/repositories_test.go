@@ -232,17 +232,14 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 					}
 				}
 			`,
-				ExpectedResult: `
-				{
-					"repositories": {
-						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" }
-						],
-						"pageInfo": {"hasNextPage": false}
-					}
-				}
-			`,
+				ExpectedResult: "null",
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:          []any{"repositories"},
+						Message:       "excluding cloned and not cloned repos leaves an empty set",
+						ResolverError: errors.New("excluding cloned and not cloned repos leaves an empty set"),
+					},
+				},
 			},
 			{
 				Schema: schema,
@@ -468,15 +465,14 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					"repositories": {
-						"nodes": [],
-						"totalCount": 0,
-						"pageInfo": {"hasNextPage": false}
-					}
-				}
-			`,
+					Path:          []any{"repositories"},
+					Message:       "excluding indexed and not indexed repos leaves an empty set",
+					ResolverError: errors.New("excluding indexed and not indexed repos leaves an empty set"),
+				},
+			},
 		},
 	})
 }
@@ -622,7 +618,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 				{
 					Path:          []any{"repositories"},
 					Message:       `cannot unmarshal repository cursor type: ""`,
-					ResolverError: errors.Errorf(`cannot unmarshal repository cursor type: ""`),
+					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
 				},
 			},
 		})
@@ -796,12 +792,6 @@ func TestRepositories_Integration(t *testing.T) {
 			args:           "notIndexed: false",
 			wantRepos:      []string{"repo8"},
 			wantTotalCount: 1,
-		},
-		// indexed and notIndexed
-		{
-			args:           "indexed: false, notIndexed: false",
-			wantRepos:      nil,
-			wantTotalCount: 0,
 		},
 		{
 			args:           "orderBy:SIZE, descending:false, first: 5",
