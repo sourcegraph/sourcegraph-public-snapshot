@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
@@ -13,6 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
+
+func init() {
+	scipMigratorUploadBatchSize = 1
+	scipMigratorDocumentBatchSize = 4
+	scipMigratorResultChunkDefaultCacheSize = 16
+}
 
 func TestSCIPMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -74,29 +79,37 @@ func TestSCIPMigrator(t *testing.T) {
 	// 	}
 	// }
 
-	fmt.Printf("YUP!!\n") // TODO
-
 	assertProgress(0, false)
 
+	// Migrate first upload record
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(0.5, false)
 
-	// if err := migrator.Up(context.Background()); err != nil {
-	// 	t.Fatalf("unexpected error performing up migration: %s", err)
-	// }
-	// assertProgress(1, false)
+	// Migrate second upload record
+	if err := migrator.Up(context.Background()); err != nil {
+		t.Fatalf("unexpected error performing up migration: %s", err)
+	}
+	assertProgress(1, false)
 
-	// assertCounts(expectedCounts)
+	// Assert no-op downwards progress
+	assertProgress(0, true)
 
-	// if err := migrator.Down(context.Background()); err != nil {
-	// 	t.Fatalf("unexpected error performing down migration: %s", err)
-	// }
-	// assertProgress(0.5, true)
+	// Assert migrated state
+	documentsCount, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
+	if err != nil {
+		t.Fatalf("unexpected error counting documents: %s", err)
+	}
+	symbolsCount, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_symbols`))
+	if err != nil {
+		t.Fatalf("unexpected error counting symbols: %s", err)
+	}
 
-	// if err := migrator.Down(context.Background()); err != nil {
-	// 	t.Fatalf("unexpected error performing down migration: %s", err)
-	// }
-	// assertProgress(0, true)
+	if expected := 59; documentsCount != expected {
+		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, documentsCount)
+	}
+	if expected := 3745; symbolsCount != expected {
+		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
+	}
 }

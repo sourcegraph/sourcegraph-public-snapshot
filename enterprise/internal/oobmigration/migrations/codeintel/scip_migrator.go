@@ -62,7 +62,24 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
 `
 
-func (m *scipMigrator) Up(ctx context.Context) (err error) {
+var (
+	// NOTE: modified in tests
+	scipMigratorUploadBatchSize             = 64
+	scipMigratorDocumentBatchSize           = 128
+	scipMigratorResultChunkDefaultCacheSize = 1024
+)
+
+func (m *scipMigrator) Up(ctx context.Context) error {
+	for i := 0; i < scipMigratorUploadBatchSize; i++ {
+		if err := m.upSingle(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 	tx, err := m.codeintelStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -109,9 +126,6 @@ func (m *scipMigrator) Down(ctx context.Context) error {
 	return nil
 }
 
-const scipMigrationDocumentBatchSize = 128
-const scipMigratorResultChunkDefaultCacheSize = 1024
-
 // migrateUpload converts each LSIF document belonging to the given upload into a SCIP document
 // and persists them to the codeintel-db in the given transaction.
 func migrateUpload(
@@ -151,8 +165,8 @@ func migrateUpload(
 		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
-			scipMigrationDocumentBatchSize,
-			page*scipMigrationDocumentBatchSize,
+			scipMigratorDocumentBatchSize,
+			page*scipMigratorDocumentBatchSize,
 		)))
 		if err != nil {
 			return err
