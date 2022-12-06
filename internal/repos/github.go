@@ -157,6 +157,7 @@ func newGithubSource(
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
 	)
 
+	useGitHubApp := false
 	config, err := conf.GitHubAppConfig()
 	if err != nil {
 		return nil, err
@@ -174,6 +175,7 @@ func newGithubSource(
 
 		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
 		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
+		useGitHubApp = true
 	}
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
