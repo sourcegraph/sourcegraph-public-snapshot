@@ -28,7 +28,7 @@ func K8S(logger log.Logger, urlspec string) *Map {
 	return &Map{
 		urlspec:   urlspec,
 		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
-		logger:    log.Scoped("endpointsk8s", "service discovery via k8s"),
+		logger:    log.Scoped("k8s", "service discovery via k8s"),
 	}
 }
 
@@ -178,7 +178,6 @@ func parseURL(rawurl string) (*k8sURL, error) {
 		Service:   svc,
 		Namespace: ns,
 		Kind:      strings.ToLower(u.Query().Get("kind")),
-		Logger:    log.Scoped("k8sendpoint", "A kubernetes endpoint that represents a service"),
 	}, nil
 }
 

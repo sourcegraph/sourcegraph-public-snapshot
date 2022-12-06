@@ -172,7 +172,7 @@ func (m *Map) discover() {
 }
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
-	logger := log.Scoped("k8sendpoint", "A kubernetes endpoint that represents a service")
+	logger := m.logger.Scoped("sendpoint", "A kubernetes endpoint that represents a service")
 	for eps := range ch {
 
 		logger.Info(
