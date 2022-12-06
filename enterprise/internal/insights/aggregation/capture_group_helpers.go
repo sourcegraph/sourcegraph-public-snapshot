@@ -4,7 +4,7 @@ package aggregation
 // The intention is to not take a dependency on the compute package itself.
 
 import (
-	"regexp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"

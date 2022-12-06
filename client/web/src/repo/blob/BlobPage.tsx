@@ -66,6 +66,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
 import { Blob, BlobInfo } from './Blob'
+import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
@@ -441,11 +442,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return (
             <div className={styles.placeholder}>
                 {alwaysRender}
-                {!enableLazyBlobSyntaxHighlighting && (
-                    <div className="d-flex mt-3 justify-content-center">
-                        <LoadingSpinner />
-                    </div>
-                )}
+                {!enableLazyBlobSyntaxHighlighting && <BlobLoadingSpinner />}
             </div>
         )
     }

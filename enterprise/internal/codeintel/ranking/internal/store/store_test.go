@@ -24,7 +24,7 @@ func TestGetStarRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (name, stars)
@@ -71,7 +71,7 @@ func TestDocumentRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 	repoName := api.RepoName("foo")
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name, stars) VALUES ('foo', 1000)`); err != nil {
@@ -116,7 +116,7 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	for i := 1; i <= 15; i++ {
 		if _, err := db.ExecContext(ctx, fmt.Sprintf(`INSERT INTO repo (name) VALUES ('r%d')`, i)); err != nil {
@@ -262,7 +262,7 @@ func TestLastUpdatedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	idFoo := api.RepoID(1)
 	idBar := api.RepoID(2)
@@ -306,7 +306,7 @@ func TestUpdatedAfter(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)

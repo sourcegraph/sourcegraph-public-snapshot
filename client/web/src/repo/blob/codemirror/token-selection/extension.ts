@@ -5,6 +5,7 @@ import { isInteractiveOccurrence, occurrenceAtMouseEvent } from '../occurrence-u
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
 import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
+import { documentHighlightsExtension } from './document-highlights'
 import { getHoverTooltip, hoverCache, hoveredOccurrenceField, hoverField, setHoveredOccurrenceEffect } from './hover'
 import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
@@ -18,6 +19,7 @@ export function tokenSelectionExtension(): Extension {
     let longPressTimeout: NodeJS.Timeout | undefined
     let didLongpress = false
     return [
+        documentHighlightsExtension(),
         modifierClickFacet.of(false),
         tokenSelectionTheme,
         selectedOccurrence.of(null),

@@ -9,30 +9,32 @@ import (
 )
 
 func NewService(
+	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
 ) *Service {
-	store := store.New(db, scopedContext("store"))
-	lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+	store := store.New(scopedContext("store", observationCtx), db)
+	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 
 	return newService(
+		observationCtx,
 		store,
 		lsifStore,
 		uploadSvc,
 		gitserver,
-		scopedContext("service"),
 	)
 }
 
 type serviceDependencies struct {
-	db          database.DB
-	codeIntelDB codeintelshared.CodeIntelDB
-	uploadSvc   UploadService
-	gitserver   GitserverClient
+	db             database.DB
+	codeIntelDB    codeintelshared.CodeIntelDB
+	uploadSvc      UploadService
+	gitserver      GitserverClient
+	observationCtx *observation.Context
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "codenav", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "codenav", component, parent)
 }

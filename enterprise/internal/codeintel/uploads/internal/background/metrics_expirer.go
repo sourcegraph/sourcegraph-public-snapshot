@@ -50,7 +50,7 @@ var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(r prometheus.Reg
 	}, nil
 })
 
-func NewExpirationMetrics(observationContext *observation.Context) *ExpirationMetrics {
-	metrics, _ := expirationMetrics.Init(observationContext.Registerer)
+func NewExpirationMetrics(observationCtx *observation.Context) *ExpirationMetrics {
+	metrics, _ := expirationMetrics.Init(observationCtx.Registerer)
 	return metrics
 }
