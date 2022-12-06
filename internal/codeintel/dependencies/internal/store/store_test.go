@@ -22,7 +22,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	batches := [][]shared.Repo{
 		{
@@ -80,7 +80,7 @@ func TestListDependencyRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	batches := []shared.Repo{
 		{Scheme: "npm", Name: "bar", Version: "2.0.0"},    // id=1
@@ -132,7 +132,7 @@ func TestDeleteDependencyReposByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	repos := []shared.Repo{
 		// Test same-set flushes

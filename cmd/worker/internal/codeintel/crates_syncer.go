@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -21,26 +19,26 @@ func NewCratesSyncerJob() job.Job {
 }
 
 func (j *cratesSyncerJob) Description() string {
-	return ""
+	return "crates.io syncer"
 }
 
 func (j *cratesSyncerJob) Config() []env.Config {
 	return nil
 }
 
-func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+func (j *cratesSyncerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	gitserverClient := gitserver.NewClient(db)
-	dependenciesService := dependencies.NewService(db)
+	dependenciesService := dependencies.NewService(observationCtx, db)
 
 	return dependencies.CrateSyncerJob(
+		observationCtx,
 		dependenciesService,
 		gitserverClient,
 		db.ExternalServices(),
-		observation.ContextWithLogger(logger),
 	), nil
 }

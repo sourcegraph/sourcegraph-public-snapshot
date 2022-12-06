@@ -21,7 +21,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);
@@ -75,7 +75,7 @@ func TestProcessStaleExportedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);

@@ -17,11 +17,11 @@ import (
 
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	logger := log.Scoped("compute", "")
 	enterpriseServices.ComputeResolver = resolvers.NewResolver(logger, db)

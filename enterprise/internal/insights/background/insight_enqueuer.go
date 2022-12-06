@@ -22,13 +22,13 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"insights_enqueuer",
 		metrics.WithCountHelp("Total number of insights enqueuer executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "Enqueuer.Run",
 		Metrics: metrics,
 	})
@@ -103,7 +103,6 @@ func (ie *InsightEnqueuer) Enqueue(
 	mode store.PersistMode,
 	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
 ) error {
-
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (

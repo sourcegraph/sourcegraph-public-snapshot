@@ -91,7 +91,7 @@ type Store interface {
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 
 	// Workerutil
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload]
+	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
@@ -113,11 +113,11 @@ type store struct {
 }
 
 // New returns a new uploads store.
-func New(db database.DB, observationContext *observation.Context) Store {
+func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		logger:     logger.Scoped("uploads.store", ""),
 		db:         basestore.NewWithHandle(db.Handle()),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -28,8 +27,6 @@ var (
 	indexedDialer     backend.ZoektDialer
 )
 
-var ErrIndexDisabled = errors.New("indexed search has been disabled")
-
 func SearcherURLs() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
 		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
@@ -40,10 +37,6 @@ func SearcherURLs() *endpoint.Map {
 }
 
 func Indexed() zoekt.Streamer {
-	if !conf.SearchIndexEnabled() {
-		return &backend.FakeSearcher{SearchError: ErrIndexDisabled, ListError: ErrIndexDisabled}
-	}
-
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -58,8 +51,7 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`. If
-// indexed search is disabled it returns ErrIndexDisabled.
+// ListAllIndexed lists all indexed repositories with `Minimal: true`.
 func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Minimal: true}

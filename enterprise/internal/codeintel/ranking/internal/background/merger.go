@@ -32,16 +32,16 @@ type RankMergerConfig struct {
 }
 
 func NewRankMerger(
+	observationCtx *observation.Context,
 	store store.Store,
 	resultsBucket *storage.BucketHandle,
 	config RankMergerConfig,
 	interval time.Duration,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	merger := &rankMerger{
 		store:         store,
 		resultsBucket: resultsBucket,
-		metrics:       newMergerMetrics(observationContext),
+		metrics:       newMergerMetrics(observationCtx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {

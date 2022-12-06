@@ -578,7 +578,7 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 
 	createdFork := targetNamespace + "-" + targetName
 
-	fork, err := s.client.ForkProject(ctx, targetMeta, namespace, &createdFork)
+	fork, err := s.client.ForkProject(ctx, targetMeta, namespace, createdFork)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking project")
 	}

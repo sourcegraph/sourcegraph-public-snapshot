@@ -25,10 +25,10 @@ type operations struct {
 
 var m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"codeintel_uploads_background",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -36,7 +36,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.background.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
@@ -49,7 +49,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
@@ -70,9 +70,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		"The number of abandoned uploads deleted from the codeintel-db.",
 	)
 
-	honeyObservationContext := *observationContext
-	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyObservationContext.Operation(observation.Op{
+	honeyobservationCtx := *observationCtx
+	honeyobservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyobservationCtx.Operation(observation.Op{
 		Name: "codeintel.uploadHandler",
 		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 			return observation.EmitForTraces | observation.EmitForHoney
@@ -83,7 +83,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		Name: "src_codeintel_upload_processor_upload_size",
 		Help: "The combined size of uploads being processed at this instant by this worker.",
 	})
-	observationContext.Registerer.MustRegister(uploadSizeGuage)
+	observationCtx.Registerer.MustRegister(uploadSizeGuage)
 
 	return &operations{
 		updateUploadsVisibleToCommits: op("UpdateUploadsVisibleToCommits"),

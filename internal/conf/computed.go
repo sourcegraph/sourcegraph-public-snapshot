@@ -128,15 +128,6 @@ func UpdateChannel() string {
 	return channel
 }
 
-// SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search.
-func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
-		return *v
-	}
-	return true // always on by default in all deployment types, see confdefaults.go
-}
-
 func BatchChangesEnabled() bool {
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled

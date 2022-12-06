@@ -53,6 +53,8 @@ const mockContext: SearchContextFields = {
     repositories,
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,
+    viewerHasAsDefault: false,
+    viewerHasStarred: false,
 }
 
 const fetchPublicContext = (): Observable<SearchContextFields> => of(mockContext)

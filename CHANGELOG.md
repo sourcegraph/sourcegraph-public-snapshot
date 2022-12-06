@@ -24,6 +24,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
 - Code Insights: the data series API now provides information about incomplete datapoints during processing
 - Added a best-effort migration such that existing Code Insights will display zero results instead of missing points at the start and end of a graph. [#44928](https://github.com/sourcegraph/sourcegraph/pull/44928)
+- More complete stack traces for Outbound request log [#45151](https://github.com/sourcegraph/sourcegraph/pull/45151)
+- A new status message now reports how many repositories have already been indexed for search. [#45246](https://github.com/sourcegraph/sourcegraph/pull/45246)
 
 ### Changed
 
@@ -31,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Gitserver's repository purge worker now runs on a regular interval instead of just on weekends, configurable by the `repoPurgeWorker` site configuration. [#44753](https://github.com/sourcegraph/sourcegraph/pull/44753)
 - Editing the presentation metadata (title, line color, line label) or the default filters of a scoped Code Insight will no longer trigger insight recalculation. [#44769](https://github.com/sourcegraph/sourcegraph/pull/44769), [#44797](https://github.com/sourcegraph/sourcegraph/pull/44797)
 - Indexed Search's `memory_map_areas_percentage_used` alert has been modified to alert earlier than it used to. It now issues a warning at 60% (previously 70%) and issues a critical alert at 80% (previously 90%).
+- Saving a new view of a scoped Code Insight will no longer trigger insight recalculation. [#44679](https://github.com/sourcegraph/sourcegraph/pull/44679)
 
 ### Fixed
 
@@ -44,6 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Removed legacy GraphQL field `dirtyMetadata` on an insight series. `insightViewDebug` can be used as an alternative. [#44416](https://github.com/sourcegraph/sourcegraph/pull/44416)
+- Removed `search.index.enabled` site configuration setting. Search indexing is now always enabled.
 
 ## 4.2.0
 

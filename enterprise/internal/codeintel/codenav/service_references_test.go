@@ -35,11 +35,11 @@ func TestReferences(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -99,11 +99,11 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -174,11 +174,11 @@ func TestReferencesRemote(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -350,11 +350,11 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}

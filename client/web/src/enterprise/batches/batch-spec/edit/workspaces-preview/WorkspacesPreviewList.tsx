@@ -52,6 +52,8 @@ interface WorkspacesPreviewListProps {
     error?: string
     /** Whether or not the items presented in the list are read-only. */
     isReadOnly?: boolean
+    /** Whether using cached results is disabled. */
+    cacheDisabled?: boolean
 }
 
 export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewListProps>> = ({
@@ -61,6 +63,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     cached,
     workspacesConnection: { connection, hasNextPage, fetchMore },
     error,
+    cacheDisabled,
     isReadOnly,
 }) => {
     const connectionOrCached = showCached && cached ? cached : connection
@@ -73,6 +76,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
                     <WorkspacesPreviewListItem
                         key={node.id}
                         workspace={node}
+                        cacheDisabled={cacheDisabled}
                         isStale={isStale}
                         exclude={excludeRepo}
                         isReadOnly={isReadOnly}

@@ -1325,6 +1325,9 @@ Available preset environments:
 * k8s
 * scaletesting
 
+See more information about the deployments schedule here:
+https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience/#sourcegraph-instances-operated-by-us
+
 ```sh
 # See which version is deployed on a preset environment
 $ sg live s2

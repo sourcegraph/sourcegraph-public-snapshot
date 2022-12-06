@@ -8,12 +8,9 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var timeNow = time.Now
@@ -60,11 +57,6 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		return false, nil
-	}
-
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrNotAuthenticated || err == auth.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
@@ -84,26 +76,13 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can add new email to their accounts
-	// on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user or site admins can add new email to
-		// users' accounts.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := backend.UserEmails.Add(ctx, r.logger, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "added an email"); err != nil {
+		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
 			log15.Warn("Failed to send email to inform user of email addition", "error", err)
 		}
 	}
@@ -122,7 +101,8 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 		return nil, err
 	}
 
-	if err := backend.UserEmails.Remove(ctx, r.logger, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
@@ -140,28 +120,9 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can set the primary email for their
-	// accounts on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
-		// email for users' accounts.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := r.db.UserEmails().SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
-	}
-
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "changed primary email"); err != nil {
-			log15.Warn("Failed to send email to inform user of primary address change", "error", err)
-		}
 	}
 
 	return &EmptyResponse{}, nil
@@ -174,37 +135,14 @@ type setUserEmailVerifiedArgs struct {
 }
 
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUserEmailVerifiedArgs) (*EmptyResponse, error) {
-	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("manually verify user email is disabled")
-	}
-
-	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
-	// status. Users themselves must go through the normal email verification process.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
-	if err := r.db.UserEmails().SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
-		return nil, err
-	}
 
-	// Avoid unnecessary calls if the email is set to unverified.
-	if args.Verified {
-		if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
-				"userID", userID,
-				"error", err,
-			)
-		}
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
@@ -221,56 +159,8 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can resend verification email for
-	// their accounts on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can resend
-		// verification email for their accounts.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	user, err := r.db.Users().GetByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	userEmails := r.db.UserEmails()
-	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if lastSent != nil &&
-		lastSent.LastVerificationSentAt != nil &&
-		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
-		return nil, errors.New("Last verification email sent too recently")
-	}
-
-	email, verified, err := userEmails.Get(ctx, userID, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if verified {
-		return &EmptyResponse{}, nil
-	}
-
-	code, err := backend.MakeEmailVerificationCode()
-	if err != nil {
-		return nil, err
-	}
-
-	err = userEmails.SetLastVerification(ctx, userID, email, code)
-	if err != nil {
-		return nil, err
-	}
-
-	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
-	if err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.ResendVerificationEmail(ctx, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}
 

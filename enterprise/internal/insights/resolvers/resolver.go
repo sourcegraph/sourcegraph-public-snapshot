@@ -23,8 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var _ graphqlbackend.InsightsResolver = &Resolver{}
-var _ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
+var (
+	_ graphqlbackend.InsightsResolver            = &Resolver{}
+	_ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
+)
 
 // baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
 // database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
@@ -124,11 +126,11 @@ type AggregationResolver struct {
 	operations *aggregationsOperations
 }
 
-func NewAggregationResolver(postgres database.DB, observationContext *observation.Context) graphqlbackend.InsightsAggregationResolver {
+func NewAggregationResolver(observationCtx *observation.Context, postgres database.DB) graphqlbackend.InsightsAggregationResolver {
 	return &AggregationResolver{
 		logger:     log.Scoped("AggregationResolver", ""),
 		postgresDB: postgres,
-		operations: newAggregationsOperations(observationContext),
+		operations: newAggregationsOperations(observationCtx),
 	}
 }
 
@@ -145,15 +147,15 @@ type aggregationsOperations struct {
 	aggregations *observation.Operation
 }
 
-func newAggregationsOperations(observationContext *observation.Context) *aggregationsOperations {
+func newAggregationsOperations(observationCtx *observation.Context) *aggregationsOperations {
 	redM := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"insights_aggregations",
 		metrics.WithLabels("op", "extended_mode", "aggregation_mode"),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("insights_aggregations.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redM,

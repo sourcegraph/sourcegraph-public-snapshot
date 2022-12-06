@@ -142,9 +142,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		ws = append(ws, workspace)
 
-		if spec.NoCache {
-			continue
-		}
 		if !spec.AllowIgnored && w.Ignored {
 			continue
 		}
