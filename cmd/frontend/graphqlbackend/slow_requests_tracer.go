@@ -73,7 +73,7 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.FIFOList, after int,
 	return reqs, nil
 }
 
-// SlowRequests returns a connection so fetch slow requests.
+// SlowRequests returns a connection to fetch slow requests.
 func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArgs) (*slowRequestConnectionResolver, error) {
 	if conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit == 0 {
 		return nil, errors.New("slow graphql requests capture is not enabled")

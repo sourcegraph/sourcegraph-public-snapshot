@@ -145,7 +145,6 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 					log.String("variables", string(enc)),
 				)
 			}
-			// TODO
 			errFields := make([]string, 0, len(err))
 			for _, e := range err {
 				errFields = append(errFields, e.Error())

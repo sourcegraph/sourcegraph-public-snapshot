@@ -38,10 +38,9 @@ import { SLOW_REQUESTS } from './backend'
 import styles from './SiteAdminSlowRequestsPage.module.scss'
 
 export interface SiteAdminSlowRequestsPageProps extends RouteComponentProps, TelemetryProps {
-    now?: () => Date
 }
 
-export type SlowRequest = SlowRequestsResult['slowRequests']['nodes'][0]
+type SlowRequest = SlowRequestsResult['slowRequests']['nodes'][0]
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -103,27 +102,27 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                 headingElement="h2"
                 description={
                     <>
+                      <Text>
                         This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for
                         seeing what's happening between clients and our API.
-                        <br />
-                        <br />
+                      </Text>
+                      <Text>
                         The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the
                         GraphQL request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set in
                         your environment or to replace it in the copied command.
-                        <br />
-                        <br />
-                        Slow requests capture is configured through{' '}
-                        <Link to="/site-admin/configuration">site config</Link>:
-                        <ul>
-                            <li>
-                                Minimum duration for a GraphQL request to be considered slow{' '}
-                                <strong>observability.logSlowGraphQLRequests</strong>
-                            </li>
-                            <li>
-                                Maximum count of captured requests to keep{' '}
-                                <strong>observability.captureSlowGraphQLRequestsLimit</strong>
-                            </li>
-                        </ul>
+                      </Text>
+                      Slow requests capture is configured through{' '}
+                      <Link to="/site-admin/configuration">site config</Link>:
+                      <ul>
+                          <li>
+                              Minimum duration for a GraphQL request to be considered slow{' '}
+                              <strong>observability.logSlowGraphQLRequests</strong>
+                          </li>
+                          <li>
+                              Maximum count of captured requests to keep{' '}
+                              <strong>observability.captureSlowGraphQLRequestsLimit</strong>
+                          </li>
+                      </ul>
                     </>
                 }
                 className="mb-3"
@@ -270,7 +269,7 @@ function ellipsis(str: string, len: number): string {
 }
 
 function shortenRepoName(repoName: string): string {
-    return repoName.split('/').at(-1) || '' // TODO
+    return repoName.split('/').at(-1) || '' 
 }
 
 function buildCurlCommand(request: SlowRequest): string {
