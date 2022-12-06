@@ -40,7 +40,7 @@ export const AddCodeHostWidget: React.FunctionComponent<AddCodeHostWidgetProps> 
         wrapperClassName={classNames('mt-3 mx-auto', className, styles.container)}
         contentClassName={classNames(styles.innerContainer, 'p-4 d-flex flex-column align-items-baseline')}
     >
-        <H3 className="mr-2">Let’s start by adding you code</H3>
+        <H3 className="mr-2">Let’s start by adding your code</H3>
         <Text
             as={Link}
             to="/site-admin/external-services/new"
