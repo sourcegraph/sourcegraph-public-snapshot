@@ -3,12 +3,12 @@ import { subDays } from 'date-fns'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { SearchContextFields, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
+import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 
 import { SearchContextPage } from './SearchContextPage'
-import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

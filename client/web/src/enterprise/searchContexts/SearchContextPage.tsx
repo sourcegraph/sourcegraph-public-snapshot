@@ -9,6 +9,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
 import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -31,10 +32,10 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 
-import styles from './SearchContextPage.module.scss'
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchContextStarButton } from './SearchContextStarButton'
+
+import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
@@ -172,7 +173,9 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
     const toggleStarWithErrorHandling = useCallback(() => {
         setAlert('') // Clear previous alerts
         toggleStar().catch(error => {
-            isErrorLike(error) && setAlert(error.message)
+            if (isErrorLike(error)) {
+                setAlert(error.message)
+            }
         })
     }, [setAlert, toggleStar])
 
