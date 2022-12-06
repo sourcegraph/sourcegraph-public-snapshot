@@ -238,17 +238,16 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 		// Create the team if not exists
 		var res *github.Response
 		var err error
-		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
-			if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-				// give some breathing room
-				time.Sleep(30 * time.Second)
+	retryCreateTeam:
+		if _, res, err = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); err != nil {
+			if err = t.setFailedAndSave(err); err != nil {
+				log.Fatalf("Failed saving to state: %s", err)
 			}
-
-			if _, res, err = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); err != nil {
-				if err = t.setFailedAndSave(err); err != nil {
-					log.Fatalf("Failed saving to state: %s", err)
-				}
-			}
+		}
+		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+			// give some breathing room
+			time.Sleep(30 * time.Second)
+			goto retryCreateTeam
 		}
 
 		t.Created = true
@@ -318,38 +317,34 @@ func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*
 		// add user to team's parent org first
 		var res *github.Response
 		var err error
-		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
-			if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-				time.Sleep(30 * time.Second)
+	retryEditOrgMembership:
+		if _, res, err = gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
+			State:        &userState,
+			Role:         &userRole,
+			Organization: &github.Organization{Login: &t.Org},
+			User:         &github.User{Login: &u.Login},
+		}); res != nil {
+			if err = t.setFailedAndSave(err); err != nil {
+				log.Fatal(err)
 			}
-			_, res, err = gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
-				State:        &userState,
-				Role:         &userRole,
-				Organization: &github.Organization{Login: &t.Org},
-				User:         &github.User{Login: &u.Login},
-			})
-
-			if err != nil {
-				if err = t.setFailedAndSave(err); err != nil {
-					log.Fatal(err)
-				}
-				continue
-			}
+			continue
+		}
+		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+			time.Sleep(30 * time.Second)
+			goto retryEditOrgMembership
 		}
 
-		res = nil
-		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
-			if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-				time.Sleep(30 * time.Second)
+	retryAddTeamMembership:
+		if _, res, err = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil); err != nil {
+			if err = t.setFailedAndSave(err); err != nil {
+				log.Fatal(err)
 			}
-			// this is an idempotent operation so no need to check existing membership
-			_, res, err = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil)
-			if err != nil {
-				if err = t.setFailedAndSave(err); err != nil {
-					log.Fatal(err)
-				}
-				continue
-			}
+			continue
+		}
+		// this is an idempotent operation so no need to check existing membership
+		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+			time.Sleep(30 * time.Second)
+			goto retryAddTeamMembership
 		}
 
 		t.TotalMembers += 1
@@ -406,33 +401,29 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 					return
 				}
 
-				for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
-					if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-						time.Sleep(30 * time.Second)
+			retryTransfer:
+				if _, res, err = gh.Repositories.Transfer(ctx, "blank200k", currentRepo.Name, github.TransferRequest{NewOwner: currentOrg.Login}); err != nil {
+					if _, ok := err.(*github.AcceptedError); ok {
+						//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+						// AcceptedError means the transfer is scheduled as a background job
+					} else {
+						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentOrg.Login, err)
 					}
+				}
 
-					_, res, err = gh.Repositories.Transfer(ctx, "blank200k", currentRepo.Name, github.TransferRequest{NewOwner: currentOrg.Login})
+				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					time.Sleep(30 * time.Second)
+					goto retryTransfer
+				}
 
-					if res.StatusCode == 422 {
-						body, err := io.ReadAll(res.Body)
-						if err != nil {
-							log.Fatalf("Failed reading response body: %s", err)
-						}
-						if strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
-							//writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
-							// The repository is already transferred but not yet saved in the state
-							break
-						}
-					}
-
+				if res.StatusCode == 422 {
+					body, err := io.ReadAll(res.Body)
 					if err != nil {
-						if _, ok := err.(*github.AcceptedError); ok {
-							//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
-							// AcceptedError means the transfer is scheduled as a background job
-							break
-						} else {
-							log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentOrg.Login, err)
-						}
+						log.Fatalf("Failed reading response body: %s", err)
+					}
+					if strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
+						//writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
+						// The repository is already transferred but not yet saved in the state
 					}
 				}
 
@@ -461,20 +452,20 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 				var uRes *github.Response
 				var uErr error
 				g.Go(func() {
-					for uRes == nil || uRes.StatusCode == 502 || uRes.StatusCode == 504 {
-						if uRes != nil && (uRes.StatusCode == 502 || uRes.StatusCode == 504) {
-							time.Sleep(30 * time.Second)
-						}
+				retryEditOrgMembership:
+					memberState := "active"
+					memberRole := "member"
 
-						memberState := "active"
-						memberRole := "member"
-						_, uRes, uErr = gh.Organizations.EditOrgMembership(ctx, currentUser.Login, currentOrg.Login, &github.Membership{
-							State: &memberState,
-							Role:  &memberRole,
-						})
-						if uErr != nil {
-							log.Fatalf("Failed edit membership of user %s in org %s: %s", currentUser.Login, currentOrg.Login, uErr)
-						}
+					if _, uRes, uErr = gh.Organizations.EditOrgMembership(ctx, currentUser.Login, currentOrg.Login, &github.Membership{
+						State: &memberState,
+						Role:  &memberRole,
+					}); uErr != nil {
+						log.Fatalf("Failed edit membership of user %s in org %s: %s", currentUser.Login, currentOrg.Login, uErr)
+					}
+
+					if uRes != nil && (uRes.StatusCode == 502 || uRes.StatusCode == 504) {
+						time.Sleep(30 * time.Second)
+						goto retryEditOrgMembership
 					}
 				})
 			}
@@ -560,24 +551,23 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 
 				var res *github.Response
 				var err error
-				for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
-					if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-						time.Sleep(30 * time.Second)
-					}
 
-					res, err = gh.Teams.AddTeamRepoBySlug(ctx, currentTeam.Org, currentTeam.Name, currentTeam.Org, currentRepo.Name, &github.TeamAddTeamRepoOptions{Permission: "push"})
+			retryAddTeamRepo:
+				if res, err = gh.Teams.AddTeamRepoBySlug(ctx, currentTeam.Org, currentTeam.Name, currentTeam.Org, currentRepo.Name, &github.TeamAddTeamRepoOptions{Permission: "push"}); err != nil {
+					log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentTeam.Name, err)
+				}
 
-					if res.StatusCode == 422 {
-						body, err := io.ReadAll(res.Body)
-						if err != nil {
-							log.Fatalf("Failed reading response body: %s", err)
-						}
-						log.Fatalf("Failed to assign repo %s to team %s: %s", currentRepo.Name, currentTeam.Name, string(body))
-					}
+				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					time.Sleep(30 * time.Second)
+					goto retryAddTeamRepo
+				}
 
+				if res.StatusCode == 422 {
+					body, err := io.ReadAll(res.Body)
 					if err != nil {
-						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentTeam.Name, err)
+						log.Fatalf("Failed reading response body: %s", err)
 					}
+					log.Fatalf("Failed to assign repo %s to team %s: %s", currentRepo.Name, currentTeam.Name, string(body))
 				}
 
 				atomic.AddInt64(reposDone, 1)
@@ -612,31 +602,37 @@ func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user,
 			for _, u := range currentUsers {
 				var res *github.Response
 				var err error
-				for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+
+			retryAddCollaborator:
+				var invitation *github.CollaboratorInvitation
+				if invitation, res, err = gh.Repositories.AddCollaborator(ctx, currentRepo.Owner, currentRepo.Name, u.Login, &github.RepositoryAddCollaboratorOptions{Permission: "push"}); err != nil {
+					log.Fatalf("Failed to add user %s as a collaborator to repo %s: %s", u.Login, currentRepo.Name, err)
+				}
+
+				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					time.Sleep(30 * time.Second)
+					goto retryAddCollaborator
+				}
+
+				// AddCollaborator returns a 201 when an invitation is created.
+				//
+				// A 204 is returned when:
+				// * an existing collaborator is added as a collaborator
+				// * an organization member is added as an individual collaborator
+				// * an existing team member (whose team is also a repository collaborator) is added as an individual collaborator
+				if res.StatusCode == 201 {
+				retryAcceptInvitation:
+					if res, err = gh.Users.AcceptInvitation(ctx, invitation.GetID()); err != nil {
+						log.Fatalf("Failed to accept collaborator invitation for user %s on repo %s: %s", u.Login, currentRepo.Name, err)
+					}
 					if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
 						time.Sleep(30 * time.Second)
-					}
-
-					var invitation *github.CollaboratorInvitation
-					invitation, res, err = gh.Repositories.AddCollaborator(ctx, currentRepo.Owner, currentRepo.Name, u.Login, &github.RepositoryAddCollaboratorOptions{Permission: "push"})
-					if err != nil {
-						log.Fatalf("Failed to add user %s as a collaborator to repo %s: %s", u.Login, currentRepo.Name, err)
-					}
-
-					// AddCollaborator returns a 201 when an invitation is created.
-					//
-					// A 204 is returned when:
-					// * an existing collaborator is added as a collaborator
-					// * an organization member is added as an individual collaborator
-					// * an existing team member (whose team is also a repository collaborator) is added as an individual collaborator
-					if res.StatusCode == 201 {
-						res, err = gh.Users.AcceptInvitation(ctx, invitation.GetID())
-						if err != nil {
-							log.Fatalf("Failed to accept collaborator invitation for user %s on repo %s: %s", u.Login, currentRepo.Name, err)
-						}
+						goto retryAcceptInvitation
 					}
 				}
+
 			}
+
 			atomic.AddInt64(reposDone, 1)
 			progress.SetValue(4, float64(*reposDone))
 			//writeInfo(out, "Repository %s transferred to users", r.Name)
