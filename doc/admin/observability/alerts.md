@@ -7853,11 +7853,11 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 
 ## otel-collector: otel_span_refused
 
-<p class="subtitle">spans that the receiver refused</p>
+<p class="subtitle">spans refused per receiver</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans that the receiver refused for 5m0s
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans refused per receiver for 5m0s
 
 **Next steps**
 
@@ -7876,29 +7876,29 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m]))) > 1)`
+Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
 
 </details>
 
 <br />
 
-## otel-collector: otel_span_failed_send_size
+## otel-collector: otel_span_export_failures
 
-<p class="subtitle">spans that the exporter failed to send</p>
+<p class="subtitle">span export failures by exporter</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans that the exporter failed to send for 5m0s
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ span export failures by exporter for 5m0s
 
 **Next steps**
 
 - Check the configuration of the exporter and if the service being exported is up
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-failed-send-size).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-export-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_otel-collector_otel_span_failed_send_size"
+  "warning_otel-collector_otel_span_export_failures"
 ]
 ```
 
@@ -7907,38 +7907,7 @@ Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m]))) > 1)`
-
-</details>
-
-<br />
-
-## otel-collector: otel_span_queue_size
-
-<p class="subtitle">spans pending to be sent</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> otel-collector: 10+ spans pending to be sent for 5m0s
-
-**Next steps**
-
-- Check configuration of exporter
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_otel-collector_otel_span_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_queue_size{exporter=~"^.*"}[1m]))) > 10)`
+Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
 
 </details>
 

@@ -123,7 +123,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "memory used by the collector",
 							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~\"^.*\"}[1m])) by (job)",
+							Query:       "sum by (job) (rate(otelcol_process_runtime_total_alloc_bytes{job=~\"^.*\"}[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows how much memory is being used by the otel collector.

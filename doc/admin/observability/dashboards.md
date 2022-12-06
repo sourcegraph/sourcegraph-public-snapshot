@@ -24447,7 +24447,7 @@ To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` 
 
 #### otel-collector: otel_span_receive_rate
 
-<p class="subtitle">Spans received per second</p>
+<p class="subtitle">Spans received per receiver per minute</p>
 
 								Shows the rate of spans accepted by the configured reveiver
 								
@@ -24469,7 +24469,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_receiver_accepted_spans{receiver=~"^.*"}[1m])) by (receiver)`
+Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans{}[1m]))`
 
 </details>
 
@@ -24477,7 +24477,7 @@ Query: `sum(rate(otelcol_receiver_accepted_spans{receiver=~"^.*"}[1m])) by (rece
 
 #### otel-collector: otel_span_refused
 
-<p class="subtitle">Spans that the receiver refused</p>
+<p class="subtitle">Spans refused per receiver</p>
 
 								Shows the amount of spans that have been refused by a receiver.
 								
@@ -24495,7 +24495,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m])) by (receiver)`
+Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans{}[1m]))`
 
 </details>
 
@@ -24505,7 +24505,7 @@ Query: `sum(rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m])) by (rec
 
 #### otel-collector: otel_span_export_rate
 
-<p class="subtitle">Spans exported per second</p>
+<p class="subtitle">Spans exported per exporter per minute</p>
 
 								Shows the rate of spans being sent by the exporter
 								
@@ -24523,21 +24523,21 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_exporter_sent_spans{exporter=~"^.*"}[1m])) by (exporter)`
+Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans{}[1m]))`
 
 </details>
 
 <br />
 
-#### otel-collector: otel_span_failed_send_size
+#### otel-collector: otel_span_export_failures
 
-<p class="subtitle">Spans that the exporter failed to send</p>
+<p class="subtitle">Span export failures by exporter</p>
 
 								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
 								
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
-Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-failed-send-size) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-export-failures) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100101` on your Sourcegraph instance.
 
@@ -24546,53 +24546,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m])) by (exporter)`
-
-</details>
-
-<br />
-
-#### otel-collector: otel_span_queue_size
-
-<p class="subtitle">Spans pending to be sent</p>
-
-								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service to which spans are being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
-
-Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-queue-size) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100102` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(otelcol_exporter_queue_size{exporter=~"^.*"}[1m])) by (exporter)`
-
-</details>
-
-<br />
-
-#### otel-collector: otel_span_queue_capacity
-
-<p class="subtitle">Spans max items that can be pending to be sent</p>
-
-								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100103` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(otelcol_exporter_queue_capacity{exporter=~"^.*"}[1m])) by (exporter)`
+Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans{}[1m]))`
 
 </details>
 
@@ -24615,7 +24569,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m])) by (job)`
+Query: `sum by (job) (rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m]))`
 
 </details>
 
@@ -24636,7 +24590,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_process_memory_rss{job=~"^.*"}[1m])) by (job)`
+Query: `sum by (job) (rate(otelcol_process_memory_rss{job=~"^.*"}[1m]))`
 
 </details>
 
@@ -24663,7 +24617,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m])) by (job)`
+Query: `sum by (job) (rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m]))`
 
 </details>
 
