@@ -586,10 +586,10 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 			return nil, nil
 		}
 
-		currentPage = currentPage + 1
-		path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+		currentPage += 1
+		getPath := fmt.Sprintf(path, visibility, currentPage)
 
-		repos, hasNextPage, err = c.listRepositories(ctx, path)
+		repos, hasNextPage, err = c.listRepositories(ctx, getPath)
 		return [][]*Repository{repos}, err
 	})
 
