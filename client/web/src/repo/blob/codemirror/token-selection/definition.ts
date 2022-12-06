@@ -18,10 +18,11 @@ import { hoveredOccurrenceField } from './hover'
 import { isModifierKey, isModifierKeyHeld } from './modifier-click'
 import { selectOccurrence, selectRange } from './selections'
 
-interface DefinitionResult {
+export interface DefinitionResult {
     handler: (position: Position) => void
     url?: string
     locations: Location[]
+    atTheDefinition?: boolean
 }
 const emptyDefinitionResult: DefinitionResult = { handler: () => {}, locations: [] }
 const definitionReady = Decoration.mark({
@@ -157,6 +158,7 @@ async function goToDefinition(
                 const refPanelURL = locationToURL(locationFrom, 'references')
                 return {
                     url: refPanelURL,
+                    atTheDefinition: true,
                     handler: position => {
                         showTemporaryTooltip(view, 'You are at the definition', position, 2000, { arrow: true })
                         const history = view.state.facet(blobPropsFacet).history

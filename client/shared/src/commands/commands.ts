@@ -43,6 +43,13 @@ export function registerBuiltinClientCommands(
 
     subscription.add(
         registerCommand({
+            command: 'invokeFunction',
+            run: (handler: () => Promise<void>) => handler(),
+        })
+    )
+
+    subscription.add(
+        registerCommand({
             command: 'openPanel',
             run: (viewID: string) => {
                 // As above for `open`, the `openPanel` client command is usually implemented by an HTML <a>
