@@ -21,7 +21,7 @@ import (
 )
 
 // Responds to /localCodeIntel
-func LocalCodeIntelHandler(readFile ReadFileFunc) func(w http.ResponseWriter, r *http.Request) {
+func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
 		body, err := io.ReadAll(r.Body)
@@ -80,7 +80,7 @@ func LocalCodeIntelHandler(readFile ReadFileFunc) func(w http.ResponseWriter, r 
 }
 
 // Responds to /symbolInfo
-func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile ReadFileFunc) func(w http.ResponseWriter, r *http.Request) {
+func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
 		body, err := io.ReadAll(r.Body)

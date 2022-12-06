@@ -9,15 +9,15 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewHandler(
 	searchFunc types.SearchFunc,
-	readFileFunc squirrel.ReadFileFunc,
+	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
@@ -25,9 +25,7 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
-	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
-	mux.HandleFunc("/debugLocalCodeIntel", squirrel.DebugLocalCodeIntelHandler)
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
+	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}
