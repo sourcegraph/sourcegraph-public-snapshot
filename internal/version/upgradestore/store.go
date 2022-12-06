@@ -2,7 +2,6 @@ package upgradestore
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // store manages checking and updating the version of the instance that was running prior to an ongoing
