@@ -195,7 +195,7 @@ func namespace() string {
 
 	ns := strings.TrimSpace(string(data))
 	if ns == "" {
-		logger.Warn("empty namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("namespace", "default"))```
+		logger.Warn("empty namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("namespace", "default"))
 		return "default"
 	}
 	return ns
