@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, useCallback, useMemo } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 
@@ -27,6 +28,7 @@ export interface SearchContextsListProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
+    setAlert: (message: string) => void
 }
 
 export const SearchContextsList: React.FunctionComponent<SearchContextsListProps> = ({
@@ -34,6 +36,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     getUserSearchContextNamespaces,
     fetchSearchContexts,
     platformContext,
+    setAlert,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
@@ -171,8 +174,8 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             showSearchFirst={true}
             nodeComponent={SearchContextNode}
             nodeComponentProps={{
-                location,
-                history,
+                authenticatedUser,
+                setAlert,
             }}
             noun="search context"
             pluralNoun="search contexts"
@@ -193,17 +196,17 @@ const SearchContextsTableHeader: React.FunctionComponent = () => (
     <thead>
         <tr>
             <th>
-                <span className="sr-only">Starred</span>
+                <VisuallyHidden>Starred</VisuallyHidden>
             </th>
             <th>Name</th>
             <th>Description</th>
             <th>Contents</th>
             <th>Last updated</th>
             <th>
-                <span className="sr-only">Tags</span>
+                <VisuallyHidden>Tags</VisuallyHidden>
             </th>
             <th>
-                <span className="sr-only">Actions</span>
+                <VisuallyHidden>Actions</VisuallyHidden>
             </th>
         </tr>
     </thead>

@@ -17,9 +17,7 @@ const CreateNotebookPage = lazyComponent(
 const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) &&
-    settingsCascade.final?.experimentalFeatures?.showSearchContext !== false &&
-    settingsCascade.final?.experimentalFeatures?.showSearchContextManagement !== false
+    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
 
 export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {

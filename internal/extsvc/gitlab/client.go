@@ -234,13 +234,13 @@ func (c *Client) Urn() string {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, result)
+	return c.doWithBaseURL(ctx, req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
 // used for authentication, it will try to refresh the token and retry the same
 // request when the token has expired.
-func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAuthContext, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -360,7 +360,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	_, _, err = c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, &v)
+	_, _, err = c.doWithBaseURL(ctx, req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
 	}

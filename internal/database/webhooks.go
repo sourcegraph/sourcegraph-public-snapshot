@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -24,7 +25,7 @@ type WebhookStore interface {
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, opts DeleteWebhookOpts) error
-	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
+	Update(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 	Count(ctx context.Context, opts WebhookListOptions) (int, error)
 }
@@ -50,8 +51,10 @@ type WebhookOpts struct {
 	UUID uuid.UUID
 }
 
-type DeleteWebhookOpts WebhookOpts
-type GetWebhookOpts WebhookOpts
+type (
+	DeleteWebhookOpts WebhookOpts
+	GetWebhookOpts    WebhookOpts
+)
 
 // Create the webhook
 //
@@ -247,15 +250,15 @@ func NewWebhookNotFoundErrorFromOpts(opts DeleteWebhookOpts) *WebhookNotFoundErr
 }
 
 // Update the webhook
-func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error) {
+func (s *webhookStore) Update(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
 		keyID           string
 	)
 
-	if newWebhook.Secret != nil {
-		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
+	if webhook.Secret != nil {
+		encryptedSecret, keyID, err = webhook.Secret.Encrypt(ctx, s.key)
 		if err != nil {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
@@ -265,13 +268,13 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.Name, newWebhook.CodeHostURN.String(), newWebhook.CodeHostKind, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		webhook.Name, webhook.CodeHostURN.String(), webhook.CodeHostKind, encryptedSecret, keyID, dbutil.NullInt32Column(actor.FromContext(ctx).UID), webhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &WebhookNotFoundError{ID: newWebhook.ID, UUID: newWebhook.UUID}
+			return nil, &WebhookNotFoundError{ID: webhook.ID, UUID: webhook.UUID}
 		}
 		return nil, errors.Wrap(err, "scanning webhook")
 	}

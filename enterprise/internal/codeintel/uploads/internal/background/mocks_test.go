@@ -12159,6 +12159,280 @@ func (c LsifStoreWriteResultChunksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockSymbolWriter is a mock implementation of the SymbolWriter interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore)
+// used for unit testing.
+type MockSymbolWriter struct {
+	// FlushFunc is an instance of a mock function object controlling the
+	// behavior of the method Flush.
+	FlushFunc *SymbolWriterFlushFunc
+	// WriteSCIPSymbolsFunc is an instance of a mock function object
+	// controlling the behavior of the method WriteSCIPSymbols.
+	WriteSCIPSymbolsFunc *SymbolWriterWriteSCIPSymbolsFunc
+}
+
+// NewMockSymbolWriter creates a new mock of the SymbolWriter interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockSymbolWriter() *MockSymbolWriter {
+	return &MockSymbolWriter{
+		FlushFunc: &SymbolWriterFlushFunc{
+			defaultHook: func(context.Context) (r0 uint32, r1 error) {
+				return
+			},
+		},
+		WriteSCIPSymbolsFunc: &SymbolWriterWriteSCIPSymbolsFunc{
+			defaultHook: func(context.Context, int, []types.InvertedRangeIndex) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockSymbolWriter creates a new mock of the SymbolWriter
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockSymbolWriter() *MockSymbolWriter {
+	return &MockSymbolWriter{
+		FlushFunc: &SymbolWriterFlushFunc{
+			defaultHook: func(context.Context) (uint32, error) {
+				panic("unexpected invocation of MockSymbolWriter.Flush")
+			},
+		},
+		WriteSCIPSymbolsFunc: &SymbolWriterWriteSCIPSymbolsFunc{
+			defaultHook: func(context.Context, int, []types.InvertedRangeIndex) error {
+				panic("unexpected invocation of MockSymbolWriter.WriteSCIPSymbols")
+			},
+		},
+	}
+}
+
+// NewMockSymbolWriterFrom creates a new mock of the MockSymbolWriter
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockSymbolWriterFrom(i lsifstore.SymbolWriter) *MockSymbolWriter {
+	return &MockSymbolWriter{
+		FlushFunc: &SymbolWriterFlushFunc{
+			defaultHook: i.Flush,
+		},
+		WriteSCIPSymbolsFunc: &SymbolWriterWriteSCIPSymbolsFunc{
+			defaultHook: i.WriteSCIPSymbols,
+		},
+	}
+}
+
+// SymbolWriterFlushFunc describes the behavior when the Flush method of the
+// parent MockSymbolWriter instance is invoked.
+type SymbolWriterFlushFunc struct {
+	defaultHook func(context.Context) (uint32, error)
+	hooks       []func(context.Context) (uint32, error)
+	history     []SymbolWriterFlushFuncCall
+	mutex       sync.Mutex
+}
+
+// Flush delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockSymbolWriter) Flush(v0 context.Context) (uint32, error) {
+	r0, r1 := m.FlushFunc.nextHook()(v0)
+	m.FlushFunc.appendCall(SymbolWriterFlushFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Flush method of the
+// parent MockSymbolWriter instance is invoked and the hook queue is empty.
+func (f *SymbolWriterFlushFunc) SetDefaultHook(hook func(context.Context) (uint32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Flush method of the parent MockSymbolWriter instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *SymbolWriterFlushFunc) PushHook(hook func(context.Context) (uint32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolWriterFlushFunc) SetDefaultReturn(r0 uint32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (uint32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolWriterFlushFunc) PushReturn(r0 uint32, r1 error) {
+	f.PushHook(func(context.Context) (uint32, error) {
+		return r0, r1
+	})
+}
+
+func (f *SymbolWriterFlushFunc) nextHook() func(context.Context) (uint32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolWriterFlushFunc) appendCall(r0 SymbolWriterFlushFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolWriterFlushFuncCall objects
+// describing the invocations of this function.
+func (f *SymbolWriterFlushFunc) History() []SymbolWriterFlushFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolWriterFlushFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolWriterFlushFuncCall is an object that describes an invocation of
+// method Flush on an instance of MockSymbolWriter.
+type SymbolWriterFlushFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 uint32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolWriterFlushFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolWriterFlushFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SymbolWriterWriteSCIPSymbolsFunc describes the behavior when the
+// WriteSCIPSymbols method of the parent MockSymbolWriter instance is
+// invoked.
+type SymbolWriterWriteSCIPSymbolsFunc struct {
+	defaultHook func(context.Context, int, []types.InvertedRangeIndex) error
+	hooks       []func(context.Context, int, []types.InvertedRangeIndex) error
+	history     []SymbolWriterWriteSCIPSymbolsFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteSCIPSymbols delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolWriter) WriteSCIPSymbols(v0 context.Context, v1 int, v2 []types.InvertedRangeIndex) error {
+	r0 := m.WriteSCIPSymbolsFunc.nextHook()(v0, v1, v2)
+	m.WriteSCIPSymbolsFunc.appendCall(SymbolWriterWriteSCIPSymbolsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WriteSCIPSymbols
+// method of the parent MockSymbolWriter instance is invoked and the hook
+// queue is empty.
+func (f *SymbolWriterWriteSCIPSymbolsFunc) SetDefaultHook(hook func(context.Context, int, []types.InvertedRangeIndex) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteSCIPSymbols method of the parent MockSymbolWriter instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SymbolWriterWriteSCIPSymbolsFunc) PushHook(hook func(context.Context, int, []types.InvertedRangeIndex) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolWriterWriteSCIPSymbolsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, []types.InvertedRangeIndex) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolWriterWriteSCIPSymbolsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, []types.InvertedRangeIndex) error {
+		return r0
+	})
+}
+
+func (f *SymbolWriterWriteSCIPSymbolsFunc) nextHook() func(context.Context, int, []types.InvertedRangeIndex) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolWriterWriteSCIPSymbolsFunc) appendCall(r0 SymbolWriterWriteSCIPSymbolsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolWriterWriteSCIPSymbolsFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolWriterWriteSCIPSymbolsFunc) History() []SymbolWriterWriteSCIPSymbolsFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolWriterWriteSCIPSymbolsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolWriterWriteSCIPSymbolsFuncCall is an object that describes an
+// invocation of method WriteSCIPSymbols on an instance of MockSymbolWriter.
+type SymbolWriterWriteSCIPSymbolsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []types.InvertedRangeIndex
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolWriterWriteSCIPSymbolsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolWriterWriteSCIPSymbolsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockWorkerStore is a mock implementation of the Store interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store)

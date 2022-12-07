@@ -41,7 +41,7 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	webhook, err := ws.CreateWebhook(ctx, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
@@ -76,12 +76,29 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 	}
 
 	ws := backend.NewWebhookService(r.db, keyring.Default())
-	newWebhook, err := ws.UpdateWebhook(ctx, whID, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	var name string
+	if args.Name != nil {
+		name = *args.Name
+	}
+	var codeHostKind string
+	if args.CodeHostKind != nil {
+		codeHostKind = *args.CodeHostKind
+	}
+	var codeHostURN string
+	if args.CodeHostURN != nil {
+		codeHostURN = *args.CodeHostURN
+	}
+	var secret string
+	if args.Secret != nil {
+		secret = *args.Secret
+	}
+
+	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, secret)
 	if err != nil {
 		return nil, errors.Wrap(err, "update webhook")
 	}
 
-	return &webhookResolver{hook: newWebhook, db: r.db}, nil
+	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
 func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.ListWebhookArgs) (graphqlbackend.WebhookConnectionResolver, error) {

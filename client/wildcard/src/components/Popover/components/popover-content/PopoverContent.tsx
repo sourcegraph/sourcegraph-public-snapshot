@@ -20,6 +20,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     autoFocus?: boolean
     focusLocked?: boolean
     returnTargetFocus?: boolean
+    focusContainerClassName?: string
 
     onOpenChange?: (event: PopoverOpenEvent) => void
 }
@@ -36,6 +37,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         returnTargetFocus = true,
         'aria-modal': ariaModal = true,
         role = 'dialog',
+        focusContainerClassName,
         onOpenChange: onOpenChangeProp,
         ...otherProps
     } = props
@@ -101,6 +103,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
                 focusLocked={focusLocked}
                 popoverElement={popover}
                 targetElement={target}
+                className={focusContainerClassName}
             >
                 {children}
             </FloatingPanelContent>
@@ -114,10 +117,11 @@ interface FloatingPanelContentProps {
     returnTargetFocus: boolean
     popoverElement: HTMLElement | null
     targetElement: HTMLElement | null
+    className?: string
 }
 
 const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = props => {
-    const { children, focusLocked, autoFocus, returnTargetFocus, popoverElement, targetElement } = props
+    const { children, focusLocked, autoFocus, returnTargetFocus, popoverElement, targetElement, className } = props
 
     const [focusLock, setFocusLock] = useState(false)
 
@@ -154,7 +158,7 @@ const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = p
     }
 
     return (
-        <FocusLock disabled={!focusLock} returnFocus={returnTargetFocus}>
+        <FocusLock disabled={!focusLock} returnFocus={returnTargetFocus} className={className}>
             {children}
         </FocusLock>
     )
