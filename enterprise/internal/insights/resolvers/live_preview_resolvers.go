@@ -36,7 +36,7 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	return r.SearchInsightPreview(ctx, previewArgs)
 }
 
-const livePreviewHumanErrMsg = "the live preview could not be generated because executing a search for query %q errored"
+const livePreviewHumanErrMsg = "the live preview could not be generated because executing a search for the query %q errored"
 
 func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	if args.Input.TimeScope.StepInterval == nil {
