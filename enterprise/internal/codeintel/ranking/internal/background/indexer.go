@@ -25,8 +25,9 @@ func NewRepositoryIndexer(
 
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"pagerank.repo-indexer", "builds page-rank indexes for repositories",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("pagerank.repo-indexer", "builds page-rank indexes for repositories", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return indexer.indexRepositories(ctx)
 		}),
 	)

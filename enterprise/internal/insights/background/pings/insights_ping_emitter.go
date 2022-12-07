@@ -25,8 +25,10 @@ func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights e
 		insightsDb: insights,
 	}
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights.pings_emitter", "emits enterprise telemetry pings", e.emit))
+	return goroutine.NewPeriodicGoroutine(
+		ctx, "insights.pings_emitter", "emits enterprise telemetry pings",
+		interval, goroutine.HandlerFunc(e.emit),
+	)
 }
 
 type InsightsPingEmitter struct {

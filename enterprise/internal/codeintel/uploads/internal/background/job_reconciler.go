@@ -31,8 +31,9 @@ func NewReconciler(
 
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.reconciler", "reconciles code-intel data drift",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.reconciler", "reconciles code-intel data drift", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleReconcile(ctx, batchSize)
 		}))
 }

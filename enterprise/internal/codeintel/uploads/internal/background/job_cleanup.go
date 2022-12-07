@@ -54,8 +54,9 @@ func NewJanitor(
 	}
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.upload-janitor", "cleans up various code intel upload and metadata",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.upload-janitor", "cleans up various code intel upload and metadata", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return j.handleCleanup(ctx, config)
 		}),
 	)

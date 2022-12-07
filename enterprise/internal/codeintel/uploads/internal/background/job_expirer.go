@@ -39,8 +39,9 @@ func NewUploadExpirer(
 	}
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.upload-expirer", "marks uploads as expired based on retention policies",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.upload-expirer", "marks uploads as expired based on retention policies", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return expirer.HandleExpiredUploadsBatch(ctx, NewExpirationMetrics(observationCtx), config)
 		}),
 	)

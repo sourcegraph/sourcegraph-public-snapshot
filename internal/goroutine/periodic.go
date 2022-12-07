@@ -20,7 +20,7 @@ import (
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	interval  time.Duration
-	handler   Handler
+	handler   unifiedHandler
 	operation *observation.Operation
 	clock     glock.Clock
 	ctx       context.Context    // root context passed to the handler
@@ -29,6 +29,11 @@ type PeriodicGoroutine struct {
 }
 
 var _ BackgroundRoutine = &PeriodicGoroutine{}
+
+type unifiedHandler interface {
+	Handler
+	ErrorHandler
+}
 
 // Handler represents the main behavior of a PeriodicGoroutine.
 type Handler interface {
@@ -50,18 +55,16 @@ type Finalizer interface {
 	OnShutdown()
 }
 
-// handlerFunc wraps a function so it can be used as a Handler.
-type handlerFunc func(ctx context.Context) error
+// HandlerFunc wraps a function so it can be used as a Handler.
+type HandlerFunc func(ctx context.Context) error
+
+func (f HandlerFunc) Handle(ctx context.Context) error {
+	return f(ctx)
+}
 
 type simpleHandler struct {
 	name, description string
-	handler           handlerFunc
-}
-
-// NewHandlerWithErrorMessage wraps the given function to be used as a handler, and
-// prints a canned failure message containing the given name.
-func NewHandlerWithErrorMessage(name, description string, handler handlerFunc) Handler {
-	return &simpleHandler{handler: handler, name: name}
+	handler           HandlerFunc
 }
 
 func (h *simpleHandler) Handle(ctx context.Context) error {
@@ -74,21 +77,34 @@ func (h *simpleHandler) HandleError(err error) {
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler) *PeriodicGoroutine {
-	return NewPeriodicGoroutineWithMetrics(ctx, interval, handler, nil)
+func NewPeriodicGoroutine(ctx context.Context, name, description string, interval time.Duration, handler Handler) *PeriodicGoroutine {
+	return NewPeriodicGoroutineWithMetrics(ctx, name, description, interval, handler, nil)
 }
 
 // NewPeriodicGoroutineWithMetrics creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutineWithMetrics(ctx context.Context, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, interval, handler, operation, glock.NewRealClock())
+func NewPeriodicGoroutineWithMetrics(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
+	return newPeriodicGoroutine(ctx, name, description, interval, handler, operation, glock.NewRealClock())
 }
 
-func newPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
+func newPeriodicGoroutine(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
 	ctx, cancel := context.WithCancel(ctx)
 
+	var h unifiedHandler
+	if uh, ok := handler.(unifiedHandler); ok {
+		h = uh
+	} else {
+		h = &simpleHandler{
+			name:        name,
+			description: description,
+			handler: func(ctx context.Context) error {
+				return handler.Handle(ctx)
+			},
+		}
+	}
+
 	return &PeriodicGoroutine{
-		handler:   handler,
+		handler:   h,
 		interval:  interval,
 		operation: operation,
 		clock:     clock,

@@ -27,8 +27,9 @@ func NewCommitGraphUpdater(
 
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.commitgraph-updater", "updates the visibility commit graph for dirty repos",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.commitgraph-updater", "", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return updater.UpdateAllDirtyCommitGraphs(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
 		}),
 	)

@@ -17,8 +17,9 @@ func NewCommittedAtBackfiller(store store.Store, gitserverClient GitserverClient
 	}
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.committed-at-backfiller", "backfills the committed_at column for code-intel uploads",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.committed-at-backfiller", "backfills the committed_at column for code-intel uploads", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return backfiller.BackfillCommittedAtBatch(ctx, batchSize)
 		}),
 	)

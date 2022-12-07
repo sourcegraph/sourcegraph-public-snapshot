@@ -42,8 +42,9 @@ func NewJanitor(
 	metrics := NewJanitorMetrics(observationCtx)
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"codeintel.autoindexing-janitor", "cleanup autoindexing jobs for unknown repos, commits etc",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("codeintel.autoindexing-janitor", "cleanup autoindexing jobs for unknown repos, commits etc ", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			job := janitorJob{
 				store:           store,
 				gitserverClient: gitserverClient,

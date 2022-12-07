@@ -16,8 +16,9 @@ func NewRankingGraphExporter(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"pagerank.graph-exporter", "exports new and purges old code-intel data as CSV",
 		interval,
-		goroutine.NewHandlerWithErrorMessage("pagerank.graph-exporter", "exports new and purges old code-intel data as CSV", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.SerializeRankingGraph(ctx, numRankingRoutines); err != nil {
 				return err
 			}
