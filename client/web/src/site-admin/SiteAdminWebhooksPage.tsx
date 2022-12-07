@@ -22,6 +22,7 @@ import { useWebhooksConnection } from './backend'
 import { WebhookNode } from './WebhookNode'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
+import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -51,6 +52,10 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
             />
 
             <Container>
+                <div className={styles.grid}>
+                    <PerformanceGauge count={10} countClassName={'text-danger'} label="error" />
+                    <PerformanceGauge count={10} countClassName={'text-warning'} label="no event" />
+                </div>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}

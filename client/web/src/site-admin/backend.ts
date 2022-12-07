@@ -1044,3 +1044,8 @@ export const CREATE_WEBHOOK_QUERY = gql`
         }
     }
 `
+
+export const useWebhooksHeaderStats = () =>
+    useQuery<>(WEBHOOK_HEADER_STATS, {
+
+    })
