@@ -267,9 +267,9 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     <SymbolKind
                         kind={symbol.kind}
                         className="mr-1"
-                        enableSymbolTags={
+                        symbolKindTags={
                             isSettingsValid(props.settingsCascade) &&
-                            props.settingsCascade.final.experimentalFeatures?.enableSymbolTags
+                            props.settingsCascade.final.experimentalFeatures?.symbolKindTags
                         }
                     />
                     <Code>

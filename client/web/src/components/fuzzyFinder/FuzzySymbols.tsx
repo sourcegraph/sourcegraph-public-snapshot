@@ -65,13 +65,13 @@ export class FuzzySymbols extends FuzzyQuery {
         }
 
         const repositoryText = `${repositoryName}/`
-        const enableSymbolTags =
-            isSettingsValid(this.settingsCascade) && this.settingsCascade.final.experimentalFeatures?.enableSymbolTags
+        const symbolKindTags =
+            isSettingsValid(this.settingsCascade) && this.settingsCascade.final.experimentalFeatures?.symbolKindTags
         return values.map(({ text, url, symbolKind }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
             icon: symbolKind ? (
-                <SymbolKind kind={symbolKind} className="mr-1" enableSymbolTags={enableSymbolTags} />
+                <SymbolKind kind={symbolKind} className="mr-1" symbolKindTags={symbolKindTags} />
             ) : undefined,
         }))
     }

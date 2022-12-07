@@ -458,8 +458,8 @@
           "type": "boolean",
           "default": false
         },
-        "enableSymbolTags": {
-          "description": "Use symbols tags instead of icons.",
+        "symbolKindTags": {
+          "description": "Show the initial letter of the symbol kind instead of icons.",
           "type": "boolean",
           "default": false
         }

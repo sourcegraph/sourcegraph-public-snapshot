@@ -72,9 +72,9 @@ function renderResultElementsForSymbolMatch(
                     <SymbolKind
                         kind={symbol.kind}
                         className="mr-1"
-                        enableSymbolTags={
+                        symbolKindTags={
                             isSettingsValid(settingsCascade) &&
-                            settingsCascade.final.experimentalFeatures?.enableSymbolTags
+                            settingsCascade.final.experimentalFeatures?.symbolKindTags
                         }
                     />
                     {symbol.name} {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}

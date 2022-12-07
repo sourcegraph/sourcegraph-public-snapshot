@@ -152,9 +152,9 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         <div className="mr-2 flex-shrink-0">
                             <SymbolKind
                                 kind={symbol.kind}
-                                enableSymbolTags={
+                                symbolKindTags={
                                     isSettingsValid(settingsCascade) &&
-                                    settingsCascade.final.experimentalFeatures?.enableSymbolTags
+                                    settingsCascade.final.experimentalFeatures?.symbolKindTags
                                 }
                             />
                         </div>

@@ -100,7 +100,7 @@ const SymbolSuggestions: React.FunctionComponent<
         onSymbolSelected: (symbol: SymbolBlockInput) => void
     }>
 > = ({ suggestions, onSymbolSelected }) => {
-    const enableSymbolTags = useExperimentalFeatures(features => features.enableSymbolTags)
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
     return (
         <div className={styles.symbolSuggestions}>
             {suggestions.map(suggestion => (
@@ -131,7 +131,7 @@ const SymbolSuggestions: React.FunctionComponent<
                             }
                             data-testid="symbol-suggestion-button"
                         >
-                            <SymbolKind kind={symbol.kind} className="mr-1" enableSymbolTags={enableSymbolTags} />
+                            <SymbolKind kind={symbol.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                             <Code>
                                 {symbol.name}{' '}
                                 {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}

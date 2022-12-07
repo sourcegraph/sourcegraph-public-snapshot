@@ -254,10 +254,10 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
     symbolURL,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [effectiveRevision])
-    const enableSymbolTags = useExperimentalFeatures(features => features.enableSymbolTags)
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
     return (
         <>
-            <SymbolKind kind={symbolKind} className={styles.symbolKind} enableSymbolTags={enableSymbolTags} />
+            <SymbolKind kind={symbolKind} className={styles.symbolKind} symbolKindTags={symbolKindTags} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}

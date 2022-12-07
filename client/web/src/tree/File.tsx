@@ -250,7 +250,7 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
         )
     }
 
-    const enableSymbolTags = useExperimentalFeatures(features => features.enableSymbolTags)
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
     if (loading) {
         return (
@@ -289,7 +289,7 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
                                 <SymbolKind
                                     kind={symbol.kind}
                                     className="mr-1 test-symbol-icon"
-                                    enableSymbolTags={enableSymbolTags}
+                                    symbolKindTags={symbolKindTags}
                                 />
                                 <span className={classNames('test-symbol-name')}>{symbol.name}</span>
                             </NavLink>
