@@ -4,10 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -21,7 +19,6 @@ import (
 )
 
 func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
-
 	searchStream := func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "searchStream")
 		defer tr.Finish()
@@ -45,7 +42,6 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 			return nil, errors.Wrap(err, "streaming.Compute")
 		}
 		tr.AddEvent("compute match context results", attribute.Int("count", streamResults.TotalCount), attribute.Bool("timeout", streamResults.DidTimeout), attribute.Int("repo_count", len(streamResults.RepoCounts)))
-
 		return streamResults, nil
 	}
 
@@ -68,37 +64,8 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 // checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking.
 // It returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
-// Note that repo ID is received untyped and being cast to api.RepoID
-// err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return false, err
-	}
-
-	// casting repoID
-	var repoID api.RepoID
-	switch untypedRepoID := untypedRepoID.(type) {
-	case api.RepoID:
-		repoID = untypedRepoID
-	case string:
-		var idErr error
-		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
-		if idErr != nil {
-			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
-			return true, err
-		}
-	default:
-		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
-			untypedRepoID, untypedRepoID))
-	}
-
-	// performing the check itself
-	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-	if checkErr != nil {
-		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
-		return true, err
-	}
-	return enabled, err
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, repoID api.RepoID) (bool, error) {
+	return authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 }
 
 func toRecording(record *SearchJob, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
@@ -143,8 +110,10 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 	var recordings []store.RecordSeriesPointArgs
 
 	for _, match := range streamResults.RepoCounts {
-		var subRepoEnabled bool
-		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
+		subRepoEnabled, subRepoErr := checkSubRepoPermissions(ctx, checker, api.RepoID(match.RepositoryID))
+		if subRepoErr != nil {
+			err = errors.Append(err, subRepoErr)
+		}
 		if subRepoEnabled {
 			continue
 		}
@@ -158,6 +127,9 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 			}
 			recordings = append(recordings, toRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
+	}
+	if err != nil {
+		return recordings, err
 	}
 	return recordings, nil
 }
@@ -185,13 +157,18 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 
 	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		var subRepoEnabled bool
 		repoID := api.RepoID(match.RepositoryID)
-		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, repoID, err)
+		subRepoEnabled, subRepoErr := checkSubRepoPermissions(ctx, checker, repoID)
+		if subRepoErr != nil {
+			err = errors.Append(err, subRepoErr)
+		}
 		if subRepoEnabled {
 			continue
 		}
 		recordings = append(recordings, toRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)...)
+	}
+	if err != nil {
+		return recordings, err
 	}
 	return recordings, nil
 }
