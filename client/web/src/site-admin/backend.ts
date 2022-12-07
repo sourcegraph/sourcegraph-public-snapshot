@@ -26,6 +26,8 @@ import {
     DeleteOrganizationVariables,
     DeleteUserResult,
     DeleteUserVariables,
+    DeleteWebhookResult,
+    DeleteWebhookVariables,
     ExternalServiceKind,
     FeatureFlagFields,
     FeatureFlagsResult,
@@ -995,6 +997,14 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
+export const DELETE_WEBHOOK = gql`
+    mutation DeleteWebhook($hookID: ID!) {
+        deleteWebhook(id: $hookID) {
+            alwaysNil
+        }
+    }
+`
+
 export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
@@ -1037,3 +1047,8 @@ export const CREATE_WEBHOOK_QUERY = gql`
         }
     }
 `
+
+export const deleteWebhook = (hookID: Scalars['ID']): Promise<void> =>
+    requestGraphQL<DeleteWebhookResult, DeleteWebhookVariables>(DELETE_WEBHOOK, { hookID })
+        .pipe(map(dataOrThrowErrors), mapTo(undefined))
+        .toPromise()
