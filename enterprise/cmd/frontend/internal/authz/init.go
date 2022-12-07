@@ -194,6 +194,6 @@ func Init(
 		}
 	}()
 
-	enterpriseServices.AuthzResolver = resolvers.NewResolver(db, timeutil.Now)
+	enterpriseServices.AuthzResolver = resolvers.NewResolver(observationCtx, db, timeutil.Now)
 	return nil
 }
