@@ -1,9 +1,10 @@
-import React, { PropsWithChildren, useCallback, useMemo } from 'react'
+import React, { PropsWithChildren, useCallback, useMemo, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     SearchContextProps,
     ListSearchContextsResult,
@@ -15,11 +16,13 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { AuthenticatedUser } from '../../auth'
 import {
+    Connection,
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '../../components/FilteredConnection'
 
+import { useDefaultContext } from './hooks/useDefaultContext'
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 
 import styles from './SearchContextsList.module.scss'
@@ -155,6 +158,34 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     const history = useHistory()
     const location = useLocation()
 
+    const [contextsOrError, setContextsOrError] = useState<
+        Connection<SearchContextMinimalFields> | ErrorLike | undefined
+    >()
+    const onUpdateContexts = useCallback((contexts: Connection<SearchContextMinimalFields> | ErrorLike | undefined) => {
+        setContextsOrError(contexts)
+    }, [])
+
+    const initialDefaultContext = useMemo(() => {
+        if (!contextsOrError || isErrorLike(contextsOrError)) {
+            return undefined
+        }
+        return contextsOrError.nodes.find(context => context.viewerHasAsDefault)
+    }, [contextsOrError])
+
+    const { defaultContext, setAsDefault } = useDefaultContext(initialDefaultContext?.id)
+    const setAsDefaultWithErrorHandling = useCallback(
+        (contextId: string, userId: string | undefined) => {
+            // Clear previous error
+            setAlert('')
+            return setAsDefault(contextId, userId).catch(error => {
+                if (isErrorLike(error)) {
+                    setAlert(error.message)
+                }
+            })
+        },
+        [setAlert, setAsDefault]
+    )
+
     return (
         <FilteredConnection<
             SearchContextMinimalFields,
@@ -176,6 +207,8 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             nodeComponentProps={{
                 authenticatedUser,
                 setAlert,
+                defaultContext,
+                setAsDefault: setAsDefaultWithErrorHandling,
             }}
             noun="search context"
             pluralNoun="search contexts"
@@ -184,6 +217,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             inputPlaceholder="Find a context"
             inputAriaLabel="Find a context"
             formClassName={styles.filtersForm}
+            onUpdate={onUpdateContexts}
         />
     )
 }
