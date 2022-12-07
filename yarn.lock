@@ -28558,7 +28558,7 @@ pvutils@latest:
     vsce: ^2.7.0
     webext-domain-permission-toggle: ^1.0.1
     webextension-polyfill: ^0.6.0
-    webpack: ^5.45.1
+    webpack: ^5.75.0
     webpack-bundle-analyzer: ^4.4.2
     webpack-cli: ^5.0.1
     webpack-dev-server: ^4.11.1
