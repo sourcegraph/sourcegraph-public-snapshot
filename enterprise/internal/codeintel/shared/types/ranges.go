@@ -26,6 +26,18 @@ func EncodeRanges(values []int32) (buf []byte, _ error) {
 		return nil, errors.Newf("unexpected range length - have %d but expected a multiple of 4", n)
 	}
 
+	// Partition the given range quads into the `shuffled` slice. We de-interlace each component of the
+	// ranges and "column-orient" each component (all start lines packed together, etc) and delta-encode
+	// each of the quadrants.
+	//
+	// - Q1 stores delta-encoded start lines, which produces small integers.
+	// - Q2 stores delta-encoded start characters, which produces runs of zeroes if occurrences happen at
+	//   the same column. This is pretty common in generated code, or for common things that occur in the
+	//   language syntax (receiver of a Go method, etc).
+	// - Q3 stores delta-encoded start/end line distances, which should result in a long run of zeros as
+	//   the start/end line/character distances should not generally change between occurrences.
+	// - Q4 stores delta-encoded start/end character distances, which should result in a long run of zeros.
+
 	var (
 		q1Offset = n / 4 * 0
 		q2Offset = n / 4 * 1
@@ -34,26 +46,47 @@ func EncodeRanges(values []int32) (buf []byte, _ error) {
 		shuffled = make([]int32, n)
 	)
 
-	// Partition the given range quads into a the `shuffled` slice. We de-interlace each component of
-	// the ranges and "column-orient" each component (all start lines packed together, etc).
-
 	for rangeIndex, rangeOffset := 0, 0; rangeOffset < n; rangeIndex, rangeOffset = rangeIndex+1, rangeOffset+4 {
 		var (
-			startLine      = values[rangeOffset+0]
-			startCharacter = values[rangeOffset+1]
-			endLine        = values[rangeOffset+2]
-			endCharacter   = values[rangeOffset+3]
+			// extract current values
+			startLine         = values[rangeOffset+0]
+			startCharacter    = values[rangeOffset+1]
+			lineDistance      = values[rangeOffset+2] - values[rangeOffset+0]
+			characterDistance = values[rangeOffset+3] - values[rangeOffset+1]
 		)
 
-		deltaEncodedStartLine := startLine
+		var (
+			// extract previous range values
+			previousStartLine         int32
+			previousStartCharacter    int32
+			previousLineDistance      int32
+			previousCharacterDistance int32
+		)
 		if rangeIndex != 0 {
-			deltaEncodedStartLine = startLine - values[(rangeIndex-1)*4]
+			previousIndex := (rangeIndex - 1) * 4
+			previousStartLine = values[previousIndex+0]
+			previousStartCharacter = values[previousIndex+1]
+			previousLineDistance = values[previousIndex+2] - values[previousIndex+0]
+			previousCharacterDistance = values[previousIndex+3] - values[previousIndex+1]
 		}
 
-		shuffled[q1Offset+rangeIndex] = deltaEncodedStartLine         // Q1: delta-encoded start lines
-		shuffled[q2Offset+rangeIndex] = endLine - startLine           // Q2: start line/end line deltas
-		shuffled[q3Offset+rangeIndex] = startCharacter                // Q3: start character
-		shuffled[q4Offset+rangeIndex] = endCharacter - startCharacter // Q4: start character/end character deltas
+		// delta-encode and store into target location in array
+		shuffled[q1Offset+rangeIndex] = startLine - previousStartLine
+		shuffled[q2Offset+rangeIndex] = startCharacter - previousStartCharacter
+		shuffled[q3Offset+rangeIndex] = lineDistance - previousLineDistance
+		shuffled[q4Offset+rangeIndex] = characterDistance - previousCharacterDistance
+	}
+
+	// As Q3 and Q4 will likely have the forms:
+	//
+	// - `[q3 initial value], 0, 0, 0, ....`
+	// - `[q4 initial value], 0, 0, 0, ....`
+	//
+	// We can reverse the values in Q4 so that the runs of zeros are contiguous. This will increase
+	// the length of the run of zeros that can be run-length encoded.
+
+	for i, j := q4Offset, n-1; i < j; i, j = i+1, j-1 {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
 
 	// Convert slice of ints into a packed byte slice. This will also run-length encode runs of zeros
@@ -89,8 +122,7 @@ func DecodeFlattenedRanges(encoded []byte) ([]int32, error) {
 	return decodeRangesFromReader(bytes.NewReader(encoded))
 }
 
-// decodeRangesFromReader decodes the output of `EncodeRanges`. The given reader is assumed to be
-// non-empty.
+// decodeRangesFromReader decodes the output of `EncodeRanges`.
 func decodeRangesFromReader(r io.ByteReader) ([]int32, error) {
 	values, err := readVarints(r)
 	if err != nil {
@@ -103,31 +135,45 @@ func decodeRangesFromReader(r io.ByteReader) ([]int32, error) {
 	}
 
 	var (
-		q1Offset        = n / 4 * 0
-		q2Offset        = n / 4 * 1
-		q3Offset        = n / 4 * 2
-		q4Offset        = n / 4 * 3
-		startLine int32 = 0
-		combined        = make([]int32, 0, n)
+		q1Offset = n / 4 * 0
+		q2Offset = n / 4 * 1
+		q3Offset = n / 4 * 2
+		q4Offset = n / 4 * 3
+		combined = make([]int32, 0, n)
+	)
+
+	// Un-reverse Q4
+	for i, j := q4Offset, n-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	var (
+		// Keep track of previous values for delta-decoding
+		startLine         int32 = 0
+		startCharacter    int32 = 0
+		lineDistance      int32 = 0
+		characterDistance int32 = 0
 	)
 
 	for i, j := 0, 0; j < n; i, j = i+1, j+4 {
 		var (
-			deltaEncodedStartLine = values[q1Offset+i]
-			lineDelta             = values[q2Offset+i]
-			startCharacter        = values[q3Offset+i]
-			characterDelta        = values[q4Offset+i]
+			deltaEncodedStartLine         = values[q1Offset+i]
+			deltaEncodedStartCharacter    = values[q2Offset+i]
+			deltaEncodedLineDistance      = values[q3Offset+i]
+			deltaEncodedCharacterDistance = values[q4Offset+i]
 		)
 
-		// delta-decode start line
 		startLine += deltaEncodedStartLine
+		startCharacter += deltaEncodedStartCharacter
+		lineDistance += deltaEncodedLineDistance
+		characterDistance += deltaEncodedCharacterDistance
 
 		combined = append(
 			combined,
-			startLine,                     // start line
-			startCharacter,                // start character
-			startLine+lineDelta,           // end line
-			startCharacter+characterDelta, // end character
+			startLine,                        // start line
+			startCharacter,                   // start character
+			startLine+lineDistance,           // end line
+			startCharacter+characterDistance, // end character
 		)
 	}
 

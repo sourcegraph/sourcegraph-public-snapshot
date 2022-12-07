@@ -41,8 +41,10 @@ func (j *janitor) Routines(startupCtx context.Context, observationCtx *observati
 		// hour aren't supported, and this is why: there's no point running this
 		// operation more frequently than that, given it's purely a debugging
 		// tool.
-		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
-			store: db.WebhookLogs(keyring.Default().WebhookLogKey),
-		}),
+		goroutine.NewPeriodicGoroutine(context.Background(), "batchchanges.webhook-log-janitor", "cleans up stale webhook logs",
+			1*time.Hour, &handler{
+				store: db.WebhookLogs(keyring.Default().WebhookLogKey),
+			},
+		),
 	}, nil
 }

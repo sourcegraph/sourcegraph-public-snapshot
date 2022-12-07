@@ -620,14 +620,15 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 
-	metricsSuccessPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
-	metricsPermsFound.WithLabelValues("user", string(p.UserID)).Set(float64(len(p.IDs)))
+	userLabel := strconv.Itoa(int(p.UserID))
+	metricsSuccessPermsSyncs.WithLabelValues("user", userLabel).Inc()
+	metricsPermsFound.WithLabelValues("user", userLabel).Set(float64(len(p.IDs)))
 
 	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
 	} else {
-		metricsFirstPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+		metricsFirstPermsSyncs.WithLabelValues("user", userLabel).Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
 	}
 
 	return providerStates, nil
