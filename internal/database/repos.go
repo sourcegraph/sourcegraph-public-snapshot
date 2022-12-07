@@ -947,11 +947,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 			sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"),
 		}
 		// Query looks like an ID
-		if id, err := strconv.Atoi(opt.Query); err == nil {
-			items = append(items, sqlf.Sprintf("id = %d", id))
-		}
-		// Query looks like a GraphQL ID
-		if id, ok := relayUnmarshalID(opt.Query); ok {
+		if id, ok := maybeQueryIsID(opt.Query); ok {
 			items = append(items, sqlf.Sprintf("id = %d", id))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
