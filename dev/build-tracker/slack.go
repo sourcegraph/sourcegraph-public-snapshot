@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 

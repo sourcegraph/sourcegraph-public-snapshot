@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	gogithub "github.com/google/go-github/v41/github"
+	gogithub "github.com/google/go-github/v48/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

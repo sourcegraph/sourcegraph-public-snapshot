@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"

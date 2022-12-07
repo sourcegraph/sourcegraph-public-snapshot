@@ -10,7 +10,7 @@ import (
 	"context"
 	"sync"
 
-	github "github.com/google/go-github/v41/github"
+	github "github.com/google/go-github/v48/github"
 )
 
 // MockGithubClient is a mock implementation of the githubClient interface

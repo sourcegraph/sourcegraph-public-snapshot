@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"strconv"
 
-	gogithub "github.com/google/go-github/v41/github"
+	gogithub "github.com/google/go-github/v48/github"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 

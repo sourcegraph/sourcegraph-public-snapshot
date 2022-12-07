@@ -383,6 +383,7 @@ github.com/bshuster-repo/logrus-logstash-hook v1.0.0/go.mod h1:zsTqEiSzDgAa/8GZR
 github.com/bufbuild/buf v1.4.0 h1:GqE3a8CMmcFvWPzuY3Mahf9Kf3S9XgZ/ORpfYFzO+90=
 github.com/bufbuild/buf v1.4.0/go.mod h1:mwHG7klTHnX+rM/ym8LXGl7vYpVmnwT96xWoRB4H5QI=
 github.com/buger/jsonparser v0.0.0-20180808090653-f4dd9f5a6b44/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
+github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/bugsnag/bugsnag-go v0.0.0-20141110184014-b1d153021fcd/go.mod h1:2oa8nejYd4cQ/b0hMIopN0lCRxU0bueqREvZLWFrtK8=
 github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b/go.mod h1:obH5gd0BsqsP2LwDJ9aOkm/6J86V6lyAXCoQWGw3K50=
 github.com/bugsnag/panicwrap v0.0.0-20151223152923-e2c28503fcd0/go.mod h1:D/8v3kj0zr8ZAKg1AQ6crr+5VwKN5eIywRkfhyM/+dE=
@@ -804,6 +805,7 @@ github.com/go-ini/ini v1.25.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3I
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/log v0.1.0/go.mod h1:zbhenjAZHb184qTLMA9ZjW7ThYL0H2mk7Q6pNt4vbaY=
+github.com/go-kit/log v0.2.0/go.mod h1:NwTd00d/i8cPZ3xOwwiv2PO5MOcx78fFErGNcVmBjv0=
 github.com/go-kit/log v0.2.1 h1:MRVx0/zhvdseW+Gza6N9rVzU/IVzaeE1SFI4raAhmBU=
 github.com/go-kit/log v0.2.1/go.mod h1:NwTd00d/i8cPZ3xOwwiv2PO5MOcx78fFErGNcVmBjv0=
 github.com/go-ldap/ldap v3.0.2+incompatible/go.mod h1:qfd9rJvER9Q0/D/Sqn1DfHRoBp40uXYvFoEVrNEPqRc=
@@ -1154,6 +1156,8 @@ github.com/google/go-github/v43 v43.0.0 h1:y+GL7LIsAIF2NZlJ46ZoC/D1W1ivZasT0lnWH
 github.com/google/go-github/v43 v43.0.0/go.mod h1:ZkTvvmCXBvsfPpTHXnH/d2hP9Y0cTbvN9kr5xqyXOIc=
 github.com/google/go-github/v47 v47.1.0 h1:Cacm/WxQBOa9lF0FT0EMjZ2BWMetQ1TQfyurn4yF1z8=
 github.com/google/go-github/v47 v47.1.0/go.mod h1:VPZBXNbFSJGjyjFRUKo9vZGawTajnWzC/YjGw/oFKi0=
+github.com/google/go-github/v48 v48.1.0 h1:nqPqq+0oRY2AMR/SRskGrrP4nnewPB7e/m2+kbT/UvM=
+github.com/google/go-github/v48 v48.1.0/go.mod h1:dDlehKBDo850ZPvCTK0sEqTCVWcrGl2LcDiajkYi89Y=
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
 github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
@@ -1676,6 +1680,8 @@ github.com/microcosm-cc/bluemonday v1.0.21/go.mod h1:ytNkv4RrDrLJ2pqlsSI46O6IVXm
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/miekg/dns v1.1.26/go.mod h1:bPDLeHnStXmXAq1m/Ch/hvfNHr14JKNPMBo3VZKjuso=
 github.com/miekg/pkcs11 v1.0.3/go.mod h1:XsNlhZGX73bx86s2hdc/FuaLm2CPZJemRLMA+WTFxgs=
+github.com/migueleliasweb/go-github-mock v0.0.13 h1:pV4yG4XlL/fEPE1Er6MzErAYFyiRSBYw1oo2OojTiCQ=
+github.com/migueleliasweb/go-github-mock v0.0.13/go.mod h1:mD5w+9J3oBBMLr7uD6owEYlYBAL8tZd+BA7iGjI4EU8=
 github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible/go.mod h1:8AuVvqP/mXw1px98n46wfvcGfQ4ci2FwoAjKYxuo3Z4=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db h1:62I3jR2EmQ4l5rM/4FEfDWcRD+abF5XlKShorW5LRoQ=

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/honeycombio/libhoney-go"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"

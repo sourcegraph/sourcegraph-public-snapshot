@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	gh "github.com/google/go-github/v41/github"
+	gh "github.com/google/go-github/v48/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -455,29 +455,32 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		affiliation = github.AffiliationDirect
 	}
 
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
-
 	// Sync collaborators
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var users []*github.Collaborator
-		users, hasNextPage, err = client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
+	listOpts := &gh.ListCollaboratorsOptions{
+		Affiliation: string(affiliation),
+		ListOptions: gh.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		},
+	}
+	for {
+		users, resp, err := cli.Repositories.ListCollaborators(ctx, owner, name, listOpts)
 		if err != nil {
 			return userIDs, errors.Wrap(err, "list users for repo")
 		}
 
 		for _, u := range users {
-			userID := strconv.FormatInt(u.DatabaseID, 10)
+			userID := strconv.FormatInt(u.GetID(), 10)
 			if p.InstallationID != nil {
 				userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
 			}
 
 			addUserToRepoPerms(extsvc.AccountID(userID))
 		}
+		if resp.NextPage == 0 {
+			break
+		}
+		listOpts.Page = resp.NextPage
 	}
 
 	// If groups caching is disabled, we are done.
@@ -516,23 +519,39 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		// Perform full sync
-		hasNextPage := true
-		for page := 1; hasNextPage; page++ {
-			var members []*github.Collaborator
+		listOpts := gh.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		}
+		for {
+			var members []*gh.User
+			var resp *gh.Response
+			var err error
 			if group.Team == "" {
-				members, hasNextPage, err = client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+				memberListOpts := &gh.ListMembersOptions{
+					Role:        "admin",
+					ListOptions: listOpts,
+				}
+				members, resp, err = cli.Organizations.ListMembers(ctx, owner, memberListOpts)
 			} else {
-				members, hasNextPage, err = client.ListTeamMembers(ctx, owner, group.Team, page)
+				memberListOpts := &gh.TeamListTeamMembersOptions{
+					ListOptions: listOpts,
+				}
+				members, resp, err = cli.Teams.ListTeamMembersBySlug(ctx, owner, group.Team, memberListOpts)
 			}
 			if err != nil {
 				return userIDs, errors.Wrap(err, "list users for group")
 			}
 			for _, u := range members {
 				// Add results to both group (for persistence) and permissions for user
-				accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
+				accountID := extsvc.AccountID(strconv.FormatInt(u.GetID(), 10))
 				group.Users = append(group.Users, accountID)
 				addUserToRepoPerms(accountID)
 			}
+			if resp.NextPage == 0 {
+				break
+			}
+			listOpts.Page = resp.NextPage
 		}
 
 		// Persist group

@@ -3,7 +3,7 @@ package github
 import (
 	"context"
 
-	gh "github.com/google/go-github/v41/github"
+	gh "github.com/google/go-github/v48/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )

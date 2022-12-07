@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v48/github"
 	"github.com/slack-go/slack"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
