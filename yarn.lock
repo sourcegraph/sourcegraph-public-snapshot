@@ -5148,9 +5148,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli@npm:^1.74.4":
-  version: 1.74.4
-  resolution: "@sentry/cli@npm:1.74.4"
+"@sentry/cli@npm:^1.74.4, @sentry/cli@npm:^1.74.6":
+  version: 1.74.6
+  resolution: "@sentry/cli@npm:1.74.6"
   dependencies:
     https-proxy-agent: ^5.0.0
     mkdirp: ^0.5.5
@@ -5161,7 +5161,7 @@ __metadata:
     which: ^2.0.2
   bin:
     sentry-cli: bin/sentry-cli
-  checksum: 6fe63095edbb0f8c250ad813e24fddd65b3266763fbf628cfd865d2f68f7248ec38e600f220d6530a54ebf1a10cc51e1b5fbf203e28fab223d80a5afd4d5dfb2
+  checksum: 3d1ef94d5505ed23858503228b59ae1ed401774e27466d7a47eba47be3855e9706f12292d4a0a6135303a5916791620e0d3a184d2fda9e28f2d26ccd347b36fb
   languageName: node
   linkType: hard
 
@@ -5205,12 +5205,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/webpack-plugin@npm:^1.18.9":
-  version: 1.18.9
-  resolution: "@sentry/webpack-plugin@npm:1.18.9"
+"@sentry/webpack-plugin@npm:^1.20.0":
+  version: 1.20.0
+  resolution: "@sentry/webpack-plugin@npm:1.20.0"
   dependencies:
-    "@sentry/cli": ^1.74.4
-  checksum: ff6edfebddd45a9d77686fe118661428ad309207b0ea6d579e38ea7edd0c390e7c84deb9e755bb0b5b118d628890e5be2146ace8c8ae72444d9d054c9c032a6d
+    "@sentry/cli": ^1.74.6
+    webpack-sources: ^2.0.0 || ^3.0.0
+  checksum: d582026c3686f287ddc23de4e64c6f03afc2a73a84ec5a8fd3eded56a45683094bf132f4c624a35386fff872eb518771109d5c0b91a2cf79da0aff035c5bb05b
   languageName: node
   linkType: hard
 
@@ -28672,7 +28673,7 @@ pvutils@latest:
     "@react-aria/live-announcer": ^3.1.0
     "@sentry/browser": ^7.8.1
     "@sentry/cli": ^1.74.4
-    "@sentry/webpack-plugin": ^1.18.9
+    "@sentry/webpack-plugin": ^1.20.0
     "@slack/web-api": ^5.15.0
     "@sourcegraph/eslint-config": 0.32.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
@@ -33439,6 +33440,13 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"webpack-sources@npm:^2.0.0 || ^3.0.0, webpack-sources@npm:^3.2.3":
+  version: 3.2.3
+  resolution: "webpack-sources@npm:3.2.3"
+  checksum: 989e401b9fe3536529e2a99dac8c1bdc50e3a0a2c8669cbafad31271eadd994bc9405f88a3039cd2e29db5e6d9d0926ceb7a1a4e7409ece021fe79c37d9c4607
+  languageName: node
+  linkType: hard
+
 "webpack-sources@npm:^2.2.0":
   version: 2.3.0
   resolution: "webpack-sources@npm:2.3.0"
@@ -33446,13 +33454,6 @@ pvutils@latest:
     source-list-map: ^2.0.1
     source-map: ^0.6.1
   checksum: f0b3d13d3f350712c828c7187573d43d15fc1a96a11e81f69e3f10220d611dab95b529aca79ded9690a94040491bd7e4d84717f4467762211762cd01795a7b71
-  languageName: node
-  linkType: hard
-
-"webpack-sources@npm:^3.2.3":
-  version: 3.2.3
-  resolution: "webpack-sources@npm:3.2.3"
-  checksum: 989e401b9fe3536529e2a99dac8c1bdc50e3a0a2c8669cbafad31271eadd994bc9405f88a3039cd2e29db5e6d9d0926ceb7a1a4e7409ece021fe79c37d9c4607
   languageName: node
   linkType: hard
 
