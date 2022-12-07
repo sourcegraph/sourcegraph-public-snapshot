@@ -6,14 +6,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
-	m := New("http://test")
+	logger := logtest.Scoped(t)
+	m := New(logger, "http://test")
 	expectEndpoints(t, m, "http://test")
 
-	m = New("http://test-1 http://test-2")
+	m = New(logger, "http://test-1 http://test-2")
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 

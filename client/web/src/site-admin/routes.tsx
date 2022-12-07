@@ -105,6 +105,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),
     },
     {
+        path: '/webhooks/create',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookCreatePage'), 'SiteAdminWebhookCreatePage'),
+    },
+    {
         path: '/webhooks/:id',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage'),

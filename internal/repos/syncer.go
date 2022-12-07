@@ -140,8 +140,6 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 const (
 	ownerUndefined = ""
 	ownerSite      = "site"
-	ownerUser      = "user"
-	ownerOrg       = "org"
 )
 
 type ErrUnauthorized struct{}

@@ -134,7 +134,7 @@
           }
         },
         "showSearchContextManagement": {
-          "description": "Enables search context management.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {

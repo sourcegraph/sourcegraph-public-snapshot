@@ -1,6 +1,7 @@
 import { subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
 
+import { AuthenticatedUser } from '../../auth'
 import { Maybe, Scalars } from '../../graphql-operations'
 
 interface SearchContextFields {
@@ -33,15 +34,7 @@ interface ListSearchContexts {
     pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
 }
 
-export function mockFetchSearchContexts({
-    first,
-    query,
-    after,
-}: {
-    first: number
-    query?: string
-    after?: string
-}): Observable<ListSearchContexts> {
+export function mockFetchSearchContexts(): Observable<ListSearchContexts> {
     const result: ListSearchContexts = {
         nodes: [
             {
@@ -60,12 +53,48 @@ export function mockFetchSearchContexts({
                 query: '',
                 updatedAt: subDays(new Date(), 1).toISOString(),
             },
+            {
+                __typename: 'SearchContext',
+                id: '1',
+                spec: 'test',
+                name: 'test',
+                namespace: null,
+                public: true,
+                autoDefined: false,
+                viewerCanManage: true,
+                viewerHasAsDefault: false,
+                viewerHasStarred: true,
+                description: 'Test context',
+                repositories: [],
+                query: '',
+                updatedAt: subDays(new Date(), 1).toISOString(),
+            },
+            {
+                __typename: 'SearchContext',
+                id: '2',
+                spec: '@user/usertest',
+                name: 'usertest',
+                namespace: {
+                    __typename: 'User',
+                    id: '1',
+                    namespaceName: 'user',
+                },
+                public: false,
+                autoDefined: false,
+                viewerCanManage: true,
+                viewerHasAsDefault: true,
+                viewerHasStarred: false,
+                description: '',
+                repositories: [],
+                query: '',
+                updatedAt: subDays(new Date(), 2).toISOString(),
+            },
         ],
         pageInfo: {
             endCursor: null,
             hasNextPage: false,
         },
-        totalCount: 0,
+        totalCount: 3,
     }
     return of(result)
 }
@@ -73,3 +102,13 @@ export function mockFetchSearchContexts({
 export function mockGetUserSearchContextNamespaces(): Maybe<Scalars['ID']>[] {
     return []
 }
+
+export const mockAuthenticatedUser = ({
+    __typename: 'User',
+    id: '1',
+    username: 'user',
+    organizations: {
+        __typename: 'OrgConnection',
+        nodes: [],
+    },
+} as unknown) as AuthenticatedUser

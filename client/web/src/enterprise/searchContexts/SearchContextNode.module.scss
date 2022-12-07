@@ -5,16 +5,39 @@
         padding: 0.25rem 0;
         border-bottom: 1px solid var(--border-color-2);
 
-        .spec {
+        &:not(:last-of-type) {
+            padding-right: 0.5rem;
+        }
+
+        &.name.spec {
             font-weight: 500;
+        }
+
+        &.description {
+            // Table cell content is not truncated with just the normal CSS.
+            // We need this width hack to get the description to truncate with ellipsis,
+            // while keeping the automatic table layout.
+            // Tested on Chrome, Firefox, and Safari.
+            // See https://stackoverflow.com/a/61382039/176059
+            max-width: 0;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &.contents,
+        &.last-updated,
+        &.name {
+            white-space: nowrap;
         }
     }
 
     @media (--sm-breakpoint-down) {
         margin-left: -1rem;
         margin-right: -1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
         border-bottom: 1px solid var(--border-color);
 
         padding-bottom: 0.75rem;
@@ -33,16 +56,23 @@
             padding: 0;
             border-bottom: none;
 
+            &:not(:last-of-type) {
+                padding-right: 0;
+            }
+
             &.star {
                 grid-area: star;
+                margin-right: 0.5rem;
             }
 
             &.name {
                 grid-area: name;
+                margin-top: 0.125rem;
             }
 
             &.description {
                 grid-area: description;
+                max-width: initial;
             }
 
             &.last-updated {
@@ -55,6 +85,8 @@
 
             &.tags {
                 grid-area: tags;
+                margin-top: 0.25rem;
+                margin-bottom: 0.25rem;
             }
 
             &.actions {
@@ -65,6 +97,7 @@
 }
 
 .button {
+    padding: 0.25rem;
     color: var(--icon-color);
     font-size: 1rem;
 

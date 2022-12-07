@@ -663,7 +663,7 @@ func TestUpdateWebhook(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return nil, sgerrors.New("oops")
 	})
 	whUUID := uuid.New()
@@ -732,7 +732,7 @@ func TestUpdateWebhook(t *testing.T) {
 	})
 
 	// database layer behaves
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return webhook, nil
 	})
 

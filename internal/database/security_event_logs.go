@@ -128,6 +128,17 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			}
 		}
 
+		// If actor is internal, we may violate the security_event_logs_check_has_user
+		// constraint, since internal actors do not have either an anonymous UID or a
+		// user ID - at many callsites, we already set anonymous UID as "internal" in
+		// these scenarios, so as a workaround, we assign the event the anonymous UID
+		// "internal".
+		noUser := event.UserID == 0 && event.AnonymousUserID == ""
+		if actor.IsInternal() && noUser {
+			event.AnonymousUserID = "internal"
+		}
+
+		// Set values corresponding to this event.
 		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
 			event.Name,
 			event.URL,

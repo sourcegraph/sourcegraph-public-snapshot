@@ -34,6 +34,7 @@
         padding-bottom: 0.75rem;
         color: var(--text-muted);
         font-weight: 500;
+        white-space: nowrap;
     }
 
     @media (--sm-breakpoint-down) {

@@ -2,16 +2,116 @@ package httpcli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestRedisLoggerMiddleware(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	normalReq, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
+	complexReq, _ := http.NewRequest("PATCH", "http://test.aa?a=2", strings.NewReader("graph"))
+	complexReq.Header.Set("Cache-Control", "no-cache")
+
+	for _, tc := range []struct {
+		req  *http.Request
+		name string
+		cli  Doer
+		err  string
+		want *types.OutboundRequestLogItem
+	}{
+		{
+			req:  normalReq,
+			name: "normal response",
+			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value"}}, http.StatusOK, []byte(`{"responseBody":true}`), nil),
+			err:  "<nil>",
+			want: &types.OutboundRequestLogItem{
+				Method:          normalReq.Method,
+				URL:             normalReq.URL.String(),
+				RequestHeaders:  map[string][]string{},
+				RequestBody:     "horse",
+				StatusCode:      http.StatusOK,
+				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value"}},
+			},
+		},
+		{
+			req:  complexReq,
+			name: "complex request",
+			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusForbidden, []byte(`{"permission":false}`), nil),
+			err:  "<nil>",
+			want: &types.OutboundRequestLogItem{
+				Method:          complexReq.Method,
+				URL:             complexReq.URL.String(),
+				RequestHeaders:  map[string][]string{"Cache-Control": {"no-cache"}},
+				RequestBody:     "graph",
+				StatusCode:      http.StatusForbidden,
+				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value1", "value2"}},
+			},
+		},
+		{
+			req:  normalReq,
+			name: "no response",
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				return nil, errors.New("oh no")
+			}),
+			err: "oh no",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Enable the feature
+			old := OutboundRequestLogLimit()
+			SetOutboundRequestLogLimit(1)
+			t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
+
+			// Build client with middleware
+			cli := redisLoggerMiddleware()(tc.cli)
+
+			// Send request
+			_, err := cli.Do(tc.req)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+
+			// Check logged request
+			logged, err := GetOutboundRequestLogItems(context.Background(), "")
+			if err != nil {
+				t.Fatalf("couldnt get logged requests: %s", err)
+			}
+			if len(logged) != 1 {
+				t.Fatalf("request was not logged")
+			}
+
+			if tc.want == nil {
+				return
+			}
+
+			if diff := cmp.Diff(tc.want, logged[0], cmpopts.IgnoreFields(
+				types.OutboundRequestLogItem{},
+				"ID",
+				"StartedAt",
+				"Duration",
+				"CreationStackFrame",
+				"CallStackFrame",
+			)); diff != "" {
+				t.Fatalf("wrong request logged: %s", diff)
+			}
+		})
+	}
+
+}
 
 func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	rcache.SetupForTest(t)
@@ -122,7 +222,7 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 			function: "main.f",
 			file:     "/Users/x/file.go",
 			line:     11,
-			want:     "main/file.go:11 (Function: f)",
+			want:     "file.go:11 (Function: f)",
 		},
 	}
 
