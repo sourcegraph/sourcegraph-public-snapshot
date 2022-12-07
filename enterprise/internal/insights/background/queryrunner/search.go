@@ -62,12 +62,6 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 }
 
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking.
-// It returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, repoID api.RepoID) (bool, error) {
-	return authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-}
-
 func toRecording(record *SearchJob, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
@@ -110,7 +104,7 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 	var recordings []store.RecordSeriesPointArgs
 
 	for _, match := range streamResults.RepoCounts {
-		subRepoEnabled, subRepoErr := checkSubRepoPermissions(ctx, checker, api.RepoID(match.RepositoryID))
+		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, api.RepoID(match.RepositoryID))
 		if subRepoErr != nil {
 			err = errors.Append(err, subRepoErr)
 		}
@@ -158,7 +152,7 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		repoID := api.RepoID(match.RepositoryID)
-		subRepoEnabled, subRepoErr := checkSubRepoPermissions(ctx, checker, repoID)
+		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 		if subRepoErr != nil {
 			err = errors.Append(err, subRepoErr)
 		}
