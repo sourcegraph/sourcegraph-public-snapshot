@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, ReactNode } from 'react'
 
 import { mdiAlertCircle as mdiAlertCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -103,7 +103,7 @@ export const InsightIncompleteAlert: FC<InsightIncompleteAlertProps> = props => 
                 <Icon
                     aria-label="Insight is in incomplete state"
                     svgPath={mdiAlertCircleOutline}
-                    color="var(--warning)"
+                    color="var(--icon-color)"
                 />
             </PopoverTrigger>
 
@@ -119,10 +119,14 @@ export const InsightIncompleteAlert: FC<InsightIncompleteAlertProps> = props => 
     )
 }
 
-function getAlertMessage(alert: IncompleteDatapointAlert): string {
+function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
     switch (alert.__typename) {
         case 'TimeoutDatapointAlert':
-            return 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'
+            return (
+                <>
+                    Some points of this data series <b>exceeded the timeout limit</b>. Results may be incomplete.
+                </>
+            )
         case 'GenericIncompleteDatapointAlert':
             return alert.reason
     }
@@ -142,7 +146,7 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
                 <Icon
                     aria-label="Insight is in incomplete state"
                     svgPath={mdiAlertCircleOutline}
-                    color="var(--warning)"
+                    color="var(--icon-color)"
                 />
             </PopoverTrigger>
 
@@ -152,30 +156,52 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
                 focusContainerClassName={styles.alertPopoverFocusContainer}
             >
                 <Text className={styles.alertDescription}>
-                    Some points of this data series got errors. Results may be incomplete.{' '}
+                    Results for some points of this data series may be incomplete.{' '}
                     <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
                         Troubleshoot
                     </Link>
                 </Text>
 
                 <ScrollBox lazyMeasurements={true} className={styles.alertPointsListScroll}>
+                    <Text className={styles.alertPointSectionTitle}>Exceeded the timeout limit:</Text>
                     <ul className={styles.alertPointsList}>
-                        {series.alerts.map(alert => (
-                            <li key={alert.time} className={styles.alertPoint}>
-                                <div className={styles.alertPointDotContainer}>
-                                    <span
-                                        /* eslint-disable-next-line react/forbid-dom-props */
-                                        style={{ backgroundColor: series.color }}
-                                        className={styles.alertPointDot}
-                                    />
-                                </div>
+                        {series.alerts
+                            .filter(alert => alert.__typename === 'TimeoutDatapointAlert')
+                            .map(alert => (
+                                <li key={alert.time} className={styles.alertPoint}>
+                                    <div className={styles.alertPointDotContainer}>
+                                        <span
+                                            /* eslint-disable-next-line react/forbid-dom-props */
+                                            style={{ backgroundColor: series.color }}
+                                            className={styles.alertPointDot}
+                                        />
+                                    </div>
 
-                                <div className={styles.alertPointDescription}>
                                     {dateFormatter(new Date(alert.time))}
-                                    <small>{getPointAlertMessage(alert)}</small>
-                                </div>
-                            </li>
-                        ))}
+                                </li>
+                            ))}
+                    </ul>
+
+                    <Text className={styles.alertPointSectionTitle}>Unable to calculate:</Text>
+                    <ul className={styles.alertPointsList}>
+                        {series.alerts
+                            .filter(alert => alert.__typename === 'GenericIncompleteDatapointAlert')
+                            .map(alert => (
+                                <li key={alert.time} className={styles.alertPoint}>
+                                    <div className={styles.alertPointDotContainer}>
+                                        <span
+                                            /* eslint-disable-next-line react/forbid-dom-props */
+                                            style={{ backgroundColor: series.color }}
+                                            className={styles.alertPointDot}
+                                        />
+                                    </div>
+
+                                    <div className={styles.alertPointDescription}>
+                                        {dateFormatter(new Date(alert.time))}
+                                        <small>{getPointAlertMessage(alert)}</small>
+                                    </div>
+                                </li>
+                            ))}
                     </ul>
                 </ScrollBox>
             </PopoverContent>

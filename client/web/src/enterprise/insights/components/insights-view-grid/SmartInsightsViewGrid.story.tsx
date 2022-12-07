@@ -201,32 +201,39 @@ const INSIGHT_DATA_MOCKS: MockedResponse<GetInsightViewResult>[] = [
                                         isLoadingData: false,
                                         incompleteDatapoints: [
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Tue May 05 2020 16:22:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Wed May 06 2020 16:22:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Tue May 05 2020 16:23:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Wed May 06 2020 16:23:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
                                             },
                                             {
-                                                __typename: 'TimeoutDatapointAlert',
+                                                __typename: 'GenericIncompleteDatapointAlert',
                                                 time: 'Tue May 05 2020 16:20:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
                                             },
                                             {
                                                 __typename: 'TimeoutDatapointAlert',
@@ -263,38 +270,6 @@ const INSIGHT_DATA_MOCKS: MockedResponse<GetInsightViewResult>[] = [
                                             {
                                                 __typename: 'TimeoutDatapointAlert',
                                                 time: 'Wed May 06 2021 16:22:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Tue May 05 2021 16:23:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Wed May 06 2021 16:23:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Tue May 05 2021 16:20:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Wed May 06 2021 16:20:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Tue May 05 2021 16:19:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Wed May 06 2021 16:19:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Tue May 05 2021 16:18:40 GMT-0300 (-03)',
-                                            },
-                                            {
-                                                __typename: 'TimeoutDatapointAlert',
-                                                time: 'Wed May 06 2021 16:18:40 GMT-0300 (-03)',
                                             },
                                         ],
                                     },

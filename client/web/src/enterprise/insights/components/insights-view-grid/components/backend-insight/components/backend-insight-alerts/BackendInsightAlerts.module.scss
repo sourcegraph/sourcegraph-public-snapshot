@@ -36,11 +36,11 @@
         display: flex;
         // Point list is a scrollable so disable scroll on popover level
         overflow: hidden;
-        padding: 0.5rem;
+        padding: 0.75rem;
         max-width: 310px;
 
         &-small {
-            max-width: 210px;
+            max-width: 240px;
         }
     }
 
@@ -52,7 +52,7 @@
     }
 
     &--description {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
         padding-bottom: 0.5rem;
         border-bottom: 1px solid var(--border-color);
     }
@@ -61,13 +61,24 @@
         max-height: 400px;
     }
 
+    &--point-section-title {
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+    }
+
     &--points-list {
         display: flex;
         flex-direction: column;
         row-gap: 0.5rem;
         list-style: none;
-        padding: 0.5rem 0 0 0;
+        padding: 0;
+        padding-bottom: 0.5rem;
         margin-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-of-type {
+            border-bottom: none;
+        }
     }
 
     &--point {
