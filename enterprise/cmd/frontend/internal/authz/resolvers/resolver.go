@@ -52,7 +52,7 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 			return err
 		}
 
-		r.logger.Error("authz.Resolver.checkLicense", log.Error(err))
+		r.logger.Error("Unable to check license for feature", log.Error(err))
 		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
 	return nil
@@ -60,7 +60,7 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 
 func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger:            observationCtx.Logger,
+		logger:            observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:                edb.NewEnterpriseDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
 		syncJobsRecords:   syncjobs.NewRecordsReader(),
@@ -352,7 +352,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, err
 	}
 
-	r.logger.Debug("SetRepositoryPermissionsForBitbucketProject: job enqueued", log.Int("jobID", jobID))
+	r.logger.Debug("Bitbucket project permissions job enqueued", log.Int("jobID", jobID))
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }
