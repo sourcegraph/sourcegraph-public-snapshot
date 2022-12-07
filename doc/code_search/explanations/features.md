@@ -94,8 +94,7 @@ Your site admin can enable search contexts on your private instance in **global 
 
 ```json
 "experimentalFeatures": {  
-  "showSearchContext": true,
-  "showSearchContextManagement": true
+  "showSearchContext": true
 }
 ```
 
