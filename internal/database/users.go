@@ -1,7 +1,6 @@
 package database
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"database/sql"
@@ -1311,21 +1310,6 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 		tagMap[t] = true
 	}
 	return tagMap, nil
-}
-
-// relayUnmarshalID is a best effort decoding of the ID from a marshalled
-// graphql.ID
-func relayUnmarshalID(s string) (id int32, ok bool) {
-	b, err := base64.URLEncoding.DecodeString(s)
-	if err != nil {
-		return 0, false
-	}
-	i := bytes.IndexByte(b, ':')
-	if i < 0 {
-		return 0, false
-	}
-	err = json.Unmarshal(b[i+1:], &id)
-	return id, err == nil
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
