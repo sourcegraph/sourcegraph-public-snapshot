@@ -1,8 +1,8 @@
 import { ReactElement, useMemo, SVGProps, CSSProperties, FocusEvent, useCallback, useState } from 'react'
 
-import classNames from 'classnames'
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
+import classNames from 'classnames'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 import { noop } from 'lodash'
