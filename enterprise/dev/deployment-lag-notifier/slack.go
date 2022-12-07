@@ -91,7 +91,7 @@ type TemplateData struct {
 	NumCommits       int
 }
 
-// createMessage renders a template and returns teh result as a bytes.Buffer to either
+// createMessage renders a template and returns the result as a bytes.Buffer to either
 // be printed or posted to Slack
 func createMessage(td TemplateData) (bytes.Buffer, error) {
 	var msg bytes.Buffer
