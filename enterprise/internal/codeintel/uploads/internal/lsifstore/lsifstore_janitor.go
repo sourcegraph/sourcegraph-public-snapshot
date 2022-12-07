@@ -42,7 +42,7 @@ locked_documents AS (
 	JOIN codeintel_scip_documents sd ON sd.id = d.document_id
 	WHERE NOT EXISTS (SELECT 1 FROM codeintel_scip_document_lookup sdl WHERE sdl.document_id = sd.id)
 	ORDER BY sd.id
-	FOR UPDATE
+	FOR UPDATE OF sd
 ),
 deleted_documents AS (
 	DELETE FROM codeintel_scip_documents
