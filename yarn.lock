@@ -12966,16 +12966,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"create-react-class@npm:^15.5.3":
-  version: 15.7.0
-  resolution: "create-react-class@npm:15.7.0"
-  dependencies:
-    loose-envify: ^1.3.1
-    object-assign: ^4.1.1
-  checksum: 0c5f43da705fa9f67ec289051dd5780792652d440dfa17cd2c7d8423c1f604609596f895dabf46fda1960ddd93ee96fe1b61ef4d55a94fc4271b07d515486714
-  languageName: node
-  linkType: hard
-
 "create-require@npm:^1.1.0":
   version: 1.1.1
   resolution: "create-require@npm:1.1.1"
@@ -13020,7 +13010,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cross-spawn@npm:6.0.5, cross-spawn@npm:^6.0.0":
+"cross-spawn@npm:^5.0.1":
+  version: 5.1.0
+  resolution: "cross-spawn@npm:5.1.0"
+  dependencies:
+    lru-cache: ^4.0.1
+    shebang-command: ^1.2.0
+    which: ^1.2.9
+  checksum: 726939c9954fc70c20e538923feaaa33bebc253247d13021737c3c7f68cdc3e0a57f720c0fe75057c0387995349f3f12e20e9bfdbf12274db28019c7ea4ec166
+  languageName: node
+  linkType: hard
+
+"cross-spawn@npm:^6.0.0":
   version: 6.0.5
   resolution: "cross-spawn@npm:6.0.5"
   dependencies:
@@ -13030,17 +13031,6 @@ __metadata:
     shebang-command: ^1.2.0
     which: ^1.2.9
   checksum: f893bb0d96cd3d5751d04e67145bdddf25f99449531a72e82dcbbd42796bbc8268c1076c6b3ea51d4d455839902804b94bc45dfb37ecbb32ea8e54a6741c3ab9
-  languageName: node
-  linkType: hard
-
-"cross-spawn@npm:^5.0.1":
-  version: 5.1.0
-  resolution: "cross-spawn@npm:5.1.0"
-  dependencies:
-    lru-cache: ^4.0.1
-    shebang-command: ^1.2.0
-    which: ^1.2.9
-  checksum: 726939c9954fc70c20e538923feaaa33bebc253247d13021737c3c7f68cdc3e0a57f720c0fe75057c0387995349f3f12e20e9bfdbf12274db28019c7ea4ec166
   languageName: node
   linkType: hard
 
@@ -15139,29 +15129,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"elm-webpack-loader@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "elm-webpack-loader@npm:8.0.0"
-  dependencies:
-    loader-utils: ^2.0.0
-    node-elm-compiler: ^5.0.0
-  peerDependencies:
-    elm: ^0.19.1-3 || 0.19.0-no-deps
-  checksum: 9a9e0cc4ca72fde6dafe854960176b940d31b68166a9295a7f5813e3960682f160c562ed0dd6fa24abc4164beceb2cae0c3c84edb61d2a92dab5edeb9cd77aa8
-  languageName: node
-  linkType: hard
-
-"elm@npm:^0.19.1-3":
-  version: 0.19.1-5
-  resolution: "elm@npm:0.19.1-5"
-  dependencies:
-    request: ^2.88.0
-  bin:
-    elm: bin/elm
-  checksum: 1b9508ccf18ab44a954f3a0d32904dbbf9f00da21bb03e734131c1d7c0215d5a2b525ec218b820bb614e88511e5d2adc47a13f42bcf57f88a8d9b643c81d388d
-  languageName: node
-  linkType: hard
-
 "emittery@npm:^0.8.1":
   version: 0.8.1
   resolution: "emittery@npm:0.8.1"
@@ -15642,18 +15609,6 @@ __metadata:
   version: 0.14.54
   resolution: "esbuild-openbsd-64@npm:0.14.54"
   conditions: os=openbsd & cpu=x64
-  languageName: node
-  linkType: hard
-
-"esbuild-plugin-elm@npm:^0.0.11-1":
-  version: 0.0.11-1
-  resolution: "esbuild-plugin-elm@npm:0.0.11-1"
-  dependencies:
-    command-exists: ^1.2.9
-    node-elm-compiler: ^5.0.6
-  peerDependencies:
-    esbuild: ">=0.8.1"
-  checksum: a2c3ca785c9bc64d97a9247f9ead776c8f1b72fbc7a0443bfd7a6b3cad1ebfb7519fc3b744328cd8504e8464c416e6dcb3baf2d2067131b85aa8b66cdffb9413
   languageName: node
   linkType: hard
 
@@ -16913,18 +16868,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"find-elm-dependencies@npm:^2.0.4":
-  version: 2.0.4
-  resolution: "find-elm-dependencies@npm:2.0.4"
-  dependencies:
-    firstline: ^1.2.0
-    lodash: ^4.17.19
-  bin:
-    find-elm-dependencies: bin/cli.js
-  checksum: fa0d32c6aa8bf816d67a3769f4b43536f27c8b0787eaa8bfe0c73c24ad9641e89c59d5a93215bcc674b623f48dd738235764d964977789abd43f10c4fbf419ea
-  languageName: node
-  linkType: hard
-
 "find-root@npm:^1.1.0":
   version: 1.1.0
   resolution: "find-root@npm:1.1.0"
@@ -17014,13 +16957,6 @@ __metadata:
     object.pick: ^1.2.0
     parse-filepath: ^1.0.1
   checksum: 056e14aafc05b73bd75bac6fdbca804f27dd0f4e498845b414762be191353d9c6db8996d8844c08ec40d86a5a28a60a19916528ee3a56420119a64a494e35fb1
-  languageName: node
-  linkType: hard
-
-"firstline@npm:^1.2.0":
-  version: 1.3.1
-  resolution: "firstline@npm:1.3.1"
-  checksum: 76ec4eaca574a549dcab3d1ee62a68f810b5c5662cf5f3a83d8125e443bbb0e4becad58e3f8c780098e0c6ae3837025181a68a22cb11f0b38723ec59ee61a1d7
   languageName: node
   linkType: hard
 
@@ -23819,18 +23755,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-elm-compiler@npm:^5.0.0, node-elm-compiler@npm:^5.0.6":
-  version: 5.0.6
-  resolution: "node-elm-compiler@npm:5.0.6"
-  dependencies:
-    cross-spawn: 6.0.5
-    find-elm-dependencies: ^2.0.4
-    lodash: ^4.17.19
-    temp: ^0.9.0
-  checksum: 5b1de0a3d9f91ceec02c4de537242ce469b2b054e4caea621ec53ece8899859741bedbe6ee5cf304b18eceb904f8460db6a8f1847c75371148cd7e86dd511c8e
-  languageName: node
-  linkType: hard
-
 "node-fetch@npm:2.6.1":
   version: 2.6.1
   resolution: "node-fetch@npm:2.6.1"
@@ -26700,17 +26624,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-elm-components@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "react-elm-components@npm:1.1.0"
-  dependencies:
-    create-react-class: ^15.5.3
-  peerDependencies:
-    react: ">=0.14.0"
-  checksum: 55c0d554d4ef1795b43bb35acf479f3dd04569660acb556bb82cd3f40bc3a83546ec4bc52e5b170bcba58559abdb97884f18698c6c0a67fa9191829d411c298a
-  languageName: node
-  linkType: hard
-
 "react-error-boundary@npm:^3.1.0":
   version: 3.1.4
   resolution: "react-error-boundary@npm:3.1.4"
@@ -27797,7 +27710,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"request@npm:^2.88.0, request@npm:^2.88.2":
+"request@npm:^2.88.2":
   version: 2.88.2
   resolution: "request@npm:2.88.2"
   dependencies:
@@ -28099,7 +28012,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"rimraf@npm:2, rimraf@npm:^2.2.8, rimraf@npm:^2.6.2, rimraf@npm:^2.6.3, rimraf@npm:~2.6.2":
+"rimraf@npm:2, rimraf@npm:^2.2.8, rimraf@npm:^2.6.2, rimraf@npm:^2.6.3":
   version: 2.6.3
   resolution: "rimraf@npm:2.6.3"
   dependencies:
@@ -28362,12 +28275,9 @@ pvutils@latest:
     date-fns: ^2.16.1
     delay: ^4.4.1
     downshift: ^3.4.8
-    elm: ^0.19.1-3
-    elm-webpack-loader: ^8.0.0
     enhanced-resolve: ^5.9.3
     envalid: ^7.3.1
     esbuild: ^0.14.54
-    esbuild-plugin-elm: ^0.0.11-1
     escape-html: ^1.0.3
     eslint: ^8.13.0
     eslint-formatter-lsif: ^1.0.3
@@ -28461,7 +28371,6 @@ pvutils@latest:
     react-circular-progressbar: ^2.0.3
     react-dom: 18.1.0
     react-dom-confetti: ^0.1.4
-    react-elm-components: ^1.1.0
     react-focus-lock: ^2.7.1
     react-grid-layout: 1.3.4
     react-refresh: ^0.10.0
@@ -30640,16 +30549,6 @@ pvutils@latest:
     lodash: ^4.17.21
     memoizerific: ^1.11.3
   checksum: 7411a5e78a35720bd0654a544409d3ce467b1dbb2073c73f36476b4c0905d97dbf539d6cbae737bb1fd8c872c2058f2a5450163a15117ed3fa031b2a2b8b33f6
-  languageName: node
-  linkType: hard
-
-"temp@npm:^0.9.0, temp@npm:^0.9.4":
-  version: 0.9.4
-  resolution: "temp@npm:0.9.4"
-  dependencies:
-    mkdirp: ^0.5.1
-    rimraf: ~2.6.2
-  checksum: 8709d4d63278bd309ca0e49e80a268308dea543a949e71acd427b3314cd9417da9a2cc73425dd9c21c6780334dbffd67e05e7be5aaa73e9affe8479afc6f20e3
   languageName: node
   linkType: hard
 

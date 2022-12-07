@@ -166,7 +166,7 @@
           }
         },
         "showComputeComponent": {
-          "description": "Enables display of compute components (currently Notebook blocks)",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {

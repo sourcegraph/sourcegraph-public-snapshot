@@ -55,7 +55,11 @@ type endpoints struct {
 //	"k8s+http://searcher"
 //	"k8s+rpc://indexed-searcher?kind=sts"
 //	"http://searcher-0 http://searcher-1 http://searcher-2"
-func New(logger log.Logger, urlspec string) *Map {
+//
+// Note: this function does not take a logger because discovery is done in the
+// in the background and does not connect to higher order functions.
+func New(urlspec string) *Map {
+	logger := log.Scoped("newmap", "A new map for the endpoing URL")
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}

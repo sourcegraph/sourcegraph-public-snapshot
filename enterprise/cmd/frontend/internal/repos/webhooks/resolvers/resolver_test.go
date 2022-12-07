@@ -784,6 +784,30 @@ func TestUpdateWebhook(t *testing.T) {
 		},
 	})
 
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "BitBucket Cloud webhook successfully updated without a secret",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://sg.bitbucket.org/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": extsvc.KindBitbucketCloud,
+			"codeHostURN":  "https://sg.bitbucket.org",
+			"secret":       nil,
+		},
+	})
+
 	webhookStore.GetByIDFunc.SetDefaultReturn(nil, &database.WebhookNotFoundError{ID: 2})
 
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{

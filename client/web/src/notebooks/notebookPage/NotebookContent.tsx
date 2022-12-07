@@ -79,12 +79,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                                 type: 'symbol',
                                 input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                             }
-                        case 'ComputeBlock':
-                            return {
-                                id: block.id,
-                                type: 'compute',
-                                input: block.computeInput,
-                            }
                     }
                 }),
             [blocks]

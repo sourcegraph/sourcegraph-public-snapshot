@@ -473,21 +473,28 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
-	logger                 log.Logger
 
-	gitservers = endpoint.New(logger, func() string {
-		v := os.Getenv("SRC_GIT_SERVERS")
-		if v == "" {
-			// Detect 'go test' and setup default addresses in that case.
-			p, err := os.Executable()
-			if err == nil && strings.HasSuffix(p, ".test") {
-				return "gitserver:3178"
-			}
-			return "k8s+rpc://gitserver:3178?kind=sts"
-		}
-		return v
-	}())
+	gitserversVal  *endpoint.Map
+	gitserversOnce sync.Once
 )
+
+func gitservers() *endpoint.Map {
+	gitserversOnce.Do(func() {
+		gitserversVal = endpoint.New(func() string {
+			v := os.Getenv("SRC_GIT_SERVERS")
+			if v == "" {
+				// Detect 'go test' and setup default addresses in that case.
+				p, err := os.Executable()
+				if err == nil && strings.HasSuffix(p, ".test") {
+					return "gitserver:3178"
+				}
+				return "k8s+rpc://gitserver:3178?kind=sts"
+			}
+			return v
+		}())
+	})
+	return gitserversVal
+}
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
@@ -503,7 +510,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		}
 	})
 
-	gitAddrs, err := gitservers.Endpoints()
+	gitAddrs, err := gitservers().Endpoints()
 	if err != nil {
 		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
@@ -558,7 +565,7 @@ func computeSearcherEndpoints() *endpoint.Map {
 		if len(strings.Fields(searcherURL)) == 0 {
 			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		} else {
-			searcherURLs = endpoint.New(logger, searcherURL)
+			searcherURLs = endpoint.New(searcherURL)
 		}
 	})
 	return searcherURLs
@@ -567,7 +574,7 @@ func computeSearcherEndpoints() *endpoint.Map {
 func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(logger, addr)
+			indexedEndpoints = endpoint.New(addr)
 		}
 	})
 	return indexedEndpoints
