@@ -135,10 +135,14 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
 interface InsightSeriesIncompleteAlertProps {
     series: BackendInsightSeries<unknown>
 }
+
 const dateFormatter = timeFormat('%B %d, %Y')
 
 export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps> = props => {
     const { series } = props
+
+    const timeoutAlerts = series.alerts.filter(alert => alert.__typename === 'TimeoutDatapointAlert')
+    const otherAlerts = series.alerts.filter(alert => alert.__typename !== 'TimeoutDatapointAlert')
 
     return (
         <Popover>
@@ -163,46 +167,50 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
                 </Text>
 
                 <ScrollBox lazyMeasurements={true} className={styles.alertPointsListScroll}>
-                    <Text className={styles.alertPointSectionTitle}>Exceeded the timeout limit:</Text>
-                    <ul className={styles.alertPointsList}>
-                        {series.alerts
-                            .filter(alert => alert.__typename === 'TimeoutDatapointAlert')
-                            .map(alert => (
-                                <li key={alert.time} className={styles.alertPoint}>
-                                    <div className={styles.alertPointDotContainer}>
-                                        <span
-                                            /* eslint-disable-next-line react/forbid-dom-props */
-                                            style={{ backgroundColor: series.color }}
-                                            className={styles.alertPointDot}
-                                        />
-                                    </div>
+                    {timeoutAlerts.length > 0 && (
+                        <>
+                            <Text className={styles.alertPointSectionTitle}>Exceeded the timeout limit:</Text>
+                            <ul className={styles.alertPointsList}>
+                                {timeoutAlerts.map(alert => (
+                                    <li key={alert.time} className={styles.alertPoint}>
+                                        <div className={styles.alertPointDotContainer}>
+                                            <span
+                                                /* eslint-disable-next-line react/forbid-dom-props */
+                                                style={{ backgroundColor: series.color }}
+                                                className={styles.alertPointDot}
+                                            />
+                                        </div>
 
-                                    {dateFormatter(new Date(alert.time))}
-                                </li>
-                            ))}
-                    </ul>
-
-                    <Text className={styles.alertPointSectionTitle}>Unable to calculate:</Text>
-                    <ul className={styles.alertPointsList}>
-                        {series.alerts
-                            .filter(alert => alert.__typename === 'GenericIncompleteDatapointAlert')
-                            .map(alert => (
-                                <li key={alert.time} className={styles.alertPoint}>
-                                    <div className={styles.alertPointDotContainer}>
-                                        <span
-                                            /* eslint-disable-next-line react/forbid-dom-props */
-                                            style={{ backgroundColor: series.color }}
-                                            className={styles.alertPointDot}
-                                        />
-                                    </div>
-
-                                    <div className={styles.alertPointDescription}>
                                         {dateFormatter(new Date(alert.time))}
-                                        <small>{getPointAlertMessage(alert)}</small>
-                                    </div>
-                                </li>
-                            ))}
-                    </ul>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+
+                    {otherAlerts.length > 0 && (
+                        <>
+                            <Text className={styles.alertPointSectionTitle}>Unable to calculate:</Text>
+                            <ul className={styles.alertPointsList}>
+                                {otherAlerts.map(alert => (
+                                    <li key={alert.time} className={styles.alertPoint}>
+                                        <div className={styles.alertPointDotContainer}>
+                                            <span
+                                                /* eslint-disable-next-line react/forbid-dom-props */
+                                                style={{ backgroundColor: series.color }}
+                                                className={styles.alertPointDot}
+                                            />
+                                        </div>
+
+                                        <div className={styles.alertPointDescription}>
+                                            {dateFormatter(new Date(alert.time))}
+                                            <small>{getPointAlertMessage(alert)}</small>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
                 </ScrollBox>
             </PopoverContent>
 
