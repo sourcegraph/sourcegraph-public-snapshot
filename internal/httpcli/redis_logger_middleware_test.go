@@ -21,28 +21,47 @@ import (
 func TestRedisLoggerMiddleware(t *testing.T) {
 	rcache.SetupForTest(t)
 
-	req, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
+	normalReq, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
+	complexReq, _ := http.NewRequest("PATCH", "http://test.aa?a=2", strings.NewReader("graph"))
+	complexReq.Header.Set("Cache-Control", "no-cache")
 
 	for _, tc := range []struct {
+		req  *http.Request
 		name string
 		cli  Doer
 		err  string
 		want *types.OutboundRequestLogItem
 	}{
 		{
+			req:  normalReq,
 			name: "normal response",
-			cli:  newFakeClient(http.StatusOK, []byte(`{"responseBody":true}`), nil),
+			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value"}}, http.StatusOK, []byte(`{"responseBody":true}`), nil),
 			err:  "<nil>",
 			want: &types.OutboundRequestLogItem{
-				Method:          req.Method,
-				URL:             req.URL.String(),
+				Method:          normalReq.Method,
+				URL:             normalReq.URL.String(),
 				RequestHeaders:  map[string][]string{},
 				RequestBody:     "horse",
-				StatusCode:      200,
-				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}},
+				StatusCode:      http.StatusOK,
+				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value"}},
 			},
 		},
 		{
+			req:  complexReq,
+			name: "complex request",
+			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusForbidden, []byte(`{"permission":false}`), nil),
+			err:  "<nil>",
+			want: &types.OutboundRequestLogItem{
+				Method:          complexReq.Method,
+				URL:             complexReq.URL.String(),
+				RequestHeaders:  map[string][]string{"Cache-Control": {"no-cache"}},
+				RequestBody:     "graph",
+				StatusCode:      http.StatusForbidden,
+				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value1", "value2"}},
+			},
+		},
+		{
+			req:  normalReq,
 			name: "no response",
 			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
 				return nil, errors.New("oh no")
@@ -61,7 +80,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 			cli := redisLoggerMiddleware()(tc.cli)
 
 			// Send request
-			_, err := cli.Do(req)
+			_, err := cli.Do(tc.req)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
@@ -203,7 +222,7 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 			function: "main.f",
 			file:     "/Users/x/file.go",
 			line:     11,
-			want:     "main/file.go:11 (Function: f)",
+			want:     "file.go:11 (Function: f)",
 		},
 	}
 
