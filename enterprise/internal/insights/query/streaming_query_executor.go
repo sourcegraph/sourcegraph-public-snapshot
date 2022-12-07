@@ -119,18 +119,21 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			c.logger.Debug("executing query", log.String("query", modified.String()))
 			err = streaming.Search(ctx, modified.String(), nil, decoder)
 			if err != nil {
-				return nil, errors.Wrap(err, "streaming.Search")
+				c.logger.Error("search errored", log.Error(err))
+				return nil, errors.New("query search encountered a general error")
 			}
 
 			tr := *tabulationResult
 			if len(tr.SkippedReasons) > 0 {
-				c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", query))
+				c.logger.Error("search skipped results", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", query))
 			}
 			if len(tr.Errors) > 0 {
-				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
+				c.logger.Error("search errored", log.String("errors", fmt.Sprintf("%v", tr.Errors)), log.String("query", query))
+				return nil, errors.New("query search encountered errors")
 			}
 			if len(tr.Alerts) > 0 {
-				return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
+				c.logger.Error("search alerted", log.String("alerts", fmt.Sprintf("%v", tr.Alerts)), log.String("query", query))
+				return nil, errors.New("query search encountered alerts")
 			}
 
 			points[execution.RecordingTime] += tr.TotalCount
