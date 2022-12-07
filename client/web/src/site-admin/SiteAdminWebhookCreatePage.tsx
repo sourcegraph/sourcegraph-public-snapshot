@@ -13,6 +13,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Alert, Button, Container, H2, Input, PageHeader, Select } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
+import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { ConnectionLoading } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -69,9 +70,10 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 }
             }
 
-            // If there are no external services or there are external services without URL,
-            // then the warning is shown and webhook creation is blocked
-            if (validateKindsAndUrls(kindToUrlMap)) {
+            // If there are no external services, then the warning is shown and webhook creation is blocked.
+            // At this point we can only have external services with existing URL which existence is enforced
+            // by the code host configuration schema.
+            if (kindToUrlMap.size !== 0) {
                 setKindsToUrls(kindToUrlMap)
                 const [currentKind] = kindToUrlMap.keys()
                 const [currentUrls] = kindToUrlMap.values()
@@ -90,17 +92,15 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
     const onCodeHostTypeChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
             const selected = event.target.value as ExternalServiceKind
-            if (!kindsToUrls.has(selected)) {
+            const selectedUrns = kindsToUrls.get(selected)
+            // This cannot happen, because the form is not rendered when there are no created external services
+            // which support webhooks (and effectively have URLs in their code host configurations).
+            if (!selectedUrns) {
                 throw new Error(
-                    `${prettyPrintExternalServiceKind(
-                        selected
-                    )} code host connection has no URL. Please check related code host configuration.`
+                    `${defaultExternalServices[selected].title} code host connection has no URL. Please check related code host configuration.`
                 )
             }
-            // `kindsToUrls.get(selected)` cannot be undefined because of the check above
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            const selectedUrn = kindsToUrls.get(selected)[0]
+            const selectedUrn = selectedUrns[0]
             setWebhook(webhook => ({
                 ...webhook,
                 codeHostKind: selected,
@@ -140,10 +140,6 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                     <Alert variant="warning" className="mt-2">
                         Please add a code host connection in order to create a webhook.
                     </Alert>
-                ) : !validateKindsAndUrls(kindsToUrls) ? (
-                    <Alert variant="warning" className="mt-2">
-                        Please ensure that code host connections have corresponding URLs.
-                    </Alert>
                 ) : (
                     <div>
                         <H2>Information</H2>
@@ -177,7 +173,7 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                                 >
                                     {Array.from(kindsToUrls.keys()).map(kind => (
                                         <option value={kind} key={kind}>
-                                            {prettyPrintExternalServiceKind(kind)}
+                                            {defaultExternalServices[kind].title}
                                         </option>
                                     ))}
                                 </Select>
@@ -233,28 +229,12 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                             >
                                 Create
                             </Button>
-                            {createWebhookError && (
-                                <Alert variant="danger" className="mt-2">
-                                    Failed to create webhook: {createWebhookError.message}
-                                </Alert>
-                            )}
+                            {createWebhookError && <ErrorAlert className="mt-2" error={createWebhookError} />}
                         </Form>
                     </div>
                 ))}
         </Container>
     )
-}
-
-function validateKindsAndUrls(map: Map<ExternalServiceKind, string[]>): boolean {
-    if (map.size === 0) {
-        return false
-    }
-    for (const urls in map.values()) {
-        if (urls.length === 0) {
-            return false
-        }
-    }
-    return true
 }
 
 function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
@@ -269,47 +249,6 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
             return true
         default:
             return false
-    }
-}
-
-function prettyPrintExternalServiceKind(kind: ExternalServiceKind): string {
-    switch (kind) {
-        case ExternalServiceKind.AWSCODECOMMIT:
-            return 'AWS CodeCommit'
-        case ExternalServiceKind.BITBUCKETCLOUD:
-            return 'Bitbucket Cloud'
-        case ExternalServiceKind.BITBUCKETSERVER:
-            return 'Bitbucket Server'
-        case ExternalServiceKind.GERRIT:
-            return 'Gerrit'
-        case ExternalServiceKind.GITHUB:
-            return 'GitHub'
-        case ExternalServiceKind.GITLAB:
-            return 'GitLab'
-        case ExternalServiceKind.GITOLITE:
-            return 'Gitolite'
-        case ExternalServiceKind.GOMODULES:
-            return 'Go Modules'
-        case ExternalServiceKind.JVMPACKAGES:
-            return 'JVM packages'
-        case ExternalServiceKind.NPMPACKAGES:
-            return 'NPM packages'
-        case ExternalServiceKind.OTHER:
-            return 'Other'
-        case ExternalServiceKind.PAGURE:
-            return 'Pagure'
-        case ExternalServiceKind.PERFORCE:
-            return 'Perforce'
-        case ExternalServiceKind.PHABRICATOR:
-            return 'Phabricator'
-        case ExternalServiceKind.PYTHONPACKAGES:
-            return 'Python packages'
-        case ExternalServiceKind.RUSTPACKAGES:
-            return 'Rust packages'
-        case ExternalServiceKind.RUBYPACKAGES:
-            return 'Ruby packages'
-        default:
-            return kind
     }
 }
 
