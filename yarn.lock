@@ -17871,12 +17871,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"generic-names@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "generic-names@npm:2.0.1"
+"generic-names@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "generic-names@npm:4.0.0"
   dependencies:
-    loader-utils: ^1.1.0
-  checksum: 5f2d6837dcddf4d7139f7c7ee4ff6ed82564123ae363aadc7a1c1c9967724da1e10d92c904b76b6ff58912465cf63cf47d87f3b400286845f289f54d5092e78f
+    loader-utils: ^3.2.0
+  checksum: 8dabd2505164191501b75f2861b5e1194458a344ae2a7c9776bdd72d1f50b248dff737bcdf118fff677275edb3632f2d10662e6ac122dd7b245c5baa8d303270
   languageName: node
   linkType: hard
 
@@ -22263,6 +22263,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"klona@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "klona@npm:2.0.5"
+  checksum: 8c976126ea252b766e648a4866e1bccff9d3b08432474ad80c559f6c7265cf7caede2498d463754d8c88c4759895edd8210c85c0d3155e6aae4968362889466f
+  languageName: node
+  linkType: hard
+
 "known-css-properties@npm:^0.24.0":
   version: 0.24.0
   resolution: "known-css-properties@npm:0.24.0"
@@ -22632,7 +22639,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loader-utils@npm:^1.0.0, loader-utils@npm:^1.1.0, loader-utils@npm:^1.2.3":
+"loader-utils@npm:^1.0.0, loader-utils@npm:^1.2.3":
   version: 1.4.0
   resolution: "loader-utils@npm:1.4.0"
   dependencies:
@@ -22651,6 +22658,13 @@ __metadata:
     emojis-list: ^3.0.0
     json5: ^2.1.2
   checksum: 6856423131b50b6f5f259da36f498cfd7fc3c3f8bb17777cf87fdd9159e797d4ba4288d9a96415fd8da62c2906960e88f74711dee72d03a9003bddcd0d364a51
+  languageName: node
+  linkType: hard
+
+"loader-utils@npm:^3.2.0":
+  version: 3.2.1
+  resolution: "loader-utils@npm:3.2.1"
+  checksum: 4e3ea054cdc8be1ab1f1238f49f42fdf0483039eff920fb1d442039f3f0ad4ebd11fb8e584ccdf2cb7e3c56b3d40c1832416e6408a55651b843da288960cc792
   languageName: node
   linkType: hard
 
@@ -25964,17 +25978,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-loader@npm:^6.1.1":
-  version: 6.1.1
-  resolution: "postcss-loader@npm:6.1.1"
+"postcss-loader@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "postcss-loader@npm:7.0.2"
   dependencies:
     cosmiconfig: ^7.0.0
-    klona: ^2.0.4
-    semver: ^7.3.5
+    klona: ^2.0.5
+    semver: ^7.3.8
   peerDependencies:
     postcss: ^7.0.0 || ^8.0.1
     webpack: ^5.0.0
-  checksum: 3c32d123813efeaede39cbd990a5c2275d0feeb3e3d2b9ad8f0bbf37e1e6d28f24d3174e4eebe9db4f563d57052dc9b5fb3f699f7527f639769d88e907a99490
+  checksum: 2d251537d482eb751f812c96c8b515f46d7c9905cad7afab33f0f34872670619b7440cefc9e2babbf89fb11b4708850d522d79fa5ff788227587645e78f16638
   languageName: node
   linkType: hard
 
@@ -26183,12 +26197,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-modules@npm:^4.2.2":
-  version: 4.2.2
-  resolution: "postcss-modules@npm:4.2.2"
+"postcss-modules@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "postcss-modules@npm:6.0.0"
   dependencies:
-    generic-names: ^2.0.1
-    icss-replace-symbols: ^1.1.0
+    generic-names: ^4.0.0
+    icss-utils: ^5.1.0
     lodash.camelcase: ^4.3.0
     postcss-modules-extract-imports: ^3.0.0
     postcss-modules-local-by-default: ^4.0.0
@@ -26197,7 +26211,7 @@ __metadata:
     string-hash: ^1.1.1
   peerDependencies:
     postcss: ^8.0.0
-  checksum: 9e8444dfb4cfde814559f91039c1475b721bff7fcae507fcd2d6efd192c58220c66c8ba5608697928b2fd3dfdf2ccfc92a698b6ed50fc02e5515c0b8fa2b9fdb
+  checksum: 3bfcfabc0600f7c8fcb49873d67eb8c23c8d874b061dda840977cbe3de74d40be3be885f854594f51687d714d1aa57e83b46ac14ceb9b1b6e3a4d36f2596e2bb
   languageName: node
   linkType: hard
 
@@ -26438,7 +26452,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.0.2, postcss@npm:^8.2.15, postcss@npm:^8.4.16, postcss@npm:^8.4.17, postcss@npm:^8.4.18, postcss@npm:^8.4.5":
+"postcss@npm:^8.0.2, postcss@npm:^8.2.15, postcss@npm:^8.4.17, postcss@npm:^8.4.18, postcss@npm:^8.4.19, postcss@npm:^8.4.5":
   version: 8.4.19
   resolution: "postcss@npm:8.4.19"
   dependencies:
@@ -28913,12 +28927,12 @@ pvutils@latest:
     p-retry: ^4.2.0
     p-timeout: ^4.1.0
     path-browserify: ^1.0.1
-    postcss: ^8.4.16
+    postcss: ^8.4.19
     postcss-custom-media: ^8.0.0
     postcss-focus-visible: ^5.0.0
     postcss-inset: ^1.0.0
-    postcss-loader: ^6.1.1
-    postcss-modules: ^4.2.2
+    postcss-loader: ^7.0.2
+    postcss-modules: ^6.0.0
     prettier: 2.7.1
     pretty-bytes: ^5.3.0
     process: ^0.11.10
