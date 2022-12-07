@@ -119,7 +119,7 @@ type workerStoreExtra struct {
 // WillRetry will return true if the next iteration of this job is valid (would
 // retry) or false if this is the last iteration.
 func (w *workerStoreExtra) WillRetry(job *Job) bool {
-	return int(job.NumFailures)+1 < w.options.MaxNumRetries
+	return !(int(job.NumFailures)+1 < w.options.MaxNumRetries)
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {

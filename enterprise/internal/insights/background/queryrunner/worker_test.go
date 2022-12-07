@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/log/logtest"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
@@ -188,5 +190,35 @@ func TestQueryJobsStatus(t *testing.T) {
 	}
 	if stringify(want) != stringify(got) {
 		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+func Test_WillRetry(t *testing.T) {
+	tests := []struct {
+		want           autogold.Value
+		maxRetries     int
+		currentRetries int32
+	}{
+		{
+			want:           autogold.Want("less than max", true),
+			maxRetries:     10,
+			currentRetries: 9,
+		},
+		{
+			want:           autogold.Want("equal to max", false),
+			maxRetries:     10,
+			currentRetries: 10,
+		},
+		{
+			want:           autogold.Want("greater than max", false),
+			maxRetries:     10,
+			currentRetries: 11,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			w := workerStoreExtra{nil, dbworkerstore.Options[*Job]{MaxNumRetries: test.maxRetries}}
+			w.WillRetry(&Job{NumFailures: test.currentRetries})
+		})
 	}
 }
