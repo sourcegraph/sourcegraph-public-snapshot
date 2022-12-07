@@ -2,16 +2,97 @@ package httpcli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestRedisLoggerMiddleware(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	req, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
+
+	for _, tc := range []struct {
+		name string
+		cli  Doer
+		err  string
+		want *types.OutboundRequestLogItem
+	}{
+		{
+			name: "normal response",
+			cli:  newFakeClient(http.StatusOK, []byte(`{"responseBody":true}`), nil),
+			err:  "<nil>",
+			want: &types.OutboundRequestLogItem{
+				Method:          req.Method,
+				URL:             req.URL.String(),
+				RequestHeaders:  map[string][]string{},
+				RequestBody:     "horse",
+				StatusCode:      200,
+				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}},
+			},
+		},
+		{
+			name: "no response",
+			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
+				return nil, errors.New("oh no")
+			}),
+			err: "oh no",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// Enable the feature
+			old := OutboundRequestLogLimit()
+			SetOutboundRequestLogLimit(1)
+			t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
+
+			// Build client with middleware
+			cli := redisLoggerMiddleware()(tc.cli)
+
+			// Send request
+			_, err := cli.Do(req)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+
+			// Check logged request
+			logged, err := GetOutboundRequestLogItems(context.Background(), "")
+			if err != nil {
+				t.Fatalf("couldnt get logged requests: %s", err)
+			}
+			if len(logged) != 1 {
+				t.Fatalf("request was not logged")
+			}
+
+			if tc.want == nil {
+				return
+			}
+
+			if diff := cmp.Diff(tc.want, logged[0], cmpopts.IgnoreFields(
+				types.OutboundRequestLogItem{},
+				"ID",
+				"StartedAt",
+				"Duration",
+				"CreationStackFrame",
+				"CallStackFrame",
+			)); diff != "" {
+				t.Fatalf("wrong request logged: %s", diff)
+			}
+		})
+	}
+
+}
 
 func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	rcache.SetupForTest(t)

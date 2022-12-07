@@ -60,9 +60,17 @@ func redisLoggerMiddleware() Middleware {
 				}
 			}
 
+			// Pull out data if we have `resp`
+			var responseHeaders http.Header
+			var statusCode int32
+			if resp != nil {
+				responseHeaders = resp.Header
+				statusCode = int32(resp.StatusCode)
+			}
+
 			// Redact sensitive headers
 			requestHeaders := req.Header
-			responseHeaders := resp.Header
+
 			if shouldRedactSensitiveHeaders {
 				requestHeaders = redactSensitiveHeaders(requestHeaders)
 				responseHeaders = redactSensitiveHeaders(responseHeaders)
@@ -82,7 +90,7 @@ func redisLoggerMiddleware() Middleware {
 				URL:                req.URL.String(),
 				RequestHeaders:     requestHeaders,
 				RequestBody:        string(requestBody),
-				StatusCode:         int32(resp.StatusCode),
+				StatusCode:         statusCode,
 				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
