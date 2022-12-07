@@ -6,12 +6,19 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-// CursorResultset builds the three value return tuple that is commonly returned
+// Cursor must be implemented by the concrete type being returned in a
+// cursorResultSet so the cursor for the following page can be calculated. See
+// listRecords for more detail on how this is used.
+type Cursor interface {
+	Cursor() int64
+}
+
+// cursorResultSet builds the three value return tuple that is commonly returned
 // from paginated query functions: the page of results, the cursor for the next
 // page, and any error(s) that occurred.
 //
 // If an error is provided in err, it will be returned as is and no other
-// processing will occur. This makes CursorResultset easier to use directly
+// processing will occur. This makes cursorResultSet easier to use directly
 // after a call to Store.query.
 //
 // If there are no further pages, the cursor will be set to 0. Users of this
@@ -19,7 +26,11 @@ import (
 // cursor cannot be 0 in the normal course of events, otherwise weird things may
 // happen! However, note that PostgreSQL SERIAL types start at 1, so this isn't
 // a concern for normal ID fields.
-func CursorResultset[T Cursor](o CursorOpts, results []T, err error) ([]T, int64, error) {
+//
+// This is normally invoked indirectly by listRecords, but may also be used
+// directly by store methods that don't implement that exact pattern but still
+// wish to return paginated resultsets.
+func cursorResultSet[T Cursor](o CursorOpts, results []T, err error) ([]T, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
@@ -36,11 +47,11 @@ func CursorResultset[T Cursor](o CursorOpts, results []T, err error) ([]T, int64
 	return nil, 0, nil
 }
 
-// CursorIntResultset is a specialised version of CursorResultset for cases
+// cursorIntResultSet is a specialised version of cursorResultSet for cases
 // where T is an integer type rather than a struct or interface, such as
 // returning a resultset of IDs. Its behaviour is otherwise identical to
-// CursorResultset.
-func CursorIntResultset[T ~int | ~int8 | ~int16 | ~int32 | ~int64](o CursorOpts, results []T, err error) ([]T, int64, error) {
+// cursorResultSet.
+func cursorIntResultSet[T ~int | ~int8 | ~int16 | ~int32 | ~int64](o CursorOpts, results []T, err error) ([]T, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
@@ -67,20 +78,20 @@ type CursorOpts struct {
 	Cursor int64
 }
 
-// LimitDB provides the LIMIT clause for a paginated query.
-func (o CursorOpts) LimitDB() *sqlf.Query {
+// limitDB provides the LIMIT clause for a paginated query.
+func (o CursorOpts) limitDB() *sqlf.Query {
 	if o.Limit == 0 {
 		return sqlf.Sprintf("")
 	}
 	return sqlf.Sprintf(fmt.Sprintf("LIMIT %d", o.Limit+1))
 }
 
-// WhereDB provides the WHERE clause for a paginated query. This must be AND-ed
+// whereDB provides the WHERE clause for a paginated query. This must be AND-ed
 // with any other clauses in the query.
 //
 // Note that the direction MUST match the ORDER BY clause in the query,
 // otherwise extremely odd things will happen.
-func (o CursorOpts) WhereDB(cursorField string, direction CursorDirection) *sqlf.Query {
+func (o CursorOpts) whereDB(cursorField string, direction CursorDirection) *sqlf.Query {
 	if o.Cursor == 0 {
 		return sqlf.Sprintf("TRUE")
 	}
@@ -95,11 +106,9 @@ func (o CursorOpts) dbLimit() int {
 	if o.Limit == 0 {
 		return o.Limit
 	}
+	// This needs to be +1 so we can see if there are more records after the
+	// requested page.
 	return o.Limit + 1
-}
-
-type Cursor interface {
-	Cursor() int64
 }
 
 // CursorDirection indicates the direction of iteration through the paginated

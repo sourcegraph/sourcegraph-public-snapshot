@@ -140,7 +140,7 @@ CREATE TABLE pagination_test (
 
 func (s *Store) CreatePaginationTest(ctx context.Context, pt *PaginationTest) error {
 	q := sqlf.Sprintf("INSERT INTO pagination_test DEFAULT VALUES RETURNING id")
-	return createOrUpdateRecord(ctx, s, q, scanPaginationTest, pt)
+	return writeRecord(ctx, s, q, scanPaginationTest, pt)
 }
 
 type ListPaginationTestOpts struct {
@@ -155,9 +155,9 @@ func (s *Store) ListPaginationTests(ctx context.Context, opts ListPaginationTest
 	// when calling WhereDB, and everything will be just fine.
 	q := sqlf.Sprintf(
 		"SELECT id FROM pagination_test WHERE %s ORDER BY id %s %s",
-		opts.WhereDB("id", opts.Direction),
+		opts.whereDB("id", opts.Direction),
 		sqlf.Sprintf(opts.Direction.String()),
-		opts.LimitDB(),
+		opts.limitDB(),
 	)
 	return listRecords(ctx, s, q, opts.CursorOpts, scanPaginationTest)
 }

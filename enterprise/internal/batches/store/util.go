@@ -11,9 +11,10 @@ import (
 // that has been executed into a target object.
 type recordScanner[T any] func(target *T, sc dbutil.Scanner) error
 
-// createOrUpdateRecord executes the given query, scans the results back into
-// the given record, and returns any error.
-func createOrUpdateRecord[T any](ctx context.Context, s *Store, q *sqlf.Query, rs recordScanner[T], record *T) error {
+// writeRecord executes the given query, scans the results back into
+// the given record, and returns any error. This is most commonly used in
+// create, update, and upsert methods.
+func writeRecord[T any](ctx context.Context, s *Store, q *sqlf.Query, rs recordScanner[T], record *T) error {
 	return s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return rs(record, sc)
 	})
@@ -48,7 +49,7 @@ func getRecord[T any](ctx context.Context, s *Store, q *sqlf.Query, rs recordSca
 func listRecords[T any, PT interface {
 	// OK, so let's explain the type definition here. T is the concrete record
 	// type we're going to be hydrating. PT is, essentially, *T, but _also_ needs to
-	// implement Cursor so that CursorResultset works as expected.
+	// implement Cursor so that cursorResultSet works as expected.
 	//
 	// Practically, that just means that your concrete type (btypes.Whatever) needs
 	// to have a Cursor method that receives *btypes.Whatever.
@@ -71,5 +72,5 @@ func listRecords[T any, PT interface {
 		return nil
 	})
 
-	return CursorResultset(opts, records, err)
+	return cursorResultSet(opts, records, err)
 }
