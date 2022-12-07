@@ -3,6 +3,7 @@ package uploadstore
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,12 +27,16 @@ type Store interface {
 
 	// Delete removes the content at the given key.
 	Delete(ctx context.Context, key string) error
+
+	// ExpireObjects iterates all objects with the given prefix and deletes them when
+	// the age of the object exceeds the given max age.
+	ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Store, error){
-	"s3":    newS3FromConfig,
-	"minio": newS3FromConfig,
-	"gcs":   newGCSFromConfig,
+	"s3":        newS3FromConfig,
+	"blobstore": newS3FromConfig,
+	"gcs":       newGCSFromConfig,
 }
 
 // CreateLazy initialize a new store from the given configuration that is initialized
