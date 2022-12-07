@@ -81,8 +81,9 @@ func (s *SyncRegistry) Start() {
 
 	externalServiceSyncer := goroutine.NewPeriodicGoroutine(
 		s.ctx,
+		"batchchanges.codehost-syncer", "Batch Changes syncer external service sync",
 		externalServiceSyncerInterval,
-		goroutine.NewHandlerWithErrorMessage("Batch Changes syncer external service sync", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return s.syncCodeHosts(ctx)
 		}),
 	)

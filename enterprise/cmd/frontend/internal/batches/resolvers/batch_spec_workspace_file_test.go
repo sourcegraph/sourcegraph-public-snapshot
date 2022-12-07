@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -182,8 +183,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected:    "",
-				expectedErr: errors.New("not implemented"),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
 			},
 			{
 				name: "CanonicalURL",
@@ -328,8 +328,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected:    "",
-				expectedErr: errors.New("not implemented"),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
 			},
 			{
 				name: "CanonicalURL",

@@ -7,6 +7,8 @@ Sourcegraph uses an SMTP server of your choosing to send emails for:
 * Email verification when built-in authentication is enabled
 * Inviting other users to Sourcegraph itself, or to an organization/team on Sourcegraph
 
+> NOTE: Sourcegraph Cloud customers can take advantage of mananged SMTP servers - [learn more](../../cloud/index.md#managed-smtp).
+
 ## Configuring Sourcegraph to send email via Amazon AWS / SES
 
 To use Amazon SES with Sourcegraph, first [follow these steps to create an SES account for Sourcegraph](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp-software-package.html).

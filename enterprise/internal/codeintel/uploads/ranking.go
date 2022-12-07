@@ -19,10 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func (s *Service) SerializeRankingGraph(
-	ctx context.Context,
-	numRankingRoutines int,
-) error {
+func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error {
 	if s.rankingBucket == nil {
 		return nil
 	}
@@ -75,9 +72,7 @@ func (s *Service) SerializeRankingGraph(
 	return nil
 }
 
-func (s *Service) VacuumRankingGraph(
-	ctx context.Context,
-) error {
+func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	if s.rankingBucket == nil {
 		return nil
 	}
@@ -156,7 +151,6 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 		}
 
 		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
-
 			return err
 		} else {
 			ow.written += n

@@ -663,7 +663,7 @@ func TestUpdateWebhook(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return nil, sgerrors.New("oops")
 	})
 	whUUID := uuid.New()
@@ -732,7 +732,7 @@ func TestUpdateWebhook(t *testing.T) {
 	})
 
 	// database layer behaves
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return webhook, nil
 	})
 
@@ -780,6 +780,30 @@ func TestUpdateWebhook(t *testing.T) {
 			"name":         "new name",
 			"codeHostKind": nil,
 			"codeHostURN":  "https://example.github.com",
+			"secret":       nil,
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "BitBucket Cloud webhook successfully updated without a secret",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://sg.bitbucket.org/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": extsvc.KindBitbucketCloud,
+			"codeHostURN":  "https://sg.bitbucket.org",
 			"secret":       nil,
 		},
 	})

@@ -32,6 +32,7 @@ interface SignInPageProps {
         | 'resetPasswordEnabled'
         | 'experimentalFeatures'
     >
+    isSourcegraphDotCom: boolean
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
@@ -115,9 +116,18 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 {props.context.allowSignup ? (
                     <Text>
                         New to Sourcegraph?{' '}
-                        <Link to="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                            Sign up
-                        </Link>
+                        {props.isSourcegraphDotCom ? (
+                            <Link
+                                to="https://signup.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            >
+                                Sign up
+                            </Link>
+                        ) : (
+                            <Link to="/sign-up">Sign up</Link>
+                        )}
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

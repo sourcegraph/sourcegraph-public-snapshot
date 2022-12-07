@@ -158,15 +158,3 @@ type MockExternalServicesLister struct {
 func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
 }
-
-func TestHashToken(t *testing.T) {
-	// Sanity check output of hash function
-	h, err := hashToken("token")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := "47a1037c"
-	if want != h {
-		t.Fatalf("Want %q, got %q", want, h)
-	}
-}

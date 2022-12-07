@@ -97,6 +97,14 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddLogFields(fields)
 	}
 
+	// We wrap our queries in GobCache, this gives us a convenient way to find
+	// out the marshalled size of the query.
+	if gobCache, ok := q.(*query.GobCache); ok {
+		b, _ := gobCache.GobEncode()
+		tr.LogFields(log.Int("query.size", len(b)))
+		event.AddField("query.size", len(b))
+	}
+
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)

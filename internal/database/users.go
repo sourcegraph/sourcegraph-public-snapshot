@@ -895,7 +895,19 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		items := []*sqlf.Query{
+			sqlf.Sprintf("username ILIKE %s", query),
+			sqlf.Sprintf("display_name ILIKE %s", query),
+		}
+		// Query looks like an ID
+		if id, err := strconv.Atoi(opt.Query); err == nil {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		// Query looks like a GraphQL ID
+		if id, ok := relayUnmarshalID(opt.Query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {
