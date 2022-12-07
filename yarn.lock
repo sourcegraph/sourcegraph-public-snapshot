@@ -25627,6 +25627,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prettier-plugin-svelte@npm:^2.8.1":
+  version: 2.9.0
+  resolution: "prettier-plugin-svelte@npm:2.9.0"
+  peerDependencies:
+    prettier: ^1.16.4 || ^2.0.0
+    svelte: ^3.2.0
+  checksum: 2d74a960783a1974a4818ebac25145ee26095c5652a777584b7eb8f08907702160263538396c03dce7f9bcd5b313f914b234eb809ccc1550a5933fc5e919ca88
+  languageName: node
+  linkType: hard
+
 "prettier@npm:2.0.5":
   version: 2.0.5
   resolution: "prettier@npm:2.0.5"
@@ -28006,6 +28016,7 @@ pvutils@latest:
     postcss-loader: ^7.0.2
     postcss-modules: ^6.0.0
     prettier: 2.8.1
+    prettier-plugin-svelte: ^2.8.1
     pretty-bytes: ^5.3.0
     process: ^0.11.10
     prop-types: ^15.7.2

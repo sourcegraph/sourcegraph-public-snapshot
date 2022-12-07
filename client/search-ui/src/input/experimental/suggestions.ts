@@ -10,7 +10,7 @@ import {
 } from '@codemirror/state'
 import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
-import { SvelteComponentTyped } from 'svelte'
+import { ComponentType, SvelteComponentTyped } from 'svelte'
 
 import Suggestions from './Suggestions.svelte'
 
@@ -47,9 +47,7 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export interface CustomRenderer {
-    new (): SvelteComponentTyped<{ option: Option }>
-}
+export type CustomRenderer = ComponentType<SvelteComponentTyped<{ option: Option }>>
 
 export interface Command {
     type: 'command'
