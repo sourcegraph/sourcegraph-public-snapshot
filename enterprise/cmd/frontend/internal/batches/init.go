@@ -25,11 +25,11 @@ import (
 // events.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	// Validate site configuration.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -41,7 +41,7 @@ func Init(
 	})
 
 	// Initialize store.
-	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
@@ -52,7 +52,7 @@ func Init(
 	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
 
-	operations := httpapi.NewOperations(observationContext)
+	operations := httpapi.NewOperations(observationCtx)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)
 	enterpriseServices.BatchesChangesFileGetHandler = fileHandler.Get()
 	enterpriseServices.BatchesChangesFileExistsHandler = fileHandler.Exists()

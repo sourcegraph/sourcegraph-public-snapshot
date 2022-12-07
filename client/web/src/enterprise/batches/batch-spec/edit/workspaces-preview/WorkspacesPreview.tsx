@@ -90,6 +90,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         hasPreviewed,
         preview,
         isPreviewDisabled,
+        noCache: cacheDisabled,
     } = workspacesPreview
 
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
@@ -319,6 +320,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                         showCached={showCached}
                         cached={cachedWorkspacesPreview}
                         isReadOnly={isReadOnly}
+                        cacheDisabled={cacheDisabled}
                     />
                     <ImportingChangesetsPreviewList
                         isStale={

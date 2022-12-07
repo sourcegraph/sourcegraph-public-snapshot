@@ -776,11 +776,11 @@ function getTokensTooltipInformation(
                 break
             case 'keyword':
                 switch (token.kind) {
-                    case KeywordKind.Or:
+                    case KeywordKind.And:
                         values.push('Find results which match both the left and the right expression.')
                         range = token.range
                         break
-                    case KeywordKind.And:
+                    case KeywordKind.Or:
                         values.push('Find results which match the left or the right expression.')
                         range = token.range
                         break

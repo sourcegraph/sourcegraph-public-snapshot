@@ -15,7 +15,7 @@ import (
 func TestInsertDependencyIndexingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 

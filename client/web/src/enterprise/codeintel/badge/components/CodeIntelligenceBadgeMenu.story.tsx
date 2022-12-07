@@ -226,6 +226,7 @@ const searchBasedSupport = [
 ]
 
 const emptyPayload: UseCodeIntelStatusPayload = {
+    availableIndexers: [],
     activeUploads: [],
     recentUploads: [],
     recentIndexes: [],

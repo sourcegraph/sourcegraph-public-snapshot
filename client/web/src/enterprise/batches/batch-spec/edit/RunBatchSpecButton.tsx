@@ -75,8 +75,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
                 <H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</H3>
-                {/* TODO: Once the execution mutation honors execution options, this can be removed. */}
-                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution. Currently, toggling this option also requires updating the workspaces preview.">
+                <ExecutionOption moreInfo="Toggle to run workspace executions even if cache entries exist.">
                     <Checkbox
                         name="run-without-cache"
                         id="run-without-cache"

@@ -244,7 +244,7 @@ func TestSyncRegistry_SyncCodeHosts(t *testing.T) {
 		return codeHosts, nil
 	})
 
-	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
 
 	assertSyncerCount := func(t *testing.T, want int) {
 		t.Helper()
@@ -307,7 +307,7 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	}
 	go syncer.Run(syncerCtx)
 
-	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
 	reg.syncers[codeHostURL] = syncer
 
 	// Start handler in background, will be canceled when ctx is canceled

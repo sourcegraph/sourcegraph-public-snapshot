@@ -114,6 +114,11 @@ type Mutation {
     deleteWebhook(id: ID!): EmptyResponse!
 
     """
+    Updates a webhook with given ID. Null values aren't updated.
+    """
+    updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!
@@ -154,6 +159,17 @@ type Mutation {
         """
         repository: ID!
     ): EmptyResponse!
+    """
+    Force Zoekt to reindex the repository right now. Reindexing occurs
+    automatically, so this should not normally be needed.
+    """
+    reindexRepository(
+        """
+        The repository to index
+        """
+        repository: ID!
+    ): EmptyResponse!
+
     """
     Creates a new user account.
 
@@ -469,6 +485,18 @@ type Mutation {
         Only captured and stored on Sourcegraph Cloud.
         """
         referrer: String
+        """
+        The original referrer for a user
+        """
+        originalReferrer: String
+        """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
+        The sessions first url for a user
+        """
+        sessionFirstURL: String
         """
         Device session ID to identify the user's session for analytics.
         """
@@ -843,6 +871,18 @@ input Event {
     """
     referrer: String
     """
+    The original referrer for a user
+    """
+    originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
+    """
+    The sessions first url for a user
+    """
+    sessionFirstURL: String
+    """
     Device session ID to identify the user's session for analytics.
     """
     deviceSessionID: String
@@ -1106,8 +1146,18 @@ type RandomizeUserPasswordResult {
     """
     The reset password URL that the user must visit to sign into their account again. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance, an email containing this URL
+    will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
+    """
+    If true, then an email with the password reset URL was sent to the primary email
+    address associated with the user. If false, email sending (SMTP) might not be configured
+    on this instance, or an error may have occurred - check the error logs with log scope
+    'randomizeUserPassword' for more details.
+    """
+    emailSent: Boolean!
 }
 
 """
@@ -1219,11 +1269,6 @@ type Query {
     If no namespace is given, it returns all external services.
     """
     externalServices(
-        """
-        The namespace to scope returned external services.
-        Currently, this can only be used for a user.
-        """
-        namespace: ID
         """
         Returns the first n external services from the list.
         """
@@ -2673,11 +2718,6 @@ type ExternalService implements Node {
     When the external service was last updated.
     """
     updatedAt: DateTime!
-
-    """
-    The namespace this external service belongs to.
-    """
-    namespace: Namespace
 
     """
     The number of repos synced by the external service.
@@ -8128,7 +8168,7 @@ type OutboundRequest implements Node {
     """
     Stack information to figure out where in the code base the request was initiated.
     """
-    callStackFrame: String!
+    callStack: String!
 }
 
 """

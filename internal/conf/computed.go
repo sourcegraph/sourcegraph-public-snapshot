@@ -2,6 +2,7 @@ package conf
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -79,6 +81,42 @@ func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, e
 	return config, nil
 }
 
+func GitHubAppEnabled() bool {
+	cfg, _ := GitHubAppConfig()
+	return cfg.Configured()
+}
+
+type GitHubAppConfiguration struct {
+	PrivateKey   []byte
+	AppID        string
+	Slug         string
+	ClientID     string
+	ClientSecret string
+}
+
+func (c GitHubAppConfiguration) Configured() bool {
+	return c.AppID != "" && len(c.PrivateKey) != 0 && c.Slug != "" && c.ClientID != "" && c.ClientSecret != ""
+}
+
+func GitHubAppConfig() (config GitHubAppConfiguration, err error) {
+	cfg := Get().GitHubApp
+	if cfg == nil {
+		return GitHubAppConfiguration{}, nil
+	}
+
+	privateKey, err := base64.StdEncoding.DecodeString(cfg.PrivateKey)
+	if err != nil {
+		return GitHubAppConfiguration{}, errors.Wrap(err, "decoding GitHub app private key failed")
+	}
+	return GitHubAppConfiguration{
+		PrivateKey:   privateKey,
+		AppID:        cfg.AppID,
+		Slug:         cfg.Slug,
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+	}, nil
+}
+
 type AccessTokenAllow string
 
 const (
@@ -126,15 +164,6 @@ func UpdateChannel() string {
 		return "release"
 	}
 	return channel
-}
-
-// SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search.
-func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
-		return *v
-	}
-	return true // always on by default in all deployment types, see confdefaults.go
 }
 
 func BatchChangesEnabled() bool {

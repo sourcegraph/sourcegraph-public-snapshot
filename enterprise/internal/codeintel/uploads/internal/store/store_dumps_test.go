@@ -28,7 +28,7 @@ import (
 func TestGetDumpsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// Dumps do not exist initially
 	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
@@ -99,7 +99,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 func TestFindClosestDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -165,7 +165,7 @@ func TestFindClosestDumps(t *testing.T) {
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -225,7 +225,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -278,7 +278,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -328,7 +328,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -408,7 +408,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 func TestFindClosestDumpsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -497,7 +497,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -541,7 +541,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -607,7 +607,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 func TestDefinitionDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	moniker1 := precise.QualifiedMonikerData{
 		MonikerData: precise.MonikerData{
@@ -746,7 +746,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{
 		ID:      1,
@@ -772,7 +772,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{
 		ID:      1,
@@ -810,7 +810,7 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{
 		ID:      1,

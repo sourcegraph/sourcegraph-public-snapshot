@@ -657,6 +657,157 @@ func TestDeleteWebhook(t *testing.T) {
 	})
 }
 
+func TestUpdateWebhook(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
+		return nil, sgerrors.New("oops")
+	})
+	whUUID := uuid.New()
+	ghURN, err := extsvc.NewCodeHostBaseURL("https://github.com")
+	require.NoError(t, err)
+	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name", ID: 1, UUID: whUUID, CodeHostURN: ghURN}, nil)
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	id := marshalWebhookID(42)
+	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
+                updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+                    name
+                    id
+                    uuid
+                    codeHostURN
+				}
+			}`
+	gqlSchema := createGqlSchema(t, db)
+
+	// validate error if not site admin
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "only site admin can update webhook",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "must be site admin",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	// User is site admin
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "database error",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "update webhook: oops",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	// database layer behaves
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
+		return webhook, nil
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "webhook successfully updated 1 field",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://github.com/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "webhook successfully updated multiple fields",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://example.github.com/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  "https://example.github.com",
+			"secret":       nil,
+		},
+	})
+
+	webhookStore.GetByIDFunc.SetDefaultReturn(nil, &database.WebhookNotFoundError{ID: 2})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "error for non-existent webhook",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "update webhook: webhook with ID 2 not found",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  "https://example.github.com",
+			"secret":       nil,
+		},
+	})
+}
+
 func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, NewWebhooksResolver(db))

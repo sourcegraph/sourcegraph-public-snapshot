@@ -27,12 +27,12 @@ type rootResolver struct {
 	operations   *operations
 }
 
-func NewRootResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) resolverstubs.AutoindexingServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
 		autoindexSvc: autoindexSvc,
 		uploadSvc:    uploadSvc,
 		policySvc:    policySvc,
-		operations:   newOperations(observationContext),
+		operations:   newOperations(observationCtx),
 	}
 }
 
@@ -396,27 +396,57 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	}
 	repoID := int(repositoryID)
 
-	// uploadResolver := r.resolver.UploadsResolver()
-	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
 	lastUploadRetentionScan, err := r.uploadSvc.GetLastUploadRetentionScanForRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// recentIndexes, err := r.resolver.AutoIndexingRootResolver().GetRecentIndexesSummary(ctx, repoID)
 	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// lastIndexScan, err := r.resolver.AutoIndexingRootResolver().GetLastIndexScanForRepository(ctx, repoID)
 	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
+	}
+
+	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create blocklist for indexes that have already been uploaded.
+	blocklist := map[string]struct{}{}
+	for _, u := range recentUploads {
+		key := getKeyForLookup(u.Indexer, u.Root)
+		blocklist[key] = struct{}{}
+	}
+
+	commit := "HEAD"
+	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
+	if err != nil {
+		return nil, err
+	}
+
+	availableIndexersMap := map[string]availableIndexer{}
+	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
+
+	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+	if err != nil {
+		return nil, err
+	}
+	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+
+	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
+	for indexName, indexer := range inferredAvailableIndexers {
+		inferredAvailableIndexersResolver = append(inferredAvailableIndexersResolver,
+			sharedresolvers.InferredAvailableIndexers{
+				Roots: indexer.Roots,
+				Index: indexName,
+				URL:   indexer.URL,
+			},
+		)
 	}
 
 	summary := sharedresolvers.RepositorySummary{
@@ -430,10 +460,9 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// the same graphQL request, not across different request.
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
-	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, summary, prefetcher, errTracer), nil
+	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, summary, inferredAvailableIndexersResolver, prefetcher, errTracer), nil
 }
 
-// HERE HERE HERE
 func (r *rootResolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {
 	ctx, _, endObservation := r.operations.getSupportedByCtags.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("repoName", string(repoName))},

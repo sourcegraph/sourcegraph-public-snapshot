@@ -54,6 +54,8 @@ export interface UseWorkspacesPreviewResult {
      * on the page.
      */
     hasPreviewed: boolean
+    /** Whether or not the batch spec should be executed with the cache disabled. */
+    noCache: boolean
 }
 
 interface UseWorkspacesPreviewOptions {
@@ -159,10 +161,10 @@ export const useWorkspacesPreview = (
             > =>
                 isBatchSpecApplied
                     ? createBatchSpecFromRaw({
-                          variables: { spec: code, namespace: namespaceID, noCache, batchChange },
+                          variables: { spec: code, namespace: namespaceID, batchChange },
                       }).then(result => result.data?.createBatchSpecFromRaw)
                     : replaceBatchSpecInput({
-                          variables: { spec: code, previousSpec: currentBatchSpecID, noCache },
+                          variables: { spec: code, previousSpec: currentBatchSpecID },
                       }).then(result => result.data?.replaceBatchSpecInput)
 
             return preview()
@@ -192,7 +194,6 @@ export const useWorkspacesPreview = (
             currentBatchSpecID,
             namespaceID,
             isBatchSpecApplied,
-            noCache,
             createBatchSpecFromRaw,
             replaceBatchSpecInput,
             batchChange,
@@ -276,5 +277,6 @@ export const useWorkspacesPreview = (
         error,
         clearError: () => setError(undefined),
         hasPreviewed: hasRequestedPreview && hasPreviewed,
+        noCache,
     }
 }

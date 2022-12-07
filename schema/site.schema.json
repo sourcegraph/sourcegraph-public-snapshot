@@ -18,7 +18,7 @@
       "group": "Search"
     },
     "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "REMOVED.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
@@ -578,7 +578,8 @@
         "insightsBackfillerV2": {
           "description": "Use v2 of the insights backfiller which backfills a series at a time.",
           "type": "boolean",
-          "default": false
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "examples": [
@@ -1891,6 +1892,13 @@
       "minimum": 0,
       "default": 50,
       "maximum": 500
+    },
+    "redactOutboundRequestHeaders": {
+      "description": "Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
     },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",

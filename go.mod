@@ -135,7 +135,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20221116144936-8b7619bccc8a
+	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.2.3
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -166,12 +166,12 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
-	go.uber.org/zap v1.23.0
+	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.3.0
 	golang.org/x/net v0.2.0
 	golang.org/x/oauth2 v0.2.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.2.0
+	golang.org/x/sys v0.3.0
 	golang.org/x/time v0.2.0
 	golang.org/x/tools v0.3.0
 	gonum.org/v1/gonum v0.11.0
@@ -229,7 +229,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221201083655-f32b0e172b58
+	github.com/sourcegraph/zoekt v0.0.0-20221206194847-ec7da2382965
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -430,7 +430,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.7.0
 	golang.org/x/term v0.2.0 // indirect
-	golang.org/x/text v0.4.0
+	golang.org/x/text v0.5.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.51.0 // indirect

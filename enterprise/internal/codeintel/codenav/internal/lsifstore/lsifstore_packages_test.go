@@ -10,20 +10,49 @@ import (
 )
 
 func TestGetPackageInformation(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		uploadID             int
+		path                 string
+		packageInformationID string
+		expectedData         precise.PackageInformationData
+	}{
+		{
+			name:                 "lsif",
+			uploadID:             testLSIFUploadID,
+			path:                 "protocol/protocol.go",
+			packageInformationID: "114",
+			expectedData: precise.PackageInformationData{
+				Name:    "https://github.com/sourcegraph/lsif-go",
+				Version: "ad3507cbeb18",
+			},
+		},
+		{
+			name:                 "scip",
+			uploadID:             testSCIPUploadID,
+			path:                 "protocol/protocol.go",
+			packageInformationID: "scip:dGVzdC1tYW5hZ2Vy:dGVzdC1uYW1l:dGVzdC12ZXJzaW9u",
+			expectedData: precise.PackageInformationData{
+				Manager: "test-manager",
+				Name:    "test-name",
+				Version: "test-version",
+			},
+		},
+	}
+
 	store := populateTestStore(t)
 
-	if actual, exists, err := store.GetPackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "114"); err != nil {
-		t.Fatalf("unexpected error %s", err)
-	} else if !exists {
-		t.Errorf("no package information")
-	} else {
-		expected := precise.PackageInformationData{
-			Name:    "https://github.com/sourcegraph/lsif-go",
-			Version: "ad3507cbeb18",
-		}
-
-		if diff := cmp.Diff(expected, actual); diff != "" {
-			t.Errorf("unexpected package information (-want +got):\n%s", diff)
-		}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if actual, exists, err := store.GetPackageInformation(context.Background(), testCase.uploadID, testCase.path, testCase.packageInformationID); err != nil {
+				t.Fatalf("unexpected error %s", err)
+			} else if !exists {
+				t.Errorf("no package information")
+			} else {
+				if diff := cmp.Diff(testCase.expectedData, actual); diff != "" {
+					t.Errorf("unexpected package information (-want +got):\n%s", diff)
+				}
+			}
+		})
 	}
 }

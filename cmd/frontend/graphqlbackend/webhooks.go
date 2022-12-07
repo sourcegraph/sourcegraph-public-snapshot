@@ -12,6 +12,7 @@ import (
 type WebhooksResolver interface {
 	CreateWebhook(ctx context.Context, args *CreateWebhookArgs) (WebhookResolver, error)
 	DeleteWebhook(ctx context.Context, args *DeleteWebhookArgs) (*EmptyResponse, error)
+	UpdateWebhook(ctx context.Context, args *UpdateWebhookArgs) (WebhookResolver, error)
 	Webhooks(ctx context.Context, args *ListWebhookArgs) (WebhookConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
@@ -48,6 +49,14 @@ type CreateWebhookArgs struct {
 
 type DeleteWebhookArgs struct {
 	ID graphql.ID
+}
+
+type UpdateWebhookArgs struct {
+	ID           graphql.ID
+	Name         *string
+	CodeHostKind *string
+	CodeHostURN  *string
+	Secret       *string
 }
 
 type ListWebhookArgs struct {

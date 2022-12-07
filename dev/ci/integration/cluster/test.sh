@@ -31,8 +31,10 @@ function cluster_capture_state() {
   kubectl describe pods >"$root_dir/describe_pods.log" 2>&1
 
   # Get logs for some deployments
-  kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
-
+  IFS=' ' read -ra deployments <<< "$(kubectl get deployments -o=jsonpath='{.items[*].metadata.name}')"
+  for dep in "${deployments[@]}"; do
+    kubectl logs "deployment/$dep" --all-containers >"$root_dir/$dep.log" 2>&1
+  done
   set +x
 }
 

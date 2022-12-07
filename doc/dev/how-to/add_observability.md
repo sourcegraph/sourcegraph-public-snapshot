@@ -23,11 +23,7 @@ The high-level ideas behind the [`internal/observation` package](https://sourceg
 ## Usage
 
 ```go
-observationContext := observation.Context{
-    Logger:     log.Scoped("my-scope", "a simple description"),
-    Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-    Registerer: prometheus.DefaultRegisterer,
-}
+observationContext := observation.NewContext(log.Scoped("my-scope", "a simple description"))
 
 metrics := metrics.NewREDMetrics(
     observationContext.Registerer,

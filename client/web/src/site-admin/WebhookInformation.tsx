@@ -1,11 +1,11 @@
 import { FC, useState } from 'react'
 
-import { mdiContentCopy, mdiEye } from '@mdi/js'
+import { mdiEye } from '@mdi/js'
 import classNames from 'classnames'
-import copy from 'copy-to-clipboard'
 
 import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
+import { CopyableText } from '../components/CopyableText'
 import { WebhookFields } from '../graphql-operations'
 
 import styles from './WebhookInformation.module.scss'
@@ -32,10 +32,7 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
                 <tr>
                     <th className={styles.tableHeader}>Webhook endpoint</th>
                     <td className={styles.contentCell}>
-                        {webhook.url}
-                        <Button size="sm" className={styles.copyButton} onClick={() => copy(webhook.url)}>
-                            <Icon svgPath={mdiContentCopy} inline={true} aria-label="Copy webhook endpoint" />
-                        </Button>
+                        <CopyableText text={webhook.url} size={60} />
                     </td>
                 </tr>
                 <tr>

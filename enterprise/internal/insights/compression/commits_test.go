@@ -18,7 +18,7 @@ import (
 
 func TestInsertCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	commitStore := NewCommitStore(insightsDB)
 
 	commit1 := makeCommit("abc123", time.Date(2021, time.April, 21, 1, 1, 0, 0, time.UTC))
@@ -45,7 +45,8 @@ func TestInsertCommits(t *testing.T) {
 			firstInsert:  []*gitdomain.Commit{commit3},
 			secondInsert: []*gitdomain.Commit{commit4, commit3},
 			after:        time.Date(2021, time.May, 22, 1, 1, 0, 0, time.UTC),
-			want:         autogold.Want("desc", "[{1 bcd234 2021-05-21 01:02:00 +0000 UTC} {1 bcd123 2021-05-21 01:01:00 +0000 UTC}]")},
+			want:         autogold.Want("desc", "[{1 bcd234 2021-05-21 01:02:00 +0000 UTC} {1 bcd123 2021-05-21 01:01:00 +0000 UTC}]"),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {

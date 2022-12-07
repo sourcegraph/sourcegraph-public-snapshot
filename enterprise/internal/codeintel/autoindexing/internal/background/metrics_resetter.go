@@ -15,14 +15,14 @@ type resetterMetrics struct {
 	numDependencyIndexResetErrors   prometheus.Counter
 }
 
-func NewResetterMetrics(observationContext *observation.Context) *resetterMetrics {
+func NewResetterMetrics(observationCtx *observation.Context) *resetterMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 

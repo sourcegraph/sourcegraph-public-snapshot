@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCleaner(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"webhook_build_worker_cleaner",
 		metrics.WithCountHelp("Total number of webhookbuilder cleaner executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "WebhookBuilder.Cleaner.Run",
 		Metrics: metrics,
 	})

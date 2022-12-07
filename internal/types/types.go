@@ -562,21 +562,19 @@ type GitserverRepo struct {
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          *extsvc.EncryptableConfig
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 type ExternalServiceRepo struct {
@@ -1654,6 +1652,15 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	Autodefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1719,5 +1726,5 @@ type OutboundRequestLogItem struct {
 	Duration           float64             `json:"duration"`
 	ErrorMessage       string              `json:"errorMessage"`
 	CreationStackFrame string              `json:"creationStackFrame"`
-	CallStackFrame     string              `json:"callStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
 }

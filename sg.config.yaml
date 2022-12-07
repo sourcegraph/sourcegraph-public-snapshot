@@ -107,12 +107,19 @@ env:
   # This setting will be going away soon
   DISABLE_CNCF: notonmybox
 
-  # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
-  CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
+  # Point code insights to the `frontend` database in development
+  CODEINSIGHTS_PGPORT: $PGPORT
+  CODEINSIGHTS_PGHOST: $PGHOST
+  CODEINSIGHTS_PGUSER: $PGUSER
+  CODEINSIGHTS_PGPASSWORD: $PGPASSWORD
+  CODEINSIGHTS_PGDATABASE: $PGDATABASE
+  CODEINSIGHTS_PGSSLMODE: $PGSSLMODE
+  CODEINSIGHTS_PGDATASOURCE: $PGDATASOURCE
+
+  # Disable code insights by default
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
-  ENABLE_STREAMING_REPOS_SYNCER: true
 
   # # OpenTelemetry in dev - use single http/json endpoint
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
@@ -299,7 +306,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/oss-symbols
     env:
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
       - lib
@@ -317,7 +324,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: 'false'
     watch:
@@ -405,8 +412,11 @@ commands:
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
-      # Pull syntax-highlighter latest insider image, only during install
-      docker pull -q sourcegraph/syntax-highlighter:insiders
+      # Pull syntax-highlighter latest insider image, only during install, but
+      # skip if OFFLINE=true is set.
+      if [[ "$OFFLINE" != "true" ]]; then
+          docker pull -q sourcegraph/syntax-highlighter:insiders
+      fi
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
@@ -425,7 +435,7 @@ commands:
       go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
 
   zoekt-index-0:
     <<: *zoekt_indexserver_template
@@ -556,13 +566,14 @@ commands:
         --name=$CONTAINER \
         --cpus=1 \
         --memory=1g \
-        -p 0.0.0.0:9000:80 \
+        -p 0.0.0.0:9000:9000 \
         -e 'S3PROXY_AUTHORIZATION=none' \
         -v "$BLOBSTORE_DISK":/data \
         $IMAGE >"$BLOBSTORE_LOG_FILE" 2>&1
     install: |
       mkdir -p $BLOBSTORE_LOGS
       mkdir -p $BLOBSTORE_DISK
+      chmod u+rwx $BLOBSTORE_LOGS $BLOBSTORE_DISK
       CACHE=true ./docker-images/blobstore/build.sh >$BLOBSTORE_LOG_FILE 2>&1
     env:
       BLOBSTORE_DISK: $HOME/.sourcegraph-dev/data/blobstore
@@ -859,7 +870,7 @@ commandsets:
       - blobstore
       - codeintel-worker
       - codeintel-executor
-      - otel-collector
+      # - otel-collector
       - jaeger
       - grafana
       - prometheus

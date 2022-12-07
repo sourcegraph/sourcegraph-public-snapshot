@@ -108,7 +108,7 @@ type JobMonitorConfig struct {
 	InsightStore    store.Interface
 	RepoStore       database.RepoStore
 	BackfillRunner  pipeline.Backfiller
-	ObsContext      *observation.Context
+	ObservationCtx  *observation.Context
 	AllRepoIterator *discovery.AllReposIterator
 	CostAnalyzer    *priority.QueryAnalyzer
 }
@@ -133,6 +133,15 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 
 type SeriesReader interface {
 	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
+}
+
+type SeriesBackfillComplete interface {
+	SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error
+}
+
+type SeriesReadBackfillComplete interface {
+	SeriesReader
+	SeriesBackfillComplete
 }
 
 type Scheduler struct {

@@ -122,7 +122,7 @@
     },
     {
       "Name": "func_lsif_uploads_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        content_type,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            NEW.content_type,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_lsif_uploads_transition_columns_diff",
@@ -130,7 +130,7 @@
     },
     {
       "Name": "func_lsif_uploads_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            content_type,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                NEW.content_type,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_row_to_configuration_policies_transition_columns",
@@ -13638,6 +13638,19 @@
           "Comment": ""
         },
         {
+          "Name": "content_type",
+          "Index": 34,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'application/x-ndjson+lsif'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support."
+        },
+        {
           "Name": "execution_logs",
           "Index": 22,
           "TypeName": "json[]",
@@ -14141,6 +14154,19 @@
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "content_type",
+          "Index": 17,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'application/x-ndjson+lsif'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -17808,6 +17834,67 @@
       "Triggers": []
     },
     {
+      "Name": "search_context_default",
+      "Comment": "When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.",
+      "Columns": [
+        {
+          "Name": "search_context_id",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "search_context_default_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX search_context_default_pkey ON search_context_default USING btree (user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "search_context_default_search_context_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "search_contexts",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "search_context_default_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "search_context_repos",
       "Comment": "",
       "Columns": [
@@ -17877,6 +17964,80 @@
           "RefTableName": "search_contexts",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "search_context_stars",
+      "Comment": "When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "search_context_id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "search_context_stars_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX search_context_stars_pkey ON search_context_stars USING btree (search_context_id, user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (search_context_id, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "search_context_stars_search_context_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "search_contexts",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "search_context_stars_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -20818,7 +20979,7 @@
     },
     {
       "Name": "lsif_uploads_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "reconciler_changesets",

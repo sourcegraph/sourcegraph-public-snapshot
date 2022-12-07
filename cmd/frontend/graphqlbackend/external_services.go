@@ -212,13 +212,10 @@ type ExternalServicesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: check whether user is site-admin
+	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-
-	var namespaceUserID int32
-	var namespaceOrgID int32
 
 	var afterID int64
 	if args.After != nil {
@@ -230,14 +227,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
-		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
-		// specified we need to explicitly specify `NoNamespace`, otherwise site
-		// admins will be able to list all user code host connections that are not
-		// accessible when trying to access them individually.
-		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
-		NamespaceUserID: namespaceUserID,
-		NamespaceOrgID:  namespaceOrgID,
-		AfterID:         afterID,
+		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil

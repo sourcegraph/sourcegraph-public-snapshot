@@ -314,10 +314,12 @@ CREATE FUNCTION func_lsif_uploads_insert() RETURNS trigger
         INSERT INTO lsif_uploads_audit_logs
         (upload_id, commit, root, repository_id, uploaded_at,
         indexer, indexer_version, upload_size, associated_index_id,
+        content_type,
         operation, transition_columns)
         VALUES (
             NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,
             NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,
+            NEW.content_type,
             'create', func_lsif_uploads_transition_columns_diff(
                 (NULL, NULL, NULL, NULL, NULL, NULL),
                 func_row_to_lsif_uploads_transition_columns(NEW)
@@ -382,11 +384,13 @@ CREATE FUNCTION func_lsif_uploads_update() RETURNS trigger
             INSERT INTO lsif_uploads_audit_logs
             (reason, upload_id, commit, root, repository_id, uploaded_at,
             indexer, indexer_version, upload_size, associated_index_id,
+            content_type,
             operation, transition_columns)
             VALUES (
                 COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),
                 NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,
                 NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,
+                NEW.content_type,
                 'modify', diff
             );
         END IF;
@@ -2486,6 +2490,7 @@ CREATE TABLE lsif_uploads (
     last_referenced_scan_at timestamp with time zone,
     last_traversal_scan_at timestamp with time zone,
     last_reconcile_at timestamp with time zone,
+    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2518,6 +2523,8 @@ COMMENT ON COLUMN lsif_uploads.indexer_version IS 'The version of the indexer th
 COMMENT ON COLUMN lsif_uploads.last_referenced_scan_at IS 'The last time this upload was known to be referenced by another (possibly expired) index.';
 
 COMMENT ON COLUMN lsif_uploads.last_traversal_scan_at IS 'The last time this upload was known to be reachable by a non-expired index.';
+
+COMMENT ON COLUMN lsif_uploads.content_type IS 'The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support.';
 
 CREATE VIEW lsif_dumps AS
  SELECT u.id,
@@ -2830,7 +2837,8 @@ CREATE TABLE lsif_uploads_audit_logs (
     transition_columns hstore[],
     reason text DEFAULT ''::text,
     sequence bigint NOT NULL,
-    operation audit_log_operation NOT NULL
+    operation audit_log_operation NOT NULL,
+    content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL
 );
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -2896,6 +2904,7 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.content_type,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,
@@ -3361,11 +3370,26 @@ CREATE SEQUENCE saved_searches_id_seq
 
 ALTER SEQUENCE saved_searches_id_seq OWNED BY saved_searches.id;
 
+CREATE TABLE search_context_default (
+    user_id integer NOT NULL,
+    search_context_id bigint NOT NULL
+);
+
+COMMENT ON TABLE search_context_default IS 'When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.';
+
 CREATE TABLE search_context_repos (
     search_context_id bigint NOT NULL,
     repo_id integer NOT NULL,
     revision text NOT NULL
 );
+
+CREATE TABLE search_context_stars (
+    search_context_id bigint NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE search_context_stars IS 'When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.';
 
 CREATE TABLE search_contexts (
     id bigint NOT NULL,
@@ -4195,8 +4219,14 @@ ALTER TABLE ONLY repo
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_pkey PRIMARY KEY (user_id);
+
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_unique UNIQUE (repo_id, search_context_id, revision);
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_pkey PRIMARY KEY (search_context_id, user_id);
 
 ALTER TABLE ONLY search_contexts
     ADD CONSTRAINT search_contexts_pkey PRIMARY KEY (id);
@@ -5018,11 +5048,23 @@ ALTER TABLE ONLY saved_searches
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_repo_id_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_search_context_id_fk FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY search_contexts
     ADD CONSTRAINT search_contexts_namespace_org_id_fk FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;

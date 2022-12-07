@@ -15,7 +15,6 @@ import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
-    fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     SearchContextProps,
     fetchSearchContexts,
@@ -399,7 +398,6 @@ export class SourcegraphWebApp extends React.Component<
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContextBySpec={fetchSearchContextBySpec}
                                     fetchSearchContext={fetchSearchContext}
