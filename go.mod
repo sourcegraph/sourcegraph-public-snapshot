@@ -194,6 +194,9 @@ require github.com/XSAM/otelsql v0.15.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/alexflint/go-arg v1.4.2 // indirect
+	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/cloudflare/circl v1.3.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
@@ -206,6 +209,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.20.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
@@ -213,6 +217,7 @@ require (
 
 require (
 	cuelang.org/go v0.4.3
+	github.com/Khan/genqlient v0.5.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0

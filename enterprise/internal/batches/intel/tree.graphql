@@ -1,0 +1,14 @@
+query pathExists($repository: String!, $commit: String!, $path: String!) {
+    repository(name: $repository) {
+        commit(rev: $commit) {
+            path(path: $path) {
+                ... on GitTree {
+                    isDirectory
+                }
+                ... on GitBlob {
+                    isDirectory
+                }
+            }
+        }
+    }
+}

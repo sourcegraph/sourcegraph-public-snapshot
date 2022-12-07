@@ -5,17 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/kballard/go-shellquote"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -23,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/intel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -2086,124 +2084,110 @@ func unmarshalBulkOperationBaseArgs(args graphqlbackend.BulkOperationBaseArgs) (
 	return batchChangeID, changesetIDs, nil
 }
 
-func (r *Resolver) RenameField(ctx context.Context, args *graphqlbackend.RenameFieldArgs) (string, error) {
-	// This should check perms, too.
-	repo, err := r.store.DatabaseDB().Repos().GetByName(ctx, api.RepoName(args.Repository))
-	if err != nil {
-		return "", err
-	}
-
-	observationCtx := observation.NewContext(log.Scoped("", ""), observation.Honeycomb(&honey.Dataset{
-		Name: "codeintel-worker",
+func (r *Resolver) RenameSymbol(ctx context.Context, args *graphqlbackend.RenameSymbolArgs) (string, error) {
+	octx := observation.NewContext(log.Scoped("", ""), observation.Honeycomb(&honey.Dataset{
+		Name: "rename-field",
 	}))
 
-	cs, err := codeintel.NewServices(codeintel.ServiceDependencies{
-		DB: r.store.DatabaseDB(),
-		// TODO: This doesn't work when the codeintel db is a separate DB.
-		CodeIntelDB:    stores.NewCodeIntelDBWith(r.store.DatabaseDB()),
-		ObservationCtx: observationCtx,
+	is, err := intel.NewIntelService(log.Scoped("rename-field", ""), r.store, octx)
+	if err != nil {
+		return "", errors.Wrap(err, "initialising intel service")
+	}
+
+	// Let's go get the references.
+	irefs, err := is.GetReferences(ctx, intel.Location{
+		Repo:     args.Repository,
+		Commit:   args.Commit,
+		Path:     args.File,
+		Position: intel.Position{Line: int(args.Line), Character: int(args.Character)},
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "getting references")
 	}
-	uploads, err := cs.CodenavService.GetClosestDumpsForBlob(ctx, int(repo.ID), string(args.Commit), args.File, true, "")
-	if err != nil {
-		return "", err
-	}
-	if len(uploads) == 0 {
-		return "", errors.New("no uploads found for repo, cannot precisely rename")
-	}
-	gs := &gitserverClientShim{
-		Client: r.gitserverClient,
-		store:  r.store,
-	}
-	hunkCache, err := codenav.NewHunkCache(1000)
-	if err != nil {
-		return "", errors.Wrap(err, "creating hunk cache")
-	}
-	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, gs, repo, string(args.Commit), args.File, 500, hunkCache)
 
-	ra := shared.RequestArgs{
-		RepositoryID: int(repo.ID),
-		Commit:       args.Commit,
-		Path:         args.File,
-		Line:         int(args.Line),
-		Character:    int(args.Character),
-		Limit:        50,
-	}
-	type repoRefLoc struct {
-		path      string
-		line      int
-		character int
-	}
-	repoIDs := map[int32]repoRefLoc{}
-	var (
-		refs []types.UploadLocation
-		next shared.ReferencesCursor = shared.ReferencesCursor{Phase: "local"}
-	)
-	for {
-		refs, next, err = cs.CodenavService.GetReferences(ctx, ra, reqState, next)
-		fmt.Printf("Getting references %v\nlen=%d\n", reqState, len(refs))
-		if err != nil {
-			return "", err
+	// Transform the references into a per-repo structure, ensuring that we also
+	// don't see multiple commits for the same repo.
+	repoRefs := map[string][]intel.Reference{}
+	seenCommits := map[string]map[string]struct{}{}
+	for _, ref := range irefs {
+		if repoSeen, ok := seenCommits[ref.Repo]; ok {
+			if _, ok := repoSeen[ref.Commit]; !ok {
+				return "", errors.Newf("multiple commits referenced in repo %q, cannot continue", ref.Repo)
+			}
+		} else {
+			seenCommits[ref.Repo] = map[string]struct{}{ref.Commit: {}}
 		}
+
+		repoRefs[ref.Repo] = append(repoRefs[ref.Repo], ref)
+	}
+
+	// Now we have to resolve each reference into a workspace.
+	type PathPosition struct {
+		Path     string
+		Position intel.Position
+	}
+	workspaces := map[string]map[string]PathPosition{}
+	for repo, refs := range repoRefs {
+		if _, ok := workspaces[repo]; !ok {
+			workspaces[repo] = map[string]PathPosition{}
+		}
+
 		for _, ref := range refs {
-			if _, ok := repoIDs[int32(ref.Dump.RepositoryID)]; !ok {
-				repoIDs[int32(ref.Dump.RepositoryID)] = repoRefLoc{
-					path:      ref.Path,
-					line:      ref.TargetRange.Start.Line,
-					character: ref.TargetRange.Start.Character,
-				}
+			workspace, err := is.FindWorkspaceRoot(ctx, repo, ref.Commit, ref.Path)
+			if err != nil {
+				return "", errors.Newf("cannot find workspace root for %q in repo %q", ref.Path, repo)
+			}
+			// It doesn't matter what position we use, since LSP will handle
+			// finding the other occurrences. It just needs to be valid.
+			workspaces[repo][workspace] = PathPosition{
+				Path:     ref.Path,
+				Position: ref.Range.Start,
 			}
 		}
-		// TODO: No idea how this works :D
-		if next.Phase != "local" && next.Phase != "remote" {
-			fmt.Printf("next.Phase=%q\n", next.Phase)
-			break
-		}
 	}
 
-	if len(repoIDs) == 0 {
-		return "", errors.New("no repos found matching")
-	}
-
-	idList := make([]api.RepoID, 0, len(repoIDs))
-	for id := range repoIDs {
-		idList = append(idList, api.RepoID(id))
-	}
-	visibleConnectedRepos, err := r.store.DatabaseDB().Repos().ListMinimalRepos(ctx, database.ReposListOptions{IDs: idList})
-	if err != nil {
-		return "", err
-	}
-	if len(visibleConnectedRepos) == 0 {
-		return "", errors.New("no matching repos found")
-	}
+	// Now we have that, we can start building a batch spec.
 	on := []batcheslib.OnQueryOrRepository{}
-	for _, r := range visibleConnectedRepos {
+	for repo := range workspaces {
 		on = append(on, batcheslib.OnQueryOrRepository{
-			Repository: string(r.Name),
+			Repository: repo,
 			// TODO: Branch as well, and revision ideally
 		})
 	}
+
 	steps := []batcheslib.Step{}
-	for _, r := range visibleConnectedRepos {
+	for repo, workspaces := range workspaces {
+		run := make([]string, 0, len(workspaces))
+		for workspace, pp := range workspaces {
+			run = append(run, shellquote.Join(
+				"/usr/local/bin/lingua-franker",
+				// FIXME: another hardcoded language reference.
+				"--server-command", "/go/bin/gopls",
+				"--workspace", workspace,
+				"rename",
+				"--file", pp.Path,
+				"--position", fmt.Sprintf("%d,%d", pp.Position.Line, pp.Position.Character),
+				"--name", args.Replacement,
+			))
+		}
+
 		steps = append(steps, batcheslib.Step{
-			Container: "sourcegraph/lsp-renamer:latest",
+			// FIXME: another hardcoded language reference.
+			Container: "sourcegraph/lingua-franker-golang:latest",
 			// Only run this step in this repo.
-			If:  fmt.Sprintf("${{ equal repository.name %q }}", r.Name),
-			Run: shellquote.Join("renamer", "-file", args.File, "-"),
+			If:  fmt.Sprintf("${{ equal repository.name %q }}", repo),
+			Run: strings.Join(run, "\n"),
 		})
 	}
 	batchSpec := batcheslib.BatchSpec{
-		Name:        "erik-does-things",
-		Description: "And they are nice",
+		Name:        args.SpecName,
+		Description: "Automated rename",
 		On:          on,
 		ChangesetTemplate: &batcheslib.ChangesetTemplate{
-			Title:  "Best changeset in town",
-			Body:   "At least this town",
-			Branch: "rename-the-symbol",
+			Title:  "Rename symbol to " + args.Replacement,
+			Branch: args.SpecName,
 			Commit: batcheslib.ExpandedGitCommitDescription{
-				Message: "Renaming a symbol",
+				Message: "Rename symbol to " + args.Replacement,
 			},
 		},
 		Steps: steps,

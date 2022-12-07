@@ -3565,12 +3565,13 @@ type BatchSpecWorkspaceFile implements File2 & Node {
 }
 
 extend type Mutation {
-    renameField(
+    renameSymbol(
         repository: String!
         commit: String!
         file: String!
         line: Int!
         character: Int!
         replacement: String!
+        specName: String!
     ): String!
 }

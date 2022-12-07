@@ -1,0 +1,7 @@
+schema: ../../../../cmd/frontend/graphqlbackend/*.graphql
+operations:
+  - '*.graphql'
+generated: generated.go
+bindings:
+  GitObjectID:
+    type: string

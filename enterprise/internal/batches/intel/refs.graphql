@@ -1,0 +1,33 @@
+query getReferences($repo: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
+    repository(name: $repo) {
+        commit(rev: $commit) {
+            blob(path: $path) {
+                lsif {
+                    references(line: $line, character: $character) {
+                        nodes {
+                            resource {
+                                commit {
+                                    oid
+                                }
+                                path
+                                repository {
+                                    name
+                                }
+                            }
+                            range {
+                                start {
+                                    line
+                                    character
+                                }
+                                end {
+                                    line
+                                    character
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
