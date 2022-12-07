@@ -473,8 +473,9 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
+	logger                 log.Logger
 
-	gitservers = endpoint.New(func() string {
+	gitservers = endpoint.New(logger, func() string {
 		v := os.Getenv("SRC_GIT_SERVERS")
 		if v == "" {
 			// Detect 'go test' and setup default addresses in that case.
@@ -557,7 +558,7 @@ func computeSearcherEndpoints() *endpoint.Map {
 		if len(strings.Fields(searcherURL)) == 0 {
 			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		} else {
-			searcherURLs = endpoint.New(searcherURL)
+			searcherURLs = endpoint.New(logger, searcherURL)
 		}
 	})
 	return searcherURLs
@@ -566,7 +567,7 @@ func computeSearcherEndpoints() *endpoint.Map {
 func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(addr)
+			indexedEndpoints = endpoint.New(logger, addr)
 		}
 	})
 	return indexedEndpoints
