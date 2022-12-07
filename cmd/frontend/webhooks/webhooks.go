@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -148,21 +149,18 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
+	g := errgroup.Group{}
 	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
 		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
 	}
-	// We have to fire and forget the handler if a handler is found.
-	// Processing a webhook might take some time, and if it takes too
-	// long the provider might mark it as undelivered.
-	// See: https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#configure-your-webhook-receiver-endpoint
 	for _, handler := range wr.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
-		go func() error {
+		g.Go(func() error {
 			return handler(ctx, wr.DB, codeHostURN, e)
-		}()
+		})
 	}
-	return nil
+	return g.Wait()
 }
 
 type eventTypeNotFoundError struct {

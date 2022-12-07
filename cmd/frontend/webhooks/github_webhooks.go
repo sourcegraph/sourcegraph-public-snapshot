@@ -91,15 +91,13 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
-	// Webhooks should not fire for unregistered event types
-	if errcode.IsNotFound(err) {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-	// If it is a registered event type and we receive the webhook, we must return
-	// a success.
 	if err != nil {
-		logger.Info("did not process webhook event", log.Error(err))
+		logger.Error("Error handling github webhook event", log.Error(err))
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

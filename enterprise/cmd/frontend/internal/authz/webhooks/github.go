@@ -51,19 +51,23 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	// If we react too quickly to a webhook, the changes may not yet have properly
 	// propagated on GitHub's system, and we'll get old results, making the
 	// webhook useless.
-	time.Sleep(sleepTime)
-	switch e := payload.(type) {
-	case *gh.RepositoryEvent:
-		return h.handleRepositoryEvent(ctx, db, e)
-	case *gh.MemberEvent:
-		return h.handleMemberEvent(ctx, db, e, codeHostURN)
-	case *gh.OrganizationEvent:
-		return h.handleOrganizationEvent(ctx, db, e, codeHostURN)
-	case *gh.MembershipEvent:
-		return h.handleMembershipEvent(ctx, db, e, codeHostURN)
-	case *gh.TeamEvent:
-		return h.handleTeamEvent(ctx, e, db)
-	}
+	// We have to wait some amount of time to process the webhook to ensure
+	// that we are getting fresh results.
+	go func() {
+		time.Sleep(sleepTime)
+		switch e := payload.(type) {
+		case *gh.RepositoryEvent:
+			h.handleRepositoryEvent(ctx, db, e)
+		case *gh.MemberEvent:
+			h.handleMemberEvent(ctx, db, e, codeHostURN)
+		case *gh.OrganizationEvent:
+			h.handleOrganizationEvent(ctx, db, e, codeHostURN)
+		case *gh.MembershipEvent:
+			h.handleMembershipEvent(ctx, db, e, codeHostURN)
+		case *gh.TeamEvent:
+			h.handleTeamEvent(ctx, e, db)
+		}
+	}()
 	return nil
 }
 
