@@ -132,7 +132,7 @@
     "@sourcegraph/stylelint-plugin-sourcegraph": "^1.0.1",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@statoscope/cli": "^5.24.0",
-    "@statoscope/webpack-plugin": "^5.20.1",
+    "@statoscope/webpack-plugin": "^5.24.0",
     "@storybook/addon-a11y": "^6.5.9",
     "@storybook/addon-actions": "^6.5.9",
     "@storybook/addon-console": "^1.2.3",
