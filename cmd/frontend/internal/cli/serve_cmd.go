@@ -309,10 +309,8 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
+			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
-
-			NewCodeIntelUploadHandler:              enterprise.NewCodeIntelUploadHandler,
-			NewCodeIntelUploadScipAvailableHandler: noopHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
@@ -397,7 +395,3 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
 }
-
-var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-})

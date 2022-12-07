@@ -47,10 +47,8 @@ type Handlers struct {
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
+	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
 	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
-
-	NewCodeIntelUploadScipAvailableHandler http.HandlerFunc
-	NewCodeIntelUploadHandler              enterprise.NewCodeIntelUploadHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -118,7 +116,7 @@ func NewHandler(
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
-	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(handlers.NewCodeIntelUploadScipAvailableHandler))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
 	if envvar.SourcegraphDotComMode() {
@@ -160,7 +158,6 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	noopHandler http.HandlerFunc,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
@@ -297,3 +294,7 @@ func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *
 		}
 	}
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

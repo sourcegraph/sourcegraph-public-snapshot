@@ -151,7 +151,6 @@ func newInternalHTTPHandler(
 					db,
 					schema,
 					newCodeIntelUploadHandler,
-					noopHandler,
 					rankingService,
 					newComputeStreamHandler,
 					rateLimitWatcher,
