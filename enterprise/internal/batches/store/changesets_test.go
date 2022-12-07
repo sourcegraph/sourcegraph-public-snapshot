@@ -645,7 +645,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 		t.Run("Limit", func(t *testing.T) {
 			for i := 1; i <= len(changesets); i++ {
-				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
+				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{CursorOpts: CursorOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -689,7 +689,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		t.Run("Cursor pagination", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				opts := ListChangesetsOpts{CursorOpts: CursorOpts{Cursor: cursor, Limit: 1}}
 				have, next, err := s.ListChangesets(ctx, opts)
 				if err != nil {
 					t.Fatal(err)

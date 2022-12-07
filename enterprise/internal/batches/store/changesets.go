@@ -225,7 +225,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 		return err
 	}
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(c, sc) })
+	return writeRecord(ctx, s, q, scanChangeset, c)
 }
 
 var createChangesetQueryFmtstr = `
@@ -377,18 +377,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 	defer endObservation(1, observation.Args{})
 
 	q := getChangesetQuery(&opts)
-
-	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(&c, sc) })
-	if err != nil {
-		return nil, err
-	}
-
-	if c.ID == 0 {
-		return nil, ErrNoResults
-	}
-
-	return &c, nil
+	return getRecord(ctx, s, q, scanChangeset)
 }
 
 var getChangesetsQueryFmtstr = `
@@ -510,8 +499,7 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // Note that TextSearch is potentially expensive, and should only be specified
 // in conjunction with at least one other option (most likely, BatchChangeID).
 type ListChangesetsOpts struct {
-	LimitOpts
-	Cursor               int64
+	CursorOpts
 	BatchChangeID        int64
 	OnlyArchived         bool
 	IncludeArchived      bool
@@ -540,22 +528,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	}
 	q := listChangesetsQuery(&opts, authzConds)
 
-	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		var c btypes.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
-
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
-		next = cs[len(cs)-1].ID
-		cs = cs[:len(cs)-1]
-	}
-
-	return cs, next, err
+	return listRecords(ctx, s, q, opts.CursorOpts, scanChangeset)
 }
 
 var listChangesetsQueryFmtstr = `
@@ -564,11 +537,12 @@ INNER JOIN repo ON repo.id = changesets.repo_id
 %s -- optional LEFT JOIN to changeset_specs if required
 WHERE %s
 ORDER BY id ASC
+%s -- limit
 `
 
 func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
+		opts.whereDB("changesets.id", CursorDirectionAscending),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
@@ -650,10 +624,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
+		listChangesetsQueryFmtstr,
 		sqlf.Join(changesetColumns, ", "),
 		join,
 		sqlf.Join(preds, "\n AND "),
+		opts.limitDB(),
 	)
 }
 
@@ -727,9 +702,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 		return err
 	}
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
-	})
+	return writeRecord(ctx, s, q, scanChangeset, cs)
 }
 
 var updateChangesetQueryFmtstr = `
@@ -783,9 +756,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
-	})
+	return writeRecord(ctx, s, q, scanChangeset, cs)
 }
 
 var updateChangesetColumnQueryFmtstr = `
@@ -812,9 +783,7 @@ func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Cha
 		return err
 	}
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
-	})
+	return writeRecord(ctx, s, q, scanChangeset, cs)
 }
 
 func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error) {
@@ -1251,24 +1220,16 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}
 	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
-	stats = &btypes.RepoChangesetsStats{}
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		if err := sc.Scan(
+	return getRecord(ctx, s, q, func(stats *btypes.RepoChangesetsStats, sc dbutil.Scanner) error {
+		return sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
 			&stats.Draft,
 			&stats.Closed,
 			&stats.Merged,
 			&stats.Open,
-		); err != nil {
-			return err
-		}
-		return err
+		)
 	})
-	if err != nil {
-		return stats, err
-	}
-	return stats, nil
 }
 
 func (s *Store) GetGlobalChangesetsStats(ctx context.Context) (stats *btypes.GlobalChangesetsStats, err error) {
@@ -1277,23 +1238,16 @@ func (s *Store) GetGlobalChangesetsStats(ctx context.Context) (stats *btypes.Glo
 
 	q := sqlf.Sprintf(getGlobalChangesetsStatsFmtstr)
 	stats = &btypes.GlobalChangesetsStats{}
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		if err := sc.Scan(
+	return getRecord(ctx, s, q, func(stats *btypes.GlobalChangesetsStats, sc dbutil.Scanner) error {
+		return sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
 			&stats.Draft,
 			&stats.Closed,
 			&stats.Merged,
 			&stats.Open,
-		); err != nil {
-			return err
-		}
-		return err
+		)
 	})
-	if err != nil {
-		return stats, err
-	}
-	return stats, nil
 }
 
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.Changeset, err error) {
@@ -1307,19 +1261,7 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 		sqlf.Join(changesetColumns, ","),
 	)
 
-	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanChangeset(&c, sc)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if c.ID == 0 {
-		return nil, ErrNoResults
-	}
-
-	return &c, nil
+	return getRecord(ctx, s, q, scanChangeset)
 }
 
 const enqueueNextScheduledChangesetFmtstr = `

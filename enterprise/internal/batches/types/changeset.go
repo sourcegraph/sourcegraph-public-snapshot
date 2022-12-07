@@ -302,6 +302,9 @@ type Changeset struct {
 // RecordID is needed to implement the workerutil.Record interface.
 func (c *Changeset) RecordID() int { return int(c.ID) }
 
+// Cursor implements store.Cursor for pagination purposes.
+func (c *Changeset) Cursor() int64 { return c.ID }
+
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c

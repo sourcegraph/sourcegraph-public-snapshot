@@ -1338,7 +1338,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				First: wantFirst,
 			},
 			wantSafe:   true,
-			wantParsed: store.ListChangesetsOpts{LimitOpts: store.LimitOpts{Limit: 10}},
+			wantParsed: store.ListChangesetsOpts{CursorOpts: store.CursorOpts{Limit: 10}},
 		},
 		// Setting state is safe and transferred to opts.
 		{
