@@ -29,50 +29,50 @@ import (
 //    pointers, which is ugly and inefficient.
 
 type BatchSpec struct {
-	Name              string                   `json:"name,omitempty" yaml:"name"`
-	Description       string                   `json:"description,omitempty" yaml:"description"`
-	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on"`
-	Workspaces        []WorkspaceConfiguration `json:"workspaces,omitempty"  yaml:"workspaces"`
-	Steps             []Step                   `json:"steps,omitempty" yaml:"steps"`
+	Name              string                   `json:"name,omitempty" yaml:"name,omitempty"`
+	Description       string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on,omitempty"`
+	Workspaces        []WorkspaceConfiguration `json:"workspaces,omitempty"  yaml:"workspaces,omitempty"`
+	Steps             []Step                   `json:"steps,omitempty" yaml:"steps,omitempty"`
 	TransformChanges  *TransformChanges        `json:"transformChanges,omitempty" yaml:"transformChanges,omitempty"`
-	ImportChangesets  []ImportChangeset        `json:"importChangesets,omitempty" yaml:"importChangesets"`
-	ChangesetTemplate *ChangesetTemplate       `json:"changesetTemplate,omitempty" yaml:"changesetTemplate"`
+	ImportChangesets  []ImportChangeset        `json:"importChangesets,omitempty" yaml:"importChangesets,omitempty"`
+	ChangesetTemplate *ChangesetTemplate       `json:"changesetTemplate,omitempty" yaml:"changesetTemplate,omitempty"`
 }
 
 type ChangesetTemplate struct {
-	Title     string                       `json:"title,omitempty" yaml:"title"`
-	Body      string                       `json:"body,omitempty" yaml:"body"`
-	Branch    string                       `json:"branch,omitempty" yaml:"branch"`
-	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit"`
-	Published *overridable.BoolOrString    `json:"published" yaml:"published"`
+	Title     string                       `json:"title,omitempty" yaml:"title,omitempty"`
+	Body      string                       `json:"body,omitempty" yaml:"body,omitempty"`
+	Branch    string                       `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Published *overridable.BoolOrString    `json:"published" yaml:"published,omitempty"`
 }
 
 type GitCommitAuthor struct {
-	Name  string `json:"name" yaml:"name"`
-	Email string `json:"email" yaml:"email"`
+	Name  string `json:"name" yaml:"name,omitempty"`
+	Email string `json:"email" yaml:"email,omitempty"`
 }
 
 type ExpandedGitCommitDescription struct {
-	Message string           `json:"message,omitempty" yaml:"message"`
-	Author  *GitCommitAuthor `json:"author,omitempty" yaml:"author"`
+	Message string           `json:"message,omitempty" yaml:"message,omitempty"`
+	Author  *GitCommitAuthor `json:"author,omitempty" yaml:"author,omitempty"`
 }
 
 type ImportChangeset struct {
-	Repository  string `json:"repository" yaml:"repository"`
-	ExternalIDs []any  `json:"externalIDs" yaml:"externalIDs"`
+	Repository  string `json:"repository" yaml:"repository,omitempty"`
+	ExternalIDs []any  `json:"externalIDs" yaml:"externalIDs,omitempty"`
 }
 
 type WorkspaceConfiguration struct {
-	RootAtLocationOf   string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf"`
-	In                 string `json:"in,omitempty" yaml:"in"`
-	OnlyFetchWorkspace bool   `json:"onlyFetchWorkspace,omitempty" yaml:"onlyFetchWorkspace"`
+	RootAtLocationOf   string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf,omitempty"`
+	In                 string `json:"in,omitempty" yaml:"in,omitempty"`
+	OnlyFetchWorkspace bool   `json:"onlyFetchWorkspace,omitempty" yaml:"onlyFetchWorkspace,omitempty"`
 }
 
 type OnQueryOrRepository struct {
-	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
-	Repository                string   `json:"repository,omitempty" yaml:"repository"`
-	Branch                    string   `json:"branch,omitempty" yaml:"branch"`
-	Branches                  []string `json:"branches,omitempty" yaml:"branches"`
+	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery,omitempty"`
+	Repository                string   `json:"repository,omitempty" yaml:"repository,omitempty"`
+	Branch                    string   `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Branches                  []string `json:"branches,omitempty" yaml:"branches,omitempty"`
 }
 
 var ErrConflictingBranches = NewValidationError(errors.New("both branch and branches specified"))
@@ -88,9 +88,9 @@ func (oqor *OnQueryOrRepository) GetBranches() ([]string, error) {
 }
 
 type Step struct {
-	Run       string            `json:"run,omitempty" yaml:"run"`
-	Container string            `json:"container,omitempty" yaml:"container"`
-	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
+	Run       string            `json:"run,omitempty" yaml:"run,omitempty"`
+	Container string            `json:"container,omitempty" yaml:"container,omitempty"`
+	Env       env.Environment   `json:"env,omitempty" yaml:"env,omitempty"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`

@@ -2175,7 +2175,7 @@ func (r *Resolver) RenameSymbol(ctx context.Context, args *graphqlbackend.Rename
 			// FIXME: another hardcoded language reference.
 			Container: "sourcegraph/lingua-franker-golang:latest",
 			// Only run this step in this repo.
-			If:  fmt.Sprintf("${{ equal repository.name %q }}", repo),
+			If:  fmt.Sprintf("${{ eq repository.name %q }}", repo),
 			Run: strings.Join(run, "\n"),
 		})
 	}

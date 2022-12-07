@@ -20,7 +20,9 @@ import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
+import { dataOrThrowErrors, getGraphQLClient, gql } from '@sourcegraph/http-client'
 import { Context } from '@sourcegraph/template-parser'
+import { requestGraphQL as realRequestGraphQL } from '../codeintel/legacy-extensions/api'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -35,6 +37,14 @@ import { PlatformContext, PlatformContextProps, URLToFileContext } from '../plat
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'
+import {
+    CreateBatchSpecForSymbolRenameResult,
+    CreateBatchSpecForSymbolRenameVariables,
+    GetCurrentUserResult,
+    GetCurrentUserVariables,
+    UpsertEmptyBatchChangeResult,
+    UpsertEmptyBatchChangeVariables,
+} from '../graphql-operations'
 
 const LOADING = 'loading' as const
 
@@ -374,14 +384,16 @@ export function registerHoverContributions({
                         commandArguments: ['${goToDefinition.url}'],
                     },
                     {
-                        id: 'batches.renameField',
+                        id: 'batches.renameSymbol',
                         title: 'Rename',
-                        command: 'batches.renameField',
+                        command: 'batches.renameSymbol',
                         commandArguments: [
                             /* eslint-disable no-template-curly-in-string */
                             '${json(hoverPosition)}',
                             /* eslint-enable no-template-curly-in-string */
                         ],
+                        iconURL:
+                            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAdnJLH8AAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAg9JREFUOMudk09o0mEYxz+zv9pGNKQuEQthh/BWOsVDdNhQEGXtEkFjDiLolKdiDGyyuhatXRQGdvBS6ARtHZQFUUhmhwShBr8ga0LMTW1TWZtPh/0WuoxGX3jh5Xmf7+d5n5fnhX2qMdarNMZ6L+6Nd/3LePx5VQeMjNbWhkaXFsxnv83f0j9+sdAJcBo4BSwBVdV8Anhv26r3+T9GMSoTiGjX19fG3/ZoZxuAR6OarwNfgHfAV2BQjXuN2z/75l7fxqhM7FTsqncvr9otyyuzc8D6ATUxCWjV/RFgBLi8VdsYnNBUdZaVmba2SmtXD33KXCoY30wmDqqx5p7WdcD57egjbkRhdeAY185p0R/dSduo6gEutBoeAhKPxwXouDR0ifLsiXy+ck9i+rrE9PU7rYDxQCAgIiI+n68jwOVySbPZlJepV3K3O5GL6evaVsCHUqkkIiKLi4sdAaFQSERENjc3xW63V1vejDNer1d2VSwWOwJyudzvnGAwKMAQgAYwmEwmABRFIZ/PYzab/xioQqFAOp0GoL+/H6Bv92zAYrEsRyIRqVQqUqlUZHp6uq260+mUWq0m5XJZksmkOByOVcDeWuAwcNNms31PpVISDofbAH6/X7LZrAwPD/8AJoGev42+DpgxGAxtAKvVKsA8cHK/n+++x+ORTCYjU1NTAjzlP/TA7XYLkFBv1lG/AIbqECVgkhOvAAAAAElFTkSuQmCC',
                     },
                 ],
                 menus: {
@@ -399,7 +411,8 @@ export function registerHoverContributions({
                             disabledWhen: 'hoveredOnDefinition',
                         },
                         {
-                            action: 'batches.renameField',
+                            action: 'batches.renameSymbol',
+                            when: 'goToDefinition.error || goToDefinition.showLoading || goToDefinition.url',
                             // when: 'batches.renameField.error || batches.renameField.showLoading',
                         },
                     ],
@@ -541,18 +554,94 @@ export function registerHoverContributions({
 
             subscriptions.add(
                 extensionsController.registerCommand({
-                    command: 'batches.renameField',
+                    command: 'batches.renameSymbol',
                     run: async (parametersString: string) => {
                         const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(
                             parametersString
                         )
 
-                        const result = await wrapRemoteObservable(extensionHostAPI.renameField(parameters))
-                            .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
+                        const newName = window.prompt('New name:')
+                        if (!newName) {
+                            return Promise.reject(new Error('No name provided'))
+                        }
+
+                        const specName = window.prompt('Spec name:')
+                        if (!specName) {
+                            return Promise.reject(new Error('No spec name provided'))
+                        }
+
+                        const spec = await wrapRemoteObservable(
+                            await extensionHostAPI.renameSymbol(parameters, newName, specName)
+                        )
+                            .pipe(
+                                first(({ isLoading, result }) => !isLoading || result !== null),
+                                map(maybeResult => maybeResult.result)
+                            )
                             .toPromise()
 
-                        alert(`generated the following spec:
-${result}`)
+                        // I really did try with RxJS. My browser tabs will back
+                        // this up.
+                        const user = dataOrThrowErrors(
+                            await realRequestGraphQL<GetCurrentUserResult>(
+                                gql`
+                                    query GetCurrentUser {
+                                        currentUser {
+                                            id
+                                        }
+                                    }
+                                `
+                            )
+                        )
+
+                        const batchChange = dataOrThrowErrors(
+                            await realRequestGraphQL<UpsertEmptyBatchChangeResult, UpsertEmptyBatchChangeVariables>(
+                                gql`
+                                    mutation UpsertEmptyBatchChange($namespace: ID!, $name: String!) {
+                                        upsertEmptyBatchChange(namespace: $namespace, name: $name) {
+                                            id
+                                            url
+                                        }
+                                    }
+                                `,
+                                {
+                                    namespace: user.currentUser?.id,
+                                    name: specName,
+                                }
+                            )
+                        ).upsertEmptyBatchChange
+
+                        const result = dataOrThrowErrors(
+                            await realRequestGraphQL<
+                                CreateBatchSpecForSymbolRenameResult,
+                                CreateBatchSpecForSymbolRenameVariables
+                            >(
+                                gql`
+                                    mutation CreateBatchSpecForSymbolRename(
+                                        $batchSpec: String!
+                                        $batchChange: ID!
+                                        $namespace: ID!
+                                    ) {
+                                        createBatchSpecFromRaw(
+                                            batchSpec: $batchSpec
+                                            namespace: $namespace
+                                            batchChange: $batchChange
+                                            execute: true
+                                        ) {
+                                            id
+                                        }
+                                    }
+                                `,
+                                {
+                                    batchSpec: spec,
+                                    batchChange: batchChange.id,
+                                    namespace: user.currentUser?.id,
+                                }
+                            )
+                        )
+
+                        window.open(batchChange.url + '/edit')
+
+                        return Promise.resolve()
                     },
                 })
             )

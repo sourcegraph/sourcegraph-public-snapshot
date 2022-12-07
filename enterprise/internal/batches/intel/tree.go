@@ -53,5 +53,5 @@ func (s *IntelService) FindWorkspaceRoot(ctx context.Context, repo, commit, full
 		}
 	}
 
-	return "", nil
+	return ".", nil
 }
