@@ -116,3 +116,14 @@
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     height: 1px;
 }
+
+.star {
+    color: var(--yellow);
+    flex-shrink: 0;
+    transform: translateY(-0.0625rem); // Slight optical alignment
+}
+
+.separator {
+    border-top: 1px solid var(--border-color-2);
+    margin: 0.25rem 0;
+}
