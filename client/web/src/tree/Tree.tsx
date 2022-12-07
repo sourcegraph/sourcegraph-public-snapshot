@@ -9,6 +9,9 @@ import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { Input } from '@sourcegraph/wildcard/src'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -24,12 +27,16 @@ import { TreeSearchResults } from './TreeSearchResults'
 import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
+import { SearchStreamingProps } from '../search'
+import classNames from 'classnames'
+// import {Input} from "postcss";
 
 interface Props
     extends AbsoluteRepo,
         ExtensionsControllerProps,
         ThemeProps,
         TelemetryProps,
+        SearchStreamingProps,
         PlatformContextProps<'requestGraphQL'> {
     history: H.History
     scrollRootSelector?: string
@@ -135,24 +142,6 @@ const previousChild = (node: TreeNode, index: number): TreeNode => {
     // At top of tree, circle back down.
     return getDeepestDescendant(node.parent)
 }
-
-const QUERY = gql`
-    query Files($query: String!) {
-        search(patternType: regexp, query: $query) {
-            results {
-                results {
-                    ... on FileMatch {
-                        __typename
-                        file {
-                            name
-                            path
-                        }
-                    }
-                }
-            }
-        }
-    }
-`
 
 export class Tree extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -348,13 +337,21 @@ export class Tree extends React.PureComponent<Props, State> {
                 ref={this.setTreeElement}
             >
                 <div className={styles.formContainer}>
-                    <ConnectionForm
-                        inputValue={this.state.searchTerm}
-                        onInputChange={this.setSearchTerm}
-                        inputPlaceholder="Search files..."
-                        compact={true}
-                        // formClassName={styles.form}
-                    />
+                    <Form className={classNames(styles.form)} onSubmit={event => event.preventDefault()}>
+                        <Input
+                            type="search"
+                            value={this.state.searchTerm}
+                            onChange={this.setSearchTerm}
+                            placeholder="Search files..."
+                            // compact={true}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            variant="small"
+                        />
+                    </Form>
+
                     {/* <SummaryContainer compact={true} className={styles.summaryContainer}>*/}
                     {/*    {query && summary}*/}
                     {/* </SummaryContainer>*/}
@@ -365,6 +362,9 @@ export class Tree extends React.PureComponent<Props, State> {
                         repoName={this.props.repoName}
                         commitID={this.props.commitID}
                         requestGraphQL={this.props.platformContext.requestGraphQL}
+                        streamSearch={this.props.streamSearch}
+                        extensionsController={this.props.extensionsController}
+                        telemetryService={this.props.telemetryService}
                     />
                 ) : (
                     <TreeRoot

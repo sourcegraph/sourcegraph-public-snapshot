@@ -28,6 +28,7 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
+import { SearchStreamingProps } from '../search'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
@@ -41,6 +42,7 @@ interface RepoRevisionSidebarProps
         ThemeProps,
         TelemetryProps,
         SettingsCascadeProps,
+        SearchStreamingProps,
         PlatformContextProps<'requestGraphQL'> {
     repoID?: Scalars['ID']
     isDir: boolean
@@ -174,6 +176,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                         telemetryService={props.telemetryService}
                                         enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
                                         platformContext={props.platformContext}
+                                        streamSearch={props.streamSearch}
                                     />
                                 </TabPanel>
                                 {!enableMergedFileSymbolSidebar && (
