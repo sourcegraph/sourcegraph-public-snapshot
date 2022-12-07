@@ -227,6 +227,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
+	RepositoryDefinition(ctx context.Context) (InsightRepositoryDefinition, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
 	IsCalculated() (bool, error)
@@ -249,6 +250,20 @@ type InsightIntervalTimeScope interface {
 
 type InsightRepositoryScopeResolver interface {
 	Repositories(ctx context.Context) ([]string, error)
+}
+
+type InsightRepositoryDefinition interface {
+	ToInsightRepositoryScope() (InsightRepositoryScopeResolver, bool)
+	ToAllRepositoriesScope() (AllRepositoriesScopeResolver, bool)
+	ToRepositorySearchScope() (RepositorySearchScopeResolver, bool)
+}
+
+type AllRepositoriesScopeResolver interface {
+	AllRepos() bool
+}
+
+type RepositorySearchScopeResolver interface {
+	Search() string
 }
 
 type InsightsDashboardPayloadResolver interface {
@@ -413,7 +428,8 @@ type LineChartDataSeriesOptionsInput struct {
 }
 
 type RepositoryScopeInput struct {
-	Repositories []string
+	Repositories       []string
+	RepositoryCriteria *string
 }
 
 type TimeScopeInput struct {

@@ -573,6 +573,8 @@ input RepositoryScopeInput {
     The list of repositories included in this scope.
     """
     repositories: [String!]!
+
+    repositoryCriteria: String
 }
 
 """
@@ -1019,7 +1021,12 @@ type SearchInsightDataSeriesDefinition {
     """
     A scope of repositories defined for this insight.
     """
-    repositoryScope: InsightRepositoryScope!
+    repositoryScope: InsightRepositoryScope! @deprecated(reason: "use repositoryDefinition instead")
+
+    """
+    A definition of Repositories this series will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
 
     """
     The scope of time for which the insight data is generated.
@@ -1042,6 +1049,16 @@ type SearchInsightDataSeriesDefinition {
     """
     groupBy: GroupByField
 }
+
+type AllRepositoriesScope {
+    allRepos: Boolean!
+}
+
+type RepositorySearchScope {
+    search: String!
+}
+
+union InsightRepositoryDefinition = AllRepositoriesScope | RepositorySearchScope | InsightRepositoryScope
 
 """
 View presentation for a line chart insight
