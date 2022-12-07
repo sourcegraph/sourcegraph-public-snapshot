@@ -41,7 +41,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
-
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
 

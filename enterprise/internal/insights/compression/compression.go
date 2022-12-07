@@ -26,10 +26,14 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type CommitFilter struct {
@@ -42,6 +46,54 @@ type NoopFilter struct {
 
 type DataFrameFilter interface {
 	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
+}
+
+func NewGitserverFilter(db database.DB) DataFrameFilter {
+	client := gitserver.NewClient(db)
+	// .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+	return &gitserverFilter{client: client, repos: db.Repos(), gcc: discovery.NewGitCommitClient(db)}
+}
+
+type gitserverFilter struct {
+	client gitserver.Client
+	repos  database.RepoStore
+	gcc    *discovery.GitCommitClient
+}
+
+func (g *gitserverFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
+	// fix this later to pass name directly
+	repo, err := g.repos.Get(ctx, id)
+	if err != nil {
+		return uncompressedPlan(frames)
+	}
+	name := repo.Name
+	// g.client.Commits(ctx, name, gitserver.CommitsOptions{})
+
+	hasCommits := func(from, to time.Time) bool {
+		commits, err := g.gcc.RecentCommits(ctx, name, to)
+		if err != nil {
+			return false // always default to uncompressed
+		}
+		if commits[0].Committer.Date.After(from) {
+			return true
+		}
+		return false
+	}
+
+	prev := frames[0].From
+	for i := 1; i < len(frames); i++ {
+		if !hasCommits(prev, frames[i].From) {
+			// compress it
+		} else {
+			// don't compress it
+		}
+	}
+
+	// for each element after the first
+	// if there are commits prior
+	//      | ------------------ |
+	//    prev ---------------- current
+	// after prev before current
 }
 
 func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsDB) DataFrameFilter {
