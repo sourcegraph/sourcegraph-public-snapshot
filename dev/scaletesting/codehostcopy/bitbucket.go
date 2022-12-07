@@ -20,7 +20,7 @@ type BitbucketCodeHost struct {
 	c      *bitbucket.Client
 }
 
-func NewBitbucketCodeHost(ctx context.Context, logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
+func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
 	u, err := url.Parse(def.URL)
 	if err != nil {
 		return nil, err
@@ -55,20 +55,21 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 }
 
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
-	bt.logger.Info("fetching repos")
+	bt.logger.Debug("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
 	if err != nil {
-		bt.logger.Error("failed to list repos", log.Error(err))
+		bt.logger.Debug("failed to list repos", log.Error(err))
+		return nil, err
 	}
 
-	bt.logger.Info("fetched list of repos", log.Int("repos", len(repos)))
+	bt.logger.Debug("fetched list of repos", log.Int("repos", len(repos)))
 
 	results := make([]*store.Repo, 0, len(repos))
 	for _, r := range repos {
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
-			bt.logger.Warn("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
-			continue
+			bt.logger.Debug("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
+			return nil, err
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
@@ -102,7 +103,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 				if err != nil {
 					return nil, err
 				}
-				bt.logger.Info("created project", log.String("project", p.Key))
+				bt.logger.Debug("created project", log.String("project", p.Key))
 			}
 		} else {
 			return nil, err
@@ -113,7 +114,6 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	if err != nil {
 		return nil, err
 	}
-	bt.logger.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
+	bt.logger.Debug("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
 	return getCloneUrl(repo)
-
 }
