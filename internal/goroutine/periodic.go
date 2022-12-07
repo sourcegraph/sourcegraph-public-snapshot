@@ -63,8 +63,9 @@ func (f HandlerFunc) Handle(ctx context.Context) error {
 }
 
 type simpleHandler struct {
-	name, description string
-	handler           HandlerFunc
+	name    string
+	scope   log.Logger
+	handler HandlerFunc
 }
 
 func (h *simpleHandler) Handle(ctx context.Context) error {
@@ -72,7 +73,7 @@ func (h *simpleHandler) Handle(ctx context.Context) error {
 }
 
 func (h *simpleHandler) HandleError(err error) {
-	log.Scoped(h.name, h.description).Error("An error occurred in a background task", log.String("handler", h.name), log.Error(err))
+	h.scope.Error("An error occurred in a background task", log.String("handler", h.name), log.Error(err))
 }
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
@@ -95,8 +96,8 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 		h = uh
 	} else {
 		h = &simpleHandler{
-			name:        name,
-			description: description,
+			name:  name,
+			scope: log.Scoped(name, description),
 			handler: func(ctx context.Context) error {
 				return handler.Handle(ctx)
 			},
