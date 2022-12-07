@@ -2,7 +2,10 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -33,6 +36,8 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	return r.SearchInsightPreview(ctx, previewArgs)
 }
 
+const livePreviewHumanErrMsg = "the live preview could not be generated because executing a search for query %q errored"
+
 func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	if args.Input.TimeScope.StepInterval == nil {
 		return nil, errors.New("live preview currently only supports a time interval time scope")
@@ -60,20 +65,23 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 				executor := query.NewComputeExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
 				if err != nil {
-					return nil, err
+					r.logger.Error("compute search errored", log.Error(err), log.String("query", seriesArgs.Query), log.String("groupBy", *seriesArgs.GroupBy), log.String("repos", repoNamesOrNumberOf(repos)))
+					return nil, errors.Newf(livePreviewHumanErrMsg, seriesArgs.Query)
 				}
 			} else {
 				executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
 				if err != nil {
-					return nil, err
+					r.logger.Error("capture group search errored", log.Error(err), log.String("query", seriesArgs.Query), log.String("repos", repoNamesOrNumberOf(repos)))
+					return nil, errors.Newf(livePreviewHumanErrMsg, seriesArgs.Query)
 				}
 			}
 		} else {
 			executor := query.NewStreamingExecutor(r.postgresDB, clock)
 			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
 			if err != nil {
-				return nil, err
+				r.logger.Error("search errored", log.Error(err), log.String("query", seriesArgs.Query), log.String("repos", repoNamesOrNumberOf(repos)))
+				return nil, errors.Newf(livePreviewHumanErrMsg, seriesArgs.Query)
 			}
 		}
 		generatedSeries = append(generatedSeries, series...)
@@ -89,6 +97,13 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 	}
 
 	return resolvers, nil
+}
+
+func repoNamesOrNumberOf(repos []string) string {
+	if len(repos) < 5 {
+		return fmt.Sprintf("%v", repos)
+	}
+	return fmt.Sprintf("%d", len(repos))
 }
 
 func pluralize(singular, plural string, n int) string {
