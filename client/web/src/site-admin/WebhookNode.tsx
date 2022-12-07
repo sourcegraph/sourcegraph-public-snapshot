@@ -1,15 +1,16 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 
 import { mdiCog, mdiDelete } from '@mdi/js'
+import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { useMutation } from '@sourcegraph/http-client'
+import { Button, H3, Icon, Link, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
-import { ExternalServiceKind } from '../graphql-operations'
+import { DeleteWebhookResult, DeleteWebhookVariables, ExternalServiceKind } from '../graphql-operations'
 
-import { deleteWebhook } from './backend'
+import { DELETE_WEBHOOK } from './backend'
 
 import styles from './WebhookNode.module.scss'
 
@@ -27,25 +28,11 @@ export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<Webhoo
     codeHostURN,
 }) => {
     const IconComponent = defaultExternalServices[codeHostKind].icon
-    const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
 
-    const onDelete = useCallback(async () => {
-        if (
-            !window.confirm(
-                'Delete this webhook? Any external webhooks configured to point at this webhook will no longer be received.'
-            )
-        ) {
-            return
-        }
-        setIsDeleting(true)
-        try {
-            await deleteWebhook(id)
-            setIsDeleting(false)
-            window.location.reload()
-        } catch (error) {
-            setIsDeleting(asError(error))
-        }
-    }, [id])
+    const [deleteWebhook, { error, loading: isDeleting }] = useMutation<DeleteWebhookResult, DeleteWebhookVariables>(
+        DELETE_WEBHOOK,
+        { variables: { hookID: id }, onCompleted: () => window.location.reload() }
+    )
 
     return (
         <>
@@ -72,22 +59,29 @@ export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<Webhoo
                 </div>
                 <div className="ml-1">
                     <Tooltip content="Delete webhook">
-                        <>
-                            <Button
-                                aria-label="Delete"
-                                className="test-delete-webhook"
-                                variant="danger"
-                                size="sm"
-                                disabled={isDeleting === true}
-                                onClick={onDelete}
-                            >
+                        <Button
+                            aria-label="Delete"
+                            className="test-delete-webhook"
+                            variant="danger"
+                            size="sm"
+                            disabled={isDeleting}
+                            onClick={event => {
+                                event.preventDefault()
+                                deleteWebhook().catch(
+                                    // noop here is used because creation error is handled directly when useMutation is called
+                                    noop
+                                )
+                            }}
+                        >
+                            <>
+                                {isDeleting && <LoadingSpinner />}
                                 <Icon aria-hidden={true} svgPath={mdiDelete} />
-                            </Button>
-                            {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
-                        </>
+                            </>
+                        </Button>
                     </Tooltip>
                 </div>
             </div>
+            {error && <ErrorAlert className="mt-2" prefix="Error during webhook deletion" error={error} />}
         </>
     )
 }

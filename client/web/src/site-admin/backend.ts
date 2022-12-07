@@ -26,8 +26,6 @@ import {
     DeleteOrganizationVariables,
     DeleteUserResult,
     DeleteUserVariables,
-    DeleteWebhookResult,
-    DeleteWebhookVariables,
     ExternalServiceKind,
     FeatureFlagFields,
     FeatureFlagsResult,
@@ -1047,8 +1045,3 @@ export const CREATE_WEBHOOK_QUERY = gql`
         }
     }
 `
-
-export const deleteWebhook = (hookID: Scalars['ID']): Promise<void> =>
-    requestGraphQL<DeleteWebhookResult, DeleteWebhookVariables>(DELETE_WEBHOOK, { hookID })
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
-        .toPromise()
