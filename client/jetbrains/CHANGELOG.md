@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added support for JetBrains 2022.3 products.
+
 ### Changed
 
 ### Deprecated
@@ -22,8 +24,10 @@
 
 ### Fixed
 
-- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the remote. [pull/44739](https://github.com/sourcegraph/sourcegraph/pull/44739)
-- Fixed a bug where if the tracked branch had a different name from the local branch, the local branch name was used in the URL, incorrectly
+- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the
+  remote. [pull/44739](https://github.com/sourcegraph/sourcegraph/pull/44739)
+- Fixed a bug where if the tracked branch had a different name from the local branch, the local branch name was used in
+  the URL, incorrectly
 
 ## [2.1.0]
 
@@ -45,13 +49,16 @@
 
 ### Removed
 
-- Removed tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+- Removed tracking parameters from all shareable
+  URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
 
 ### Fixed
 
 - Remove pointer cursor in the web view. [pull/41845](https://github.com/sourcegraph/sourcegraph/pull/41845)
-- Updated “Learn more” URL to link the blog post in the update notification [pull/41846](https://github.com/sourcegraph/sourcegraph/pull/41846)
-- Made the plugin compatible with versions 3.42.0 and below [pull/42105](https://github.com/sourcegraph/sourcegraph/pull/42105)
+- Updated “Learn more” URL to link the blog post in the update
+  notification [pull/41846](https://github.com/sourcegraph/sourcegraph/pull/41846)
+- Made the plugin compatible with versions 3.42.0 and
+  below [pull/42105](https://github.com/sourcegraph/sourcegraph/pull/42105)
 
 ## [2.0.1]
 
@@ -77,7 +84,8 @@
 
 ## [1.2.2] - Minor bug fixes
 
-- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.
+- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for
+  details.
 - Special thanks: @oliviernotteghem for contributing the new features in this release!
 - Fixed bugs where Open in Sourcegraph from the git menu does not work for repos with ssh url as their remote url
 
@@ -85,7 +93,8 @@
 
 - Added "Open In Sourcegraph" action to VCS History and Git Log to open a revision in the Sourcegraph diff view.
 - Added "defaultBranch" configuration option that allows opening files in a specific branch on Sourcegraph.
-- Added "remoteUrlReplacements" configuration option that allow users to replace specified values in the remote url with new strings.
+- Added "remoteUrlReplacements" configuration option that allow users to replace specified values in the remote url with
+  new strings.
 
 ## [1.2.0] - Copy link to file, search in repository, per-repository configuration, bug fixes & more
 
@@ -94,13 +103,15 @@
 - Menu entries (Open file, etc.) are now under a Sourcegraph sub-menu.
 - Added a "Copy link to file" action (alt+c / opt+c).
 - Added a "Search in repository" action (alt+r / opt+r).
-- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.
+- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for
+  details.
 - Special thanks: @oliviernotteghem for contributing the new features in this release!
 
 ## [1.1.2] - Minor bug fixes around searching.
 
 - Fixed an error that occurred when trying to search with no selection.
-- The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor choice of just the first git remote.
+- The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor
+  choice of just the first git remote.
 
 ## [1.1.1] - Fixed search shortcut
 
