@@ -5,7 +5,7 @@ import { gql, useMutation } from '@sourcegraph/http-client'
 
 export function useToggleSearchContextStar(
     initialStarred: boolean,
-    searchContextId: string,
+    searchContextId: string | undefined,
     userId: string | undefined
 ): { starred: boolean; toggleStar: () => Promise<void> } {
     const [starred, setStarred] = useState(initialStarred)
@@ -30,9 +30,11 @@ export function useToggleSearchContextStar(
     `)
 
     const toggleStar = useCallback(async () => {
+        const errorPrefix = `Failed to ${starred ? 'unstar' : 'star'} search context`
+
         // Cannot star if user is not authenticated
-        if (!userId) {
-            throw new Error('Cannot star search context: user is not authenticated')
+        if (!userId || !searchContextId) {
+            throw new Error(`${errorPrefix}: You are not signed in. Please sign in and try again.`)
         }
 
         const previousStarred = starred
@@ -50,11 +52,17 @@ export function useToggleSearchContextStar(
             // If the mutation fails, revert the optimistic update
             setStarred(previousStarred)
 
-            if (isErrorLike(error) && error.message.includes('Failed to fetch')) {
-                throw new Error('Network error, check your internet connection.')
+            if (isErrorLike(error)) {
+                if (error.message.includes('Failed to fetch')) {
+                    throw new Error(
+                        `${errorPrefix}: Could not contact the server, please check your network connection and try again.`,
+                        { cause: error }
+                    )
+                } else {
+                    throw new Error(`${errorPrefix}: ${error.message}`, { cause: error })
+                }
             } else {
-                // Rethrow the original error
-                throw error
+                throw new Error(`${errorPrefix}: An unknown error occurred.`, { cause: error })
             }
         }
     }, [createStarMutation, deleteStarMutation, searchContextId, starred, userId])

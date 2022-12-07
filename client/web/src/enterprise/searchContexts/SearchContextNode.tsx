@@ -30,7 +30,9 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
     const toggleStarWithErrorHandling = useCallback(() => {
         setAlert('') // Clear previous alerts
         toggleStar().catch(error => {
-            setAlert(`Error starring search context: ${isErrorLike(error) ? error.message : 'Unknown error'}`)
+            if (isErrorLike(error)) {
+                setAlert(error.message)
+            }
         })
     }, [setAlert, toggleStar])
 
