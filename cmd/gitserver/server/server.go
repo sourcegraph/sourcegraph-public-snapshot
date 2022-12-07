@@ -2214,7 +2214,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	removeBadRefs(ctx, tmp)
 
 	if err := setHEAD(ctx, logger, tmp, syncer, remoteURL); err != nil {
-		logger.Error("Failed to ensure HEAD exists", log.Error(err))
+		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
