@@ -203,7 +203,7 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 			function: "main.f",
 			file:     "/Users/x/file.go",
 			line:     11,
-			want:     "main/file.go:11 (Function: f)",
+			want:     "file.go:11 (Function: f)",
 		},
 	}
 
