@@ -332,7 +332,7 @@
     "storybook-dark-mode": "^1.1.0",
     "stream-browserify": "^3.0.0",
     "string-width": "^4.2.0",
-    "style-loader": "^3.1.0",
+    "style-loader": "^3.3.1",
     "stylelint": "^14.3.0",
     "svgo": "^2.7.0",
     "term-size": "^2.2.0",
