@@ -275,11 +275,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true)
-		if err != nil {
-			return err
-		}
-
 		var specs []*btypes.ChangesetSpec
 		for _, s := range rawSpecs {
 			changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
