@@ -26,26 +26,24 @@ type Services struct {
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-
-	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
-
-	GitHubSyncWebhook           webhooks.Registerer
-	RankingService              RankingService
-	NewExecutorProxyHandler     NewExecutorProxyHandler
-	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
-	NewComputeStreamHandler     NewComputeStreamHandler
-	AuthzResolver               graphqlbackend.AuthzResolver
-	BatchChangesResolver        graphqlbackend.BatchChangesResolver
-	CodeIntelResolver           graphqlbackend.CodeIntelResolver
-	InsightsResolver            graphqlbackend.InsightsResolver
-	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
-	LicenseResolver             graphqlbackend.LicenseResolver
-	DotcomResolver              graphqlbackend.DotcomRootResolver
-	SearchContextsResolver      graphqlbackend.SearchContextsResolver
-	NotebooksResolver           graphqlbackend.NotebooksResolver
-	ComputeResolver             graphqlbackend.ComputeResolver
-	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
-	WebhooksResolver            graphqlbackend.WebhooksResolver
+	GitHubSyncWebhook               webhooks.Registerer
+	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
+	RankingService                  RankingService
+	NewExecutorProxyHandler         NewExecutorProxyHandler
+	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
+	NewComputeStreamHandler         NewComputeStreamHandler
+	AuthzResolver                   graphqlbackend.AuthzResolver
+	BatchChangesResolver            graphqlbackend.BatchChangesResolver
+	CodeIntelResolver               graphqlbackend.CodeIntelResolver
+	InsightsResolver                graphqlbackend.InsightsResolver
+	CodeMonitorsResolver            graphqlbackend.CodeMonitorsResolver
+	LicenseResolver                 graphqlbackend.LicenseResolver
+	DotcomResolver                  graphqlbackend.DotcomRootResolver
+	SearchContextsResolver          graphqlbackend.SearchContextsResolver
+	NotebooksResolver               graphqlbackend.NotebooksResolver
+	ComputeResolver                 graphqlbackend.ComputeResolver
+	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver                graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -82,12 +80,11 @@ func DefaultServices() Services {
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
+		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		RankingService:                  stubRankingService{},
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
-
-		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 	}
 }
 
