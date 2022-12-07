@@ -56,7 +56,6 @@ function renderResultElementsForSymbolMatch(
     selectedResult: string | null,
     selectResult: (resultId: string) => void,
     openResult: (resultId: string) => void,
-    settingsCascade: SettingsCascadeProps['settingsCascade']
 ): JSX.Element[] {
     return match.symbols.map(symbol => (
         <SelectableSearchResult
