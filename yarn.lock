@@ -28963,7 +28963,7 @@ pvutils@latest:
     stream-http: ^3.2.0
     string-score: ^1.0.1
     string-width: ^4.2.0
-    style-loader: ^3.1.0
+    style-loader: ^3.3.1
     stylelint: ^14.3.0
     svgo: ^2.7.0
     tabbable: ^5.1.5
@@ -30647,12 +30647,12 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"style-loader@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "style-loader@npm:3.1.0"
+"style-loader@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "style-loader@npm:3.3.1"
   peerDependencies:
     webpack: ^5.0.0
-  checksum: bf7e8d2cc9b5d51b39ce5a975604b67e9d8c96f7b44fee38da1b04c42d92f66c8dc0bb533c1e035921facd1e41cb9caab9567589e961d93cc6785ce55f49311e
+  checksum: 470feef680f59e2fce4d6601b5c55b88c01ad8d1dd693c528ffd591ff5fd7c01a4eff3bdbe62f26f847d6bd2430c9ab594be23307cfe7a3446ab236683f0d066
   languageName: node
   linkType: hard
 
