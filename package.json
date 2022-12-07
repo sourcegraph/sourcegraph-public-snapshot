@@ -227,7 +227,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "8.0.1",
     "@types/vscode": "^1.63.1",
-    "@types/webpack-bundle-analyzer": "4.4.1",
+    "@types/webpack-bundle-analyzer": "^4.6.0",
     "@types/webpack-dev-server": "4.7.2",
     "@types/webpack-stats-plugin": "^0.3.2",
     "@types/yauzl": "^2.9.2",
