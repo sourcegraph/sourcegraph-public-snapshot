@@ -48,7 +48,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 		},
 		{
 			req:  complexReq,
-			name: "complex response",
+			name: "complex request",
 			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusForbidden, []byte(`{"permission":false}`), nil),
 			err:  "<nil>",
 			want: &types.OutboundRequestLogItem{
