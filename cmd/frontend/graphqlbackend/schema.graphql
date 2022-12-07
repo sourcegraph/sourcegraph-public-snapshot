@@ -2791,6 +2791,61 @@ type ExternalService implements Node {
     The list of recent sync jobs for this external service.
     """
     syncJobs(first: Int): ExternalServiceSyncJobConnection!
+
+    """
+    Checks the availability of the external service.
+    """
+    checkConnection: ExternalServiceAvailability!
+
+    """
+    True if this external service can perform availability check by running checkConnection.
+
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    """
+    hasConnectionCheck: Boolean!
+}
+
+"""
+Avaiability status of an external service for diagnostic purposes.
+
+This is so that the UI can surface whether the external service
+can serve requests, and if not, why is the reason for that.
+"""
+union ExternalServiceAvailability =
+      ExternalServiceAvailable
+    | ExternalServiceUnavailable
+    | ExternalServiceAvailabilityUnknown
+
+"""
+Indicator that the external service was recently found to be available.
+"""
+type ExternalServiceAvailable {
+    """
+    The timestamp of the last successful availability check that was performed.
+    """
+    lastCheckedAt: DateTime!
+}
+
+"""
+Indicator that the external service was recently not found available.
+"""
+type ExternalServiceUnavailable {
+    """
+    User-friendly textual description of supposed reason why the service is not available.
+    """
+    suspectedReason: String!
+}
+
+"""
+Availability for some external services may not be determined, or only partially
+supported. In that case unknown variant of ExternalServiceAvailability is returned.
+"""
+type ExternalServiceAvailabilityUnknown {
+    """
+    User-friendly textual description of the implementation status of availablity.
+    This is expected to be tied to specific kinds of external services.
+    """
+    implementationNote: String!
 }
 
 """
