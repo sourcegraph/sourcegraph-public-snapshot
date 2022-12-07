@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useCallback, useMemo, useState } from 'react'
+import React, { FC, MouseEvent, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -53,7 +53,6 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const { ref, width = 0 } = useResizeObserver()
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
-
     const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace

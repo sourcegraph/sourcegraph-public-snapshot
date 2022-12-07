@@ -1,5 +1,6 @@
 import { ReactElement, useMemo, SVGProps, CSSProperties, FocusEvent, useCallback, useState } from 'react'
 
+import classNames from 'classnames'
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
@@ -94,8 +95,9 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         zeroYAxisMin = false,
         getLineGroupStyle,
         getActiveSeries = identity,
-        onDatumClick = noop,
         padding = DEFAULT_LINE_CHART_PADDING,
+        onDatumClick = noop,
+        className,
         ...attributes
     } = props
 
@@ -161,7 +163,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 xScale={xScale}
                 yScale={yScale}
                 padding={padding}
-                className={styles.root}
+                className={classNames(styles.root, className)}
                 onFocus={handleSvgFocus}
                 onBlur={() => setTooltipOpen(false)}
             >
