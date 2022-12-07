@@ -13,7 +13,7 @@ export const SET_DEFAULT_SEARCH_CONTEXT_MUTATION = gql`
 
 export function useDefaultContext(
     initialDefaultSearchContextId: string | undefined
-): { defaultContext: string | undefined; setAsDefault: (searchContextId: string, userId?: string) => Promise<void> } {
+): { defaultContext: string | undefined; setAsDefault: (searchContextId?: string, userId?: string) => Promise<void> } {
     const [defaultContext, setDefaultContext] = useState(initialDefaultSearchContextId)
     useEffect(() => {
         setDefaultContext(initialDefaultSearchContextId)
@@ -22,7 +22,7 @@ export function useDefaultContext(
     const [setAsDefaultMutation] = useMutation(SET_DEFAULT_SEARCH_CONTEXT_MUTATION)
 
     const setAsDefault = useCallback(
-        async (searchContextId: string, userId?: string) => {
+        async (searchContextId?: string, userId?: string) => {
             const errorPrefix = 'Failed to set search context as default'
 
             // Cannot set as default if user is not authenticated
