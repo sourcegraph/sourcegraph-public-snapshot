@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -45,7 +46,8 @@ func clock() time.Time {
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, NewResolver(db, clock))
+	resolver := NewResolver(observation.TestContextTB(t), db, clock)
+	parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, resolver)
 	if err != nil {
 		t.Fatal(err)
 	}
