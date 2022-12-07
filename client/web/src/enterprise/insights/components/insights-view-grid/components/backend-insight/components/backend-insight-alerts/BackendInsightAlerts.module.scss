@@ -80,6 +80,8 @@
         align-items: center;
 
         &::before {
+            // Render an invisible "a" symbol in order to improve non-symbol UI element (dot icon)
+            // alignment with (point description) text UI
             content: 'a';
             width: 0;
             visibility: hidden;

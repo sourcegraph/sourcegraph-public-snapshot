@@ -22,6 +22,8 @@
     align-items: center;
 
     &::before {
+        // Render an invisible "a" symbol in order to improve non-symbol UI element (legend mark)
+        // alignment with legend text layout
         content: 'a';
         width: 0;
         visibility: hidden;
