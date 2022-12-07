@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
@@ -131,12 +132,12 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 				log.Error(err),
 				log.String("reason", string(reason)))
 
-			if err := r.insightsStore.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+			if addErr := r.insightsStore.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
 				SeriesID: series.ID,
 				Reason:   reason,
 				Time:     recordTime,
-			}); err != nil {
-				return errors.Wrap(err, "workHandler.AddIncompleteDatapoint")
+			}); addErr != nil {
+				return multierror.Append(err, errors.Wrap(addErr, "workHandler.AddIncompleteDatapoint"))
 			}
 		}
 		return err
