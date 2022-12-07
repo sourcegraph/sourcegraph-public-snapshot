@@ -2797,7 +2797,7 @@ Indicator that the external service was recently not found available.
 """
 type ExternalServiceUnavailable {
     """
-    User-friendly textual description of suposed reason why the service is not available.
+    User-friendly textual description of supposed reason why the service is not available.
     """
     suspectedReason: String!
 }
