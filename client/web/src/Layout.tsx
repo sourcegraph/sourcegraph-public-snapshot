@@ -133,6 +133,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
+    // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
 
