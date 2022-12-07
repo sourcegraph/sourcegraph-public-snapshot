@@ -30,6 +30,7 @@ func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {
 			SymbolContainerName: block.SymbolInput.SymbolContainerName,
 			SymbolKind:          block.SymbolInput.SymbolKind,
 		}}
+	}
 	panic("unknown block type")
 }
 
@@ -74,6 +75,7 @@ func BlockToAPIInput(block notebooks.NotebookBlock) graphqlbackend.CreateNoteboo
 			SymbolContainerName: block.SymbolInput.SymbolContainerName,
 			SymbolKind:          block.SymbolInput.SymbolKind,
 		}}
+	}
 	panic("unknown block type")
 }
 
