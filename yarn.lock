@@ -28874,7 +28874,7 @@ pvutils@latest:
     terser-webpack-plugin: ^5.1.4
     textarea-caret: ^3.1.0
     ts-key-enum: ^2.0.7
-    ts-loader: ^9.3.0
+    ts-loader: ^9.4.2
     ts-node: ^10.7.0
     tslib: ^2.1.0
     typed-scss-modules: ^4.1.1
@@ -31566,9 +31566,9 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"ts-loader@npm:^9.3.0":
-  version: 9.3.0
-  resolution: "ts-loader@npm:9.3.0"
+"ts-loader@npm:^9.4.2":
+  version: 9.4.2
+  resolution: "ts-loader@npm:9.4.2"
   dependencies:
     chalk: ^4.1.0
     enhanced-resolve: ^5.0.0
@@ -31577,7 +31577,7 @@ pvutils@latest:
   peerDependencies:
     typescript: "*"
     webpack: ^5.0.0
-  checksum: 90755ac5850890ff433f2f8c7186d57ae4e172d389342d874b50ab233675f06c47c69043c517e2a2eeaf2251637ecfac607ac6190c89340f246ceff8c7f4af7a
+  checksum: 6f306ee4c615c2a159fb177561e3fb86ca2cbd6c641e710d408a64b4978e1ff3f2c9733df07bff27d3f82efbfa7c287523d4306049510c7485ac2669a9c37eb0
   languageName: node
   linkType: hard
 
