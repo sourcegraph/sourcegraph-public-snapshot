@@ -60,12 +60,13 @@ func (p *proxy) serveHTTP(wr http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	// // Truncate to 1024 characters for now, mainly for performance. Should remove
-	// const maxLen = 1024
-	// if prompt, ok := jBody["prompt"].(string); ok && len(prompt) > maxLen {
-	// 	log.Printf("Truncating to maxLen: %s", prompt)
-	// 	jBody["prompt"] = prompt[len(prompt)-maxLen:]
-	// }
+	// Truncate to 1024 characters for now, necessary for some reason,
+	// otherwise you get garbage
+	const maxLen = 1024
+	if prompt, ok := jBody["prompt"].(string); ok && len(prompt) > maxLen {
+		log.Printf("Truncating to maxLen: %s", prompt)
+		jBody["prompt"] = prompt[len(prompt)-maxLen:]
+	}
 
 	bodyPretty, err := json.MarshalIndent(jBody, "", "  ")
 	if err != nil {
