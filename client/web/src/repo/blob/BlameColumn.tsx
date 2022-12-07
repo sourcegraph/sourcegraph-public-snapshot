@@ -128,7 +128,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         onSelect={selectRow}
                         onDeselect={deselectRow}
                     />,
-                    portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
+                    portalRoot.querySelector(`.${styles.wrapper.replaceAll('+', '\\+')}`) as HTMLDivElement
                 )
             )}
         </>
