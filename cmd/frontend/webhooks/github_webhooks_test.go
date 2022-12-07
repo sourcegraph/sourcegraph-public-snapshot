@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -27,6 +28,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func waitForTrueOrContext(t *testing.T, ctx context.Context, condition func() bool) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	for {
+		if condition() {
+			break
+		}
+		if ctx.Err() != nil {
+			t.Fatal("Timed out while waiting for condition")
+		}
+	}
+}
+
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 	var called bool
@@ -39,9 +53,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
-	if !called {
-		t.Errorf("Expected called to be true, was false")
-	}
+	waitForTrueOrContext(t, ctx, func() bool { return called })
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
@@ -71,9 +83,7 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
-	if len(called) != 2 {
-		t.Errorf("Expected called to be 2, got %v", called)
-	}
+	waitForTrueOrContext(t, ctx, func() bool { return len(called) == 2 })
 }
 
 func TestGithubWebhookDispatchError(t *testing.T) {
@@ -91,12 +101,11 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
-		t.Errorf("Expected %q, got %q", want, have)
+	// Dispatch should return nil even if the handler itself errors, as it is still a valid webhook delivery
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
+		t.Errorf("Expected no error, got %s", err)
 	}
-	if len(called) != 2 {
-		t.Errorf("Expected called to be 2, got %v", called)
-	}
+	waitForTrueOrContext(t, ctx, func() bool { return len(called) == 2 })
 }
 
 func errString(err error) string {
@@ -212,7 +221,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 			called = false
 			resp := sendRequest(u, secret)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.True(t, called)
+			waitForTrueOrContext(t, ctx, func() bool { return called })
 		}
 	})
 
@@ -232,7 +241,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 			called = false
 			resp := sendRequest(u, "")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.True(t, called)
+			waitForTrueOrContext(t, ctx, func() bool { return called })
 		}
 	})
 }
