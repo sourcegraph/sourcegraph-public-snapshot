@@ -92,9 +92,10 @@ All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP 
 
 - [Code Monitoring](../code_monitoring/index.md) notifications
 - Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
+- Important updates to a user accounts (for example, creation of API keys)
 - For [`builtin` authentication](../admin/auth/index.md#builtin-password-authentication), password resets and email verification
 
-By default, emails will be sent from an `@cloud.sourcegraph.com` email address.
+By default, emails will be sent from an `@cloud.sourcegraph.com` email address. To test email delivery, refer to [sending a test email](../admin/config/email.md#sending-a-test-email).
 
 To opt out of managed SMTP, please let your Sourcegraph Account team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md).
 
