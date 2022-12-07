@@ -7566,13 +7566,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/compression-webpack-plugin@npm:9.0.0":
-  version: 9.0.0
-  resolution: "@types/compression-webpack-plugin@npm:9.0.0"
+"@types/compression-webpack-plugin@npm:9.1.1":
+  version: 9.1.1
+  resolution: "@types/compression-webpack-plugin@npm:9.1.1"
   dependencies:
-    tapable: ^2.2.0
-    webpack: ^5.51.0
-  checksum: abac85a2233f97864423fd07464299921ae28a4a5887b1dbf4024572ad43ba01d7692f7240c627d568086260120bfef3518298f7839355b12a7aa15742920632
+    compression-webpack-plugin: "*"
+  checksum: 92947584b73bf1bba1268c033ed15bb0490bd81590dd9bc2363070f07630b75945b9e2be5fda2ce2fe417fea209a16afe8440a1a6e3576d25f56831bcade6f76
   languageName: node
   linkType: hard
 
@@ -12908,15 +12907,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"compression-webpack-plugin@npm:^9.0.0":
-  version: 9.0.0
-  resolution: "compression-webpack-plugin@npm:9.0.0"
+"compression-webpack-plugin@npm:*, compression-webpack-plugin@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "compression-webpack-plugin@npm:10.0.0"
   dependencies:
-    schema-utils: ^3.1.0
+    schema-utils: ^4.0.0
     serialize-javascript: ^6.0.0
   peerDependencies:
     webpack: ^5.1.0
-  checksum: 4d6c22770ed532d343aaea0e90bbf7393a2dcf38a1ae2528855bcce6dcd98b02b543658d38b0f6f650b93465515ecb1553c99833db818eb2b9b3ed47cfe6d564
+  checksum: 2ac9079b7ab87141639c62ddbb2820a06f105198e27ef4c3860da3186bdbefc00d1e206969833ce7a4b7b26161ddbec7b8d20d30f9f9c1d494818b9b86f0d5cc
   languageName: node
   linkType: hard
 
@@ -28612,7 +28611,7 @@ pvutils@latest:
     "@types/classnames": 2.2.10
     "@types/command-exists": 1.2.0
     "@types/compression": 1.7.2
-    "@types/compression-webpack-plugin": 9.0.0
+    "@types/compression-webpack-plugin": 9.1.1
     "@types/connect-history-api-fallback": 1.3.4
     "@types/css-minimizer-webpack-plugin": 3.0.1
     "@types/d3-axis": 1.0.12
@@ -28715,7 +28714,7 @@ pvutils@latest:
     comlink: ^4.3.0
     command-exists: ^1.2.9
     compression: ^1.7.4
-    compression-webpack-plugin: ^9.0.0
+    compression-webpack-plugin: ^10.0.0
     connect-history-api-fallback: ^1.6.0
     copy-to-clipboard: ^3.3.1
     core-js: ^3.8.2
