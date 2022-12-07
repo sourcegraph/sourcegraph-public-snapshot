@@ -32,7 +32,7 @@
         isLightTheme: boolean
         placeholder: string
         onChange: (querySate: QueryState) => void
-        onSubmit?: () => void
+        hasSubmitHandler: boolean
         suggestionsContainer: HTMLDivElement | null
         suggestionSource?: Source
         history: History
@@ -60,6 +60,13 @@
         }
     }
 
+    // Wraps the onSubmit prop because that one changes whenever the input
+    // value changes causing unnecessary reconfiguration of the extensions
+    function onSubmitInternal() {
+        onSubmit?.()
+    }
+    $: hasSubmitHandler = !!onSubmit
+
     // Helper function to update extensions dependent on props. Used when
     // creating the editor and to update it when the props change.
     function configureExtensions({
@@ -68,7 +75,7 @@
         isLightTheme,
         placeholder,
         onChange,
-        onSubmit,
+        hasSubmitHandler,
         suggestionsContainer,
         suggestionSource,
         history,
@@ -96,22 +103,22 @@
             extensions.push(placeholderExtension(element))
         }
 
-        if (onSubmit) {
+        if (hasSubmitHandler) {
             extensions.push(
-                editorConfigFacet.of({ onSubmit }),
+                editorConfigFacet.of({ onSubmit: onSubmitInternal }),
                 Prec.high(
                     keymap.of([
                         {
                             key: 'Enter',
                             run() {
-                                onSubmit?.()
+                                onSubmitInternal()
                                 return true
                             },
                         },
                         {
                             key: 'Mod-Enter',
                             run() {
-                                onSubmit?.()
+                                onSubmitInternal()
                                 return true
                             },
                         },
@@ -207,7 +214,7 @@
             isLightTheme,
             placeholder,
             onChange,
-            onSubmit,
+            hasSubmitHandler,
             suggestionsContainer,
             suggestionSource,
             history,
@@ -224,7 +231,7 @@
                 isLightTheme,
                 placeholder,
                 onChange,
-                onSubmit,
+                hasSubmitHandler,
                 suggestionsContainer,
                 suggestionSource,
                 history,

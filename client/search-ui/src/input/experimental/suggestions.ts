@@ -253,7 +253,8 @@ class RegisteredSource {
     }
 
     public update(transaction: Transaction): RegisteredSource {
-        if (isUserInput(transaction)) {
+        // TODO: We probalby don't want to trigger fetches on every doc changed
+        if (isUserInput(transaction) || transaction.docChanged) {
             return this.query(transaction.state)
         }
 
@@ -262,11 +263,6 @@ class RegisteredSource {
                 return this
             }
             return this.query(transaction.state)
-        }
-
-        // Handles "external" changes to the query input
-        if (transaction.docChanged) {
-            return new RegisteredSource(this.source, RegisteredSourceState.Inactive, emptyResult)
         }
 
         for (const effect of transaction.effects) {
@@ -361,7 +357,11 @@ class SuggestionsState {
 }
 
 function isUserInput(transaction: Transaction): boolean {
-    return transaction.isUserEvent('input.type') || transaction.isUserEvent('delete.backward')
+    return (
+        transaction.isUserEvent('input.type') ||
+        transaction.isUserEvent('input.paste') ||
+        transaction.isUserEvent('delete')
+    )
 }
 
 interface Config {
