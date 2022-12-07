@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	gh "github.com/google/go-github/v43/github"
 
@@ -42,7 +43,15 @@ func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
 	)
 }
 
+// This should be set to zero for testing
+var sleepTime = 10 * time.Second
+
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
+	// TODO: This MUST be removed once permissions syncing jobs are database backed!
+	// If we react too quickly to a webhook, the changes may not yet have properly
+	// propagated on GitHub's system, and we'll get old results, making the
+	// webhook useless.
+	time.Sleep(sleepTime)
 	switch e := payload.(type) {
 	case *gh.RepositoryEvent:
 		return h.handleRepositoryEvent(ctx, db, e)

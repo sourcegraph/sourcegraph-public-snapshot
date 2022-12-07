@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/v47/github"
 	"github.com/sourcegraph/log/logtest"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,7 +44,21 @@ func int64Pointer(v int64) *int64 {
 	return &v
 }
 
+func waitForTrueOrContext(t *testing.T, ctx context.Context, condition *bool) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	for {
+		if *condition {
+			break
+		}
+		if ctx.Err() != nil {
+			t.Fatal("Timed out while waiting for condition")
+		}
+	}
+}
+
 func TestGitHubWebhooks(t *testing.T) {
+	sleepTime = 0
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -149,7 +163,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("member event added", func(t *testing.T) {
@@ -174,7 +188,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("member event removed", func(t *testing.T) {
@@ -199,7 +213,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("organization event member added", func(t *testing.T) {
@@ -221,7 +235,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("organization event member removed", func(t *testing.T) {
@@ -243,7 +257,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("membership event added", func(t *testing.T) {
@@ -265,7 +279,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("membership event removed", func(t *testing.T) {
@@ -287,7 +301,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("team event added to repository", func(t *testing.T) {
@@ -309,7 +323,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 
 	t.Run("team event removed from repository", func(t *testing.T) {
@@ -331,6 +345,6 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		assert.True(t, webhookCalled)
+		waitForTrueOrContext(t, ctx, &webhookCalled)
 	})
 }
