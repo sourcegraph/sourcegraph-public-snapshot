@@ -24,6 +24,12 @@
 
 <!-- Add changes changes to this section before release. -->
 
+_Upgrade notes for the next version will appear here._
+
+## v4.1 ➔ v4.2.1
+
+<!-- Add changes changes to this section before release. -->
+
 **Notes**:
 
 - This upgrade adds a [node-exporter](https://github.com/prometheus/node_exporter) DaemonSet, which collects crucial machine-level metrics that help Sourcegraph scale your deployment.
