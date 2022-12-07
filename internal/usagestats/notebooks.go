@@ -45,7 +45,6 @@ WHERE name IN (
 		&notebooksUsageStats.NotebookAddedQueryBlocksCount,
 		&notebooksUsageStats.NotebookAddedFileBlocksCount,
 		&notebooksUsageStats.NotebookAddedSymbolBlocksCount,
-		&notebooksUsageStats.NotebookAddedComputeBlocksCount,
 	); err != nil {
 		return nil, err
 	}

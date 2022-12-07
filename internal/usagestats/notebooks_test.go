@@ -65,7 +65,6 @@ VALUES
 		NotebookAddedQueryBlocksCount:    &oneInt,
 		NotebookAddedFileBlocksCount:     &oneInt,
 		NotebookAddedSymbolBlocksCount:   &oneInt,
-		NotebookAddedComputeBlocksCount:  &oneInt,
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
