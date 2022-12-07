@@ -274,6 +274,7 @@
     "jest-fetch-mock": "^3.0.3",
     "jest-junit": "^13.0.0",
     "jest-mock-extended": "^2.0.2-beta2",
+    "jest-transform-svelte": "^2.1.1",
     "jsdom": "^16.7.0",
     "json-schema-ref-parser": "^9.0.6",
     "json-schema-to-typescript": "^10.1.3",

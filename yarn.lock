@@ -13926,6 +13926,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"deasync@npm:^0.1.19":
+  version: 0.1.28
+  resolution: "deasync@npm:0.1.28"
+  dependencies:
+    bindings: ^1.5.0
+    node-addon-api: ^1.7.1
+  checksum: e0c1ef427875c897e0d903a08410df1d0a3dfd0d2a0a1e43fb6c2824dfbc504b810bd08a0d30653117259316e1aa65409c96dbed40101c934f75bac7499e1265
+  languageName: node
+  linkType: hard
+
 "debounce@npm:^1.2.0":
   version: 1.2.1
   resolution: "debounce@npm:1.2.1"
@@ -20762,6 +20772,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jest-transform-svelte@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "jest-transform-svelte@npm:2.1.1"
+  dependencies:
+    deasync: ^0.1.19
+  peerDependencies:
+    svelte: ">= 3"
+  checksum: 2cde7dfee9470b4c7f979c4267c8a56dfe4169b225f5fdec9c0a25b1133fc281775aecdba6e2cdccc49befe5c310dc52ff5a6a0d0bcc13b5f11073322b4e13b1
+  languageName: node
+  linkType: hard
+
 "jest-util@npm:^25.5.0":
   version: 25.5.0
   resolution: "jest-util@npm:25.5.0"
@@ -23369,6 +23390,15 @@ __metadata:
   dependencies:
     semver: ^7.3.5
   checksum: 3644dd51f4f189358ef56055407501aa698632d67448585b38c46c81a482a0c3bfb06da513ac4060a12ce5f607f208ba9d9c8280f1c38329670b709bd735fcae
+  languageName: node
+  linkType: hard
+
+"node-addon-api@npm:^1.7.1":
+  version: 1.7.2
+  resolution: "node-addon-api@npm:1.7.2"
+  dependencies:
+    node-gyp: latest
+  checksum: 938922b3d7cb34ee137c5ec39df6289a3965e8cab9061c6848863324c21a778a81ae3bc955554c56b6b86962f6ccab2043dd5fa3f33deab633636bd28039333f
   languageName: node
   linkType: hard
 
@@ -27932,6 +27962,7 @@ pvutils@latest:
     jest-fetch-mock: ^3.0.3
     jest-junit: ^13.0.0
     jest-mock-extended: ^2.0.2-beta2
+    jest-transform-svelte: ^2.1.1
     js-base64: ^3.7.2
     js-cookie: ^2.2.1
     js-yaml: ^4.1.0

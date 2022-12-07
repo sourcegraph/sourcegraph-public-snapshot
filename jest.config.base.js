@@ -25,6 +25,10 @@ const config = {
   coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.tsx?$/.source, /\.d\.ts$/.source],
   roots: ['<rootDir>/src'],
 
+  transform: {
+    '^.+\\.svelte$': 'jest-transform-svelte',
+  },
+
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
   // modules). If you get an error from jest like "Jest encountered an unexpected token. ... SyntaxError:
   // unexpected token import/export", then add it here. See

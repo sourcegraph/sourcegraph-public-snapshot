@@ -47,7 +47,9 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export type CustomRenderer = typeof SvelteComponentTyped<{ option: Option }>
+export interface CustomRenderer {
+    new (): SvelteComponentTyped<{ option: Option }>
+}
 
 export interface Command {
     type: 'command'
