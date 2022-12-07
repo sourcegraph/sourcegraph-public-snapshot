@@ -26,7 +26,7 @@ const config = {
   roots: ['<rootDir>/src'],
 
   transform: {
-    '^.+\\.svelte$': 'jest-transform-svelte',
+    '^.+\\.svelte$': ['svelte-jester', { preprocess: true }],
   },
 
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
