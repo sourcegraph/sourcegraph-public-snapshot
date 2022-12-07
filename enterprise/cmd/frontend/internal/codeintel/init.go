@@ -85,7 +85,6 @@ func Init(
 		policyRootResolver,
 		uploadRootResolver,
 	)
-	enterpriseServices.NewCodeIntelUploadScipAvailableHandler = uploadshttp.IsSCIPAvailableHandler()
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
 	enterpriseServices.RankingService = codeIntelServices.RankingService
 	return nil

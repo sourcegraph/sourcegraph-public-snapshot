@@ -49,7 +49,7 @@ type Handlers struct {
 	BatchesChangesFileUploadHandler http.Handler
 	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
 
-	NewCodeIntelUploadScipAvailableHandler http.Handler
+	NewCodeIntelUploadScipAvailableHandler http.HandlerFunc
 	NewCodeIntelUploadHandler              enterprise.NewCodeIntelUploadHandler
 }
 
@@ -160,7 +160,7 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	newCodeIntelUploadScipAvailableHandler http.Handler,
+	noopHandler http.HandlerFunc,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
@@ -216,7 +216,7 @@ func NewInternalHandler(
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Get(apirouter.SCIPUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(newCodeIntelUploadScipAvailableHandler))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

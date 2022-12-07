@@ -63,12 +63,6 @@ func newHandler(
 	return handler
 }
 
-func IsSCIPAvailableHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-}
-
 func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
 	// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
 	// authorized to view the target repository; they are either a site admin or the code

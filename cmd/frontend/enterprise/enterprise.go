@@ -27,8 +27,7 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 
-	NewCodeIntelUploadHandler              NewCodeIntelUploadHandler
-	NewCodeIntelUploadScipAvailableHandler http.Handler
+	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
 
 	GitHubSyncWebhook           webhooks.Registerer
 	RankingService              RankingService
@@ -88,8 +87,7 @@ func DefaultServices() Services {
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 
-		NewCodeIntelUploadHandler:              func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
-		NewCodeIntelUploadScipAvailableHandler: makeNotFoundHandler("code intel upload scip available"),
+		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 	}
 }
 
