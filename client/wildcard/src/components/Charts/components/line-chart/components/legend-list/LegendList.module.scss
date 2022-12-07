@@ -8,17 +8,29 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 .legend-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     word-break: break-all;
 }
 
+.legend-mark-container {
+    display: flex;
+    align-items: center;
+
+    &::before {
+        content: 'a';
+        width: 0;
+        visibility: hidden;
+    }
+}
+
 .legend-mark {
-    display: inline-block;
+    display: flex;
+    align-items: center;
     width: 0.5rem;
     height: 0.5rem;
     flex-shrink: 0;
