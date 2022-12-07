@@ -24,7 +24,6 @@ var _ workerutil.Handler[*Job] = &workHandler{}
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights database.
 type workHandler struct {
-	// baseWorkerStore *basestore.Store
 	baseWorkerStore *workerStoreExtra
 	insightsStore   *store.Store
 	repoStore       discovery.RepoStore
