@@ -15,6 +15,11 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+type PermissionSyncJobOpts struct {
+	HighPriority     bool
+	InvalidateCaches bool
+}
+
 type PermissionSyncJobStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) PermissionSyncJobStore
@@ -22,8 +27,8 @@ type PermissionSyncJobStore interface {
 	Transact(ctx context.Context) (PermissionSyncJobStore, error)
 	Done(err error) error
 
-	CreateUserSyncJob(ctx context.Context, user int32, highPriority bool) error
-	CreateRepoSyncJob(ctx context.Context, repo int32, highPriority bool) error
+	CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error
+	CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error
 }
 
 type permissionSyncJobStore struct {
@@ -54,17 +59,19 @@ func (s *permissionSyncJobStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, highPriority bool) error {
+func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
 	return s.createSyncJob(ctx, &PermissionSyncJob{
-		UserID:       int(user),
-		HighPriority: highPriority,
+		UserID:           int(user),
+		HighPriority:     opts.HighPriority,
+		InvalidateCaches: opts.InvalidateCaches,
 	})
 }
 
-func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo int32, highPriority bool) error {
+func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error {
 	return s.createSyncJob(ctx, &PermissionSyncJob{
-		RepositoryID: int(repo),
-		HighPriority: highPriority,
+		RepositoryID:     int(repo),
+		HighPriority:     opts.HighPriority,
+		InvalidateCaches: opts.InvalidateCaches,
 	})
 }
 

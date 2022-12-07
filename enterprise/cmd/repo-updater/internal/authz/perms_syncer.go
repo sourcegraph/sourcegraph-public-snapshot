@@ -1127,14 +1127,15 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 		for _, u := range schedule.Users {
-			if err := store.CreateUserSyncJob(ctx, u.userID, false); err != nil {
+
+			if err := store.CreateUserSyncJob(ctx, u.userID, database.PermissionSyncJobOpts{}); err != nil {
 				logger.Error("failed to create user job", log.Error(err))
 				continue
 			}
 		}
 
 		for _, u := range schedule.Repos {
-			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), false); err != nil {
+			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), database.PermissionSyncJobOpts{}); err != nil {
 				logger.Error("failed to create user job", log.Error(err))
 				continue
 			}

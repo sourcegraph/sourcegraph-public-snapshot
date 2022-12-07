@@ -77,8 +77,9 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 	logger := log.Scoped("TODO", "horsegraph")
 	store := database.PermissionSyncJobsWith(logger, db)
 
+	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
 	for _, acc := range accs {
-		if err := store.CreateUserSyncJob(ctx, int32(acc.UserID), true); err != nil {
+		if err := store.CreateUserSyncJob(ctx, int32(acc.UserID), jobOpts); err != nil {
 			return err
 		}
 	}

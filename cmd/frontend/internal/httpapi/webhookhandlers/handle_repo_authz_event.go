@@ -63,5 +63,6 @@ func scheduleRepoUpdate(ctx context.Context, db database.DB, repo *gh.Repository
 	log15.Debug("scheduleRepoUpdate: Dispatching permissions update", "repos", repo.GetFullName())
 
 	logger := log.Scoped("TODO", "horsegraph")
-	return database.PermissionSyncJobsWith(logger, db).CreateRepoSyncJob(ctx, int32(r.ID), true)
+	jobOpts := database.PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: opts.InvalidateCaches}
+	return database.PermissionSyncJobsWith(logger, db).CreateRepoSyncJob(ctx, int32(r.ID), jobOpts)
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -176,7 +175,8 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateRepoSyncJob(ctx, int32(repoID), true)
+	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
+	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateRepoSyncJob(ctx, int32(repoID), jobOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -201,15 +201,12 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{
-		UserIDs: []int32{userID},
-	}
-	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
-		req.Options.InvalidateCaches = true
+	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
+	if args.Options != nil && args.Options.InvalidateCaches != nil {
+		jobOpts.InvalidateCaches = *args.Options.InvalidateCaches
 	}
 
-	// TODO: Pass all options
-	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, req.UserIDs[0], true)
+	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, userID, jobOpts)
 	if err != nil {
 		return nil, err
 	}

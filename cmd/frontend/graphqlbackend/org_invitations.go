@@ -344,7 +344,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		}
 
 		// Schedule permission sync for user that accepted the invite
-		err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, a.UID, true)
+		permJobs := database.PermissionSyncJobsWith(r.logger, r.db)
+		err = permJobs.CreateUserSyncJob(ctx, a.UID, database.PermissionSyncJobOpts{HighPriority: true})
 		if err != nil {
 			return nil, err
 		}
