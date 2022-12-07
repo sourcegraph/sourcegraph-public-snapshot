@@ -5,7 +5,7 @@ import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, H3, Icon, Link, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H3, Icon, Link, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { DeleteWebhookResult, DeleteWebhookVariables, ExternalServiceKind } from '../graphql-operations'
@@ -52,9 +52,14 @@ export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<Webhoo
             <div className="d-flex flex-shrink-0 ml-3">
                 <div>
                     <Tooltip content="Edit webhook">
-                        <Button aria-label="Edit" className="test-edit-webhook" variant="secondary" size="sm">
+                        <ButtonLink
+                            to={`/site-admin/webhooks/${id}/edit`}
+                            className="test-edit-webhook"
+                            variant="secondary"
+                            size="sm"
+                        >
                             <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
-                        </Button>
+                        </ButtonLink>
                     </Tooltip>
                 </div>
                 <div className="ml-1">
