@@ -44,18 +44,15 @@ func int64Pointer(v int64) *int64 {
 	return &v
 }
 
-func waitForTrueOrContext(t *testing.T, ctx context.Context, condition *bool) {
+func waitForTrueOrContext(t *testing.T, ctx context.Context, condition chan bool) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	for {
-		if *condition {
-			break
+	select {
+	case ret := <-condition:
+		if !ret {
+			t.Fatal("Expected condition to be true")
 		}
-		if ctx.Err() != nil {
-			t.Fatal("Timed out while waiting for condition")
-		}
-		time.Sleep(100 * time.Millisecond)
+	case <-time.After(3 * time.Second):
+		t.Fatal("Timed out while waiting for condition")
 	}
 }
 
@@ -147,9 +144,9 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	}
 
 	t.Run("repository event", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == repo.ID
+			webhookCalled <- args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -165,13 +162,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("member event added", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -190,13 +187,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("member event removed", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -215,13 +212,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("organization event member added", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -237,13 +234,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("organization event member removed", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -259,13 +256,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("membership event added", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -281,13 +278,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("membership event removed", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == u.ID
+			webhookCalled <- args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -303,13 +300,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("team event added to repository", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == repo.ID
+			webhookCalled <- args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -325,13 +322,13 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 
 	t.Run("team event removed from repository", func(t *testing.T) {
-		webhookCalled := false
+		webhookCalled := make(chan bool)
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == repo.ID
+			webhookCalled <- args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -347,6 +344,6 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
-		waitForTrueOrContext(t, ctx, &webhookCalled)
+		waitForTrueOrContext(t, ctx, webhookCalled)
 	})
 }
