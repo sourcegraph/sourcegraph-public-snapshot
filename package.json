@@ -349,7 +349,7 @@
     "vsce": "^2.7.0",
     "webpack": "^5.45.1",
     "webpack-bundle-analyzer": "^4.4.2",
-    "webpack-cli": "^4.7.2",
+    "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.0.0",
     "webpack-manifest-plugin": "^3.1.0",
     "webpack-stats-plugin": "^1.1.0",
