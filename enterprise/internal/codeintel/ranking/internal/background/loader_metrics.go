@@ -11,14 +11,14 @@ type loaderMetrics struct {
 	numCSVBytesRead      prometheus.Counter
 }
 
-func newLoaderMetrics(observationContext *observation.Context) *loaderMetrics {
+func newLoaderMetrics(observationCtx *observation.Context) *loaderMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 

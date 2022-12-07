@@ -42,6 +42,7 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
 	lsifstore lsifstore.LsifStore,
@@ -50,9 +51,8 @@ func newService(
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
-	observationContext *observation.Context,
 ) *Service {
-	workerutilStore := store.WorkerutilStore(observationContext)
+	workerutilStore := store.WorkerutilStore(observationCtx)
 
 	return &Service{
 		store:           store,
@@ -64,8 +64,8 @@ func newService(
 		policySvc:       policySvc,
 		policyMatcher:   policyMatcher,
 		locker:          locker,
-		logger:          observationContext.Logger,
-		operations:      newOperations(observationContext),
+		logger:          observationCtx.Logger,
+		operations:      newOperations(observationCtx),
 		clock:           glock.NewRealClock(),
 	}
 }

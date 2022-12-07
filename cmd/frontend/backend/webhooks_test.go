@@ -133,7 +133,7 @@ func TestCreateUpdateDeleteWebhook(t *testing.T) {
 	newName := "new name"
 	newCodeHostKind := extsvc.KindGitLab
 	newCodeHostURL := "https://gitlab.com/"
-	newWebhook, err := ws.UpdateWebhook(ctx, webhook.ID, &newName, &newCodeHostKind, &newCodeHostURL, &newSecret)
+	newWebhook, err := ws.UpdateWebhook(ctx, webhook.ID, newName, newCodeHostKind, newCodeHostURL, newSecret)
 	require.NoError(t, err)
 	// assert that it's still the same webhook
 	assert.Equal(t, webhook.ID, newWebhook.ID)

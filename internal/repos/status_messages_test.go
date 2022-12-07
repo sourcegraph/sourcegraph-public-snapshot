@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,8 +32,6 @@ func TestStatusMessages(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	memoryStore := featureflag.NewMemoryStore(nil, nil, map[string]bool{"indexing-status-message": true})
-	ctx = featureflag.WithFlags(ctx, memoryStore)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logtest.Scoped(t), db)
@@ -269,9 +267,9 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Logger: logger,
-				Store:  store,
-				Now:    clock.Now,
+				ObsvCtx: observation.TestContextTB(t),
+				Store:   store,
+				Now:     clock.Now,
 			}
 
 			mockDB := database.NewMockDBFrom(db)

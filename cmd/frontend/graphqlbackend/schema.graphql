@@ -114,7 +114,7 @@ type Mutation {
     deleteWebhook(id: ID!): EmptyResponse!
 
     """
-    Updates a webhook with given ID. Empty fields are not updated.
+    Updates a webhook with given ID. Null values aren't updated.
     """
     updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
 
@@ -485,6 +485,18 @@ type Mutation {
         Only captured and stored on Sourcegraph Cloud.
         """
         referrer: String
+        """
+        The original referrer for a user
+        """
+        originalReferrer: String
+        """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
+        The sessions first url for a user
+        """
+        sessionFirstURL: String
         """
         Device session ID to identify the user's session for analytics.
         """
@@ -859,6 +871,18 @@ input Event {
     """
     referrer: String
     """
+    The original referrer for a user
+    """
+    originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
+    """
+    The sessions first url for a user
+    """
+    sessionFirstURL: String
+    """
     Device session ID to identify the user's session for analytics.
     """
     deviceSessionID: String
@@ -1122,8 +1146,18 @@ type RandomizeUserPasswordResult {
     """
     The reset password URL that the user must visit to sign into their account again. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance, an email containing this URL
+    will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
+    """
+    If true, then an email with the password reset URL was sent to the primary email
+    address associated with the user. If false, email sending (SMTP) might not be configured
+    on this instance, or an error may have occurred - check the error logs with log scope
+    'randomizeUserPassword' for more details.
+    """
+    emailSent: Boolean!
 }
 
 """

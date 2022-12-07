@@ -24,17 +24,17 @@ type IndexEnqueuer struct {
 }
 
 func NewIndexEnqueuer(
+	observationCtx *observation.Context,
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
 	gitserverClient GitserverClient,
 	jobSelector *jobselector.JobSelector,
-	observationContext *observation.Context,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserverClient,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 		jobSelector:     jobSelector,
 	}
 }

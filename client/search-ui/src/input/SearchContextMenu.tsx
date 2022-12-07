@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect, FormEvent, useMemo, useState, FC } from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC } from 'react'
 
-import { mdiClose, mdiArrowRight } from '@mdi/js'
+import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -14,7 +14,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import {
     Badge,
     Button,
-    useObservable,
     Icon,
     ButtonLink,
     Link,
@@ -62,7 +61,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         defaultSearchContextSpec,
         selectSearchContextSpec,
         getUserSearchContextNamespaces,
-        fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
         onMenuClose,
         showSearchContextManagement,
@@ -161,16 +159,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         platformContext,
     ])
 
-    const autoDefinedSearchContexts = useObservable(
-        useMemo(
-            () =>
-                fetchAutoDefinedSearchContexts({ platformContext, useMinimalFields: true }).pipe(
-                    catchError(error => [asError(error)])
-                ),
-            [fetchAutoDefinedSearchContexts, platformContext]
-        )
-    )
-
     const reset = useCallback(() => {
         selectSearchContextSpec(defaultSearchContextSpec)
         onMenuClose()
@@ -184,22 +172,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         },
         [onMenuClose, selectSearchContextSpec, telemetryService]
     )
-
-    const filteredAutoDefinedSearchContexts = useMemo(
-        () =>
-            autoDefinedSearchContexts && !isErrorLike(autoDefinedSearchContexts)
-                ? autoDefinedSearchContexts.filter(context =>
-                      context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-                  )
-                : [],
-        [autoDefinedSearchContexts, searchFilter]
-    )
-
-    // Merge auto-defined contexts and user-defined contexts
-    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts), [
-        filteredAutoDefinedSearchContexts,
-        searchContexts,
-    ])
 
     return (
         <Combobox openOnFocus={true} className={classNames(styles.container, className)} onSelect={handleContextSelect}>
@@ -225,15 +197,22 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             </div>
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
                 {loadingState !== 'LOADING' &&
-                    filteredList.map(context => (
-                        <SearchContextMenuItem
-                            key={context.id}
-                            spec={context.spec}
-                            description={context.description}
-                            query={context.query}
-                            isDefault={context.spec === defaultSearchContextSpec}
-                            selected={context.spec === selectedSearchContextSpec}
-                        />
+                    searchContexts.map((context, index) => (
+                        <>
+                            {/* Separate starred and unstarred contexts */}
+                            {index > 0 && searchContexts[index - 1].viewerHasStarred && !context.viewerHasStarred && (
+                                <div className={styles.separator} />
+                            )}
+                            <SearchContextMenuItem
+                                key={context.id}
+                                spec={context.spec}
+                                description={context.description}
+                                query={context.query}
+                                isDefault={context.spec === defaultSearchContextSpec}
+                                selected={context.spec === selectedSearchContextSpec}
+                                starred={context.viewerHasStarred}
+                            />
+                        </>
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <div data-testid="search-context-menu-item" className={styles.item}>
@@ -245,7 +224,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                         <small>Error occurred while loading search contexts</small>
                     </div>
                 )}
-                {loadingState === 'DONE' && filteredList.length === 0 && (
+                {loadingState === 'DONE' && searchContexts.length === 0 && (
                     <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>No contexts found</small>
                     </div>
@@ -309,11 +288,17 @@ interface SearchContextMenuItemProps {
     query: string
     selected: boolean
     isDefault: boolean
+    starred: boolean
 }
 
-export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
-    const { spec, description, query, selected, isDefault } = props
-
+export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = ({
+    spec,
+    description,
+    query,
+    selected,
+    isDefault,
+    starred,
+}) => {
     const descriptionOrQuery = description.length > 0 ? description : query
 
     return (
@@ -337,9 +322,15 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
             {isDefault && (
                 <>
                     <VisuallyHidden>,</VisuallyHidden>
-                    <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
+                    <Badge variant="secondary" className={classNames('text-uppercase ml-1', styles.itemDefault)}>
                         Default
                     </Badge>
+                </>
+            )}
+            {starred && (
+                <>
+                    <VisuallyHidden>, Starred</VisuallyHidden>
+                    <Icon svgPath={mdiStar} className={classNames('ml-1', styles.star)} aria-hidden={true} />
                 </>
             )}
         </ComboboxOption>

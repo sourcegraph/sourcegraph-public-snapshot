@@ -3370,11 +3370,26 @@ CREATE SEQUENCE saved_searches_id_seq
 
 ALTER SEQUENCE saved_searches_id_seq OWNED BY saved_searches.id;
 
+CREATE TABLE search_context_default (
+    user_id integer NOT NULL,
+    search_context_id bigint NOT NULL
+);
+
+COMMENT ON TABLE search_context_default IS 'When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.';
+
 CREATE TABLE search_context_repos (
     search_context_id bigint NOT NULL,
     repo_id integer NOT NULL,
     revision text NOT NULL
 );
+
+CREATE TABLE search_context_stars (
+    search_context_id bigint NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE search_context_stars IS 'When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.';
 
 CREATE TABLE search_contexts (
     id bigint NOT NULL,
@@ -4204,8 +4219,14 @@ ALTER TABLE ONLY repo
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_pkey PRIMARY KEY (user_id);
+
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_unique UNIQUE (repo_id, search_context_id, revision);
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_pkey PRIMARY KEY (search_context_id, user_id);
 
 ALTER TABLE ONLY search_contexts
     ADD CONSTRAINT search_contexts_pkey PRIMARY KEY (id);
@@ -5027,11 +5048,23 @@ ALTER TABLE ONLY saved_searches
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY search_context_default
+    ADD CONSTRAINT search_context_default_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_repo_id_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY search_context_repos
     ADD CONSTRAINT search_context_repos_search_context_id_fk FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_search_context_id_fkey FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY search_context_stars
+    ADD CONSTRAINT search_context_stars_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY search_contexts
     ADD CONSTRAINT search_contexts_namespace_org_id_fk FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;

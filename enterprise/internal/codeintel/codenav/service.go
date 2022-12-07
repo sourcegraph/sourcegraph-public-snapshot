@@ -31,18 +31,18 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
-	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		store:      store,
 		lsifstore:  lsifstore,
 		gitserver:  gitserver,
 		uploadSvc:  uploadSvc,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 		logger:     log.Scoped("codenav", ""),
 	}
 }

@@ -3,14 +3,13 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type uploadBackfillerJob struct{}
@@ -29,8 +28,8 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+func (j *uploadBackfillerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}

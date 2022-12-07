@@ -20,11 +20,11 @@ import (
 // processing.
 func NewReconcilerWorker(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store[*btypes.Changeset],
 	gitClient gitserver.Client,
 	sourcer sources.Sourcer,
-	observationContext *observation.Context,
 ) *workerutil.Worker[*btypes.Changeset] {
 	r := reconciler.New(gitClient, sourcer, s)
 
@@ -33,7 +33,7 @@ func NewReconcilerWorker(
 		NumHandlers:       5,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_reconciler"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "batch_changes_reconciler"),
 	}
 
 	worker := dbworker.NewWorker[*btypes.Changeset](ctx, workerStore, r.HandlerFunc(), options)

@@ -1182,7 +1182,6 @@ index e5af166..d44c3fc 100644
 			if err != nil {
 				t.Fatal(err)
 			}
-
 		})
 	})
 
@@ -2555,7 +2554,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2583,7 +2581,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2608,7 +2605,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2634,7 +2630,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2660,7 +2655,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2686,7 +2680,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2712,7 +2705,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2800,7 +2792,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2844,7 +2835,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}

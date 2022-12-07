@@ -32,21 +32,26 @@ type RankMergerConfig struct {
 }
 
 func NewRankMerger(
+	observationCtx *observation.Context,
 	store store.Store,
 	resultsBucket *storage.BucketHandle,
 	config RankMergerConfig,
 	interval time.Duration,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	merger := &rankMerger{
 		store:         store,
 		resultsBucket: resultsBucket,
-		metrics:       newMergerMetrics(observationContext),
+		metrics:       newMergerMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return merger.mergeRanks(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"pagerank.merger", "reconciles page-rank data from auxiliary table",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return merger.mergeRanks(ctx, config)
+		}),
+	)
 }
 
 func (m *rankMerger) mergeRanks(ctx context.Context, config RankMergerConfig) (err error) {

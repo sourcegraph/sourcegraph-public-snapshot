@@ -15,10 +15,10 @@ type operations struct {
 
 var m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"codeintel_dependencies",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -26,7 +26,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dependencies.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,

@@ -7,9 +7,7 @@ import (
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -31,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -54,25 +51,19 @@ func Main() {
 	})
 	defer liblog.Sync()
 
+	// Initialize tracing/metrics
+	logger := log.Scoped("codeintel-worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
+	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+		Name: "codeintel-worker",
+	}))
+
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	tracer.Init(logger.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
-
-	logger := log.Scoped("worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
 
 	if err := config.Validate(); err != nil {
 		logger.Error("Failed for load config", log.Error(err))
-	}
-
-	// Initialize tracing/metrics
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("worker", "the precise codeintel worker"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-		HoneyDataset: &honey.Dataset{
-			Name: "codeintel-worker",
-		},
 	}
 
 	// Start debug server
@@ -84,8 +75,8 @@ func Main() {
 	}
 
 	// Connect to databases
-	db := database.NewDB(logger, mustInitializeDB())
-	codeIntelDB := mustInitializeCodeIntelDB()
+	db := database.NewDB(logger, mustInitializeDB(observationCtx))
+	codeIntelDB := mustInitializeCodeIntelDB(observationCtx)
 
 	// Migrations may take a while, but after they're done we'll immediately
 	// spin up a server and can accept traffic. Inform external clients we'll
@@ -99,16 +90,17 @@ func Main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	services, err := codeintel.NewServices(codeintel.Databases{
-		DB:          db,
-		CodeIntelDB: codeIntelDB,
+	services, err := codeintel.NewServices(codeintel.ServiceDependencies{
+		DB:             db,
+		CodeIntelDB:    codeIntelDB,
+		ObservationCtx: observationCtx,
 	})
 	if err != nil {
 		logger.Fatal("Failed to create codeintel services", log.Error(err))
 	}
 
 	// Initialize stores
-	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, config.LSIFUploadStoreConfig)
 	if err != nil {
 		logger.Fatal("Failed to create upload store", log.Error(err))
 	}
@@ -118,6 +110,7 @@ func Main() {
 
 	// Initialize worker
 	worker := uploads.NewUploadProcessorJob(
+		observationCtx,
 		services.UploadsService,
 		db,
 		uploadStore,
@@ -125,7 +118,6 @@ func Main() {
 		config.WorkerBudget,
 		config.WorkerPollInterval,
 		config.MaximumRuntimePerJob,
-		observationContext,
 	)
 
 	// Initialize health server
@@ -139,21 +131,20 @@ func Main() {
 	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)
 }
 
-func mustInitializeDB() *sql.DB {
+func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	logger := log.Scoped("init db", "Initialize fontend database")
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		logger.Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
 	//
 	// START FLAILING
 
 	ctx := context.Background()
-	db := database.NewDB(logger, sqlDB)
+	db := database.NewDB(observationCtx.Logger, sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
@@ -167,26 +158,16 @@ func mustInitializeDB() *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB() codeintelshared.CodeIntelDB {
+func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelshared.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	logger := log.Scoped("init db", "Initialize codeintel database.")
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
+	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
+		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(db)
-}
-
-func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
-	if withHoney {
-		return observationContext
-	}
-	ctx := *observationContext
-	ctx.HoneyDataset = nil
-	return &ctx
+	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

@@ -1,10 +1,10 @@
 package graphqlbackend
 
 import (
-	"regexp"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 

@@ -43,7 +43,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	// TODO: Validate access token.
 	// Validate src-cli is of a good version, rely on the connected instance to tell
 	// us what "good" means.
-	if err := validateSrcCLIVersion(cliCtx.Context, logger, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+	if err := validateSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions); err != nil {
 		return err
 	}
 
@@ -81,9 +81,9 @@ func validateGitVersion(ctx context.Context) error {
 }
 
 // validateSrcCLIVersion queries the latest recommended version of src-cli and makes sure it
-// matches what is installed. If not, a warning message recommending to use a different
-// version is logged.
-func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
+// matches what is installed. If not, an error recommending to use a different
+// version is returned.
+func validateSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
 	latestVersion, err := latestSrcCLIVersion(ctx, client, options)
 	if err != nil {
 		return errors.Wrap(err, "cannot retrieve latest compatible src-cli version")

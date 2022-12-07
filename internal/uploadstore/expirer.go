@@ -14,7 +14,7 @@ type expirer struct {
 }
 
 func NewExpirer(ctx context.Context, store Store, prefix string, maxAge time.Duration, interval time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(ctx, interval, &expirer{
+	return goroutine.NewPeriodicGoroutine(ctx, "codeintel.upload-store-expirer", "expires entries in the code intel upload store", interval, &expirer{
 		store:  store,
 		prefix: prefix,
 		maxAge: maxAge,

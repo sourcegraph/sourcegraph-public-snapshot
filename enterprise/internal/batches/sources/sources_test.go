@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"testing"
 
@@ -136,9 +137,8 @@ func TestLoadExternalService(t *testing.T) {
 		if _, ok := repo.Sources[newerExternalService.URN()]; ok {
 			sources = append(sources, &newerExternalService)
 		}
-		if _, ok := repo.Sources[externalService.URN()]; ok {
-			sources = append(sources, &externalService)
-		}
+		// Simulate original ORDER BY ID DESC.
+		sort.SliceStable(sources, func(i, j int) bool { return sources[i].ID > sources[j].ID })
 		return sources, nil
 	})
 

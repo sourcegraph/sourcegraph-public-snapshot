@@ -19,10 +19,14 @@ import (
 func NewBackfillCompletedCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Hour * 2
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_backill_completed_check", func(ctx context.Context) (err error) {
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		"insights.backill_completed_check", "sets timestamps for when a series' backfilled operation has completed",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) (err error) {
 			return checkBackfillCompleted(ctx, postgres, insightsdb)
-		}))
+		}),
+	)
 }
 
 func checkBackfillCompleted(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) (err error) {

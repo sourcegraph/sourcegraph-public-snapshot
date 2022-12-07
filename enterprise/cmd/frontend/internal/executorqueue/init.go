@@ -19,10 +19,10 @@ import (
 // Init initializes the executor endpoints required for use with the executor service.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
@@ -38,8 +38,8 @@ func Init(
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
-	codeintelHandler := handler.NewHandler(executorStore, metricsStore, codeintelqueue.QueueOptions(db, accessToken, observationContext))
-	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(db, accessToken, observationContext))
+	codeintelHandler := handler.NewHandler(executorStore, metricsStore, codeintelqueue.QueueOptions(observationCtx, db, accessToken))
+	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(observationCtx, db, accessToken))
 	queueOptions := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	queueHandler, err := newExecutorQueueHandler(

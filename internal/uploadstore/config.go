@@ -21,8 +21,7 @@ func normalizeConfig(t Config) Config {
 	// Normalize the backend name.
 	o.Backend = strings.ToLower(o.Backend)
 
-	// TODO(blobstore): remove minio support
-	if o.Backend == "blobstore" || o.Backend == "minio" {
+	if o.Backend == "blobstore" {
 		// No manual provisioning on blobstore.
 		o.ManageBucket = true
 
