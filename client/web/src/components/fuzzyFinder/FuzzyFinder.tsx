@@ -79,10 +79,13 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
         }
     }, [props.telemetryService, isVisible])
 
-    const handleItemClick = useCallback(() => {
-        props.telemetryService.log('FuzzyFinderResultClicked', { activeTab, scope }, { activeTab, scope })
-        setIsVisible(false)
-    }, [props.telemetryService, setIsVisible, activeTab, scope])
+    const handleItemClick = useCallback(
+        (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
+            props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+            setIsVisible(false)
+        },
+        [props.telemetryService, setIsVisible, activeTab, scope]
+    )
 
     if (tabs.isAllDisabled()) {
         return null
@@ -126,7 +129,7 @@ interface FuzzyFinderProps extends FuzzyState {
     /**
      * Search result click handler.
      */
-    onClickItem: () => void
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
 
     location: H.Location
 
