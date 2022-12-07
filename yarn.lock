@@ -7333,12 +7333,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/case-sensitive-paths-webpack-plugin@npm:2.1.5":
-  version: 2.1.5
-  resolution: "@types/case-sensitive-paths-webpack-plugin@npm:2.1.5"
+"@types/case-sensitive-paths-webpack-plugin@npm:2.1.6":
+  version: 2.1.6
+  resolution: "@types/case-sensitive-paths-webpack-plugin@npm:2.1.6"
   dependencies:
     "@types/webpack": ^4
-  checksum: 49e782a3d43636b79c59aee5ea280f3a90da236da50bec27ea8847b87d2cf9631fdafc894a7984503566f39a7809cfd0bcb6179f41e5e2fc4bc2e756e36f3d92
+  checksum: c5eb21985fc79afc72fa2e0d2e8494d8162dd46b370efd25a0be1f583a8669376ba001684497c6eb17a068775b2a80be1c948cbea47695e03e8956f46ee1305b
   languageName: node
   linkType: hard
 
@@ -28274,7 +28274,7 @@ pvutils@latest:
     "@testing-library/user-event": ^13.5.0
     "@types/babel__core": 7.1.12
     "@types/bloomfilter": 0.0.0
-    "@types/case-sensitive-paths-webpack-plugin": 2.1.5
+    "@types/case-sensitive-paths-webpack-plugin": 2.1.6
     "@types/chai": 4.2.14
     "@types/chai-as-promised": 7.1.3
     "@types/chrome": 0.0.127
