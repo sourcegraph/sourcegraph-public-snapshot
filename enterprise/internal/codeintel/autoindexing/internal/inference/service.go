@@ -61,12 +61,12 @@ func (e LimitError) Error() string {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	sandboxService SandboxService,
 	gitService GitService,
 	limiter *ratelimit.InstrumentedLimiter,
 	maximumFilesWithContentCount int,
 	maximumFileWithContentSizeBytes int,
-	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		sandboxService:                  sandboxService,
@@ -74,7 +74,7 @@ func newService(
 		limiter:                         limiter,
 		maximumFilesWithContentCount:    maximumFilesWithContentCount,
 		maximumFileWithContentSizeBytes: maximumFileWithContentSizeBytes,
-		operations:                      newOperations(observationContext),
+		operations:                      newOperations(observationCtx),
 	}
 }
 

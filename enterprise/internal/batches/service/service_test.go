@@ -1182,7 +1182,6 @@ index e5af166..d44c3fc 100644
 			if err != nil {
 				t.Fatal(err)
 			}
-
 		})
 	})
 
@@ -1233,6 +1232,99 @@ index e5af166..d44c3fc 100644
 				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
 			}
 		})
+
+		t.Run("caching disabled", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Simulate successful resolution.
+			job := &btypes.BatchSpecResolutionJob{
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				BatchSpecID: spec.ID,
+				InitiatorID: admin.ID,
+			}
+
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			cs := &btypes.ChangesetSpec{
+				Title:      "test",
+				BaseRepoID: rs[0].ID,
+			}
+			if err := s.CreateChangesetSpec(ctx, cs); err != nil {
+				t.Fatal(err)
+			}
+
+			var workspaceIDs []int64
+			for _, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID:       spec.ID,
+					RepoID:            repo.ID,
+					CachedResultFound: true,
+					StepCacheResults:  map[int]btypes.StepCacheResult{1: {}},
+					ChangesetSpecIDs:  []int64{cs.ID},
+				}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDs = append(workspaceIDs, ws.ID)
+			}
+
+			tru := true
+			// Execute BatchSpec by creating execution jobs
+			if _, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{
+				BatchSpecRandID: spec.RandID,
+				// Disable caching.
+				NoCache: &tru,
+			}); err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: workspaceIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(jobs) != len(rs) {
+				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
+			}
+
+			ws, _, err := s.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{IDs: workspaceIDs})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, w := range ws {
+				if w.CachedResultFound {
+					t.Error("cached_result_found not reset")
+				}
+				if len(w.StepCacheResults) > 0 {
+					t.Error("step_cache_results not reset")
+				}
+				if len(w.ChangesetSpecIDs) > 0 {
+					t.Error("changeset_spec_ids not reset")
+				}
+			}
+
+			// Verify the changeset spec has been deleted.
+			if _, err := s.GetChangesetSpecByID(ctx, cs.ID); err == nil || err != store.ErrNoResults {
+				t.Fatal(err)
+			}
+
+			// Verify the batch spec no_cache flag has been updated.
+			reloadedSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reloadedSpec.NoCache {
+				t.Error("no_cache flag on batch spec not updated")
+			}
+		})
+
 		t.Run("resolution not completed", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -2462,7 +2554,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2490,7 +2581,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2515,7 +2605,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2541,7 +2630,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2567,7 +2655,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2593,7 +2680,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2619,7 +2705,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2707,7 +2792,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2751,7 +2835,6 @@ changesetTemplate:
 				},
 				BatchChange: batchChange.ID,
 			})
-
 			if err != nil {
 				t.Fatal(err)
 			}

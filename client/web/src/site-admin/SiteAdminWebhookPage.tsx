@@ -63,12 +63,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                             updatedBy={webhookData.node.updatedBy}
                         />
                     }
-                    className="test-batch-change-close-page mb-3"
+                    className="mb-3"
                     headingElement="h2"
                     actions={
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
                                 <ButtonLink
+                                    to="/site-admin/webhooks/create"
                                     className="test-create-webhook"
                                     size="sm"
                                     variant="primary"

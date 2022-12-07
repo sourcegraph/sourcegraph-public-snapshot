@@ -3,7 +3,6 @@ package lsifstore
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ProcessedSCIPData struct {

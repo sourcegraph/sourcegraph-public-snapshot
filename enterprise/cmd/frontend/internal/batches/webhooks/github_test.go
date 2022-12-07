@@ -226,7 +226,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0o666)
 					if err != nil {
 						t.Fatal(err)
 					}

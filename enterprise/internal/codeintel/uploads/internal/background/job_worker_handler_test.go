@@ -2,8 +2,10 @@ package background
 
 import (
 	"context"
+	"encoding/base64"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,6 +34,7 @@ func TestHandle(t *testing.T) {
 		Commit:       "deadbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
+		ContentType:  "application/x-ndjson+lsif",
 	}
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
@@ -148,6 +152,258 @@ func TestHandle(t *testing.T) {
 	}
 }
 
+func TestHandleSCIP(t *testing.T) {
+	setupRepoMocks(t)
+
+	upload := codeinteltypes.Upload{
+		ID:           42,
+		Root:         "",
+		Commit:       "deadbeef",
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+		ContentType:  "application/x-protobuf+scip",
+	}
+
+	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+	gitserverClient := NewMockGitserverClient()
+
+	// Set default transaction behavior
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Set default transaction behavior
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Track writes to symbols table
+	symbolWriter := NewMockSymbolWriter()
+	mockLSIFStore.NewSymbolWriterFunc.SetDefaultReturn(symbolWriter, nil)
+
+	id := 0
+	mockLSIFStore.InsertSCIPDocumentFunc.SetDefaultHook(func(_ context.Context, _ int, _ string, _ []byte, _ []byte) (int, error) {
+		id++
+		return id, nil
+	})
+
+	// Give correlation package a valid input dump
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
+
+	// Allowlist all files in dump
+	gitserverClient.DirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
+
+	expectedCommitDate := time.Unix(1587396557, 0).UTC()
+	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
+
+	svc := &handler{
+		store:           mockDBStore,
+		lsifstore:       mockLSIFStore,
+		gitserverClient: gitserverClient,
+		repoStore:       mockRepoStore,
+		workerStore:     mockWorkerStore,
+	}
+
+	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
+	if err != nil {
+		t.Fatalf("unexpected error handling upload: %s", err)
+	} else if requeued {
+		t.Errorf("unexpected requeue")
+	}
+
+	if calls := mockDBStore.UpdateCommittedAtFunc.History(); len(calls) != 1 {
+		t.Errorf("unexpected number of UpdateCommitedAt calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
+	} else if calls[0].Arg1 != 50 {
+		t.Errorf("unexpected UpdateCommitedAt repository id. want=%d have=%d", 50, calls[0].Arg1)
+	} else if calls[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected UpdateCommitedAt commit. want=%s have=%s", "deadbeef", calls[0].Arg2)
+	} else if calls[0].Arg3 != expectedCommitDateStr {
+		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
+	}
+
+	expectedPackagesDumpID := 42
+	expectedPackages := []precise.Package{
+		{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "template",
+			Version: "0.0.0-DEVELOPMENT",
+		},
+	}
+	if len(mockDBStore.UpdatePackagesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
+	} else if diff := cmp.Diff(expectedPackagesDumpID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff(expectedPackages, mockDBStore.UpdatePackagesFunc.History()[0].Arg2); diff != "" {
+		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
+	}
+
+	expectedPackageReferencesDumpID := 42
+	expectedPackageReferences := []precise.PackageReference{
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "typescript",
+			Version: "4.9.3",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "sourcegraph",
+			Version: "25.5.0",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "js-base64",
+			Version: "3.7.1",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "tagged-template-noop",
+			Version: "2.1.01",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "@types/mocha",
+			Version: "9.0.0",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "@types/node",
+			Version: "14.17.15",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "@types/lodash",
+			Version: "4.14.178",
+		}},
+		{Package: precise.Package{
+			Scheme:  "scip-typescript",
+			Manager: "npm",
+			Name:    "rxjs",
+			Version: "6.6.7",
+		}},
+	}
+	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackageReferencesFunc.History()))
+	} else if diff := cmp.Diff(expectedPackageReferencesDumpID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
+	} else {
+		sort.Slice(expectedPackageReferences, func(i, j int) bool {
+			return expectedPackageReferences[i].Name < expectedPackageReferences[j].Name
+		})
+
+		if diff := cmp.Diff(expectedPackageReferences, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg2); diff != "" {
+			t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
+		}
+	}
+
+	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencySyncingJobFunc.History()))
+	} else if mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1 != 42 {
+		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
+	}
+
+	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
+	}
+
+	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.SetRepositoryAsDirtyFunc.History()))
+	} else if mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1)
+	}
+
+	if len(mockUploadStore.DeleteFunc.History()) != 1 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 1, len(mockUploadStore.DeleteFunc.History()))
+	}
+
+	if len(mockLSIFStore.InsertMetadataFunc.History()) != 1 {
+		t.Errorf("unexpected number of of InsertMetadataFunc.History() calls. want=%d have=%d", 1, len(mockLSIFStore.InsertMetadataFunc.History()))
+	} else {
+		call := mockLSIFStore.InsertMetadataFunc.History()[0]
+		if call.Arg1 != 42 {
+			t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
+		}
+
+		expectedMetadata := lsifstore.ProcessedMetadata{
+			TextDocumentEncoding: "UTF8",
+			ToolName:             "scip-typescript",
+			ToolVersion:          "0.3.3",
+			ToolArguments:        nil,
+			ProtocolVersion:      0,
+		}
+		if diff := cmp.Diff(expectedMetadata, call.Arg2); diff != "" {
+			t.Errorf("unexpected processed metadata args (-want +got):\n%s", diff)
+		}
+	}
+	if len(mockLSIFStore.InsertSCIPDocumentFunc.History()) != 11 {
+		t.Errorf("unexpected number of of InsertSCIPDocumentFunc.History() calls. want=%d have=%d", 11, len(mockLSIFStore.InsertSCIPDocumentFunc.History()))
+	} else {
+		found := false
+		for _, call := range mockLSIFStore.InsertSCIPDocumentFunc.History() {
+			if call.Arg1 != 42 {
+				t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
+			}
+			if call.Arg2 != "template/src/util/promise.ts" {
+				continue
+			}
+
+			found = true
+			expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
+			if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(call.Arg3)); diff != "" {
+				t.Errorf("unexpected hash (-want +got):\n%s", diff)
+			}
+		}
+		if !found {
+			t.Fatalf("target path not found")
+		}
+	}
+	if len(symbolWriter.WriteSCIPSymbolsFunc.History()) != 11 {
+		t.Errorf("unexpected number of of riteSCIPSymbolsFunc.History() calls. want=%d have=%d", 11, len(symbolWriter.WriteSCIPSymbolsFunc.History()))
+	} else {
+		found := false
+		for i, call := range mockLSIFStore.InsertSCIPDocumentFunc.History() {
+			const targetPath = "template/src/util/graphql.ts"
+			if call.Arg2 != targetPath {
+				continue
+			}
+
+			// this path is sixth in order of processing, guaranteed by canonicalization
+			expectedDocumentLookupID := 6
+
+			found = true
+			call := symbolWriter.WriteSCIPSymbolsFunc.History()[i]
+			if call.Arg1 != expectedDocumentLookupID {
+				t.Fatalf("unexpected value for upload id. want=%d have=%d", expectedDocumentLookupID, call.Arg1)
+			}
+			if diff := cmp.Diff(testedInvertedRangeIndex, call.Arg2); diff != "" {
+				t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
+			}
+		}
+
+		if !found {
+			t.Fatalf("target path not found")
+		}
+	}
+}
+
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
@@ -157,6 +413,7 @@ func TestHandleError(t *testing.T) {
 		Commit:       "deadbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
+		ContentType:  "application/x-ndjson+lsif",
 	}
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
@@ -210,6 +467,73 @@ func TestHandleError(t *testing.T) {
 	}
 }
 
+func TestHandleErrorScip(t *testing.T) {
+	setupRepoMocks(t)
+
+	upload := codeinteltypes.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       "deadbeef",
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+		ContentType:  "application/x-protobuf+scip",
+	}
+
+	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+	gitserverClient := NewMockGitserverClient()
+
+	// Set default transaction behavior
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Set default transaction behavior
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Track writes to symbols table
+	symbolWriter := NewMockSymbolWriter()
+	mockLSIFStore.NewSymbolWriterFunc.SetDefaultReturn(symbolWriter, nil)
+
+	// Give correlation package a valid input dump
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
+
+	// Supply non-nil commit date
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
+
+	// Set a different tip commit
+	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
+
+	svc := &handler{
+		store:     mockDBStore,
+		lsifstore: mockLSIFStore,
+		// lsifstore:       mockLSIFStore,
+		gitserverClient: gitserverClient,
+		repoStore:       mockRepoStore,
+		workerStore:     mockWorkerStore,
+	}
+
+	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
+	if err == nil {
+		t.Fatalf("unexpected nil error handling upload")
+	} else if !strings.Contains(err.Error(), "uh-oh!") {
+		t.Fatalf("unexpected error: %s", err)
+	} else if requeued {
+		t.Errorf("unexpected requeue")
+	}
+
+	if len(mockDBStore.DoneFunc.History()) != 1 {
+		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockDBStore.DoneFunc.History()))
+	}
+
+	if len(mockUploadStore.DeleteFunc.History()) != 0 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 0, len(mockUploadStore.DeleteFunc.History()))
+	}
+}
+
 func TestHandleCloneInProgress(t *testing.T) {
 	upload := codeinteltypes.Upload{
 		ID:           42,
@@ -217,6 +541,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		Commit:       "deadbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
+		ContentType:  "application/x-ndjson+lsif",
 	}
 
 	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
@@ -259,6 +584,35 @@ func TestHandleCloneInProgress(t *testing.T) {
 
 func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
 	return os.Open("./testdata/dump1.lsif.gz")
+}
+
+func copyTestDumpScip(ctx context.Context, key string) (io.ReadCloser, error) {
+	return os.Open("./testdata/index1.scip.gz")
+}
+
+var scipDirectoryChildren = map[string][]string{
+	"": {
+		"template",
+	},
+	"template": {
+		"template/src",
+	},
+	"template/src": {
+		"template/src/extension.ts",
+		"template/src/indicators.ts",
+		"template/src/language.ts",
+		"template/src/logging.ts",
+		"template/src/util",
+	},
+	"template/src/util": {
+		"template/src/util/api.ts",
+		"template/src/util/graphql.ts",
+		"template/src/util/ix.test.ts",
+		"template/src/util/ix.ts",
+		"template/src/util/promise.ts",
+		"template/src/util/uri.test.ts",
+		"template/src/util/uri.ts",
+	},
 }
 
 func setupRepoMocks(t *testing.T) {

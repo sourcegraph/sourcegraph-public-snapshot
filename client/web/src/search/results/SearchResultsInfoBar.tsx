@@ -170,7 +170,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 {props.stats}
 
                 {props.isSourcegraphDotCom && (
-                    <CloudCtaBanner className="mb-5" variant="outlined">
+                    <CloudCtaBanner className="mb-0" variant="outlined">
                         To search across your private repositories,{' '}
                         <Link
                             to="https://signup.sourcegraph.com"

@@ -370,3 +370,15 @@
     :why:
     :versions: []
     :when: 2022-04-18 21:25:36.854878000 Z
+- - :ignore
+  - root-workspace-0b6124
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-12-05 09:54:08.112251000 Z
+- - :ignore
+  - trim
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-12-05 09:54:31.944623000 Z

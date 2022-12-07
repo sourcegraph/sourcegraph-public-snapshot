@@ -26,10 +26,10 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(policySvc *policies.Service, observationContext *observation.Context) resolverstubs.PoliciesServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, policySvc *policies.Service) resolverstubs.PoliciesServiceResolver {
 	return &rootResolver{
 		policySvc:  policySvc,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

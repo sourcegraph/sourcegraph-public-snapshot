@@ -7,7 +7,6 @@ import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/a
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -20,7 +19,6 @@ describe('SearchContextDropdown', () => {
         telemetryService: NOOP_TELEMETRY_SERVICE,
         query: '',
         showSearchContextManagement: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         defaultSearchContextSpec: '',

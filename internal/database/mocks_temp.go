@@ -35566,6 +35566,10 @@ type MockSearchContextsStore struct {
 	// CountSearchContextsFunc is an instance of a mock function object
 	// controlling the behavior of the method CountSearchContexts.
 	CountSearchContextsFunc *SearchContextsStoreCountSearchContextsFunc
+	// CreateSearchContextStarForUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreateSearchContextStarForUser.
+	CreateSearchContextStarForUserFunc *SearchContextsStoreCreateSearchContextStarForUserFunc
 	// CreateSearchContextWithRepositoryRevisionsFunc is an instance of a
 	// mock function object controlling the behavior of the method
 	// CreateSearchContextWithRepositoryRevisions.
@@ -35573,6 +35577,10 @@ type MockSearchContextsStore struct {
 	// DeleteSearchContextFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteSearchContext.
 	DeleteSearchContextFunc *SearchContextsStoreDeleteSearchContextFunc
+	// DeleteSearchContextStarForUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteSearchContextStarForUser.
+	DeleteSearchContextStarForUserFunc *SearchContextsStoreDeleteSearchContextStarForUserFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *SearchContextsStoreDoneFunc
@@ -35602,6 +35610,10 @@ type MockSearchContextsStore struct {
 	// function object controlling the behavior of the method
 	// SetSearchContextRepositoryRevisions.
 	SetSearchContextRepositoryRevisionsFunc *SearchContextsStoreSetSearchContextRepositoryRevisionsFunc
+	// SetUserDefaultSearchContextIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetUserDefaultSearchContextID.
+	SetUserDefaultSearchContextIDFunc *SearchContextsStoreSetUserDefaultSearchContextIDFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *SearchContextsStoreTransactFunc
@@ -35621,6 +35633,11 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 				return
 			},
 		},
+		CreateSearchContextStarForUserFunc: &SearchContextsStoreCreateSearchContextStarForUserFunc{
+			defaultHook: func(context.Context, int32, int64) (r0 error) {
+				return
+			},
+		},
 		CreateSearchContextWithRepositoryRevisionsFunc: &SearchContextsStoreCreateSearchContextWithRepositoryRevisionsFunc{
 			defaultHook: func(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (r0 *types.SearchContext, r1 error) {
 				return
@@ -35628,6 +35645,11 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 		},
 		DeleteSearchContextFunc: &SearchContextsStoreDeleteSearchContextFunc{
 			defaultHook: func(context.Context, int64) (r0 error) {
+				return
+			},
+		},
+		DeleteSearchContextStarForUserFunc: &SearchContextsStoreDeleteSearchContextStarForUserFunc{
+			defaultHook: func(context.Context, int32, int64) (r0 error) {
 				return
 			},
 		},
@@ -35676,6 +35698,11 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 				return
 			},
 		},
+		SetUserDefaultSearchContextIDFunc: &SearchContextsStoreSetUserDefaultSearchContextIDFunc{
+			defaultHook: func(context.Context, int32, int64) (r0 error) {
+				return
+			},
+		},
 		TransactFunc: &SearchContextsStoreTransactFunc{
 			defaultHook: func(context.Context) (r0 SearchContextsStore, r1 error) {
 				return
@@ -35699,6 +35726,11 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 				panic("unexpected invocation of MockSearchContextsStore.CountSearchContexts")
 			},
 		},
+		CreateSearchContextStarForUserFunc: &SearchContextsStoreCreateSearchContextStarForUserFunc{
+			defaultHook: func(context.Context, int32, int64) error {
+				panic("unexpected invocation of MockSearchContextsStore.CreateSearchContextStarForUser")
+			},
+		},
 		CreateSearchContextWithRepositoryRevisionsFunc: &SearchContextsStoreCreateSearchContextWithRepositoryRevisionsFunc{
 			defaultHook: func(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 				panic("unexpected invocation of MockSearchContextsStore.CreateSearchContextWithRepositoryRevisions")
@@ -35707,6 +35739,11 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 		DeleteSearchContextFunc: &SearchContextsStoreDeleteSearchContextFunc{
 			defaultHook: func(context.Context, int64) error {
 				panic("unexpected invocation of MockSearchContextsStore.DeleteSearchContext")
+			},
+		},
+		DeleteSearchContextStarForUserFunc: &SearchContextsStoreDeleteSearchContextStarForUserFunc{
+			defaultHook: func(context.Context, int32, int64) error {
+				panic("unexpected invocation of MockSearchContextsStore.DeleteSearchContextStarForUser")
 			},
 		},
 		DoneFunc: &SearchContextsStoreDoneFunc{
@@ -35754,6 +35791,11 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 				panic("unexpected invocation of MockSearchContextsStore.SetSearchContextRepositoryRevisions")
 			},
 		},
+		SetUserDefaultSearchContextIDFunc: &SearchContextsStoreSetUserDefaultSearchContextIDFunc{
+			defaultHook: func(context.Context, int32, int64) error {
+				panic("unexpected invocation of MockSearchContextsStore.SetUserDefaultSearchContextID")
+			},
+		},
 		TransactFunc: &SearchContextsStoreTransactFunc{
 			defaultHook: func(context.Context) (SearchContextsStore, error) {
 				panic("unexpected invocation of MockSearchContextsStore.Transact")
@@ -35775,11 +35817,17 @@ func NewMockSearchContextsStoreFrom(i SearchContextsStore) *MockSearchContextsSt
 		CountSearchContextsFunc: &SearchContextsStoreCountSearchContextsFunc{
 			defaultHook: i.CountSearchContexts,
 		},
+		CreateSearchContextStarForUserFunc: &SearchContextsStoreCreateSearchContextStarForUserFunc{
+			defaultHook: i.CreateSearchContextStarForUser,
+		},
 		CreateSearchContextWithRepositoryRevisionsFunc: &SearchContextsStoreCreateSearchContextWithRepositoryRevisionsFunc{
 			defaultHook: i.CreateSearchContextWithRepositoryRevisions,
 		},
 		DeleteSearchContextFunc: &SearchContextsStoreDeleteSearchContextFunc{
 			defaultHook: i.DeleteSearchContext,
+		},
+		DeleteSearchContextStarForUserFunc: &SearchContextsStoreDeleteSearchContextStarForUserFunc{
+			defaultHook: i.DeleteSearchContextStarForUser,
 		},
 		DoneFunc: &SearchContextsStoreDoneFunc{
 			defaultHook: i.Done,
@@ -35807,6 +35855,9 @@ func NewMockSearchContextsStoreFrom(i SearchContextsStore) *MockSearchContextsSt
 		},
 		SetSearchContextRepositoryRevisionsFunc: &SearchContextsStoreSetSearchContextRepositoryRevisionsFunc{
 			defaultHook: i.SetSearchContextRepositoryRevisions,
+		},
+		SetUserDefaultSearchContextIDFunc: &SearchContextsStoreSetUserDefaultSearchContextIDFunc{
+			defaultHook: i.SetUserDefaultSearchContextID,
 		},
 		TransactFunc: &SearchContextsStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -35927,6 +35978,118 @@ func (c SearchContextsStoreCountSearchContextsFuncCall) Args() []interface{} {
 // invocation.
 func (c SearchContextsStoreCountSearchContextsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// SearchContextsStoreCreateSearchContextStarForUserFunc describes the
+// behavior when the CreateSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance is invoked.
+type SearchContextsStoreCreateSearchContextStarForUserFunc struct {
+	defaultHook func(context.Context, int32, int64) error
+	hooks       []func(context.Context, int32, int64) error
+	history     []SearchContextsStoreCreateSearchContextStarForUserFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateSearchContextStarForUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSearchContextsStore) CreateSearchContextStarForUser(v0 context.Context, v1 int32, v2 int64) error {
+	r0 := m.CreateSearchContextStarForUserFunc.nextHook()(v0, v1, v2)
+	m.CreateSearchContextStarForUserFunc.appendCall(SearchContextsStoreCreateSearchContextStarForUserFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance is invoked and the hook queue is empty.
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) SetDefaultHook(hook func(context.Context, int32, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) PushHook(hook func(context.Context, int32, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) nextHook() func(context.Context, int32, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) appendCall(r0 SearchContextsStoreCreateSearchContextStarForUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SearchContextsStoreCreateSearchContextStarForUserFuncCall objects
+// describing the invocations of this function.
+func (f *SearchContextsStoreCreateSearchContextStarForUserFunc) History() []SearchContextsStoreCreateSearchContextStarForUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SearchContextsStoreCreateSearchContextStarForUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SearchContextsStoreCreateSearchContextStarForUserFuncCall is an object
+// that describes an invocation of method CreateSearchContextStarForUser on
+// an instance of MockSearchContextsStore.
+type SearchContextsStoreCreateSearchContextStarForUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SearchContextsStoreCreateSearchContextStarForUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SearchContextsStoreCreateSearchContextStarForUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SearchContextsStoreCreateSearchContextWithRepositoryRevisionsFunc
@@ -36153,6 +36316,118 @@ func (c SearchContextsStoreDeleteSearchContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SearchContextsStoreDeleteSearchContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// SearchContextsStoreDeleteSearchContextStarForUserFunc describes the
+// behavior when the DeleteSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance is invoked.
+type SearchContextsStoreDeleteSearchContextStarForUserFunc struct {
+	defaultHook func(context.Context, int32, int64) error
+	hooks       []func(context.Context, int32, int64) error
+	history     []SearchContextsStoreDeleteSearchContextStarForUserFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteSearchContextStarForUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSearchContextsStore) DeleteSearchContextStarForUser(v0 context.Context, v1 int32, v2 int64) error {
+	r0 := m.DeleteSearchContextStarForUserFunc.nextHook()(v0, v1, v2)
+	m.DeleteSearchContextStarForUserFunc.appendCall(SearchContextsStoreDeleteSearchContextStarForUserFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance is invoked and the hook queue is empty.
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) SetDefaultHook(hook func(context.Context, int32, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteSearchContextStarForUser method of the parent
+// MockSearchContextsStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) PushHook(hook func(context.Context, int32, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) nextHook() func(context.Context, int32, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) appendCall(r0 SearchContextsStoreDeleteSearchContextStarForUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SearchContextsStoreDeleteSearchContextStarForUserFuncCall objects
+// describing the invocations of this function.
+func (f *SearchContextsStoreDeleteSearchContextStarForUserFunc) History() []SearchContextsStoreDeleteSearchContextStarForUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SearchContextsStoreDeleteSearchContextStarForUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SearchContextsStoreDeleteSearchContextStarForUserFuncCall is an object
+// that describes an invocation of method DeleteSearchContextStarForUser on
+// an instance of MockSearchContextsStore.
+type SearchContextsStoreDeleteSearchContextStarForUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SearchContextsStoreDeleteSearchContextStarForUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SearchContextsStoreDeleteSearchContextStarForUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -37133,6 +37408,118 @@ func (c SearchContextsStoreSetSearchContextRepositoryRevisionsFuncCall) Args() [
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SearchContextsStoreSetSearchContextRepositoryRevisionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// SearchContextsStoreSetUserDefaultSearchContextIDFunc describes the
+// behavior when the SetUserDefaultSearchContextID method of the parent
+// MockSearchContextsStore instance is invoked.
+type SearchContextsStoreSetUserDefaultSearchContextIDFunc struct {
+	defaultHook func(context.Context, int32, int64) error
+	hooks       []func(context.Context, int32, int64) error
+	history     []SearchContextsStoreSetUserDefaultSearchContextIDFuncCall
+	mutex       sync.Mutex
+}
+
+// SetUserDefaultSearchContextID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSearchContextsStore) SetUserDefaultSearchContextID(v0 context.Context, v1 int32, v2 int64) error {
+	r0 := m.SetUserDefaultSearchContextIDFunc.nextHook()(v0, v1, v2)
+	m.SetUserDefaultSearchContextIDFunc.appendCall(SearchContextsStoreSetUserDefaultSearchContextIDFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetUserDefaultSearchContextID method of the parent
+// MockSearchContextsStore instance is invoked and the hook queue is empty.
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) SetDefaultHook(hook func(context.Context, int32, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetUserDefaultSearchContextID method of the parent
+// MockSearchContextsStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) PushHook(hook func(context.Context, int32, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, int64) error {
+		return r0
+	})
+}
+
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) nextHook() func(context.Context, int32, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) appendCall(r0 SearchContextsStoreSetUserDefaultSearchContextIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SearchContextsStoreSetUserDefaultSearchContextIDFuncCall objects
+// describing the invocations of this function.
+func (f *SearchContextsStoreSetUserDefaultSearchContextIDFunc) History() []SearchContextsStoreSetUserDefaultSearchContextIDFuncCall {
+	f.mutex.Lock()
+	history := make([]SearchContextsStoreSetUserDefaultSearchContextIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SearchContextsStoreSetUserDefaultSearchContextIDFuncCall is an object
+// that describes an invocation of method SetUserDefaultSearchContextID on
+// an instance of MockSearchContextsStore.
+type SearchContextsStoreSetUserDefaultSearchContextIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SearchContextsStoreSetUserDefaultSearchContextIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SearchContextsStoreSetUserDefaultSearchContextIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -42057,7 +42444,7 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 			},
 		},
 		SetLastVerificationFunc: &UserEmailsStoreSetLastVerificationFunc{
-			defaultHook: func(context.Context, int32, string, string) (r0 error) {
+			defaultHook: func(context.Context, int32, string, string, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -42144,7 +42531,7 @@ func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
 			},
 		},
 		SetLastVerificationFunc: &UserEmailsStoreSetLastVerificationFunc{
-			defaultHook: func(context.Context, int32, string, string) error {
+			defaultHook: func(context.Context, int32, string, string, time.Time) error {
 				panic("unexpected invocation of MockUserEmailsStore.SetLastVerification")
 			},
 		},
@@ -43333,24 +43720,24 @@ func (c UserEmailsStoreRemoveFuncCall) Results() []interface{} {
 // SetLastVerification method of the parent MockUserEmailsStore instance is
 // invoked.
 type UserEmailsStoreSetLastVerificationFunc struct {
-	defaultHook func(context.Context, int32, string, string) error
-	hooks       []func(context.Context, int32, string, string) error
+	defaultHook func(context.Context, int32, string, string, time.Time) error
+	hooks       []func(context.Context, int32, string, string, time.Time) error
 	history     []UserEmailsStoreSetLastVerificationFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLastVerification delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUserEmailsStore) SetLastVerification(v0 context.Context, v1 int32, v2 string, v3 string) error {
-	r0 := m.SetLastVerificationFunc.nextHook()(v0, v1, v2, v3)
-	m.SetLastVerificationFunc.appendCall(UserEmailsStoreSetLastVerificationFuncCall{v0, v1, v2, v3, r0})
+func (m *MockUserEmailsStore) SetLastVerification(v0 context.Context, v1 int32, v2 string, v3 string, v4 time.Time) error {
+	r0 := m.SetLastVerificationFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SetLastVerificationFunc.appendCall(UserEmailsStoreSetLastVerificationFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the SetLastVerification
 // method of the parent MockUserEmailsStore instance is invoked and the hook
 // queue is empty.
-func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(context.Context, int32, string, string) error) {
+func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(context.Context, int32, string, string, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -43359,7 +43746,7 @@ func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Context, int32, string, string) error) {
+func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Context, int32, string, string, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -43368,19 +43755,19 @@ func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, string, string) error {
+	f.SetDefaultHook(func(context.Context, int32, string, string, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserEmailsStoreSetLastVerificationFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, string, string) error {
+	f.PushHook(func(context.Context, int32, string, string, time.Time) error {
 		return r0
 	})
 }
 
-func (f *UserEmailsStoreSetLastVerificationFunc) nextHook() func(context.Context, int32, string, string) error {
+func (f *UserEmailsStoreSetLastVerificationFunc) nextHook() func(context.Context, int32, string, string, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -43426,6 +43813,9 @@ type UserEmailsStoreSetLastVerificationFuncCall struct {
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -43434,7 +43824,7 @@ type UserEmailsStoreSetLastVerificationFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c UserEmailsStoreSetLastVerificationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -51342,7 +51732,7 @@ func NewMockWebhookStore() *MockWebhookStore {
 			},
 		},
 		UpdateFunc: &WebhookStoreUpdateFunc{
-			defaultHook: func(context.Context, int32, *types.Webhook) (r0 *types.Webhook, r1 error) {
+			defaultHook: func(context.Context, *types.Webhook) (r0 *types.Webhook, r1 error) {
 				return
 			},
 		},
@@ -51389,7 +51779,7 @@ func NewStrictMockWebhookStore() *MockWebhookStore {
 			},
 		},
 		UpdateFunc: &WebhookStoreUpdateFunc{
-			defaultHook: func(context.Context, int32, *types.Webhook) (*types.Webhook, error) {
+			defaultHook: func(context.Context, *types.Webhook) (*types.Webhook, error) {
 				panic("unexpected invocation of MockWebhookStore.Update")
 			},
 		},
@@ -52182,23 +52572,23 @@ func (c WebhookStoreListFuncCall) Results() []interface{} {
 // WebhookStoreUpdateFunc describes the behavior when the Update method of
 // the parent MockWebhookStore instance is invoked.
 type WebhookStoreUpdateFunc struct {
-	defaultHook func(context.Context, int32, *types.Webhook) (*types.Webhook, error)
-	hooks       []func(context.Context, int32, *types.Webhook) (*types.Webhook, error)
+	defaultHook func(context.Context, *types.Webhook) (*types.Webhook, error)
+	hooks       []func(context.Context, *types.Webhook) (*types.Webhook, error)
 	history     []WebhookStoreUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // Update delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWebhookStore) Update(v0 context.Context, v1 int32, v2 *types.Webhook) (*types.Webhook, error) {
-	r0, r1 := m.UpdateFunc.nextHook()(v0, v1, v2)
-	m.UpdateFunc.appendCall(WebhookStoreUpdateFuncCall{v0, v1, v2, r0, r1})
+func (m *MockWebhookStore) Update(v0 context.Context, v1 *types.Webhook) (*types.Webhook, error) {
+	r0, r1 := m.UpdateFunc.nextHook()(v0, v1)
+	m.UpdateFunc.appendCall(WebhookStoreUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Update method of the
 // parent MockWebhookStore instance is invoked and the hook queue is empty.
-func (f *WebhookStoreUpdateFunc) SetDefaultHook(hook func(context.Context, int32, *types.Webhook) (*types.Webhook, error)) {
+func (f *WebhookStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.Webhook) (*types.Webhook, error)) {
 	f.defaultHook = hook
 }
 
@@ -52206,7 +52596,7 @@ func (f *WebhookStoreUpdateFunc) SetDefaultHook(hook func(context.Context, int32
 // Update method of the parent MockWebhookStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WebhookStoreUpdateFunc) PushHook(hook func(context.Context, int32, *types.Webhook) (*types.Webhook, error)) {
+func (f *WebhookStoreUpdateFunc) PushHook(hook func(context.Context, *types.Webhook) (*types.Webhook, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -52215,19 +52605,19 @@ func (f *WebhookStoreUpdateFunc) PushHook(hook func(context.Context, int32, *typ
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WebhookStoreUpdateFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, *types.Webhook) (*types.Webhook, error) {
+	f.SetDefaultHook(func(context.Context, *types.Webhook) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WebhookStoreUpdateFunc) PushReturn(r0 *types.Webhook, r1 error) {
-	f.PushHook(func(context.Context, int32, *types.Webhook) (*types.Webhook, error) {
+	f.PushHook(func(context.Context, *types.Webhook) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
-func (f *WebhookStoreUpdateFunc) nextHook() func(context.Context, int32, *types.Webhook) (*types.Webhook, error) {
+func (f *WebhookStoreUpdateFunc) nextHook() func(context.Context, *types.Webhook) (*types.Webhook, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -52265,10 +52655,7 @@ type WebhookStoreUpdateFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *types.Webhook
+	Arg1 *types.Webhook
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.Webhook
@@ -52280,7 +52667,7 @@ type WebhookStoreUpdateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WebhookStoreUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

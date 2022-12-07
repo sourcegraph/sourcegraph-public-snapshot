@@ -117,7 +117,7 @@ func purge(ctx context.Context, logger log.Logger, db database.DB, options datab
 		return nil
 	})
 	// If we did something we log with a higher level.
-	statusLogger := logger.Info
+	statusLogger := logger.Debug
 	if failed > 0 {
 		statusLogger = logger.Warn
 	}

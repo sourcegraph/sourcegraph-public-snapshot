@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -113,8 +112,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
+		if !conf.GitHubAppEnabled() {
 			http.NotFound(w, req)
 			return
 		}

@@ -3,6 +3,9 @@ package database
 import (
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -107,4 +110,11 @@ func (p *PaginationArgs) SQL() (queryArgs *QueryArgs, err error) {
 	}
 
 	return
+}
+
+// relayUnmarshalID is a best effort decoding of the ID from a marshalled
+// graphql.ID
+func relayUnmarshalID(s string) (id int32, ok bool) {
+	err := relay.UnmarshalSpec(graphql.ID(s), &id)
+	return id, err == nil
 }

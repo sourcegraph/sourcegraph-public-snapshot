@@ -84,14 +84,14 @@ For a full list of possible state see
 							NoAlert: true,
 						},
 						{
-							Name:        "searcher_hybrid_index_changed_total",
-							Description: "hybrid search retrying due to index updates over 10m",
+							Name:        "searcher_hybrid_retry_total",
+							Description: "hybrid search retrying over 10m",
 							Interpretation: `
-Expectation is that this graph should mostly be 0. It should only trigger if a
-user manages to do a search and the underlying index changes while searching.
-So occasional bursts can be expected, but if this graph is regularly above 0
-it is a sign for further investigation.`,
-							Query:   `sum(increase(searcher_hybrid_index_changed_total[10m]))`,
+Expectation is that this graph should mostly be 0. It will trigger if a user
+manages to do a search and the underlying index changes while searching or
+Zoekt goes down. So occasional bursts can be expected, but if this graph is
+regularly above 0 it is a sign for further investigation.`,
+							Query:   `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`,
 							Panel:   monitoring.Panel(),
 							Owner:   monitoring.ObservableOwnerSearchCore,
 							NoAlert: true,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"os/user"
@@ -296,7 +296,7 @@ func getPackageManagerConstraint(ctx context.Context, tool string) (string, erro
 	}
 	defer jsonFile.Close()
 
-	jsonData, err := ioutil.ReadAll(jsonFile)
+	jsonData, err := io.ReadAll(jsonFile)
 	if err != nil {
 		return "", errors.Wrap(err, "Read package.json")
 	}

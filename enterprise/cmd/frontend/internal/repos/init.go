@@ -15,11 +15,11 @@ import (
 // Init initializes the given enterpriseServices with the webhook handlers for handling GitHub push events.
 func Init(
 	_ context.Context,
+	_ *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	_ *observation.Context,
 ) error {
 	enterpriseServices.GitHubSyncWebhook = webhooks.NewGitHubWebhookHandler()
 	enterpriseServices.WebhooksResolver = resolvers.NewWebhooksResolver(db)

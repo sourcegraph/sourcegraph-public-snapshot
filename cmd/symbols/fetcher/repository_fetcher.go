@@ -34,10 +34,10 @@ type ParseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(observationCtx *observation.Context, gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
-		operations:          newOperations(observationContext),
+		operations:          newOperations(observationCtx),
 		maxTotalPathsLength: maxTotalPathsLength,
 		maxFileSize:         maxFileSize,
 	}

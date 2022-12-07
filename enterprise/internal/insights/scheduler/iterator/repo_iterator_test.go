@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -48,7 +49,7 @@ func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentR
 
 func TestForNextAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	ctx := context.Background()
@@ -170,7 +171,7 @@ func TestForNextAndFinish(t *testing.T) {
 func TestNew(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	repos := []int32{1, 6, 10, 22, 55}
@@ -189,7 +190,7 @@ func TestNew(t *testing.T) {
 
 func TestForNextRetryAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	ctx := context.Background()

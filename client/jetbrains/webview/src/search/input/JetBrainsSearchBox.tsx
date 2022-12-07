@@ -103,7 +103,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             fetchSearchContexts={props.fetchSearchContexts}
-                            fetchAutoDefinedSearchContexts={props.fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
                             platformContext={props.platformContext}

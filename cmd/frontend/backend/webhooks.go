@@ -35,6 +35,55 @@ func (ws *webhookService) CreateWebhook(ctx context.Context, name, codeHostKind,
 	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, name, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
 }
 
+func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
+	return ws.db.Webhooks(ws.keyRing.WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+}
+
+func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secret string) (*types.Webhook, error) {
+	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
+	webhook, err := webhooksStore.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if name != "" {
+		webhook.Name = name
+	}
+	if codeHostKind != "" {
+		if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
+			return nil, err
+		}
+
+		webhook.CodeHostKind = codeHostKind
+	}
+	if codeHostURN != "" {
+		codeHostURN, err := extsvc.NewCodeHostBaseURL(codeHostURN)
+		if err != nil {
+			return nil, err
+		}
+		webhook.CodeHostURN = codeHostURN
+	}
+	if secret != "" {
+		if codeHostKind != "" {
+			if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, &secret); err != nil {
+				return nil, err
+			}
+		}
+
+		webhook.Secret = types.NewUnencryptedSecret(secret)
+	}
+
+	newWebhook, err := webhooksStore.Update(ctx, webhook)
+	if err != nil {
+		return nil, err
+	}
+	return newWebhook, nil
+}
+
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 	switch codeHostKind {
 	case extsvc.KindGitHub, extsvc.KindGitLab, extsvc.KindBitbucketServer:
