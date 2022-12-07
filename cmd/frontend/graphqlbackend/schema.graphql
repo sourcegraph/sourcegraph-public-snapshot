@@ -2764,7 +2764,7 @@ type ExternalService implements Node {
     checkConnection: ExternalServiceAvailability!
 
     """
-    True if this external service cah perform availability check by running checkConnection.
+    True if this external service can perform availability check by running checkConnection.
 
     If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
     """
