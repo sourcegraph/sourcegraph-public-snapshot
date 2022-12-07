@@ -31,7 +31,6 @@ import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
-import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
@@ -493,8 +492,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 extensionsController={extensionsController}
                             />
                         )
-                    case 'compute':
-                        return <NotebookComputeBlock platformContext={platformContext} {...block} {...blockProps} />
                     case 'symbol':
                         return (
                             <NotebookSymbolBlock
