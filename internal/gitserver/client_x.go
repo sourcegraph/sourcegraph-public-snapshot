@@ -81,6 +81,7 @@ func (r *SQLRepo) Clone(ctx context.Context, repoID api.RepoID, url string, bran
 		toBeProcessed.add(c)
 	}
 	processed := map[plumbing.Hash]bool{}
+	paths := pathCoverage{topIndices: map[int]int{}}
 	for toBeProcessed.notEmpty() {
 		c := toBeProcessed.pop()
 		var parents []*types.RepoVersion
@@ -94,16 +95,16 @@ func (r *SQLRepo) Clone(ctx context.Context, repoID api.RepoID, url string, bran
 			}
 			parents = append(parents, p)
 		}
+		reachability := aggregateReachability(parents)
+		coverage := paths.TakeIndex(reachability)
+		reachability[coverage.PathColor] = coverage.PathIndex // can reach self
 		// TODO compute path color and index based on intermediate path storage.
 		// TODO compute reachability based on parents already present in the database.
 		v := types.RepoVersion{
-			RepoID:     repoID,
-			ExternalID: hex.EncodeToString(c.Hash[:]),
-			PathCoverage: types.RepoVersionPathCoverage{
-				PathColor: 1,
-				PathIndex: 1,
-			},
-			Reachability: map[int]int{1: 1},
+			RepoID:       repoID,
+			ExternalID:   hex.EncodeToString(c.Hash[:]),
+			PathCoverage: coverage,
+			Reachability: reachability,
 		}
 		_, err = r.db.RepoVersions().CreateIfNotExists(ctx, v)
 		if err != nil {
@@ -155,4 +156,63 @@ func (b *bag) pop() *object.Commit {
 
 func (b *bag) add(c *object.Commit) {
 	b.stack = append(b.stack, c)
+}
+
+// computing reachability
+//
+// just take the max index for every reachable path color
+//
+// for the index of considered commit, try to extend the lowest color
+// path. That is if the reachable index for a path is the highest index
+// for a path, then that can be extended - that is this commit can get
+// the same color and index+1.
+
+func aggregateReachability(parents []*types.RepoVersion) map[int]int {
+	r := map[int]int{}
+	for _, p := range parents {
+		for c, i := range p.Reachability {
+			j := r[c]
+			if i > j {
+				r[c] = i
+			}
+		}
+	}
+	return r
+}
+
+type pathCoverage struct {
+	topIndices       map[int]int
+	highestUsedColor int
+}
+
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
+
+func (p *pathCoverage) TakeIndex(reachability map[int]int) types.RepoVersionPathCoverage {
+	lowestUsableColor := maxInt
+	for c, i := range reachability {
+		if p.topIndices[c] == i { // can use C
+			// pick the lowest color - which is somewhat of an arbitrary strategy,
+			// but let's go with that for now
+			if c < lowestUsableColor {
+				lowestUsableColor = c
+			}
+		}
+	}
+	// No path can be extended, pick a new color.
+	if lowestUsableColor == maxInt {
+		lowestUsableColor = p.highestUsedColor + 1
+	}
+	// if new color was picked this will be 0+1 = 1, so the lowest index that can be used.
+	// as we start counting path index from 1
+	index := p.topIndices[lowestUsableColor] + 1
+	// Update the state of path coverage
+	p.topIndices[lowestUsableColor] = index
+	if p.highestUsedColor < lowestUsableColor {
+		p.highestUsedColor = lowestUsableColor
+	}
+	return types.RepoVersionPathCoverage{
+		PathColor: lowestUsableColor,
+		PathIndex: index,
+	}
 }
