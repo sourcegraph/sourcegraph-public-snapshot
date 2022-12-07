@@ -46,7 +46,7 @@ func int64Pointer(v int64) *int64 {
 
 func waitForTrueOrContext(t *testing.T, ctx context.Context, condition *bool) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	for {
 		if *condition {
