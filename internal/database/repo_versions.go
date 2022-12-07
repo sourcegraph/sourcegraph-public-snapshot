@@ -2,16 +2,19 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoVersionsStore interface {
 	CreateIfNotExists(ctx context.Context, version types.RepoVersion) (*types.RepoVersion, error)
+	Lookup(ctx context.Context, repoID api.RepoID, externalID string) (*types.RepoVersion, error)
 }
 
 var _ RepoVersionsStore = (*repoVersionsStore)(nil)
@@ -50,5 +53,28 @@ func (s *repoVersionsStore) CreateIfNotExists(ctx context.Context, v types.RepoV
 	}
 	// TODO this assumes there was no conflict which is incorrect:
 	v.ID = id
+	return &v, nil
+}
+
+func (s *repoVersionsStore) Lookup(ctx context.Context, repoID api.RepoID, externalID string) (*types.RepoVersion, error) {
+	var v types.RepoVersion
+	var reachability string
+	err := s.Handle().QueryRowContext(
+		ctx,
+		`SELECT v.id, v.repo_id, v.external_id, v.path_cover_color, v.path_cover_index, v.path_cover_reachability
+		FROM repo_versions AS v
+		WHERE v.repo_id = $1
+		AND v.external_id = $2`,
+		repoID, externalID,
+	).Scan(&v.ID, &v.RepoID, &v.ExternalID, &v.PathCoverage.PathColor, &v.PathCoverage.PathIndex, &reachability)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal([]byte(reachability), &v.Reachability); err != nil {
+		return nil, err
+	}
 	return &v, nil
 }
