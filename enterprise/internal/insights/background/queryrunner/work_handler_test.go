@@ -91,15 +91,18 @@ func Test_HandleWithTerminalError(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	series, err := metadataStore.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:            "asdf",
-		Query:               "findme",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 5,
-		GenerationMethod:    types.Search,
-	})
-	if err != nil {
-		t.Fatal(err)
+	setUp := func(t *testing.T, seriesId string) types.InsightSeries {
+		series, err := metadataStore.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:            seriesId,
+			Query:               "findme",
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 5,
+			GenerationMethod:    types.Search,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return series
 	}
 
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
@@ -111,7 +114,7 @@ func Test_HandleWithTerminalError(t *testing.T) {
 	}
 	workerStore := CreateDBWorkerStore(observation.TestContextTB(t), basestore.NewWithHandle(postgres.Handle()))
 
-	queueIt := func(previousFailures int) *Job {
+	queueIt := func(t *testing.T, previousFailures int, series types.InsightSeries) *Job {
 		job := &Job{
 			SearchJob: SearchJob{
 				SeriesID:    series.SeriesID,
@@ -123,10 +126,11 @@ func Test_HandleWithTerminalError(t *testing.T) {
 			Cost:     10,
 			Priority: 10,
 		}
-		job.ID, err = EnqueueJob(ctx, basestore.NewWithHandle(workerStore.Handle()), job)
+		id, err := EnqueueJob(ctx, basestore.NewWithHandle(workerStore.Handle()), job)
 		if err != nil {
 			t.Fatal(err)
 		}
+		job.ID = id
 		err = basestore.NewWithHandle(workerStore.Handle()).Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set num_failures = %s where id = %s", previousFailures, job.ID))
 		if err != nil {
 			t.Fatal(err)
@@ -147,8 +151,9 @@ func Test_HandleWithTerminalError(t *testing.T) {
 	}
 
 	t.Run("ensure max errors produces incomplete point entry", func(t *testing.T) {
-		job := queueIt(9)
-		err = handler.Handle(ctx, logger, job)
+		series := setUp(t, "terminal")
+		job := queueIt(t, 9, series)
+		err := handler.Handle(ctx, logger, job)
 		require.ErrorIs(t, err, fakeErr)
 		incompletes, err := tss.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
 		if err != nil {
@@ -159,8 +164,9 @@ func Test_HandleWithTerminalError(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("ensure less than max errors does not produce an incomplete point entry", func(t *testing.T) {
-		job := queueIt(7)
-		err = handler.Handle(ctx, logger, job)
+		series := setUp(t, "willretry")
+		job := queueIt(t, 7, series)
+		err := handler.Handle(ctx, logger, job)
 		require.ErrorIs(t, err, fakeErr)
 		incompletes, err := tss.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
 		if err != nil {
