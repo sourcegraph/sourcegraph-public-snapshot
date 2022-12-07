@@ -67,9 +67,6 @@ const queryStateSelector = (
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
@@ -129,7 +126,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                             {...props}
                             editorComponent={editorComponent}
                             showSearchContext={showSearchContext}
-                            showSearchContextManagement={showSearchContextManagement}
+                            showSearchContextManagement={true}
                             caseSensitive={caseSensitive}
                             patternType={patternType}
                             setPatternType={setSearchPatternType}

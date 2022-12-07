@@ -23,7 +23,7 @@ import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './C
 import { temporal } from './Temporal'
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+    useExperimentalFeatures.setState({ showSearchContext: true })
     return <Story />
 }
 
