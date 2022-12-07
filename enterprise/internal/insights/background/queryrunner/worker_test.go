@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -195,30 +196,41 @@ func TestQueryJobsStatus(t *testing.T) {
 
 func Test_WillRetry(t *testing.T) {
 	tests := []struct {
-		want           autogold.Value
-		maxRetries     int
-		currentRetries int32
+		Name             string
+		want             bool
+		maxFailures      int
+		previousFailures int32
 	}{
 		{
-			want:           autogold.Want("less than max", true),
-			maxRetries:     10,
-			currentRetries: 9,
+			Name:             "less than max",
+			want:             true,
+			maxFailures:      10,
+			previousFailures: 8,
 		},
 		{
-			want:           autogold.Want("equal to max", false),
-			maxRetries:     10,
-			currentRetries: 10,
+			Name:             "at actual limit",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 9,
 		},
 		{
-			want:           autogold.Want("greater than max", false),
-			maxRetries:     10,
-			currentRetries: 11,
+			Name:             "equal to max",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 10,
+		},
+		{
+			Name:             "greater than max",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 11,
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
-			w := workerStoreExtra{nil, dbworkerstore.Options[*Job]{MaxNumRetries: test.maxRetries}}
-			w.WillRetry(&Job{NumFailures: test.currentRetries})
+		t.Run(test.Name, func(t *testing.T) {
+			w := workerStoreExtra{nil, dbworkerstore.Options[*Job]{MaxNumRetries: test.maxFailures}}
+			got := w.WillRetry(&Job{NumFailures: test.previousFailures})
+			require.Equal(t, test.want, got)
 		})
 	}
 }

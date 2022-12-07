@@ -131,6 +131,7 @@ func Test_HandleWithTerminalError(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		job.NumFailures = int32(previousFailures)
 		return job
 	}
 
@@ -146,7 +147,7 @@ func Test_HandleWithTerminalError(t *testing.T) {
 	}
 
 	t.Run("ensure max errors produces incomplete point entry", func(t *testing.T) {
-		job := queueIt(8)
+		job := queueIt(9)
 		err = handler.Handle(ctx, logger, job)
 		require.ErrorIs(t, err, fakeErr)
 		incompletes, err := tss.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
