@@ -102,16 +102,6 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	ctx := context.Background()
 
-	mockOauthContext := &oauthutil.OAuthContext{
-		ClientID:     "client_id",
-		ClientSecret: "client_secret",
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "url/oauth/authorize",
-			TokenURL: "url/oauth/token",
-		},
-		Scopes: []string{"read_user"},
-	}
-
 	provider := NewClientProvider("Test", baseURL, doer)
 
 	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
@@ -125,7 +115,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, _, err = client.doWithBaseURL(ctx, mockOauthContext, req, &result)
+	_, _, err = client.doWithBaseURL(ctx, req, &result)
 	require.NoError(t, err)
 }
 
