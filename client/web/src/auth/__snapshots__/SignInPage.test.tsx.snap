@@ -174,9 +174,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="/sign-up"
           >
             Sign up
           </a>
@@ -353,9 +351,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="/sign-up"
           >
             Sign up
           </a>
@@ -532,9 +528,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 2 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="/sign-up"
           >
             Sign up
           </a>
@@ -721,9 +715,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="/sign-up"
           >
             Sign up
           </a>
@@ -910,9 +902,7 @@ exports[`SignInPage with Sourcegraph auth provider renders page with 3 providers
           New to Sourcegraph? 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="/sign-up"
           >
             Sign up
           </a>
