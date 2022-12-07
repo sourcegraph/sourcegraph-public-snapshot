@@ -94,7 +94,7 @@ All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP 
 - Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
 - For [`builtin` authentication](../admin/auth/index.md#builtin-password-authentication), password resets and email verification
 
-To opt out of managed SMTP, please let your Sourcegraph's Customer Support team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md).
+To opt out of managed SMTP, please let your Sourcegraph Account team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md).
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
