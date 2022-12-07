@@ -194,6 +194,9 @@ const createNotebookMutation = gql`
 `
 
 export function createNotebook(variables: CreateNotebookVariables): Observable<NotebookFields> {
+    // Remove any null blocks. This is caused by deleted block types.
+    variables.notebook.blocks = variables.notebook.blocks.filter(block => block)
+
     return requestGraphQL<CreateNotebookResult, CreateNotebookVariables>(createNotebookMutation, variables).pipe(
         map(dataOrThrowErrors),
         map(data => data.createNotebook)
@@ -210,6 +213,9 @@ const updateNotebookMutation = gql`
 `
 
 export function updateNotebook(variables: UpdateNotebookVariables): Observable<NotebookFields> {
+    // Remove any null blocks. This is caused by deleted block types.
+    variables.notebook.blocks = variables.notebook.blocks.filter(block => block)
+
     return requestGraphQL<UpdateNotebookResult, UpdateNotebookVariables>(updateNotebookMutation, variables).pipe(
         map(dataOrThrowErrors),
         map(data => data.updateNotebook)
