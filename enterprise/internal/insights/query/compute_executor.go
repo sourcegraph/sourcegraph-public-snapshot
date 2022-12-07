@@ -69,7 +69,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 
 		grouped, err := c.computeSearch(ctx, finalQuery.String())
 		if err != nil {
-			errorMsg := "failed to execute capture group search for repository:" + repository
+			errorMsg := "failed to execute compute search for repository:" + repository
 			return nil, errors.Wrap(err, errorMsg)
 		}
 

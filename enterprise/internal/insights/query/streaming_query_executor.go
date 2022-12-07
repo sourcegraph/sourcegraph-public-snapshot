@@ -54,7 +54,7 @@ func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query stri
 
 	repoResult := *selectRepoResult
 	if len(repoResult.SkippedReasons) > 0 {
-		c.logger.Error("repo search skipped results", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
+		c.logger.Error("repo search skipped results", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", modified.String()))
 	}
 	if len(repoResult.Errors) > 0 {
 		return nil, errors.Errorf("repo streaming search: errors: %v", repoResult.Errors)
@@ -124,7 +124,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 
 			tr := *tabulationResult
 			if len(tr.SkippedReasons) > 0 {
-				c.logger.Error("search skipped results", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", query))
+				c.logger.Error("search skipped results", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", modified.String()))
 			}
 			if len(tr.Errors) > 0 {
 				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
