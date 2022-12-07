@@ -29,7 +29,7 @@ In order to continue using webhooks you need to follow the steps below to [add a
 
 ## Adding a receiver
 
-Before adding a webhook receiver you should ensure that you have at least one [code host connection](../external_service) configured. 
+Before adding a webhook receiver you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
 
 In order to receive webhook events you need to add a receiver. The receiver will be configured to accept events from a specific code host connection based on it's type and URN.
 
