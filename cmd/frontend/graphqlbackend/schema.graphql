@@ -114,7 +114,7 @@ type Mutation {
     deleteWebhook(id: ID!): EmptyResponse!
 
     """
-    Updates a webhook with given ID. Empty fields are not updated.
+    Updates a webhook with given ID. Null values aren't updated.
     """
     updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
 
