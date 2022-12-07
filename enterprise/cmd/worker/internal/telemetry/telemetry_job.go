@@ -81,7 +81,7 @@ func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
 			Help:      "Currently configured maximum throughput per second.",
 		}),
 	}
-	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
+	return goroutine.NewPeriodicGoroutine(context.Background(), "analytics.event-log-export-metrics", "event logs export backlog metrics", time.Minute*5, job)
 }
 
 type queueSizeJob struct {
@@ -115,7 +115,7 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	observationCtx := observation.NewContext(log.NoOp())
 	handlerMetrics := newHandlerMetrics(observationCtx)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "analytics.telemetry-export", "event logs telemetry sender", JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error

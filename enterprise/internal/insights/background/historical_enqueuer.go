@@ -103,10 +103,9 @@ func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observati
 	enq.featureFlagStore = ffs
 
 	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
-		"insights_historical_enqueuer",
-		enq.Handler,
-	), operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, "insights.historical_enqueuer", "enqueues jobs to build series on historical data",
+		30*time.Second, goroutine.HandlerFunc(enq.Handler), operation,
+	)
 }
 
 // func NewRepoScopedBackfiller(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, iterator discovery.RepoIterator) error {

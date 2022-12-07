@@ -20,7 +20,7 @@ func TestPeriodicGoroutine(t *testing.T) {
 		return nil
 	})
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), t.Name(), "", time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	<-called
@@ -51,7 +51,7 @@ func TestPeriodicGoroutineError(t *testing.T) {
 		return err
 	})
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), t.Name(), "", time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	<-called
@@ -81,7 +81,7 @@ func TestPeriodicGoroutineContextError(t *testing.T) {
 		return ctx.Err()
 	})
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), t.Name(), "", time.Second, handler, nil, clock)
 	go goroutine.Start()
 	<-called
 	goroutine.Stop()
@@ -105,7 +105,7 @@ func TestPeriodicGoroutineFinalizer(t *testing.T) {
 		return nil
 	})
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), t.Name(), "", time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	<-called
