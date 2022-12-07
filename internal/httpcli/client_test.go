@@ -633,12 +633,18 @@ func TestExpJitterDelay(t *testing.T) {
 	}
 }
 
-//nolint:unparam // unparam complains that `code` always has same value across call-sites, but that's OK
 func newFakeClient(code int, body []byte, err error) Doer {
+	return newFakeClientWithHeaders(map[string][]string{}, code, body, err)
+}
+
+func newFakeClientWithHeaders(respHeaders map[string][]string, code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
+		for k, v := range respHeaders {
+			rr.Header()[k] = v
+		}
 		_, _ = rr.Write(body)
-		rr.WriteHeader(code)
+		rr.Code = code
 		return rr.Result(), err
 	})
 }
