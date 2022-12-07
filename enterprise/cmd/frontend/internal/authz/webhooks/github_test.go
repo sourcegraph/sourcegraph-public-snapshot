@@ -55,6 +55,7 @@ func waitForTrueOrContext(t *testing.T, ctx context.Context, condition *bool) {
 		if ctx.Err() != nil {
 			t.Fatal("Timed out while waiting for condition")
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 

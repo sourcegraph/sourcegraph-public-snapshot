@@ -154,6 +154,7 @@ func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHos
 	// We have to fire and forget the handler if a handler is found.
 	// Processing a webhook might take some time, and if it takes too
 	// long the provider might mark it as undelivered.
+	// See: https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#configure-your-webhook-receiver-endpoint
 	for _, handler := range wr.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
