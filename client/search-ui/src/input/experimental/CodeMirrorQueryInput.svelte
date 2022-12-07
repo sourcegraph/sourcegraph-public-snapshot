@@ -267,13 +267,8 @@
         <div class="focus-container" use:resizeObserver on:resize={onResize}>
             <div bind:this={container} style="display: contents" />
             <!-- TODO: Consider making this a CodeMirror extension -->
-            <button
-                type="button"
-                class:showWhenFocused={hasValue}
-                on:click={() => {
-                    console.log('clear')
-                    onChange({ query: '' })
-                }}><Icon path={mdiClose} /></button
+            <button type="button" class:showWhenFocused={hasValue} on:click={() => onChange({ query: '' })}
+                ><Icon path={mdiClose} /></button
             >
             <!-- A temporary solution for rendering a global shortcut button. Should probably be a CodeMirror extension too -->
             <button type="button" class="global-shortcut hideWhenFocused" on:click={focus}>/</button>
