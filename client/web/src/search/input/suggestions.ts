@@ -24,7 +24,7 @@ import { getWebGraphQLClient } from '../../backend/graphql'
 const none: any[] = []
 
 const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
-const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.type]
+const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.lang, FilterType.type]
 const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType[]>> = {
     [FilterType.type]: filter => {
         switch (filter.value?.value) {
