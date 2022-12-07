@@ -1,5 +1,6 @@
 import { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 import { concat, from, Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -11,9 +12,8 @@ import { BlobViewState, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url
 import { blobPropsFacet } from '..'
 import { HovercardView, HoverData } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
-import { modifierClickDescription } from '../token-selection/modifier-click'
 import { DefinitionResult, goToDefinitionAtOccurrence } from '../token-selection/definition'
-import { map } from 'rxjs/operators'
+import { modifierClickDescription } from '../token-selection/modifier-click'
 
 export interface HoverResult {
     markdownContents: string
