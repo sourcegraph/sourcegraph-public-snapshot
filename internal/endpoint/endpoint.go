@@ -7,10 +7,9 @@ import (
 	"sync"
 
 	"github.com/cespare/xxhash/v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/go-rendezvous"
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -55,11 +54,11 @@ type endpoints struct {
 //	"k8s+http://searcher"
 //	"k8s+rpc://indexed-searcher?kind=sts"
 //	"http://searcher-0 http://searcher-1 http://searcher-2"
-func New(logger log.Logger, urlspec string) *Map {
+func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
-	return K8S(logger, urlspec)
+	return K8S(urlspec)
 }
 
 // Static returns an Endpoint map which consistently hashes over endpoints.
@@ -129,6 +128,7 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -171,15 +171,14 @@ func (m *Map) discover() {
 }
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
-	logger := log.Scoped("endpoint", "A kubernetes endpoint that represents a service")
 	for eps := range ch {
-
-		logger.Info(
-			"endpoints k8s discovered",
-			log.String("urlspec", m.urlspec),
-			log.String("service", eps.Service),
-			log.Int("count", len(eps.Endpoints)),
-			log.Error(eps.Error),
+		log15.Info(
+			"endpoints discovered",
+			"urlspec", m.urlspec,
+			"service", eps.Service,
+			"count", len(eps.Endpoints),
+			"endpoints", eps.Endpoints,
+			"error", eps.Error,
 		)
 
 		switch {

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,25 +17,22 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(logger log.Logger, urlspec string) *Map {
-	logger = logger.Scoped("k8s", "service discovery via k8s")
+func K8S(urlspec string) *Map {
 	return &Map{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(logger, urlspec, namespace(logger), loadClient),
+		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
 	}
 }
 
 // k8sDiscovery does service discovery of the given k8s urlspec (e.g. k8s+http://searcher),
 // publishing endpoint changes to the given disco channel. It's started by endpoint.K8S as a
 // go-routine.
-func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
+func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
 	return func(disco chan endpoints) {
 		u, err := parseURL(urlspec)
 		if err != nil {
@@ -65,12 +63,13 @@ func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*
 
 		handle := func(obj any) {
 			eps := k8sEndpoints(u, obj)
-			logger.Info(
+
+			log15.Info(
 				"endpoints k8s discovered",
-				log.String("urlspec", urlspec),
-				log.String("service", u.Service),
-				log.Int("count", len(eps)),
-				log.Strings("endpoints", eps),
+				"urlspec", urlspec,
+				"service", u.Service,
+				"count", len(eps),
+				"endpoints", eps,
 			)
 
 			disco <- endpoints{Service: u.Service, Endpoints: eps}
@@ -182,18 +181,17 @@ func parseURL(rawurl string) (*k8sURL, error) {
 // namespace returns the namespace the pod is currently running in
 // this is done because the k8s client we previously used set the namespace
 // when the client was created, the official k8s client does not
-func namespace(logger log.Logger) string {
-	logger = logger.Scoped("namespace", "A kubernetes namespace")
+func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		logger.Warn("falling back to kubernetes default namespace", log.String("error", filename+" is empty"))
+		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
 		return "default"
 	}
 
 	ns := strings.TrimSpace(string(data))
 	if ns == "" {
-		logger.Warn("empty namespace in file", log.String("filename", filename), log.String("namespaceInFile", ""), log.String("namespace", "default"))
+		log15.Warn("file: ", filename, " empty using \"default\" ns")
 		return "default"
 	}
 	return ns
