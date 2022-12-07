@@ -4,6 +4,8 @@
 
 ### Added
 
+- Compatibility with IntelliJ 2022.3
+
 ### Changed
 
 ### Deprecated
