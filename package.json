@@ -476,6 +476,7 @@
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.7",
     "tslib": "^2.1.0",
+    "url": "^0.11.0",
     "use-callback-ref": "^1.2.5",
     "use-debounce": "^8.0.1",
     "use-deep-compare-effect": "^1.6.1",
