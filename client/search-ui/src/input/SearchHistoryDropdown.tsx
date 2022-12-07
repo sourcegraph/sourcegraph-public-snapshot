@@ -43,9 +43,8 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
 // button and the content
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
-// eslint-disable-next-line react/display-name
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    ({ recentSearches = [], onSelect, className, telemetryService }) => {
+    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService }) {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(

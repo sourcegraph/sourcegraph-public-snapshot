@@ -191,18 +191,22 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmpty')
             }
-
-            // setTimeout avoids a "Cannot update a component while rendering a different component" React error
-            setTimeout(
-                () => addRecentSearch(submittedURLQuery, results.progress.matchCount, limitHit(results.progress)),
-                0
-            )
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
         }
-    }, [addRecentSearch, results, submittedURLQuery, telemetryService])
+    }, [results, submittedURLQuery, telemetryService])
+
+    useEffect(() => {
+        if (results?.state === 'complete') {
+            // Add the recent search in the next queue execution to avoid updating a React component while rendering another component.
+            setTimeout(
+                () => addRecentSearch(submittedURLQuery, results.progress.matchCount, limitHit(results.progress)),
+                0
+            )
+        }
+    }, [addRecentSearch, results, submittedURLQuery])
 
     useEffect(() => {
         if (
