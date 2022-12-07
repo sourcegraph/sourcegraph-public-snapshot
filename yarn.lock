@@ -8107,17 +8107,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mini-css-extract-plugin@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@types/mini-css-extract-plugin@npm:2.0.1"
-  dependencies:
-    "@types/node": "*"
-    tapable: ^2.2.0
-    webpack: ^5
-  checksum: afae2ceed5646f21396e22371c36ecb091e5ce271bb9533dfe18ae1855cbde6b0ded6185b84b3ec6bb70411190b545644bce9a356b787d9c1949ef6e12adb31d
-  languageName: node
-  linkType: hard
-
 "@types/minimatch@npm:*":
   version: 3.0.5
   resolution: "@types/minimatch@npm:3.0.5"
@@ -23377,14 +23366,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mini-css-extract-plugin@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "mini-css-extract-plugin@npm:2.1.0"
+"mini-css-extract-plugin@npm:^2.7.2":
+  version: 2.7.2
+  resolution: "mini-css-extract-plugin@npm:2.7.2"
   dependencies:
-    schema-utils: ^3.0.0
+    schema-utils: ^4.0.0
   peerDependencies:
     webpack: ^5.0.0
-  checksum: d9d61c6bb40328806c8f4dd874a5e2e77ad7d452720fe1b48ad9fbdf84f2619f1063ce2370da48a4859318e5c865da128dc6ca1ea03fde556aea214576108cc5
+  checksum: cd65611d6dc452f230c6ebba8a47bc5f5146b813b13b0b402c6f4a69f6451242eeea781152bebd31cad8ca7c7e95dac91e7e464087f18fb65b2d1097b58cf4ae
   languageName: node
   linkType: hard
 
@@ -28348,7 +28337,6 @@ pvutils@latest:
     "@types/lru-cache": ^7.6.1
     "@types/marked": 4.0.3
     "@types/mime-types": 2.1.0
-    "@types/mini-css-extract-plugin": 2.0.1
     "@types/mocha": 8.2.0
     "@types/mock-require": ^2.0.1
     "@types/mockdate": 2.0.0
@@ -28504,7 +28492,7 @@ pvutils@latest:
     mdi-react: ^8.1.0
     message-port-polyfill: ^0.2.0
     mime-types: ^2.1.28
-    mini-css-extract-plugin: ^2.1.0
+    mini-css-extract-plugin: ^2.7.2
     minimatch: ^3.0.4
     mocha: ^8.3.2
     mock-require: ^3.0.3
