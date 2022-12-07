@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
@@ -137,7 +136,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 				Reason:   reason,
 				Time:     recordTime,
 			}); addErr != nil {
-				return multierror.Append(err, errors.Wrap(addErr, "workHandler.AddIncompleteDatapoint"))
+				return errors.Append(err, errors.Wrap(addErr, "workHandler.AddIncompleteDatapoint"))
 			}
 		}
 		return err
