@@ -100,9 +100,7 @@ function useForceReindex(id: Scalars['ID']): () => void {
         submitForceReindex({
             variables: { id },
         }).then(
-            () => {
-                window.location.reload()
-            },
+            () => {},
             () => {}
         )
     }, [submitForceReindex, id])
@@ -120,7 +118,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     const forceReindex = useForceReindex(repo.id)
 
     return (
-        <div>
+        <>
             <div className="mb-3">
                 <Button variant="primary" onClick={() => forceReindex()}>
                     Reindex now
@@ -162,7 +160,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
                     <span>&nbsp;&mdash; initial indexing in progress</span>
                 )}
             </li>
-        </div>
+        </>
     )
 }
 
