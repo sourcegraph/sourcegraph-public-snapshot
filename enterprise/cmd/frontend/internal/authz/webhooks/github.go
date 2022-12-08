@@ -63,7 +63,8 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	// that we are getting fresh results.
 	go func() {
 		time.Sleep(sleepTime)
-		eventContext := context.Background()
+		eventContext, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
 
 		switch e := payload.(type) {
 		case *gh.RepositoryEvent:
