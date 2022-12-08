@@ -87,11 +87,11 @@ func (l *LogJob) logBatch(
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		l.logSearchLatency(ctx, clients, inputs, duration)
+		l.logSearchDuration(ctx, clients, inputs, duration)
 	}()
 
 	var status, alertType string
-	status = DetermineStatusForLogs(alert, stats, err)
+	status = determineStatusForLogs(alert, stats, err)
 	if alert != nil {
 		alertType = alert.PrometheusType
 	}
@@ -99,7 +99,7 @@ func (l *LogJob) logBatch(
 	requestName := trace.GraphQLRequestName(ctx)
 	logPrometheusBatch(status, alertType, requestSource, requestName, duration)
 
-	isSlow := duration > LogSlowSearchesThreshold()
+	isSlow := duration > slowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: inputs.OriginalQuery,
@@ -129,12 +129,12 @@ func (l *LogJob) logBatch(
 	}
 }
 
-// logSearchLatency records search durations in the event database. This
+// logSearchDuration records search durations in the event database. This
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func (l *LogJob) logSearchLatency(ctx context.Context, clients job.RuntimeClients, si search.Inputs, duration time.Duration) {
-	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
+func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClients, si search.Inputs, duration time.Duration) {
+	tr, ctx := trace.New(ctx, "LogSearchDuration", "")
 	defer tr.Finish()
 	var types []string
 	resultTypes, _ := si.Query.StringValues(query.FieldType)
@@ -241,9 +241,9 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-// DetermineStatusForLogs determines the final status of a search for logging
+// determineStatusForLogs determines the final status of a search for logging
 // purposes.
-func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
+func determineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
 	switch {
 	case err == context.DeadlineExceeded:
 		return "timeout"
@@ -260,9 +260,9 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 	}
 }
 
-// LogSlowSearchesThreshold returns the minimum duration configured in site
+// slowSearchesThreshold returns the minimum duration configured in site
 // settings for logging slow searches.
-func LogSlowSearchesThreshold() time.Duration {
+func slowSearchesThreshold() time.Duration {
 	ms := conf.Get().ObservabilityLogSlowSearches
 	if ms == 0 {
 		return time.Duration(math.MaxInt64)
