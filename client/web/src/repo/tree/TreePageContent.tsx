@@ -8,21 +8,20 @@ import { escapeRegExp, zip as _zip } from 'lodash'
 import { from, Observable, zip } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { ContributableMenu } from '@sourcegraph/client-api'
-import { numberWithCommas, pluralize } from '@sourcegraph/common'
+import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Heading, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Link, Tooltip, Text, useObservable } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
+import { getFileDecorations } from '../../backend/features'
+import { queryGraphQL, requestGraphQL } from '../../backend/graphql'
+import { FilteredConnection } from '../../components/FilteredConnection'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -54,15 +53,66 @@ import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { UserAvatar } from '../../user/UserAvatar'
 import { fetchBlob } from '../blob/backend'
-import { GitCommitNode } from '../commits/GitCommitNode'
+import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { BATCH_COUNT } from '../RepositoriesPopover'
 
-import { TreeEntriesSection } from './TreeEntriesSection'
-import { DiffStat, LangStats } from './TreePagePanels'
+import { DiffStat, FilesCard, LangStats, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePage.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
+
+export type TreeCommitsRepositoryCommit = NonNullable<
+    Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']
+>
+
+export const fetchTreeCommits = memoizeObservable(
+    (args: {
+        repo: Scalars['ID']
+        revspec: string
+        first?: number
+        filePath?: string
+        after?: string
+    }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
+        queryGraphQL(
+            gql`
+                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
+                    node(id: $repo) {
+                        __typename
+                        ... on Repository {
+                            commit(rev: $revspec) {
+                                ancestors(first: $first, path: $filePath, after: $after) {
+                                    nodes {
+                                        ...GitCommitFields
+                                    }
+                                    pageInfo {
+                                        hasNextPage
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ${gitCommitFragment}
+            `,
+            args
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.node) {
+                    throw new Error('Repository not found')
+                }
+                if (data.node.__typename !== 'Repository') {
+                    throw new Error('Node is not a Repository')
+                }
+                if (!data.node.commit) {
+                    throw new Error('Commit not found')
+                }
+                return data.node.commit.ancestors
+            })
+        ),
+    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
+)
 
 const TREE_COMMITS_PER_PAGE = 10
 
@@ -333,6 +383,21 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         }
     }, [showOlderCommits])
 
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    getFileDecorations({
+                        files: tree.entries,
+                        extensionsController: props.extensionsController,
+                        repoName: repo.name,
+                        commitID,
+                        parentNodeUri: tree.url,
+                    }),
+                [commitID, props.extensionsController, repo.name, tree.entries, tree.url]
+            )
+        ) ?? {}
+
     const [readmeInfo, setReadmeInfo] = useState<
         | undefined
         | {
@@ -398,10 +463,40 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, tree.entries])
 
+    const queryCommits = useCallback(
+        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
+            const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
+            return fetchTreeCommits({
+                ...args,
+                repo: repo.id,
+                revspec: revision || '',
+                filePath,
+                after,
+            })
+        },
+        [filePath, repo.id, revision, showOlderCommits]
+    )
+
     const onShowOlderCommitsClicked = useCallback((event: React.MouseEvent): void => {
         event.preventDefault()
         setShowOlderCommits(true)
     }, [])
+
+    const emptyElement = showOlderCommits ? (
+        <>No commits in this tree.</>
+    ) : (
+        <div className="test-tree-page-no-recent-commits">
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
+            <Button
+                className="test-tree-page-show-all-commits"
+                onClick={onShowOlderCommitsClicked}
+                variant="secondary"
+                size="sm"
+            >
+                Show all commits
+            </Button>
+        </div>
+    )
 
     const showAllCommits = (
         <Button
@@ -414,6 +509,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </Button>
     )
 
+    /*
     // <<<<<<< HEAD
     const { extensionsController } = props
 
@@ -503,84 +599,102 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
-            {/* ************* */}
         </>
     )
-    //     return (
-    //         <>
-    //             <div>
-    //                 {readmeInfo && (
-    //                     <ReadmePreviewCard
-    //                         readmeHTML={readmeInfo.blob.richHTML}
-    //                         readmeURL={readmeInfo.entry.url}
-    //                         location={props.location}
-    //                     />
-    //                 )}
-    //             </div>
-    //             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-    //                 <div className="row">
-    //                     <div className="col-12 mb-3">
-    //                         <FilesCard langStats={langStats} diffStats={diffStats} entries={tree.entries} />
-    //                     </div>
-    //                 </div>
-    //                 <div className="row">
-    //                     <div className="col-12 col-lg-6 mb-3">
-    //                         <Card className="card">
-    //                             <CardHeader>
-    //                                 <Link to={`${tree.url}/-/commits`}>
-    //                                     Commits
-    //                                 </Link>
-    //                             </CardHeader>
-    //                             {/* TODO(beyang): ultra-compact mode and collapse date timestamps into headers */}
-    //                             <FilteredConnection<
-    //                                 GitCommitFields,
-    //                                 Pick<
-    //                                     GitCommitNodeProps,
-    //                                     'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'
-    //                                 >
-    //                             >
-    //                                 location={props.location}
-    //                                 className="foobar"
-    //                                 listClassName="list-group list-group-flush"
-    //                                 noun="commit in this tree"
-    //                                 pluralNoun="commits in this tree"
-    //                                 queryConnection={queryCommits}
-    //                                 nodeComponent={GitCommitNode}
-    //                                 nodeComponentProps={{
-    //                                     className: classNames('list-group-item px-2 py-1', styles.gitCommitNode),
-    //                                     messageSubjectClassName: styles.gitCommitNodeMessageSubject,
-    //                                     compact: true,
-    //                                     wrapperElement: 'li',
-    //                                 }}
-    //                                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-    //                                 defaultFirst={20}
-    //                                 useURLQuery={false}
-    //                                 hideSearch={true}
-    //                                 emptyElement={emptyElement}
-    //                                 totalCountSummaryComponent={TotalCountSummary}
-    //                             />
-    //                         </Card>
-    //                     </div>
-    //                     <div className="col-12 col-lg-6">
-    //                         <Card className="card">
-    //                             <CardHeader>
-    //                                 <Link to={`${tree.url}/-/stats/contributors`}>
-    //                                     Contributors
-    //                                 </Link>
-    //                             </CardHeader>
-    //                             <Contributors
-    //                                 filePath={filePath}
-    //                                 tree={tree}
-    //                                 repo={repo}
-    //                                 commitID={commitID}
-    //                                 revision={revision}
-    //                                 {...props}
-    //                             />
-    //                         </Card>
-    //                     </div>
-    //                 </div>
-    //             </section>
-    // >>>>>>> dba1cfefd4 (main code changes) */}
+    */
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
+        <div className="mt-2">
+            {showOlderCommits ? (
+                <>
+                    {totalCount} total {pluralize('commit', totalCount)} in this tree.
+                </>
+            ) : (
+                <>
+                    <Text className="mb-2">
+                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
+                    </Text>
+                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
+                        Show all commits
+                    </Button>
+                </>
+            )}
+        </div>
+    )
+
+    return (
+        <>
+            <div>
+                {readmeInfo && (
+                    <ReadmePreviewCard
+                        readmeHTML={readmeInfo.blob.richHTML}
+                        readmeURL={readmeInfo.entry.url}
+                        location={props.location}
+                    />
+                )}
+            </div>
+            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
+                <div className="row">
+                    <div className="col-12 mb-3">
+                        <FilesCard langStats={langStats} diffStats={diffStats} entries={tree.entries} />
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-12 col-lg-6 mb-3">
+                        <Card className="card">
+                            <CardHeader>
+                                <Link to={`${tree.url}/-/commits`}>Commits</Link>
+                            </CardHeader>
+                            {/* TODO(beyang): ultra-compact mode and collapse date timestamps into headers */}
+                            <FilteredConnection<
+                                GitCommitFields,
+                                Pick<
+                                    GitCommitNodeProps,
+                                    'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'
+                                >
+                            >
+                                location={props.location}
+                                className="foobar"
+                                listClassName="list-group list-group-flush"
+                                noun="commit in this tree"
+                                pluralNoun="commits in this tree"
+                                queryConnection={queryCommits}
+                                nodeComponent={GitCommitNode}
+                                nodeComponentProps={{
+                                    className: classNames('list-group-item px-2 py-1', styles.gitCommitNode),
+                                    messageSubjectClassName: styles.gitCommitNodeMessageSubject,
+                                    compact: true,
+                                    wrapperElement: 'li',
+                                }}
+                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                                defaultFirst={20}
+                                useURLQuery={false}
+                                hideSearch={true}
+                                emptyElement={emptyElement}
+                                totalCountSummaryComponent={TotalCountSummary}
+                            />
+                        </Card>
+                    </div>
+                    <div className="col-12 col-lg-6">
+                        <Card className="card">
+                            <CardHeader>
+                                <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
+                            </CardHeader>
+                            <Contributors
+                                filePath={filePath}
+                                tree={tree}
+                                repo={repo}
+                                commitID={commitID}
+                                revision={revision}
+                                {...props}
+                            />
+                        </Card>
+                    </div>
+                </div>
+            </section>
+        </>
+    )
 }
 
 const CONTRIBUTORS_QUERY = gql`
@@ -640,33 +754,33 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         path: filePath,
     }
 
-    // const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
-    //     RepositoryContributorsResult,
-    //     RepositoryContributorsVariables,
-    //     RepositoryContributorNodeFields
-    // >({
-    //     query: CONTRIBUTORS_QUERY,
-    //     variables: {
-    //         first: BATCH_COUNT,
-    //         repo: repo.id,
-    //         revisionRange: spec.revisionRange,
-    //         afterDate: spec.after,
-    //         path: filePath,
-    //     },
-    //     getConnection: result => {
-    //         const { node } = dataOrThrowErrors(result)
-    //         if (!node) {
-    //             throw new Error(`Node ${repo.id} not found`)
-    //         }
-    //         if (!('contributors' in node)) {
-    //             throw new Error('Failed to fetch contributors for this repo')
-    //         }
-    //         return node.contributors
-    //     },
-    //     options: {
-    //         fetchPolicy: 'cache-first',
-    //     },
-    // })
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+        RepositoryContributorsResult,
+        RepositoryContributorsVariables,
+        RepositoryContributorNodeFields
+    >({
+        query: CONTRIBUTORS_QUERY,
+        variables: {
+            first: BATCH_COUNT,
+            repo: repo.id,
+            revisionRange: spec.revisionRange,
+            afterDate: spec.after,
+            path: filePath,
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+            if (!node) {
+                throw new Error(`Node ${repo.id} not found`)
+            }
+            if (!('contributors' in node)) {
+                throw new Error('Failed to fetch contributors for this repo')
+            }
+            return node.contributors
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
+    })
 
     return (
         <ConnectionContainer>
