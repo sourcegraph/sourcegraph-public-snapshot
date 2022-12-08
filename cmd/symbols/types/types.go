@@ -26,9 +26,10 @@ type SqliteConfig struct {
 
 func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
 	return SqliteConfig{
-		Ctags:                   ctags,
-		RepositoryFetcher:       repositoryFetcher,
-		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
+		Ctags:             ctags,
+		RepositoryFetcher: repositoryFetcher,
+		// TODO(sqs): CACHE_DIR env var name is also used by searcher, this causes a conflict, so I renamed it to SYMBOLS_CACHE_DIR
+		CacheDir:                baseConfig.Get("SYMBOLS_CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
 		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
@@ -79,7 +80,8 @@ type RepositoryFetcherConfig struct {
 
 func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherConfig {
 	return RepositoryFetcherConfig{
-		MaxTotalPathsLength: baseConfig.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		// TODO(sqs): searcher also has a MAX_TOTAL_PATHS_LENGTH env var that conflicts, so I renamed this to SYMBOLS_MAX_TOTAL_PATHS_LENGTH
+		MaxTotalPathsLength: baseConfig.GetInt("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
 		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
 	}
 }

@@ -15,7 +15,8 @@ type operations struct {
 
 func newOperations(observationCtx *observation.Context, component string) *operations {
 	var m *metrics.REDMetrics
-	if observationCtx.Registerer != nil {
+	var dontRegister = true // TODO(sqs): panic: duplicate metrics collector registration attempted
+	if observationCtx.Registerer != nil && !dontRegister {
 		m = metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"diskcache",
