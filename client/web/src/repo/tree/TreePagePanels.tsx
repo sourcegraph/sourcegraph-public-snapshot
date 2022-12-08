@@ -3,7 +3,6 @@ import React, { useCallback, useRef, useState } from 'react'
 import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { maxBy } from 'lodash'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
