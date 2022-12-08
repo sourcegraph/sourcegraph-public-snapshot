@@ -19,12 +19,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -38,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -356,89 +352,6 @@ var (
 	}, []string{"status", "alert_type", "source", "request_name"})
 )
 
-// LogSearchLatency records search durations in the event database. This
-// function may only be called after a search result is performed, because it
-// relies on the invariant that query and pattern error checking has already
-// been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, si *search.Inputs, durationMs int32) {
-	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
-	defer tr.Finish()
-	var types []string
-	resultTypes, _ := si.Query.StringValues(query.FieldType)
-	for _, typ := range resultTypes {
-		switch typ {
-		case "repo", "symbol", "diff", "commit":
-			types = append(types, typ)
-		case "path":
-			// Map type:path to file
-			types = append(types, "file")
-		case "file":
-			switch {
-			case si.PatternType == query.SearchTypeStandard:
-				types = append(types, "standard")
-			case si.PatternType == query.SearchTypeStructural:
-				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteral:
-				types = append(types, "literal")
-			case si.PatternType == query.SearchTypeRegex:
-				types = append(types, "regexp")
-			case si.PatternType == query.SearchTypeLucky:
-				types = append(types, "lucky")
-			}
-		}
-	}
-
-	// Don't record composite searches that specify more than one type:
-	// because we can't break down the search timings into multiple
-	// categories.
-	if len(types) > 1 {
-		return
-	}
-
-	q, err := query.ToBasicQuery(si.Query)
-	if err != nil {
-		// Can't convert to a basic query, can't guarantee accurate reporting.
-		return
-	}
-	if !query.IsPatternAtom(q) {
-		// Not an atomic pattern, can't guarantee accurate reporting.
-		return
-	}
-
-	// If no type: was explicitly specified, infer the result type.
-	if len(types) == 0 {
-		// If a pattern was specified, a content search happened.
-		if q.IsLiteral() {
-			types = append(types, "literal")
-		} else if q.IsRegexp() {
-			types = append(types, "regexp")
-		} else if q.IsStructural() {
-			types = append(types, "structural")
-		} else if si.Query.Exists(query.FieldFile) {
-			// No search pattern specified and file: is specified.
-			types = append(types, "file")
-		} else {
-			// No search pattern or file: is specified, assume repo.
-			// This includes accounting for searches of fields that
-			// specify repohasfile: and repohascommitafter:.
-			types = append(types, "repo")
-		}
-	}
-
-	// Only log the time if we successfully resolved one search type.
-	if len(types) == 1 {
-		a := actor.FromContext(ctx)
-		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
-			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
-			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
-			if err != nil {
-				log15.Warn("Could not log search latency", "err", err)
-			}
-		}
-	}
-}
-
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
@@ -496,7 +409,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
-	logBatch(ctx, r.SearchInputs, srr, err)
 	return srr, err
 }
 
