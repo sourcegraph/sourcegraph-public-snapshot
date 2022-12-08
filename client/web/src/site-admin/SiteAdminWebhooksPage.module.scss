@@ -20,21 +20,3 @@
         grid-template-columns: 1fr max-content;
     }
 }
-
-.errors {
-    grid-column: 1 / 2;
-
-    @media (--sm-breakpoint-down) {
-        grid-column: 1 / 3;
-        grid-row: 1 / 2;
-    }
-}
-
-.services {
-    grid-column: 2 / 3;
-
-    @media (--sm-breakpoint-down) {
-        grid-column: 1 / 3;
-        grid-row: 2 / 3;
-    }
-}

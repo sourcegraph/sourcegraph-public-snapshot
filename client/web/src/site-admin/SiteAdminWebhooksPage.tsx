@@ -36,7 +36,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
     }, [telemetryService])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
-    const totals = useWebhookPageHeader()
+    const headerTotals = useWebhookPageHeader()
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Incoming webhooks" />
@@ -53,20 +53,20 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
             />
 
             <Container>
-            { !totals.loading &&
-                <div className={styles.grid}>
-                    <PerformanceGauge
-                        count={totals.totalErrors}
-                        countClassName={totals.totalErrors > 0 ? 'text-danger' : ''}
-                        label="error"
-                    />
-                    <PerformanceGauge
-                        count={totals.totalNoEvents}
-                        countClassName={totals.totalNoEvents > 0 ? 'text-warning' : ''}
-                        label="no event"
-                    />
-                </div>
-            }
+                {!headerTotals.loading && (
+                    <div className={styles.grid}>
+                        <PerformanceGauge
+                            count={headerTotals.totalErrors}
+                            countClassName={headerTotals.totalErrors > 0 ? 'text-danger' : ''}
+                            label="error"
+                        />
+                        <PerformanceGauge
+                            count={headerTotals.totalNoEvents}
+                            countClassName={headerTotals.totalNoEvents > 0 ? 'text-warning' : ''}
+                            label="no event"
+                        />
+                    </div>
+                )}
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
