@@ -5,12 +5,11 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
@@ -46,8 +45,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     fetchHighlightedFileLineRanges,
 }) => {
     const enableLazyFileResultSyntaxHighlighting =
-        settingsCascade.final &&
-        !isErrorLike(settingsCascade.final) &&
+        isSettingsValid(settingsCascade) &&
         settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
@@ -158,7 +156,13 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         data-selectable-search-result="true"
                     >
                         <div className="mr-2 flex-shrink-0">
-                            <SymbolTag kind={symbol.kind} />
+                            <SymbolKind
+                                kind={symbol.kind}
+                                symbolKindTags={
+                                    isSettingsValid(settingsCascade) &&
+                                    settingsCascade.final.experimentalFeatures?.symbolKindTags
+                                }
+                            />
                         </div>
                         <div className={styles.symbolCodeExcerpt}>
                             <CodeExcerpt

@@ -45,7 +45,6 @@ describe('Search contexts', () => {
             user: {
                 experimentalFeatures: {
                     showSearchContext: true,
-                    showSearchContextManagement: true,
                 },
             },
         }),
@@ -93,7 +92,6 @@ describe('Search contexts', () => {
                     user: {
                         experimentalFeatures: {
                             showSearchContext: true,
-                            showSearchContextManagement: true,
                             ...enableEditor(editorName).experimentalFeatures,
                         },
                     },

@@ -27,9 +27,10 @@ export const toMaybeLoadingProviderResult = <T>(
  *
  * I ❤️ TypeScript.
  */
-export const propertyIsDefined = <T extends object, K extends keyof T>(key: K) => (
-    value: T
-): value is T & { [k in K]-?: NonNullable<T[k]> } => isDefined(value[key])
+export const propertyIsDefined =
+    <T extends object, K extends keyof T>(key: K) =>
+    (value: T): value is T & { [k in K]-?: NonNullable<T[k]> } =>
+        isDefined(value[key])
 
 /**
  * Scrolls a DOMRect based position to the center if it is out of view.
@@ -58,13 +59,15 @@ export const scrollRectangleIntoCenterIfNeeded = (
 /**
  * Returns a curried function that returns `true` if `e1` and `e2` overlap.
  */
-export const elementOverlaps = (element1: HTMLElement) => (element2: HTMLElement): boolean => {
-    const rectangle1 = element1.getBoundingClientRect()
-    const rectangle2 = element2.getBoundingClientRect()
-    return !(
-        rectangle1.right < rectangle2.left ||
-        rectangle1.left > rectangle2.right ||
-        rectangle1.bottom < rectangle2.top ||
-        rectangle1.top > rectangle2.bottom
-    )
-}
+export const elementOverlaps =
+    (element1: HTMLElement) =>
+    (element2: HTMLElement): boolean => {
+        const rectangle1 = element1.getBoundingClientRect()
+        const rectangle2 = element2.getBoundingClientRect()
+        return !(
+            rectangle1.right < rectangle2.left ||
+            rectangle1.left > rectangle2.right ||
+            rectangle1.bottom < rectangle2.top ||
+            rectangle1.top > rectangle2.bottom
+        )
+    }

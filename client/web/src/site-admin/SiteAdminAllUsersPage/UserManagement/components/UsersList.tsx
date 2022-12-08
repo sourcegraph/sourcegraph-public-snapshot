@@ -181,11 +181,10 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     const onLimitChange = useCallback((newLimit: number) => setFilters({ limit: newLimit.toString() }), [setFilters])
 
     const users = (data || previousData)?.site.users
-    const onPreviousPage = useCallback(() => setFilters({ offset: Math.max(0, offset - limit).toString() }), [
-        limit,
-        offset,
-        setFilters,
-    ])
+    const onPreviousPage = useCallback(
+        () => setFilters({ offset: Math.max(0, offset - limit).toString() }),
+        [limit, offset, setFilters]
+    )
     const onNextPage = useCallback(() => {
         const newOffset = offset + limit
         if (users?.totalCount && users?.totalCount >= newOffset) {

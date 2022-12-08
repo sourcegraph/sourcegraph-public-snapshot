@@ -47,9 +47,14 @@ func NewRankLoader(
 		metrics:       newLoaderMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return loader.loadRanks(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"pagerank.loader", "loads page-rank data into postgres auxiliary table from object store",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return loader.loadRanks(ctx, config)
+		}),
+	)
 }
 
 const (

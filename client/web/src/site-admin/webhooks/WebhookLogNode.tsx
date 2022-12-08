@@ -15,6 +15,7 @@ import styles from './WebhookLogNode.module.scss'
 
 export interface Props {
     node: WebhookLogFields
+    doNotShowExternalService?: boolean
 
     // For storybook purposes only:
     initiallyExpanded?: boolean
@@ -22,6 +23,7 @@ export interface Props {
 }
 
 export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    doNotShowExternalService = false,
     initiallyExpanded,
     initialTabIndex,
     node: { externalService, receivedAt, request, response, statusCode },
@@ -45,7 +47,8 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                 <StatusCode code={statusCode} />
             </span>
             <span>
-                {externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>}
+                {!doNotShowExternalService &&
+                    (externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>)}
             </span>
             <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
             <span className={styles.smDetailsButton}>

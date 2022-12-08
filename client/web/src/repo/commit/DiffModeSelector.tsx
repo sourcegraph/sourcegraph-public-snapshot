@@ -1,8 +1,12 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import { DiffMode } from './RepositoryCommitPage'
+
+import styles from './DiffModeSelector.module.scss'
 
 interface DiffModeSelectorProps {
     className?: string
@@ -23,7 +27,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'unified'}
-                className="mb-0"
+                className={classNames(styles.button, 'mb-0')}
                 as="label"
                 htmlFor="diff-mode-selector-unified"
             >
@@ -42,7 +46,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'split'}
-                className="mb-0"
+                className={classNames(styles.button, 'mb-0')}
                 as="label"
                 htmlFor="diff-mode-selector-split"
             >

@@ -60,7 +60,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		if err := validateSrcCLIVersion(cliCtx.Context, logger, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
+		if err := validateSrcCLIVersion(cliCtx.Context, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
 			return err
 		}
 

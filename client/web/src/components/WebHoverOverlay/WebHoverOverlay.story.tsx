@@ -33,8 +33,7 @@ const config: Meta = {
     parameters: {
         design: {
             type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
         },
         chromatic: {
             enableDarkMode: true,
@@ -215,8 +214,7 @@ export const WithDismissibleAlertWithIcon: Story = () => (
                 {
                     summary: {
                         kind: MarkupKind.Markdown,
-                        value:
-                            'Search based result.<br /> [Learn more about precise code navigation](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions/-/blob/shared/indicators.ts#L67)',
+                        value: 'Search based result.<br /> [Learn more about precise code navigation](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions/-/blob/shared/indicators.ts#L67)',
                     },
                     type: 'test-alert-type',
                     iconKind: 'info',

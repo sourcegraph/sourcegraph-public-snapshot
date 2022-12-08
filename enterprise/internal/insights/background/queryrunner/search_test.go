@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -46,7 +47,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -97,7 +98,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -145,7 +146,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -190,7 +191,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -229,7 +230,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -261,7 +262,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			return &streaming.ComputeTabulationResult{}, errors.New("error")
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -288,7 +289,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -318,7 +319,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -349,7 +350,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateComputeRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -386,7 +387,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -436,7 +437,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -482,7 +483,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -522,7 +523,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -556,7 +557,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if err != nil {
 			t.Error(err)
 		}
@@ -582,7 +583,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			return &streaming.TabulationResult{}, errors.New("error")
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
@@ -609,7 +610,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
@@ -639,7 +640,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
@@ -670,7 +671,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			}, nil
 		}
 
-		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked)
+		recordings, err := generateSearchRecordingsStream(context.Background(), &job, date, mocked, logtest.Scoped(t))
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}

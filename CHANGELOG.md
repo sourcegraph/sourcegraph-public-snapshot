@@ -26,6 +26,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Added a best-effort migration such that existing Code Insights will display zero results instead of missing points at the start and end of a graph. [#44928](https://github.com/sourcegraph/sourcegraph/pull/44928)
 - More complete stack traces for Outbound request log [#45151](https://github.com/sourcegraph/sourcegraph/pull/45151)
 - A new status message now reports how many repositories have already been indexed for search. [#45246](https://github.com/sourcegraph/sourcegraph/pull/45246)
+- Search contexts can now be starred (favorited) in the search context management page. Starred search contexts will appear first in the context dropdown menu next to the search box. [#45230](https://github.com/sourcegraph/sourcegraph/pull/45230)
+- Added a button "Reindex now" to the index status page. Admins can now force an immediate reindex of a repository. [#45178](https://github.com/sourcegraph/sourcegraph/pull/45178)
 
 ### Changed
 
@@ -44,11 +46,14 @@ All notable changes to Sourcegraph are documented in this file.
 - When the setting `batchChanges.enforceForks` is enabled, Batch Changes will now prefix the name of the fork repo it creates with the original repo's namespace name in order to prevent repo name collisions. [#43681](https://github.com/sourcegraph/sourcegraph/pull/43681), [#44458](https://github.com/sourcegraph/sourcegraph/pull/44458), [#44548](https://github.com/sourcegraph/sourcegraph/pull/44548), [#44924](https://github.com/sourcegraph/sourcegraph/pull/44924)
 - Code Insights: fixed an issue where certain queries matching sequential whitespace characters would overcount. [#44969](https://github.com/sourcegraph/sourcegraph/pull/44969)
 - GitHub fine-grained Personal Access Tokens can now clone repositories correctly, but are not yet officially supported. [#45137](https://github.com/sourcegraph/sourcegraph/pull/45137)
+- Detect-and-track Code Insights will now return data for repositories without sub-repo permissions even when sub-repo permissions are enabled on the instance. [#45631](https://github.com/sourcegraph/sourcegraph/pull/45361)
 
 ### Removed
 
 - Removed legacy GraphQL field `dirtyMetadata` on an insight series. `insightViewDebug` can be used as an alternative. [#44416](https://github.com/sourcegraph/sourcegraph/pull/44416)
 - Removed `search.index.enabled` site configuration setting. Search indexing is now always enabled.
+- Removed the experimental feature setting `showSearchContextManagement`. The search context management page is now available to all users with access to search contexts. [#45230](https://github.com/sourcegraph/sourcegraph/pull/45230)
+- Removed the experimental feature setting `showComputeComponent`. Any notebooks that made use of the compute component will no longer render the block. The block will be deleted from the databse the next time a notebook that uses it is saved. [#45360](https://github.com/sourcegraph/sourcegraph/pull/45360)
 
 ## 4.2.0
 

@@ -23,7 +23,6 @@ type NotebookBlock struct {
 	QueryInput    string
 	FileInput     FileInput
 	SymbolInput   SymbolInput
-	ComputeInput  string
 }
 
 type FileInput struct {

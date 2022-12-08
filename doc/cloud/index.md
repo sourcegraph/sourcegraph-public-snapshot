@@ -21,7 +21,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 
 Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
-## Trial limitations
+### Trial limitations
 
 We currently have a limited capacity of single-tenant cloud instances and are prioritizing organizations with more than 100 developers. When you request a trial, you will receive an email indicating the status of your request.
 
@@ -31,11 +31,11 @@ If you're eligible for a cloud instance, you will receive a link to the instance
 
 Trials last 30 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
 
-# Cloud subscription
+## Cloud subscription
 
 As part of this service you will receive a number of benefits from our team, including:
 
-## Initial setup, configuration, and cost estimation
+### Initial setup, configuration, and cost estimation
 
 - Advising if managed instances are right for your organization.
 - Initial resource estimations based on your organization & code size.
@@ -47,22 +47,22 @@ As part of this service you will receive a number of benefits from our team, inc
   - [Integrating your single sign-on provider with Sourcegraph](../admin/auth/index.md)
   - [Configuring Sourcegraph](../admin/config/index.md)
 
-## Access restrictions
+### Access restrictions
 
 - Granting your team application-level admin access to the instance.
 - Configuring any IP-restrictions (e.g. VPN) and/or SSO restrictions to the instance.
 
-## Monthly upgrades and maintenance
+### Monthly upgrades and maintenance
 
 - Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
-## Health monitoring, support, and SLAs
+### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
 - [Support and SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances).
 
-## Backup and restore
+### Backup and restore
 
 <span class="badge badge-note">SOC2/CI-79</span>
 
@@ -71,7 +71,7 @@ Backup and restore capability is provided via automated snapshots.
 - Frequency: Snapshots are produced daily.
 - Retention period: Snapshots are kept for 90 days.
 
-## Training, feedback, and engagement
+### Training, feedback, and engagement
 
 As with any Sourcegraph enterprise customer, you will also receive support from us with:
 
@@ -83,6 +83,20 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
   - Helping the maintainers of your internal engineer onboarding add a session on Sourcegraph
   - Holding ongoing brown bag lunches to introduce new feature releases
   - Advice and templates on how to introduce Sourcegraph to your engineering organization
+
+### Managed SMTP
+
+> NOTE: This feature is currently undergoing a staged rollout.
+
+All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
+
+- [Code Monitoring](../code_monitoring/index.md) notifications
+- Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
+- For [`builtin` authentication](../admin/auth/index.md#builtin-password-authentication), password resets and email verification
+
+To opt out of managed SMTP, please let your Sourcegraph Account team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md).
+
+To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
 ## Requirements
 

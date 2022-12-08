@@ -29,10 +29,7 @@ interface Props extends RouteComponentProps, ThemeProps {}
  */
 export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ isLightTheme }) => {
     const latestPing = useObservable(
-        useMemo(
-            () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }),
-            []
-        )
+        useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminPings')

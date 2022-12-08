@@ -167,10 +167,10 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             return () => document.removeEventListener('paste', onFileURLPaste)
         }, [isSelected, onFileURLPaste])
 
-        const codeIntelViewerUpdatesProps = useMemo(() => ({ extensionsController, ...input }), [
-            extensionsController,
-            input,
-        ])
+        const codeIntelViewerUpdatesProps = useMemo(
+            () => ({ extensionsController, ...input }),
+            [extensionsController, input]
+        )
 
         const logEventOnCopy = useCallback(() => {
             telemetryService.log(...codeCopiedEvent('notebook-file-block'))

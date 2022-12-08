@@ -94,15 +94,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     )
 
     // Set up mutations for creation or management of this feature flag.
-    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
-        CREATE_FEATURE_FLAG_MUTATION
-    )
-    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] = useMutation(
-        UPDATE_FEATURE_FLAG_MUTATION
-    )
-    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] = useMutation(
-        DELETE_FEATURE_FLAG_MUTATION
-    )
+    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] =
+        useMutation(CREATE_FEATURE_FLAG_MUTATION)
+    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] =
+        useMutation(UPDATE_FEATURE_FLAG_MUTATION)
+    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] =
+        useMutation(DELETE_FEATURE_FLAG_MUTATION)
 
     // Create the main form fields and action buttons based on the state of the page.
     let body: React.ReactElement
@@ -292,10 +289,10 @@ const AddFeatureFlagOverride: FunctionComponent<
     const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
     const [namespaceID, setNamespaceID] = useState<number | string>('')
 
-    const getBase64Namespace = useCallback((): string => btoa(`${overrideType}:${namespaceID}`), [
-        namespaceID,
-        overrideType,
-    ])
+    const getBase64Namespace = useCallback(
+        (): string => btoa(`${overrideType}:${namespaceID}`),
+        [namespaceID, overrideType]
+    )
 
     const [addOverride, { loading, error, reset }] = useMutation<
         CreateFeatureFlagOverrideResult,
@@ -770,10 +767,10 @@ const ReferencesCollapsible: React.FunctionComponent<
     }>
 > = ({ flagName, productGitVersion }) => {
     const references = useObservable(
-        useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
-            flagName,
-            productGitVersion,
-        ])
+        useMemo(
+            () => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])),
+            [flagName, productGitVersion]
+        )
     )
     if (references === undefined || references.length === 0) {
         return <></>

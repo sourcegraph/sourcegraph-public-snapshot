@@ -426,8 +426,7 @@ describe('Repository component', () => {
                 skip: true,
             },
             {
-                name:
-                    'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
+                name: 'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                 repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                 filePath: '/tree/examples',
                 symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go?L26:6-26:10',

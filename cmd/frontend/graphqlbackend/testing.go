@@ -91,11 +91,11 @@ func RunTest(t *testing.T, test *Test) {
 	// Verify JSON to avoid red herring errors.
 	got, err := formatJSON(result.Data)
 	if err != nil {
-		t.Fatalf("got: invalid JSON: %s", err)
+		t.Fatalf("got: invalid JSON: %s\n\n%v", err, result.Data)
 	}
 	want, err := formatJSON([]byte(test.ExpectedResult))
 	if err != nil {
-		t.Fatalf("want: invalid JSON: %s", err)
+		t.Fatalf("want: invalid JSON: %s\n\n%s", err, test.ExpectedResult)
 	}
 
 	require.JSONEq(t, string(want), string(got))

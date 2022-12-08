@@ -60,9 +60,17 @@ func redisLoggerMiddleware() Middleware {
 				}
 			}
 
+			// Pull out data if we have `resp`
+			var responseHeaders http.Header
+			var statusCode int32
+			if resp != nil {
+				responseHeaders = resp.Header
+				statusCode = int32(resp.StatusCode)
+			}
+
 			// Redact sensitive headers
 			requestHeaders := req.Header
-			responseHeaders := resp.Header
+
 			if shouldRedactSensitiveHeaders {
 				requestHeaders = redactSensitiveHeaders(requestHeaders)
 				responseHeaders = redactSensitiveHeaders(responseHeaders)
@@ -82,7 +90,7 @@ func redisLoggerMiddleware() Middleware {
 				URL:                req.URL.String(),
 				RequestHeaders:     requestHeaders,
 				RequestBody:        string(requestBody),
-				StatusCode:         int32(resp.StatusCode),
+				StatusCode:         statusCode,
 				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
@@ -233,8 +241,7 @@ func formatStackFrame(function string, file string, line int) string {
 	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
 
 	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
-	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), sourcegraphPrefix) // cmd/frontend/graphqlbackend/trace.go
-	fileName = strings.TrimPrefix(fileName, "/")                                                // Strip prefix `/` if there is one
+	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), "/main/") // cmd/frontend/graphqlbackend/trace.go
 
 	return fmt.Sprintf("%s:%d (Function: %s)", fileName, line, funcName)
 }

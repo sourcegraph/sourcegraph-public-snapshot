@@ -563,7 +563,7 @@ export class Driver {
     public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
         const response = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query($name: String!) {
+                query ($name: String!) {
                     repository(name: $name) {
                         id
                     }

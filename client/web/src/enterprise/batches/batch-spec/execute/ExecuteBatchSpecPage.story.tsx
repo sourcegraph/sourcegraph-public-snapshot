@@ -115,11 +115,11 @@ const buildMocks = (batchSpec: BatchSpecExecutionFields): MockedResponses => [
     },
 ]
 
-const buildWorkspacesQuery = (
-    workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>
-): typeof _queryWorkspacesList =>
+const buildWorkspacesQuery =
+    (workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>): typeof _queryWorkspacesList =>
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    () => of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
+    () =>
+        of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
 
 // A true executing batch spec wouldn't have a finishedAt set, but we need to have one so
 // that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
