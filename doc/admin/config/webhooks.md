@@ -1,6 +1,6 @@
-# Webhooks
+# Incoming webhooks
 
-Webhook receivers can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside of the instance. 
+Incoming webhooks can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside of the instance. 
 
 We currently support webhooks for the following:
 
@@ -25,13 +25,13 @@ This includes any webhooks pointed at URLs starting with the following:
 * `.api/bitbucket-server-webhooks`
 * `.api/bitbucket-cloud-webhooks`
 
-In order to continue using webhooks you need to follow the steps below to [add a receiver](#adding-a-receiver) and then update the webhook configured on your code host with the new webhook url which will look something like `https://sourcegraph-instance/.api/webhooks/{UUID}`
+In order to continue using webhooks you need to follow the steps below to [add an incoming webhook](#adding-an-incoming-webhook) and then update the webhook configured on your code host with the new webhook url which will look something like `https://sourcegraph-instance/.api/webhooks/{UUID}`
 
-## Adding a receiver
+## Adding an incoming webhook
 
-Before adding a webhook receiver you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
+Before adding an incoming webhook you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
 
-In order to receive webhook events you need to add a receiver. The receiver will be configured to accept events from a specific code host connection based on it's type and URN.
+The incoming webhook will be configured to accept events from a specific code host connection based on it's type and URN.
 
 1. Navigate to **Site Admin > Incoming webhooks**
 1. Click **Add webhook**
@@ -50,8 +50,8 @@ Most importantly, you will be presented with the unique URL for this webhook whi
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
-1. Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**.
 1. Via **Site Admin > Incoming webhooks**
+1. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
 
@@ -89,7 +89,7 @@ To retain webhook logs for one day:
 ### Encrypting webhook logs
 
 Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
-Recent received webhook payloads can be seen on the webhook details page for each receiver.
+Recent received webhook payloads can be seen on the webhook details page for each incoming webhook.
   
  > NOTE: Deprecated webhooks added via code host configuration can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
 
@@ -101,7 +101,7 @@ The instructions for setting up webhooks on the code host are specific to each c
 
 #### Batch changes
 
-1. Copy the webhook URL displayed after adding the receiver as mentioned [above](#adding-a-receiver)
+1. Copy the webhook URL displayed after adding the incoming webhook as mentioned [above](#adding-an-incoming-webhook)
 1. On GitHub, go to the settings page of your organization. From there, click **Settings**, then **Webhooks**, then **Add webhook**.
 1. Fill in the webhook form:
    * **Payload URL**: the URL you copied above from Sourcegraph.
@@ -129,7 +129,7 @@ Follow the same steps as above, but ensure you include the `push` event under **
 
 #### Batch changes
 
-1. Copy the webhook URL displayed after adding the receiver as mentioned [above](#adding-a-receiver)
+1. Copy the webhook URL displayed after adding the incoming webhook as mentioned [above](#adding-an-incoming-webhook)
 1. On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
 1. Fill in the webhook form:
    * **URL**: the URL you copied above from Sourcegraph.
@@ -156,7 +156,7 @@ The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#
    * **Scope**: `global`
    * **Endpoint**: The URL found after creating a webhook receiver
    * **Events**: `repo:build_status`, `pr:activity:status`, `pr:activity:event`, `pr:activity:rescope`, `pr:activity:merge`, `pr:activity:comment`, `pr:activity:reviewers`, `pr:participant:status`
-   * **Secret**: The secret you configured when creating the webhook receiver
+   * **Secret**: The secret you configured when creating the incoming webhook
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
@@ -171,7 +171,7 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbuc
 1. Click **Add webhook**.
 1. Fill in the webhook form:
    * **Title**: any title.
-   * **URL**: the URL found after creating a webhokk receiver
+   * **URL**: the URL found after creating an incoming webhook
    * **Triggers**: select **Build status created** and **Build status updated** under **Repository**, and every item under **Pull request**.
 1. Click **Save**.
 1. Confirm that the new webhook is listed below **Repository hooks**.
