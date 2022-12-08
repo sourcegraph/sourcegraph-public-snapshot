@@ -81,9 +81,6 @@ export const queryWebhookLogs = (
 
     if (externalService === 'all' || externalService === 'unmatched') {
         return requestGraphQL<WebhookLogsResult, WebhookLogsVariables>(
-            // V2ViaG9vazow is webhook ID 0.
-            // This is so that all webhook logs that have a webhookID
-            // associated with them are excluded.
             gql`
                 query WebhookLogs($first: Int, $after: String, $onlyErrors: Boolean!, $onlyUnmatched: Boolean!) {
                     webhookLogs(
@@ -91,7 +88,7 @@ export const queryWebhookLogs = (
                         after: $after
                         onlyErrors: $onlyErrors
                         onlyUnmatched: $onlyUnmatched
-                        webhookID: "V2ViaG9vazow"
+                        legacyOnly: true
                     ) {
                         ...WebhookLogConnectionFields
                     }
@@ -143,9 +140,6 @@ export const queryWebhookLogs = (
     )
 }
 
-// V2ViaG9vazow is webhook ID 0.
-// This is so that webhook logs that have a webhook ID associated
-// with them are excluded.
 export const WEBHOOK_LOG_PAGE_HEADER = gql`
     query WebhookLogPageHeader {
         externalServices {
@@ -155,7 +149,7 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
             totalCount
         }
 
-        webhookLogs(onlyErrors: true, webhookID: "V2ViaG9vazow") {
+        webhookLogs(onlyErrors: true, legacyOnly: true) {
             totalCount
         }
     }
