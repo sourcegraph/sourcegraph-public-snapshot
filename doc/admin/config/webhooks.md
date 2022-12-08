@@ -13,7 +13,6 @@ Bitbucket Cloud | 🟢 | 🔴
 
 Webhooks need to be configured both on the sending side, the code host and receiveing side, Sourcegraph.
 
-
 ## Deprecation notice
 
 As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 4.6.0.
@@ -45,53 +44,6 @@ The incoming webhook will be configured to accept events from a specific code ho
 The incoming webhook will now be created and you will be redirected to a page showing more details.
 
 Most importantly, you will be presented with the unique URL for this webhook which is required when configuring the webhook on your code host.
-
-## Webhook logging
-
-Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
-
-1. Via **Site Admin > Incoming webhooks**
-1. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
-
-By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
-
-### Enabling webhook logging
-
-Webhook logging is controlled by the `webhook.logging` site configuration
-option. This option is an object with the following keys:
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | `boolean` | If `true`, incoming webhooks will be stored. | `true` if no site encryption is enabled; `false` otherwise. |
-| `retention` | `string` | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h` |
-
-#### Examples
-
-To disable webhook logging:
-
-```json
-{
-  "webhook.logging": {"enabled": false}
-}
-```
-
-To retain webhook logs for one day:
-
-```json
-{
-  "webhook.logging": {
-    "enabled": false,
-    "retention": "24h"
-  }
-}
-```
-
-### Encrypting webhook logs
-
-Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
-Recent received webhook payloads can be seen on the webhook details page for each incoming webhook.
-  
- > NOTE: Deprecated webhooks added via code host configuration can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
 
 ## Configuring webhooks on the code host
 
@@ -177,3 +129,50 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbuc
 1. Confirm that the new webhook is listed below **Repository hooks**.
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+
+## Webhook logging
+
+Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
+
+1. Via **Site Admin > Incoming webhooks**
+1. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
+
+By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
+
+### Enabling webhook logging
+
+Webhook logging is controlled by the `webhook.logging` site configuration
+option. This option is an object with the following keys:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | `boolean` | If `true`, incoming webhooks will be stored. | `true` if no site encryption is enabled; `false` otherwise. |
+| `retention` | `string` | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h` |
+
+#### Examples
+
+To disable webhook logging:
+
+```json
+{
+  "webhook.logging": {"enabled": false}
+}
+```
+
+To retain webhook logs for one day:
+
+```json
+{
+  "webhook.logging": {
+    "enabled": false,
+    "retention": "24h"
+  }
+}
+```
+
+### Encrypting webhook logs
+
+Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
+Recent received webhook payloads can be seen on the webhook details page for each incoming webhook.
+  
+ > NOTE: Deprecated webhooks added via code host configuration can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
