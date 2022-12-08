@@ -28,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
+// NewLogJob wraps a job with a LogJob, which records stats about the duration
+// of the search, logs slow searches, and records an event in the EventLogs table.
 func NewLogJob(inputs *search.Inputs, child job.Job) job.Job {
 	return &LogJob{
 		child:  child,
@@ -52,7 +54,7 @@ func (l *LogJob) Run(ctx context.Context, clients job.RuntimeClients, s streamin
 
 	duration := time.Since(start)
 
-	l.logBatch(ctx, clients, l.inputs, statsStream.Stats, resultStream.Count(), duration, alert, err)
+	l.log(ctx, clients, statsStream.Stats, resultStream.Count(), duration, alert, err)
 
 	return alert, err
 }
@@ -73,10 +75,9 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func (l *LogJob) logBatch(
+func (l *LogJob) log(
 	ctx context.Context,
 	clients job.RuntimeClients,
-	inputs *search.Inputs,
 	stats streaming.Stats,
 	resultCount int,
 	duration time.Duration,
@@ -88,7 +89,7 @@ func (l *LogJob) logBatch(
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		l.logSearchDuration(ctx, clients, inputs, duration)
+		l.logSearchDuration(ctx, clients, l.inputs, duration)
 	}()
 
 	var status, alertType string
@@ -103,7 +104,7 @@ func (l *LogJob) logBatch(
 	isSlow := duration > slowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: inputs.OriginalQuery,
+			OriginalQuery: l.inputs.OriginalQuery,
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
@@ -117,7 +118,7 @@ func (l *LogJob) logBatch(
 
 		if isSlow {
 			clients.Logger.Warn("slow search request",
-				log.String("query", inputs.OriginalQuery),
+				log.String("query", l.inputs.OriginalQuery),
 				log.String("type", requestName),
 				log.String("source", requestSource),
 				log.String("status", status),
