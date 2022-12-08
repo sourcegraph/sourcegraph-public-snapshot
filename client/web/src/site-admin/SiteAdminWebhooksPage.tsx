@@ -18,8 +18,9 @@ import {
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 
-import { useWebhooksConnection } from './backend'
+import { useWebhooksConnection, useWebhookPageHeader } from './backend'
 import { WebhookNode } from './WebhookNode'
+import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
 
@@ -35,6 +36,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
     }, [telemetryService])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
+    const headerTotals = useWebhookPageHeader()
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Incoming webhooks" />
@@ -51,6 +53,20 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
             />
 
             <Container>
+                {!headerTotals.loading && (
+                    <div className={styles.grid}>
+                        <PerformanceGauge
+                            count={headerTotals.totalErrors}
+                            countClassName={headerTotals.totalErrors > 0 ? 'text-danger' : ''}
+                            label="error"
+                        />
+                        <PerformanceGauge
+                            count={headerTotals.totalNoEvents}
+                            countClassName={headerTotals.totalNoEvents > 0 ? 'text-warning' : ''}
+                            label="no event"
+                        />
+                    </div>
+                )}
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
