@@ -39,9 +39,21 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
                 <div ref={fileRef}>
                     <RenderedFile className={styles.readme} dangerousInnerHTML={readmeHTML} location={location} />
                 </div>
-                <div className={isNotCutoff ? classNames(styles.readmeFader, styles.readmeFaderInvisible) : classNames(styles.readmeFader)} />
+                <div
+                    className={
+                        isNotCutoff
+                            ? classNames(styles.readmeFader, styles.readmeFaderInvisible)
+                            : classNames(styles.readmeFader)
+                    }
+                />
             </div>
-            <div className={isNotCutoff ? classNames(styles.readmeMore) : classNames(styles.readmeMore, styles.readmeMoreVisible)}>
+            <div
+                className={
+                    isNotCutoff
+                        ? classNames(styles.readmeMore)
+                        : classNames(styles.readmeMore, styles.readmeMoreVisible)
+                }
+            >
                 <Link to={readmeURL}>More...</Link>
             </div>
         </>
@@ -91,11 +103,15 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
     }
 
     const langStatsByPath = langStats ? Object.fromEntries(langStats.map(langStat => [langStat.path, langStat])) : {}
-    const sizeByPath = langStats ? Object.fromEntries(
-        langStats.map(langStat => [langStat.path, langStat.languages
-            .map(lang => lang.bytes)
-            .reduce((prev, cur) => prev + cur, 0)])) : {}
-        const maxSize = Math.max(...Object.entries(sizeByPath).map(([, size]) => size)) || 1
+    const sizeByPath = langStats
+        ? Object.fromEntries(
+              langStats.map(langStat => [
+                  langStat.path,
+                  langStat.languages.map(lang => lang.bytes).reduce((prev, cur) => prev + cur, 0),
+              ])
+          )
+        : {}
+    const maxSize = Math.max(...Object.entries(sizeByPath).map(([, size]) => size)) || 1
 
     let sortedEntries = entries
     switch (sortColumn) {
@@ -145,7 +161,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                 sortedEntries.sort((entry1, entry2) => {
                     const size1 = sizeByPath[entry1.name] || 0
                     const size2 = sizeByPath[entry2.name] || 0
-                    return (size2 - size1)
+                    return size2 - size1
                 })
             }
             break
@@ -168,18 +184,9 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             tabIndex={0}
                             onClick={callbacks.clickFiles}
                             onKeyDown={callbacks.clickFiles}
-                            className={classNames('col-7 px-2', styles.cardColHeader)}
+                            className={classNames('col-9 px-2', styles.cardColHeader)}
                         >
                             Files
-                        </div>
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={callbacks.clickBytes}
-                            onKeyDown={callbacks.clickBytes}
-                            className={classNames('col-2 px-2', styles.cardColHeader)}
-                        >
-                            Bytes (code)
                         </div>
                         <div
                             title="1 month activity"
@@ -187,26 +194,17 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             tabIndex={0}
                             onClick={callbacks.clickActivity}
                             onKeyDown={callbacks.clickActivity}
-                            className={classNames('col-2 px-2', styles.cardColHeader)}
+                            className={classNames('col-3 px-2', styles.cardColHeader)}
                         >
                             Activity
                         </div>
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={callbacks.clickLanguages}
-                            onKeyDown={callbacks.clickLanguages}
-                            className={classNames('col-1 px-2', styles.cardColHeader)}
-                        >
-                            Languages
-                        </div>{' '}
                     </div>
                 </div>
             </CardHeader>
             <div className="container-fluid">
                 {sortedEntries.map(entry => (
                     <div key={entry.name} className="row">
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-7">
+                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-9">
                             <LinkOrSpan
                                 to={entry.url}
                                 className={classNames(
@@ -235,32 +233,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                 </div>
                             </LinkOrSpan>
                         </div>
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-2">
-                            {sizeByPath[entry.path] > 0 ? (
-                                <div
-                                    className={styles.meterContainer}
-                                    title={prettyBytes(sizeByPath[entry.path])}
-                                >
-                                    <ParentSize>
-                                        {({ width }) => (
-                                            <LinearPieChart
-                                                viewMinMax={[0, maxSize]}
-                                                minBarWidth={10}
-                                                width={width}
-                                                height={10}
-                                                data={[sizeByPath[entry.path]]}
-                                                getDatumValue={size => size}
-                                                getDatumName={size => `${size}`}
-                                                getDatumColor={() => 'gray'}
-                                                className={styles.barSvg}
-                                                barRadius={5}
-                                            />
-                                        )}
-                                    </ParentSize>
-                                </div>
-                            ) : ''}
-                        </div>
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-2">
+                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-3">
                             {diffStatsByPath[entry.name] && (
                                 <div
                                     className={styles.meterContainer}
@@ -294,31 +267,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                                 minBarWidth={10}
                                                 className={styles.barSvg}
                                                 barRadius={5}
-                                            />
-                                        )}
-                                    </ParentSize>
-                                </div>
-                            )}
-                        </div>
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-1">
-                            {langStatsByPath[entry.path] && (
-                                <div
-                                    className={styles.meterContainer}
-                                    title={langStatsByPath[entry.path].languages
-                                        .sort(({ bytes }) => bytes)
-                                        .map(({ name, bytes }) => `${prettyBytes(bytes)} : ${name}`)
-                                        .join('\n')}
-                                >
-                                    <ParentSize>
-                                        {({ width }) => (
-                                            <LinearPieChart
-                                                width={width}
-                                                height={10}
-                                                data={langStatsByPath[entry.path].languages}
-                                                getDatumValue={lang => lang.bytes}
-                                                getDatumName={lang => lang.name}
-                                                getDatumColor={lang => lang.color}
-                                                className={styles.barSvg}
+                                                rightToLeft={true}
                                             />
                                         )}
                                     </ParentSize>
