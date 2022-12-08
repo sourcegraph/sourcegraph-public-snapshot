@@ -32,6 +32,7 @@ _Upgrade notes for the next version will appear here._
 
 **Notes**:
 
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
 - This upgrade adds a [node-exporter](https://github.com/prometheus/node_exporter) DaemonSet, which collects crucial machine-level metrics that help Sourcegraph scale your deployment.
   - **Note**: Similarly to `cadvisor`,  `node-exporter`:
     - runs as a DaemonSet
