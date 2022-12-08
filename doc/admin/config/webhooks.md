@@ -40,7 +40,7 @@ The incoming webhook will be configured to accept events from a specific code ho
 1. Navigate to **Site Admin > Incoming webhooks**
 1. Click **Add webhook**
 1. Fill out the form:
-   1. **Webhook name**: Optional descriptive name for the webhook
+   1. **Webhook name**: Descriptive name for the webhook, initially populate by the code host URN.
    1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance. 
    1. **Code host URN**: The URN for the code host. Again, this will be filtered by code host connections added on your instance.
    1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided but you are free to change it.
