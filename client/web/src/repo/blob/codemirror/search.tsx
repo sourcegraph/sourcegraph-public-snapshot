@@ -53,6 +53,9 @@ class SearchPanel implements Panel {
     private state: { searchQuery: SearchQuery; overrideBrowserSearch: boolean; history: History }
     private root: Root | null = null
     private input: HTMLInputElement | null = null
+    private resultCountainer: HTMLSpanElement | null = null
+    private searchQuery = new Subject<SearchQuery>()
+    private subsciptions = new Subscription()
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
@@ -65,6 +68,17 @@ class SearchPanel implements Panel {
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
             history: this.view.state.facet(blobPropsFacet).history,
         }
+
+        this.subsciptions.add(
+            this.searchQuery
+                .pipe(
+                    startWith(this.state.searchQuery),
+                    debounceTime(200),
+                    filter(searchQuery => searchQuery.valid),
+                    distinctUntilChanged(isEqual)
+                )
+                .subscribe(searchQuery => this.commit(searchQuery))
+        )
     }
 
     public update(update: ViewUpdate): void {
@@ -95,6 +109,10 @@ class SearchPanel implements Panel {
         this.render(this.state)
     }
 
+    public unmount(): void {
+        this.subsciptions.unsubscribe()
+    }
+
     private render({
         searchQuery,
         overrideBrowserSearch,
@@ -122,23 +140,21 @@ class SearchPanel implements Panel {
                         name="search"
                         variant="small"
                         placeholder="Find..."
-                        value={searchQuery.search}
                         autoComplete="off"
-                        onChange={() => this.commit()}
-                        onKeyUp={() => this.commit()}
+                        onChange={event => this.updateSearchQuery({ search: event.target.value })}
                         main-field="true"
                         role="search"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.caseSensitive}
-                        onToggle={() => this.commit({ caseSensitive: !searchQuery.caseSensitive })}
+                        onToggle={() => this.updateSearchQuery({ caseSensitive: !searchQuery.caseSensitive })}
                         iconSvgPath={mdiFormatLetterCase}
                         title="Case sensitivity"
                         className="test-blob-view-search-case-sensitive"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
-                        onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
+                        onToggle={() => this.updateSearchQuery({ regexp: !searchQuery.regexp })}
                         iconSvgPath={mdiRegex}
                         title="Regular expression"
                         className="test-blob-view-search-regexp"
@@ -185,6 +201,20 @@ class SearchPanel implements Panel {
         )
     }
 
+    private updateSearchQuery = ({
+        search,
+        caseSensitive,
+        regexp,
+    }: { search?: string; caseSensitive?: boolean; regexp?: boolean } = {}): void => {
+        // (this.input?.value || '')
+        const query = new SearchQuery({
+            search: search ?? this.state.searchQuery.search,
+            caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
+            regexp: regexp ?? this.state.searchQuery.regexp,
+        })
+        this.searchQuery.next(query)
+    }
+
     private setOverrideBrowserSearch = (override: boolean): void =>
         this.view.dispatch({
             effects: setOverrideBrowserFindInPageShortcut.of(override),
@@ -207,13 +237,7 @@ class SearchPanel implements Panel {
         }
     }
 
-    private commit = ({ caseSensitive, regexp }: { caseSensitive?: boolean; regexp?: boolean } = {}): void => {
-        const query = new SearchQuery({
-            search: this.input?.value ?? '',
-            caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
-            regexp: regexp ?? this.state.searchQuery.regexp,
-        })
-
+    private commit = (query: SearchQuery): void => {
         if (!query.eq(this.state.searchQuery)) {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
