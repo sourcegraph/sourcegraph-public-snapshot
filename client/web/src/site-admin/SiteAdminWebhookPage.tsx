@@ -109,7 +109,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
                     <Header />
                     {connection?.nodes?.map(node => (
-                        <WebhookLogNode key={node.id} node={node} />
+                        <WebhookLogNode doNotShowExternalService={true} key={node.id} node={node} />
                     ))}
                 </ConnectionList>
 
@@ -139,7 +139,8 @@ const Header: FC = () => (
         {/* element in the header row*/}
         <span className="d-md-block" />
         <H5 className="text-uppercase text-center text-nowrap">Status code</H5>
-        <H5 className="text-uppercase text-nowrap">External service</H5>
+        {/* Another empty element to fill in the empty middle of the grid */}
+        <span className="d-md-block" />
         <H5 className="text-uppercase text-nowrap">Received at</H5>
     </>
 )
