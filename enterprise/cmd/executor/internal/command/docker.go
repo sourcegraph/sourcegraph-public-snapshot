@@ -41,6 +41,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 		Command: flatten(
 			"docker",
 			dockerConfigFlag(dockerConfigPath),
+			"--add-host=host.docker.internal:host-gateway",
 			"run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
