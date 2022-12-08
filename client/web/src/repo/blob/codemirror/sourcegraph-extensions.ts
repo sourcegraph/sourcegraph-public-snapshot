@@ -237,9 +237,10 @@ class SelectionManager implements PluginValue {
             // Used to convert SelectedLineRange type to a valid LineOrPositionOrRange type to keep TypeScript happy
             let lprSelection: LineOrPositionOrRange = {}
             if (selection) {
-                lprSelection = selection.endLine
-                    ? { line: selection.line, endLine: selection.endLine }
-                    : { line: selection.line, character: selection.character }
+                lprSelection =
+                    selection.line !== selection.endLine
+                        ? { line: selection.line, endLine: selection.endLine }
+                        : { line: selection.line, character: selection.character }
             }
             context.extensionHostAPI
                 .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(lprSelection))
