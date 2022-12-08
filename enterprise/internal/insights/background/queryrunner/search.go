@@ -96,7 +96,7 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 		return nil, err
 	}
 	if len(streamResults.SkippedReasons) > 0 {
-		logger.Error("compute search encountered skipped events", log.String("reasons", fmt.Sprintf("%v", streamResults.SkippedReasons)), log.String("query", job.SearchQuery))
+		logger.Error("compute search encountered skipped events", log.String("seriesID", job.SeriesID), log.String("reasons", fmt.Sprintf("%v", streamResults.SkippedReasons)), log.String("query", job.SearchQuery))
 	}
 	if len(streamResults.Errors) > 0 {
 		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
@@ -111,7 +111,8 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 	for _, match := range streamResults.RepoCounts {
 		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, api.RepoID(match.RepositoryID))
 		if subRepoErr != nil {
-			logger.Error("sub-repo permissions check errored", log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			logger.Error("sub-repo permissions check errored", log.String("seriesID", job.SeriesID), log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			continue
 		}
 		if subRepoEnabled {
 			continue
@@ -139,7 +140,7 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 
 	tr := *tabulationResult
 	if len(tr.SkippedReasons) > 0 {
-		logger.Error("search encountered skipped events", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", job.SearchQuery))
+		logger.Error("search encountered skipped events", log.String("seriesID", job.SeriesID), log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", job.SearchQuery))
 	}
 	if len(tr.Errors) > 0 {
 		return nil, classifiedError(tr.Errors, types.Search)
@@ -159,7 +160,8 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 		repoID := api.RepoID(match.RepositoryID)
 		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 		if subRepoErr != nil {
-			logger.Error("sub-repo permissions check errored", log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			logger.Error("sub-repo permissions check errored", log.String("seriesID", job.SeriesID), log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			continue
 		}
 		if subRepoEnabled {
 			continue
