@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitCommitResolver(t *testing.T) {
@@ -236,128 +235,167 @@ func TestGitCommitAncestors(t *testing.T) {
 		opt gitserver.CommitsOptions,
 		authz authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 
-		switch api.CommitID(opt.Range) {
-		case c1.ID:
-			return commits, nil
-
-		case c3.ID:
-			return commits[2:], nil
-		default:
-			return []*gitdomain.Commit{}, errors.New("mock not implemented for this test case")
-		}
-
+		// Offset the returned list of commits based on the value of the Skip option.
+		return commits[opt.Skip:], nil
 	})
 
 	defer func() {
 		backend.Mocks = backend.MockServices{}
 	}()
 
-	// Start at commit c1.
-	// Expect c1 and c2 in the nodes. c3 in the endCursor.
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchemaWithClient(t, db, client),
-		Query: `
-{
-  repository(name: "github.com/gorilla/mux") {
-    commit(rev: "aabbc12345") {
-      ancestors(first: 2, path: "bill-of-materials.json") {
-        nodes {
-          id
-		  oid
-          abbreviatedOID
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-        }
-      }
-    }
-  }
-}
-        `,
-		ExpectedResult: `
-{
-  "repository": {
-	"commit": {
-	  "ancestors": {
-		"nodes": [
-		  {
-			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
-            "oid": "aabbc12345",
-            "abbreviatedOID": "aabbc12"
-		  },
-		  {
-			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
-            "oid": "ccdde12345",
+	RunTests(t, []*Test{
+		// Start at commit c1.
+		// Expect c1 and c2 in the nodes. 2 in the endCursor.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 2, path: "bill-of-materials.json") {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+							"oid": "aabbc12345",
+							"abbreviatedOID": "aabbc12"
+						  },
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+							"oid": "ccdde12345",
 
-		    "abbreviatedOID": "ccdde12"
-          }
-		],
-		"pageInfo": {
-		  "endCursor": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
-		  "hasNextPage": true
-		}
-	  }
-	}
-  }
-}
-        `,
+							"abbreviatedOID": "ccdde12"
+						  }
+						],
+						"pageInfo": {
+						  "endCursor": "2",
+						  "hasNextPage": true
+						}
+					  }
+					}
+				  }
+				}`,
+		},
+
+		// Start at commit c1 with offset:1.
+		// Expect c2 and c3 in the nodes. 3 in the endCursor.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 2, path: "bill-of-materials.json", offset: 1) {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+							"oid": "ccdde12345",
+
+							"abbreviatedOID": "ccdde12"
+						  },
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
+							"oid": "eeffg12345",
+							"abbreviatedOID": "eeffg12"
+						  }
+						],
+						"pageInfo": {
+						  "endCursor": "3",
+						  "hasNextPage": true
+						}
+					  }
+					}
+				  }
+				}`,
+		},
+
+		// Start at commit c1 with offset:2
+		// Expect c3, c4, c5 in the nodes. No endCursor because there will be no new commits.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 3, path: "bill-of-materials.json", offset: 2) {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
+							"oid": "eeffg12345",
+							"abbreviatedOID": "eeffg12"
+						  },
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZ2doaGkxMjM0NSJ9",
+							"oid": "gghhi12345",
+							"abbreviatedOID": "gghhi12"
+						  },
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiaWprbG0xMjM0NSJ9",
+							"oid": "ijklm12345",
+							"abbreviatedOID": "ijklm12"
+						  }
+						],
+						"pageInfo": {
+						  "endCursor": null,
+						  "hasNextPage": false
+						}
+					  }
+					}
+				  }
+				}`,
+		},
 	})
-
-	// Start at commit c3.
-	// Expect c3, c4, c5 in the nodes. No endCursor because there will be no new commits.
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchemaWithClient(t, db, client),
-		Query: `
-{
-  repository(name: "github.com/gorilla/mux") {
-    commit(rev: "eeffg12345") {
-      ancestors(first: 3, path: "bill-of-materials.json") {
-        nodes {
-          id
-		  oid
-          abbreviatedOID
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-        }
-      }
-    }
-  }
-}
-        `,
-		ExpectedResult: `
-{
-  "repository": {
-	"commit": {
-	  "ancestors": {
-		"nodes": [
-		  {
-			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
-            "oid": "eeffg12345",
-            "abbreviatedOID": "eeffg12"
-		  },
-		  {
-			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZ2doaGkxMjM0NSJ9",
-            "oid": "gghhi12345",
-		    "abbreviatedOID": "gghhi12"
-          },
-		  {
-			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiaWprbG0xMjM0NSJ9",
-            "oid": "ijklm12345",
-		    "abbreviatedOID": "ijklm12"
-          }
-		],
-		"pageInfo": {
-          "endCursor": null,
-		  "hasNextPage": false
-		}
-	  }
-	}
-  }
-}
-        `,
-	})
-
 }
