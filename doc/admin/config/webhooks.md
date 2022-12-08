@@ -89,9 +89,6 @@ To retain webhook logs for one day:
 ### Encrypting webhook logs
 
 Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
-
-
-
 Recent received webhook payloads can be seen on the webhook details page for each receiver.
   
  > NOTE: Deprecated webhooks added via code host configuration can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
