@@ -98,6 +98,13 @@ Your site admin can enable search contexts on your private instance in **global 
 }
 ```
 
+## Fuzzy search
+
+Fuzzy finder helps you find any item by its name in the current repository or everywhere. You can search for repositories, symbols, files and files. 
+To open the fuzzy finder, press `Cmd/Ctrl+K` anywhere on the Sourcegraph web app.
+
+<img src="./fuzzy_search.png" alt="Fuzzy search">
+
 ## Multi-branch indexing <span class="badge badge-primary">experimental</span>
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
