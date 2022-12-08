@@ -135,7 +135,8 @@ func (opts *WebhookLogListOpts) predicates() []*sqlf.Query {
 		}
 	}
 	if opts.OnlyErrors {
-		preds = append(preds, sqlf.Sprintf("status_code NOT BETWEEN 100 AND 399"))
+		// We don't treat HTTP404 as an error.
+		preds = append(preds, sqlf.Sprintf("(status_code NOT BETWEEN 100 AND 399) AND (status_code != 404)"))
 	}
 	if since := opts.Since; since != nil {
 		preds = append(preds, sqlf.Sprintf("received_at >= %s", *since))

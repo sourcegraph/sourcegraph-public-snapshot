@@ -185,6 +185,11 @@ func TestWebhookLogStore(t *testing.T) {
 		if err := store.Create(ctx, errLog); err != nil {
 			t.Fatal(err)
 		}
+		err404Time := time.Date(2021, 10, 29, 18, 48, 0, 0, time.UTC)
+		err404Log := createWebhookLog(0, 0, http.StatusNotFound, err404Time)
+		if err := store.Create(ctx, err404Log); err != nil {
+			t.Fatal(err)
+		}
 
 		for name, tc := range map[string]struct {
 			opts WebhookLogListOpts
@@ -193,7 +198,7 @@ func TestWebhookLogStore(t *testing.T) {
 			"all": {
 				opts: WebhookLogListOpts{},
 				// Note that we return in reverse order.
-				want: []*types.WebhookLog{errLog, okLog},
+				want: []*types.WebhookLog{err404Log, errLog, okLog},
 			},
 			"errors": {
 				opts: WebhookLogListOpts{OnlyErrors: true},
@@ -205,7 +210,7 @@ func TestWebhookLogStore(t *testing.T) {
 			},
 			"no external service": {
 				opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(0)},
-				want: []*types.WebhookLog{errLog},
+				want: []*types.WebhookLog{err404Log, errLog},
 			},
 			"external service without results": {
 				opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(es.ID + 1)},
@@ -217,7 +222,7 @@ func TestWebhookLogStore(t *testing.T) {
 			},
 			"no webhook id": {
 				opts: WebhookLogListOpts{WebhookID: int32Ptr(0)},
-				want: []*types.WebhookLog{errLog},
+				want: []*types.WebhookLog{err404Log, errLog},
 			},
 			"webhook id without results": {
 				opts: WebhookLogListOpts{WebhookID: int32Ptr(wh.ID + 1)},
@@ -228,7 +233,7 @@ func TestWebhookLogStore(t *testing.T) {
 					Since: timePtr(okTime.Add(-1 * time.Minute)),
 					Until: timePtr(errTime.Add(1 * time.Minute)),
 				},
-				want: []*types.WebhookLog{errLog, okLog},
+				want: []*types.WebhookLog{err404Log, errLog, okLog},
 			},
 			"neither within time range": {
 				opts: WebhookLogListOpts{
@@ -243,11 +248,11 @@ func TestWebhookLogStore(t *testing.T) {
 				},
 				want: []*types.WebhookLog{okLog},
 			},
-			"one after": {
+			"two after": {
 				opts: WebhookLogListOpts{
 					Since: timePtr(okTime.Add(30 * time.Second)),
 				},
-				want: []*types.WebhookLog{errLog},
+				want: []*types.WebhookLog{err404Log, errLog},
 			},
 			"all options given": {
 				opts: WebhookLogListOpts{
