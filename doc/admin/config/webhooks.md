@@ -1,6 +1,6 @@
 # Incoming webhooks
 
-Incoming webhooks can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside of the instance instead of polling for changes.
+Incoming webhooks can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside the instance instead of polling for changes.
 
 Webhooks are currently implemented to speed up two types of external events:
 
@@ -35,7 +35,7 @@ In order to continue using webhooks you need to follow the steps below to [add a
 
 Before adding an incoming webhook you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
 
-The incoming webhook will be configured to accept events from a specific code host connection based on it's type and URN.
+The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
 1. Navigate to **Site Admin > Incoming webhooks**
 1. Click **Add webhook**
@@ -43,11 +43,11 @@ The incoming webhook will be configured to accept events from a specific code ho
    1. **Webhook name**: Descriptive name for the webhook, initially populate by the code host URN.
    1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance. 
    1. **Code host URN**: The URN for the code host. Again, this will be filtered by code host connections added on your instance.
-   1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided but you are free to change it.
+   1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
        > NOTE: Secrets are not supported for BitBucket cloud
 1. Click **Create**
 
-The incoming webhook will now be created and you will be redirected to a page showing more details.
+The incoming webhook will now be created, and you will be redirected to a page showing more details.
 
 Use the unique URL present on the details page to configure [the webhook on your code host](#configuring-webhooks-on-the-code-host).
 
