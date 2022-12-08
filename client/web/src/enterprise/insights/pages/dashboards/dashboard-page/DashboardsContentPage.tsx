@@ -39,11 +39,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     }
 
     if (loading || !dashboards) {
-        return (
-            <div data-testid="loading-spinner">
-                <LoadingSpinner aria-live="off" inline={false} />
-            </div>
-        )
+        return <LoadingSpinner aria-live="off" inline={false} />
     }
 
     return (
