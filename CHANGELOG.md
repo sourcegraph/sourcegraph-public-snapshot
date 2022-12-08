@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - More complete stack traces for Outbound request log [#45151](https://github.com/sourcegraph/sourcegraph/pull/45151)
 - A new status message now reports how many repositories have already been indexed for search. [#45246](https://github.com/sourcegraph/sourcegraph/pull/45246)
 - Search contexts can now be starred (favorited) in the search context management page. Starred search contexts will appear first in the context dropdown menu next to the search box. [#45230](https://github.com/sourcegraph/sourcegraph/pull/45230)
+- Added a button "Reindex now" to the index status page. Admins can now force an immediate reindex of a repository. [#45178](https://github.com/sourcegraph/sourcegraph/pull/45178)
 
 ### Changed
 
