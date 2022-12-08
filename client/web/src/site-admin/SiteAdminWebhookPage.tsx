@@ -77,15 +77,17 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                     actions={
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
-                                <ButtonLink
-                                    to={`/site-admin/webhooks/${id}/edit`}
-                                    className="test-edit-webhook"
-                                    size="sm"
-                                    variant="primary"
-                                    display="inline"
-                                >
-                                    Edit
-                                </ButtonLink>
+                                <Tooltip content="Edit webhook">
+                                    <ButtonLink
+                                        to={`/site-admin/webhooks/${id}/edit`}
+                                        className="test-edit-webhook"
+                                        size="sm"
+                                        variant="primary"
+                                        display="inline"
+                                    >
+                                        Edit
+                                    </ButtonLink>
+                                </Tooltip>
                             </div>
                             <div className="mr-1">
                                 <Tooltip content="Delete webhook">
@@ -97,6 +99,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                         disabled={isDeleting}
                                         onClick={event => {
                                             event.preventDefault()
+                                            if (
+                                                !window.confirm(
+                                                    'Delete this webhook? Any external webhooks configured to point at this webhook will no longer be received.'
+                                                )
+                                            ) {
+                                                return
+                                            }
                                             deleteWebhook().catch(
                                                 // noop here is used because creation error is handled directly when useMutation is called
                                                 noop
