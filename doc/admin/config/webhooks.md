@@ -33,7 +33,7 @@ Before adding a webhook receiver you should ensure that you have at least one [c
 
 In order to receive webhook events you need to add a receiver. The receiver will be configured to accept events from a specific code host connection based on it's type and URN.
 
-1. Navigate to Site Admin > Incoming webhooks
+1. Navigate to **Site Admin > Incoming webhooks**
 1. Click `Add webhook`
 1. You'll be presented with a form to create a new webhook receiver:
    1. Webhook name: Optional descriptive name for the webhook
