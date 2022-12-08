@@ -6,7 +6,7 @@ import * as H from 'history'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
-import { LinearPieChart, Link, Icon, Card, CardHeader, ParentSize } from '@sourcegraph/wildcard'
+import { StackedMeter, Link, Icon, Card, CardHeader, ParentSize } from '@sourcegraph/wildcard'
 
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -172,7 +172,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                 >
                                     <ParentSize>
                                         {({ width }) => (
-                                            <LinearPieChart
+                                            <StackedMeter
                                                 width={width}
                                                 height={10}
                                                 viewMinMax={[0, maxLinesChanged]}

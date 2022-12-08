@@ -5,7 +5,7 @@ import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
 import { BarRounded } from '@visx/shape'
 
-interface LinearPieChartProps<Datum> {
+interface StackedMeterProps<Datum> {
     width: number
     height: number
     data: Datum[]
@@ -20,8 +20,7 @@ interface LinearPieChartProps<Datum> {
     barRadius?: number
 }
 
-// TODO: rename StackedHorizontalBar
-export function LinearPieChart<Datum>({
+export function StackedMeter<Datum>({
     className,
     width,
     height,
@@ -34,7 +33,7 @@ export function LinearPieChart<Datum>({
     rightToLeft,
     minBarWidth,
     barRadius,
-}: LinearPieChartProps<Datum>): ReactElement | null {
+}: StackedMeterProps<Datum>): ReactElement | null {
     if (width === 0) {
         return null
     }

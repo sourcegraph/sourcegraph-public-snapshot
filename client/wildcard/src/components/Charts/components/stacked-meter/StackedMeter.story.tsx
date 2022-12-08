@@ -4,7 +4,7 @@ import ParentSize from '@visx/responsive/lib/components/ParentSizeModern'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { LinearPieChart } from '.'
+import { StackedMeter } from '.'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
@@ -19,7 +19,7 @@ const StoryConfig: Meta = {
 }
 export default StoryConfig
 
-export const LinearPieChartDemo: Story = () => {
+export const StackedMeterDemo: Story = () => {
     const data = [
         {
             language: 'JavaScript',
@@ -50,7 +50,7 @@ export const LinearPieChartDemo: Story = () => {
     return (
         <ParentSize debounceTime={0}>
             {({ width, height }) => (
-                <LinearPieChart
+                <StackedMeter
                     width={width}
                     height={height}
                     data={data}
@@ -64,7 +64,7 @@ export const LinearPieChartDemo: Story = () => {
                             <title>{`${getDatumName(datum)}: ${getDatumValue(datum)} LoC`}</title>
                         </path>
                     )}
-                </LinearPieChart>
+                </StackedMeter>
             )}
         </ParentSize>
     )
