@@ -150,10 +150,10 @@ By default, sites without [database encryption](encryption.md) enabled will reta
 Webhook logging is controlled by the `webhook.logging` site configuration
 option. This option is an object with the following keys:
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | `boolean` | If `true`, incoming webhooks will be stored. | `true` if no site encryption is enabled; `false` otherwise. |
-| `retention` | `string` | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h` |
+| Key         | Type      | Default                                                                                                               | Description                                                 |
+|-------------|-----------|-----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| `enabled`   | `boolean` | If `true`, incoming webhooks will be stored.                                                                          | `true` if no site encryption is enabled; `false` otherwise. |
+| `retention` | `string`  | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h`                                                       |
 
 #### Examples
 
