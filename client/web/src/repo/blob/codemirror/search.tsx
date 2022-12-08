@@ -17,7 +17,6 @@ import { Compartment, Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
-import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith, filter } from 'rxjs/operators'
@@ -76,7 +75,12 @@ class SearchPanel implements Panel {
                     startWith(this.state.searchQuery),
                     debounceTime(200),
                     filter(searchQuery => searchQuery.valid),
-                    distinctUntilChanged(isEqual)
+                    distinctUntilChanged(
+                        (previous, current) =>
+                            previous.search !== current.search ||
+                            previous.caseSensitive !== current.caseSensitive ||
+                            previous.regexp !== current.regexp
+                    )
                 )
                 .subscribe(searchQuery => this.commit(searchQuery))
         )
