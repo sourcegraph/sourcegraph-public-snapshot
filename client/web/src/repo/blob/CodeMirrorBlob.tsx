@@ -208,9 +208,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
-            navigateToLineOnAnyClick
-                ? navigateToLineOnAnyClickExtension(location, historyRef.current, customHistoryAction)
-                : [],
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
