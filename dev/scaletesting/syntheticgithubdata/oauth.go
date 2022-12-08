@@ -32,7 +32,12 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 	pairs := tg.Wait()
 
 	csvFile, err := os.Create("users.csv")
-	defer csvFile.Close()
+	defer func() {
+		err = csvFile.Close()
+		if err != nil {
+			log.Fatalf("Failed to close csv file: %s", err)
+		}
+	}()
 	if err != nil {
 		log.Fatalf("Failed creating csv: %s", err)
 	}
