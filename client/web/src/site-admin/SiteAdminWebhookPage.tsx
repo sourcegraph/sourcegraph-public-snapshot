@@ -80,6 +80,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                             </div>
                             <div className="mr-1">
                                 <ButtonLink
+                                    to={`/site-admin/webhooks/${id}/edit`}
                                     className="test-edit-webhook"
                                     size="sm"
                                     variant="secondary"

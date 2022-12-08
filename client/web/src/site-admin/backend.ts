@@ -1044,3 +1044,11 @@ export const CREATE_WEBHOOK_QUERY = gql`
         }
     }
 `
+
+export const UPDATE_WEBHOOK_QUERY = gql`
+    mutation UpdateWebhook($id: ID!, $name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`
