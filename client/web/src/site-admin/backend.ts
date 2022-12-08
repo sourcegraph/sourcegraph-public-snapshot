@@ -542,23 +542,22 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<
-                Record<ExternalServiceKind, ExternalServiceConfig[]>
-            > = data.externalServices.nodes
-                .filter(svc => svc.config)
-                .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
-                .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
-                    (externalServicesByKind, [kind, config]) => {
-                        let services = externalServicesByKind[kind]
-                        if (!services) {
-                            services = []
-                            externalServicesByKind[kind] = services
-                        }
-                        services.push(config)
-                        return externalServicesByKind
-                    },
-                    {}
-                )
+            const externalServices: Partial<Record<ExternalServiceKind, ExternalServiceConfig[]>> =
+                data.externalServices.nodes
+                    .filter(svc => svc.config)
+                    .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
+                    .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                        (externalServicesByKind, [kind, config]) => {
+                            let services = externalServicesByKind[kind]
+                            if (!services) {
+                                services = []
+                                externalServicesByKind[kind] = services
+                            }
+                            services.push(config)
+                            return externalServicesByKind
+                        },
+                        {}
+                    )
             const settingsSubjects = data.viewerSettings.subjects.map(settings => ({
                 __typename: settings.__typename,
                 settingsURL: settings.settingsURL,

@@ -88,11 +88,10 @@ interface LazyPreviewResult {
 export function useLazyLivePreviewLangStatsInsight(props: LazyQueryProps): LazyPreviewResult {
     const { repository, otherThreshold, path } = props
 
-    const lazyQuery = useCallback(() => getLangStats({ repository, otherThreshold, path }), [
-        repository,
-        otherThreshold,
-        path,
-    ])
+    const lazyQuery = useCallback(
+        () => getLangStats({ repository, otherThreshold, path }),
+        [repository, otherThreshold, path]
+    )
 
     return { lazyQuery }
 }

@@ -75,10 +75,11 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
 }) => {
     const token = match.params.token
 
-    const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<
-        InvitationByTokenResult,
-        InvitationByTokenVariables
-    >(INVITATION_BY_TOKEN, {
+    const {
+        data: inviteData,
+        loading: inviteLoading,
+        error: inviteError,
+    } = useQuery<InvitationByTokenResult, InvitationByTokenVariables>(INVITATION_BY_TOKEN, {
         skip: !authenticatedUser || !token,
         variables: {
             token,

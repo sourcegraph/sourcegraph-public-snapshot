@@ -105,40 +105,40 @@ describe('codmirror completions', () => {
     })
 
     test('returns suggestions for an empty query', async () => {
-        expect(
-            (await getCompletionItems(getToken('', 0), 0, async () => []))?.map(({ label }) => label)
-        ).toStrictEqual([
-            'after',
-            'archived',
-            'author',
-            '-author',
-            'before',
-            'case',
-            'committer',
-            '-committer',
-            'content',
-            '-content',
-            'context',
-            'count',
-            'file',
-            '-file',
-            'fork',
-            'lang',
-            '-lang',
-            'message',
-            '-message',
-            'patterntype',
-            'repo',
-            '-repo',
-            'repohascommitafter',
-            'repohasfile',
-            '-repohasfile',
-            'rev',
-            'select',
-            'timeout',
-            'type',
-            'visibility',
-        ])
+        expect((await getCompletionItems(getToken('', 0), 0, async () => []))?.map(({ label }) => label)).toStrictEqual(
+            [
+                'after',
+                'archived',
+                'author',
+                '-author',
+                'before',
+                'case',
+                'committer',
+                '-committer',
+                'content',
+                '-content',
+                'context',
+                'count',
+                'file',
+                '-file',
+                'fork',
+                'lang',
+                '-lang',
+                'message',
+                '-message',
+                'patterntype',
+                'repo',
+                '-repo',
+                'repohascommitafter',
+                'repohasfile',
+                '-repohasfile',
+                'rev',
+                'select',
+                'timeout',
+                'type',
+                'visibility',
+            ]
+        )
     })
 
     test('returns suggestions on whitespace', async () => {

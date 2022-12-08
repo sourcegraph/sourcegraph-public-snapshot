@@ -139,10 +139,10 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
         )
     )
 
-    const latestNotebook = useMemo(() => updatedNotebookOrError || notebookOrError, [
-        notebookOrError,
-        updatedNotebookOrError,
-    ])
+    const latestNotebook = useMemo(
+        () => updatedNotebookOrError || notebookOrError,
+        [notebookOrError, updatedNotebookOrError]
+    )
 
     useEffect(() => {
         if (isNotebookLoaded(latestNotebook)) {
@@ -175,9 +175,10 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
         [setUpdateQueue]
     )
 
-    const onUpdateTitle = useCallback((title: string) => setUpdateQueue(queue => queue.concat([{ title }])), [
-        setUpdateQueue,
-    ])
+    const onUpdateTitle = useCallback(
+        (title: string) => setUpdateQueue(queue => queue.concat([{ title }])),
+        [setUpdateQueue]
+    )
 
     const onUpdateVisibility = useCallback(
         (isPublic: boolean, namespace: string) =>

@@ -299,7 +299,7 @@
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^7.0.2",
     "postcss-modules": "^6.0.0",
-    "prettier": "2.7.1",
+    "prettier": "2.8.1",
     "process": "^0.11.10",
     "puppeteer": "^13.5.1",
     "rimraf": "^3.0.2",
@@ -472,7 +472,6 @@
     "cssnano": "4.1.10",
     "webpack": "5",
     "tslib": "2.1.0",
-    "prettier": "2.2.1",
     "jsprim": "1.4.2"
   },
   "packageManager": "yarn@3.2.3"

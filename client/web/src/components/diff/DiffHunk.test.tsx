@@ -46,8 +46,7 @@ describe('DiffHunk', () => {
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
-                    html:
-                        '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
+                    html: '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,

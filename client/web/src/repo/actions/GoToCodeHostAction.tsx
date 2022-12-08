@@ -279,9 +279,10 @@ function getPerforceChangelistNumberFromCommitMessage(commitMessage: string): st
     return commitMessage.slice(changeIndex + 9, -1)
 }
 
-export function serviceKindDisplayNameAndIcon(
-    serviceKind: ExternalServiceKind | null
-): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
+export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind | null): {
+    displayName: string
+    icon?: React.ComponentType<{ className?: string }>
+} {
     if (!serviceKind) {
         return { displayName: 'code host' }
     }

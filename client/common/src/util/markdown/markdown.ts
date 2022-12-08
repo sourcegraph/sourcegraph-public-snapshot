@@ -83,7 +83,7 @@ export const renderMarkdown = (
         // Because returning undefined is the recommended way to easily disable autolinks
         // but the type definition does not allow it.
         // More context here: https://github.com/markedjs/marked/issues/882
-        tokenizer.url = () => (undefined as unknown) as marked.Tokens.Link
+        tokenizer.url = () => undefined as unknown as marked.Tokens.Link
     }
 
     const rendered = marked(markdown, {

@@ -96,15 +96,15 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
         [width, height, padding]
     )
 
-    const yScale = useMemo(() => yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale, [
-        yOriginalScale,
-        contentRectangle,
-    ])
+    const yScale = useMemo(
+        () => yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale,
+        [yOriginalScale, contentRectangle]
+    )
 
-    const xScale = useMemo(() => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale, [
-        xOriginalScale,
-        contentRectangle,
-    ])
+    const xScale = useMemo(
+        () => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale,
+        [xOriginalScale, contentRectangle]
+    )
 
     const context = useMemo<SVGRootLayout>(
         () => ({

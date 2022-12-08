@@ -338,9 +338,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
           }
         : {}
 
-    const handleGoToResultsPageClick = useCallback(() => onClickItem('FuzzyFinderGoToResultsPageClicked'), [
-        onClickItem,
-    ])
+    const handleGoToResultsPageClick = useCallback(
+        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
+        [onClickItem]
+    )
 
     return (
         <Modal
