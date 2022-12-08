@@ -1,11 +1,186 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
+import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
+import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view'
+import { mdiClose } from '@mdi/js'
+import classNames from 'classnames'
 import { History } from 'history'
 
-import { QueryState, SearchPatternType } from '@sourcegraph/search'
+import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { Icon } from '@sourcegraph/wildcard'
 
-import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
-import { Source } from './suggestions'
+import { singleLine } from '../codemirror'
+import { parseInputAsQuery } from '../codemirror/parsedQuery'
+import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+
+import { editorConfigFacet, Source, suggestions } from './suggestions'
+
+import styles from './CodeMirrorQueryInputWrapper.module.scss'
+
+// Helper function to observe the current size of an element. This is used
+// to create an appropriately sized placeholder element.
+function useResizeObserver(node: HTMLElement | null): { height: number } {
+    const [height, setHeight] = useState<number>(0)
+
+    useEffect(() => {
+        let resizeObserver: ResizeObserver | null = null
+
+        if (node) {
+            resizeObserver = new ResizeObserver(() => {
+                setHeight(node.clientHeight)
+            })
+            resizeObserver.observe(node)
+        }
+
+        return node ? () => resizeObserver?.unobserve(node) : undefined
+    }, [node])
+
+    return { height }
+}
+
+interface ExtensionConfig {
+    popoverID: string
+    patternType: SearchPatternType
+    interpretComments: boolean
+    isLightTheme: boolean
+    placeholder: string
+    onChange: (querySate: QueryState) => void
+    onSubmit?: () => void
+    suggestionsContainer: HTMLDivElement | null
+    suggestionSource?: Source
+    history: History
+}
+
+// For simplicity we will recompute all extensions when input changes using
+// this ocmpartment
+const extensionsCompartment = new Compartment()
+
+// Helper function to update extensions dependent on props. Used when
+// creating the editor and to update it when the props change.
+function configureExtensions({
+    popoverID,
+    patternType,
+    interpretComments,
+    isLightTheme,
+    placeholder,
+    onChange,
+    onSubmit,
+    suggestionsContainer,
+    suggestionSource,
+    history,
+}: ExtensionConfig): Extension {
+    const extensions = [
+        singleLine,
+        EditorView.darkTheme.of(isLightTheme === false),
+        parseInputAsQuery({ patternType, interpretComments }),
+        EditorView.updateListener.of(update => {
+            if (update.docChanged) {
+                onChange({
+                    query: update.state.sliceDoc(),
+                    changeSource: QueryChangeSource.userInput,
+                })
+            }
+        }),
+    ]
+
+    if (placeholder) {
+        // Passing a DOM element instead of a string makes the CodeMirror
+        // extension set aria-hidden="true" on the placeholder, which is
+        // what we want.
+        const element = document.createElement('span')
+        element.append(document.createTextNode(placeholder))
+        extensions.push(placeholderExtension(element))
+    }
+
+    if (onSubmit) {
+        extensions.push(
+            editorConfigFacet.of({ onSubmit }),
+            Prec.high(
+                keymap.of([
+                    {
+                        key: 'Enter',
+                        run() {
+                            onSubmit()
+                            return true
+                        },
+                    },
+                    {
+                        key: 'Mod-Enter',
+                        run() {
+                            onSubmit()
+                            return true
+                        },
+                    },
+                ])
+            )
+        )
+    }
+
+    if (suggestionSource && suggestionsContainer) {
+        extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, history))
+    }
+
+    return extensions
+}
+
+function createEditor(
+    parent: HTMLDivElement,
+    popoverID: string,
+    queryState: QueryState,
+    extensions: Extension
+): EditorView {
+    return new EditorView({
+        state: EditorState.create({
+            doc: queryState.query,
+            extensions: [
+                EditorView.lineWrapping,
+                EditorView.contentAttributes.of({
+                    role: 'combobox',
+                    'aria-controls': popoverID,
+                    'aria-owns': popoverID,
+                    'aria-haspopup': 'grid',
+                }),
+                keymap.of(historyKeymap),
+                keymap.of(defaultKeymap),
+                codemirrorHistory(),
+                Prec.low([querySyntaxHighlighting, filterHighlight]),
+                EditorView.theme({
+                    '&': {
+                        flex: 1,
+                        backgroundColor: 'var(--input-bg)',
+                        borderRadius: 'var(--border-radius)',
+                        borderColor: 'var(--border-color)',
+                    },
+                    '&.cm-editor.cm-focused': {
+                        outline: 'none',
+                    },
+                    '.cm-content': {
+                        caretColor: 'var(--search-query-text-color)',
+                        fontFamily: 'var(--code-font-family)',
+                        fontSize: 'var(--code-font-size)',
+                        color: 'var(--search-query-text-color)',
+                    },
+                }),
+                extensionsCompartment.of(extensions),
+            ],
+        }),
+        parent,
+    })
+}
+
+function updateEditor(editor: EditorView | null, extensions: Extension): void {
+    if (editor) {
+        editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
+    }
+}
+
+function updateValueIfNecessary(editor: EditorView | null, queryState: QueryState): void {
+    if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
+        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: queryState.query } })
+    }
+}
 
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
@@ -19,30 +194,109 @@ export interface CodeMirrorQueryInputWrapperProps {
     history: History
 }
 
-export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = props => {
-    const [parent, setParent] = useState<HTMLDivElement | null>(null)
-    const [instance, setInstance] = useState<CodeMirrorQueryInput | null>(null)
-    const instanceRef = useRef(instance)
-    instanceRef.current = instance
+export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = ({
+    queryState,
+    onChange,
+    onSubmit,
+    isLightTheme,
+    interpretComments,
+    patternType,
+    placeholder,
+    suggestionSource,
+    history,
+}) => {
+    const [container, setContainer] = useState<HTMLDivElement | null>(null)
+    const [focusContainer, setFocusContainer] = useState<HTMLDivElement | null>(null)
+    const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
+    const popoverID = useMemo(() => `searchinput-popover-${Math.floor(Math.random() * 2e6).toString(36)}`, [])
 
-    useEffect(() => {
-        if (!parent) {
-            return
-        }
-        const instance = new CodeMirrorQueryInput({
-            target: parent,
-            props,
-        })
-        setInstance(instance)
-        return () => instance.$destroy()
-        // props are updated below
+    // Wraps the onSubmit prop because that one changes whenever the input
+    // value changes causing unnecessary reconfiguration of the extensions
+    const onSubmitRef = useRef(onSubmit)
+    onSubmitRef.current = onSubmit
+    const hasSubmitHandler = !!onSubmit
+
+    // Update extensions whenever any of these props change
+    const extensions = useMemo(
+        () =>
+            configureExtensions({
+                popoverID,
+                patternType,
+                interpretComments,
+                isLightTheme,
+                placeholder,
+                onChange,
+                onSubmit: hasSubmitHandler ? (): void => onSubmitRef.current?.() : undefined,
+                suggestionsContainer,
+                suggestionSource,
+                history,
+            }),
+        [
+            popoverID,
+            patternType,
+            interpretComments,
+            isLightTheme,
+            placeholder,
+            onChange,
+            hasSubmitHandler,
+            onSubmitRef,
+            suggestionsContainer,
+            suggestionSource,
+            history,
+        ]
+    )
+
+    const editor = useMemo(
+        () => (container ? createEditor(container, popoverID, queryState, extensions) : null),
+        // Should only run once when the component is created, not when
+        // extensions for state update (this is handled in separate hooks)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parent])
+        [container]
+    )
+    const editorRef = useRef(editor)
+    editorRef.current = editor
+    useEffect(() => () => editor?.destroy(), [editor])
 
-    useEffect(() => {
-        instanceRef.current?.$set(props)
-    }, [props])
+    // Update editor content whenever query state changes
+    useEffect(() => updateValueIfNecessary(editorRef.current, queryState), [queryState])
 
-    // eslint-disable-next-line react/forbid-dom-props
-    return <div ref={setParent} style={{ display: 'contents' }} />
+    // Update editor configuration whenever extensions change
+    useEffect(() => updateEditor(editorRef.current, extensions), [extensions])
+
+    const focus = useCallback(() => {
+        editorRef.current?.contentDOM.focus()
+    }, [editorRef])
+
+    const { height: spacerHeight } = useResizeObserver(focusContainer)
+
+    const hasValue = queryState.query.length > 0
+
+    return (
+        <div className={styles.container}>
+            {/* eslint-disable-next-line react/forbid-dom-props */}
+            <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
+            <div className={styles.root}>
+                <div ref={setFocusContainer} className={styles.focusContainer}>
+                    {/* eslint-disable-next-line react/forbid-dom-props */}
+                    <div ref={setContainer} style={{ display: 'contents' }} />
+                    <button
+                        type="button"
+                        className={classNames({ [styles.showWhenFocused]: hasValue })}
+                        onClick={() => onChange({ query: '' })}
+                    >
+                        <Icon svgPath={mdiClose} aria-label="Clear" />
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.globalShortcut} ${styles.hideWhenFocused}`}
+                        onClick={focus}
+                    >
+                        /
+                    </button>
+                </div>
+                <div ref={setSuggestionsContainer} className={styles.suggestions} />
+            </div>
+            <Shortcut ordered={['/']} onMatch={focus} />
+        </div>
+    )
 }

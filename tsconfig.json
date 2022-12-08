@@ -18,18 +18,13 @@
     "composite": true,
     "outDir": "out",
     "rootDir": ".",
-    "plugins": [
-      {
-        "name": "typescript-svelte-plugin"
-      }
-    ]
   },
   "watchOptions": {
     "watchFile": "useFsEvents",
     "watchDirectory": "useFsEvents",
-    "fallbackPolling": "dynamicPriority"
+    "fallbackPolling": "dynamicPriority",
   },
 
   "include": [],
-  "exclude": ["out", "node_modules"]
+  "exclude": ["out", "node_modules"],
 }

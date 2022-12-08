@@ -28,8 +28,6 @@ const {
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
-const svelteOptions = require('../../svelte.config')
-
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
@@ -233,13 +231,12 @@ const config = {
       }),
   ].filter(Boolean),
   resolve: {
-    extensions: ['.mjs', '.ts', '.tsx', '.js', '.json', '.svelte'],
-    mainFields: ['svelte', 'es2015', 'module', 'browser', 'main'],
+    extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
+    mainFields: ['es2015', 'module', 'browser', 'main'],
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
       'react-visibility-sensor': path.resolve(ROOT_PATH, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
-      svelte: path.resolve(ROOT_PATH, 'node_modules', 'svelte'),
     },
   },
   module: {
@@ -294,19 +291,6 @@ const config = {
             report: 'json',
             pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
           },
-        },
-      },
-      {
-        test: /\.svelte$/,
-        use: {
-          loader: 'svelte-loader',
-          options: svelteOptions,
-        },
-      },
-      {
-        test: /node_modules\/svelte\/.*\.mjs$/,
-        resolve: {
-          fullySpecified: false,
         },
       },
     ],

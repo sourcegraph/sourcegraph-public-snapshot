@@ -1,3 +1,5 @@
+import React from 'react'
+
 import {
     EditorSelection,
     EditorState,
@@ -10,9 +12,9 @@ import {
 } from '@codemirror/state'
 import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
-import { ComponentType, SvelteComponentTyped } from 'svelte'
+import { createRoot, Root } from 'react-dom/client'
 
-import Suggestions from './Suggestions.svelte'
+import { Suggestions } from './Suggestions'
 
 // Temporary solution to make some editor settings available to other extensions
 interface EditorConfig {
@@ -47,7 +49,7 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export type CustomRenderer = ComponentType<SvelteComponentTyped<{ option: Option }>>
+export type CustomRenderer = (option: Option) => React.ReactElement
 
 export interface Command {
     type: 'command'
@@ -90,29 +92,31 @@ export interface Group {
 }
 
 class SuggestionView {
-    private instance: Suggestions
-    private root: HTMLElement
+    private container: HTMLDivElement
+    private root: Root
 
-    constructor(id: string, public view: EditorView, public parent: HTMLDivElement) {
+    private onSelect = (option: Option): void => {
+        applyOption(this.view, option)
+        // Query input looses focus when option is selected via
+        // mousedown/click. This is a necessary hack to re-focus the query
+        // input.
+        window.requestAnimationFrame(() => this.view.contentDOM.focus())
+    }
+
+    constructor(private readonly id: string, public readonly view: EditorView, public parent: HTMLDivElement) {
         const state = view.state.field(suggestionsStateField)
-        this.root = document.createElement('div')
-        this.instance = new Suggestions({
-            target: parent,
-            props: {
+        this.container = document.createElement('div')
+        this.root = createRoot(this.container)
+        this.root.render(
+            React.createElement(Suggestions, {
                 id,
                 results: state.result.groups,
                 activeRowIndex: state.selectedOption,
                 open: state.open,
-            },
-        })
-        this.instance.$on('select', event => {
-            applyOption(this.view, event.detail)
-            // Query input looses focus when option is selected via
-            // mousedown/click. This is a necessary hack to re-focus the query
-            // input.
-            window.requestAnimationFrame(() => view.contentDOM.focus())
-        })
-        this.view.dom.append(this.root)
+                onSelect: this.onSelect,
+            })
+        )
+        parent.append(this.container)
     }
 
     public update(update: ViewUpdate): void {
@@ -124,12 +128,20 @@ class SuggestionView {
     }
 
     private updateResults(state: SuggestionsState): void {
-        this.instance.$set({ results: state.result.groups, activeRowIndex: state.selectedOption, open: state.open })
+        this.root.render(
+            React.createElement(Suggestions, {
+                id: this.id,
+                results: state.result.groups,
+                activeRowIndex: state.selectedOption,
+                open: state.open,
+                onSelect: this.onSelect,
+            })
+        )
     }
 
     public destroy(): void {
-        this.instance.$destroy()
-        this.root.remove()
+        this.root.unmount()
+        this.container.remove()
     }
 }
 

@@ -1,5 +1,4 @@
 export { LazyCodeMirrorQueryInput } from './LazyCodeMirrorQueryInput'
 export type { Group, Option, Completion, Target, Command, Source } from './suggestions'
 export { getEditorConfig } from './suggestions'
-export { default as FilterOption } from './FilterSuggestion.svelte'
-export { default as SearchQueryOption } from './SearchQueryOption.svelte'
+export { FilterOption, QueryOption } from './Suggestions'

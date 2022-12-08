@@ -1,0 +1,92 @@
+.suggestions {
+    &[role='grid'] {
+        overflow-y: auto;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [role='rowgroup'] {
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px;
+
+        &:first-of-type {
+            padding-top: 0;
+        }
+
+        &:last-of-type {
+            border: none;
+        }
+
+        &:last-of-type {
+            border: none;
+        }
+
+        // group header
+        [role='presentation'] {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            padding: 0 8px;
+        }
+
+        [role='row'] {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: var(--border-radius);
+            font-family: var(--code-font-family);
+            font-size: 12px;
+            min-height: 24px;
+
+            &[aria-selected='true'] {
+                background-color: var(--subtle-bg);
+                border-radius: 4px;
+            }
+
+            &:hover {
+                background-color: var(--color-bg-2);
+                cursor: pointer;
+            }
+
+            .match {
+                font-weight: bold;
+            }
+
+            .description {
+                margin-left: 8px;
+                color: var(--input-placeholder-color);
+            }
+
+            .note {
+                font-size: 12px;
+                margin-left: auto;
+                color: var(--text-muted);
+                font-family: var(--font-family-base);
+            }
+        }
+    }
+}
+
+.filter-option {
+    display: flex;
+    font-family: var(--code-font-family);
+    font-size: 12px;
+    color: var(--search-filter-keyword-color);
+    background-color: var(--oc-blue-0);
+    // border: 1px solid var(--oc-blue-1);
+    border-radius: 3px;
+    padding: 0px;
+
+    .separator {
+        color: var(--search-filter-keyword-color);
+    }
+}
+
+.icon {
+    color: var(--icon-color);
+}

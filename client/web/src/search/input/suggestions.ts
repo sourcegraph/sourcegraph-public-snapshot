@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository } from '@mdi/js'
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
@@ -12,7 +14,7 @@ import {
     Completion,
     Source,
     FilterOption,
-    SearchQueryOption,
+    QueryOption,
     getEditorConfig,
 } from '@sourcegraph/search-ui/src/experimental'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
@@ -21,6 +23,8 @@ import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 
+const filterRenderer = (option: Option): React.ReactElement => React.createElement(FilterOption, { option })
+const queryRenderer = (option: Option): React.ReactElement => React.createElement(QueryOption, { option })
 const none: any[] = []
 
 const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
@@ -43,7 +47,7 @@ function toFilterCompletion(filter: FilterType, from: number, to?: number): Comp
     return {
         type: 'completion',
         icon: mdiFilterOutline,
-        render: FilterOption,
+        render: filterRenderer,
         value: filter,
         insertValue: filter + ':',
         description,
@@ -353,7 +357,7 @@ export const suggestions: Source = (state, pos) => {
                     apply: view => {
                         getEditorConfig(view.state).onSubmit()
                     },
-                    render: SearchQueryOption,
+                    render: queryRenderer,
                 },
             ],
         })
