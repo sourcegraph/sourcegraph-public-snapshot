@@ -194,9 +194,9 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             tabIndex={0}
                             onClick={callbacks.clickActivity}
                             onKeyDown={callbacks.clickActivity}
-                            className={classNames('col-3 px-2', styles.cardColHeader)}
+                            className={classNames('col-3 px-2 text-right', styles.cardColHeader)}
                         >
-                            Activity
+                            Recent activity
                         </div>
                     </div>
                 </div>
