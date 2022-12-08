@@ -326,15 +326,9 @@ func (r *webhookResolver) WebhookLogs(ctx context.Context, args *graphqlbackend.
 	gqlID := marshalWebhookID(r.hook.ID)
 	// We need to make a new args struct, otherwise the pointer gets shared
 	// between resolvers.
-	resolverArgs := &graphqlbackend.WebhookLogsArgs{
-		WebhookID:  &gqlID,
-		After:      args.After,
-		OnlyErrors: args.OnlyErrors,
-		Since:      args.Since,
-		Until:      args.Until,
-	}
-	res, err := graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, resolverArgs, graphqlbackend.WebhookLogsAllExternalServices)
-	return res, err
+	resolverArgs := *args
+	resolverArgs.WebhookID = &gqlID
+	return graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, &resolverArgs, graphqlbackend.WebhookLogsAllExternalServices)
 }
 
 func marshalWebhookID(id int32) graphql.ID {
