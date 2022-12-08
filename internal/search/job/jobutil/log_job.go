@@ -70,10 +70,9 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-// logSearchDuration records search durations in the event database. This
-// function may only be called after a search result is performed, because it
-// relies on the invariant that query and pattern error checking has already
-// been performed.
+// logEvent records search durations in the event database. This function may
+// only be called after a search result is performed, because it relies on the
+// invariant that query and pattern error checking has already been performed.
 func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
 	tr, ctx := trace.New(ctx, "LogSearchDuration", "")
 	defer tr.Finish()
@@ -152,46 +151,4 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			}
 		}
 	}
-}
-
-var (
-	searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_graphql_search_response",
-		Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-	}, []string{"status", "alert_type", "source", "request_name"})
-
-	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_search_response_latency_seconds",
-		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
-	}, []string{"status", "alert_type", "source", "request_name"})
-)
-
-// determineStatusForLogs determines the final status of a search for logging
-// purposes.
-func determineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
-	switch {
-	case err == context.DeadlineExceeded:
-		return "timeout"
-	case err != nil:
-		return "error"
-	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
-		return "timeout"
-	case stats.Status.Any(search.RepoStatusTimedout):
-		return "partial_timeout"
-	case alert != nil:
-		return "alert"
-	default:
-		return "success"
-	}
-}
-
-// slowSearchesThreshold returns the minimum duration configured in site
-// settings for logging slow searches.
-func slowSearchesThreshold() time.Duration {
-	ms := conf.Get().ObservabilityLogSlowSearches
-	if ms == 0 {
-		return time.Duration(math.MaxInt64)
-	}
-	return time.Duration(ms) * time.Millisecond
 }
