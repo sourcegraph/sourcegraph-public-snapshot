@@ -39,7 +39,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 				},
 			},
 			"OnlyErrors false": {
-				id: WebhookLogsUnmatchedExternalService,
+				id: webhookLogsAllExternalServices,
 				input: WebhookLogsArgs{
 					OnlyErrors: boolPtr(false),
 				},
@@ -88,7 +88,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 			"foo",
 		} {
 			t.Run(input, func(t *testing.T) {
-				_, err := (&WebhookLogsArgs{After: &input}).toListOpts(WebhookLogsUnmatchedExternalService)
+				_, err := (&WebhookLogsArgs{After: &input}).toListOpts(webhookLogsAllExternalServices)
 				assert.NotNil(t, err)
 			})
 		}
@@ -105,7 +105,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
+		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsAllExternalServices)
 		assert.ErrorIs(t, err, auth.ErrNotAuthenticated)
 	})
 
@@ -116,7 +116,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
+		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsAllExternalServices)
 		assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 	})
 
@@ -127,7 +127,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
+		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsAllExternalServices)
 		assert.Nil(t, err)
 	})
 }
