@@ -11,16 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // compactor is a worker responsible for compacting rows in the repo_statistics table.
 type compactor struct{}
 
-var _ job.Job = &compactor{}
-
 func NewCompactor() job.Job {
 	return &compactor{}
-
 }
 
 func (j *compactor) Description() string {
@@ -31,17 +29,19 @@ func (j *compactor) Config() []env.Config {
 	return nil
 }
 
-func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+func (j *compactor) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), 30*time.Minute, &handler{
-			store:  db.RepoStatistics(),
-			logger: logger,
-		}),
+		goroutine.NewPeriodicGoroutine(context.Background(), "repomgmt.statistics-compactor", "compacts repo statistics",
+			30*time.Minute, &handler{
+				store:  db.RepoStatistics(),
+				logger: observationCtx.Logger,
+			},
+		),
 	}, nil
 }
 
@@ -50,8 +50,10 @@ type handler struct {
 	logger log.Logger
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+var (
+	_ goroutine.Handler      = &handler{}
+	_ goroutine.ErrorHandler = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context) error {
 	return h.store.CompactRepoStatistics(ctx)

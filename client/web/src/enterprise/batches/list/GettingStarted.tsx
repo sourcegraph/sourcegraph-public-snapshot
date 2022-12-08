@@ -1,9 +1,11 @@
 import React from 'react'
 
-import { DownloadSourcegraphIcon } from '@sourcegraph/branded/src/components/DownloadSourcegraphIcon'
-import { Container, Link, H2, H3, Text } from '@sourcegraph/wildcard'
+import { mdiOpenInNew } from '@mdi/js'
+
+import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -18,7 +20,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
 }) => (
     <div className={className} data-testid="test-getting-started">
         <Container className="mb-3">
-            <div className="row">
+            <div className="row align-items-center">
                 <div className="col-12 col-md-7">
                     <video
                         className="w-100 h-auto shadow percy-hide"
@@ -50,43 +52,42 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <H3>Use Batch Changes to...</H3>
                     <ul>
                         <li>Update configuration files across many repositories</li>
-                        <li>Update libraries which call your APIs</li>
+                        <li>Update libraries consuming your APIs</li>
                         <li>Rapidly fix critical security issues</li>
                         <li>Update boilerplate code</li>
-                        <li>Clean up tech debt</li>
-                        <li>
-                            <Link to="/help/batch_changes/tutorials" rel="noopener">
-                                See more use cases
-                            </Link>
-                        </li>
+                        <li>Pay down tech debt</li>
                     </ul>
                     <H3>Resources</H3>
                     <ul>
                         <li>
-                            <Link to="/help/batch_changes" rel="noopener">
-                                Batch Changes documentation
+                            <Link to="/help/batch_changes" target="_blank" rel="noopener">
+                                Documentation <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                         <li>
-                            <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
-                                Batch Changes product page
+                            <Link to="https://about.sourcegraph.com/batch-changes" target="_blank" rel="noopener">
+                                Product page <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                     </ul>
                 </div>
             </div>
         </Container>
-        <div className="d-flex justify-content-start">
-            {isSourcegraphDotCom ? (
-                <CtaBanner
-                    bodyText="Batch Changes requires a Sourcegraph Cloud or self-hosted instance."
-                    title={<H3>Start using Batch Changes</H3>}
-                    linkText="Get started"
-                    href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
-                    icon={<DownloadSourcegraphIcon />}
-                    onClick={() => eventLogger.log('BatchChangesInstallFromCloudClicked')}
-                />
-            ) : (
+        {isSourcegraphDotCom ? (
+            <CloudCtaBanner variant="filled">
+                To automate changes across your team's private repos,{' '}
+                <Link
+                    to="https://signup.sourcegraph.com/?p=batch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                >
+                    try Sourcegraph Cloud
+                </Link>
+                .
+            </CloudCtaBanner>
+        ) : (
+            <div className="d-flex justify-content-start">
                 <CtaBanner
                     bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
                     title={<H3>Start using Batch Changes</H3>}
@@ -94,7 +95,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     href="/help/batch_changes/quickstart"
                     icon={<BatchChangesIcon />}
                 />
-            )}
-        </div>
+            </div>
+        )}
     </div>
 )

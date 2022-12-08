@@ -562,21 +562,19 @@ type GitserverRepo struct {
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          *extsvc.EncryptableConfig
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 type ExternalServiceRepo struct {
@@ -619,9 +617,6 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
-
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -1606,7 +1601,6 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
-	NotebookAddedComputeBlocksCount  *int32
 }
 
 // Secret represents the secrets table
@@ -1657,6 +1651,15 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	Autodefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1684,12 +1687,14 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 }
 
 // Webhook defines the information we need to handle incoming webhooks from a
-// code host
+// code host.
 type Webhook struct {
-	// The primary key, used for sorting and pagination
+	// The primary key, used for sorting and pagination.
 	ID int32
-	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID         uuid.UUID
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
 	CodeHostKind string
 	CodeHostURN  extsvc.CodeHostBaseURL
 	// Secret can be in one of three states:
@@ -1706,4 +1711,19 @@ type Webhook struct {
 	UpdatedAt       time.Time
 	CreatedByUserID int32
 	UpdatedByUserID int32
+}
+
+type OutboundRequestLogItem struct {
+	ID                 string              `json:"id"`
+	StartedAt          time.Time           `json:"startedAt"`
+	Method             string              `json:"method"` // The request method (GET, POST, etc.)
+	URL                string              `json:"url"`
+	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestBody        string              `json:"requestBody"`
+	StatusCode         int32               `json:"statusCode"` // The response status code
+	ResponseHeaders    map[string][]string `json:"responseHeaders"`
+	Duration           float64             `json:"duration"`
+	ErrorMessage       string              `json:"errorMessage"`
+	CreationStackFrame string              `json:"creationStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
 }

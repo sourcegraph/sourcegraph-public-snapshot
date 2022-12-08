@@ -4110,11 +4110,11 @@ Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[
 
 <br />
 
-### Frontend: Emails
+### Frontend: Email delivery
 
 #### frontend: email_delivery_failures
 
-<p class="subtitle">Emails delivery failures every 30 minutes</p>
+<p class="subtitle">Email delivery failures every 30 minutes</p>
 
 Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
 
@@ -4131,22 +4131,43 @@ Query: `sum(increase(src_email_send{success="false"}[30m]))`
 
 <br />
 
-#### frontend: email_deliveries
+#### frontend: email_deliveries_by_source
 
-<p class="subtitle">Emails delivered per minute</p>
+<p class="subtitle">Emails successfully delivered every 5 minutes by source</p>
 
 Emails successfully delivered by source.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (source) (increase(src_email_send{success="true"}[1m]))`
+Query: `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: email_deliveries_total
+
+<p class="subtitle">Total emails successfully delivered every 5 minutes</p>
+
+Total emails successfully delivered.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (increase(src_email_send{success="true"}[5m]))`
 
 </details>
 
@@ -4674,6 +4695,8 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usag
 #### gitserver: disk_space_remaining
 
 <p class="subtitle">Disk space remaining by instance</p>
+
+Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by `SRC_REPOS_DESIRED_PERCENT_FREE`).
 
 Refer to the [alerts reference](./alerts.md#gitserver-disk-space-remaining) for 2 alerts related to this panel.
 
@@ -14240,18 +14263,21 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
-### Searcher: Hybrid (experimental)
+### Searcher: Index use
 
 #### searcher: searcher_hybrid_final_state_total
 
 <p class="subtitle">Hybrid search final state over 10m</p>
 
-This graph should be empty unless you enable the feature flag "search-hybrid".
+This graph is about our interactions with the search index (zoekt) to help
+complete unindexed search requests. Searcher will use indexed search for the
+files that have not changed between the unindexed commit and the index.
 
 This graph should mostly be "success". The next most common state should be
-"diff-too-large", which happens if the commit is too far from the indexed
-commit. Otherwise other state should be rare and likely are a sign for further
-investigation.
+"search-canceled" which happens when result limits are hit or the user starts
+a new search. Finally the next most common should be "diff-too-large", which
+happens if the commit is too far from the indexed commit. Otherwise other
+state should be rare and likely are a sign for further investigation.
 
 Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
 indexing a subset of repositories. Otherwise every other state should occur
@@ -14275,14 +14301,14 @@ Query: `sum by (state)(increase(searcher_hybrid_final_state_total[10m]))`
 
 <br />
 
-#### searcher: searcher_hybrid_index_changed_total
+#### searcher: searcher_hybrid_retry_total
 
-<p class="subtitle">Hybrid search retrying due to index updates over 10m</p>
+<p class="subtitle">Hybrid search retrying over 10m</p>
 
-Expectation is that this graph should mostly be 0. It should only trigger if a
-user manages to do a search and the underlying index changes while searching.
-So occasional bursts can be expected, but if this graph is regularly above 0
-it is a sign for further investigation.
+Expectation is that this graph should mostly be 0. It will trigger if a user
+manages to do a search and the underlying index changes while searching or
+Zoekt goes down. So occasional bursts can be expected, but if this graph is
+regularly above 0 it is a sign for further investigation.
 
 This panel has no related alerts.
 
@@ -14293,7 +14319,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(searcher_hybrid_index_changed_total[10m]))`
+Query: `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`
 
 </details>
 
@@ -16519,12 +16545,12 @@ To see this dashboard, visit `/-/debug/grafana/d/zoekt/zoekt` on your Sourcegrap
 
 Sudden changes can be caused by indexing configuration changes.
 
-Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 Legend:
-- assigned: # of repos assigned to Zoekt
-- indexed: # of repos Zoekt has indexed
-- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+- index_num_assigned: # of repos assigned to Zoekt
+- index_num_indexed: # of repos Zoekt has indexed
+- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
 
 This panel has no related alerts.
 
@@ -16535,7 +16561,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100000` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_num_assigned)`
+Query: `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`
 
 </details>
 
@@ -16547,12 +16573,12 @@ Query: `sum(index_num_assigned)`
 
 Sudden changes can be caused by indexing configuration changes.
 
-Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 Legend:
-- assigned: # of repos assigned to Zoekt
-- indexed: # of repos Zoekt has indexed
-- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+- index_num_assigned: # of repos assigned to Zoekt
+- index_num_indexed: # of repos Zoekt has indexed
+- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
 
 This panel has no related alerts.
 
@@ -16563,7 +16589,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100001` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
+Query: `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`
 
 </details>
 
@@ -20405,7 +20431,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -20426,7 +20452,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -20449,7 +20475,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -20470,7 +20496,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -20492,7 +20518,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) >= 1`
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) >= 1`
 
 </details>
 
@@ -20514,7 +20540,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) > 60)`
 
 </details>
 

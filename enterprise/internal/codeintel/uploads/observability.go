@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,16 +67,24 @@ type operations struct {
 	numBytesDeleted        prometheus.Counter
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_uploads",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var (
+	metricsMap = make(map[string]prometheus.Counter)
+	m          = new(metrics.SingletonREDMetrics)
+	metricsMu  sync.Mutex
+)
+
+func newOperations(observationCtx *observation.Context) *operations {
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_uploads",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
@@ -83,12 +92,21 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	counter := func(name, help string) prometheus.Counter {
+		metricsMu.Lock()
+		defer metricsMu.Unlock()
+
+		if c, ok := metricsMap[name]; ok {
+			return c
+		}
+
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
+		observationCtx.Registerer.MustRegister(counter)
 
-		observationContext.Registerer.MustRegister(counter)
+		metricsMap[name] = counter
+
 		return counter
 	}
 
@@ -163,26 +181,26 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 }
 
-func MetricReporters(uploadSvc UploadService, observationContext *observation.Context) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+func MetricReporters(observationCtx *observation.Context, uploadSvc UploadService) {
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
 	}, func() float64 {
 		dirtyRepositories, err := uploadSvc.GetDirtyRepositories(context.Background())
 		if err != nil {
-			observationContext.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
+			observationCtx.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
 		}
 
 		return float64(len(dirtyRepositories))
 	}))
 
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
 		Help: "The maximum amount of time a repository has had a stale commit graph.",
 	}, func() float64 {
 		age, err := uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
-			observationContext.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
+			observationCtx.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
 			return 0
 		}
 

@@ -17,7 +17,7 @@ func TestUploadAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{ID: 1})
 	updateUploads(t, db, types.Upload{ID: 1, State: "deleting"})
@@ -51,7 +51,7 @@ func TestDeleteOldAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// Sanity check for syntax only
 	if _, err := store.DeleteOldAuditLogs(context.Background(), time.Second, time.Now()); err != nil {

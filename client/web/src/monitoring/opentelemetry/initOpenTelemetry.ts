@@ -72,7 +72,11 @@ export function initOpenTelemetry(): void {
         registerInstrumentations({
             // Type-casting is required since the `FetchInstrumentation` is wrongly typed internally as `node.js` instrumentation.
             instrumentations: [
-                (new FetchInstrumentation() as unknown) as InstrumentationOption,
+                new FetchInstrumentation({
+                    // Ignore adding network events as span events to reduce the volume of events
+                    // sent to OpenTelemetry backends such as Honeycomb.
+                    ignoreNetworkEvents: true,
+                }) as unknown as InstrumentationOption,
                 new WindowLoadInstrumentation(),
                 new HistoryInstrumentation({
                     shouldCreatePageViewOnLocationChange: prevLocationInfo => {

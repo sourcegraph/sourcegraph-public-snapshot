@@ -69,11 +69,6 @@ type InsightsSeries {
     The status of this series of data, e.g. progress collecting it.
     """
     status: InsightSeriesStatus!
-
-    """
-    Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
-    """
-    dirtyMetadata: [InsightDirtyQueryMetadata!]!
 }
 
 """
@@ -89,26 +84,6 @@ type InsightDataPoint {
     The value of the insight at this point in time.
     """
     value: Float!
-}
-
-"""
-An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
-"""
-type InsightDirtyQueryMetadata {
-    """
-    The number of dirty queries for this data point and reason combination.
-    """
-    count: Int!
-
-    """
-    The reason the query was marked dirty.
-    """
-    reason: String!
-
-    """
-    The time in the data series that is marked dirty.
-    """
-    time: DateTime!
 }
 
 """
@@ -197,6 +172,21 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     The data point that is incomplete.
     """
     time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time. Only returns alerts that do not satisfy a specific implementation.
+"""
+type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+
+    """
+    A message describing why the datapoint was marked incomplete.
+    """
+    reason: String!
 }
 
 extend type Query {
@@ -366,7 +356,7 @@ type InsightViewConnection {
     """
     A list of insights.
     """
-    nodes: [InsightView!]!
+    nodes: [InsightView]!
 
     """
     Pagination information.
@@ -903,6 +893,11 @@ extend type Mutation {
     Delete an insight view given the graphql ID.
     """
     deleteInsightView(id: ID!): EmptyResponse!
+
+    """
+    Create a new insight view from an existing view.
+    """
+    saveInsightAsNewView(input: SaveInsightAsNewViewInput!): InsightViewPayload!
 }
 
 """
@@ -1207,4 +1202,29 @@ type SearchInsightLivePreviewSeries {
     The label for the data series.
     """
     label: String!
+}
+
+"""
+Input for saving a new view on an insight.
+"""
+input SaveInsightAsNewViewInput {
+    """
+    The insight view ID we are creating a new view from.
+    """
+    insightViewId: ID!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard ID to associate this insight with once created.
+    """
+    dashboard: ID
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }

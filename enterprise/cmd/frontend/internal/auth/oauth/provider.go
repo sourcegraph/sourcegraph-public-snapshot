@@ -75,7 +75,7 @@ func (p *Provider) Refresh(ctx context.Context) error {
 
 type ProviderOp struct {
 	AuthPrefix   string
-	OAuth2Config func(extraScopes ...string) oauth2.Config
+	OAuth2Config func() oauth2.Config
 	SourceConfig schema.AuthProviders
 	StateConfig  gologin.CookieConfig
 	ServiceID    string
@@ -148,8 +148,7 @@ type LoginStateOp string
 
 const (
 	// NOTE: OAuth is almost always used for creating new accounts, therefore we don't need a special name for it.
-	LoginStateOpCreateAccount            LoginStateOp = ""
-	LoginStateOpCreateCodeHostConnection LoginStateOp = "createCodeHostConnection"
+	LoginStateOpCreateAccount LoginStateOp = ""
 )
 
 type LoginState struct {

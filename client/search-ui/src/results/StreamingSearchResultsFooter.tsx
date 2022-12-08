@@ -4,7 +4,8 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { Alert, LoadingSpinner, Code, Text } from '@sourcegraph/wildcard'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Alert, LoadingSpinner, Code, Text, Link } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
@@ -14,8 +15,9 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
     React.PropsWithChildren<{
         results?: AggregateStreamingSearchResults
         children?: React.ReactChild | React.ReactChild[]
+        telemetryService: TelemetryService
     }>
-> = ({ results, children }) => (
+> = ({ results, children, telemetryService }) => (
     <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
@@ -37,20 +39,30 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
                     <Text className="m-0">
                         <strong>No results matched your query</strong>
                         <br />
-                        Use the tips below to improve your query.
+                        Learn more about how to search{' '}
+                        <Link
+                            to="https://docs.sourcegraph.com/code_search/explanations/features"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                            onClick={() => telemetryService.log('ClickedOnDocs')}
+                        >
+                            in our docs
+                        </Link>
+                        , or use the tips below to improve your query.
                     </Text>
                 </Alert>
             </div>
         )}
 
-        {results?.state === 'complete' && results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
-            <Alert className="d-flex m-3" variant="info">
-                <Text className="m-0">
-                    <strong>Result limit hit.</strong> Modify your search with <Code>count:</Code> to return additional
-                    items.
-                </Text>
-            </Alert>
-        )}
+        {results?.state === 'complete' &&
+            results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
+                <Alert className="d-flex m-3" variant="info">
+                    <Text className="m-0">
+                        <strong>Result limit hit.</strong> Modify your search with <Code>count:</Code> to return
+                        additional items.
+                    </Text>
+                </Alert>
+            )}
 
         {children}
     </div>

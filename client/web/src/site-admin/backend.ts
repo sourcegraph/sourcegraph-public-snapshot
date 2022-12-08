@@ -14,7 +14,10 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     AllConfigResult,
     CheckMirrorRepositoryConnectionResult,
@@ -284,6 +287,35 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
+export const OUTBOUND_REQUESTS = gql`
+    query OutboundRequests($after: String) {
+        outboundRequests(after: $after) {
+            nodes {
+                id
+                startedAt
+                method
+                url
+                requestHeaders {
+                    name
+                    values
+                }
+                requestBody
+                statusCode
+                responseHeaders {
+                    name
+                    values
+                }
+                durationMs
+                errorMessage
+                creationStackFrame
+                callStack
+            }
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
         updateMirrorRepository(repository: $repository) {
@@ -510,23 +542,22 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<
-                Record<ExternalServiceKind, ExternalServiceConfig[]>
-            > = data.externalServices.nodes
-                .filter(svc => svc.config)
-                .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
-                .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
-                    (externalServicesByKind, [kind, config]) => {
-                        let services = externalServicesByKind[kind]
-                        if (!services) {
-                            services = []
-                            externalServicesByKind[kind] = services
-                        }
-                        services.push(config)
-                        return externalServicesByKind
-                    },
-                    {}
-                )
+            const externalServices: Partial<Record<ExternalServiceKind, ExternalServiceConfig[]>> =
+                data.externalServices.nodes
+                    .filter(svc => svc.config)
+                    .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
+                    .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                        (externalServicesByKind, [kind, config]) => {
+                            let services = externalServicesByKind[kind]
+                            if (!services) {
+                                services = []
+                                externalServicesByKind[kind] = services
+                            }
+                            services.push(config)
+                            return externalServicesByKind
+                        },
+                        {}
+                    )
             const settingsSubjects = data.viewerSettings.subjects.map(settings => ({
                 __typename: settings.__typename,
                 settingsURL: settings.settingsURL,
@@ -919,6 +950,7 @@ const WEBHOOK_FIELDS_FRAGMENT = gql`
         id
         uuid
         url
+        name
         codeHostKind
         codeHostURN
         secret
@@ -962,8 +994,16 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
-export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
-    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+export const DELETE_WEBHOOK = gql`
+    mutation DeleteWebhook($hookID: ID!) {
+        deleteWebhook(id: $hookID) {
+            alwaysNil
+        }
+    }
+`
+
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+    useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
         getConnection: result => {
@@ -981,8 +1021,8 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseConnectionResult<WebhookLogFields> =>
-    useConnection<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
+): UseShowMorePaginationResult<WebhookLogFields> =>
+    useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
             first: first ?? 20,
@@ -996,3 +1036,11 @@ export const useWebhookLogsConnection = (
             return webhookLogs
         },
     })
+
+export const CREATE_WEBHOOK_QUERY = gql`
+    mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`

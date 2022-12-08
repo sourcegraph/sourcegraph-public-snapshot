@@ -300,14 +300,18 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
+
 	err = client.DeleteExternalService(esID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// This call should return not found error. Retrying for 5 seconds to wait for async deletion to finish
-	err = gqltestutil.Retry(5*time.Second, func() error {
-		_, err = client.UpdateExternalService(gqltestutil.UpdateExternalServiceInput{ID: esID})
+	// This call should return not found error.
+	// Retrying to wait for async deletion to finish. Deletion
+	// might be blocked on the first sync of the external service still
+	// running. It cancels that syncs and waits for it to finish.
+	err = gqltestutil.Retry(30*time.Second, func() error {
+		err = client.CheckExternalService(esID)
 		if err == nil {
 			return gqltestutil.ErrContinueRetry
 		}

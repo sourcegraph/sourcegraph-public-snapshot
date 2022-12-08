@@ -10,7 +10,7 @@ import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
 import { fuzzyIsActive, FuzzyTabsProps, FuzzyState, useFuzzyState, FuzzyTabKey } from './FuzzyTabs'
 
-const DEFAULT_MAX_RESULTS = 100
+const DEFAULT_MAX_RESULTS = 50
 
 export interface FuzzyFinderContainerProps
     extends TelemetryProps,
@@ -29,8 +29,8 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     const { isVisible, setIsVisible } = props
     const isVisibleRef = useRef(isVisible)
     isVisibleRef.current = isVisible
-    const state = useFuzzyState(props, () => setIsVisible(false))
-    const { tabs, activeTab, setActiveTab, repoRevision, isScopeToggleDisabled, toggleScope } = state
+    const state = useFuzzyState(props)
+    const { tabs, activeTab, setActiveTab, repoRevision, scope, isScopeToggleDisabled, toggleScope } = state
     const isScopeToggleDisabledRef = useRef(isScopeToggleDisabled)
     isScopeToggleDisabledRef.current = isScopeToggleDisabled
 
@@ -79,6 +79,14 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
         }
     }, [props.telemetryService, isVisible])
 
+    const handleItemClick = useCallback(
+        (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
+            props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+            setIsVisible(false)
+        },
+        [props.telemetryService, setIsVisible, activeTab, scope]
+    )
+
     if (tabs.isAllDisabled()) {
         return null
     }
@@ -104,7 +112,12 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                     ))
                 )}
             {isVisible && (
-                <FuzzyFinder {...state} setIsVisible={bool => setIsVisible(bool)} location={props.location} />
+                <FuzzyFinder
+                    {...state}
+                    setIsVisible={setIsVisible}
+                    location={props.location}
+                    onClickItem={handleItemClick}
+                />
             )}
         </>
     )
@@ -112,6 +125,11 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
 
 interface FuzzyFinderProps extends FuzzyState {
     setIsVisible: Dispatch<SetStateAction<boolean>>
+
+    /**
+     * Search result click handler.
+     */
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
 
     location: H.Location
 

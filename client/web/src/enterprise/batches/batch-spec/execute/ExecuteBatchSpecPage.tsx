@@ -62,10 +62,11 @@ export interface AuthenticatedExecuteBatchSpecPageProps
 export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     React.PropsWithChildren<AuthenticatedExecuteBatchSpecPageProps>
 > = ({ batchChange, batchSpecID, testContextState, ...props }) => {
-    const { data: batchChangeData, error: batchChangeError, loading: batchChangeLoading } = useQuery<
-        GetBatchChangeToEditResult,
-        GetBatchChangeToEditVariables
-    >(GET_BATCH_CHANGE_TO_EDIT, {
+    const {
+        data: batchChangeData,
+        error: batchChangeError,
+        loading: batchChangeLoading,
+    } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(GET_BATCH_CHANGE_TO_EDIT, {
         variables: batchChange,
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -288,7 +289,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         )}
                         exact={true}
                     />
-                ) : null}
+                ) : (
+                    // If the batch spec is not ready to be previewed, redirect to the spec instead.
+                    <Redirect to={`${match.url}/spec`} />
+                )}
                 <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </div>

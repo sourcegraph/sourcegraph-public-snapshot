@@ -3,11 +3,10 @@ package search
 import (
 	"bytes"
 	"context"
-	"regexp/syntax"
+	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -16,36 +15,62 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
-	metricHybridIndexChanged = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "searcher_hybrid_index_changed_total",
-		Help: "Total number of times the zoekt index changed while doing a hybrid search.",
-	})
+	metricHybridRetry = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "searcher_hybrid_retry_total",
+		Help: "Total number of times we retry zoekt indexed search for hybrid search.",
+	}, []string{"reason"})
 	metricHybridFinalState = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "searcher_hybrid_final_state_total",
 		Help: "Total number of times a hybrid search ended in a specific state.",
 	}, []string{"state"})
 )
 
-// hybrid search is an experimental feature which will search zoekt only for
-// the paths that are the same for p.Commit. unsearched is the paths that
-// searcher needs to search on p.Commit. If ok is false, then the zoekt search
-// failed in a way where we should fallback to a normal unindexed search on
-// the whole commit.
+// hybrid search is a feature which will search zoekt only for the paths that
+// are the same for p.Commit. unsearched is the paths that searcher needs to
+// search on p.Commit. If ok is false, then the zoekt search failed in a way
+// where we should fallback to a normal unindexed search on the whole commit.
 //
 // This only interacts with zoekt so that we can leverage the normal searcher
 // code paths for the unindexed parts. IE unsearched is expected to be used to
 // fetch a zip via the store and then do a normal unindexed search.
-func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
-	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
-		log.String("repo", string(p.Repo)),
-		log.String("commit", string(p.Commit)),
-	)
+func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
+	// recordHybridFinalState is a wrapper around metricHybridState to make the
+	// callsites more succinct.
+	finalState := "unknown"
+	recordHybridFinalState := func(state string) {
+		finalState = state
+	}
+
+	// We call out to external services in several places, and in each case
+	// the most common error condition for those is searcher cancelling the
+	// request. As such we centralize our observability to always take into
+	// account the state of the ctx.
+	defer func() {
+		if err != nil {
+			switch ctx.Err() {
+			case context.Canceled:
+				// We swallow the error since we only cancel requests once we
+				// have hit limits or the RPC request has gone away.
+				recordHybridFinalState("search-canceled")
+				unsearched, ok, err = nil, true, nil
+			case context.DeadlineExceeded:
+				// We return the error because hitting a deadline should be
+				// unexpected. We also don't need to run the normal searcher
+				// path in this case.
+				recordHybridFinalState("search-timeout")
+				unsearched, ok = nil, true
+			}
+		}
+
+		metricHybridFinalState.WithLabelValues(finalState).Inc()
+	}()
 
 	client := s.Indexed
 
@@ -104,13 +129,13 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		logger.Debug("starting zoekt search")
 
-		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
+		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
 			return nil, false, err
-		} else if !ok {
-			metricHybridIndexChanged.Inc()
-			logger.Debug("retrying search since index changed while searching")
+		} else if retryReason != "" {
+			metricHybridRetry.WithLabelValues(retryReason).Inc()
+			logger.Debug("retrying search since index changed while searching", log.String("retryReason", retryReason))
 			continue
 		}
 
@@ -126,22 +151,25 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 // zoektSearchIgnorePaths will execute the search for p on zoekt and stream
 // out results via sender. It will not search paths listed under ignoredPaths.
 //
-// If we did not search the correct commit or we don't know if we did, ok is
-// false.
-func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (ok bool, err error) {
+// If we did not search the correct commit or we don't know if we did, a
+// non-empty retryReason is returned.
+func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (retryReason string, err error) {
 	qText, err := zoektCompile(&p.PatternInfo)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to compile query for zoekt")
+		return "", errors.Wrap(err, "failed to compile query for zoekt")
 	}
 	q := zoektquery.Simplify(zoektquery.NewAnd(
 		zoektquery.NewSingleBranchesRepos("HEAD", uint32(p.RepoID)),
 		qText,
-		zoektIgnorePaths(ignoredPaths),
+		&zoektquery.Not{Child: zoektquery.NewFileNameSet(ignoredPaths...)},
 	))
 
 	opts := (&zoektutil.Options{
 		NumRepos:       1,
 		FileMatchLimit: int32(p.Limit),
+		Features: search.Features{
+			Ranking: true,
+		},
 	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
@@ -150,71 +178,68 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	// We only support chunk matches below.
 	opts.ChunkMatches = true
 
-	res, err := client.Search(ctx, q, opts)
-	if err != nil {
-		return false, err
-	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	for _, fm := range res.Files {
-		// Unexpected commit searched, signal to retry.
-		if fm.Version != string(indexed) {
-			return false, nil
-		}
+	// We need to keep track of extra state to ensure we searched the correct
+	// commit (there is a race between List and Search). We can only tell if
+	// we searched the correct commit if we had a result since that contains
+	// the commit searched.
+	var wrongCommit, foundResults bool
+	var crashes int
 
-		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
-		for _, cm := range fm.ChunkMatches {
-			if cm.FileName {
-				continue
+	err = client.StreamSearch(ctx, q, opts, senderFunc(func(res *zoekt.SearchResult) {
+		crashes += res.Crashes
+		for _, fm := range res.Files {
+			// Unexpected commit searched, signal to retry.
+			if fm.Version != string(indexed) {
+				wrongCommit = true
+				cancel()
+				return
 			}
 
-			ranges := make([]protocol.Range, 0, len(cm.Ranges))
-			for _, r := range cm.Ranges {
-				ranges = append(ranges, protocol.Range{
-					Start: protocol.Location{
-						Offset: int32(r.Start.ByteOffset),
-						Line:   int32(r.Start.LineNumber - 1),
-						Column: int32(r.Start.Column - 1),
-					},
-					End: protocol.Location{
-						Offset: int32(r.End.ByteOffset),
-						Line:   int32(r.End.LineNumber - 1),
-						Column: int32(r.End.Column - 1),
-					},
-				})
-			}
+			foundResults = true
 
-			cms = append(cms, protocol.ChunkMatch{
-				Content: string(cm.Content),
-				ContentStart: protocol.Location{
-					Offset: int32(cm.ContentStart.ByteOffset),
-					Line:   int32(cm.ContentStart.LineNumber) - 1,
-					Column: int32(cm.ContentStart.Column) - 1,
-				},
-				Ranges: ranges,
+			sender.Send(protocol.FileMatch{
+				Path:         fm.FileName,
+				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
 			})
 		}
-
-		sender.Send(protocol.FileMatch{
-			Path:         fm.FileName,
-			ChunkMatches: cms,
-		})
+	}))
+	// we check wrongCommit first since that overrides err (especially since
+	// err is likely context.Cancel when we want to retry)
+	if wrongCommit {
+		return "index-search-changed", nil
+	}
+	if err != nil {
+		return "", err
 	}
 
-	// we have no matches, so we don't know if we searched the correct commit.
-	if len(res.Files) == 0 {
-		newIndexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to double check indexed commit")
-		}
-		if !ok {
-			// let the retry logic handle the call to zoektIndexedCommit again
-			return false, nil
-		}
-		retry := newIndexed != indexed
-		return !retry, nil
+	// We found results and we got past wrongCommit, so we know what we have
+	// streamed back is correct.
+	if foundResults {
+		return "", nil
 	}
 
-	return true, nil
+	// The zoekt containing the repo may have been unreachable, so we are
+	// conservative and treat any backend being down as a reason to retry.
+	if crashes > 0 {
+		return "index-search-missing", nil
+	}
+
+	// we have no matches, so we don't know if we searched the correct commit
+	newIndexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to double check indexed commit")
+	}
+	if !ok {
+		// let the retry logic handle the call to zoektIndexedCommit again
+		return "index-list-missing", nil
+	}
+	if newIndexed != indexed {
+		return "index-list-changed", nil
+	}
+	return "", nil
 }
 
 // zoektCompile builds a text search zoekt query for p.
@@ -292,20 +317,7 @@ func zoektIgnorePaths(paths []string) zoektquery.Q {
 		return &zoektquery.Const{Value: true}
 	}
 
-	parts := make([]zoektquery.Q, 0, len(paths))
-	for _, p := range paths {
-		re, err := syntax.Parse("^"+regexp.QuoteMeta(p)+"$", syntax.Perl)
-		if err != nil {
-			panic("failed to regex compile escaped literal: " + err.Error())
-		}
-		parts = append(parts, &zoektquery.Regexp{
-			Regexp:        re,
-			FileName:      true,
-			CaseSensitive: true,
-		})
-	}
-
-	return &zoektquery.Not{Child: zoektquery.NewOr(parts...)}
+	return &zoektquery.Not{Child: zoektquery.NewFileNameSet(paths...)}
 }
 
 // zoektIndexedCommit returns the default indexed commit for a repository.
@@ -324,6 +336,42 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 	}
 
 	return "", false, nil
+}
+
+func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
+	cms := make([]protocol.ChunkMatch, 0, len(chunkMatches))
+	for _, cm := range chunkMatches {
+		if cm.FileName {
+			continue
+		}
+
+		ranges := make([]protocol.Range, 0, len(cm.Ranges))
+		for _, r := range cm.Ranges {
+			ranges = append(ranges, protocol.Range{
+				Start: protocol.Location{
+					Offset: int32(r.Start.ByteOffset),
+					Line:   int32(r.Start.LineNumber - 1),
+					Column: int32(r.Start.Column - 1),
+				},
+				End: protocol.Location{
+					Offset: int32(r.End.ByteOffset),
+					Line:   int32(r.End.LineNumber - 1),
+					Column: int32(r.End.Column - 1),
+				},
+			})
+		}
+
+		cms = append(cms, protocol.ChunkMatch{
+			Content: string(cm.Content),
+			ContentStart: protocol.Location{
+				Offset: int32(cm.ContentStart.ByteOffset),
+				Line:   int32(cm.ContentStart.LineNumber) - 1,
+				Column: int32(cm.ContentStart.Column) - 1,
+			},
+			Ranges: ranges,
+		})
+	}
+	return cms
 }
 
 // parseGitDiffNameStatus returns the paths changedA and changedB for commits
@@ -357,6 +405,12 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 	return changedA, changedB, nil
 }
 
+type senderFunc func(result *zoekt.SearchResult)
+
+func (f senderFunc) Send(result *zoekt.SearchResult) {
+	f(result)
+}
+
 func totalStringsLen(ss []string) int {
 	sum := 0
 	for _, s := range ss {
@@ -369,10 +423,4 @@ func totalStringsLen(ss []string) int {
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
 	return l.WithTrace(trace.Context(ctx))
-}
-
-// recordHybridFinalState is a wrapper around metricHybridState to make the
-// callsites more succinct.
-func recordHybridFinalState(state string) {
-	metricHybridFinalState.WithLabelValues(state).Inc()
 }

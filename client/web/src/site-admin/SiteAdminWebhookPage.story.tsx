@@ -13,7 +13,7 @@ import { WebhookFields, WebhookLogFields } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID } from './backend'
 import { SiteAdminWebhookPage } from './SiteAdminWebhookPage'
-import { WEBHOOK_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
+import { WEBHOOK_BY_ID_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/story/fixtures'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -40,7 +40,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             },
             result: {
                 data: {
-                    node: createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1'),
+                    node: createWebhookMock(ExternalServiceKind.GITHUB, 'https://github.com/'),
                 },
             },
             nMatches: Number.POSITIVE_INFINITY,
@@ -60,8 +60,8 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: true },
-                        totalCount: 40,
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 20,
                     },
                 },
             },
@@ -82,20 +82,22 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: ERRORED_WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: true },
-                        totalCount: 40,
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 20,
                     },
                 },
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
         {
-            request: { query: getDocumentNode(WEBHOOK_LOG_PAGE_HEADER) },
+            request: {
+                query: getDocumentNode(WEBHOOK_BY_ID_LOG_PAGE_HEADER),
+                variables: {
+                    webhookID: '1',
+                },
+            },
             result: {
                 data: {
-                    externalServices: {
-                        totalCount: 5,
-                    },
                     webhookLogs: {
                         totalCount: 13,
                     },
@@ -121,7 +123,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
     )
 }
 
-SiteAdminWebhookPageStory.storyName = 'Webhook receiver'
+SiteAdminWebhookPageStory.storyName = 'Incoming webhook'
 SiteAdminWebhookPageStory.args = {
     match: {
         params: {
@@ -135,6 +137,7 @@ function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookField
         __typename: 'Webhook',
         createdAt: formatRFC3339(TIMESTAMP_MOCK),
         id: '1',
+        name: 'GitHub.com commit push webhook',
         secret: 'secret-secret',
         updatedAt: formatRFC3339(TIMESTAMP_MOCK),
         url: 'sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',

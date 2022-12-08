@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
@@ -452,5 +453,52 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			require.NoError(t, err)
 			assert.Len(t, have, 1)
 		})
+	})
+
+	t.Run("DisableBatchSpecWorkspaceExecutionCache", func(t *testing.T) {
+		cs := &btypes.ChangesetSpec{}
+		require.NoError(t, s.CreateChangesetSpec(ctx, cs))
+
+		bc := &btypes.BatchSpec{NoCache: true, NamespaceUserID: 1}
+		require.NoError(t, s.CreateBatchSpec(ctx, bc))
+		batchSpecID := bc.ID
+
+		workspace := &btypes.BatchSpecWorkspace{
+			BatchSpecID:       batchSpecID,
+			RepoID:            repos[0].ID,
+			CachedResultFound: true,
+			StepCacheResults: map[int]btypes.StepCacheResult{
+				1: {
+					Key: "asdf",
+					Value: &execution.AfterStepResult{
+						StepIndex: 1,
+					},
+				},
+			},
+			ChangesetSpecIDs: []int64{cs.ID, 2, 3},
+		}
+		err := s.CreateBatchSpecWorkspace(ctx, workspace)
+		require.NoError(t, err)
+
+		require.NoError(t, s.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpecID))
+
+		want := workspace
+		want.ChangesetSpecIDs = []int64{}
+		want.StepCacheResults = map[int]btypes.StepCacheResult{}
+		want.CachedResultFound = false
+
+		have, err := s.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{
+			ID: workspace.ID,
+		})
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(want, have); diff != "" {
+			t.Fatalf("invalid workspace state: %s", diff)
+		}
+
+		_, err = s.GetChangesetSpec(ctx, GetChangesetSpecOpts{
+			ID: cs.ID,
+		})
+		require.Error(t, err, ErrNoResults)
 	})
 }

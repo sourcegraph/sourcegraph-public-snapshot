@@ -73,6 +73,10 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
+### Fine-grained personal access tokens
+
+GitHub's fine-grained personal access tokens are not yet supported.
+
 ## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.

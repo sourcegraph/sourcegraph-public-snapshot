@@ -25,7 +25,7 @@ import (
 func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -36,11 +36,11 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	seriesStore := store.New(insightsDB, permStore)
 
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
-		InsightStore: seriesStore,
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
+		InsightStore:   seriesStore,
 	}
 	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)
@@ -86,8 +86,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	if !inProgressFound {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := inProgressDequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
+	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
 
 	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
 	require.NoError(t, err)

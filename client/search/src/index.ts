@@ -4,7 +4,6 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import {
-    fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     getUserSearchContextNamespaces,
     fetchSearchContext,
@@ -48,7 +47,6 @@ export interface SearchContextProps {
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
-    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
@@ -64,7 +62,6 @@ export type SearchContextInputProps = Pick<
     | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'
-    | 'fetchAutoDefinedSearchContexts'
     | 'fetchSearchContexts'
     | 'getUserSearchContextNamespaces'
 >

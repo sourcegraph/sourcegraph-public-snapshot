@@ -46,14 +46,14 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     return (
         <Container>
-            <PageTitle title="Webhook receiver" />
+            <PageTitle title="Incoming webhook" />
             {webhookLoading && !webhookData && <ConnectionLoading />}
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <PageHeader
                     path={[
                         { icon: mdiCog },
-                        { to: '/site-admin/webhooks', text: 'Webhook receivers' },
-                        { text: webhookData.node.codeHostURN },
+                        { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
+                        { text: webhookData.node.name },
                     ]}
                     byline={
                         <CreatedByAndUpdatedByInfoByline
@@ -63,12 +63,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                             updatedBy={webhookData.node.updatedBy}
                         />
                     }
-                    className="test-batch-change-close-page mb-3"
+                    className="mb-3"
                     headingElement="h2"
                     actions={
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
                                 <ButtonLink
+                                    to="/site-admin/webhooks/create"
                                     className="test-create-webhook"
                                     size="sm"
                                     variant="primary"
@@ -98,7 +99,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             )}
 
             <H2>Logs</H2>
-            <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
+            <WebhookInfoLogPageHeader webhookID={id} onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 
             <ConnectionContainer className="mt-5">
                 {error && <ConnectionError errors={[error.message]} />}

@@ -54,7 +54,7 @@ func Searcher() *monitoring.Dashboard {
 			},
 
 			{
-				Title:  "Hybrid (experimental)",
+				Title:  "Index use",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -62,12 +62,15 @@ func Searcher() *monitoring.Dashboard {
 							Name:        "searcher_hybrid_final_state_total",
 							Description: "hybrid search final state over 10m",
 							Interpretation: `
-This graph should be empty unless you enable the feature flag "search-hybrid".
+This graph is about our interactions with the search index (zoekt) to help
+complete unindexed search requests. Searcher will use indexed search for the
+files that have not changed between the unindexed commit and the index.
 
 This graph should mostly be "success". The next most common state should be
-"diff-too-large", which happens if the commit is too far from the indexed
-commit. Otherwise other state should be rare and likely are a sign for further
-investigation.
+"search-canceled" which happens when result limits are hit or the user starts
+a new search. Finally the next most common should be "diff-too-large", which
+happens if the commit is too far from the indexed commit. Otherwise other
+state should be rare and likely are a sign for further investigation.
 
 Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
 indexing a subset of repositories. Otherwise every other state should occur
@@ -81,14 +84,14 @@ For a full list of possible state see
 							NoAlert: true,
 						},
 						{
-							Name:        "searcher_hybrid_index_changed_total",
-							Description: "hybrid search retrying due to index updates over 10m",
+							Name:        "searcher_hybrid_retry_total",
+							Description: "hybrid search retrying over 10m",
 							Interpretation: `
-Expectation is that this graph should mostly be 0. It should only trigger if a
-user manages to do a search and the underlying index changes while searching.
-So occasional bursts can be expected, but if this graph is regularly above 0
-it is a sign for further investigation.`,
-							Query:   `sum(increase(searcher_hybrid_index_changed_total[10m]))`,
+Expectation is that this graph should mostly be 0. It will trigger if a user
+manages to do a search and the underlying index changes while searching or
+Zoekt goes down. So occasional bursts can be expected, but if this graph is
+regularly above 0 it is a sign for further investigation.`,
+							Query:   `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`,
 							Panel:   monitoring.Panel(),
 							Owner:   monitoring.ObservableOwnerSearchCore,
 							NoAlert: true,

@@ -15,7 +15,8 @@ import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
 import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpecInfo } from '../BatchSpecNode'
 import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
 import {
@@ -26,8 +27,6 @@ import {
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
-
-import styles from './BatchChangeDetailsTabs.module.scss'
 
 export enum TabName {
     Changesets = 'changesets',
@@ -41,13 +40,15 @@ export enum TabName {
 }
 
 const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number =>
-    ([
-        TabName.Changesets,
-        TabName.Chart,
-        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
-        TabName.Archived,
-        TabName.BulkOperations,
-    ] as string[]).indexOf(tabName)
+    (
+        [
+            TabName.Changesets,
+            TabName.Chart,
+            shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
+            TabName.Archived,
+            TabName.BulkOperations,
+        ] as string[]
+    ).indexOf(tabName)
 
 const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName =>
     [
@@ -158,7 +159,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     )
 
     const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
-    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage && '+'}`
+    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage ? '+' : ''}`
 
     return (
         <BatchChangeTabs defaultIndex={defaultTabIndex} onChange={onTabChange}>
@@ -285,14 +286,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                     originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
-                            <Container>
-                                <BatchSpec
-                                    name={batchChange.name}
-                                    originalInput={batchChange.currentSpec.originalInput}
-                                    isLightTheme={isLightTheme}
-                                    className={styles.batchSpec}
-                                />
-                            </Container>
+                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
                     )}
                 </TabPanel>

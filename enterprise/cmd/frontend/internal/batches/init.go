@@ -3,6 +3,8 @@ package batches
 import (
 	"context"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
@@ -23,11 +25,11 @@ import (
 // events.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	// Validate site configuration.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -39,17 +41,18 @@ func Init(
 	})
 
 	// Initialize store.
-	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
+	logger := sglog.Scoped("Batches", "batch changes webhooks")
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
-	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
 
-	operations := httpapi.NewOperations(observationContext)
+	operations := httpapi.NewOperations(observationCtx)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)
 	enterpriseServices.BatchesChangesFileGetHandler = fileHandler.Get()
 	enterpriseServices.BatchesChangesFileExistsHandler = fileHandler.Exists()

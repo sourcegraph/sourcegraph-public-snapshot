@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -31,6 +32,7 @@ type Server struct {
 	repos.Store
 	*repos.Syncer
 	Logger                log.Logger
+	ObservationCtx        *observation.Context
 	SourcegraphDotComMode bool
 	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
@@ -166,35 +168,29 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	var genericSourcer repos.Sourcer
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
 	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.GetService(db)
+	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
 	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 
 	externalServiceID := req.ExternalServiceID
 
-	// We want to get soft-deleted external services as well, since we do a final
-	// sync when an external service gets deleted.
-	es, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
-		IDs:            []int64{externalServiceID},
-		IncludeDeleted: true,
-	})
+	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
-		s.respond(w, http.StatusInternalServerError, err)
+		if errcode.IsNotFound(err) {
+			s.respond(w, http.StatusNotFound, err)
+		} else {
+			s.respond(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 
-	if len(es) != 1 {
-		s.respond(w, http.StatusNotFound, errors.Newf("external service %d not found", externalServiceID))
-		return
-	}
-
-	genericSrc, err := genericSourcer(ctx, es[0])
+	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
-	statusCode, resp := handleExternalServiceValidate(ctx, logger, es[0], genericSrc)
+	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
 		return

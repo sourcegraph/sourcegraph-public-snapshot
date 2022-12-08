@@ -8,7 +8,7 @@ import { useSearchParameters } from '@sourcegraph/wildcard'
 import { Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
-import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
+import { LangStatsInsightCard } from './lang-stats-insight-card/LangStatsInsightCard'
 import { ViewGridItem } from './view-grid/ViewGrid'
 
 export interface SmartInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
@@ -46,9 +46,9 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
                     {children}
                 </BackendInsightView>
             ) : (
-                <BuiltInInsight insight={insight} resizing={resizing} telemetryService={telemetryService}>
+                <LangStatsInsightCard insight={insight} resizing={resizing} telemetryService={telemetryService}>
                     {children}
-                </BuiltInInsight>
+                </LangStatsInsightCard>
             )}
         </ViewGridItem>
     )

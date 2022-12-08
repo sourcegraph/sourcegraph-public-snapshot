@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,7 +44,7 @@ type BatchesStore interface {
 const fileStoreBucket = "batch-changes"
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, version string) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
@@ -122,22 +123,20 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 	// Check if we have a cache result for the workspace, if so, add it to the execution
 	// input.
-	if !batchSpec.NoCache {
-		// Find the cache entry for the _last_ step. src-cli only needs the most
-		// recent cache entry to do its work.
-		latestStepIndex := -1
-		for stepIndex := range workspace.StepCacheResults {
-			if stepIndex > latestStepIndex {
-				latestStepIndex = stepIndex
-			}
+	// Find the cache entry for the _last_ step. src-cli only needs the most
+	// recent cache entry to do its work.
+	latestStepIndex := -1
+	for stepIndex := range workspace.StepCacheResults {
+		if stepIndex > latestStepIndex {
+			latestStepIndex = stepIndex
 		}
-		if latestStepIndex != -1 {
-			cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
-			// Technically this should never be not ok, but computers.
-			if ok {
-				executionInput.CachedStepResultFound = true
-				executionInput.CachedStepResult = *cacheEntry.Value
-			}
+	}
+	if latestStepIndex != -1 {
+		cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
+		// Technically this should never be not ok, but computers.
+		if ok {
+			executionInput.CachedStepResultFound = true
+			executionInput.CachedStepResult = *cacheEntry.Value
 		}
 	}
 
@@ -149,7 +148,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 	files := map[string]apiclient.VirtualMachineFile{
 		srcInputPath: {
-			Content: string(marshaledInput),
+			Content: marshaledInput,
 		},
 	}
 
@@ -197,7 +196,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		if executionInput.CachedStepResultFound {
 			cacheEntry := executionInput.CachedStepResult
 			// Apply the diff if necessary.
-			if cacheEntry.Diff != "" {
+			if len(cacheEntry.Diff) > 0 {
 				dockerSteps = append(dockerSteps, apiclient.DockerStep{
 					Key: "apply-diff",
 					Dir: srcRepoDir,
@@ -219,7 +218,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			}
 			// Write the step result for the last cached step.
 			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.VirtualMachineFile{
-				Content: string(val),
+				Content: val,
 			}
 		}
 
@@ -294,6 +293,18 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			// runs on the host and we don't want pollution outside of the workspace.
 			"-tmp", srcTempDir,
 		}
+
+		if version != "" {
+			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
+			if err != nil {
+				return apiclient.Job{}, err
+			}
+			if canUseBinaryDiffs {
+				// Enable binary diffs.
+				commands = append(commands, "-binaryDiffs")
+			}
+		}
+
 		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
 		if len(workspaceFiles) > 0 {
 			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)

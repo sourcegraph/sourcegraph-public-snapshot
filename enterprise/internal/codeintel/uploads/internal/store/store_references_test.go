@@ -19,7 +19,7 @@ import (
 func TestUpdatePackageReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// for foreign key relation
 	insertUploads(t, db, types.Upload{ID: 42})
@@ -51,7 +51,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 func TestReferencesForUpload(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},

@@ -21,9 +21,8 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
-    const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] = useTemporarySetting(
-        'batches.minSavedPerChangeset'
-    )
+    const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] =
+        useTemporarySetting('batches.minSavedPerChangeset')
 
     const { data, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
         GLOBAL_CHANGESETS_STATS,
@@ -45,19 +44,19 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         <div className={classNames(styles.statsBar, 'text-muted d-block d-sm-flex')}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
-                    <H3 className="font-weight-bold">
+                    <H3 className="font-weight-bold mb-0">
                         <span className="d-block mb-1">{data.batchChanges.totalCount}</span>
                         <span className={styles.statLabel}>Batch changes</span>
                     </H3>
                 </div>
                 <div className="pr-4">
-                    <H3 className="font-weight-bold">
+                    <H3 className="font-weight-bold mb-0">
                         <span className="d-block mb-1">{data.globalChangesetsStats.merged}</span>
                         <span className={styles.statLabel}>Changesets merged</span>
                     </H3>
                 </div>
                 <div className="pr-4">
-                    <H3 className="font-weight-bold">
+                    <H3 className="font-weight-bold mb-0">
                         <span className="d-block mb-1">
                             {Math.round((data.globalChangesetsStats.merged * minSavedPerChangeset) / 60).toFixed(2)}
                         </span>

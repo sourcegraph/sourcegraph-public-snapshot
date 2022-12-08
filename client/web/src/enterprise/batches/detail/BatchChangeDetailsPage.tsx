@@ -54,15 +54,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const {
-        namespaceID,
-        batchChangeName,
-        history,
-        location,
-        telemetryService,
-        authenticatedUser,
-        deleteBatchChange,
-    } = props
+    const { namespaceID, batchChangeName, history, location, telemetryService, authenticatedUser, deleteBatchChange } =
+        props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -169,7 +162,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 className="mb-3"
             />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
-            {batchChange.viewerCanAdminister && (
+            {batchChange.closedAt === null && batchChange.viewerCanAdminister && (
                 <UnpublishedNotice
                     unpublished={batchChange.changesetsStats.unpublished}
                     total={batchChange.changesetsStats.total}

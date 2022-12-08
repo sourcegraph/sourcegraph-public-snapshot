@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,29 +26,36 @@ type JanitorConfig struct {
 type janitorJob struct {
 	store           store.Store
 	gitserverClient GitserverClient
-	metrics         janitorMetrics
+	metrics         *janitorMetrics
 	logger          log.Logger
 	clock           glock.Clock
 }
 
 func NewJanitor(
+	observationCtx *observation.Context,
 	interval time.Duration,
 	store store.Store,
 	gitserverClient GitserverClient,
 	clock glock.Clock,
 	config JanitorConfig,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		job := janitorJob{
-			store:           store,
-			gitserverClient: gitserverClient,
-			metrics:         janitorMetrics{},
-			logger:          log.Scoped("codeintel.janitor.background", ""),
-			clock:           clock,
-		}
+	metrics := NewJanitorMetrics(observationCtx)
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.autoindexing-janitor", "cleanup autoindexing jobs for unknown repos, commits etc",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			job := janitorJob{
+				store:           store,
+				gitserverClient: gitserverClient,
+				metrics:         metrics,
+				logger:          log.Scoped("codeintel.janitor.background", ""),
+				clock:           clock,
+			}
 
-		return job.handleCleanup(ctx, config)
-	}))
+			return job.handleCleanup(ctx, config)
+		}),
+	)
 }
 
 func (j janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {

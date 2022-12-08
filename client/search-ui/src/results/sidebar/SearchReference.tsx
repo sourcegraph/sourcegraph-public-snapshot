@@ -231,6 +231,13 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('has.key({any string})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that are associated with the given key, regardless of its value.',
+        examples: ['repo:has.key(owner)', '-repo:has.key(wip)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,
@@ -512,111 +519,102 @@ export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQuerySt
     filter: string
 }
 
-const SearchReference = React.memo(
-    (props: SearchReferenceProps): ReactElement => {
-        const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
+const SearchReference = React.memo((props: SearchReferenceProps): ReactElement => {
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-        const { setQueryState, telemetryService } = props
-        const filter = props.filter.trim()
-        const hasFilter = filter.length > 0
+    const { setQueryState, telemetryService } = props
+    const filter = props.filter.trim()
+    const hasFilter = filter.length > 0
 
-        const selectedFilters = useMemo(() => {
-            if (!hasFilter) {
-                return filterInfos
-            }
-            const searchTerms = parseSearchInput(filter)
-            return filterInfos.filter(info => matches(searchTerms, info))
-        }, [filter, hasFilter])
+    const selectedFilters = useMemo(() => {
+        if (!hasFilter) {
+            return filterInfos
+        }
+        const searchTerms = parseSearchInput(filter)
+        return filterInfos.filter(info => matches(searchTerms, info))
+    }, [filter, hasFilter])
 
-        const updateQuery = useCallback(
-            (searchReference: FilterInfo, negate: boolean) => {
-                setQueryState(({ query }) => {
-                    const updatedQuery = updateQueryWithFilterAndExample(
-                        query,
-                        searchReference.field,
-                        searchReference,
-                        {
-                            singular: Boolean(FILTERS[searchReference.field].singular),
-                            negate: negate && isNegatableFilter(searchReference.field),
-                            emptyValue: shouldShowSuggestions(searchReference),
-                        }
-                    )
-                    return {
-                        query: updatedQuery.query,
-                        selectionRange: updatedQuery.placeholderRange,
-                        revealRange: updatedQuery.filterRange,
-                        hint:
-                            (shouldShowSuggestions(searchReference) ? EditorHint.ShowSuggestions : 0) |
-                            EditorHint.Focus,
-                    }
+    const updateQuery = useCallback(
+        (searchReference: FilterInfo, negate: boolean) => {
+            setQueryState(({ query }) => {
+                const updatedQuery = updateQueryWithFilterAndExample(query, searchReference.field, searchReference, {
+                    singular: Boolean(FILTERS[searchReference.field].singular),
+                    negate: negate && isNegatableFilter(searchReference.field),
+                    emptyValue: shouldShowSuggestions(searchReference),
                 })
-            },
-            [setQueryState]
-        )
-        const updateQueryWithOperator = useCallback(
-            (info: OperatorInfo) => {
-                setQueryState(({ query }) => ({ query: query + ` ${info.operator} ` }))
-            },
-            [setQueryState]
-        )
-        const updateQueryWithExample = useCallback(
-            (example: string) => {
-                telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
-                setQueryState(({ query }) => ({ query: query.trimEnd() + ' ' + example }))
-            },
-            [setQueryState, hasFilter, telemetryService]
-        )
+                return {
+                    query: updatedQuery.query,
+                    selectionRange: updatedQuery.placeholderRange,
+                    revealRange: updatedQuery.filterRange,
+                    hint: (shouldShowSuggestions(searchReference) ? EditorHint.ShowSuggestions : 0) | EditorHint.Focus,
+                }
+            })
+        },
+        [setQueryState]
+    )
+    const updateQueryWithOperator = useCallback(
+        (info: OperatorInfo) => {
+            setQueryState(({ query }) => ({ query: query + ` ${info.operator} ` }))
+        },
+        [setQueryState]
+    )
+    const updateQueryWithExample = useCallback(
+        (example: string) => {
+            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
+            setQueryState(({ query }) => ({ query: query.trimEnd() + ' ' + example }))
+        },
+        [setQueryState, hasFilter, telemetryService]
+    )
 
-        const filterList = (
-            <FilterInfoList filters={selectedFilters} onClick={updateQuery} onExampleClick={updateQueryWithExample} />
-        )
+    const filterList = (
+        <FilterInfoList filters={selectedFilters} onClick={updateQuery} onExampleClick={updateQueryWithExample} />
+    )
 
-        return (
-            <div>
-                {hasFilter ? (
-                    filterList
-                ) : (
-                    <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
-                        <TabList>
-                            <Tab>Common</Tab>
-                            <Tab>All filters</Tab>
-                            <Tab>Operators</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel>
-                                <FilterInfoList
-                                    filters={commonFilters}
-                                    onClick={updateQuery}
-                                    onExampleClick={updateQueryWithExample}
-                                />
-                            </TabPanel>
-                            <TabPanel>{filterList}</TabPanel>
-                            <TabPanel>
-                                <ul className={styles.list}>
-                                    {operatorInfo.map(operatorInfo => (
-                                        <SearchReferenceEntry
-                                            searchReference={operatorInfo}
-                                            key={operatorInfo.operator + operatorInfo.value}
-                                            onClick={updateQueryWithOperator}
-                                            onExampleClick={updateQueryWithExample}
-                                        />
-                                    ))}
-                                </ul>
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                )}
-                <Text className={sidebarStyles.sidebarSectionFooter}>
-                    <small>
-                        <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                        </Link>
-                    </small>
-                </Text>
-            </div>
-        )
-    }
-)
+    return (
+        <div>
+            {hasFilter ? (
+                filterList
+            ) : (
+                <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                    <TabList>
+                        <Tab>Common</Tab>
+                        <Tab>All filters</Tab>
+                        <Tab>Operators</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <FilterInfoList
+                                filters={commonFilters}
+                                onClick={updateQuery}
+                                onExampleClick={updateQueryWithExample}
+                            />
+                        </TabPanel>
+                        <TabPanel>{filterList}</TabPanel>
+                        <TabPanel>
+                            <ul className={styles.list}>
+                                {operatorInfo.map(operatorInfo => (
+                                    <SearchReferenceEntry
+                                        searchReference={operatorInfo}
+                                        key={operatorInfo.operator + operatorInfo.value}
+                                        onClick={updateQueryWithOperator}
+                                        onExampleClick={updateQueryWithExample}
+                                    />
+                                ))}
+                            </ul>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            )}
+            <Text className={sidebarStyles.sidebarSectionFooter}>
+                <small>
+                    <Link target="blank" to="/help/code_search/reference/queries">
+                        Search syntax <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                    </Link>
+                </small>
+            </Text>
+        </div>
+    )
+})
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>

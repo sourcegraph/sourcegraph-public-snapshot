@@ -254,6 +254,29 @@ type CreateCommitFromPatchRequest struct {
 	// BaseCommit is the revision that the staging area object is based on
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
+	Patch []byte
+	// TargetRef is the ref that will be created for this patch
+	TargetRef string
+	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	UniqueRef bool
+	// CommitInfo is the information that will be used when creating the commit from a patch
+	CommitInfo PatchCommitInfo
+	// Push specifies whether the target ref will be pushed to the code host: if
+	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	Push *PushConfig
+	// GitApplyArgs are the arguments that will be passed to `git apply` along
+	// with `--cached`.
+	GitApplyArgs []string
+}
+
+// V1CreateCommitFromPatchRequest is the request information needed for creating
+// the simulated staging area git object for a repo.
+type V1CreateCommitFromPatchRequest struct {
+	// Repo is the repository to get information about.
+	Repo api.RepoName
+	// BaseCommit is the revision that the staging area object is based on
+	BaseCommit api.CommitID
+	// Patch is the diff contents to be used to create the staging area revision
 	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string

@@ -87,21 +87,21 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
  *
  * @returns a mock implementation of {@link PlatformContext#requestGraphQL}
  */
-export const mockRequestGraphQL = (
-    responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES
-): PlatformContext['requestGraphQL'] => <R, V = object>({
-    request,
-    variables,
-    mightContainPrivateInfo,
-}: {
-    request: string
-    variables: V
-    mightContainPrivateInfo?: boolean
-}) => {
-    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    const requestName = nameMatch?.[1]
-    if (!requestName || !responseMap[requestName]) {
-        return throwError(new Error(`No mock for GraphQL request ${String(requestName)}`))
+export const mockRequestGraphQL =
+    (responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES): PlatformContext['requestGraphQL'] =>
+    <R, V extends {} = object>({
+        request,
+        variables,
+        mightContainPrivateInfo,
+    }: {
+        request: string
+        variables: V
+        mightContainPrivateInfo?: boolean
+    }) => {
+        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+        const requestName = nameMatch?.[1]
+        if (!requestName || !responseMap[requestName]) {
+            return throwError(new Error(`No mock for GraphQL request ${String(requestName)}`))
+        }
+        return responseMap[requestName](variables, mightContainPrivateInfo)
     }
-    return responseMap[requestName](variables, mightContainPrivateInfo)
-}

@@ -220,7 +220,7 @@ func TestRepositoryComparison(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := rawDiff, testDiff; have != want {
+			if have, want := rawDiff, testDiff+testCopyDiff; have != want {
 				t.Fatalf("rawDiff wrong. want=%q, have=%q", want, have)
 			}
 		})
@@ -279,7 +279,8 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if len(nodes) != testDiffFiles {
+			// +1 for the copyDiffFile
+			if len(nodes) != testDiffFiles+1 {
 				t.Fatalf("wrong length of nodes. want=%d, have=%d", testDiffFiles, len(nodes))
 			}
 
@@ -349,8 +350,8 @@ func TestRepositoryComparison(t *testing.T) {
 		})
 
 		t.Run("Pagination", func(t *testing.T) {
-			endCursors := []string{"1", "2"}
-			totalCount := int32(testDiffFiles)
+			endCursors := []string{"1", "2", "3"}
+			totalCount := int32(testDiffFiles) + 1
 
 			tests := []struct {
 				first int32
@@ -383,6 +384,14 @@ func TestRepositoryComparison(t *testing.T) {
 					first:           1,
 					after:           endCursors[1],
 					wantNodeCount:   1,
+					wantHasNextPage: true,
+					wantEndCursor:   &endCursors[2],
+					wantTotalCount:  nil,
+				},
+				{
+					first:           1,
+					after:           endCursors[2],
+					wantNodeCount:   1,
 					wantHasNextPage: false,
 					wantEndCursor:   nil,
 					wantTotalCount:  &totalCount,
@@ -390,7 +399,7 @@ func TestRepositoryComparison(t *testing.T) {
 				{
 					first:           testDiffFiles + 1,
 					after:           "",
-					wantNodeCount:   testDiffFiles,
+					wantNodeCount:   testDiffFiles + 1,
 					wantHasNextPage: false,
 					wantEndCursor:   nil,
 					wantTotalCount:  &totalCount,
@@ -581,6 +590,7 @@ index 4d14577..10ef458 100644
 				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
 				"<div><span class=\"hl-text hl-html hl-markdown\">Detailed documentation can be found on\n</span></div>",
 				"<div><span class=\"hl-text hl-html hl-markdown\">[staticcheck.io](https://staticcheck.io/docs/).\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
 			},
 			highlightedHead: []template.HTML{
 				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">#</span> </span><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">staticcheck</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
@@ -600,6 +610,7 @@ index 4d14577..10ef458 100644
 				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
 				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
 				"<div><span class=\"hl-text hl-html hl-markdown\">(c) Copyright Sourcegraph 2013-2021.</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
 			},
 		}
 
@@ -662,12 +673,14 @@ index 4d14577..9fe9a4f 100644
 				"## Installation",
 				"",
 				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+				"",
 			},
 			highlightedHead: []template.HTML{
 				"# staticcheck",
 				"## Installation",
 				"Wowza!",
 				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+				"",
 			},
 		}
 
@@ -734,7 +747,8 @@ index d206c4c..bb06461 100644
 -// If a feature is not present, it defaults to false.
 -func IsEnabled(key string) bool {
 -       return features[strings.ToLower(key)]
--}`
+-}
+`
 
 	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
@@ -760,11 +774,13 @@ index d206c4c..bb06461 100644
 				"func IsEnabled(key string) bool {",
 				"return features[strings.ToLower(key)]",
 				"}",
+				"",
 			},
 			highlightedHead: []template.HTML{
 				"func AddFeature(key string, isEnabled bool) {",
 				"features[strings.ToLower(key)] = isEnabled",
 				"}",
+				"",
 			},
 		}
 
@@ -782,9 +798,10 @@ index d206c4c..bb06461 100644
 		wantLines := []struct {
 			kind, html string
 		}{
+			{kind: "UNCHANGED", html: "func AddFeature(key string, isEnabled bool) {"},
 			{kind: "UNCHANGED", html: "features[strings.ToLower(key)] = isEnabled"},
 			{kind: "UNCHANGED", html: "}"},
-			{kind: "UNCHANGED", html: ""},
+			{kind: "DELETED", html: ""},
 			{kind: "DELETED", html: "// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is"},
 			{kind: "DELETED", html: "// case insensitive."},
 			{kind: "DELETED", html: "// If a feature is not present, it defaults to false."},
@@ -868,13 +885,12 @@ index 9bd8209..d2acfa9 100644
 +Another line
 `
 
-// This is unparseable by go-diff. Once it isn't anymore, the test should fail, reminding
-// us of the TODO comment in repository_comparison to reenable it.
 const testCopyDiff = `diff --git a/test.txt b/test2.txt
 similarity index 100%
 copy from test.txt
 copy to test2.txt
 `
+
 const testDiffFirstHunk = ` Line 1
  Line 2
  Line 3

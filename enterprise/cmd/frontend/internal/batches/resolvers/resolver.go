@@ -129,6 +129,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecWorkspaceByID(ctx, id)
 		},
+		workspaceFileIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecWorkspaceFileByID(ctx, id)
+		},
 	}
 }
 
@@ -143,7 +146,7 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	if changesetID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	changeset, err := r.store.GetChangeset(ctx, store.GetChangesetOpts{ID: changesetID})
@@ -175,7 +178,7 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 	}
 
 	if batchChangeID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	batchChange, err := r.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
@@ -256,7 +259,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	if batchSpecRandID == "" {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
 	if err != nil {
@@ -283,7 +286,7 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	}
 
 	if changesetSpecRandID == "" {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	opts := store.GetChangesetSpecOpts{RandID: changesetSpecRandID}
@@ -314,7 +317,7 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 	}
 
 	if dbID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	if isSiteCredential {
@@ -368,7 +371,7 @@ func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphq
 	}
 
 	if dbID == "" {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	return r.bulkOperationByIDString(ctx, dbID)
@@ -396,7 +399,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 	}
 
 	if id == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero{}
 	}
 
 	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
@@ -1659,7 +1662,8 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 	svc := service.New(r.store)
 	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
 		BatchSpecRandID: batchSpecRandID,
-		// TODO: args not yet implemented: NoCache, AutoApply
+		// TODO: args not yet implemented: AutoApply
+		NoCache: args.NoCache,
 	})
 	if err != nil {
 		return nil, err
@@ -1884,6 +1888,39 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql.ID) (_ graphqlbackend.BatchWorkspaceFileResolver, err error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	batchWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchWorkspaceFileRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	file, err := r.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: batchWorkspaceFileRandID})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: file.BatchSpecID})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return newBatchSpecWorkspaceFileResolver(spec.RandID, file), nil
 }
 
 func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {

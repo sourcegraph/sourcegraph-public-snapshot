@@ -304,7 +304,6 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 					}
 				}
 			}
-
 		})
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {

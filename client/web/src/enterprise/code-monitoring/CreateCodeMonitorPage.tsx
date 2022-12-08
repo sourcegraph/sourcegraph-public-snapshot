@@ -38,13 +38,15 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
 }) => {
-    const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
-        location.search,
-    ])
+    const triggerQuery = useMemo(
+        () => new URLSearchParams(location.search).get('trigger-query') ?? undefined,
+        [location.search]
+    )
 
-    const description = useMemo(() => new URLSearchParams(location.search).get('description') ?? undefined, [
-        location.search,
-    ])
+    const description = useMemo(
+        () => new URLSearchParams(location.search).get('description') ?? undefined,
+        [location.search]
+    )
 
     useEffect(
         () =>

@@ -5,6 +5,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -12,7 +14,7 @@ import (
 // NewIndexResetter returns a background routine that periodically resets index
 // records that are marked as being processed but are no longer being processed
 // by a worker.
-func NewIndexResetter(interval time.Duration, store dbworkerstore.Store, logger log.Logger, metrics *resetterMetrics) *dbworker.Resetter {
+func NewIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[types.Index], metrics *resetterMetrics) *dbworker.Resetter[types.Index] {
 	return dbworker.NewResetter(logger.Scoped("indexResetter", ""), store, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_index_worker_resetter",
 		Interval: interval,
@@ -27,7 +29,7 @@ func NewIndexResetter(interval time.Duration, store dbworkerstore.Store, logger 
 // NewDependencyIndexResetter returns a background routine that periodically resets
 // dependency index records that are marked as being processed but are no longer being
 // processed by a worker.
-func NewDependencyIndexResetter(interval time.Duration, store dbworkerstore.Store, logger log.Logger, metrics *resetterMetrics) *dbworker.Resetter {
+func NewDependencyIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[shared.DependencyIndexingJob], metrics *resetterMetrics) *dbworker.Resetter[shared.DependencyIndexingJob] {
 	return dbworker.NewResetter(logger.Scoped("dependencyIndexResetter", ""), store, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_dependency_index_worker_resetter",
 		Interval: interval,

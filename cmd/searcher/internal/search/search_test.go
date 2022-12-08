@@ -20,12 +20,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -517,7 +517,8 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 func newStore(t *testing.T, files map[string]struct {
 	body string
 	typ  fileType
-}) *search.Store {
+},
+) *search.Store {
 	writeTar := func(w io.Writer, paths []string) error {
 		if paths == nil {
 			for name := range files {
@@ -534,7 +535,7 @@ func newStore(t *testing.T, files map[string]struct {
 			case typeFile:
 				hdr = &tar.Header{
 					Name: name,
-					Mode: 0600,
+					Mode: 0o600,
 					Size: int64(len(file.body)),
 				}
 				if err := tarW.WriteHeader(hdr); err != nil {
@@ -585,10 +586,7 @@ func newStore(t *testing.T, files map[string]struct {
 		Path: t.TempDir(),
 		Log:  logtest.Scoped(t),
 
-		ObservationContext: &observation.Context{
-			Registerer: metrics.TestRegisterer,
-			Logger:     logtest.Scoped(t),
-		},
+		ObservationCtx: observation.TestContextTB(t),
 	}
 }
 

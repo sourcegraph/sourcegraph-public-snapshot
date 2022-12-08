@@ -43,6 +43,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -105,6 +106,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: { hideSourcegraphOperatorLogin },
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -131,6 +133,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -165,6 +168,7 @@ describe('SignInPage', () => {
                                     resetPasswordEnabled: true,
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />

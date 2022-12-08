@@ -71,9 +71,10 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     now = () => new Date(),
     displayNamespace,
 }) => {
-    const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(() => node.batchSpecs.nodes?.[0], [
-        node.batchSpecs.nodes,
-    ])
+    const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(
+        () => node.batchSpecs.nodes?.[0],
+        [node.batchSpecs.nodes]
+    )
 
     // The URL to follow when a batch change is clicked on depends on the current state
     // and execution state.

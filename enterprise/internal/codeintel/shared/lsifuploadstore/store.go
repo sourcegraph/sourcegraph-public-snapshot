@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-func New(ctx context.Context, conf *Config, observationContext *observation.Context) (uploadstore.Store, error) {
+func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (uploadstore.Store, error) {
 	c := uploadstore.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
@@ -28,5 +28,5 @@ func New(ctx context.Context, conf *Config, observationContext *observation.Cont
 		},
 	}
 
-	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationContext, "codeintel", "uploadstore"))
+	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationCtx, "codeintel", "uploadstore"))
 }

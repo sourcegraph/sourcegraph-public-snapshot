@@ -2,6 +2,7 @@ import React, {
     createContext,
     FC,
     forwardRef,
+    HTMLAttributes,
     PropsWithChildren,
     ReactElement,
     useCallback,
@@ -64,20 +65,18 @@ const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
             breakpointName =>
                 [
                     breakpointName,
-                    viewIds.map(
-                        (id, index): ReactGridLayout => {
-                            const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
-                            return {
-                                i: id,
-                                h: DEFAULT_HEIGHT,
-                                w: width,
-                                x: (index * width) % COLUMNS[breakpointName],
-                                y: Math.floor((index * width) / COLUMNS[breakpointName]),
-                                minW: MIN_WIDTHS[breakpointName],
-                                minH: 2,
-                            }
+                    viewIds.map((id, index): ReactGridLayout => {
+                        const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
+                        return {
+                            i: id,
+                            h: DEFAULT_HEIGHT,
+                            w: width,
+                            x: (index * width) % COLUMNS[breakpointName],
+                            y: Math.floor((index * width) / COLUMNS[breakpointName]),
+                            minW: MIN_WIDTHS[breakpointName],
+                            minH: 2,
                         }
-                    ),
+                    }),
                 ] as const
         )
     )
@@ -137,11 +136,10 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
     const activeBreakpoint = useMemo(() => findBreakpointByWidth(width), [width])
 
-    const context = useMemo(() => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }), [
-        gridElements,
-        gridLayouts,
-        activeBreakpoint,
-    ])
+    const context = useMemo(
+        () => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }),
+        [gridElements, gridLayouts, activeBreakpoint]
+    )
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),
@@ -206,13 +204,13 @@ const KEY_NAVIGATION_DIRECTIONS: Partial<Record<Key, Direction>> = {
     [Key.ArrowLeft]: 'left',
 }
 
-interface ViewGridItemProps {
+interface ViewGridItemProps extends HTMLAttributes<HTMLElement> {
     id: string
     children: React.ReactElement
 }
 
 export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, ref) => {
-    const { children, id, ...attributes } = props
+    const { children, id, className, ...attributes } = props
 
     const { gridElements, activeLayout } = useContext(GridViewContext)
     const mergedRef = useMergeRefs<HTMLElement>([ref, (children as any).ref])
@@ -242,7 +240,13 @@ export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, r
             const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
 
             if (nextLayoutElement) {
-                nextLayoutElement.focus()
+                // Schedule focus and scroll call into the next rendering frame since
+                // in order to ensure that Safari focus and scrollIntoView will work
+                // as expected
+                requestAnimationFrame(() => {
+                    nextLayoutElement.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                    nextLayoutElement.focus()
+                })
             }
         },
         [activeLayout, gridElements, id]
@@ -252,6 +256,7 @@ export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, r
         return React.cloneElement(children as ReactElement, {
             ...attributes,
             ref: mergedRef,
+            className: classNames(className, styles.item),
             onKeyDown: handleKeydown,
         })
     }

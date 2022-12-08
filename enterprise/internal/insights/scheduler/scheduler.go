@@ -94,13 +94,13 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 }
 
 type BackgroundJobMonitor struct {
-	inProgressWorker   *workerutil.Worker
-	inProgressResetter *dbworker.Resetter
-	inProgressStore    dbworkerstore.Store
+	inProgressWorker   *workerutil.Worker[*BaseJob]
+	inProgressResetter *dbworker.Resetter[*BaseJob]
+	inProgressStore    dbworkerstore.Store[*BaseJob]
 
-	newBackfillWorker   *workerutil.Worker
-	newBackfillResetter *dbworker.Resetter
-	newBackfillStore    dbworkerstore.Store
+	newBackfillWorker   *workerutil.Worker[*BaseJob]
+	newBackfillResetter *dbworker.Resetter[*BaseJob]
+	newBackfillStore    dbworkerstore.Store[*BaseJob]
 }
 
 type JobMonitorConfig struct {
@@ -108,7 +108,7 @@ type JobMonitorConfig struct {
 	InsightStore    store.Interface
 	RepoStore       database.RepoStore
 	BackfillRunner  pipeline.Backfiller
-	ObsContext      *observation.Context
+	ObservationCtx  *observation.Context
 	AllRepoIterator *discovery.AllReposIterator
 	CostAnalyzer    *priority.QueryAnalyzer
 }
@@ -133,6 +133,15 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 
 type SeriesReader interface {
 	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
+}
+
+type SeriesBackfillComplete interface {
+	SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error
+}
+
+type SeriesReadBackfillComplete interface {
+	SeriesReader
+	SeriesBackfillComplete
 }
 
 type Scheduler struct {

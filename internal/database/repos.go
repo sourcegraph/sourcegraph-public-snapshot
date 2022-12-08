@@ -78,6 +78,7 @@ type RepoStore interface {
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
+	GetFirstRepoByCloneURL(context.Context, string) (*types.Repo, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
@@ -700,10 +701,6 @@ type ReposListOptions struct {
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
 
-	// IncludeUserPublicRepos will include repos from the user_public_repos table if this field is true, and the user_id
-	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
-	IncludeUserPublicRepos bool
-
 	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
 	// when last attempted. Specifically, this means that they have a non-null
 	// last_error value in the gitserver_repos table.
@@ -747,6 +744,9 @@ type RepoKVPFilter struct {
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
 	Negated bool
+	// If IgnoreValue is true, this filter will select only repos that
+	// have the given key, regardless of its value
+	KeyOnly bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -1091,9 +1091,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
-		if opt.IncludeUserPublicRepos {
-			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposCTEFmtstr, opt.UserID))
-		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
@@ -1112,7 +1109,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if len(opt.KVPFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.KVPFilters {
-			if filter.Value != nil {
+			if filter.KeyOnly {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			} else if filter.Value != nil {
 				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
 				if filter.Negated {
 					q = "NOT " + q
@@ -1193,10 +1196,6 @@ func containsSizeField(orderBy RepoListOrderBy) bool {
 
 const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
-`
-
-const userPublicReposCTEFmtstr = `
-SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
 type ListSourcegraphDotComIndexableReposOptions struct {
@@ -1579,7 +1578,7 @@ LIMIT 1
 `
 
 // GetFirstRepoNameByCloneURL returns the first repo name in our database that
-// match the given clone url. If not repo is found, an empty string and nil error
+// match the given clone url. If no repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
@@ -1587,6 +1586,17 @@ func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL str
 		return "", err
 	}
 	return api.RepoName(name), nil
+}
+
+// GetFirstRepoByCloneURL returns the first repo in our database that matches the given clone url.
+// If no repo is found, nil and an error are returned.
+func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string) (*types.Repo, error) {
+	repoName, err := s.GetFirstRepoNameByCloneURL(ctx, cloneURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GetByName(ctx, repoName)
 }
 
 func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {

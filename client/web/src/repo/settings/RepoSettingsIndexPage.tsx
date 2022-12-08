@@ -9,14 +9,20 @@ import { map, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    reindexResult,
+    reindexVariables,
+    RepositoryTextSearchIndexRepository,
+    Scalars,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
@@ -80,6 +86,27 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
     )
 }
 
+function useForceReindex(id: Scalars['ID']): () => void {
+    const [submitForceReindex] = useMutation<reindexResult, reindexVariables>(
+        gql`
+            mutation reindex($id: ID!) {
+                reindexRepository(repository: $id) {
+                    alwaysNil
+                }
+            }
+        `
+    )
+    const forceReindex = React.useCallback(() => {
+        submitForceReindex({
+            variables: { id },
+        }).then(
+            () => {},
+            () => {}
+        )
+    }, [submitForceReindex, id])
+    return forceReindex
+}
+
 const TextSearchIndexedReference: React.FunctionComponent<
     React.PropsWithChildren<{
         repo: SettingsAreaRepositoryFields
@@ -88,43 +115,52 @@ const TextSearchIndexedReference: React.FunctionComponent<
 > = ({ repo, indexedRef }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
 
+    const forceReindex = useForceReindex(repo.id)
+
     return (
-        <li className={styles.ref}>
-            <Icon
-                className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
-                svgPath={isCurrent ? mdiCheckCircle : undefined}
-                as={!isCurrent ? LoadingSpinner : undefined}
-                aria-hidden={true}
-            />
-            <LinkOrSpan to={indexedRef.ref.url}>
-                <Code weight="bold">{indexedRef.ref.displayName}</Code>
-            </LinkOrSpan>{' '}
-            {indexedRef.indexed ? (
-                <span>
-                    &nbsp;&mdash; indexed at{' '}
-                    <Code>
-                        <LinkOrSpan
-                            to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
-                        >
-                            {indexedRef.indexedCommit!.abbreviatedOID}
-                        </LinkOrSpan>
-                    </Code>{' '}
-                    {indexedRef.current ? '(up to date)' : '(index update in progress)'}
-                    {indexedRef.skippedIndexed && Number(indexedRef.skippedIndexed.count) > 0 ? (
-                        <span>
-                            .&nbsp;
-                            <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
-                                {indexedRef.skippedIndexed.count}{' '}
-                                {pluralize('file', Number(indexedRef.skippedIndexed.count))} skipped during indexing
-                            </Link>
-                            .
-                        </span>
-                    ) : null}
-                </span>
-            ) : (
-                <span>&nbsp;&mdash; initial indexing in progress</span>
-            )}
-        </li>
+        <>
+            <div className="mb-3">
+                <Button variant="primary" onClick={() => forceReindex()}>
+                    Reindex now
+                </Button>
+            </div>
+            <li className={styles.ref}>
+                <Icon
+                    className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
+                    svgPath={isCurrent ? mdiCheckCircle : undefined}
+                    as={!isCurrent ? LoadingSpinner : undefined}
+                    aria-hidden={true}
+                />
+                <LinkOrSpan to={indexedRef.ref.url}>
+                    <Code weight="bold">{indexedRef.ref.displayName}</Code>
+                </LinkOrSpan>{' '}
+                {indexedRef.indexed ? (
+                    <span>
+                        &nbsp;&mdash; indexed at{' '}
+                        <Code>
+                            <LinkOrSpan
+                                to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
+                            >
+                                {indexedRef.indexedCommit!.abbreviatedOID}
+                            </LinkOrSpan>
+                        </Code>{' '}
+                        {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                        {indexedRef.skippedIndexed && Number(indexedRef.skippedIndexed.count) > 0 ? (
+                            <span>
+                                .&nbsp;
+                                <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
+                                    {indexedRef.skippedIndexed.count}{' '}
+                                    {pluralize('file', Number(indexedRef.skippedIndexed.count))} skipped during indexing
+                                </Link>
+                                .
+                            </span>
+                        ) : null}
+                    </span>
+                ) : (
+                    <span>&nbsp;&mdash; initial indexing in progress</span>
+                )}
+            </li>
+        </>
     )
 }
 

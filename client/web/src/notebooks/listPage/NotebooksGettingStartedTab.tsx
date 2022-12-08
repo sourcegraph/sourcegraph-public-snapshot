@@ -7,6 +7,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
 
@@ -53,6 +54,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
+    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -117,6 +119,22 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
+
+            {isSourcegraphDotCom && (
+                <CloudCtaBanner variant="filled">
+                    To create Notebooks across your team's private repositories,{' '}
+                    <Link
+                        to="https://signup.sourcegraph.com/?p=notebooks"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                    >
+                        try Sourcegraph Cloud
+                    </Link>
+                    .
+                </CloudCtaBanner>
+            )}
+
             <H3>Example notebooks</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 <div className="col-12 col-md-6">

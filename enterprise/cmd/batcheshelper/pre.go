@@ -26,7 +26,7 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 
 	step := executionInput.Steps[stepIdx]
 
-	changes, err := git.ChangesInDiff([]byte(previousResult.Diff))
+	changes, err := git.ChangesInDiff(previousResult.Diff)
 	if err != nil {
 		return errors.Wrap(err, "failed to compute changes")
 	}
@@ -117,7 +117,7 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 	if err := os.WriteFile(stepScriptPath, fullScript, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step script file")
 	}
-	if _, err := exec.CommandContext(context.Background(), "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
+	if _, err := exec.CommandContext(ctx, "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
 		return errors.Wrap(err, "failed to chmod step script file")
 	}
 

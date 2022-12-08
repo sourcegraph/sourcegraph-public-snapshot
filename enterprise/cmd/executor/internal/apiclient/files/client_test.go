@@ -43,7 +43,7 @@ func TestNew(t *testing.T) {
 				},
 			}
 
-			_, err := files.New(options, observationContext)
+			_, err := files.New(observationContext, options)
 			if test.expectedErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
@@ -109,7 +109,7 @@ func TestClient_Exists(t *testing.T) {
 				},
 			}
 
-			client, err := files.New(options, observationContext)
+			client, err := files.New(observationContext, options)
 			require.NoError(t, err)
 
 			exists, err := client.Exists(context.Background(), "some-bucket", "foo/bar")
@@ -175,7 +175,7 @@ func TestClient_Get(t *testing.T) {
 				},
 			}
 
-			client, err := files.New(options, observationContext)
+			client, err := files.New(observationContext, options)
 			require.NoError(t, err)
 
 			content, err := client.Get(context.Background(), "some-bucket", "foo/bar")

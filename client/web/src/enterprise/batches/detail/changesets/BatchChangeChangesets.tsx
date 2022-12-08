@@ -19,7 +19,7 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourceg
 import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
-import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -117,15 +117,8 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     // single object makes it hard to have hooks that depend on individual
     // callbacks and objects within the context. Therefore, we'll have a nice,
     // ugly destructured set of variables here.
-    const {
-        selected,
-        deselectAll,
-        areAllVisibleSelected,
-        isSelected,
-        toggleSingle,
-        toggleVisible,
-        setVisible,
-    } = useContext(MultiSelectContext)
+    const { selected, deselectAll, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } =
+        useContext(MultiSelectContext)
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -162,7 +155,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         [changesetFilters, batchChangeID, onlyArchived]
     )
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangeChangesetsResult,
         BatchChangeChangesetsVariables,
         ExternalChangesetFields | HiddenExternalChangesetFields
@@ -206,9 +199,10 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
+    const nextOverlayElement = useCallback(
+        (element: HTMLElement | null): void => hoverOverlayElements.next(element),
+        [hoverOverlayElements]
+    )
 
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 

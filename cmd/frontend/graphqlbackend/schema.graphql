@@ -106,12 +106,17 @@ type Mutation {
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
     """
-    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+    createWebhook(name: String!, codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
     """
     Deletes a webhook by given ID. Only site admins may perform this mutation.
     """
     deleteWebhook(id: ID!): EmptyResponse!
+
+    """
+    Updates a webhook with given ID. Null values aren't updated.
+    """
+    updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
 
     """
     Adds a external service. Only site admins may perform this mutation.
@@ -154,6 +159,17 @@ type Mutation {
         """
         repository: ID!
     ): EmptyResponse!
+    """
+    Force Zoekt to reindex the repository right now. Reindexing occurs
+    automatically, so this should not normally be needed.
+    """
+    reindexRepository(
+        """
+        The repository to index
+        """
+        repository: ID!
+    ): EmptyResponse!
+
     """
     Creates a new user account.
 
@@ -238,7 +254,7 @@ type Mutation {
     createPassword(newPassword: String!): EmptyResponse
     """
     Sets the user to accept the site's Terms of Service and Privacy Policy.
-    If the ID is ommitted, the current user is assumed.
+    If the ID is omitted, the current user is assumed.
 
     Only the user or site admins may perform this mutation.
     """
@@ -470,6 +486,18 @@ type Mutation {
         """
         referrer: String
         """
+        The original referrer for a user
+        """
+        originalReferrer: String
+        """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
+        The sessions first url for a user
+        """
+        sessionFirstURL: String
+        """
         Device session ID to identify the user's session for analytics.
         """
         deviceSessionID: String
@@ -618,11 +646,6 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    Set the repos synced by an external service
-    """
-    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
     Updates an out-of-band migration to run in a particular direction.
 
     Applied in the forward direction, an out-of-band migration migrates data into a format that
@@ -634,12 +657,6 @@ type Mutation {
     should be applied in reverse prior to downgrading the instance.
     """
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
-
-    """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
-    """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
@@ -853,6 +870,18 @@ input Event {
     Only captured and stored on Sourcegraph Cloud.
     """
     referrer: String
+    """
+    The original referrer for a user
+    """
+    originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
+    """
+    The sessions first url for a user
+    """
+    sessionFirstURL: String
     """
     Device session ID to identify the user's session for analytics.
     """
@@ -1117,8 +1146,18 @@ type RandomizeUserPasswordResult {
     """
     The reset password URL that the user must visit to sign into their account again. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance, an email containing this URL
+    will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
+    """
+    If true, then an email with the password reset URL was sent to the primary email
+    address associated with the user. If false, email sending (SMTP) might not be configured
+    on this instance, or an error may have occurred - check the error logs with log scope
+    'randomizeUserPassword' for more details.
+    """
+    emailSent: Boolean!
 }
 
 """
@@ -1230,11 +1269,6 @@ type Query {
     If no namespace is given, it returns all external services.
     """
     externalServices(
-        """
-        The namespace to scope returned external services.
-        Currently, this can only be used for a user.
-        """
-        namespace: ID
         """
         Returns the first n external services from the list.
         """
@@ -1497,12 +1531,6 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
-    but ones that the configured code hosts are able to see.
-    """
-    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
-
-    """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
     """
     codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
@@ -1591,6 +1619,21 @@ type Query {
         """
         webhookID: ID
     ): WebhookLogConnection!
+
+    """
+    Get a log of the latest outbound external requests. Only available to site admins.
+    """
+    outboundRequests(
+        """
+        Returns the first n log items. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OutboundRequestConnection!
 
     """
     (experimental)
@@ -2677,11 +2720,6 @@ type ExternalService implements Node {
     updatedAt: DateTime!
 
     """
-    The namespace this external service belongs to.
-    """
-    namespace: Namespace
-
-    """
     The number of repos synced by the external service.
     """
     repoCount: Int!
@@ -2718,15 +2756,6 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
-    Returns a list of scopes granted by the code host. It is based on the token used
-    when configuring the external service.
-
-    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
-    so it should be used sparingly.
-    """
-    grantedScopes: [String!]
-
-    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
@@ -2759,23 +2788,64 @@ type ExternalService implements Node {
     ): WebhookLogConnection!
 
     """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories included by this external service, and is derived from commit history (because that
-    for example gives more accurate collaborator work email addresses than the contributors API which
-    often returns personal emails.
-
-    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
-    inviting collaborators while repositories are cloning.
-
-    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
-    reaches out to the code host directly which is wasteful if repositories are already cloned.
-    """
-    invitableCollaborators: [Person!]!
-
-    """
     The list of recent sync jobs for this external service.
     """
     syncJobs(first: Int): ExternalServiceSyncJobConnection!
+
+    """
+    Checks the availability of the external service.
+    """
+    checkConnection: ExternalServiceAvailability!
+
+    """
+    True if this external service can perform availability check by running checkConnection.
+
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    """
+    hasConnectionCheck: Boolean!
+}
+
+"""
+Avaiability status of an external service for diagnostic purposes.
+
+This is so that the UI can surface whether the external service
+can serve requests, and if not, why is the reason for that.
+"""
+union ExternalServiceAvailability =
+      ExternalServiceAvailable
+    | ExternalServiceUnavailable
+    | ExternalServiceAvailabilityUnknown
+
+"""
+Indicator that the external service was recently found to be available.
+"""
+type ExternalServiceAvailable {
+    """
+    The timestamp of the last successful availability check that was performed.
+    """
+    lastCheckedAt: DateTime!
+}
+
+"""
+Indicator that the external service was recently not found available.
+"""
+type ExternalServiceUnavailable {
+    """
+    User-friendly textual description of supposed reason why the service is not available.
+    """
+    suspectedReason: String!
+}
+
+"""
+Availability for some external services may not be determined, or only partially
+supported. In that case unknown variant of ExternalServiceAvailability is returned.
+"""
+type ExternalServiceAvailabilityUnknown {
+    """
+    User-friendly textual description of the implementation status of availablity.
+    This is expected to be tied to specific kinds of external services.
+    """
+    implementationNote: String!
 }
 
 """
@@ -3740,6 +3810,10 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedDiffHunkBody!
 }
 
@@ -5082,7 +5156,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    (Experimental) Symbol defined in this blob at the specfic line number and character offset.
+    (Experimental) Symbol defined in this blob at the specific line number and character offset.
     """
     symbol(
         """
@@ -5482,11 +5556,6 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
-    publicRepositories returns the repos listed in user_public_repos for this user
-    """
-    publicRepositories: [Repository!]!
-
-    """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
     repositories this user has access to, and is derived from recent commit history of those.
     """
@@ -5830,10 +5899,6 @@ type Org implements Node & SettingsSubject & Namespace {
     Whether the viewer is a member of this organization.
     """
     viewerIsMember: Boolean!
-    """
-    Whether the viewer needs to update their code host connection.
-    """
-    viewerNeedsCodeHostUpdate: Boolean!
     """
     The URL to the organization.
     """
@@ -7845,39 +7910,6 @@ type EventLogsConnection {
 }
 
 """
-A list of code host repositories
-"""
-type CodeHostRepositoryConnection {
-    """
-    Errors returned from the code host.
-    """
-    codeHostErrors: [String!]!
-
-    """
-    A list of repositories affiliated with a code host.
-    """
-    nodes: [CodeHostRepository!]!
-}
-
-"""
-A repository returned directly from a code host
-"""
-type CodeHostRepository {
-    """
-    The Name "owner/reponame" of the repo
-    """
-    name: String!
-    """
-    The code host the repo came from
-    """
-    codeHost: ExternalService
-    """
-    Is the repo private
-    """
-    private: Boolean!
-}
-
-"""
 A description of a command run inside the executor to during processing of the parent record.
 """
 type ExecutionLogEntry {
@@ -7938,6 +7970,10 @@ type Webhook implements Node {
     The URL of the webhook in the instance. This is the location where we expect to receive payloads.
     """
     url: String!
+    """
+    Descriptive webhook name.
+    """
+    name: String!
     """
     The kind of code host sending payloads. (eg. GitHub, GitLab)
     """
@@ -8052,7 +8088,7 @@ interface WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8067,7 +8103,7 @@ type WebhookLogRequest implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8097,7 +8133,7 @@ type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8106,16 +8142,101 @@ type WebhookLogResponse implements WebhookLogMessage {
 }
 
 """
-A single HTTP header within a webhook log.
+A list of logged outbound requests.
 """
-type WebhookLogHeader {
+type OutboundRequestConnection {
     """
-    The header name.
+    A list of outbound requests.
+    """
+    nodes: [OutboundRequest!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single outbound request.
+"""
+type OutboundRequest implements Node {
+    """
+    The request log item ID.
+    """
+    id: ID!
+
+    """
+    The time the request was sent at.
+    """
+    startedAt: DateTime!
+
+    """
+    The method used in the HTTP request. E.g. GET, POST, etc.
+    """
+    method: String!
+
+    """
+    The full URL the request was sent to.
+    """
+    url: String!
+
+    """
+    The headers sent with the HTTP request.
+    """
+    requestHeaders: [HTTPHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    requestBody: String!
+
+    """
+    The HTTP status code received.
+    """
+    statusCode: Int!
+
+    """
+    The headers received with the HTTP response.
+    """
+    responseHeaders: [HTTPHeader!]!
+
+    """
+    The total time the request took to complete, in milliseconds.
+    """
+    durationMs: Int!
+
+    """
+    Any error message got from the request Doer in case of an error, otherwise an empty string.
+    """
+    errorMessage: String!
+
+    """
+    Stack information to figure out where the ExternalClientFactory was created.
+    """
+    creationStackFrame: String!
+
+    """
+    Stack information to figure out where in the code base the request was initiated.
+    """
+    callStack: String!
+}
+
+"""
+A key-value pair
+"""
+type HTTPHeader {
+    """
+    The header name
     """
     name: String!
 
     """
-    The header values.
+    Can be multiple values
     """
     values: [String!]!
 }

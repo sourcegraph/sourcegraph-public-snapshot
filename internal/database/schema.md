@@ -270,6 +270,7 @@ Referenced by:
  batch_change_id   | bigint                   |           |          | 
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
+    "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
     "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
@@ -375,6 +376,7 @@ Foreign-key constraints:
  type                | text                     |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_unique_rand_id" UNIQUE, btree (rand_id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
@@ -1954,6 +1956,7 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
  name    | text    |           | not null | 
  version | text    |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_dump_id" btree (dump_id)
@@ -1966,6 +1969,8 @@ Foreign-key constraints:
 Associates an upload with the set of packages they provide within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that provides the package.
+
+**manager**: The package manager name.
 
 **name**: The package name.
 
@@ -1982,6 +1987,7 @@ Associates an upload with the set of packages they provide within a given packag
  name    | text    |           | not null | 
  version | text    |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_dump_id" btree (dump_id)
@@ -1994,6 +2000,8 @@ Foreign-key constraints:
 Associates an upload with the set of packages they require within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that references the package.
+
+**manager**: The package manager name.
 
 **name**: The package name.
 
@@ -2060,6 +2068,7 @@ Stores the retention policy of code intellience data for a repository.
  last_referenced_scan_at | timestamp with time zone |           |          | 
  last_traversal_scan_at  | timestamp with time zone |           |          | 
  last_reconcile_at       | timestamp with time zone |           |          | 
+ content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2089,6 +2098,8 @@ Triggers:
 Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**content_type**: The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support.
 
 **expired**: Whether or not this upload data is no longer protected by any data retention policy.
 
@@ -2135,6 +2146,7 @@ Stores metadata about an LSIF index uploaded by a user.
  reason              | text                     |           |          | ''::text
  sequence            | bigint                   |           | not null | nextval('lsif_uploads_audit_logs_seq'::regclass)
  operation           | audit_log_operation      |           | not null | 
+ content_type        | text                     |           | not null | 'application/x-ndjson+lsif'::text
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -2768,6 +2780,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.search_context_default"
+```
+      Column       |  Type   | Collation | Nullable | Default 
+-------------------+---------+-----------+----------+---------
+ user_id           | integer |           | not null | 
+ search_context_id | bigint  |           | not null | 
+Indexes:
+    "search_context_default_pkey" PRIMARY KEY, btree (user_id)
+Foreign-key constraints:
+    "search_context_default_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
+    "search_context_default_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.
+
 # Table "public.search_context_repos"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -2782,6 +2810,23 @@ Foreign-key constraints:
     "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.search_context_stars"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ search_context_id | bigint                   |           | not null | 
+ user_id           | integer                  |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "search_context_stars_pkey" PRIMARY KEY, btree (search_context_id, user_id)
+Foreign-key constraints:
+    "search_context_stars_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
+    "search_context_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.
 
 # Table "public.search_contexts"
 ```
@@ -2809,7 +2854,9 @@ Foreign-key constraints:
     "search_contexts_namespace_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "search_contexts_namespace_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "search_context_default" CONSTRAINT "search_context_default_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
+    TABLE "search_context_stars" CONSTRAINT "search_context_stars_search_context_id_fkey" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3141,6 +3188,8 @@ Referenced by:
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
     TABLE "saved_searches" CONSTRAINT "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "search_context_default" CONSTRAINT "search_context_default_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "search_context_stars" CONSTRAINT "search_context_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
@@ -3195,6 +3244,7 @@ Triggers:
  worker_hostname   | text                     |           | not null | ''::text
  org               | text                     |           |          | 
  extsvc_id         | integer                  |           |          | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
     "webhook_build_jobs_state" btree (state)
@@ -3238,6 +3288,7 @@ Foreign-key constraints:
  uuid               | uuid                     |           | not null | gen_random_uuid()
  created_by_user_id | integer                  |           |          | 
  updated_by_user_id | integer                  |           |          | 
+ name               | text                     |           | not null | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
@@ -3256,6 +3307,8 @@ Webhooks registered in Sourcegraph instance.
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
 **created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
+**name**: Descriptive name of a webhook.
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 
@@ -3516,6 +3569,7 @@ Foreign-key constraints:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.content_type,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,

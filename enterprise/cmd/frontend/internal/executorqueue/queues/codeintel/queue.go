@@ -9,18 +9,17 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func QueueOptions(db database.DB, accessToken func() string, observationContext *observation.Context) handler.QueueOptions {
-	recordTransformer := func(ctx context.Context, record workerutil.Record, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
-		return transformRecord(record.(types.Index), resourceMetadata, accessToken())
+func QueueOptions(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueOptions[types.Index] {
+	recordTransformer := func(ctx context.Context, _ string, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
+		return transformRecord(record, resourceMetadata, accessToken())
 	}
 
-	store := store.NewWithMetrics(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext)
+	store := store.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
 
-	return handler.QueueOptions{
+	return handler.QueueOptions[types.Index]{
 		Name:              "codeintel",
 		Store:             store,
 		RecordTransformer: recordTransformer,

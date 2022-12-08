@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
@@ -17,10 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -33,20 +32,16 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Sourcer Sourcer
-	Worker  *workerutil.Worker
+	Worker  *workerutil.Worker[*SyncJob]
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
-	// Logger if non-nil is logged to.
-	Logger log.Logger
+	ObsvCtx *observation.Context
 
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
-
-	// Registerer is the interface to register / unregister prometheus metrics.
-	Registerer prometheus.Registerer
 
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
@@ -76,16 +71,18 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, s.Logger.Scoped("syncWorker", ""), store.Handle(), &syncHandler{
-		syncer:          s,
-		store:           store,
-		minSyncInterval: opts.MinSyncInterval,
-	}, SyncWorkerOptions{
-		WorkerInterval:       opts.DequeueInterval,
-		NumHandlers:          ConfRepoConcurrentExternalServiceSyncers(),
-		PrometheusRegisterer: s.Registerer,
-		CleanupOldJobs:       true,
-	})
+	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+		store.Handle(),
+		&syncHandler{
+			syncer:          s,
+			store:           store,
+			minSyncInterval: opts.MinSyncInterval,
+		}, SyncWorkerOptions{
+			WorkerInterval: opts.DequeueInterval,
+			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+			CleanupOldJobs: true,
+		},
+	)
 
 	go worker.Start()
 	defer worker.Stop()
@@ -96,8 +93,8 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
 			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
-			if err != nil && s.Logger != nil {
-				s.Logger.Error("enqueuing sync jobs", log.Error(err))
+			if err != nil {
+				s.ObsvCtx.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
 		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
@@ -112,12 +109,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	sj, ok := record.(*SyncJob)
-	if !ok {
-		return errors.Errorf("expected repos.SyncJob, got %T", record)
-	}
-
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, sj *SyncJob) (err error) {
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
@@ -148,8 +140,6 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 const (
 	ownerUndefined = ""
 	ownerSite      = "site"
-	ownerUser      = "user"
-	ownerOrg       = "org"
 )
 
 type ErrUnauthorized struct{}
@@ -194,9 +184,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 
 	stored, err := store.RepoStore().List(ctx, database.ReposListOptions{})
 	if err != nil {
-		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", log.Error(err))
-		}
+		s.ObsvCtx.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", log.Error(err))
 		return
 	}
 
@@ -298,7 +286,7 @@ func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
-	logger := s.Logger.With(log.String("name", string(name)), log.Bool("background", background))
+	logger := s.ObsvCtx.Logger.With(log.String("name", string(name)), log.Bool("background", background))
 
 	logger.Debug("SyncRepo started")
 
@@ -413,11 +401,11 @@ func (s *Syncer) syncRepo(
 
 	if stored != nil {
 		defer func() {
-			s.Logger.Debug("deferred deletable repo check")
+			s.ObsvCtx.Logger.Debug("deferred deletable repo check")
 			if isDeleteableRepoError(err) {
 				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
 				if err2 != nil {
-					s.Logger.Error(
+					s.ObsvCtx.Logger.Error(
 						"SyncRepo failed to delete",
 						log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)),
 						log.String("repo", string(name)),
@@ -425,7 +413,7 @@ func (s *Syncer) syncRepo(
 						log.Error(err2),
 					)
 				}
-				s.Logger.Debug("external service repo deleted", log.Int32("deleted ID", int32(stored.ID)))
+				s.ObsvCtx.Logger.Debug("external service repo deleted", log.Int32("deleted ID", int32(stored.ID)))
 				s.notifyDeleted(ctx, stored.ID)
 			}
 		}()
@@ -437,7 +425,7 @@ func (s *Syncer) syncRepo(
 	}
 
 	if repo.Private {
-		s.Logger.Debug("repo is private, skipping")
+		s.ObsvCtx.Logger.Debug("repo is private, skipping")
 		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
@@ -505,7 +493,7 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 	progressRecorder progressRecorderFunc,
 ) (err error) {
-	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
+	logger := s.ObsvCtx.Logger.With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
 
 	// Ensure the job field is recorded when monitoring external API calls
@@ -522,37 +510,6 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
-	// We take an advisory lock here and also when deleting an external service to
-	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(s.Store, "external_service")
-
-	var locked bool
-	var unlock locker.UnlockFunc
-	// We need both code paths here since our production code doesn't use a
-	// transaction but most of our tests DO run in transactions in order to make
-	// rolling back test state easier.
-	if s.Store.Handle().InTransaction() {
-		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-	} else {
-		// We're NOT in a transaction
-		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-		defer func() {
-			err = unlock(err)
-		}()
-	}
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -566,9 +523,7 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We use context.Background() here because we want this update to
-		// succeed even if the job has been canceled.
-		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -585,22 +540,17 @@ func (s *Syncer) SyncExternalService(
 		return ErrCloudDefaultSync
 	}
 
-	// Disable external service syncing for user or organisation owned services
-	if svc.NamespaceUserID != 0 {
-		return errors.New("syncing user owned external service not allowed")
-	}
-	if svc.NamespaceOrgID != 0 {
-		return errors.New("syncing organisation owned external service not allowed")
-	}
-
 	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
 		return err
 	}
 
+	if err := src.CheckConnection(ctx); err != nil {
+		return err
+	}
+
 	results := make(chan SourceResult)
 	go func() {
-		s.Logger.Debug("listing repos asynchronously")
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
@@ -618,12 +568,14 @@ func (s *Syncer) SyncExternalService(
 			errcode.IsAccountSuspended(err)
 	}
 
-	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
+	logger = s.ObsvCtx.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 
 	var syncProgress SyncProgress
 	// Record the final progress state
 	defer func() {
-		if err := progressRecorder(ctx, syncProgress, true); err != nil {
+		// Use a different context here so that we make sure to record progress
+		// even if context has been canceled
+		if err := progressRecorder(context.Background(), syncProgress, true); err != nil {
 			logger.Error("recording final sync progress", log.Error(err))
 		}
 	}()
@@ -725,7 +677,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	}
 
-	if !abortDeletion || (!svc.IsSiteOwned() && fatal(errs)) {
+	if !abortDeletion {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
@@ -773,19 +725,19 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
 
-		s.Logger.Debug("committing transaction")
+		s.ObsvCtx.Logger.Debug("committing transaction")
 		err = tx.Done(err)
 		if err != nil {
-			s.Logger.Warn("failed to commit transaction", log.Error(err))
+			s.ObsvCtx.Logger.Warn("failed to commit transaction", log.Error(err))
 			return
 		}
 
 		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
-				s.Logger.Debug("sync context done")
+				s.ObsvCtx.Logger.Debug("sync context done")
 			case s.Synced <- d:
-				s.Logger.Debug("diff synced")
+				s.ObsvCtx.Logger.Debug("diff synced")
 			}
 		}
 	}()
@@ -803,7 +755,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
-		s.Logger.Debug("naming conflict")
+		s.ObsvCtx.Logger.Debug("naming conflict")
 
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
@@ -824,10 +776,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We fallthrough to the next case after removing the conflicting repo in order to update
 		// the winner (i.e. existing). This works because we mutate stored to contain it, which the case expects.
 		stored = types.Repos{existing}
-		s.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
+		s.ObsvCtx.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
-		s.Logger.Debug("existing repo")
+		s.ObsvCtx.Logger.Debug("existing repo")
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -840,20 +792,20 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
-		s.Logger.Debug("appended to modified repos")
+		s.ObsvCtx.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
-		s.Logger.Debug("new repo")
+		s.ObsvCtx.Logger.Debug("new repo")
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
 
 		d.Added = append(d.Added, sourced)
-		s.Logger.Debug("appended to added repos")
+		s.ObsvCtx.Logger.Debug("appended to added repos")
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
 	}
 
-	s.Logger.Debug("completed")
+	s.ObsvCtx.Logger.Debug("completed")
 	return d, nil
 }
 
@@ -915,10 +867,6 @@ func (s *Syncer) observeSync(
 		var owner string
 		if svc == nil {
 			owner = ownerUndefined
-		} else if svc.NamespaceUserID > 0 {
-			owner = ownerUser
-		} else if svc.NamespaceOrgID > 0 {
-			owner = ownerOrg
 		} else {
 			owner = ownerSite
 		}

@@ -1510,6 +1510,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var autherWithRefresh auth.AuthenticatorWithRefresh
 	if auther != nil {
@@ -1893,21 +1896,17 @@ type restTopicsResponse struct {
 
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		var u github.User
-		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
+		usr, err = encryption.DecryptJSON[github.User](ctx, data.Data)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		usr = &u
 	}
 
 	if data.AuthData != nil {
-		var t oauth2.Token
-		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		tok = &t
 	}
 
 	return usr, tok, nil

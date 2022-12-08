@@ -2,10 +2,11 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -23,6 +24,8 @@ import (
 
 type StreamingQueryExecutor struct {
 	justInTimeExecutor
+
+	logger log.Logger
 }
 
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
@@ -33,6 +36,7 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
+		logger: log.Scoped("StreamingQueryExecutor", ""),
 	}
 }
 
@@ -50,7 +54,7 @@ func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query stri
 
 	repoResult := *selectRepoResult
 	if len(repoResult.SkippedReasons) > 0 {
-		log15.Error("insights query issue", "reasons", repoResult.SkippedReasons, "query", query)
+		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
 	}
 	if len(repoResult.Errors) > 0 {
 		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
@@ -71,7 +75,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 		}
 		repoIds[repository] = repo.ID
 	}
-	log15.Debug("Generated repoIds", "repoids", repoIds)
+	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
 	frames := timeseries.BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
 	points := timeCounts{}
@@ -112,6 +116,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
+			c.logger.Debug("executing query", log.String("query", modified.String()))
 			err = streaming.Search(ctx, modified.String(), nil, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
@@ -119,7 +124,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 
 			tr := *tabulationResult
 			if len(tr.SkippedReasons) > 0 {
-				log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", query)
+				c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", query))
 			}
 			if len(tr.Errors) > 0 {
 				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)

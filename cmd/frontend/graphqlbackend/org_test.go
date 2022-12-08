@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/graph-gophers/graphql-go/errors"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -569,90 +567,4 @@ func TestUnmarshalOrgID(t *testing.T) {
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
 	})
-}
-
-func TestOrganization_viewerNeedsCodeHostUpdate(t *testing.T) {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
-	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	orgs := database.NewMockOrgStore()
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
-	for name, test := range map[string]struct {
-		OrgServices  []*types.ExternalService
-		UserServices []*types.ExternalService
-		OrgMembers   *types.OrgMembership
-		Expected     string
-	}{
-		"not a member": {
-			Expected: `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
-		},
-		"member and org without service": {
-			OrgMembers: &types.OrgMembership{OrgID: 1, UserID: 1},
-			Expected:   `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
-		},
-		"member without service, org with service": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}},
-			UserServices: []*types.ExternalService{},
-			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
-			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
-		},
-		"member with service, org without service": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}},
-			UserServices: []*types.ExternalService{},
-			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
-			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
-		},
-		"member with service, org with service created earlier": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour), Config: extsvc.NewEmptyConfig()}},
-			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now(), Config: extsvc.NewEmptyConfig()}},
-			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
-			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
-		},
-		"member with service, org with service created later": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour), Config: extsvc.NewEmptyConfig()}},
-			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now().Add(-2 * time.Hour), Config: extsvc.NewEmptyConfig()}},
-			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
-			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":true}}`,
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			orgMembers := database.NewStrictMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(test.OrgMembers, nil)
-			externalServices := database.NewStrictMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				if opts.NamespaceUserID == 1 {
-					return test.UserServices, nil
-				}
-				if opts.NamespaceOrgID == 1 {
-					return test.OrgServices, nil
-				}
-				return nil, nil
-			})
-			db := database.NewStrictMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-			db.OrgsFunc.SetDefaultReturn(orgs)
-			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			RunTests(t, []*Test{
-				{
-					Schema:  mustParseGraphQLSchema(t, db),
-					Context: ctx,
-					Query: `
-					{
-						organization(name: "acme") {
-							viewerNeedsCodeHostUpdate
-						}
-					}
-				`,
-					ExpectedResult: test.Expected,
-				},
-			})
-		})
-	}
 }

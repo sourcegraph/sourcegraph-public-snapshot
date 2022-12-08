@@ -89,6 +89,7 @@ Available commands in `sg.config.yaml`:
 * batches-executor-firecracker
 * batcheshelper-builder
 * bext
+* blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
@@ -105,7 +106,6 @@ Available commands in `sg.config.yaml`:
 * grafana
 * jaeger
 * loki
-* minio
 * monitoring-generator
 * oss-frontend
 * oss-repo-updater
@@ -631,7 +631,7 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
@@ -723,7 +723,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
@@ -1016,6 +1016,7 @@ Flags:
 * `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
+* `--multi-instance-groupings="<value>"`: If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
 * `--prometheus.dir="<value>"`: Output directory for generated Prometheus assets (default: $SG_ROOT/docker-images/prometheus/config/)
 * `--prometheus.url="<value>"`: Address for the Prometheus instance to reload (default: http://127.0.0.1:9090)
@@ -1323,6 +1324,9 @@ Available preset environments:
 * dotcom
 * k8s
 * scaletesting
+
+See more information about the deployments schedule here:
+https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience/#sourcegraph-instances-operated-by-us
 
 ```sh
 # See which version is deployed on a preset environment

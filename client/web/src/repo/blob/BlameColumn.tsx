@@ -12,7 +12,7 @@ import styles from './BlameColumn.module.scss'
 
 interface BlameColumnProps {
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined }
     codeViewElements: ReplaySubject<HTMLElement | null>
     history: History
 }
@@ -98,7 +98,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks?.current?.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cell and corresponding blame hunk (or undefined if no blame hunk)
                     addedCells.push([cell, currentLineDecorations])
@@ -128,7 +128,10 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         onSelect={selectRow}
                         onDeselect={deselectRow}
                     />,
-                    portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
+                    // The classname can contain a +, so we would either need to escape it (boo!),
+                    // or just use getElementsByClassName.
+                    // eslint-disable-next-line unicorn/prefer-query-selector
+                    portalRoot.getElementsByClassName(styles.wrapper)[0] as HTMLDivElement
                 )
             )}
         </>

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -51,9 +50,7 @@ type ExternalServiceStore interface {
 	// otherwise a panic would occur once pkg/conf's deadlock detector determines a
 	// deadlock occurred.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner
-	// of the external service. Otherwise, `es.NamespaceUserID` must be specified
-	// (i.e. non-nil) for a user-added external service.
+	// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 	//
 	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 	// recalculated based on whether "authorization" field is presented in
@@ -97,17 +94,14 @@ type ExternalServiceStore interface {
 
 	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
 	// found or not in processing or queued state.
-	CancelSyncJob(ctx context.Context, id int64) error
+	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
 
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
-	// List returns external services under given namespace.
-	// If no namespace is given, it returns all external services.
+	// List returns external services.
 	//
-	// 🚨 SECURITY: The caller must ensure one of the following:
-	// 	- The actor is a site admin
-	// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
+	// 🚨 SECURITY: The caller must be a site admin
 	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 
 	// ListRepos returns external service repos for given externalServiceID.
@@ -245,17 +239,6 @@ type ExternalServicesGetSyncJobsOptions struct {
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
-	// When true, only include external services not under any namespace (i.e. owned
-	// by all site admins), and values of ExcludeNamespaceUser, NamespaceUserID and
-	// NamespaceOrgID are ignored.
-	NoNamespace bool
-	// When true, will exclude external services under any user namespace, and the
-	// value of NamespaceUserID is ignored.
-	ExcludeNamespaceUser bool
-	// When specified, only include external services under given user namespace.
-	NamespaceUserID int32
-	// When specified, only include external services under given organization namespace.
-	NamespaceOrgID int32
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
 	// When specified, only include external services with ID below this number
@@ -284,20 +267,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	if len(o.IDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
 	}
-
-	if o.NoNamespace {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
-	} else {
-		if o.ExcludeNamespaceUser {
-			conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
-		} else if o.NamespaceUserID > 0 {
-			conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
-		}
-
-		if o.NamespaceOrgID > 0 {
-			conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
-		}
-	}
 	if len(o.Kinds) > 0 {
 		conds = append(conds, sqlf.Sprintf("kind = ANY(%s)", pq.Array(o.Kinds)))
 	}
@@ -325,15 +294,6 @@ type ValidateExternalServiceConfigOptions struct {
 	Config string
 	// The list of authN providers configured on the instance.
 	AuthProviders []schema.AuthProviders
-	// If non zero, indicates the user that owns the external service.
-	NamespaceUserID int32
-	// If non zero, indicates the organization that owns the codehost connection.
-	NamespaceOrgID int32
-}
-
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ValidateExternalServiceConfigOptions) IsSiteOwned() bool {
-	return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0
 }
 
 type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
@@ -375,29 +335,6 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			return nil, errors.Errorf(
 				"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 			)
-		}
-
-		// For user-added and org-added external services, we need to prevent them from using disallowed fields.
-		if !opt.IsSiteOwned() {
-			// We do not allow users to add external service other than GitHub.com and GitLab.com
-			result := gjson.GetBytes(normalized, "url")
-			baseURL, err := url.Parse(result.String())
-			if err != nil {
-				return nil, errors.Wrap(err, "parse base URL")
-			}
-			normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
-			if normalizedURL != "https://github.com/" &&
-				normalizedURL != "https://gitlab.com/" {
-				return nil, errors.New("external service only allowed for https://github.com/ and https://gitlab.com/")
-			}
-
-			disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
-			results := gjson.GetManyBytes(normalized, disallowedFields...)
-			for i, r := range results {
-				if r.Exists() {
-					return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
-				}
-			}
 		}
 
 		res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
@@ -576,11 +513,9 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
-		Kind:            es.Kind,
-		Config:          rawConfig,
-		AuthProviders:   confGet().AuthProviders,
-		NamespaceUserID: es.NamespaceUserID,
-		NamespaceOrgID:  es.NamespaceOrgID,
+		Kind:          es.Kind,
+		Config:        rawConfig,
+		AuthProviders: confGet().AuthProviders,
 	})
 	if err != nil {
 		return err
@@ -628,8 +563,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
-			dbutil.NullInt32Column(es.NamespaceUserID),
-			dbutil.NullInt32Column(es.NamespaceOrgID),
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
@@ -639,8 +572,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -665,11 +598,9 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		}
 
 		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
-			Kind:            s.Kind,
-			Config:          rawConfig,
-			AuthProviders:   authProviders,
-			NamespaceUserID: s.NamespaceUserID,
-			NamespaceOrgID:  s.NamespaceOrgID,
+			Kind:          s.Kind,
+			Config:        rawConfig,
+			AuthProviders: authProviders,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
@@ -746,8 +677,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
-			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
-			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&keyID,
@@ -783,8 +712,6 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			dbutil.NullTimeColumn(s.DeletedAt),
 			dbutil.NullTimeColumn(s.LastSyncAt),
 			dbutil.NullTimeColumn(s.NextSyncAt),
-			dbutil.NullInt32Column(s.NamespaceUserID),
-			dbutil.NullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -798,7 +725,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -813,8 +740,6 @@ INSERT INTO external_services (
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id,
-  namespace_org_id,
   unrestricted,
   cloud_default,
   has_webhooks
@@ -831,8 +756,6 @@ SET
   deleted_at         = excluded.deleted_at,
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
-  namespace_user_id  = excluded.namespace_user_id,
-  namespace_org_id   = excluded.namespace_org_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
@@ -846,8 +769,6 @@ RETURNING
 	deleted_at,
 	last_sync_at,
 	next_sync_at,
-	namespace_user_id,
-	namespace_org_id,
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
@@ -906,8 +827,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:              externalService.Kind,
 			Config:            unredactedConfig,
 			AuthProviders:     ps,
-			NamespaceUserID:   externalService.NamespaceUserID,
-			NamespaceOrgID:    externalService.NamespaceOrgID,
 		})
 		if err != nil {
 			return err
@@ -992,15 +911,36 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// We take an advisory lock here and also when syncing an external service to
-	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(tx, "external_service")
-	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
-	if err != nil {
-		return errors.Wrap(err, "getting advisory lock")
+	// Load the external service *for update* so that no sync job can be created
+	if err := tx.selectForUpdate(ctx, id); err != nil {
+		return err
 	}
-	if !locked {
-		return errors.Errorf("could not get advisory lock for service %d", id)
+
+	// Cancel all currently running sync jobs, *outside* the transaction.
+	err = e.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: id})
+	if err != nil {
+		return err
+	}
+
+	// Wait until all the sync jobs we just canceled are done executing to
+	// ensure that we delete all repositories and no new ones are inserted.
+	runningJobsCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	for {
+		if err := runningJobsCtx.Err(); err != nil {
+			return err
+		}
+
+		runningJobsExist, err := e.hasRunningSyncJobs(runningJobsCtx, id)
+		if err != nil {
+			return err
+		}
+
+		if !runningJobsExist {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
@@ -1066,6 +1006,23 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	}
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
+	}
+	return nil
+}
+
+// selectForUpdate loads an external service with FOR UPDATE with the given ID
+// and that is not deleted. It's used by Delete.
+func (e *externalServiceStore) selectForUpdate(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(
+		`SELECT id FROM external_services WHERE id = %s AND deleted_at IS NULL FOR UPDATE`,
+		id,
+	)
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return &externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
@@ -1170,10 +1127,17 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 	return count, err
 }
 
-type errSyncJobNotFound struct{ id int64 }
+type errSyncJobNotFound struct {
+	id, externalServiceID int64
+}
 
 func (e errSyncJobNotFound) Error() string {
-	return fmt.Sprintf("sync job with id %d not found", e.id)
+	if e.id != 0 {
+		return fmt.Sprintf("sync job with id %d not found", e.id)
+	} else if e.externalServiceID != 0 {
+		return fmt.Sprintf("sync job with external service id %d not found", e.externalServiceID)
+	}
+	return "sync job not found"
 }
 
 func (errSyncJobNotFound) NotFound() bool {
@@ -1259,7 +1223,24 @@ LIMIT 1
 	return lastError, err
 }
 
-func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+type ExternalServicesCancelSyncJobOptions struct {
+	ID                int64
+	ExternalServiceID int64
+}
+
+func buildCancelSyncJobQuery(opts ExternalServicesCancelSyncJobOptions) (*sqlf.Query, error) {
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+	if opts.ExternalServiceID != 0 {
+		conds = append(conds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	if len(conds) == 0 {
+		return nil, errors.New("not enough conditions given to build query to cancel external service sync job")
+	}
+
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE
@@ -1271,10 +1252,21 @@ SET
 	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
 	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
 WHERE
-	id = %s
+	%s
 	AND
 	state IN ('queued', 'processing')
-`, now, id)
+	AND
+	cancel IS FALSE
+`, now, sqlf.Join(conds, " AND "))
+
+	return q, nil
+}
+
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error {
+	q, err := buildCancelSyncJobQuery(opts)
+	if err != nil {
+		return err
+	}
 
 	res, err := e.ExecResult(ctx, q)
 	if err != nil {
@@ -1284,10 +1276,33 @@ WHERE
 	if err != nil {
 		return err
 	}
-	if af != 1 {
-		return &errSyncJobNotFound{id: id}
+	if opts.ID != 0 && af != 1 {
+		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
 	}
+
+	// If opts.ExternalServiceID is set and affected rows are 0 we don't treat
+	// it as an error, because we want to be able to use this method to cancel
+	// jobs *if there are any*.
+	// Just like a `DeleteUserByID(1234)` function should fail if there is no
+	// user with that ID, but a `DeleteUsersWithUsernameStartingWith("foo")`
+	// shouldn't fail if there are no users with that prefix in the name.
+
 	return nil
+}
+
+func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
+	q := sqlf.Sprintf(`
+SELECT 1
+FROM external_service_sync_jobs
+WHERE
+	external_service_id = %s
+	AND
+	state IN ('queued', 'processing')
+LIMIT 1
+`, id)
+
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	return ok, err
 }
 
 func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
@@ -1344,8 +1359,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			deleted_at,
 			last_sync_at,
 			next_sync_at,
-			namespace_user_id,
-			namespace_org_id,
 			unrestricted,
 			cloud_default,
 			has_webhooks,
@@ -1371,8 +1384,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			deletedAt       sql.NullTime
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
-			namespaceUserID sql.NullInt32
-			namespaceOrgID  sql.NullInt32
 			encryptedConfig string
 			keyID           string
 			hasWebhooks     sql.NullBool
@@ -1389,8 +1400,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&deletedAt,
 			&lastSyncAt,
 			&nextSyncAt,
-			&namespaceUserID,
-			&namespaceOrgID,
 			&h.Unrestricted,
 			&h.CloudDefault,
 			&hasWebhooks,
@@ -1407,12 +1416,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		}
 		if nextSyncAt.Valid {
 			h.NextSyncAt = nextSyncAt.Time
-		}
-		if namespaceUserID.Valid {
-			h.NamespaceUserID = namespaceUserID.Int32
-		}
-		if namespaceOrgID.Valid {
-			h.NamespaceOrgID = namespaceOrgID.Int32
 		}
 		if hasWebhooks.Valid {
 			h.HasWebhooks = &hasWebhooks.Bool

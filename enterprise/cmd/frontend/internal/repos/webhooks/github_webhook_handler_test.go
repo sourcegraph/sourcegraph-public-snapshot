@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -78,7 +78,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}

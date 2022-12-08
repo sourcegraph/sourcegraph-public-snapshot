@@ -41,10 +41,10 @@ export class FuzzyRepos extends FuzzyQuery {
             return {
                 text,
                 url,
-                icon: icon ? <span className="fuzzy-repos-result-icon">{icon}</span> : undefined,
+                icon: icon ? <span className="mr-1">{icon}</span> : undefined,
                 textSuffix:
                     stars && stars > 0 && formattedRepositoryStarCount ? (
-                        <span className="fuzzy-repos-star">
+                        <span className="mr-1">
                             <SearchResultStar aria-label={`${stars} stars`} />
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>

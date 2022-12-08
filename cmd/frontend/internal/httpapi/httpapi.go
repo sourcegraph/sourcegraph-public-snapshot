@@ -40,10 +40,11 @@ import (
 
 type Handlers struct {
 	GitHubSyncWebhook               webhooks.Registerer
+	PermissionsGitHubWebhook        webhooks.Registerer
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
-	BatchesBitbucketServerWebhook   http.Handler
-	BatchesBitbucketCloudWebhook    http.Handler
+	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
+	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -93,7 +94,10 @@ func NewHandler(
 	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)
 	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BatchesBitbucketServerWebhook.Register(&wh)
+	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.PermissionsGitHubWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
@@ -125,6 +129,9 @@ func NewHandler(
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+
+	gsClient := gitserver.NewClient(db)
+	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).

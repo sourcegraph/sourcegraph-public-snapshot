@@ -129,20 +129,6 @@ const (
 	MappingCompute GenerationMethod = "mapping-compute"
 )
 
-type DirtyQuery struct {
-	ID      int
-	Query   string
-	ForTime time.Time
-	DirtyAt time.Time
-	Reason  string
-}
-
-type DirtyQueryAggregate struct {
-	Count   int
-	ForTime time.Time
-	Reason  string
-}
-
 type Dashboard struct {
 	ID           int
 	Title        string

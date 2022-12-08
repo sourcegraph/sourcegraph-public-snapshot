@@ -14,13 +14,13 @@
     "captainSlackUsername": "coury",
     "captainGitHubUsername": "coury-clark",
     // Release versions
-    "previousRelease": "4.1.3",
-    "upcomingRelease": "4.2.0",
-    "oneWorkingWeekBeforeRelease": "15 November 2022 10:00 PST",
-    "threeWorkingDaysBeforeRelease": "17 November 2022 10:00 PST",
-    "releaseDate": "22 November 2022 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 November 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "27 November 2022 10:00 PST",
+    "previousRelease": "4.2.0",
+    "upcomingRelease": "4.2.1",
+    "oneWorkingWeekBeforeRelease": "8 December 2022 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "12 December 2022 10:00 PST",
+    "releaseDate": "07 December 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "16 December 2022 10:00 PST",
+    "oneWorkingWeekAfterRelease": "19 December 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

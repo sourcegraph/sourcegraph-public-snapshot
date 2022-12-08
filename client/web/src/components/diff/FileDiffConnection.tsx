@@ -80,9 +80,10 @@ export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren
         }
     }, [])
 
-    const extensionInfo = useMemo(() => props.nodeComponentProps?.extensionInfo, [
-        props.nodeComponentProps?.extensionInfo,
-    ])
+    const extensionInfo = useMemo(
+        () => props.nodeComponentProps?.extensionInfo,
+        [props.nodeComponentProps?.extensionInfo]
+    )
 
     const extensionInfoChanges = useMemo(() => new ReplaySubject<ExtensionInfo | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {

@@ -8,12 +8,12 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { SymbolKind } from '@sourcegraph/shared/src/schema'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { SymbolKind as SymbolKindEnum } from '@sourcegraph/shared/src/schema'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionForm,
     ConnectionContainer,
@@ -23,6 +23,7 @@ import {
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
@@ -41,11 +42,12 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
     nestedRender,
 }) => {
     const isActiveFunc = (): boolean => isActive
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode}>
             {node.__typename === 'SymbolPlaceholder' ? (
                 <span className={styles.link}>
-                    <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
+                    <SymbolKind kind={SymbolKindEnum.UNKNOWN} className="mr-1" symbolKindTags={symbolKindTags} />
                     {node.name}
                 </span>
             ) : (
@@ -56,7 +58,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                     activeClassName={styles.linkActive}
                     onClick={onHandleClick}
                 >
-                    <SymbolIcon kind={node.kind} className="mr-1" />
+                    <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">
                         {node.name}
                     </span>
@@ -132,7 +134,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         SymbolsResult,
         SymbolsVariables,
         SymbolNodeFields

@@ -17,21 +17,25 @@ type reconcilerJob struct {
 }
 
 func NewReconciler(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	interval time.Duration,
 	batchSize int,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := reconcilerJob{
 		store:      store,
 		lsifstore:  lsifstore,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return job.handleReconcile(ctx, batchSize)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.reconciler", "reconciles code-intel data drift",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return job.handleReconcile(ctx, batchSize)
+		}))
 }
 
 func (j reconcilerJob) handleReconcile(ctx context.Context, batchSize int) (err error) {
@@ -91,13 +95,13 @@ func (j reconcilerJob) handleReconcileFromCodeintelDB(ctx context.Context, batch
 
 	j.operations.numReconcileScansFromCodeIntelDB.Add(float64(len(ids)))
 
-	dumps, err := j.store.GetDumpsByIDs(ctx, ids)
+	uploads, err := j.store.GetUploadsByIDsAllowDeleted(ctx, ids...)
 	if err != nil {
 		return err
 	}
 
 	found := map[int]struct{}{}
-	for _, dump := range dumps {
+	for _, dump := range uploads {
 		found[dump.ID] = struct{}{}
 	}
 

@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -64,16 +62,18 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		}
 
 		// If there is only one auth provider configured, the single auth provider is a OAuth
-		// instance, and it's an app request, redirect to signin immediately. The user wouldn't be
-		// able to do anything else anyway; there's no point in showing them a signin screen with
-		// just a single signin option.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
-			span.AddEvent("redirect to singin")
+		// instance, it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+		//
+		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
+		pc := getExactlyOneOAuthProvider()
+		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) {
+			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
 			v.Set("pc", pc.ConfigID().ID)
 			span.Finish()
 			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
+
 			return
 		}
 
@@ -94,15 +94,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		op := LoginStateOp(req.URL.Query().Get("op"))
-		extraScopes, err := getExtraScopes(req.Context(), db, serviceType, op)
-		if err != nil {
-			log15.Error("Getting extra OAuth scopes", "error", err)
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
-			return
-		}
-
-		p.Login(p.OAuth2Config(extraScopes...)).ServeHTTP(w, req)
+		p.Login(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	mux.Handle("/callback", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		state, err := DecodeState(req.URL.Query().Get("state"))
@@ -120,8 +112,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
+		if !conf.GitHubAppEnabled() {
 			http.NotFound(w, req)
 			return
 		}
@@ -198,31 +189,6 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitHub: {"repo"},
 	// We need full `api` scope for cloning private repos
 	extsvc.TypeGitLab: {"api"},
-}
-
-func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
-	// Extra scopes are only needed on Sourcegraph.com
-	if !envvar.SourcegraphDotComMode() {
-		return nil, nil
-	}
-	// Extra scopes are only needed when creating a code host connection, not for account creation
-	if op == LoginStateOpCreateAccount {
-		return nil, nil
-	}
-
-	scopes, ok := extraScopes[serviceType]
-	if !ok {
-		return nil, nil
-	}
-
-	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if mode != conf.ExternalServiceModeAll {
-		return nil, nil
-	}
-	return scopes, nil
 }
 
 // withOAuthExternalClient updates client such that the

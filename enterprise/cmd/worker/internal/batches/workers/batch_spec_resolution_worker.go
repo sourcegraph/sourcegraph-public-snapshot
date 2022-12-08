@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -17,10 +18,10 @@ import (
 // specs and passes them to the batchSpecWorkspaceCreator.
 func NewBatchSpecResolutionWorker(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	s *store.Store,
-	workerStore dbworkerstore.Store,
-	observationContext *observation.Context,
-) *workerutil.Worker {
+	workerStore dbworkerstore.Store[*btypes.BatchSpecResolutionJob],
+) *workerutil.Worker[*btypes.BatchSpecResolutionJob] {
 	e := &batchSpecWorkspaceCreator{
 		store:  s,
 		logger: log.Scoped("batch-spec-workspace-creator", "The background worker running workspace resolutions for batch changes"),
@@ -31,9 +32,9 @@ func NewBatchSpecResolutionWorker(
 		NumHandlers:       5,
 		Interval:          1 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "batch_changes_batch_spec_resolution_worker"),
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, e.HandlerFunc(), options)
+	worker := dbworker.NewWorker[*btypes.BatchSpecResolutionJob](ctx, workerStore, e.HandlerFunc(), options)
 	return worker
 }

@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -495,10 +495,13 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 				return nil, err
 			}
 			lines, aborted, err := highlight.CodeAsLines(ctx, highlight.Params{
+				// We rely on the final newline to be kept for proper highlighting.
+				KeepFinalNewline:   true,
 				Content:            []byte(content),
 				Filepath:           file.Path(),
 				DisableTimeout:     args.DisableTimeout,
 				HighlightLongLines: args.HighlightLongLines,
+				Format:             gosyntect.HighlightResponseType(args.Format),
 			})
 			if aborted {
 				r.highlightAborted = aborted
@@ -546,85 +549,47 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		return nil, err
 	}
 
-	hunkLines := strings.Split(string(r.hunk.Body), "\n")
-
-	// TODO: Clean up trailing newline logic:
-	// https://github.com/sourcegraph/sourcegraph/issues/20704
-
-	// Remove final empty line on files that end with a newline, as most code hosts do.
-	if hunkLines[len(hunkLines)-1] == "" {
-		hunkLines = hunkLines[:len(hunkLines)-1]
-	}
-
-	// Trim a trailing empty line to match the behavior of highlight.Code
-	// If this isn't done, it causes the length of highlightedHead to be
-	// different than the length of hunkLines, which leads to out-of-bounds
-	// errors like https://github.com/sourcegraph/sourcegraph/issues/20405
-	if hunkLines[len(hunkLines)-1] == "+" {
-		hunkLines = hunkLines[:len(hunkLines)-1]
-	}
-
-	// Now do the same thing for trailing "-" lines. But only if they're not
-	// followed by an "unchanged" line.
-	// See https://github.com/sourcegraph/sourcegraph/pull/20673
-	var lastMinus = -1
-	for i, hunkLine := range hunkLines {
-		// An "unchanged" line should start with an empty space.
-		if hunkLine[0:1] == " " {
-			lastMinus = -1
-		} else if hunkLine == "-" {
-			lastMinus = i
-		}
-	}
+	// If the diff ends with a newline, we have to strip it, otherwise we iterate
+	// over a ghost line that we don't want to render.
+	hunkLines := strings.Split(strings.TrimSuffix(string(r.hunk.Body), "\n"), "\n")
 
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
 	headLine := r.hunk.NewStartLine - 1
 
-	// Empty "-" line that's not followed by an unchanged line, so cut it out
-	if lastMinus > -1 {
-		hunkLines = append(hunkLines[:lastMinus], hunkLines[lastMinus+1:]...)
-		// Removing the empty "-" line causes a mismatch in position between hunkLines and highlightedBase. hunkLines
-		// will be behind by one line.
-		baseLine++
-	}
-
-	// Even after all the logic above, we were still hitting out-of-bounds panics:
-	// https://github.com/sourcegraph/sourcegraph/issues/21054
-	// Ultimately, we'll need a cleaner solution than this, but for now, just
-	// returning an empty line div when one was trimmed unexpectedly will at least
-	// protect from panics.
-	// Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/20704
+	// TODO: There's been historically a lot of bugs in this code. They should be resolved now,
+	// but let's keep this in for one more release and check log aggregators before we
+	// finally remove this in Sourcegraph 4.4.
 	safeIndex := func(lines []template.HTML, target int32) string {
 		if len(lines) > int(target) {
 			return string(lines[target])
 		}
-		log15.Warn("returned default value for out of bounds index on highlighted code")
-		return `<div>\n</div>`
+		log15.Error("returned default value for out of bounds index on highlighted code")
+		return `<div></div>`
 	}
 
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if hunkLine[0] == ' ' {
-			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
+			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindUnchanged
 			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
-			highlightedDiffHunkLineResolver.kind = "ADDED"
+			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindAdded
 			highlightedDiffHunkLineResolver.html = safeIndex(highlightedHead, headLine)
 			headLine++
 		} else if hunkLine[0] == '-' {
-			highlightedDiffHunkLineResolver.kind = "DELETED"
+			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindDeleted
 			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 		} else {
 			return nil, errors.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}
-
 		highlightedDiffHunkLineResolvers[i] = &highlightedDiffHunkLineResolver
 	}
+
 	return &highlightedDiffHunkBodyResolver{
 		highlightedDiffHunkLineResolvers: highlightedDiffHunkLineResolvers,
 		aborted:                          aborted,
@@ -644,9 +609,17 @@ func (r *highlightedDiffHunkBodyResolver) Lines() []*highlightedDiffHunkLineReso
 	return r.highlightedDiffHunkLineResolvers
 }
 
+type highlightedDiffHunkLineKind int
+
+const (
+	highlightedDiffHunkLineKindUnchanged highlightedDiffHunkLineKind = iota
+	highlightedDiffHunkLineKindAdded
+	highlightedDiffHunkLineKindDeleted
+)
+
 type highlightedDiffHunkLineResolver struct {
 	html string
-	kind string
+	kind highlightedDiffHunkLineKind
 }
 
 func (r *highlightedDiffHunkLineResolver) HTML() string {
@@ -654,7 +627,15 @@ func (r *highlightedDiffHunkLineResolver) HTML() string {
 }
 
 func (r *highlightedDiffHunkLineResolver) Kind() string {
-	return r.kind
+	switch r.kind {
+	case highlightedDiffHunkLineKindUnchanged:
+		return "UNCHANGED"
+	case highlightedDiffHunkLineKindAdded:
+		return "ADDED"
+	case highlightedDiffHunkLineKindDeleted:
+		return "DELETED"
+	}
+	panic("unreachable code: r.kind didn't match a known type")
 }
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {

@@ -187,7 +187,6 @@ func (c *Client) DeleteDashboard(id string) error {
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
-
 	return nil
 }
 
@@ -207,4 +206,198 @@ func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string
 		"organizations": orgGrants,
 		"global":        globalGrant,
 	}
+}
+
+func (c *Client) CreateSearchInsight(title string, series map[string]any) (SearchInsight, error) {
+	const query = `
+		mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
+			createLineChartSearchInsight(input: $input) {
+				view {
+				  id
+				  presentation {
+					... on LineChartInsightViewPresentation {
+					  seriesPresentation {
+						seriesId
+						label
+						color 
+					  }
+					}
+				  }
+				}
+			}
+		}
+	`
+
+	variables := map[string]any{
+		"input": map[string]any{
+			"options": map[string]any{
+				"title": title,
+			},
+			"dataSeries": []any{
+				series,
+			},
+		},
+	}
+	var resp struct {
+		Data struct {
+			CreateLineChartSearchInsight struct {
+				View struct {
+					Id           string `json:"id"`
+					Presentation struct {
+						SeriesPresentation []struct {
+							SeriesId string `json:"SeriesId"`
+							Label    string `json:"Label"`
+							Color    string `json:"Color"`
+						} `json:"SeriesPresentation"`
+					} `json:"Presentation"`
+				} `json:"View"`
+			} `json:"createLineChartSearchInsight"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+	}
+	singleSeries := resp.Data.CreateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	if len(singleSeries) != 1 {
+		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
+	}
+	return SearchInsight{
+		InsightViewId: resp.Data.CreateLineChartSearchInsight.View.Id,
+		SeriesId:      singleSeries[0].SeriesId,
+		Label:         singleSeries[0].Label,
+		Color:         singleSeries[0].Color,
+	}, nil
+}
+
+type SearchInsight struct {
+	InsightViewId string
+	SeriesId      string
+	Label         string
+	Color         string
+}
+
+func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any) (SearchInsight, error) {
+	const query = `
+		mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
+			updateLineChartSearchInsight(input: $input, id: $id) {
+				view {
+                  id
+				  presentation {
+					... on LineChartInsightViewPresentation {
+					  seriesPresentation {
+						seriesId
+						label
+						color 
+					  }
+					}
+				  }
+				}
+			}
+		}
+	`
+
+	variables := map[string]any{
+		"id":    insightViewID,
+		"input": input,
+	}
+	var resp struct {
+		Data struct {
+			UpdateLineChartSearchInsight struct {
+				View struct {
+					Id           string `json:"id"`
+					Presentation struct {
+						SeriesPresentation []struct {
+							SeriesId string `json:"SeriesId"`
+							Label    string `json:"Label"`
+							Color    string `json:"Color"`
+						} `json:"SeriesPresentation"`
+					} `json:"Presentation"`
+				} `json:"View"`
+			} `json:"updateLineChartSearchInsight"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+	}
+	singleSeries := resp.Data.UpdateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	if len(singleSeries) != 1 {
+		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
+	}
+	return SearchInsight{
+		InsightViewId: resp.Data.UpdateLineChartSearchInsight.View.Id,
+		SeriesId:      singleSeries[0].SeriesId,
+		Label:         singleSeries[0].Label,
+		Color:         singleSeries[0].Color,
+	}, nil
+}
+
+func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, error) {
+	const query = `
+		mutation saveAsNewView($new: SaveInsightAsNewViewInput!) {
+		  saveInsightAsNewView(input:$new) {
+			view {
+			  id 
+			  dataSeries {
+				seriesId
+			  }
+			}
+		  }
+		}
+	`
+
+	variables := map[string]any{
+		"new": input,
+	}
+	var resp struct {
+		Data struct {
+			SaveInsightAsNewView struct {
+				View struct {
+					Id         string `json:"id"`
+					DataSeries []struct {
+						SeriesId string `json:"seriesId"`
+					} `json:"dataSeries"`
+				} `json:"view"`
+			} `json:"saveInsightAsNewView"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	insights := []SearchInsight{}
+	for _, series := range resp.Data.SaveInsightAsNewView.View.DataSeries {
+		insights = append(insights, SearchInsight{
+			InsightViewId: resp.Data.SaveInsightAsNewView.View.Id,
+			SeriesId:      series.SeriesId,
+		})
+	}
+	return insights, nil
+}
+
+func (c *Client) DeleteInsightView(insightViewId string) error {
+	const query = `
+		mutation DeleteInsightView ($id: ID!) {
+		  deleteInsightView(id: $id){
+			alwaysNil
+		  }
+		}
+	`
+	variables := map[string]any{
+		"id": insightViewId,
+	}
+	var resp struct {
+		Data struct {
+			DeleteInsightView struct {
+				AlwaysNil string `json:"alwaysNil"`
+			} `json:"deleteInsightView"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
 }

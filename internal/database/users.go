@@ -58,7 +58,6 @@ type UserStore interface {
 	Create(context.Context, NewUser) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
-	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
 	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
@@ -87,7 +86,6 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UserAllowedExternalServices(context.Context, int32) (conf.ExternalServiceMode, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -815,8 +813,13 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
-	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
-	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator user accounts.
+	// Filter out users with a known Sourcegraph admin username
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
+	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
 	ExcludeSourcegraphOperators bool
 
 	*LimitOffset
@@ -892,7 +895,19 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		items := []*sqlf.Query{
+			sqlf.Sprintf("username ILIKE %s", query),
+			sqlf.Sprintf("display_name ILIKE %s", query),
+		}
+		// Query looks like an ID
+		if id, err := strconv.Atoi(opt.Query); err == nil {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		// Query looks like a GraphQL ID
+		if id, ok := relayUnmarshalID(opt.Query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {
@@ -1295,45 +1310,6 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 		tagMap[t] = true
 	}
 	return tagMap, nil
-}
-
-// UserAllowedExternalServices returns whether the supplied user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	// If site level already allows all code then no need to check user
-	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
-		return siteMode, nil
-	}
-
-	tags, err := u.Tags(ctx, userID)
-	if err != nil {
-		return siteMode, err
-	}
-
-	// The user may have a tag that opts them in
-	if tags[TagAllowUserExternalServicePrivate] {
-		return conf.ExternalServiceModeAll, nil
-	}
-	if tags[TagAllowUserExternalServicePublic] {
-		return conf.ExternalServiceModePublic, nil
-	}
-
-	return siteMode, nil
-}
-
-// CurrentUserAllowedExternalServices returns whether the current user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

@@ -68,17 +68,22 @@ type Store interface {
 	// external service. This must only be used when updating metadata on a repo
 	// that cannot affect its associations.
 	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
-	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
-	// if it is not already queued or processing. Additionally, it also skips
-	// queueing up a sync job for cloud_default external services. This is done to
-	// avoid the sync job for the cloud_default triggering a deletion of repos
-	// because:
+	// EnqueueSingleSyncJob enqueues a single sync job for the given external
+	// service if the external service is not deleted and no other job is
+	// already queued or processing.
+	//
+	// Additionally, it also skips queueing up a sync job for cloud_default
+	// external services. This is done to avoid the sync job for the
+	// cloud_default triggering a deletion of repos because:
 	//  1. cloud_default does not define any repos in its config
 	//  2. repos under the cloud_default are lazily synced the first time a user accesses them
 	//
 	// This is a limitation of our current repo syncing architecture. The
 	// cloud_default flag is only set on sourcegraph.com and manages public GitHub
 	// and GitLab repositories that have been lazily synced.
+	//
+	// It can block if a row-level lock is held on the given external service,
+	// for example if it's being deleted.
 	EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error)
 	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
@@ -384,8 +389,6 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -413,20 +416,14 @@ const upsertExternalServiceRepoQuery = `
 INSERT INTO external_service_repos (
 	external_service_id,
 	repo_id,
-	user_id,
-	org_id,
 	clone_url
 )
-VALUES (%s, %s, NULLIF(%s, 0), NULLIF(%s, 0), %s)
+VALUES (%s, %s, %s)
 ON CONFLICT (external_service_id, repo_id)
 DO UPDATE SET
-	clone_url = excluded.clone_url,
-	user_id   = excluded.user_id,
-	org_id    =  excluded.org_id
+	clone_url = excluded.clone_url
 WHERE
-	external_service_repos.clone_url != excluded.clone_url OR
-	external_service_repos.user_id   != excluded.user_id OR
-	external_service_repos.org_id    != excluded.org_id
+	external_service_repos.clone_url != excluded.clone_url
 `
 
 func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
@@ -555,8 +552,6 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -583,19 +578,26 @@ RETURNING updated_at
 
 func (s *store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_sync_jobs (external_service_id)
-SELECT %s
-WHERE NOT EXISTS (
-	SELECT
+WITH es AS (
+	SELECT id
 	FROM external_services es
-	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
-	WHERE es.id = %s
-	AND (
-		j.state IN ('queued', 'processing')
-		OR es.cloud_default
-	)
+	WHERE
+		id = %s
+		AND NOT cloud_default
+		AND deleted_at IS NULL
+	FOR UPDATE
 )
-`, extSvcID, extSvcID)
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT es.id
+FROM es
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM external_service_sync_jobs j
+	WHERE
+		es.id = j.external_service_id
+		AND j.state IN ('queued', 'processing')
+)
+`, extSvcID)
 	return s.Exec(ctx, q)
 }
 
@@ -629,6 +631,8 @@ WITH due AS (
     AND deleted_at IS NULL
     AND LOWER(kind) != 'phabricator'
     AND %s
+    FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
+                                    -- sync jobs while an external service is being deleted.
 ),
 busy AS (
     SELECT DISTINCT external_service_id id FROM external_service_sync_jobs

@@ -15,6 +15,9 @@ export type FeatureFlagName =
     | 'admin-analytics-cache-disabled'
     | 'search-input-show-history'
     | 'user-management-disabled'
+    | 'search-results-keyboard-navigation'
+    | 'enable-streaming-git-blame'
+    | 'plg-enable-add-codehost-widget'
 
 interface OrgFlagOverride {
     orgID: string

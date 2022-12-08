@@ -36,10 +36,8 @@ type batchSpecWorkspaceCreator struct {
 
 // HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-		job := record.(*btypes.BatchSpecResolutionJob)
-
+func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc[*btypes.BatchSpecResolutionJob] {
+	return func(ctx context.Context, logger log.Logger, job *btypes.BatchSpecResolutionJob) (err error) {
 		// Run the resolution job as the user, so that only secrets and workspaces
 		// that are visible to the user are returned.
 		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))
@@ -144,9 +142,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		ws = append(ws, workspace)
 
-		if spec.NoCache {
-			continue
-		}
 		if !spec.AllowIgnored && w.Ignored {
 			continue
 		}
@@ -280,7 +275,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path)
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true)
 		if err != nil {
 			return err
 		}

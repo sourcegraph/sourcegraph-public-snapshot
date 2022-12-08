@@ -1,6 +1,8 @@
 .container {
     display: flex;
     flex-direction: column;
+    width: 31rem;
+    max-width: 100%;
 }
 
 .header {
@@ -34,8 +36,6 @@
 }
 
 .list {
-    width: 31rem;
-    max-width: 100%;
     max-height: 310px;
     margin: 0;
     padding: 0.25rem 0;
@@ -106,9 +106,24 @@
         color: var(--link-color);
         padding: 0;
     }
+    &-icon {
+        font-size: 1.2rem;
+        max-height: 1.29rem;
+    }
 }
 
 .infinite-scroll-trigger {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     height: 1px;
+}
+
+.star {
+    color: var(--yellow);
+    flex-shrink: 0;
+    transform: translateY(-0.0625rem); // Slight optical alignment
+}
+
+.separator {
+    border-top: 1px solid var(--border-color-2);
+    margin: 0.25rem 0;
 }

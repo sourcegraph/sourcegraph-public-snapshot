@@ -4,8 +4,6 @@ import { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { logger } from '@sourcegraph/common'
 
-import { parseAttributes } from '../sdk/parseAttributes'
-
 interface FormattedSpan {
     name?: string
     raw?: ReadableSpan
@@ -37,7 +35,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
             }
 
             formattedSpan.raw = span
-            formattedSpan.attrs = parseAttributes(attributes)
+            formattedSpan.attrs = attributes
             formattedSpan.name = `${span.name} - ${this.formatDuration(span)}`
 
             if (parentSpanId) {

@@ -14,7 +14,7 @@ var (
 		Name: "msft/lsif-node",
 		URN:  "github.com/Microsoft/lsif-node",
 	}
-	lsifTypescript = CodeIntelIndexer{
+	scipTypescript = CodeIntelIndexer{
 		Name: "scip-typescript",
 		URN:  "github.com/sourcegraph/scip-typescript",
 	}
@@ -83,7 +83,7 @@ var (
 var AllIndexers = []CodeIntelIndexer{
 	lsifNode,
 	msftNode,
-	lsifTypescript,
+	scipTypescript,
 	scipJava,
 	msftJava,
 	lsifGo,
@@ -108,10 +108,10 @@ var LanguageToIndexer = map[string][]CodeIntelIndexer{
 	".java":    {scipJava, msftJava},
 	".kt":      {scipJava},
 	".scala":   {scipJava},
-	".js":      {lsifTypescript, lsifNode, msftNode},
-	".jsx":     {lsifTypescript, lsifNode, msftNode},
-	".ts":      {lsifTypescript, lsifNode, msftNode},
-	".tsx":     {lsifTypescript, lsifNode, msftNode},
+	".js":      {scipTypescript, lsifNode, msftNode},
+	".jsx":     {scipTypescript, lsifNode, msftNode},
+	".ts":      {scipTypescript, lsifNode, msftNode},
+	".tsx":     {scipTypescript, lsifNode, msftNode},
 	".dart":    {workivaDart, lsifDart},
 	".c":       {lsifClang, lsifCPP},
 	".cc":      {lsifClang, lsifCPP},
@@ -132,10 +132,31 @@ var LanguageToIndexer = map[string][]CodeIntelIndexer{
 var ImageToIndexer = map[string]CodeIntelIndexer{
 	"sourcegraph/scip-java":       scipJava,
 	"sourcegraph/lsif-go":         lsifGo,
-	"sourcegraph/scip-typescript": lsifTypescript,
+	"sourcegraph/scip-typescript": scipTypescript,
 	"sourcegraph/lsif-node":       lsifNode,
 	"sourcegraph/lsif-clang":      lsifClang,
 	"davidrjenni/lsif-php":        lsifPHP,
 	"sourcegraph/lsif-rust":       rustAnalyzer,
 	"sourcegraph/scip-python":     scipPython,
+}
+
+var PreferredIndexers = map[string]CodeIntelIndexer{
+	"lsif-node":       scipTypescript,
+	"lsif-tsc":        scipTypescript,
+	"scip-typescript": scipTypescript,
+	"scip-java":       scipJava,
+	"lsif-java":       scipJava,
+	"lsif-go":         lsifGo,
+	"lsif-clang":      lsifClang,
+	"lsif-cpp":        lsifCPP,
+	"lsif-dart":       lsifDart,
+	"hie-lsif":        hieLSIF,
+	"lsif-jsonnet":    lsifJsonnet,
+	"lsif-ocaml":      lsifOcaml,
+	"scip-python":     scipPython,
+	"lsif-rust":       rustAnalyzer,
+	"rust-analyzer":   rustAnalyzer,
+	"lsif-php":        lsifPHP,
+	"lsif-terraform":  lsifTerraform,
+	"lsif-dotnet":     lsifDotnet,
 }

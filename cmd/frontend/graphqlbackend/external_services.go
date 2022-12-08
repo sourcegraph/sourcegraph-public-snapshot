@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -104,6 +103,11 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
@@ -116,11 +120,6 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	oldConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -174,53 +173,36 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	// Load external service to make sure it exists
+	_, err = r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check external service access
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	if args.Async {
 		// run deletion in the background and return right away
 		go func() {
-			if err := r.deleteExternalService(context.Background(), id, es); err != nil {
-				log15.Error("Background external service deletion failed", "err", err)
+			if err := r.db.ExternalServices().Delete(context.Background(), id); err != nil {
+				r.logger.Error("Background external service deletion failed", log.Error(err))
 			}
 		}()
 	} else {
-		if err = r.deleteExternalService(ctx, id, es); err != nil {
+		if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
 			return nil, err
 		}
 	}
 
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es *types.ExternalService) error {
-	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
-		return err
-	}
-	now := time.Now()
-	es.DeletedAt = now
-
-	// The user doesn't care if triggering syncing failed when deleting a
-	// service, so kick off in the background.
-	go func() {
-		if err := backend.SyncExternalService(context.Background(), r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
-			log15.Warn("Performing final sync after external service deletion", "err", err)
-		}
-	}()
-
-	return nil
 }
 
 type ExternalServicesArgs struct {
@@ -230,12 +212,11 @@ type ExternalServicesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	var namespaceUserID int32
-	var namespaceOrgID int32
-
-	if err := backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
+
 	var afterID int64
 	if args.After != nil {
 		var err error
@@ -246,14 +227,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
-		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
-		// specified we need to explicitly specify `NoNamespace`, otherwise site
-		// admins will be able to list all user code host connections that are not
-		// accessible when trying to access them individually.
-		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
-		NamespaceUserID: namespaceUserID,
-		NamespaceOrgID:  namespaceOrgID,
-		AfterID:         afterID,
+		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
@@ -392,6 +366,11 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
 		return nil, err
@@ -399,11 +378,6 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -425,26 +399,17 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := unmarshalExternalServiceSyncJobID(args.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	esj, err := r.db.ExternalServices().GetSyncJobByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	_, err = r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	if err := r.db.ExternalServices().CancelSyncJob(ctx, esj.ID); err != nil {
+	if err := r.db.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
 		return nil, err
 	}
 

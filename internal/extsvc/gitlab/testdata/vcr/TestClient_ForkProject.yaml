@@ -11,24 +11,24 @@ interactions:
     method: GET
   response:
     body: '{"id":16606399,"description":"","name":"src CLI","name_with_namespace":"sourcegraph
-      / src CLI","path":"src-cli","path_with_namespace":"sourcegraph/src-cli","created_at":"2020-01-30T11:45:14.073Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:sourcegraph/src-cli.git","http_url_to_repo":"https://gitlab.com/sourcegraph/src-cli.git","web_url":"https://gitlab.com/sourcegraph/src-cli","readme_url":"https://gitlab.com/sourcegraph/src-cli/-/blob/master/README.md","avatar_url":null,"forks_count":1,"star_count":0,"last_activity_at":"2022-01-11T02:37:55.714Z","namespace":{"id":2582152,"name":"sourcegraph","path":"sourcegraph","kind":"group","full_path":"sourcegraph","parent_id":null,"avatar_url":"/uploads/-/system/group/avatar/2582152/3979584.png","web_url":"https://gitlab.com/groups/sourcegraph"},"container_registry_image_prefix":"registry.gitlab.com/sourcegraph/src-cli","_links":{"self":"https://gitlab.com/api/v4/projects/16606399","issues":"https://gitlab.com/api/v4/projects/16606399/issues","merge_requests":"https://gitlab.com/api/v4/projects/16606399/merge_requests","repo_branches":"https://gitlab.com/api/v4/projects/16606399/repository/branches","labels":"https://gitlab.com/api/v4/projects/16606399/labels","events":"https://gitlab.com/api/v4/projects/16606399/events","members":"https://gitlab.com/api/v4/projects/16606399/members"},"packages_enabled":true,"empty_repo":false,"archived":false,"visibility":"public","resolve_outdated_diff_discussions":false,"container_expiration_policy":{"cadence":"7d","enabled":false,"keep_n":null,"older_than":null,"name_regex":null,"name_regex_keep":null,"next_run_at":"2020-02-06T11:45:14.091Z"},"issues_enabled":true,"merge_requests_enabled":true,"wiki_enabled":true,"jobs_enabled":true,"snippets_enabled":true,"container_registry_enabled":true,"service_desk_enabled":true,"can_create_merge_request_in":true,"issues_access_level":"enabled","repository_access_level":"enabled","merge_requests_access_level":"enabled","forking_access_level":"enabled","wiki_access_level":"enabled","builds_access_level":"enabled","snippets_access_level":"enabled","pages_access_level":"enabled","operations_access_level":"enabled","analytics_access_level":"enabled","container_registry_access_level":"enabled","emails_disabled":null,"shared_runners_enabled":true,"lfs_enabled":true,"creator_id":3294801,"import_status":"failed","open_issues_count":0,"ci_default_git_depth":50,"ci_forward_deployment_enabled":null,"ci_job_token_scope_enabled":false,"public_jobs":true,"build_timeout":3600,"auto_cancel_pending_pipelines":"enabled","build_coverage_regex":null,"ci_config_path":null,"shared_with_groups":[],"only_allow_merge_if_pipeline_succeeds":false,"allow_merge_on_skipped_pipeline":null,"restrict_user_defined_variables":false,"request_access_enabled":true,"only_allow_merge_if_all_discussions_are_resolved":false,"remove_source_branch_after_merge":true,"printing_merge_request_link_enabled":true,"merge_method":"merge","squash_option":"default_off","suggestion_commit_message":null,"merge_commit_template":null,"squash_commit_template":null,"auto_devops_enabled":false,"auto_devops_deploy_strategy":"continuous","autoclose_referenced_issues":true,"keep_latest_artifact":true,"approvals_before_merge":0,"mirror":true,"mirror_user_id":3294801,"mirror_trigger_builds":false,"only_mirror_protected_branches":null,"mirror_overwrites_diverged_branches":null,"external_authorization_classification_label":"","marked_for_deletion_at":null,"marked_for_deletion_on":null,"requirements_enabled":true,"security_and_compliance_enabled":false,"compliance_frameworks":[],"issues_template":null,"merge_requests_template":null,"merge_pipelines_enabled":false,"merge_trains_enabled":false,"permissions":{"project_access":null,"group_access":null}}'
+      / src CLI","path":"src-cli","path_with_namespace":"sourcegraph/src-cli","created_at":"2020-01-30T11:45:14.073Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.com:sourcegraph/src-cli.git","http_url_to_repo":"https://gitlab.com/sourcegraph/src-cli.git","web_url":"https://gitlab.com/sourcegraph/src-cli","readme_url":"https://gitlab.com/sourcegraph/src-cli/-/blob/master/README.md","avatar_url":null,"forks_count":3,"star_count":0,"last_activity_at":"2022-01-11T16:11:41.070Z","namespace":{"id":2582152,"name":"sourcegraph","path":"sourcegraph","kind":"group","full_path":"sourcegraph","parent_id":null,"avatar_url":"/uploads/-/system/group/avatar/2582152/3979584.png","web_url":"https://gitlab.com/groups/sourcegraph"},"container_registry_image_prefix":"registry.gitlab.com/sourcegraph/src-cli","_links":{"self":"https://gitlab.com/api/v4/projects/16606399","issues":"https://gitlab.com/api/v4/projects/16606399/issues","merge_requests":"https://gitlab.com/api/v4/projects/16606399/merge_requests","repo_branches":"https://gitlab.com/api/v4/projects/16606399/repository/branches","labels":"https://gitlab.com/api/v4/projects/16606399/labels","events":"https://gitlab.com/api/v4/projects/16606399/events","members":"https://gitlab.com/api/v4/projects/16606399/members","cluster_agents":"https://gitlab.com/api/v4/projects/16606399/cluster_agents"},"packages_enabled":true,"empty_repo":false,"archived":false,"visibility":"public","resolve_outdated_diff_discussions":false,"container_expiration_policy":{"cadence":"7d","enabled":false,"keep_n":null,"older_than":null,"name_regex":null,"name_regex_keep":null,"next_run_at":"2020-02-06T11:45:14.091Z"},"issues_enabled":true,"merge_requests_enabled":true,"wiki_enabled":true,"jobs_enabled":true,"snippets_enabled":true,"container_registry_enabled":true,"service_desk_enabled":true,"can_create_merge_request_in":true,"issues_access_level":"enabled","repository_access_level":"enabled","merge_requests_access_level":"enabled","forking_access_level":"enabled","wiki_access_level":"enabled","builds_access_level":"enabled","snippets_access_level":"enabled","pages_access_level":"enabled","operations_access_level":"enabled","analytics_access_level":"enabled","container_registry_access_level":"enabled","security_and_compliance_access_level":"private","releases_access_level":"enabled","emails_disabled":null,"shared_runners_enabled":true,"lfs_enabled":true,"creator_id":3294801,"import_status":"failed","open_issues_count":0,"ci_default_git_depth":50,"ci_forward_deployment_enabled":null,"ci_job_token_scope_enabled":false,"ci_separated_caches":true,"ci_opt_in_jwt":false,"ci_allow_fork_pipelines_to_run_in_parent_project":true,"public_jobs":true,"build_timeout":3600,"auto_cancel_pending_pipelines":"enabled","ci_config_path":null,"shared_with_groups":[],"only_allow_merge_if_pipeline_succeeds":false,"allow_merge_on_skipped_pipeline":null,"restrict_user_defined_variables":false,"request_access_enabled":true,"only_allow_merge_if_all_discussions_are_resolved":false,"remove_source_branch_after_merge":true,"printing_merge_request_link_enabled":true,"merge_method":"merge","squash_option":"default_off","enforce_auth_checks_on_uploads":true,"suggestion_commit_message":null,"merge_commit_template":null,"squash_commit_template":null,"issue_branch_template":null,"auto_devops_enabled":false,"auto_devops_deploy_strategy":"continuous","autoclose_referenced_issues":true,"keep_latest_artifact":true,"runner_token_expiration_interval":null,"approvals_before_merge":0,"mirror":true,"mirror_user_id":3294801,"mirror_trigger_builds":false,"only_mirror_protected_branches":null,"mirror_overwrites_diverged_branches":null,"external_authorization_classification_label":"","marked_for_deletion_at":null,"marked_for_deletion_on":null,"requirements_enabled":true,"requirements_access_level":"enabled","security_and_compliance_enabled":false,"compliance_frameworks":[],"issues_template":null,"merge_requests_template":null,"merge_pipelines_enabled":false,"merge_trains_enabled":false,"only_allow_merge_if_all_status_checks_passed":false,"permissions":{"project_access":null,"group_access":null}}'
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 6cbaf2090d9a8407-YVR
+      - 76e5dc621c78ad13-ATL
+      Content-Security-Policy:
+      - default-src 'none'
       Content-Type:
       - application/json
       Date:
-      - Tue, 11 Jan 2022 03:09:18 GMT
+      - Wed, 23 Nov 2022 00:41:44 GMT
       Etag:
-      - W/"fcf43d5280f1837e61a5769d2c1e7692"
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - W/"c28b47069caf72f036a4e11396d969fb"
       Gitlab-Lb:
-      - fe-21-lb-gprd
+      - fe-27-lb-gprd
       Gitlab-Sv:
       - api-gke-us-east1-b
       Nel:
@@ -36,7 +36,7 @@ interactions:
       Referrer-Policy:
       - strict-origin-when-cross-origin
       Report-To:
-      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=I2nAqrtJaa%2FO49EQ4%2BuFJpJ9peHF%2Fv9kFUam%2B%2BMknETx49q8fH8UNmAK0Cn%2B%2BVfWAtN%2FKi1jY6qZh19kTZ0T7o3t%2Bc6oeuqmukixxrt6ZBxWhyG7kzJcGmZdEsqzsFwcVVHjtNwLyd4%3D"}],"group":"cf-nel","max_age":604800}'
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=ybxPhHz7mfzAaI65%2BIdW8DreRdEaTm9ya%2B2LaM3nWI28usfYOkc7K0U5T1IMhFOHfOrvM5PTbD%2FlE53Eh4X%2BO1FrM1txR95hTgY6JKgJETp7jjiyckndwmgyvinjOv%2BN9iHjaW7dzkU%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -48,9 +48,9 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - 01FS3HS0FBVND9NXFAEDK8H2QZ
+      - 11dd9d7c4cd9b037b539f89e8db819a2
       X-Runtime:
-      - "0.353787"
+      - "0.126951"
     status: 200 OK
     code: 200
     duration: ""

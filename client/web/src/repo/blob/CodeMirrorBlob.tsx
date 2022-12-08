@@ -2,7 +2,7 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
@@ -23,12 +23,14 @@ import { useExperimentalFeatures } from '../../stores'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import { showGitBlameDecorations } from './codemirror/blame-decorations'
+import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 
@@ -79,7 +81,9 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame information
+// Compartment to update blame visibility
+const blameVisibilityCompartment = new Compartment()
+// Compartment to update blame decorations
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
@@ -94,8 +98,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         location,
         history,
+        isBlameVisible,
         blameHunks,
-        tokenKeyboardNavigation,
+        enableLinkDrivenCodeNavigation,
+        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -122,7 +128,14 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+    const blameVisibility = useMemo(
+        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
+        [isBlameVisible]
+    )
+    const blameDecorations = useMemo(
+        () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
+        [isBlameVisible, blameHunks]
+    )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
@@ -170,19 +183,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const extensions = useMemo(
         () => [
+            // Log uncaught errors that happen in callbacks that we pass to
+            // CodeMirror. Without this exception sink, exceptions get silently
+            // ignored making it difficult to debug issues caused by uncaught
+            // exceptions.
+            // eslint-disable-next-line no-console
+            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                enableSelectionDrivenCodeNavigation,
             }),
-            tokenKeyboardNavigation
-                ? tokensAsLinks({
-                      history,
-                      blobInfo,
-                      preloadGoToDefinition,
-                  })
-                : [],
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -192,10 +207,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                       disableStatusBar,
                       disableDecorations,
+                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
+            blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
             search({
                 // useFileSearch is not a dependency because the search
@@ -207,7 +224,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
-        // further below. However they are still needed here because we need to
+        // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
@@ -226,12 +243,26 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            editor.setState(
-                EditorState.create({
-                    doc: blobInfo.content,
-                    extensions,
-                })
-            )
+            const state = EditorState.create({ doc: blobInfo.content, extensions })
+            editor.setState(state)
+
+            if (!enableSelectionDrivenCodeNavigation) {
+                return
+            }
+
+            // Sync editor selection with the URL so that triggering
+            // `history.goBack/goForward()` works similar to the "Go back"
+            // command in VS Code.
+            const { range } = selectionFromLocation(editor, historyRef.current.location)
+            if (range) {
+                selectRange(editor, range)
+                // Automatically focus the content DOM to enable keyboard
+                // navigation. Without this automatic focus, users need to click
+                // on the blob view with the mouse.
+                // NOTE: this focus statment does not seem to have an effect
+                // when using macOS VoiceOver.
+                editor.contentDOM.focus({ preventScroll: true })
+            }
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -248,8 +279,18 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
 
-    // Update blame information
+    // Update blame visibility
     useEffect(() => {
+        if (editor) {
+            editor.dispatch({ effects: blameVisibilityCompartment.reconfigure(blameVisibility) })
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [blameVisibility])
+
+    // Update blame decorations
+    useLayoutEffect(() => {
         if (editor) {
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
         }

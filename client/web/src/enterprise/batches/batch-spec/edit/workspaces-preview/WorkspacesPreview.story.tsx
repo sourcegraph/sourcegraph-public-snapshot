@@ -346,6 +346,36 @@ export const Succeeded: Story = () => (
                             clearError: noop,
                             setFilters: noop,
                             isPreviewDisabled: false,
+                            noCache: false,
+                        },
+                    }}
+                >
+                    <WorkspacesPreview />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+export const CacheDisabled: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockBatchSpec()}
+                    refetchBatchChange={() => Promise.resolve()}
+                    testState={{
+                        workspacesPreview: {
+                            hasPreviewed: true,
+                            resolutionState: BatchSpecWorkspaceResolutionState.COMPLETED,
+                            preview: () => Promise.resolve(),
+                            cancel: noop,
+                            isInProgress: false,
+                            clearError: noop,
+                            setFilters: noop,
+                            isPreviewDisabled: false,
+                            noCache: true,
                         },
                     }}
                 >

@@ -1,6 +1,9 @@
 # Temporary directory for whatever you want
 .tmp/
 
+# Bazel
+bazel-*
+
 # Vim
 *.swp
 
@@ -109,7 +112,7 @@ package-lock.json
 coverage/
 out/
 client/shared/src/schema.ts
-client/shared/src/schema/*
+client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
 /dist
@@ -118,13 +121,9 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
-elm-stuff
 
 # Extensions
 /client/extension-api/dist
-
-# Compute Component
-/client/web/src/search/results/components/compute/public/dist
 
 # Direnv
 .envrc
@@ -188,3 +187,6 @@ go.work.sum
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# SCIP
+index.scip

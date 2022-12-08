@@ -30,6 +30,33 @@ See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) do
 
 Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit, it uses Zoekt. Otherwise it uses the [symbols service](../../code_navigation/explanations/features.md#symbol-search)
 
+## Smart Search
+
+Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default. Smart Search is only enabled in the web application and its results view (Search APIs remain the same and are unaffected).
+
+### Example
+
+Take a query like `go buf byte parser`, for example. Normally, Sourcegraph will search for the string "go buf byte parser" with those tokens in that order. If there are **_no_** results, Smart Search attempts variations of the query. One rule applies a `lang:` filter to known languages. For example, `go` may refer to the `Go` language, so we convert this token to a `lang:Go` filter. Another rule relaxes the ordering on remaining tokens so that we search for `buf AND byte AND parser` anywhere in the file. Here's an example of what Smart Search looks like in action:
+
+<img
+  src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-example.png"
+  alt="Smart Search example"
+/>
+<br />
+
+Note that if the original query finds results (which depends on the code it runs on), Smart Search has no effect. Smart Search does not otherwise intervene or interfere with search queries if those queries return results, and Sourcegraph behaves as usual.
+
+### Configuration options
+
+It is sometimes useful to check for the _absence_ of results (we _want_ to see zero matches). In these cases, Smart Search can be disabled temporarily by toggling the lightning button in the search bar. To deactivate Smart Search by default, set `"search.defaultMode": "precise"` in settings.
+
+It is not possible to customize Smart Search rules at this time. So far a small number of rules are enabled based on feedback and utility. They affect the following query properties:
+
+- Separate patterns with `AND` (pattern order doesn't matter)
+- Patterns as filters (e.g., apply `lang:` or `type:symbol`  filters based on keywords)
+- Quotes in queries (run a literal search for quoted patterns)
+- Patterns as Regular Expressions (check patterns for likely regular expression syntax)
+
 ## Saved searches
 
 Saved searches let you save and describe search queries so you can easily monitor the results on an ongoing basis. You can create a saved search for anything, including diffs and commits across all branches of your repositories. Saved searches can be an early warning system for common problems in your code and a way to monitor best practices, the progress of refactors, etc.
@@ -67,8 +94,7 @@ Your site admin can enable search contexts on your private instance in **global 
 
 ```json
 "experimentalFeatures": {  
-  "showSearchContext": true,
-  "showSearchContextManagement": true
+  "showSearchContext": true
 }
 ```
 

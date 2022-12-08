@@ -24,15 +24,6 @@ func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
 const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
 
 func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
@@ -41,7 +32,6 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	if err != nil {
 		return nil, err
 	}
-	noOpAnyChar(re)
 
 	// OptimizeRegexp currently only converts capture groups into non-capture
 	// groups (faster for stdlib regexp to execute).
@@ -141,9 +131,7 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		searchOpts.UseDocumentRanks = true
 
 		// This damps the impact of document ranks on the final ranking.
-		if o.Features.RankingDampDocRanks {
-			searchOpts.RanksDampingFactor = 0.5
-		}
+		searchOpts.RanksDampingFactor = 0.5
 
 		return searchOpts
 	}
