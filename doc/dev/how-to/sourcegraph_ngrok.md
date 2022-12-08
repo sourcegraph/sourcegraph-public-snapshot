@@ -8,6 +8,7 @@ One way to do that is to use [ngrok](https://ngrok.io/), a reverse proxy that
 allows you to expose your instance to the internet.
 
 1. Install `ngrok`: `brew install ngrok`
+1. Authenticate the `ngrok` if this is your first time running it (the token can be obtained from [Ngrok dashboard](https://dashboard.ngrok.com/get-started/setup)): `ngrok config add-authtoken <Your token>`
 1. Start your Sourcegraph instance: `sg start`
 1. Start `ngrok` and point it at Sourcegraph: `ngrok http --host-header=rewrite 3080`
 1. Copy the `Forwarding` URL `ngrok` displays. e.g.: `https://630b-87-170-68-206.eu.ngrok.io`
