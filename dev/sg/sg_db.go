@@ -92,7 +92,7 @@ sg db add-user -name=foo
 			{
 				Name:        "update-user-external-services",
 				Usage:       "Manually update a user's external services",
-				Description: `Patches the table 'user_external_services'' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.`,
+				Description: `Patches the table 'user_external_services' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.`,
 				Action:      dbUpdateUserExternalAccount,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -103,32 +103,32 @@ sg db add-user -name=foo
 					&cli.StringFlag{
 						Name:  "extsvc.display-name",
 						Value: "",
-						Usage: "",
+						Usage: "The display name of the GitHub instance connected to the Sourcegraph instance (as listed under Site admin > Manage code hosts)",
 					},
 					&cli.StringFlag{
 						Name:  "github.username",
 						Value: "sourcegraph",
-						Usage: "Username for external account on Github",
+						Usage: "Username of the account on the GitHub instance",
 					},
 					&cli.StringFlag{
 						Name:  "github.token",
 						Value: "",
-						Usage: "",
+						Usage: "GitHub token with a scope to read all user data",
 					},
 					&cli.StringFlag{
 						Name:  "github.baseurl",
 						Value: "",
-						Usage: "",
+						Usage: "The base url of the GitHub instance to connect to",
 					},
 					&cli.StringFlag{
 						Name:  "github.client-id",
 						Value: "",
-						Usage: "",
+						Usage: "The client ID of an OAuth app on the GitHub instance",
 					},
 					&cli.StringFlag{
 						Name:  "oauth.token",
 						Value: "",
-						Usage: "OAuth token to assign to this user",
+						Usage: "OAuth token to patch for the provided user",
 					},
 				},
 			},
