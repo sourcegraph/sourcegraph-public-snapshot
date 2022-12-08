@@ -517,7 +517,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     className={styles.border}
                 />
             )}
-            {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
+            {!blobInfoOrError.richHTML && blobInfoOrError.aborted && false /* TODO(sqs): sqs/single-program WIP */ && (
                 <div>
                     <Alert variant="info">
                         Syntax-highlighting this file took too long. &nbsp;

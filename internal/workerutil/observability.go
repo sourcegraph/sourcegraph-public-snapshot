@@ -93,7 +93,8 @@ func NewMetrics(observationCtx *observation.Context, prefix string, opts ...Obse
 			Help: help,
 		}, keys)
 
-		observationCtx.Registerer.MustRegister(gaugeVec)
+		// TODO(sqs): hack to allow 2 executor instances in the same process
+		gaugeVec = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, gaugeVec)
 		return gaugeVec.WithLabelValues(values...)
 	}
 

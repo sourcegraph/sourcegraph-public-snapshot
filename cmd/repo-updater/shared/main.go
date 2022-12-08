@@ -8,10 +8,10 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
@@ -35,19 +35,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const port = "3182"
@@ -67,32 +63,12 @@ type LazyDebugserverEndpoint struct {
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
-func Main(enterpriseInit EnterpriseInit) {
+func Main(ctx context.Context, observationCtx *observation.Context, enterpriseInit EnterpriseInit) error {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
-	ctx := actor.WithInternalActor(context.Background())
+	ctx = actor.WithInternalActor(ctx)
 
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
-
-	logger := log.Scoped("service", "repo-updater service")
-	observationCtx := observation.NewContext(logger)
+	logger := observationCtx.Logger
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -100,11 +76,13 @@ func Main(enterpriseInit EnterpriseInit) {
 	// Start debug server
 	debugserverEndpoints := LazyDebugserverEndpoint{}
 	debugServerRoutine := createDebugServerRoutine(ready, &debugserverEndpoints)
-	go debugServerRoutine.Start()
+	if os.Getenv("DEPLOY_TYPE") != "single-program" {
+		go debugServerRoutine.Start()
+	}
 
 	clock := func() time.Time { return time.Now().UTC() }
 	if err := keyring.Init(ctx); err != nil {
-		logger.Fatal("error initialising encryption keyring", log.Error(err))
+		return errors.Wrap(err, "initializing encryption keyring")
 	}
 
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
@@ -112,7 +90,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
 	if err != nil {
-		logger.Fatal("failed to initialize database store", log.Error(err))
+		return errors.Wrap(err, "initializing database store")
 	}
 	db := database.NewDB(logger, sqlDB)
 
@@ -254,6 +232,8 @@ func Main(enterpriseInit EnterpriseInit) {
 			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
+
+	return nil
 }
 
 func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDebugserverEndpoint) goroutine.BackgroundRoutine {

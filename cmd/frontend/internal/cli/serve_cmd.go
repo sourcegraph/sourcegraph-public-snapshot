@@ -8,10 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -24,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
@@ -39,15 +36,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -91,35 +84,22 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 	return sqlDB, nil
 }
 
+type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
+
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) error {
-	ctx := context.Background()
+func Main(ctx context.Context, observationCtx *observation.Context, enterpriseSetupHook SetupFunc) error {
+	logger := observationCtx.Logger
 
-	log.SetFlags(0)
-	log.SetPrefix("")
-
-	liblog := sglog.Init(sglog.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySinkWith(
-		sglog.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
+	if os.Getenv("DEPLOY_TYPE") != "single-program" {
+		go debugserver.NewServerRoutine(ready).Start()
+	}
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
 	db := database.NewDB(logger, sqlDB)
-
-	observationCtx := observation.NewContext(logger)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		logger.Warn("Skipping out-of-band migrations check")
@@ -140,9 +120,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 		return errors.Wrap(err, "failed to apply site config overrides")
 	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
-	conf.Init()
 	conf.MustValidateDefaults()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
@@ -158,12 +136,6 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to override external service config")
 	}
-
-	// Filter trace logs
-	d, _ := time.ParseDuration(traceThreshold)
-	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d))) //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())

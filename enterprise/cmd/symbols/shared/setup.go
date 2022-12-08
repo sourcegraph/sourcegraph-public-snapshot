@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 	"database/sql"
-	stdlog "log"
 	"net/http"
 	"strings"
 
@@ -36,13 +35,7 @@ var (
 	minRepoSizeMb = env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
 )
 
-func CreateSetup(ctags types.CtagsConfig, repositoryFetcher types.RepositoryFetcherConfig) shared.SetupFunc {
-	baseConfig := env.BaseConfig{}
-	config := loadRockskipConfig(baseConfig, ctags, repositoryFetcher)
-	if err := baseConfig.Validate(); err != nil {
-		stdlog.Fatal("failed to load configuration:", err)
-	}
-
+func CreateSetup(config rockskipConfig) shared.SetupFunc {
 	repoToSize := map[string]int64{}
 
 	if useRockskip {
@@ -99,6 +92,7 @@ func CreateSetup(ctags types.CtagsConfig, repositoryFetcher types.RepositoryFetc
 }
 
 type rockskipConfig struct {
+	env.BaseConfig
 	Ctags                   types.CtagsConfig
 	RepositoryFetcher       types.RepositoryFetcherConfig
 	MaxRepos                int
@@ -108,6 +102,10 @@ type rockskipConfig struct {
 	SymbolsCacheSize        int
 	PathSymbolsCacheSize    int
 	SearchLastIndexedCommit bool
+}
+
+func (c *rockskipConfig) Load() {
+	// TODO(sqs)
 }
 
 func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repositoryFetcher types.RepositoryFetcherConfig) rockskipConfig {

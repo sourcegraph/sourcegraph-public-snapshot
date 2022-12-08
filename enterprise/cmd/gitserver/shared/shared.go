@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func EnterpriseInit(db database.DB) {
+func enterpriseInit(db database.DB) {
 	logger := log.Scoped("enterprise", "gitserver enterprise edition")
 	var err error
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())

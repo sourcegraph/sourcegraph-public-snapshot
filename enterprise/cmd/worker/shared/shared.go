@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -16,14 +17,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-var AdditionalJobs = map[string]job.Job{
+var additionalJobs = map[string]job.Job{
 	"codehost-version-syncing":      versions.NewSyncingJob(),
 	"insights-job":                  workerinsights.NewInsightsJob(),
 	"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
@@ -62,9 +66,8 @@ var AdditionalJobs = map[string]job.Job{
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func SetAuthzProviders(observationCtx *observation.Context) {
+func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider", ""), observationCtx)
-
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return
@@ -73,10 +76,21 @@ func SetAuthzProviders(observationCtx *observation.Context) {
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
 
-	ctx := context.Background()
-
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
+}
+
+func getEnterpriseInit(logger log.Logger) func(database.DB) {
+	return func(ossDB database.DB) {
+		enterpriseDB := edb.NewEnterpriseDB(ossDB)
+
+		var err error
+		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+		if err != nil {
+			logger.Fatal("Failed to create sub-repo client", log.Error(err))
+		}
+	}
+
 }

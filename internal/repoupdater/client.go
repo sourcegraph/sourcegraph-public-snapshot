@@ -19,10 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func LoadConfig() {
+	repoUpdaterURL := env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
+	DefaultClient = NewClient(repoUpdaterURL)
+}
+
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
-var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
+var DefaultClient *Client = &Client{} // TODO(sqs): needs a zero value or else a lot of tests will fail
 
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
@@ -21,19 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,8 +38,10 @@ const addr = ":3189"
 
 type EnterpriseInit = func(ossDB database.DB)
 
-// Start runs the worker.
-func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc, enterpriseInit EnterpriseInit) error {
+func LoadConfig(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
+	internalapi.LoadConfig()
+	symbols.LoadConfig()
+
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
@@ -55,26 +54,31 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 	}
 
-	jobs := map[string]job.Job{}
+	var config Config
+	config.Jobs = map[string]job.Job{}
+
 	for name, job := range builtins {
-		jobs[name] = job
+		config.Jobs[name] = job
 	}
 	for name, job := range additionalJobs {
-		jobs[name] = job
+		config.Jobs[name] = job
 	}
 
 	// Setup environment variables
-	loadConfigs(jobs)
+	loadConfigs(config.Jobs)
 
-	env.Lock()
-	env.HandleHelpFlag()
-	conf.Init()
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
+	// Validate environment variables
+	if err := validateConfigs(config.Jobs); err != nil {
+		config.AddError(err)
+	}
 
-	if err := keyring.Init(context.Background()); err != nil {
-		return errors.Wrap(err, "Failed to intialise keyring")
+	return &config
+}
+
+// Start runs the worker.
+func Start(ctx context.Context, observationCtx *observation.Context, config *Config, enterpriseInit EnterpriseInit) error {
+	if err := keyring.Init(ctx); err != nil {
+		return errors.Wrap(err, "initializing keyring")
 	}
 
 	if enterpriseInit != nil {
@@ -88,21 +92,18 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 
 	// Start debug server
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
-	// Validate environment variables
-	if err := validateConfigs(jobs); err != nil {
-		return err
+	if os.Getenv("DEPLOY_TYPE") != "single-program" {
+		go debugserver.NewServerRoutine(ready).Start()
 	}
 
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
-	emitJobCountMetrics(jobs)
+	emitJobCountMetrics(config.Jobs)
 
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines, err := createBackgroundRoutines(observationCtx, jobs)
+	allRoutines, err := createBackgroundRoutines(observationCtx, config.Jobs)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 
 	// This method blocks while the app is live - the following return is only to appease
 	// the type checker.
-	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
+	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
 	return nil
 }
 

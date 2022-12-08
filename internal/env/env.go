@@ -218,3 +218,11 @@ func HandleHelpFlag() {
 		}
 	}
 }
+
+// HackClearEnvironCache can be used to clear the environ cache if os.Setenv was called and you want
+// subsequent env.Get calls to return the new value. It is a hack but useful because some env.Get
+// calls are hard to remove from static init time, and the ones we've moved to post-init we want to
+// be able to use the default values we set in package singleprogram. TODO(sqs)
+func HackClearEnvironCache() {
+	environ = nil
+}

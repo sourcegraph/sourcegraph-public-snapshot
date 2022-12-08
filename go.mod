@@ -197,6 +197,7 @@ require (
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
+	github.com/fergusstrange/embedded-postgres v1.19.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
@@ -205,6 +206,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
 	go.opentelemetry.io/otel/metric v0.33.0 // indirect

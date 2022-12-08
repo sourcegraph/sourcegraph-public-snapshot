@@ -12,33 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	// This import is required to force a binary hash change when the src-cli version is bumped.
 	_ "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 
-func Main() {
-	cfg := &config.Config{}
-	cfg.Load()
-
-	env.Lock()
-
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	})
-	defer liblog.Sync()
-
-	logger := log.Scoped("executor", "the executor service polls the public Sourcegraph frontend API for work to perform")
+func Main(ctx context.Context, observationCtx *observation.Context, cfg *config.Config) error {
 
 	makeActionHandler := func(handler func(cliCtx *cli.Context, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
-			return handler(ctx, logger, cfg)
+			return handler(ctx, observationCtx.Logger, cfg)
 		}
 	}
 
@@ -159,8 +144,5 @@ func Main() {
 		},
 	}
 
-	if err := app.RunContext(context.Background(), os.Args); err != nil {
-		println(err.Error())
-		os.Exit(1)
-	}
+	return app.RunContext(ctx, os.Args)
 }
