@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import { mdiCog, mdiMapSearch, mdiPlus } from '@mdi/js'
-import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,8 +26,6 @@ import styles from './SiteAdminWebhooksPage.module.scss'
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     telemetryService,
 }) => {
     useEffect(() => {
@@ -71,11 +68,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     {connection && connection.nodes?.length > 0 && <Header />}
-                    <ConnectionList
-                        as="ul"
-                        className={classNames(styles.webhooksGrid, 'list-group')}
-                        aria-label="Webhooks"
-                    >
+                    <ConnectionList as="ul" className="list-group" aria-label="Webhooks">
                         {connection?.nodes?.map(node => (
                             <WebhookNode
                                 key={node.id}
@@ -108,10 +101,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
 }
 
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <div className={styles.webhooksGrid}>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Webhook</H5>
-        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Actions</H5>
-    </div>
+    <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Webhook</H5>
 )
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
