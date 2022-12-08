@@ -3365,6 +3365,11 @@ COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
+CREATE TABLE role_permissions (
+    role_id integer NOT NULL,
+    permission_id integer NOT NULL
+);
+
 CREATE TABLE roles (
     id integer NOT NULL,
     name text NOT NULL,
@@ -4267,6 +4272,9 @@ ALTER TABLE ONLY repo_permissions
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
+
 ALTER TABLE ONLY roles
     ADD CONSTRAINT roles_name UNIQUE (name);
 
@@ -5103,6 +5111,12 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);

@@ -2511,6 +2511,8 @@ Indexes:
 Check constraints:
     "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2772,6 +2774,20 @@ Indexes:
 
 **total**: Number of repositories that are not soft-deleted and not blocked
 
+# Table "public.role_permissions"
+```
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ role_id       | integer |           | not null | 
+ permission_id | integer |           | not null | 
+Indexes:
+    "role_permissions_pkey" PRIMARY KEY, btree (permission_id, role_id)
+Foreign-key constraints:
+    "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+    "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.roles"
 ```
    Column   |           Type           | Collation | Nullable |              Default              
@@ -2786,6 +2802,7 @@ Indexes:
 Check constraints:
     "name_not_blank" CHECK (name <> ''::text)
 Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
 
 ```

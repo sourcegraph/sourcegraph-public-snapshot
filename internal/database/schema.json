@@ -17770,6 +17770,67 @@
       "Triggers": []
     },
     {
+      "Name": "role_permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "permission_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "role_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "role_permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX role_permissions_pkey ON role_permissions USING btree (permission_id, role_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (permission_id, role_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "role_permissions_permission_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "permissions",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "role_permissions_role_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "roles",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "roles",
       "Comment": "",
       "Columns": [
