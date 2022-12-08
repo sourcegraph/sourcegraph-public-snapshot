@@ -2,7 +2,6 @@ version: '2.4'
 networks:
   sourcegraph:
 volumes:
-  pgdata:
   executors-e2e:
     external: true
 services:
@@ -15,16 +14,13 @@ services:
     ports:
       - '5433:5432'
     healthcheck:
-      test: 'cat /data/pgdata-12/3.31-reindex.completed && /liveness.sh'
+      test: '/liveness.sh'
       timeout: 1s
       interval: 10s
       retries: 10
       start_period: 1h
     networks:
       - sourcegraph
-    volumes:
-      - pgdata:/data
-    restart: always
   server:
     depends_on:
       postgres:
