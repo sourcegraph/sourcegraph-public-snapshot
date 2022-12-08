@@ -63,17 +63,19 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	// that we are getting fresh results.
 	go func() {
 		time.Sleep(sleepTime)
+		eventContext := context.Background()
+
 		switch e := payload.(type) {
 		case *gh.RepositoryEvent:
-			h.handleRepositoryEvent(ctx, db, e)
+			h.handleRepositoryEvent(eventContext, db, e)
 		case *gh.MemberEvent:
-			h.handleMemberEvent(ctx, db, e, codeHostURN)
+			h.handleMemberEvent(eventContext, db, e, codeHostURN)
 		case *gh.OrganizationEvent:
-			h.handleOrganizationEvent(ctx, db, e, codeHostURN)
+			h.handleOrganizationEvent(eventContext, db, e, codeHostURN)
 		case *gh.MembershipEvent:
-			h.handleMembershipEvent(ctx, db, e, codeHostURN)
+			h.handleMembershipEvent(eventContext, db, e, codeHostURN)
 		case *gh.TeamEvent:
-			h.handleTeamEvent(ctx, e, db)
+			h.handleTeamEvent(eventContext, e, db)
 		}
 	}()
 	return nil
