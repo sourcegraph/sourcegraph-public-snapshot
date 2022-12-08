@@ -273,9 +273,9 @@ func TestListWebhooks(t *testing.T) {
 					webhooks {
 						nodes {
 							id
-                            webhookLogs {
-                                totalCount
-                            }
+							webhookLogs {
+								totalCount
+ 							}
 						}
 						totalCount
 						pageInfo { hasNextPage }
