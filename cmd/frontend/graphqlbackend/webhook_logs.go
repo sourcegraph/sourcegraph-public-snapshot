@@ -141,18 +141,18 @@ func NewWebhookLogConnectionResolver(
 	}, nil
 }
 
-func (r *WebhookLogConnectionResolver) Nodes(ctx context.Context) ([]*WebhookLogResolver, error) {
+func (r *WebhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLogResolver, error) {
 	logs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*WebhookLogResolver, len(logs))
+	nodes := make([]*webhookLogResolver, len(logs))
 	db := database.NewDBWith(r.logger, r.store)
 	for i, log := range logs {
-		nodes[i] = &WebhookLogResolver{
-			DB:  db,
-			Log: log,
+		nodes[i] = &webhookLogResolver{
+			db:  db,
+			log: log,
 		}
 	}
 
@@ -197,9 +197,9 @@ func (r *WebhookLogConnectionResolver) compute(ctx context.Context) ([]*types.We
 	return r.logs, r.next, r.err
 }
 
-type WebhookLogResolver struct {
-	DB  database.DB
-	Log *types.WebhookLog
+type webhookLogResolver struct {
+	db  database.DB
+	log *types.WebhookLog
 }
 
 func marshalWebhookLogID(id int64) graphql.ID {
@@ -211,7 +211,7 @@ func unmarshalWebhookLogID(id graphql.ID) (logID int64, err error) {
 	return
 }
 
-func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*WebhookLogResolver, error) {
+func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
@@ -226,31 +226,31 @@ func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*Web
 		return nil, err
 	}
 
-	return &WebhookLogResolver{DB: db, Log: log}, nil
+	return &webhookLogResolver{db: db, log: log}, nil
 }
 
-func (r *WebhookLogResolver) ID() graphql.ID {
-	return marshalWebhookLogID(r.Log.ID)
+func (r *webhookLogResolver) ID() graphql.ID {
+	return marshalWebhookLogID(r.log.ID)
 }
 
-func (r *WebhookLogResolver) ReceivedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.Log.ReceivedAt}
+func (r *webhookLogResolver) ReceivedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.ReceivedAt}
 }
 
-func (r *WebhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	if r.Log.ExternalServiceID == nil {
+func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
+	if r.log.ExternalServiceID == nil {
 		return nil, nil
 	}
 
-	return externalServiceByID(ctx, r.DB, MarshalExternalServiceID(*r.Log.ExternalServiceID))
+	return externalServiceByID(ctx, r.db, MarshalExternalServiceID(*r.log.ExternalServiceID))
 }
 
-func (r *WebhookLogResolver) StatusCode() int32 {
-	return int32(r.Log.StatusCode)
+func (r *webhookLogResolver) StatusCode() int32 {
+	return int32(r.log.StatusCode)
 }
 
-func (r *WebhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
-	message, err := r.Log.Request.Decrypt(ctx)
+func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
+	message, err := r.log.Request.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -258,8 +258,8 @@ func (r *WebhookLogResolver) Request(ctx context.Context) (*webhookLogRequestRes
 	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &message}}, nil
 }
 
-func (r *WebhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
-	message, err := r.Log.Response.Decrypt(ctx)
+func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
+	message, err := r.log.Response.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}

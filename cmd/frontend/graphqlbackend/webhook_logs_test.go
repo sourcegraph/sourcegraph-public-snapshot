@@ -197,7 +197,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 		nodes, err := r.Nodes(ctx)
 		for i, node := range nodes {
-			assert.Equal(t, logs[i], node.Log)
+			assert.Equal(t, logs[i], node.log)
 		}
 		assert.Nil(t, err)
 
