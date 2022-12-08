@@ -39,7 +39,7 @@ interface Board {
     id: string
 }
 
-type NewEntity<T extends object> = Omit<T, 'id' |'created_at' | 'updated_at'>
+type NewEntity<T extends object> = Omit<T, 'id' | 'created_at' | 'updated_at'>
 
 interface ErrorResult {
     error: string
@@ -109,7 +109,7 @@ async function cloneQueryAnnotation(id: string, queryId: string): Promise<QueryA
 
     const newQueryAnnotation = {
         ...omit(queryAnnotation, 'id', 'updated_at', 'created_at'),
-        query_id: queryId
+        query_id: queryId,
     } satisfies NewEntity<QueryAnnotation>
 
     signale.log('--------CREATING QUERY ANNOTATION', JSON.stringify(newQueryAnnotation, null, 2))
