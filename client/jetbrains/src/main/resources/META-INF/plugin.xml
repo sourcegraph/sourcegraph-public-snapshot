@@ -2,7 +2,6 @@
     <id>com.sourcegraph.jetbrains</id>
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
-    <idea-version since-build="211" until-build="223.*"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
