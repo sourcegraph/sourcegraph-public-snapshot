@@ -4,17 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -25,8 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-// NewLogJob wraps a job with a LogJob, which records stats about the duration
-// of the search, logs slow searches, and records an event in the EventLogs table.
+// NewLogJob wraps a job with a LogJob, which records an event in the EventLogs table.
 func NewLogJob(inputs *search.Inputs, child job.Job) job.Job {
 	return &LogJob{
 		child:  child,

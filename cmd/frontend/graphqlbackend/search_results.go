@@ -455,15 +455,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func logBatch(ctx context.Context, db database.DB, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
-	var wg sync.WaitGroup
-	defer wg.Wait()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		LogSearchLatency(ctx, db, searchInputs, srr.ElapsedMilliseconds())
-	}()
-
+func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var status, alertType string
 	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
 	if srr.SearchAlert != nil {
@@ -504,7 +496,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
-	logBatch(ctx, r.db, r.SearchInputs, srr, err)
+	logBatch(ctx, r.SearchInputs, srr, err)
 	return srr, err
 }
 
