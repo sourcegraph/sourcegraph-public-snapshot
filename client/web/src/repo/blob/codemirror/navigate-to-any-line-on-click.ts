@@ -2,6 +2,7 @@ import { Extension, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
 import { blobPropsFacet } from '.'
 
 class LineLinkManager implements PluginValue {
