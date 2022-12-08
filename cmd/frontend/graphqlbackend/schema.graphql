@@ -1618,6 +1618,10 @@ type Query {
         Only include webhook logs of given webhook ID.
         """
         webhookID: ID
+        """
+        Only include webhook logs that have no webhook ID set.
+        """
+        legacyOnly: Boolean
     ): WebhookLogConnection!
 
     """

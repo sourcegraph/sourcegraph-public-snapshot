@@ -31,6 +31,7 @@ type WebhookLogsArgs struct {
 	Since      *time.Time
 	Until      *time.Time
 	WebhookID  *graphql.ID
+	LegacyOnly *bool
 }
 
 // webhookLogsExternalServiceID is used to represent an external service ID,
@@ -92,6 +93,14 @@ func (args *WebhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 		if id > 0 {
 			opts.WebhookID = &id
 		}
+	}
+
+	// If only legacy webhook logs is requested,
+	// set WebhookID to zero so that the database
+	// query only returns webhooks with no ID set.
+	if args.LegacyOnly != nil && *args.LegacyOnly {
+		zeroID := int32(0)
+		opts.WebhookID = &zeroID
 	}
 
 	return opts, nil
