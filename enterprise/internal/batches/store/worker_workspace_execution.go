@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store/author"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -210,7 +211,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}
 
-	author, err := batchesStore.GetChangesetAuthorForUser(ctx, batchSpec.UserID)
+	author, err := author.GetChangesetAuthorForUser(ctx, batchSpec.UserID)
 	if err != nil {
 		return false, errors.Wrap(err, "creating changeset author")
 	}
