@@ -131,6 +131,8 @@ func TestGitHubWebhooks(t *testing.T) {
 		return req
 	}
 
+	ghCloneURL := github.String("https://github.com/sourcegraph/sourcegraph.git")
+
 	webhookTests := []struct {
 		name      string
 		eventType string
@@ -143,7 +145,7 @@ func TestGitHubWebhooks(t *testing.T) {
 			event: github.RepositoryEvent{
 				Action: github.String("privatized"),
 				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+					CloneURL: ghCloneURL,
 				},
 			},
 			matchRepo: true,
@@ -157,7 +159,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					ID: github.Int64(accountID),
 				},
 				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+					CloneURL: ghCloneURL,
 				},
 			},
 			matchRepo: false,
@@ -171,7 +173,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					ID: github.Int64(accountID),
 				},
 				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+					CloneURL: ghCloneURL,
 				},
 			},
 			matchRepo: false,
@@ -230,7 +232,7 @@ func TestGitHubWebhooks(t *testing.T) {
 			event: github.TeamEvent{
 				Action: github.String("added_to_repository"),
 				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+					CloneURL: ghCloneURL,
 				},
 			},
 			matchRepo: true,
@@ -241,7 +243,7 @@ func TestGitHubWebhooks(t *testing.T) {
 			event: github.TeamEvent{
 				Action: github.String("removed_from_repository"),
 				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+					CloneURL: ghCloneURL,
 				},
 			},
 			matchRepo: true,
