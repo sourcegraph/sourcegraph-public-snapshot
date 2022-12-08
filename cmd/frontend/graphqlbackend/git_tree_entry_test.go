@@ -70,8 +70,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 }
 
 func TestGitTreeEntry_Stats(t *testing.T) {
-	wantPath := "foobar.md"
-	wantContent := "foobar"
+	wantPath := "foobar.js"
 	wantInventory := &inventory.Inventory{
 		Languages: []inventory.Lang{{
 			Name:       "JavaScript",
@@ -79,8 +78,12 @@ func TestGitTreeEntry_Stats(t *testing.T) {
 			TotalLines: 10,
 		}},
 	}
+	wantLangStats := []inventory.Lang{{
+		Name:       "JavaScript",
+		TotalBytes: 555,
+		TotalLines: 10,
+	}}
 
-	// repoSvc := backend.NewMockReposService()
 	backend.Mocks.Repos.GetInventory = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error) {
 		if repo.Name != "my/repo" {
 			t.Errorf("expected repo name %s, got %s", "my/repo", repo.Name)
@@ -90,14 +93,32 @@ func TestGitTreeEntry_Stats(t *testing.T) {
 		}
 		return wantInventory, nil
 	}
+	backend.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{Name: "my/repo"}, nil
+	}
+	rs := database.NewMockRepoStore()
+	rs.GetFunc.SetDefaultReturn(&types.Repo{Name: "my/repo"}, nil)
 	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(rs)
 	gitserverClient := gitserver.NewMockClient()
 
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient,
 		NewGitCommitResolver(db, gitserverClient, NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}), api.CommitID("aaaa"), nil),
 		CreateFileInfo(wantPath, true))
 
-	entry := NewTreeEntryStatsResolver(NewGitTreeEntryResolver(db, gitserverClient, gitTree))
+	entry := NewTreeEntryStatsResolver(gitTree)
 
 	langStats, err := entry.Languages(context.Background())
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	langStatsResult := make([]inventory.Lang, 0, len(langStats))
+	for _, ls := range langStats {
+		langStatsResult = append(langStatsResult, ls.l)
+	}
+
+	if diff := cmp.Diff(langStatsResult, wantLangStats); diff != "" {
+		t.Errorf("langStats are wrong: %s", diff)
+	}
+	t.Logf("%v", langStats)
 }
