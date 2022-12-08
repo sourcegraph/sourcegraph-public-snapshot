@@ -34,10 +34,10 @@ export const useNamespaces = (
     const organizationNamespaces = organizations.nodes
     const userNamespace = userDetails
 
-    const namespaces = useMemo(() => [userNamespace, ...organizationNamespaces], [
-        userNamespace,
-        organizationNamespaces,
-    ])
+    const namespaces = useMemo(
+        () => [userNamespace, ...organizationNamespaces],
+        [userNamespace, organizationNamespaces]
+    )
 
     // The default namespace selected from the dropdown should match whatever the initial
     // namespace was, or else default to the user's namespace.
