@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -173,7 +174,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		captureValues[capture] = struct{}{}
 		pointsMap[point.Time.String()+capture] = &point
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +262,7 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		sp.Time = row.Time
 
 		return nil
-	})
+	}, true)
 
 	if err != nil {
 		return nil, err
@@ -700,6 +701,9 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 }
 
 func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
+	tr, ctx := trace.New(ctx, "AugmentSeriesPoints", "")
+	defer tr.Finish()
+
 	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
@@ -761,7 +765,13 @@ WHERE %s
 ORDER BY recording_time ASC;
 `
 
-func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc, shouldTrace ...any) error {
+	if len(shouldTrace) > 0 {
+		var tr *trace.Trace
+		tr, ctx = trace.New(ctx, "CodeInsightsDB.query", q.Query(sqlf.PostgresBindVar))
+		defer tr.Finish()
+	}
+
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
 		return err
