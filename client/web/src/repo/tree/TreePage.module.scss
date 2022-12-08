@@ -105,3 +105,24 @@
         }
     }
 }
+
+.tree-entry {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding: 0.125rem 0.25rem;
+
+    break-inside: avoid-column;
+
+    &:hover {
+        background-color: var(--color-bg-1);
+    }
+
+    &--no-columns {
+        max-width: 18rem;
+    }
+}

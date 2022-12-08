@@ -10,7 +10,6 @@ import { LinearPieChart, Link, Icon, Card, CardHeader, ParentSize } from '@sourc
 
 import { RenderedFile } from '../blob/RenderedFile'
 
-import treeEntryStyles from './TreeEntriesSection.module.scss'
 import styles from './TreePage.module.scss'
 
 interface ReadmePreviewCardProps {
@@ -137,7 +136,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                 to={entry.url}
                                 className={classNames(
                                     'test-page-file-decorable',
-                                    treeEntryStyles.treeEntry,
+                                    styles.treeEntry,
                                     entry.isDirectory && 'font-weight-bold',
                                     `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
                                 )}
