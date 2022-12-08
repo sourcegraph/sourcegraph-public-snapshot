@@ -92,7 +92,7 @@ sg db add-user -name=foo
 			{
 				Name:        "update-user-external-services",
 				Usage:       "Manually update a user's external services",
-				Description: `Patches user_external_services with a custom OAuth token for the provided user. Used in dev/test environments.`,
+				Description: `Patches the table 'user_external_services'' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.`,
 				Action:      dbUpdateUserExternalAccount,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -228,7 +228,7 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", conf.GetEnv), "frontend", &observation.TestContext)
+	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
 	if err != nil {
 		return err
 	}
@@ -255,11 +255,13 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 		return errors.Wrap(err, "failed to decrypt external service config")
 	}
 	serviceConfigMap := make(map[string]any)
-	json.Unmarshal([]byte(serviceConfigString), &serviceConfigMap)
+	if err = json.Unmarshal([]byte(serviceConfigString), &serviceConfigMap); err != nil {
+		return errors.Wrap(err, "failed to unmarshal service config JSON")
+	}
 	if serviceConfigMap["url"] == nil {
 		return errors.New("failed to find url in external service config")
 	}
-	// Add trailing slash to the URL if not there already
+	// Add trailing slash to the URL if missing
 	serviceID, err := url.JoinPath(serviceConfigMap["url"].(string), "/")
 	if err != nil {
 		return errors.Wrap(err, "failed to create external service ID url")
@@ -300,7 +302,7 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 		extsvc.AccountData{
 			AuthData: authData,
 			Data:     nil,
-		}, // TODO ??
+		},
 	)
 	return err
 }
