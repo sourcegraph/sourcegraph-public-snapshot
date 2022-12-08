@@ -277,7 +277,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                             {(createWebhookError || updateWebhookError) && (
                                 <ErrorAlert
                                     className="mt-2"
-                                    prefix={`Error during ${createWebhookError ? "creating" : "updating"} of webhook`}
+                                    prefix={`Error during ${createWebhookError ? 'creating' : 'updating'} of webhook`}
                                     error={createWebhookError || updateWebhookError}
                                 />
                             )}

@@ -52,9 +52,7 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
                     headingElement="h2"
                 />
             )}
-            {webhook && (
-                <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />
-            )}
+            {webhook && <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />}
         </Container>
     )
 }
