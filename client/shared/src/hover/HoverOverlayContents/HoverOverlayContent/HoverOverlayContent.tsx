@@ -44,12 +44,12 @@ export const HoverOverlayContent: React.FunctionComponent<
                 data-testid="hover-overlay-content"
                 className={classNames(style.hoverOverlayContent, hoverOverlayContentsStyle.hoverOverlayContent)}
             >
-                <Text>{content.value}</Text>
+                <Text>Text intercepted by Cezary {content.value}</Text>
             </span>
         )
     }
 
-    const markdownOrError = tryMarkdownRender(content.value)
+    let markdownOrError = tryMarkdownRender(content.value)
 
     if (markdownOrError instanceof Error) {
         return (
@@ -61,6 +61,8 @@ export const HoverOverlayContent: React.FunctionComponent<
             </Alert>
         )
     }
+
+    markdownOrError = '<h3>Markdown intercepted by Cezary</h3>' + markdownOrError
 
     return (
         <>

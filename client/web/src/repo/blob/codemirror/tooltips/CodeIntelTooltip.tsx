@@ -142,7 +142,7 @@ export class CodeIntelTooltip implements Tooltip {
                 aggregatedBadges: this.hover.hoverMerged?.aggregatedBadges,
                 contents: [
                     {
-                        value: markdownContents,
+                        value: '### Hahaha\n\n' + markdownContents,
                         kind: MarkupKind.Markdown,
                     },
                 ],

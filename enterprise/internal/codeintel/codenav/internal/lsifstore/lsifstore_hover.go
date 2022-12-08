@@ -43,6 +43,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		for _, occurrence := range occurrences {
 			// Return the hover data we can extract from the most specific occurrence
 			if hoverText := extractHoverData(documentData.SCIPData, occurrence); len(hoverText) != 0 {
+				hoverText = append(hoverText, "**Cezary has been here**")
 				return strings.Join(hoverText, "\n"), translateRange(scip.NewRange(occurrence.Range)), true, nil
 			}
 		}
@@ -96,7 +97,10 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 					}
 
 					// Return first match
-					return strings.Join(symbol.Documentation, "\n"), rangeBySymbol[symbolName], true, nil
+					var docs []string
+					docs = append(docs, symbol.Documentation...)
+					docs = append(docs, "**Cezary messing with documentation**")
+					return strings.Join(docs, "\n"), rangeBySymbol[symbolName], true, nil
 				}
 			}
 		}

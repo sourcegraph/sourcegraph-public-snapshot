@@ -8,7 +8,7 @@ import {
     fromHoverMerged,
     HoverMerged,
     TextDocumentIdentifier,
-    TextDocumentPositionParameters,
+    TextDocumentPositionParameters
 } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 // eslint-disable-next-line no-restricted-imports
@@ -23,8 +23,8 @@ import { PanelViewData } from '../api/extension/extensionHostApi'
 import { getModeFromPath } from '../languages'
 import { parseRepoURI } from '../util/url'
 
-import { CodeIntelContext } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
+import { CodeIntelContext } from './legacy-extensions/api'
 import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
@@ -85,6 +85,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
+    // Here is the central point of the hover!
     public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
         const request = requestFor(textParameters)
         return (

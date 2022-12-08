@@ -1,4 +1,4 @@
-import { Badged, Hover, MarkupContent, HoverAlert, AggregableBadge } from 'sourcegraph'
+import { AggregableBadge, Badged, Hover, HoverAlert, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'
@@ -15,7 +15,7 @@ export interface HoverMerged {
 
 /** Create a merged hover from the given individual hovers. */
 export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
-    const contents: HoverMerged['contents'] = []
+    let contents: HoverMerged['contents'] = []
     const alerts: HoverMerged['alerts'] = []
     const aggregatedBadges = new Map<string, AggregableBadge>()
     let range: PlainRange | undefined
@@ -49,7 +49,10 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
     if (contents.length === 0) {
         return null
     }
-
+    contents = [{
+        value: '###Hahaha\n\n' + contents[0].value,
+        kind: MarkupKind.Markdown,
+    }]
     return {
         contents,
         alerts,
