@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -101,7 +102,7 @@ func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, 
 }
 
 func (r *batchSpecWorkspaceFileResolver) URL(ctx context.Context) (string, error) {
-	return "", errors.New("not implemented")
+	return fmt.Sprintf("/files/batch-changes/%s/%s", r.file.RandID, r.batchSpecRandID), nil
 }
 
 func (r *batchSpecWorkspaceFileResolver) CanonicalURL() string {

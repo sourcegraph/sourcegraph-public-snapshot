@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/log/logtest"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
@@ -188,5 +191,46 @@ func TestQueryJobsStatus(t *testing.T) {
 	}
 	if stringify(want) != stringify(got) {
 		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+func Test_WillRetry(t *testing.T) {
+	tests := []struct {
+		Name             string
+		want             bool
+		maxFailures      int
+		previousFailures int32
+	}{
+		{
+			Name:             "less than max",
+			want:             true,
+			maxFailures:      10,
+			previousFailures: 8,
+		},
+		{
+			Name:             "at actual limit",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 9,
+		},
+		{
+			Name:             "equal to max",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 10,
+		},
+		{
+			Name:             "greater than max",
+			want:             false,
+			maxFailures:      10,
+			previousFailures: 11,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			w := workerStoreExtra{nil, dbworkerstore.Options[*Job]{MaxNumRetries: test.maxFailures}}
+			got := w.WillRetry(&Job{NumFailures: test.previousFailures})
+			require.Equal(t, test.want, got)
+		})
 	}
 }

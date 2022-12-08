@@ -123,12 +123,6 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
-        case NotebookBlockType.COMPUTE:
-            return {
-                __typename: 'ComputeBlock',
-                id: block.id,
-                computeInput: block.computeInput ?? '',
-            }
     }
 }
 

@@ -53,6 +53,8 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, observationCtx 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
+			"auth.expired-soap-cleaner",
+			"deletes expired SOAP operator user accounts",
 			time.Minute,
 			&sourcegraphOperatorCleanHandler{
 				db:                db,

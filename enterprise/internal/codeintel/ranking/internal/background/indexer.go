@@ -23,9 +23,14 @@ func NewRepositoryIndexer(
 		symbolsClient:   symbolsClient,
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return indexer.indexRepositories(ctx)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"pagerank.repo-indexer", "builds page-rank indexes for repositories",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return indexer.indexRepositories(ctx)
+		}),
+	)
 }
 
 // We currently disable this until we find a better way to calculate a graph locally

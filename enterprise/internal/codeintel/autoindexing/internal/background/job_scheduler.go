@@ -60,19 +60,25 @@ func NewScheduler(
 		)
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
-	}), observationCtx.Operation(observation.Op{
-		Name:              "codeintel.indexing.HandleIndexSchedule",
-		MetricLabelValues: []string{"HandleIndexSchedule"},
-		Metrics:           metrics,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.As(err, &inference.LimitError{}) {
-				return observation.EmitForDefault.Without(observation.EmitForMetrics)
-			}
-			return observation.EmitForDefault
-		},
-	}))
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		context.Background(),
+		"codeintel.autoindexing-background-scheduler", "schedule autoindexing jobs in the background using defined or inferred configurations",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
+		}),
+		observationCtx.Operation(observation.Op{
+			Name:              "codeintel.indexing.HandleIndexSchedule",
+			MetricLabelValues: []string{"HandleIndexSchedule"},
+			Metrics:           metrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				if errors.As(err, &inference.LimitError{}) {
+					return observation.EmitForDefault.Without(observation.EmitForMetrics)
+				}
+				return observation.EmitForDefault
+			},
+		}),
+	)
 }
 
 func (b indexSchedulerJob) handleScheduler(
@@ -187,31 +193,36 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 }
 
 func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		if !autoIndexingEnabled() {
-			return nil
-		}
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if !autoIndexingEnabled() {
+				return nil
+			}
 
-		tx, err := store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
+			tx, err := store.Transact(ctx)
+			if err != nil {
+				return err
+			}
+			defer func() { err = tx.Done(err) }()
 
-		repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-		if err != nil {
-			return err
-		}
-
-		ids := make([]int, 0, len(repoRevs))
-		for _, repoRev := range repoRevs {
-			if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+			if err != nil {
 				return err
 			}
 
-			ids = append(ids, repoRev.ID)
-		}
+			ids := make([]int, 0, len(repoRevs))
+			for _, repoRev := range repoRevs {
+				if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+					return err
+				}
 
-		return tx.MarkRepoRevsAsProcessed(ctx, ids)
-	}))
+				ids = append(ids, repoRev.ID)
+			}
+
+			return tx.MarkRepoRevsAsProcessed(ctx, ids)
+		}),
+	)
 }

@@ -241,8 +241,7 @@ func formatStackFrame(function string, file string, line int) string {
 	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
 
 	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
-	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), sourcegraphPrefix) // cmd/frontend/graphqlbackend/trace.go
-	fileName = strings.TrimPrefix(fileName, "/")                                                // Strip prefix `/` if there is one
+	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), "/main/") // cmd/frontend/graphqlbackend/trace.go
 
 	return fmt.Sprintf("%s:%d (Function: %s)", fileName, line, funcName)
 }

@@ -63,14 +63,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     } = useNavbarQueryState(selectQueryState, shallow)
 
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const { recentSearches, addRecentSearch } = useRecentSearches()
+    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -78,11 +75,10 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 history: props.history,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
-                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
+        [submitSearch, props.history, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(
@@ -104,7 +100,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
-                showSearchContextManagement={showSearchContextManagement}
+                showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}

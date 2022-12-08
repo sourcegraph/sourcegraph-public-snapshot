@@ -11,13 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type WebhookService interface {
+	CreateWebhook(ctx context.Context, name, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error)
+	DeleteWebhook(ctx context.Context, id int32) error
+	UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN string, secret *string) (*types.Webhook, error)
+}
+
 type webhookService struct {
 	db      database.DB
 	keyRing keyring.Ring
 }
 
-func NewWebhookService(db database.DB, keyRing keyring.Ring) webhookService {
-	return webhookService{
+func NewWebhookService(db database.DB, keyRing keyring.Ring) WebhookService {
+	return &webhookService{
 		db:      db,
 		keyRing: keyRing,
 	}
@@ -39,7 +45,7 @@ func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
 	return ws.db.Webhooks(ws.keyRing.WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
 }
 
-func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secret string) (*types.Webhook, error) {
+func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN string, secret *string) (*types.Webhook, error) {
 	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
 	webhook, err := webhooksStore.GetByID(ctx, id)
 	if err != nil {
@@ -50,7 +56,7 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		webhook.Name = name
 	}
 	if codeHostKind != "" {
-		if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
+		if err := validateCodeHostKindAndSecret(codeHostKind, secret); err != nil {
 			return nil, err
 		}
 
@@ -63,18 +69,18 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		}
 		webhook.CodeHostURN = codeHostURN
 	}
-	if secret != "" {
+	if secret != nil {
 		if codeHostKind != "" {
-			if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
+			if err := validateCodeHostKindAndSecret(codeHostKind, secret); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, &secret); err != nil {
+			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, secret); err != nil {
 				return nil, err
 			}
 		}
 
-		webhook.Secret = types.NewUnencryptedSecret(secret)
+		webhook.Secret = types.NewUnencryptedSecret(*secret)
 	}
 
 	newWebhook, err := webhooksStore.Update(ctx, webhook)
