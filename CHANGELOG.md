@@ -56,7 +56,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 4.2.1
 
-* `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
 
 ## 4.2.0
 
