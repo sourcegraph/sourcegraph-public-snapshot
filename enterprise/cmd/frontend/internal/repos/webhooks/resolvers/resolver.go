@@ -322,10 +322,18 @@ func (r *webhookResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserRe
 	return user, err
 }
 
-func (r *webhookResolver) WebhookLogs(ctx context.Context) (*graphqlbackend.WebhookLogConnectionResolver, error) {
+func (r *webhookResolver) WebhookLogs(ctx context.Context, args *graphqlbackend.WebhookLogsArgs) (*graphqlbackend.WebhookLogConnectionResolver, error) {
 	gqlID := marshalWebhookID(r.hook.ID)
-	args := &graphqlbackend.WebhookLogsArgs{WebhookID: &gqlID}
-	res, err := graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, args, graphqlbackend.WebhookLogsAllExternalServices)
+	// We need to make a new args struct, otherwise the pointer gets shared
+	// between resolvers.
+	resolverArgs := &graphqlbackend.WebhookLogsArgs{
+		WebhookID:  &gqlID,
+		After:      args.After,
+		OnlyErrors: args.OnlyErrors,
+		Since:      args.Since,
+		Until:      args.Until,
+	}
+	res, err := graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, resolverArgs, graphqlbackend.WebhookLogsAllExternalServices)
 	return res, err
 }
 
