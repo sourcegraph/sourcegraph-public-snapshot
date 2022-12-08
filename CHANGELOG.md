@@ -46,6 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 - When the setting `batchChanges.enforceForks` is enabled, Batch Changes will now prefix the name of the fork repo it creates with the original repo's namespace name in order to prevent repo name collisions. [#43681](https://github.com/sourcegraph/sourcegraph/pull/43681), [#44458](https://github.com/sourcegraph/sourcegraph/pull/44458), [#44548](https://github.com/sourcegraph/sourcegraph/pull/44548), [#44924](https://github.com/sourcegraph/sourcegraph/pull/44924)
 - Code Insights: fixed an issue where certain queries matching sequential whitespace characters would overcount. [#44969](https://github.com/sourcegraph/sourcegraph/pull/44969)
 - GitHub fine-grained Personal Access Tokens can now clone repositories correctly, but are not yet officially supported. [#45137](https://github.com/sourcegraph/sourcegraph/pull/45137)
+- Detect-and-track Code Insights will now return data for repositories without sub-repo permissions even when sub-repo permissions are enabled on the instance. [#45631](https://github.com/sourcegraph/sourcegraph/pull/45361)
 
 ### Removed
 
