@@ -6,7 +6,7 @@ import {
     mdiAccountEdit,
     mdiCheckboxBlankCircle,
     mdiChevronDown,
-    mdiChevronRight,
+    mdiChevronUp,
 } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -79,7 +79,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -184,7 +184,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
