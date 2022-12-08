@@ -34,6 +34,9 @@ popd
 # shellcheck disable=SC1091
 source /root/.sg_envrc
 
+SOURCEGRAPH_REPORTED_VERSION_OLD=$(curl -fs "$URL/__version")
+echo "Sourcegraph instance (old) is reporting version: \"$SOURCEGRAPH_REPORTED_VERSION_OLD\""
+
 # Stop old Sourcegraph release
 docker container stop "$CONTAINER"
 sleep 5
@@ -75,6 +78,10 @@ sleep 15
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f "$URL"
 curl -f "$URL"/healthz
+
+SOURCEGRAPH_REPORTED_VERSION_NEW=$(curl -fs "$URL/__version")
+echo "Sourcegraph instance (upgraded) is reporting version: \"$SOURCEGRAPH_REPORTED_VERSION_NEW\""
+
 echo "--- TEST: Running tests"
 pushd client/web
 yarn run test:regression:core
