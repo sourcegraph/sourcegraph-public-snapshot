@@ -27,8 +27,8 @@ The incoming webhook will be configured to accept events from a specific code ho
 1. Navigate to **Site Admin > Incoming webhooks**
 1. Click **Add webhook**
 1. Fill out the form:
-   1. **Webhook name**: Descriptive name for the webhook, initially populate by the code host URN.
-   1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance. 
+   1. **Webhook name**: Descriptive name for the webhook.
+   1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance.
    1. **Code host URN**: The URN for the code host. Again, this will be filtered by code host connections added on your instance.
    1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
        > NOTE: Secrets are not supported for BitBucket cloud
@@ -97,11 +97,11 @@ The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
 1. On your Bitbucket Server / Bitbucket Data Center instance, go to **Administration > Add-ons > Sourcegraph**
 1. Fill in the **Add a webhook** form
-   * **Name**: A unique name representing your Sourcegraph instance
-   * **Scope**: `global`
-   * **Endpoint**: The URL found after creating a webhook receiver
+   * **Name**: A unique name representing your Sourcegraph instance.
+   * **Scope**: `global`.
+   * **Endpoint**: The URL found after creating an incoming webhook.
    * **Events**: `repo:build_status`, `pr:activity:status`, `pr:activity:event`, `pr:activity:rescope`, `pr:activity:merge`, `pr:activity:comment`, `pr:activity:reviewers`, `pr:participant:status`
-   * **Secret**: The secret you configured when creating the incoming webhook
+   * **Secret**: The secret you configured when creating the incoming webhook.
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
@@ -115,9 +115,9 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbuc
 1. On Bitbucket Cloud, go to each repository, and then **Repository settings > Webhooks**.
 1. Click **Add webhook**.
 1. Fill in the webhook form:
-   * **Title**: any title.
-   * **URL**: the URL found after creating an incoming webhook
-   * **Triggers**: select **Build status created** and **Build status updated** under **Repository**, and every item under **Pull request**.
+   * **Title**: Any title.
+   * **URL**: The URL found after creating an incoming webhook.
+   * **Triggers**: Select **Build status created** and **Build status updated** under **Repository**, and every item under **Pull request**.
 1. Click **Save**.
 1. Confirm that the new webhook is listed below **Repository hooks**.
 
