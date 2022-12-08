@@ -1,10 +1,13 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog, mdiPlus } from '@mdi/js'
+import { mdiCog } from '@mdi/js'
+import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ButtonLink, Container, H2, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, H2, H5, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -17,9 +20,9 @@ import {
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
-import { WebhookFields } from '../graphql-operations'
+import { DeleteWebhookResult, DeleteWebhookVariables, WebhookFields } from '../graphql-operations'
 
-import { useWebhookLogsConnection, useWebhookQuery } from './backend'
+import { DELETE_WEBHOOK, useWebhookLogsConnection, useWebhookQuery } from './backend'
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
 import { WebhookInformation } from './WebhookInformation'
 import { WebhookLogNode } from './webhooks/WebhookLogNode'
@@ -34,6 +37,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             params: { id },
         },
         telemetryService,
+        history,
     } = props
 
     const [onlyErrors, setOnlyErrors] = useState(false)
@@ -43,6 +47,11 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
     }, [telemetryService])
+
+    const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
+        DeleteWebhookResult,
+        DeleteWebhookVariables
+    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => history.push('/site-admin/webhooks') })
 
     return (
         <Container>
@@ -69,25 +78,44 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
                                 <ButtonLink
-                                    to="/site-admin/webhooks/create"
-                                    className="test-create-webhook"
+                                    to={`/site-admin/webhooks/${id}/edit`}
+                                    className="test-edit-webhook"
                                     size="sm"
                                     variant="primary"
                                     display="inline"
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create
+                                    Edit
                                 </ButtonLink>
                             </div>
                             <div className="mr-1">
-                                <ButtonLink
-                                    to={`/site-admin/webhooks/${id}/edit`}
-                                    className="test-edit-webhook"
-                                    size="sm"
-                                    variant="secondary"
-                                    display="inline"
-                                >
-                                    Edit
-                                </ButtonLink>
+                                <Tooltip content="Delete webhook">
+                                    <Button
+                                        aria-label="Delete"
+                                        className="test-delete-webhook"
+                                        variant="danger"
+                                        size="sm"
+                                        disabled={isDeleting}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            deleteWebhook().catch(
+                                                // noop here is used because creation error is handled directly when useMutation is called
+                                                noop
+                                            )
+                                        }}
+                                    >
+                                        <>
+                                            {isDeleting && <LoadingSpinner />}
+                                            Delete
+                                        </>
+                                    </Button>
+                                </Tooltip>
+                                {deleteError && (
+                                    <ErrorAlert
+                                        className="mt-2"
+                                        prefix="Error during webhook deletion"
+                                        error={deleteError}
+                                    />
+                                )}
                             </div>
                         </div>
                     }
