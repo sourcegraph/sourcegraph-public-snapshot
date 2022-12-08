@@ -578,7 +578,7 @@ func InitDB(logger log.Logger) (database.DB, error) {
 
 	obsCtx := observation.TestContext
 	obsCtx.Logger = logger
-	sqlDB, err := connections.RawNewFrontendDB("postgres://sg@127.0.0.1:5433/sg", "", &obsCtx)
+	sqlDB, err := connections.RawNewFrontendDB(&obsCtx, "postgres://sg@127.0.0.1:5433/sg", "")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to database: %s", err)
 	}
