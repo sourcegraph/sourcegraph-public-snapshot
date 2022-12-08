@@ -78,6 +78,7 @@ type RepoStore interface {
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
+	GetFirstRepoByCloneURL(context.Context, string) (*types.Repo, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
@@ -1577,7 +1578,7 @@ LIMIT 1
 `
 
 // GetFirstRepoNameByCloneURL returns the first repo name in our database that
-// match the given clone url. If not repo is found, an empty string and nil error
+// match the given clone url. If no repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
@@ -1585,6 +1586,17 @@ func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL str
 		return "", err
 	}
 	return api.RepoName(name), nil
+}
+
+// GetFirstRepoByCloneURL returns the first repo in our database that matches the given clone url.
+// If no repo is found, nil and an error are returned.
+func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string) (*types.Repo, error) {
+	repoName, err := s.GetFirstRepoNameByCloneURL(ctx, cloneURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GetByName(ctx, repoName)
 }
 
 func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
