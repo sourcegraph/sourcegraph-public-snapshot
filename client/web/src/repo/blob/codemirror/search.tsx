@@ -1,5 +1,5 @@
 /**
- * This extension exends CodeMirro's own search extension with a custom search
+ * This extension extends CodeMirror's own search extension with a custom search
  * UI.
  */
 
@@ -17,8 +17,10 @@ import { Compartment, Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
+import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
-
+import { Subject, Subscription } from 'rxjs'
+import { debounceTime, distinctUntilChanged, startWith, filter } from 'rxjs/operators'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
