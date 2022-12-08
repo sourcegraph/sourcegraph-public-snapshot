@@ -13,6 +13,8 @@ import (
 
 	"github.com/google/go-github/v47/github"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func marshalJSON(t testing.TB, v any) string {
@@ -52,7 +53,8 @@ func waitUntil(t *testing.T, condition chan bool) {
 }
 
 func TestGitHubWebhooks(t *testing.T) {
-	sleepTime = 0
+	TestSetGitHubHandlerSleepTime(t, 0)
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -83,24 +85,21 @@ func TestGitHubWebhooks(t *testing.T) {
 			Repos:         []string{"sourcegraph/sourcegraph"},
 		})),
 	}
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
+
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+
 	err = esStore.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	repo := &types.Repo{
 		Name: "github.com/sourcegraph/sourcegraph",
-		URI:  "github.com/sourcegraph/sourcegraph",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "R_kgDOIOwtPQ",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Metadata: map[string]any{"ID": "R_kgDOIOwtPQ"},
 		Sources: map[string]*types.SourceInfo{
 			es.URN(): {
-				ID:       "R_kgDOIOwtPQ",
 				CloneURL: "https://github.com/sourcegraph/sourcegraph",
 			},
 		},
@@ -114,19 +113,18 @@ func TestGitHubWebhooks(t *testing.T) {
 	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
-	hook := fewebhooks.GitHubWebhook{
-		WebhookRouter: &fewebhooks.WebhookRouter{
-			DB: db,
-		},
-	}
-
+	hook := fewebhooks.GitHubWebhook{WebhookRouter: &fewebhooks.WebhookRouter{DB: db}}
 	ghWebhook.Register(hook.WebhookRouter)
 
-	newReq := func(t *testing.T, event string, payload []byte) *http.Request {
+	newReq := func(t *testing.T, eventType string, event any) *http.Request {
 		t.Helper()
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
+
+		jsonPayload, err := json.Marshal(event)
 		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", event)
+
+		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(jsonPayload))
+		require.NoError(t, err)
+		req.Header.Add("X-Github-Event", eventType)
 		req.Header.Set("Content-Type", "application/json")
 		return req
 	}
@@ -137,7 +135,8 @@ func TestGitHubWebhooks(t *testing.T) {
 		name      string
 		eventType string
 		event     any
-		matchRepo bool // if false, match user
+		wantRepo  bool
+		wantUser  bool
 	}{
 		{
 			name:      "repository event",
@@ -148,7 +147,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					CloneURL: ghCloneURL,
 				},
 			},
-			matchRepo: true,
+			wantRepo: true,
 		},
 		{
 			name:      "member event added",
@@ -162,7 +161,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					CloneURL: ghCloneURL,
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "member event removed",
@@ -176,7 +175,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					CloneURL: ghCloneURL,
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "organization event member added",
@@ -189,7 +188,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					},
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "organization event member removed",
@@ -202,7 +201,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					},
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "membership event added",
@@ -213,7 +212,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					ID: github.Int64(accountID),
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "membership event removed",
@@ -224,7 +223,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					ID: github.Int64(accountID),
 				},
 			},
-			matchRepo: false,
+			wantUser: true,
 		},
 		{
 			name:      "team event added to repository",
@@ -235,7 +234,7 @@ func TestGitHubWebhooks(t *testing.T) {
 					CloneURL: ghCloneURL,
 				},
 			},
-			matchRepo: true,
+			wantRepo: true,
 		},
 		{
 			name:      "team event removed from repository",
@@ -246,26 +245,25 @@ func TestGitHubWebhooks(t *testing.T) {
 					CloneURL: ghCloneURL,
 				},
 			},
-			matchRepo: true,
+			wantRepo: true,
 		},
 	}
 
 	for _, webhookTest := range webhookTests {
 		t.Run(webhookTest.name, func(t *testing.T) {
 			webhookCalled := make(chan bool)
-			repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-				if webhookTest.matchRepo {
+			repoupdater.MockSchedulePermsSync = func(_ context.Context, args protocol.PermsSyncRequest) error {
+				if webhookTest.wantRepo {
 					webhookCalled <- args.RepoIDs[0] == repo.ID
-				} else {
+				}
+				if webhookTest.wantUser {
 					webhookCalled <- args.UserIDs[0] == u.ID
 				}
 				return nil
 			}
 			t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
 
-			payload, err := json.Marshal(webhookTest.event)
-			require.NoError(t, err)
-			req := newReq(t, webhookTest.eventType, payload)
+			req := newReq(t, webhookTest.eventType, webhookTest.event)
 
 			responseRecorder := httptest.NewRecorder()
 			hook.ServeHTTP(responseRecorder, req)

@@ -4,11 +4,13 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
 	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -45,6 +47,12 @@ func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
 
 // This should be set to zero for testing
 var sleepTime = 10 * time.Second
+
+func TestSetGitHubHandlerSleepTime(t *testing.T, val time.Duration) {
+	old := sleepTime
+	t.Cleanup(func() { sleepTime = old })
+	sleepTime = val
+}
 
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
 	// TODO: This MUST be removed once permissions syncing jobs are database backed!
