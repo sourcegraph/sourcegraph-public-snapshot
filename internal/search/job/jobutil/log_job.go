@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -18,8 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -48,13 +45,11 @@ func (l *LogJob) Run(ctx context.Context, clients job.RuntimeClients, s streamin
 
 	start := time.Now()
 
-	statsStream := streaming.NewStatsObservingStream(s)
-	resultStream := streaming.NewResultCountingStream(statsStream)
-	alert, err = l.child.Run(ctx, clients, resultStream)
+	alert, err = l.child.Run(ctx, clients, s)
 
 	duration := time.Since(start)
 
-	l.log(ctx, clients, statsStream.Stats, resultStream.Count(), duration, alert, err)
+	l.logEvent(ctx, clients, duration)
 
 	return alert, err
 }
@@ -75,71 +70,16 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func (l *LogJob) log(
-	ctx context.Context,
-	clients job.RuntimeClients,
-	stats streaming.Stats,
-	resultCount int,
-	duration time.Duration,
-	alert *search.Alert,
-	err error,
-) {
-	var wg sync.WaitGroup
-	defer wg.Wait()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		l.logSearchDuration(ctx, clients, l.inputs, duration)
-	}()
-
-	var status, alertType string
-	status = determineStatusForLogs(alert, stats, err)
-	if alert != nil {
-		alertType = alert.PrometheusType
-	}
-	requestSource := string(trace.RequestSource(ctx))
-	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, duration)
-
-	isSlow := duration > slowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: l.inputs.OriginalQuery,
-			Typ:           requestName,
-			Source:        requestSource,
-			Status:        status,
-			AlertType:     alertType,
-			DurationMs:    duration.Milliseconds(),
-			ResultSize:    resultCount,
-			Error:         err,
-		})
-
-		_ = ev.Send()
-
-		if isSlow {
-			clients.Logger.Warn("slow search request",
-				log.String("query", l.inputs.OriginalQuery),
-				log.String("type", requestName),
-				log.String("source", requestSource),
-				log.String("status", status),
-				log.String("alertType", alertType),
-				log.Int64("durationMs", duration.Milliseconds()),
-				log.Int("resultSize", resultCount),
-				log.String("error", err.Error()),
-			)
-		}
-	}
-}
-
 // logSearchDuration records search durations in the event database. This
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClients, si *search.Inputs, duration time.Duration) {
+func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
 	tr, ctx := trace.New(ctx, "LogSearchDuration", "")
 	defer tr.Finish()
+
 	var types []string
-	resultTypes, _ := si.Query.StringValues(query.FieldType)
+	resultTypes, _ := l.inputs.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
 		switch typ {
 		case "repo", "symbol", "diff", "commit":
@@ -149,15 +89,15 @@ func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClien
 			types = append(types, "file")
 		case "file":
 			switch {
-			case si.PatternType == query.SearchTypeStandard:
+			case l.inputs.PatternType == query.SearchTypeStandard:
 				types = append(types, "standard")
-			case si.PatternType == query.SearchTypeStructural:
+			case l.inputs.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteral:
+			case l.inputs.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case si.PatternType == query.SearchTypeRegex:
+			case l.inputs.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
-			case si.PatternType == query.SearchTypeLucky:
+			case l.inputs.PatternType == query.SearchTypeLucky:
 				types = append(types, "lucky")
 			}
 		}
@@ -170,7 +110,7 @@ func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClien
 		return
 	}
 
-	q, err := query.ToBasicQuery(si.Query)
+	q, err := query.ToBasicQuery(l.inputs.Query)
 	if err != nil {
 		// Can't convert to a basic query, can't guarantee accurate reporting.
 		return
@@ -189,7 +129,7 @@ func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClien
 			types = append(types, "regexp")
 		} else if q.IsStructural() {
 			types = append(types, "structural")
-		} else if si.Query.Exists(query.FieldFile) {
+		} else if l.inputs.Query.Exists(query.FieldFile) {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -226,22 +166,6 @@ var (
 		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 	}, []string{"status", "alert_type", "source", "request_name"})
 )
-
-func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
-	searchResponseCounter.WithLabelValues(
-		status,
-		alertType,
-		requestSource,
-		requestName,
-	).Inc()
-
-	searchLatencyHistogram.WithLabelValues(
-		status,
-		alertType,
-		requestSource,
-		requestName,
-	).Observe(elapsed.Seconds())
-}
 
 // determineStatusForLogs determines the final status of a search for logging
 // purposes.
