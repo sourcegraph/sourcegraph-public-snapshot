@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
@@ -13,6 +15,9 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -26,6 +31,19 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"hostname", "category", "code"})
+
+const tempSearchCoreMetricsLogPathEnv = "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH"
+
+var (
+	tempSearchCoreMetricsLoggingEnabled = os.Getenv(tempSearchCoreMetricsLogPathEnv) != ""
+
+	// tempSearchMetricsLogger is a zap.Logger that logs writes metrics data to the log file specified
+	// in the SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH environment variable.
+	//
+	// Note: tempSearchMetricsLogger must be shared across all metered searcher instances in order to have all
+	// writes to the log file protected by the same lock.
+	tempSearchMetricsLogger = mustInitializeTempSearchCoreMetricsLogger()
+)
 
 type meteredSearcher struct {
 	zoekt.Streamer
@@ -220,6 +238,17 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 
+	if tempSearchCoreMetricsLoggingEnabled {
+		if fields := event.Fields(); len(fields) > 0 {
+			data, marshalErr := json.Marshal(fields)
+			if marshalErr != nil {
+				tempSearchMetricsLogger.Error("failed to marshal search metrics event data", zap.Error(marshalErr))
+			} else {
+				tempSearchMetricsLogger.Info("emitting search metrics", zap.Any("data", json.RawMessage(data)))
+			}
+		}
+	}
+
 	return err
 }
 
@@ -301,4 +330,53 @@ func queryString(q query.Q) string {
 		return "<nil>"
 	}
 	return q.String()
+}
+
+// mustInitializeTempSearchCoreMetricsLogger returns a zap.Logger that's suitable for logging search metrics
+// to the log file specified in the "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH" environment variable.
+// If "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH" is empty, a no-op logger is returned instead.
+func mustInitializeTempSearchCoreMetricsLogger() *zap.Logger {
+	logPath := os.Getenv(tempSearchCoreMetricsLogPathEnv)
+	if logPath == "" {
+		return zap.NewNop()
+	}
+
+	// truncate the logfile on startup (so that we don't emit duplicate logs)
+	if _, err := os.Stat(logPath); err == nil {
+		_ = os.Truncate(logPath, 0)
+	}
+
+	// we use a lumberjack logger to rotate the log file
+	// (so that we don't consume too much ephemeral disk space)
+	lumberjackSync := &lumberjack.Logger{
+		Filename:   logPath,
+		MaxSize:    20, // log file can be max 20 megabytes
+		MaxBackups: 0,  // no backups
+	}
+
+	// copied from https://github.com/sourcegraph/log/blob/7d93c6ad70375de4801d6e292f23b2de407eb859/internal/encoders/config.go#L15
+	encoderConfig := zapcore.EncoderConfig{
+		NameKey:        "InstrumentationScope",
+		TimeKey:        "Timestamp",
+		EncodeTime:     zapcore.EpochNanosTimeEncoder,
+		LevelKey:       "SeverityText",
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		MessageKey:     "Body",
+		CallerKey:      "Caller",
+		FunctionKey:    "Function",
+		StacktraceKey:  "Stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	// using a custom zap core disables sampling by default, according to
+	// https://github.com/uber-go/zap/issues/1211#issuecomment-1337897072
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(lumberjackSync),
+		zapcore.InfoLevel,
+	)
+
+	return zap.New(core, zap.AddCaller())
 }
