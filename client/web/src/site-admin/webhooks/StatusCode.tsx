@@ -12,7 +12,7 @@ export interface Props {
 export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ code }) => (
     <span>
         <span className={classNames('mr-1')}>
-            {(code < 400 || code === 404) ? (
+            {code < 400 || code === 404 ? (
                 <Icon className="text-success" aria-label="Success" svgPath={mdiCheck} />
             ) : (
                 <Icon className="text-danger" aria-label="Failed" svgPath={mdiAlertCircle} />
