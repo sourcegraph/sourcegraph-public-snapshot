@@ -520,9 +520,6 @@ func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionCheck
 	if !SubRepoEnabled(checker) {
 		return false, nil
 	}
-	if repoID == 1 {
-		return false, errors.New("sourcegraph should error")
-	}
 	return checker.EnabledForRepoID(ctx, repoID)
 }
 
