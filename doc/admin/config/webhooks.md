@@ -1,10 +1,15 @@
 # Incoming webhooks
 
-Incoming webhooks can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside of the instance. 
+Incoming webhooks can be configured on a Sourcegraph instance in order to receive webhook events from code hosts. This allows Sourcegraph to react more quickly to events that occur outside of the instance instead of polling for changes.
 
-We currently support webhooks for the following:
+Webhooks are currently implemented to speed up two types of external events:
 
-Code host | [Batch changes](../../batch_changes/index.md) | Repository push
+* Keeping batch changes changeset details up to date
+* Keeping code on Sourcegraph fresh by responding to new code being pushed to a repository
+
+See the table below for code host compatibility:
+
+Code host | [Batch changes](../../batch_changes/index.md) | Code push
 --------- | :-: | :-:
 GitHub | 🟢 | 🟢 
 GitLab | 🟢 | 🔴
@@ -74,7 +79,7 @@ The instructions for setting up webhooks on the code host are specific to each c
 
 Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
 
-#### Repository push
+#### Code push
 
 Follow the same steps as above, but ensure you include the `push` event under **Let me select individual events**
 
