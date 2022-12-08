@@ -553,17 +553,6 @@ var (
 )
 
 func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
-	// Override user context to ensure that stats for this query are cached
-	// regardless of the user context's cancellation. For example, if
-	// stats/sparklines are slow to load on the homepage and all users navigate
-	// away from that page before they load, no user would ever see them and we
-	// would never cache them. This fixes that by ensuring the first request
-	// 'kicks off loading' and places the result into cache regardless of
-	// whether or not the original querier of this information still wants it.
-	originalCtx := ctx
-	ctx = context.Background()
-	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
-
 	cacheKey := r.SearchInputs.OriginalQuery
 	// Check if value is in the cache.
 	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
