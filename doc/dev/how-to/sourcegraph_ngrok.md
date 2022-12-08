@@ -1,7 +1,7 @@
 # Run a local Sourcegraph instance behind ngrok
 
 Sometimes it's useful to have the Sourcegraph instance you're running on your
-local machine be reachable over the internet. If you're testing webhooks, for
+local machine to be reachable over the internet. If you're testing webhooks, for
 example, where a code host needs to be able to send requests to your instances.
 
 One way to do that is to use [ngrok](https://ngrok.io/), a reverse proxy that
