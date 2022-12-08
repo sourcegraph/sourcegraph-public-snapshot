@@ -43,7 +43,7 @@ The incoming webhook will be configured to accept events from a specific code ho
 
 The incoming webhook will now be created and you will be redirected to a page showing more details.
 
-Most importantly, you will be presented with the unique URL for this webhook which is required when configuring the webhook on your code host.
+Use the unique URL present on the details page to configure [the webhook on your code host](#configuring-webhooks-on-the-code-host).
 
 ## Configuring webhooks on the code host
 
@@ -173,6 +173,3 @@ To retain webhook logs for one day:
 ### Encrypting webhook logs
 
 Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
-Recent received webhook payloads can be seen on the webhook details page for each incoming webhook.
-  
- > NOTE: Deprecated webhooks added via code host configuration can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
