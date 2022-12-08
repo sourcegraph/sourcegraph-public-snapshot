@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
@@ -915,6 +917,12 @@ func TestRepos_List_query1(t *testing.T) {
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, db, repo)
 	}
+
+	abcDefRepo, err := db.Repos().GetByName(ctx, "abc/def")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		query string
 		want  []api.RepoName
@@ -923,6 +931,10 @@ func TestRepos_List_query1(t *testing.T) {
 		{"ABC/DEF", []api.RepoName{"abc/def"}},
 		{"xyz", []api.RepoName{"github.com/abc/xyz"}},
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
+
+		// Test if we match by ID
+		{strconv.Itoa(int(abcDefRepo.ID)), []api.RepoName{"abc/def"}},
+		{string(relay.MarshalID("Repository", abcDefRepo.ID)), []api.RepoName{"abc/def"}},
 	}
 	for _, test := range tests {
 		repos, err := db.Repos().List(ctx, ReposListOptions{Query: test.query})

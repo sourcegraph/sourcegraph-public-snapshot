@@ -209,7 +209,6 @@ func TestSyncerSync(t *testing.T) {
 		)
 
 		var diff repos.Diff
-
 		diff.Unmodified = append(diff.Unmodified, tc.repo.With(
 			typestest.Opt.RepoSources(tc.svc.URN()),
 		))

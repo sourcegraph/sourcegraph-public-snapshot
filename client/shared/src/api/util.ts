@@ -131,7 +131,7 @@ export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Obse
  * NOTE2: for testing purposes only!!
  */
 export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
-    (new Proxy(object, {
+    new Proxy(object, {
         get: (a, property) => {
             if (property === 'then') {
                 // Promise.resolve(pretendRemote(..)) checks if this is a Promise
@@ -147,7 +147,7 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
             }
             throw new Error(`unspecified property in the stub: "${property.toString()}"`)
         },
-    }) as unknown) as Remote<T>
+    }) as unknown as Remote<T>
 
 /**
  * For proxySubscribables to be passed as stubs to pretendRemote.
@@ -159,7 +159,7 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
 export const pretendProxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyMarker]: true,
     subscribe(observer): Unsubscribable & ProxyMarked {
-        const subscription = subscribable.subscribe((observer as unknown) as PartialObserver<T>)
+        const subscription = subscribable.subscribe(observer as unknown as PartialObserver<T>)
 
         return {
             [proxyMarker]: true,

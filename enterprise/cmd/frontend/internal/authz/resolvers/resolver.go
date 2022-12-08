@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,6 +32,7 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
+	logger            log.Logger
 	db                edb.EnterpriseDB
 	repoupdaterClient interface {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
@@ -49,14 +52,15 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 			return err
 		}
 
-		log15.Error("authz.Resolver.checkLicense", "err", err)
+		r.logger.Error("Unable to check license for feature", log.Error(err))
 		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
 	return nil
 }
 
-func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
+func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
+		logger:            observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:                edb.NewEnterpriseDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
 		syncJobsRecords:   syncjobs.NewRecordsReader(),
@@ -348,7 +352,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, err
 	}
 
-	log15.Debug("SetRepositoryPermissionsForBitbucketProject: job enqueued", "jobID", jobID)
+	r.logger.Debug("Bitbucket project permissions job enqueued", log.Int("jobID", jobID))
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }

@@ -82,21 +82,22 @@ export const MockedFeatureFlagsProvider: React.FunctionComponent<
     React.PropsWithChildren<MockedFeatureFlagsProviderProps>
 > = ({ overrides, refetchInterval, children }) => {
     const mockRequestGraphQL = useMemo(
-        () => (
-            query: string,
-            variables: any
-        ): Observable<{
-            data: { evaluateFeatureFlag: boolean | null }
-        }> => {
-            const value = overrides[variables.flagName as FeatureFlagName]
-            if (value instanceof Error) {
-                return throwError(value)
-            }
+        () =>
+            (
+                query: string,
+                variables: any
+            ): Observable<{
+                data: { evaluateFeatureFlag: boolean | null }
+            }> => {
+                const value = overrides[variables.flagName as FeatureFlagName]
+                if (value instanceof Error) {
+                    return throwError(value)
+                }
 
-            return of({
-                data: { evaluateFeatureFlag: value ?? null },
-            })
-        },
+                return of({
+                    data: { evaluateFeatureFlag: value ?? null },
+                })
+            },
         [overrides]
     )
 

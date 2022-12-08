@@ -207,10 +207,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
-	// Create a new external service
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
+	confGet := func() *conf.Unified { return &conf.Unified{} }
 
 	tests := []struct {
 		name             string
@@ -265,7 +262,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 		},
 		{
-			name: "Cloud: auto-add authorization to code host connections for GitHub",
+			name: "dotcom: auto-add authorization to code host connections for GitHub",
 			externalService: &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "GITHUB #4",
@@ -275,7 +272,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantHasWebhooks:  false,
 		},
 		{
-			name: "Cloud: auto-add authorization to code host connections for GitLab",
+			name: "dotcom: auto-add authorization to code host connections for GitLab",
 			externalService: &types.ExternalService{
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "GITLAB #1",

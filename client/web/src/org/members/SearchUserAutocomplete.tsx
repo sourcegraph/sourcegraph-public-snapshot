@@ -68,9 +68,9 @@ export const AutocompleteSearchUsers: FC<AutocompleteSearchUsersProps> = props =
         )
     }
 
-    const results = (data
-        ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1))
-        : []) as IUserItem[]
+    const results = (
+        data ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1)) : []
+    ) as IUserItem[]
 
     const resultsEnabled = !EMAIL_PATTERN.test(userNameOrEmail) && !error && userNameOrEmail.length >= MIN_SEARCH_LENGTH
     const renderResults = resultsEnabled && results.length > 0

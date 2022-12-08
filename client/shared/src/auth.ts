@@ -18,6 +18,7 @@ export const currentAuthStateQuery = gql`
             settingsURL
             organizations {
                 nodes {
+                    __typename
                     id
                     name
                     displayName

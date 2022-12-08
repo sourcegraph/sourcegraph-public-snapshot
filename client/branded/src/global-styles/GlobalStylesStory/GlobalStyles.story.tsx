@@ -115,8 +115,7 @@ Colors.parameters = {
     design: {
         name: 'Figma',
         type: 'figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
     },
 }
 

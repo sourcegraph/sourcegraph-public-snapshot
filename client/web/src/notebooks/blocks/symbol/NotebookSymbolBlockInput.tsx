@@ -5,7 +5,7 @@ import { EditorView } from '@codemirror/view'
 import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/search-ui'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Code } from '@sourcegraph/wildcard'
 
@@ -99,44 +99,47 @@ const SymbolSuggestions: React.FunctionComponent<
         suggestions: SymbolMatch[]
         onSymbolSelected: (symbol: SymbolBlockInput) => void
     }>
-> = ({ suggestions, onSymbolSelected }) => (
-    <div className={styles.symbolSuggestions}>
-        {suggestions.map(suggestion => (
-            <div key={`${suggestion.repository}_${suggestion.path}`} className="pr-2">
-                <RepoFileLink
-                    className="my-2"
-                    repoName={suggestion.repository}
-                    repoURL={getRepositoryUrl(suggestion.repository, suggestion.branches)}
-                    filePath={suggestion.path}
-                    fileURL={getFileMatchUrl(suggestion)}
-                />
-                {suggestion.symbols.map((symbol, index) => (
-                    <Button
-                        className={styles.symbolButton}
-                        // We have to use the index as key in case of duplicate symbols.
-                        // eslint-disable-next-line react/no-array-index-key
-                        key={`${suggestion.repository}_${suggestion.path}_${symbol.containerName}_${symbol.name}_${index}`}
-                        onClick={() =>
-                            onSymbolSelected({
-                                repositoryName: suggestion.repository,
-                                filePath: suggestion.path,
-                                revision: suggestion.commit ?? '',
-                                symbolName: symbol.name,
-                                symbolKind: symbol.kind,
-                                symbolContainerName: symbol.containerName,
-                                lineContext: 3,
-                            })
-                        }
-                        data-testid="symbol-suggestion-button"
-                    >
-                        <SymbolIcon kind={symbol.kind} className="mr-1" />
-                        <Code>
-                            {symbol.name}{' '}
-                            {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                        </Code>
-                    </Button>
-                ))}
-            </div>
-        ))}
-    </div>
-)
+> = ({ suggestions, onSymbolSelected }) => {
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
+    return (
+        <div className={styles.symbolSuggestions}>
+            {suggestions.map(suggestion => (
+                <div key={`${suggestion.repository}_${suggestion.path}`} className="pr-2">
+                    <RepoFileLink
+                        className="my-2"
+                        repoName={suggestion.repository}
+                        repoURL={getRepositoryUrl(suggestion.repository, suggestion.branches)}
+                        filePath={suggestion.path}
+                        fileURL={getFileMatchUrl(suggestion)}
+                    />
+                    {suggestion.symbols.map((symbol, index) => (
+                        <Button
+                            className={styles.symbolButton}
+                            // We have to use the index as key in case of duplicate symbols.
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={`${suggestion.repository}_${suggestion.path}_${symbol.containerName}_${symbol.name}_${index}`}
+                            onClick={() =>
+                                onSymbolSelected({
+                                    repositoryName: suggestion.repository,
+                                    filePath: suggestion.path,
+                                    revision: suggestion.commit ?? '',
+                                    symbolName: symbol.name,
+                                    symbolKind: symbol.kind,
+                                    symbolContainerName: symbol.containerName,
+                                    lineContext: 3,
+                                })
+                            }
+                            data-testid="symbol-suggestion-button"
+                        >
+                            <SymbolKind kind={symbol.kind} className="mr-1" symbolKindTags={symbolKindTags} />
+                            <Code>
+                                {symbol.name}{' '}
+                                {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                            </Code>
+                        </Button>
+                    ))}
+                </div>
+            ))}
+        </div>
+    )
+}

@@ -87,135 +87,137 @@ interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemePro
     isEmbedded?: boolean
 }
 
-export const NotebookMarkdownBlock: React.FunctionComponent<
-    React.PropsWithChildren<NotebookMarkdownBlockProps>
-> = React.memo(
-    ({
-        id,
-        input,
-        output,
-        isSelected,
-        isLightTheme,
-        isReadOnly,
-        isEmbedded,
-        onBlockInputChange,
-        onRunBlock,
-        onNewBlock,
-        ...props
-    }) => {
-        const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
-        const [container, setContainer] = useState<HTMLDivElement | null>(null)
-
-        const runBlock = useCallback(() => {
-            onRunBlock(id)
-            setIsEditing(false)
-            return true
-        }, [id, onRunBlock, setIsEditing])
-
-        const newBlock = useCallback(() => {
-            onRunBlock(id)
-            onNewBlock(id)
-            setIsEditing(false)
-            return true
-        }, [id, onRunBlock, onNewBlock, setIsEditing])
-
-        const onInputChange = useCallback((text: string) => onBlockInputChange(id, { type: 'md', input: { text } }), [
+export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChildren<NotebookMarkdownBlockProps>> =
+    React.memo(
+        ({
             id,
+            input,
+            output,
+            isSelected,
+            isLightTheme,
+            isReadOnly,
+            isEmbedded,
             onBlockInputChange,
-        ])
+            onRunBlock,
+            onNewBlock,
+            ...props
+        }) => {
+            const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
+            const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-        const extensions: Extension[] = useMemo(
-            () => [
-                keymap.of([
-                    {
-                        key: 'Mod-Enter',
-                        run: runBlock,
-                    },
-                    {
-                        key: 'Mod-Shift-Enter',
-                        run: newBlock,
-                    },
-                ]),
-                changeListener(onInputChange),
-                staticExtensions,
-            ],
-            [runBlock, onInputChange, newBlock]
-        )
+            const runBlock = useCallback(() => {
+                onRunBlock(id)
+                setIsEditing(false)
+                return true
+            }, [id, onRunBlock, setIsEditing])
 
-        const editor = useCodeMirror(container, input.text, extensions)
+            const newBlock = useCallback(() => {
+                onRunBlock(id)
+                onNewBlock(id)
+                setIsEditing(false)
+                return true
+            }, [id, onRunBlock, onNewBlock, setIsEditing])
 
-        const editMarkdown = useCallback(() => {
-            if (!isReadOnly) {
-                setIsEditing(true)
+            const onInputChange = useCallback(
+                (text: string) => onBlockInputChange(id, { type: 'md', input: { text } }),
+                [id, onBlockInputChange]
+            )
+
+            const extensions: Extension[] = useMemo(
+                () => [
+                    keymap.of([
+                        {
+                            key: 'Mod-Enter',
+                            run: runBlock,
+                        },
+                        {
+                            key: 'Mod-Shift-Enter',
+                            run: newBlock,
+                        },
+                    ]),
+                    changeListener(onInputChange),
+                    staticExtensions,
+                ],
+                [runBlock, onInputChange, newBlock]
+            )
+
+            const editor = useCodeMirror(container, input.text, extensions)
+
+            const editMarkdown = useCallback(() => {
+                if (!isReadOnly) {
+                    setIsEditing(true)
+                }
+            }, [isReadOnly, setIsEditing])
+
+            useEffect(() => {
+                if (editor) {
+                    focusEditor(editor)
+                }
+            }, [isEditing, editor])
+
+            const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, onNewBlock, ...props })
+
+            const modifierKeyLabel = useModifierKeyLabel()
+            const menuActions = useMemo(() => {
+                const action: BlockMenuAction[] = [
+                    isEditing
+                        ? {
+                              type: 'button',
+                              label: 'Render',
+                              icon: <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />,
+                              onClick: runBlock,
+                              keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
+                          }
+                        : {
+                              type: 'button',
+                              label: 'Edit',
+                              icon: <Icon aria-hidden={true} svgPath={mdiPencil} />,
+                              onClick: editMarkdown,
+                              keyboardShortcutLabel: '↵',
+                          },
+                ]
+                return action.concat(commonMenuActions)
+            }, [isEditing, modifierKeyLabel, runBlock, editMarkdown, commonMenuActions])
+
+            const notebookBlockProps = useMemo(
+                () => ({
+                    id,
+                    isReadOnly,
+                    isSelected,
+                    onRunBlock,
+                    onBlockInputChange,
+                    actions: isSelected && !isReadOnly ? menuActions : [],
+                    'aria-label': 'Notebook markdown block',
+                    isInputVisible: isEditing,
+                    setIsInputVisible: setIsEditing,
+                    focusInput: () => editor && focusEditor(editor),
+                    ...props,
+                }),
+                [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
+            )
+
+            const isInputFocused = useIsBlockInputFocused(id)
+
+            if (!isEditing) {
+                return (
+                    <NotebookBlock {...notebookBlockProps} onDoubleClick={editMarkdown}>
+                        <div
+                            className={classNames(styles.output, isEmbedded && styles.isEmbedded)}
+                            data-testid="output"
+                        >
+                            <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
+                        </div>
+                    </NotebookBlock>
+                )
             }
-        }, [isReadOnly, setIsEditing])
 
-        useEffect(() => {
-            if (editor) {
-                focusEditor(editor)
-            }
-        }, [isEditing, editor])
-
-        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, onNewBlock, ...props })
-
-        const modifierKeyLabel = useModifierKeyLabel()
-        const menuActions = useMemo(() => {
-            const action: BlockMenuAction[] = [
-                isEditing
-                    ? {
-                          type: 'button',
-                          label: 'Render',
-                          icon: <Icon aria-hidden={true} svgPath={mdiPlayCircleOutline} />,
-                          onClick: runBlock,
-                          keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
-                      }
-                    : {
-                          type: 'button',
-                          label: 'Edit',
-                          icon: <Icon aria-hidden={true} svgPath={mdiPencil} />,
-                          onClick: editMarkdown,
-                          keyboardShortcutLabel: '↵',
-                      },
-            ]
-            return action.concat(commonMenuActions)
-        }, [isEditing, modifierKeyLabel, runBlock, editMarkdown, commonMenuActions])
-
-        const notebookBlockProps = useMemo(
-            () => ({
-                id,
-                isReadOnly,
-                isSelected,
-                onRunBlock,
-                onBlockInputChange,
-                actions: isSelected && !isReadOnly ? menuActions : [],
-                'aria-label': 'Notebook markdown block',
-                isInputVisible: isEditing,
-                setIsInputVisible: setIsEditing,
-                focusInput: () => editor && focusEditor(editor),
-                ...props,
-            }),
-            [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
-        )
-
-        const isInputFocused = useIsBlockInputFocused(id)
-
-        if (!isEditing) {
             return (
-                <NotebookBlock {...notebookBlockProps} onDoubleClick={editMarkdown}>
-                    <div className={classNames(styles.output, isEmbedded && styles.isEmbedded)} data-testid="output">
-                        <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
-                    </div>
+                <NotebookBlock
+                    className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
+                    {...notebookBlockProps}
+                >
+                    <div ref={setContainer} />
                 </NotebookBlock>
             )
         }
-
-        return (
-            <NotebookBlock
-                className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
-                {...notebookBlockProps}
-            >
-                <div ref={setContainer} />
-            </NotebookBlock>
-        )
-    }
-)
+    )

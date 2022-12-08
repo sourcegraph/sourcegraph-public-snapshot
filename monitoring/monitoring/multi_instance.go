@@ -13,7 +13,7 @@ import (
 )
 
 func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (*grafanasdk.Board, error) {
-	board := grafana.Board("multi-instance-overviews", "Multi-instance overviews",
+	board := grafana.NewBoard("multi-instance-overviews", "Multi-instance overviews",
 		[]string{"multi-instance", "generated"})
 
 	var variableMatchers []*labels.Matcher
@@ -57,14 +57,9 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 					// Only add row if this dashboard has a multi instance panel, and only
 					// do it once per dashboard
 					addDashboardRow.Do(func() {
-						row = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
-						row.OfType = sdk.RowType
-						row.Type = "row"
-						row.Title = d.Title
-						row.Collapsed = true // avoid crazy loading times
 						offsetY++
-						setPanelPos(row, 0, offsetY)
-						row.Panels = []sdk.Panel{} // cannot be null
+						row = grafana.NewRowPanel(offsetY, d.Title)
+						row.Collapsed = true // avoid crazy loading times
 						board.Panels = append(board.Panels, row)
 					})
 

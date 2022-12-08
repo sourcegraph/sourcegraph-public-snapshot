@@ -9,6 +9,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import {
@@ -86,6 +87,23 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
+const MOCK_ORGANIZATION = {
+    __typename: 'Org',
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
+}
+
+const mockAuthenticatedUser = {
+    __typename: 'User',
+    username: 'alice',
+    displayName: 'alice',
+    id: 'b',
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
+
 export const EditFirstTime: Story = () => (
     <WebStory>
         {props => (
@@ -97,6 +115,7 @@ export const EditFirstTime: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -144,6 +163,7 @@ export const EditLatestBatchSpec: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -176,6 +196,7 @@ export const BatchChangeNotFound: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -208,6 +229,7 @@ export const InvalidBatchSpec: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -240,6 +262,7 @@ export const ExecutorsNotActive: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}

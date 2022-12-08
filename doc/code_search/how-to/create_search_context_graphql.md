@@ -17,8 +17,7 @@ Step 1: Add to global configuration (must be site-admin):
 ```json
 {
     "experimentalFeatures": {
-      "showSearchContext": true,
-      "showSearchContextManagement": true
+      "showSearchContext": true
   }
 }
 ```
