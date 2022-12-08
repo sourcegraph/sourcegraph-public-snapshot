@@ -34,25 +34,27 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
             <PageTitle title="Incoming webhook" />
             {loading && !data && <ConnectionLoading />}
             {webhook && (
-                <PageHeader
-                    path={[
-                        { icon: mdiCog },
-                        { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
-                        { text: webhook.name },
-                    ]}
-                    byline={
-                        <CreatedByAndUpdatedByInfoByline
-                            createdAt={webhook.createdAt}
-                            createdBy={webhook.createdBy}
-                            updatedAt={webhook.updatedAt}
-                            updatedBy={webhook.updatedBy}
-                        />
-                    }
-                    className="mb-3"
-                    headingElement="h2"
-                />
+                <>
+                    <PageHeader
+                        path={[
+                            { icon: mdiCog },
+                            { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
+                            { text: webhook.name },
+                        ]}
+                        byline={
+                            <CreatedByAndUpdatedByInfoByline
+                                createdAt={webhook.createdAt}
+                                createdBy={webhook.createdBy}
+                                updatedAt={webhook.updatedAt}
+                                updatedBy={webhook.updatedBy}
+                            />
+                        }
+                        className="mb-3"
+                        headingElement="h2"
+                    />
+                    <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />
+                </>
             )}
-            {webhook && <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />}
         </Container>
     )
 }
