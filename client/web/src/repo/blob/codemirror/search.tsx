@@ -77,9 +77,9 @@ class SearchPanel implements Panel {
                     filter(searchQuery => searchQuery.valid),
                     distinctUntilChanged(
                         (previous, current) =>
-                            previous.search !== current.search ||
-                            previous.caseSensitive !== current.caseSensitive ||
-                            previous.regexp !== current.regexp
+                            previous.search === current.search &&
+                            previous.caseSensitive === current.caseSensitive &&
+                            previous.regexp === current.regexp
                     )
                 )
                 .subscribe(searchQuery => this.commit(searchQuery))
@@ -202,6 +202,12 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
+
+                {/*{this.state.searchQuery.search && (*/}
+                {/*    <div>*/}
+                {/*        found <span ref={element => (this.resultCountainer = element)} /> results*/}
+                {/*    </div>*/}
+                {/*)}*/}
             </Container>
         )
     }
@@ -246,6 +252,18 @@ class SearchPanel implements Panel {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
             if (query.search) {
+                // const regex = new RegExp(query.search, `g${query.caseSensitive ? '' : 'i'}`)
+                // const found = []
+                // let match: RegExpExecArray | null
+                // while ((match = regex.exec(this.view.state.facet(blobPropsFacet).blobInfo.content)) !== null) {
+                //     found.push(this.view.state.doc.lineAt(match.index))
+                // }
+                // if (this.resultCountainer) {
+                //     this.resultCountainer.innerText = found.length.toString()
+                // }
+                // this.setState(state => ({ ...state, resultNumber: found.length }))
+                // console.log(found.length)
+
                 // The following code scrolls next match into view if there is no
                 // match in the visible viewport. This is done by searching for the
                 // text from the currently top visible line and determining whether
