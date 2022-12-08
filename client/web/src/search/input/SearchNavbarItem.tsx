@@ -53,14 +53,8 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
 
-    const {
-        queryState,
-        setQueryState,
-        submitSearch,
-        searchCaseSensitivity,
-        searchPatternType,
-        searchMode,
-    } = useNavbarQueryState(selectQueryState, shallow)
+    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
+        useNavbarQueryState(selectQueryState, shallow)
 
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')

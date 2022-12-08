@@ -92,10 +92,10 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
-    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
-        dataSeries,
-        zeroYAxisMin,
-    ])
+    const { minX, maxX, minY, maxY } = useMemo(
+        () => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }),
+        [dataSeries, zeroYAxisMin]
+    )
 
     const xScale = useMemo(
         () =>

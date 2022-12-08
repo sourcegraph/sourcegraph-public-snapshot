@@ -20,11 +20,11 @@ export function getEventValue<Value>(event: ChangeEvent<HTMLInputElement> | Valu
     if (isChangeEvent(event)) {
         // Checkbox input case
         if (event.target.type === 'checkbox') {
-            return (event.target.checked as unknown) as Value
+            return event.target.checked as unknown as Value
         }
 
         // Native input value case
-        return (event.target.value as unknown) as Value
+        return event.target.value as unknown as Value
     }
 
     // Custom input without event but with value of input itself.

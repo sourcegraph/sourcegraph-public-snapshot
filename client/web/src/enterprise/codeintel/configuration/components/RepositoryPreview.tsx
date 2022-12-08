@@ -14,9 +14,11 @@ interface RepositoryPreviewProps {
 }
 
 export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<RepositoryPreviewProps>> = ({ patterns }) => {
-    const { previewResult: preview, isLoadingPreview: previewLoading, previewError } = usePreviewRepositoryFilter(
-        patterns
-    )
+    const {
+        previewResult: preview,
+        isLoadingPreview: previewLoading,
+        previewError,
+    } = usePreviewRepositoryFilter(patterns)
 
     return (
         <div>

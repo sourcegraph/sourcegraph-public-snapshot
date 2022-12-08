@@ -238,8 +238,7 @@ const USE_PRECISE_CODE_INTEL_MOCK: UsePreciseCodeIntelForPositionResult = {
     repository: {
         id: 'UmVwb3NpdG9yeToz',
         commit: {
-            id:
-                'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3oiLCJjIjoiOWQxZjM1M2EyODViMzA5NGJjMzNiZGFlMjc3YTE5YWVkYWJlOGI3MSJ9',
+            id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3oiLCJjIjoiOWQxZjM1M2EyODViMzA5NGJjMzNiZGFlMjc3YTE5YWVkYWJlOGI3MSJ9',
             blob: {
                 lsif: {
                     references: {
@@ -303,8 +302,7 @@ const HIGHLIGHTED_FILE_MOCK = {
         repository: {
             id: 'UmVwb3NpdG9yeToyMDQ=',
             commit: {
-                id:
-                    'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3lNRFE9IiwiYyI6IjlkMWYzNTNhMjg1YjMwOTRiYzMzYmRhZTI3N2ExOWFlZGFiZThiNzEifQ==',
+                id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3lNRFE9IiwiYyI6IjlkMWYzNTNhMjg1YjMwOTRiYzMzYmRhZTI3N2ExOWFlZGFiZThiNzEifQ==',
                 blob: {
                     highlight: {
                         aborted: false,

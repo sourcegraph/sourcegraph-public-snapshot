@@ -128,9 +128,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameVisibility = useMemo(() => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []), [
-        isBlameVisible,
-    ])
+    const blameVisibility = useMemo(
+        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
+        [isBlameVisible]
+    )
     const blameDecorations = useMemo(
         () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
         [isBlameVisible, blameHunks]

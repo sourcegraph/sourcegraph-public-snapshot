@@ -83,10 +83,13 @@ export function useMatchHandlers({
                     .catch(error => console.error('Error opening Sourcegraph file', error))
             },
             openSymbol: (symbolUrl: string) => {
-                const { path, position, revision, repositoryName, host: codeHost } = SourcegraphUri.parse(
-                    `https:/${symbolUrl}`,
-                    window.URL
-                )
+                const {
+                    path,
+                    position,
+                    revision,
+                    repositoryName,
+                    host: codeHost,
+                } = SourcegraphUri.parse(`https:/${symbolUrl}`, window.URL)
                 const sourcegraphUri = SourcegraphUri.fromParts(host, `${codeHost}/${repositoryName}`, {
                     revision,
                     path,
