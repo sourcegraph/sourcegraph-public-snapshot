@@ -23,7 +23,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Heading, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -641,33 +640,33 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         path: filePath,
     }
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
-        RepositoryContributorsResult,
-        RepositoryContributorsVariables,
-        RepositoryContributorNodeFields
-    >({
-        query: CONTRIBUTORS_QUERY,
-        variables: {
-            first: BATCH_COUNT,
-            repo: repo.id,
-            revisionRange: spec.revisionRange,
-            afterDate: spec.after,
-            path: filePath,
-        },
-        getConnection: result => {
-            const { node } = dataOrThrowErrors(result)
-            if (!node) {
-                throw new Error(`Node ${repo.id} not found`)
-            }
-            if (!('contributors' in node)) {
-                throw new Error('Failed to fetch contributors for this repo')
-            }
-            return node.contributors
-        },
-        options: {
-            fetchPolicy: 'cache-first',
-        },
-    })
+    // const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+    //     RepositoryContributorsResult,
+    //     RepositoryContributorsVariables,
+    //     RepositoryContributorNodeFields
+    // >({
+    //     query: CONTRIBUTORS_QUERY,
+    //     variables: {
+    //         first: BATCH_COUNT,
+    //         repo: repo.id,
+    //         revisionRange: spec.revisionRange,
+    //         afterDate: spec.after,
+    //         path: filePath,
+    //     },
+    //     getConnection: result => {
+    //         const { node } = dataOrThrowErrors(result)
+    //         if (!node) {
+    //             throw new Error(`Node ${repo.id} not found`)
+    //         }
+    //         if (!('contributors' in node)) {
+    //             throw new Error('Failed to fetch contributors for this repo')
+    //         }
+    //         return node.contributors
+    //     },
+    //     options: {
+    //         fetchPolicy: 'cache-first',
+    //     },
+    // })
 
     return (
         <ConnectionContainer>

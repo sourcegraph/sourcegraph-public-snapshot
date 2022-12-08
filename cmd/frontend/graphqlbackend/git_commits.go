@@ -46,26 +46,6 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			n = *r.first
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
-		var query string
-		if r.query != nil {
-			query = *r.query
-		}
-		var path string
-		if r.path != nil {
-			path = *r.path
-		}
-		var author string
-		if r.author != nil {
-			author = *r.author
-		}
-		var after string
-		if r.after != nil {
-			after = *r.after
-		}
-		var before string
-		if r.before != nil {
-			before = *r.before
-		}
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),

@@ -85,7 +85,7 @@ func NewMockReposService() *MockReposService {
 			},
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
+			defaultHook: func(context.Context, *types.Repo, api.CommitID, string, bool) (r0 *inventory.Inventory, r1 error) {
 				return
 			},
 		},
@@ -142,7 +142,7 @@ func NewStrictMockReposService() *MockReposService {
 			},
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+			defaultHook: func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error) {
 				panic("unexpected invocation of MockReposService.GetInventory")
 			},
 		},
@@ -752,24 +752,24 @@ func (c ReposServiceGetCommitFuncCall) Results() []interface{} {
 // ReposServiceGetInventoryFunc describes the behavior when the GetInventory
 // method of the parent MockReposService instance is invoked.
 type ReposServiceGetInventoryFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
+	defaultHook func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error)
+	hooks       []func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error)
 	history     []ReposServiceGetInventoryFuncCall
 	mutex       sync.Mutex
 }
 
 // GetInventory delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 api.CommitID, v3 bool) (*inventory.Inventory, error) {
-	r0, r1 := m.GetInventoryFunc.nextHook()(v0, v1, v2, v3)
-	m.GetInventoryFunc.appendCall(ReposServiceGetInventoryFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 api.CommitID, v3 string, v4 bool) (*inventory.Inventory, error) {
+	r0, r1 := m.GetInventoryFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.GetInventoryFunc.appendCall(ReposServiceGetInventoryFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetInventory method
 // of the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error)) {
 	f.defaultHook = hook
 }
 
@@ -777,7 +777,7 @@ func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context,
 // GetInventory method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -786,19 +786,19 @@ func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *type
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceGetInventoryFunc) SetDefaultReturn(r0 *inventory.Inventory, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceGetInventoryFunc) PushReturn(r0 *inventory.Inventory, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.PushHook(func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, *types.Repo, api.CommitID, string, bool) (*inventory.Inventory, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -842,7 +842,10 @@ type ReposServiceGetInventoryFuncCall struct {
 	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 bool
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *inventory.Inventory
@@ -854,7 +857,7 @@ type ReposServiceGetInventoryFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ReposServiceGetInventoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

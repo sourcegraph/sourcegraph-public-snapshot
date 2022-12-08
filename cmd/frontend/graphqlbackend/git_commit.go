@@ -81,11 +81,6 @@ func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *Repos
 		gitRepo:         repoName,
 		oid:             GitObjectID(id),
 		commit:          commit,
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit of a repository").
-			With(log.Object("repoCommit",
-				log.String("repoName", string(repo.Name())),
-				log.Int32("repoID", int32(repo.IDInt32())),
-				log.String("commitID", string(id)))),
 	}
 }
 
