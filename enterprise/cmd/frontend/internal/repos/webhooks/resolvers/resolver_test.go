@@ -285,32 +285,10 @@ func TestListWebhooks(t *testing.T) {
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{
-							"id":"V2ViaG9vazox",
-                            "webhookLogs": {
-                                "totalCount": 2
-                            }
-						},
-						{
-							"id":"V2ViaG9vazoy",
-                            "webhookLogs": {
-                                "totalCount": 1
-                            }
-						},
-						{
-							"id":"V2ViaG9vazoz",
-                            "webhookLogs": {
-                                "totalCount": 0
-                            }
-
-						},
-						{
-							"id":"V2ViaG9vazo0",
-                            "webhookLogs": {
-                                "totalCount": 0
-                            }
-
-						}
+						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 2 } },
+						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
+						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
 					],
 					"totalCount":4,
 					"pageInfo":{"hasNextPage":false}
@@ -337,32 +315,10 @@ func TestListWebhooks(t *testing.T) {
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{
-							"id":"V2ViaG9vazox",
-                            "webhookLogs": {
-                                "totalCount": 1
-                            }
-						},
-						{
-							"id":"V2ViaG9vazoy",
-                            "webhookLogs": {
-                                "totalCount": 1
-                            }
-						},
-						{
-							"id":"V2ViaG9vazoz",
-                            "webhookLogs": {
-                                "totalCount": 0
-                            }
-
-						},
-						{
-							"id":"V2ViaG9vazo0",
-                            "webhookLogs": {
-                                "totalCount": 0
-                            }
-
-						}
+						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
+						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
 					],
 					"totalCount":4,
 					"pageInfo":{"hasNextPage":false}
