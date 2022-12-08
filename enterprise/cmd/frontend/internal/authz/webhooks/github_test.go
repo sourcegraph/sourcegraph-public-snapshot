@@ -252,11 +252,15 @@ func TestGitHubWebhooks(t *testing.T) {
 	for _, webhookTest := range webhookTests {
 		t.Run(webhookTest.name, func(t *testing.T) {
 			webhookCalled := make(chan bool)
+			// Need to have variables scoped here to avoid race condition
+			// detection by test runner
+			wantRepo := webhookTest.wantRepo
+			wantUser := webhookTest.wantUser
 			repoupdater.MockSchedulePermsSync = func(_ context.Context, args protocol.PermsSyncRequest) error {
-				if webhookTest.wantRepo {
+				if wantRepo {
 					webhookCalled <- args.RepoIDs[0] == repo.ID
 				}
-				if webhookTest.wantUser {
+				if wantUser {
 					webhookCalled <- args.UserIDs[0] == u.ID
 				}
 				return nil
