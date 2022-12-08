@@ -4,7 +4,6 @@ import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { maxBy } from 'lodash'
-import prettyBytes from 'pretty-bytes'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -60,18 +59,6 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
     )
 }
 
-export interface LangStats {
-    path: string
-    languages: LangStat[]
-}
-
-export interface LangStat {
-    name: string
-    color: string
-    bytes: number
-    lines: number
-}
-
 export interface DiffStat {
     path: string
     added: number
@@ -81,15 +68,10 @@ export interface DiffStat {
 export interface FilePanelProps {
     entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
     diffStats?: DiffStat[]
-    langStats?: LangStats[]
 }
 
-export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePanelProps>> = ({
-    entries,
-    diffStats,
-    langStats,
-}) => {
-    const [sortColumn, setSortColumn] = useState<'Files' | 'Activity' | 'Languages' | 'Bytes'>('Files')
+export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePanelProps>> = ({ entries, diffStats }) => {
+    const [sortColumn, setSortColumn] = useState<'Files' | 'Activity'>('Files')
 
     const diffStatsByPath: { [path: string]: DiffStat } = {}
     let maxLinesChanged = 1
@@ -102,66 +84,15 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
         }
     }
 
-    const langStatsByPath = langStats ? Object.fromEntries(langStats.map(langStat => [langStat.path, langStat])) : {}
-    const sizeByPath = langStats
-        ? Object.fromEntries(
-              langStats.map(langStat => [
-                  langStat.path,
-                  langStat.languages.map(lang => lang.bytes).reduce((prev, cur) => prev + cur, 0),
-              ])
-          )
-        : {}
-    const maxSize = Math.max(...Object.entries(sizeByPath).map(([, size]) => size)) || 1
-
     let sortedEntries = entries
     switch (sortColumn) {
         case 'Activity':
             sortedEntries = [...entries]
             if (diffStats) {
                 sortedEntries.sort((entry1, entry2) => {
-                    const stats1 = diffStatsByPath[entry1.name]
-                    const stats2 = diffStatsByPath[entry2.name]
+                    const stats1: DiffStat = diffStatsByPath[entry1.name]
+                    const stats2: DiffStat = diffStatsByPath[entry2.name]
                     return (stats2 ? stats2.added + stats2.deleted : 0) - (stats1 ? stats1.added + stats1.deleted : 0)
-                })
-            }
-            break
-        case 'Languages':
-            sortedEntries = [...entries]
-            if (langStats) {
-                sortedEntries.sort((entry1, entry2) => {
-                    if (entry1.isDirectory !== entry2.isDirectory) {
-                        if (entry1.isDirectory) {
-                            return -1
-                        }
-                        return 1
-                    }
-                    const stats1 = langStatsByPath[entry1.path]
-                    const stats2 = langStatsByPath[entry2.path]
-                    const maxLang1 = maxBy(stats1.languages, lang => lang.bytes)
-                    const maxLang2 = maxBy(stats2.languages, lang => lang.bytes)
-                    if (!maxLang1 && !maxLang2) {
-                        return 0
-                    }
-                    if (!maxLang1) {
-                        return 1
-                    }
-                    if (!maxLang2) {
-                        return -1
-                    }
-                    if (maxLang1.name === maxLang2.name) {
-                        return maxLang2.bytes - maxLang1.bytes
-                    }
-                    return maxLang1.name.localeCompare(maxLang2.name)
-                })
-            }
-            break
-        case 'Bytes':
-            sortedEntries = [...entries]
-            if (langStats) {
-                sortedEntries.sort((entry1, entry2) => {
-                    const size1 = sizeByPath[entry1.name] || 0
-                    const size2 = sizeByPath[entry2.name] || 0
-                    return size2 - size1
                 })
             }
             break
@@ -170,8 +101,6 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
     const callbacks = {
         clickFiles: useCallback(() => setSortColumn('Files'), []),
         clickActivity: useCallback(() => setSortColumn('Activity'), []),
-        clickLanguages: useCallback(() => setSortColumn('Languages'), []),
-        clickBytes: useCallback(() => setSortColumn('Bytes'), []),
     }
 
     return (
@@ -287,7 +216,7 @@ export const DiffMeter: React.FunctionComponent<{
     deleted: number
     totalWidth: number
 }> = ({ added, deleted, totalWidth }) => (
-    <div title={`${formatNumber(added)} lines added, -${formatNumber(deleted)} deleted`} className={styles.diffMeter}>
+    <div title={`${formatNumber(added)} lines added, -${formatNumber(deleted)} deleted`}>
         {added > 0 && (
             <div
                 // eslint-disable-next-line react/forbid-dom-props
@@ -295,7 +224,6 @@ export const DiffMeter: React.FunctionComponent<{
                     display: 'inline-block',
                     width: `${Math.max(2, (100 * added) / totalWidth)}%`,
                 }}
-                className={classNames(styles.diffMeterBar, styles.diffMeterAdded)}
             />
         )}
         {deleted > 0 && (
@@ -305,7 +233,6 @@ export const DiffMeter: React.FunctionComponent<{
                     display: 'inline-block',
                     width: `${Math.max(2, (100 * deleted) / totalWidth)}%`,
                 }}
-                className={classNames(styles.diffMeterBar, styles.diffMeterDeleted)}
             />
         )}
     </div>

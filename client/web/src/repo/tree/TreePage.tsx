@@ -213,7 +213,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         location,
     }
 
-    const [selectedTab, setSelectedTab] = useState('home')
+    const [, setSelectedTab] = useState('home')
     const [showPageTitle, setShowPageTitle] = useState(true)
     const { path } = useRouteMatch()
 
@@ -251,68 +251,87 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const RootHeaderSection = (): React.ReactElement => (
         <>
-            <div className="d-flex flex-wrap flex-md-nowrap justify-content-between px-0">
-                    <div className={classNames('flex-fill pl-0', styles.header)}>
-                        <PageHeader className="mb-3 test-tree-page-title">
-                            <PageHeader.Heading as="h2" styleAs="h1">
-                                <PageHeader.Breadcrumb icon={mdiSourceRepository}>
-                                    {displayRepoName(repo!.name)}
-                                </PageHeader.Breadcrumb>
-                            </PageHeader.Heading>
-                        </PageHeader>
-                        {repo?.description && <Text>{repo.description}</Text>}
-                    </div>
-                    <div className={classNames('flex-shrink-0 pr-0', styles.menu)}>
-                        <ButtonGroup>
-                            <Button className='flex-shrink-0' to={`/${encodeURIPathComponent(repoName)}/-/branches`} variant="secondary" outline={true} as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
-                                <span className={styles.text}>Branches</span>
-                            </Button>
-                            <Button className='flex-shrink-0' to={`/${encodeURIPathComponent(repoName)}/-/tags`} variant="secondary" outline={true} as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiTag} />{' '}
-                                <span className={styles.text}>Tags</span>
-                            </Button>
+            <div className="d-flex flex-wrap flex-lg-nowrap justify-content-between px-0">
+                <div className={classNames('flex-fill pl-0', styles.header)}>
+                    <PageHeader className="mb-3 test-tree-page-title">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                                {displayRepoName(repo?.name || '')}
+                            </PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
+                    {repo?.description && <Text>{repo.description}</Text>}
+                </div>
+                <div className={classNames('flex-shrink-0 pr-0', styles.menu)}>
+                    <ButtonGroup>
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
+                            <span className={styles.text}>Branches</span>
+                        </Button>
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                        </Button>
+                        <Button
+                            className="flex-shrink-0"
+                            to={
+                                revision
+                                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
+                                          revision
+                                      )}`
+                                    : `/${encodeURIPathComponent(repoName)}/-/compare`
+                            }
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
+                            <span className={styles.text}>Compare</span>
+                        </Button>
+                        {codeIntelligenceEnabled && (
                             <Button
-                                className='flex-shrink-0'
-                                to={
-                                    revision
-                                        ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(revision)}`
-                                        : `/${encodeURIPathComponent(repoName)}/-/compare`
-                                }
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
-                                <span className={styles.text}>Compare</span>
+                                <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
+                                <span className={styles.text}>Code graph data</span>
                             </Button>
-                            {codeIntelligenceEnabled && (
-                                <Button
-                                    className='flex-shrink-0'
-                                    to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
-                                    variant="secondary"
-                                    outline={true}
-                                    as={Link}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
-                                    <span className={styles.text}>Code graph data</span>
-                                </Button>
-                            )}
-                            {batchChangesEnabled && <RepoBatchChangesButton className='flex-shrink-0' textClassName={styles.text} repoName={repoName} />}
-                            {repo?.viewerCanAdminister && (
-                                <Button
-                                    className='flex-shrink-0'
-                                    to={`/${encodeURIPathComponent(repoName)}/-/settings`}
-                                    variant="secondary"
-                                    outline={true}
-                                    as={Link}
-                                    aria-label="Repository settings"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiCog} />
-                                </Button>
-                            )}
-                        </ButtonGroup>
-                    </div>
+                        )}
+                        {batchChangesEnabled && (
+                            <RepoBatchChangesButton
+                                className="flex-shrink-0"
+                                textClassName={styles.text}
+                                repoName={repoName}
+                            />
+                        )}
+                        {repo?.viewerCanAdminister && (
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                                aria-label="Repository settings"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
+                            </Button>
+                        )}
+                    </ButtonGroup>
+                </div>
             </div>
         </>
     )
@@ -337,7 +356,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     <div className={classNames(styles.header)}>
                         <header className="mb-3">
                             {treeOrError.isRoot ? (
-                                <RootHeaderSection tree={treeOrError} />
+                                <RootHeaderSection />
                             ) : (
                                 <PageHeader className="mb-3 mr-2 test-tree-page-title">
                                     <PageHeader.Heading as="h2" styleAs="h1">

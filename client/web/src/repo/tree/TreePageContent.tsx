@@ -1,25 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import formatISO from 'date-fns/formatISO'
 import subYears from 'date-fns/subYears'
 import * as H from 'history'
-import { escapeRegExp, zip as _zip } from 'lodash'
-import { from, Observable, zip } from 'rxjs'
+import { escapeRegExp } from 'lodash'
+import { Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Card, CardHeader, Link, Tooltip, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Link, Tooltip, Text } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL, requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -39,14 +37,11 @@ import {
     DiffSinceResult,
     DiffSinceVariables,
     GitCommitFields,
-    LangStatsResult,
-    LangStatsVariables,
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
     RepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
-    TreeCommitsVariables,
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
@@ -57,7 +52,7 @@ import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { BATCH_COUNT } from '../RepositoriesPopover'
 
-import { DiffStat, FilesCard, LangStats, ReadmePreviewCard } from './TreePagePanels'
+import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePage.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
@@ -113,30 +108,6 @@ export const fetchTreeCommits = memoizeObservable(
         ),
     args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
 )
-
-const TREE_COMMITS_PER_PAGE = 10
-
-// TODO(beyang): dark theme, responsive
-const TREE_COMMITS_QUERY = gql`
-    query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                commit(rev: $revspec) {
-                    ancestors(first: $first, path: $filePath, after: $after) {
-                        nodes {
-                            ...GitCommitFields
-                        }
-                        pageInfo {
-                            hasNextPage
-                        }
-                    }
-                }
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
 
 export const fetchCommit = (args: {
     repo: Scalars['String']
@@ -249,69 +220,6 @@ export const fetchDiffStats = (args: {
         })
     )
 
-const fetchLangStats = (args: {
-    repo: Scalars['String']
-    revspec: Scalars['String']
-    paths: Scalars['String'][]
-}): Observable<LangStats[]> => {
-    const langStatsForAllFilesObs = requestGraphQL<LangStatsResult, LangStatsVariables>(
-        gql`
-            query LangStats($repo: String!, $revspec: String!, $paths: [String!]!) {
-                repository(name: $repo) {
-                    commit(rev: $revspec) {
-                        languageStatistics(paths: $paths) {
-                            name
-                            totalBytes
-                            totalLines
-                        }
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repository?.commit?.languageStatistics)
-    )
-
-    const languageMap = from(import('linguist-languages')).pipe(
-        map(({ default: languagesMap }) => (language: string): string => {
-            const isLinguistLanguage = (language: string): language is keyof typeof languagesMap =>
-                Object.prototype.hasOwnProperty.call(languagesMap, language)
-
-            if (isLinguistLanguage(language)) {
-                return languagesMap[language].color ?? 'gray'
-            }
-
-            return 'gray'
-        })
-    )
-
-    return zip(langStatsForAllFilesObs, languageMap).pipe(
-        map(([langStatsForAllFiles, getLangColor]) => {
-            if (!langStatsForAllFiles) {
-                return []
-            }
-
-            if (langStatsForAllFiles.length !== args.paths.length) {
-                throw new Error('length of language statistics did not match length of entries')
-            }
-
-            return _zip(langStatsForAllFiles, args.paths).map(
-                ([langStatsForFile, path]): LangStats => ({
-                    path: path!,
-                    languages: langStatsForFile.map(langStat => ({
-                        color: getLangColor(langStat.name),
-                        bytes: langStat.totalBytes,
-                        lines: langStat.totalLines,
-                        name: langStat.name,
-                    })),
-                })
-            )
-        })
-    )
-}
-
 interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
@@ -330,74 +238,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     ...props
 }) => {
     const [showOlderCommits, setShowOlderCommits] = useState(false)
-    const after = useMemo(() => (showOlderCommits ? null : formatISO(subYears(Date.now(), 1))), [showOlderCommits])
-
-    const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useShowMorePagination<
-        TreeCommitsResult,
-        TreeCommitsVariables,
-        GitCommitFields
-    >({
-        query: TREE_COMMITS_QUERY,
-        variables: {
-            repo: repo.id,
-            revspec: revision || '',
-            first: TREE_COMMITS_PER_PAGE,
-            filePath,
-            after,
-        },
-        getConnection: result => {
-            const { node } = dataOrThrowErrors(result)
-
-            if (!node) {
-                return { nodes: [] }
-            }
-            if (node.__typename !== 'Repository') {
-                return { nodes: [] }
-            }
-            if (!node.commit?.ancestors) {
-                return { nodes: [] }
-            }
-
-            return node.commit.ancestors
-        },
-        options: {
-            fetchPolicy: 'cache-first',
-        },
-    })
-
-    // We store the refetchAll callback in a ref since it will update when
-    // variables or result length change and we need to call an up-to-date
-    // version in the useEffect below to refetch the proper results.
-    //
-    // TODO: See if we can make refetchAll stable
-    const refetchAllRef = useRef(refetchAll)
-    useEffect(() => {
-        refetchAllRef.current = refetchAll
-    }, [refetchAll])
-
-    useEffect(() => {
-        if (showOlderCommits && refetchAllRef.current) {
-            // Updating the variables alone is not enough to force a loading
-            // indicator to show, so we need to refetch the results.
-            refetchAllRef.current()
-        }
-    }, [showOlderCommits])
-
-    const fileDecorationsByPath =
-        useObservable<FileDecorationsByPath>(
-            useMemo(
-                () =>
-                    getFileDecorations({
-                        files: tree.entries,
-                        extensionsController: props.extensionsController,
-                        repoName: repo.name,
-                        commitID,
-                        parentNodeUri: tree.url,
-                    }),
-                [commitID, props.extensionsController, repo.name, tree.entries, tree.url]
-            )
-        ) ?? {}
-
     const [readmeInfo, setReadmeInfo] = useState<
         | undefined
         | {
@@ -451,18 +291,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
-    const [langStats, setLangStats] = useState<LangStats[]>()
-    useEffect(() => {
-        const subscription = fetchLangStats({
-            repo: repo.name,
-            revspec: revision,
-            paths: tree.entries.map(entry => entry.path),
-        }).subscribe(results => {
-            setLangStats(results)
-        })
-        return () => subscription.unsubscribe()
-    }, [repo.name, revision, tree.entries])
-
     const queryCommits = useCallback(
         (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
@@ -498,110 +326,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </div>
     )
 
-    const showAllCommits = (
-        <Button
-            className="test-tree-page-show-all-commits"
-            onClick={onShowOlderCommitsClicked}
-            variant="secondary"
-            size="sm"
-        >
-            Show commits older than one year
-        </Button>
-    )
-
-    /*
-    // <<<<<<< HEAD
-    const { extensionsController } = props
-
-    const showLinkToCommitsPage = connection && hasNextPage && connection.nodes.length > TREE_COMMITS_PER_PAGE
-
-    return (
-        <>
-            <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <Heading as="h3" styleAs="h2">
-                    Files and directories
-                </Heading>
-                <TreeEntriesSection
-                    parentPath={filePath}
-                    entries={tree.entries}
-                    fileDecorationsByPath={fileDecorationsByPath}
-                    isLightTheme={props.isLightTheme}
-                />
-            </section>
-            {extensionsController !== null && window.context.enableLegacyExtensions ? (
-                <ActionsContainer
-                    {...props}
-                    extensionsController={extensionsController}
-                    menu={ContributableMenu.DirectoryPage}
-                    empty={null}
-                >
-                    {items => (
-                        <section className={styles.section}>
-                            <Heading as="h3" styleAs="h2">
-                                Actions
-                            </Heading>
-                            {items.map(item => (
-                                <Button
-                                    {...props}
-                                    extensionsController={extensionsController}
-                                    key={item.action.id}
-                                    {...item}
-                                    className="mr-1 mb-1"
-                                    variant="secondary"
-                                    as={ActionItem}
-                                />
-                            ))}
-                        </section>
-                    )}
-                </ActionsContainer>
-            ) : null}
-
-            <ConnectionContainer className={styles.section}>
-                <Heading as="h3" styleAs="h2">
-                    Changes
-                </Heading>
-
-                {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                <ConnectionList className="list-group list-group-flush w-100">
-                    {connection?.nodes.map(node => (
-                        <GitCommitNode
-                            key={node.id}
-                            className={classNames('list-group-item', styles.gitCommitNode)}
-                            messageSubjectClassName={styles.gitCommitNodeMessageSubject}
-                            compact={true}
-                            wrapperElement="li"
-                            node={node}
-                        />
-                    ))}
-                </ConnectionList>
-                {loading && <ConnectionLoading />}
-                {connection && (
-                    <SummaryContainer centered={true}>
-                        <ConnectionSummary
-                            centered={true}
-                            first={TREE_COMMITS_PER_PAGE}
-                            connection={connection}
-                            noun={showOlderCommits ? 'commit' : 'commit in the past year'}
-                            pluralNoun={showOlderCommits ? 'commits' : 'commits in the past year'}
-                            hasNextPage={hasNextPage}
-                            emptyElement={null}
-                        />
-                        {hasNextPage ? (
-                            showLinkToCommitsPage ? (
-                                <Link to={`${repo.url}/-/commits${filePath ? `/${filePath}` : ''}`}>
-                                    Show all commits
-                                </Link>
-                            ) : (
-                                <ShowMoreButton centered={true} onClick={fetchMore} />
-                            )
-                        ) : null}
-                        {!hasNextPage && !showOlderCommits ? showAllCommits : null}
-                    </SummaryContainer>
-                )}
-            </ConnectionContainer>
-        </>
-    )
-    */
     const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
         totalCount,
     }) => (
@@ -637,7 +361,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <div className="row">
                     <div className="col-12 mb-3">
-                        <FilesCard langStats={langStats} diffStats={diffStats} entries={tree.entries} />
+                        <FilesCard diffStats={diffStats} entries={tree.entries} />
                     </div>
                 </div>
                 <div className="row">
@@ -646,7 +370,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                             <CardHeader>
                                 <Link to={`${tree.url}/-/commits`}>Commits</Link>
                             </CardHeader>
-                            {/* TODO(beyang): ultra-compact mode and collapse date timestamps into headers */}
                             <FilteredConnection<
                                 GitCommitFields,
                                 Pick<
