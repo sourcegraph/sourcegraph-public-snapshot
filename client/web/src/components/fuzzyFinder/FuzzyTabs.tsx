@@ -107,7 +107,6 @@ export interface FuzzyState {
     isScopeToggleDisabled: boolean
     scope: FuzzyScope
     toggleScope: () => void
-    onClickItem: () => void
 }
 
 export function fuzzyIsActive(activeTab: FuzzyTabKey, tab: FuzzyTabKey): boolean {
@@ -177,7 +176,6 @@ export function defaultFuzzyState(): FuzzyState {
     let activeTab: FuzzyTabKey = 'all'
     return {
         query,
-        onClickItem: () => {},
         setQuery: newQuery => {
             if (typeof newQuery === 'function') {
                 query = newQuery(query)
@@ -219,7 +217,7 @@ export interface FuzzyTabsProps extends FuzzyActionProps {
     isVisible: boolean
 }
 
-export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): FuzzyState {
+export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     const {
         themeState,
         isVisible,
@@ -383,7 +381,6 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
     ])
 
     return {
-        onClickItem,
         query,
         setQuery,
         activeTab,

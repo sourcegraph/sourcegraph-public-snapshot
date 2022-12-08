@@ -54,6 +54,7 @@ export interface FuzzyModalProps extends FuzzyState {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -236,6 +237,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
+    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -247,7 +249,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             maxResults,
             initialMaxResults,
             setMaxResults,
-            onClickItem
+            handleResultClick
         )
     }, [
         activeTab,
@@ -257,7 +259,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         maxResults,
         initialMaxResults,
         setMaxResults,
-        onClickItem,
+        handleResultClick,
         tabs,
     ])
 
@@ -335,6 +337,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
               onChange: (index: number) => setActiveTab(tabs.focusTab(index)),
           }
         : {}
+
+    const handleGoToResultsPageClick = useCallback(() => onClickItem('FuzzyFinderGoToResultsPageClicked'), [
+        onClickItem,
+    ])
 
     return (
         <Modal
@@ -427,7 +433,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 )}
                 <hr className="my-0 w-100" />
                 <div className="d-flex align-items-center w-100 p-3">
-                    <SearchQueryLink {...props} />
+                    <SearchQueryLink {...props} onClickItem={handleGoToResultsPageClick} />
                     <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>
@@ -502,7 +508,7 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
     </Select>
 )
 
-const SearchQueryLink: React.FunctionComponent<FuzzyState> = props => {
+const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () => void }> = props => {
     const { onClickItem, scope } = props
     const searchQueryLink = useCallback(
         (query: string): JSX.Element => {
