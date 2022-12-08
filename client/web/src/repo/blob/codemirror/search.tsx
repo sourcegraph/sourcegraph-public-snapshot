@@ -55,7 +55,6 @@ class SearchPanel implements Panel {
     private state: { searchQuery: SearchQuery; overrideBrowserSearch: boolean; history: History }
     private root: Root | null = null
     private input: HTMLInputElement | null = null
-    private resultCountainer: HTMLSpanElement | null = null
     private searchQuery = new Subject<SearchQuery>()
     private subsciptions = new Subscription()
 
@@ -208,7 +207,6 @@ class SearchPanel implements Panel {
         caseSensitive,
         regexp,
     }: { search?: string; caseSensitive?: boolean; regexp?: boolean } = {}): void => {
-        // (this.input?.value || '')
         const query = new SearchQuery({
             search: search ?? this.state.searchQuery.search,
             caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
