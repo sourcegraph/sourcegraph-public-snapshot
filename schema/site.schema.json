@@ -1079,7 +1079,7 @@
       "group": "Email"
     },
     "executors.frontendURL": {
-      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
