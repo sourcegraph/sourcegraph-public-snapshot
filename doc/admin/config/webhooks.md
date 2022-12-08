@@ -11,7 +11,7 @@ GitLab | 🟢 | 🔴
 Bitbucket Server / Datacenter | 🟢 | 🔴 
 Bitbucket Cloud | 🟢 | 🔴
 
-Webhooks need to be configured both on the sending side, the code host and receiveing side, Sourcegraph.
+Webhooks need to be configured both on the sending side, the code host and receiving side, Sourcegraph respectivley.
 
 ## Deprecation notice
 
