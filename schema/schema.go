@@ -1975,6 +1975,8 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
+	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
+	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
