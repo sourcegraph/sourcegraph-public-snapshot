@@ -1017,7 +1017,8 @@ export const WEBHOOK_PAGE_HEADER = gql`
         webhookLogs(onlyErrors: true) {
             totalCount
         }
-    }`
+    }
+`
 
 export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number; totalNoEvents: number } => {
     const { data, loading } = useQuery<WebhookPageHeaderResult, WebhookPageHeaderVariables>(WEBHOOK_PAGE_HEADER, {})
