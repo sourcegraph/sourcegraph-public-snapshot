@@ -208,9 +208,7 @@ func TestGitCommitAncestors(t *testing.T) {
 	}
 	c2 := gitdomain.Commit{
 		ID: api.CommitID("ccdde12345"),
-		Parents: []api.CommitID{
-			c1.ID,
-		},
+		Parents: []api.CommitID{c1.ID},
 	}
 	c3 := gitdomain.Commit{
 		ID:      api.CommitID("eeffg12345"),
