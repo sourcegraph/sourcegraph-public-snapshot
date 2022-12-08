@@ -242,7 +242,7 @@ In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/t
 
 ```yaml
 
-minio:
+blobstore:
   enabled: false # Disable deployment of the built-in object storage
 
 # we use YAML anchors and alias to keep override file clean
