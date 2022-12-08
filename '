@@ -39,7 +39,7 @@ func marshalJSON(t testing.TB, v any) string {
 	return string(bs)
 }
 
-func waitUntil(t *testing.T, condition chan bool) {
+func waitUntil(t *testing.T, ctx context.Context, condition chan bool) {
 	t.Helper()
 	select {
 	case ret := <-condition:
@@ -181,70 +181,11 @@ func TestGitHubWebhooks(t *testing.T) {
 			eventType: "organization",
 			event: github.OrganizationEvent{
 				Action: github.String("member_added"),
-				Membership: &github.Membership{
-					User: &github.User{
-						ID: github.Int64(accountID),
-					},
-				},
-			},
-			matchRepo: false,
-		},
-		{
-			name:      "organization event member removed",
-			eventType: "organization",
-			event: github.OrganizationEvent{
-				Action: github.String("member_removed"),
-				Membership: &github.Membership{
-					User: &github.User{
-						ID: github.Int64(accountID),
-					},
-				},
-			},
-			matchRepo: false,
-		},
-		{
-			name:      "membership event added",
-			eventType: "membership",
-			event: github.MembershipEvent{
-				Action: github.String("added"),
-				Member: &github.User{
+				Membership: &github.Membership{User: &github.User{
 					ID: github.Int64(accountID),
-				},
+				}},
 			},
 			matchRepo: false,
-		},
-		{
-			name:      "membership event removed",
-			eventType: "membership",
-			event: github.MembershipEvent{
-				Action: github.String("removed"),
-				Member: &github.User{
-					ID: github.Int64(accountID),
-				},
-			},
-			matchRepo: false,
-		},
-		{
-			name:      "team event added to repository",
-			eventType: "team",
-			event: github.TeamEvent{
-				Action: github.String("added_to_repository"),
-				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
-				},
-			},
-			matchRepo: true,
-		},
-		{
-			name:      "team event removed from repository",
-			eventType: "team",
-			event: github.TeamEvent{
-				Action: github.String("removed_from_repository"),
-				Repo: &github.Repository{
-					CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
-				},
-			},
-			matchRepo: true,
 		},
 	}
 
@@ -267,7 +208,139 @@ func TestGitHubWebhooks(t *testing.T) {
 
 			responseRecorder := httptest.NewRecorder()
 			hook.ServeHTTP(responseRecorder, req)
-			waitUntil(t, webhookCalled)
+			waitUntil(t, ctx, webhookCalled)
 		})
 	}
+
+	t.Run("organization event member added", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.UserIDs[0] == u.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.OrganizationEvent{
+			Action: github.String("member_added"),
+			Membership: &github.Membership{User: &github.User{
+				ID: github.Int64(123),
+			}},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "organization", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
+
+	t.Run("organization event member removed", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.UserIDs[0] == u.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.OrganizationEvent{
+			Action: github.String("member_removed"),
+			Membership: &github.Membership{User: &github.User{
+				ID: github.Int64(123),
+			}},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "organization", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
+
+	t.Run("membership event added", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.UserIDs[0] == u.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.MembershipEvent{
+			Action: github.String("added"),
+			Member: &github.User{
+				ID: github.Int64(123),
+			},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "membership", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
+
+	t.Run("membership event removed", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.UserIDs[0] == u.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.MembershipEvent{
+			Action: github.String("removed"),
+			Member: &github.User{
+				ID: github.Int64(123),
+			},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "membership", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
+
+	t.Run("team event added to repository", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.RepoIDs[0] == repo.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.TeamEvent{
+			Action: github.String("added_to_repository"),
+			Repo: &github.Repository{
+				CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+			},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "team", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
+
+	t.Run("team event removed from repository", func(t *testing.T) {
+		webhookCalled := make(chan bool)
+		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
+			webhookCalled <- args.RepoIDs[0] == repo.ID
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+
+		payload, err := json.Marshal(github.TeamEvent{
+			Action: github.String("removed_from_repository"),
+			Repo: &github.Repository{
+				CloneURL: github.String("https://github.com/sourcegraph/sourcegraph.git"),
+			},
+		})
+		require.NoError(t, err)
+		req := newReq(t, "team", payload)
+
+		responseRecorder := httptest.NewRecorder()
+		hook.ServeHTTP(responseRecorder, req)
+		waitUntil(t, ctx, webhookCalled)
+	})
 }

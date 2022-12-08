@@ -32,7 +32,7 @@ type GitHubWebhook struct {
 }
 
 func NewGitHubWebhook(logger log.Logger) *GitHubWebhook {
-	return &GitHubWebhook{logger}
+	return &GitHubWebhook{logger: logger}
 }
 
 func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
