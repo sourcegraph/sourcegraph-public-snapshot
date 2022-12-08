@@ -409,6 +409,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
+	logBatch(ctx, r.SearchInputs, srr, err)
 	return srr, err
 }
 
