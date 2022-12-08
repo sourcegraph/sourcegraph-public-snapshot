@@ -18,19 +18,6 @@ Bitbucket Cloud | 🟢 | 🔴
 
 To receive webhooks both the receiving and sending side need to be configured. To configure the receiving side, [add an incoming webhook](#adding-an-incoming-webhook). Set up the sending side by [configuring webhooks on your code host](#configuring-webhooks-on-the-code-host)
 
-## Deprecation notice
-
-As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 4.6.0.
-
-This includes any webhooks pointed at URLs starting with the following:
-
-* `.api/github-webhooks`
-* `.api/gitlab-webhooks`
-* `.api/bitbucket-server-webhooks`
-* `.api/bitbucket-cloud-webhooks`
-
-In order to continue using webhooks you need to follow the steps below to [add an incoming webhook](#adding-an-incoming-webhook) and then update the webhook configured on your code host with the new webhook url which will look something like `https://sourcegraph-instance/.api/webhooks/{UUID}`
-
 ## Adding an incoming webhook
 
 Before adding an incoming webhook you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
@@ -179,3 +166,16 @@ To retain webhook logs for one day:
 ### Encrypting webhook logs
 
 Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
+
+## Deprecation notice
+
+As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 4.6.0.
+
+This includes any webhooks pointed at URLs starting with the following:
+
+* `.api/github-webhooks`
+* `.api/gitlab-webhooks`
+* `.api/bitbucket-server-webhooks`
+* `.api/bitbucket-cloud-webhooks`
+
+In order to continue using webhooks you need to follow the steps below to [add an incoming webhook](#adding-an-incoming-webhook) and then update the webhook configured on your code host with the new webhook url which will look something like `https://sourcegraph-instance/.api/webhooks/{UUID}`
