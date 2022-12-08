@@ -1014,8 +1014,12 @@ export const WEBHOOK_PAGE_HEADER = gql`
             }
         }
 
-        webhookLogs(onlyErrors: true) {
-            totalCount
+        errorsOnly: webhooks {
+            nodes {
+                webhookLogs(onlyErrors: true) {
+                    totalCount
+                }
+            }
         }
     }
 `
@@ -1023,7 +1027,8 @@ export const WEBHOOK_PAGE_HEADER = gql`
 export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number; totalNoEvents: number } => {
     const { data, loading } = useQuery<WebhookPageHeaderResult, WebhookPageHeaderVariables>(WEBHOOK_PAGE_HEADER, {})
     const totalNoEvents = data?.webhooks.nodes.filter(webhook => webhook.webhookLogs?.totalCount === 0).length || 0
-    const totalErrors = data?.webhookLogs.totalCount || 0
+    const totalErrors =
+        data?.errorsOnly.nodes.reduce((sum, webhook) => sum + (webhook.webhookLogs?.totalCount || 0), 0) || 0
     return { loading, totalErrors, totalNoEvents }
 }
 
