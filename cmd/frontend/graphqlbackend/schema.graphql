@@ -7964,7 +7964,7 @@ type TemporarySettings {
 }
 
 """
-Represents a webhook receiver from a code host.
+Represents an incoming webhook from a code host.
 """
 type Webhook implements Node {
     """

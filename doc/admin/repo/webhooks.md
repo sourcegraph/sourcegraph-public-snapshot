@@ -24,5 +24,5 @@ For repositories that Sourcegraph is already aware of, it will periodically perf
 
 ### GitHub
 
-We support the `push` event for GitHub. In order to handle them you need to set up webhooks in GitHub and point it at a webhook receiver configured in Sourcegraph, as described [here](../config/webhooks.md).
+We support the `push` event for GitHub. In order to handle them you need to set up webhooks in GitHub and point it at a incoming webhook configured in Sourcegraph, as described [here](../config/webhooks.md).
 
