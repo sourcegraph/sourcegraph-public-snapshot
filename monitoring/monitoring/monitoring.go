@@ -102,7 +102,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
 	}
-	board := grafana.Board(uid, c.Title, []string{"builtin"})
+	board := grafana.NewBoard(uid, c.Title, []string{"builtin"})
 
 	if !c.noAlertsDefined() {
 		alertLevelVariable := ContainerVariable{
@@ -262,14 +262,9 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// Non-general groups are shown as collapsible panels.
 		var rowPanel *sdk.Panel
 		if group.Title != "General" {
-			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
-			rowPanel.OfType = sdk.RowType
-			rowPanel.Type = "row"
-			rowPanel.Title = group.Title
 			offsetY++
-			setPanelPos(rowPanel, 0, offsetY)
+			rowPanel = grafana.NewRowPanel(offsetY, group.Title)
 			rowPanel.Collapsed = group.Hidden
-			rowPanel.Panels = []sdk.Panel{} // cannot be null
 			board.Panels = append(board.Panels, rowPanel)
 		}
 

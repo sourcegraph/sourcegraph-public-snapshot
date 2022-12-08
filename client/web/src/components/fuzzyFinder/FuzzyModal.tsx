@@ -357,7 +357,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     {showTabs ? (
                         <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
-                                <Tab key={key} className={styles.tab}>
+                                <Tab key={key} className={styles.tab} data-testid={key}>
                                     {tab.title}
                                     <span className={styles.shortcut}>
                                         {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}

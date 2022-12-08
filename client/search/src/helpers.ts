@@ -65,7 +65,6 @@ export interface SubmitSearchParameters
         | 'excludedResults'
         | 'smartSearchDisabled'
     searchMode?: SearchMode
-    addRecentSearch?: (query: string) => void
 }
 
 export interface SubmitSearchProps {

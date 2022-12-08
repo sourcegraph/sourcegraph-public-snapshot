@@ -44,9 +44,14 @@ func NewRankMerger(
 		metrics:       newMergerMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return merger.mergeRanks(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"pagerank.merger", "reconciles page-rank data from auxiliary table",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return merger.mergeRanks(ctx, config)
+		}),
+	)
 }
 
 func (m *rankMerger) mergeRanks(ctx context.Context, config RankMergerConfig) (err error) {

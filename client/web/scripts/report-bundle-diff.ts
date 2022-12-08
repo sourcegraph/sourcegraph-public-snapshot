@@ -21,6 +21,12 @@ async function main(): Promise<void> {
         const [commitFilename, compareFilename] = process.argv.slice(-2)
 
         const report = parseReport(commitFilename, compareFilename)
+
+        if (hasZeroChanges(report)) {
+            console.log('No changes detected in the bundle size, skip posting the comment.')
+            process.exit(0)
+        }
+
         const body = reportToMarkdown(report)
         await createOrUpdateComment(body)
 
@@ -179,4 +185,13 @@ async function fetchPreviousComment(
 
 function shortRev(rev: string | null | undefined): string {
     return rev ? rev.slice(0, 7) : 'unknown'
+}
+
+function hasZeroChanges(report: Report): boolean {
+    for (const metric of report.slice(1) as Metric[]) {
+        if (metric.value !== 0) {
+            return false
+        }
+    }
+    return true
 }

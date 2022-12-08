@@ -40,12 +40,7 @@ var (
 // This only interacts with zoekt so that we can leverage the normal searcher
 // code paths for the unindexed parts. IE unsearched is expected to be used to
 // fetch a zip via the store and then do a normal unindexed search.
-func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
-	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
-		log.String("repo", string(p.Repo)),
-		log.String("commit", string(p.Commit)),
-	)
-
+func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
 	// recordHybridFinalState is a wrapper around metricHybridState to make the
 	// callsites more succinct.
 	finalState := "unknown"

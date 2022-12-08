@@ -22,7 +22,7 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 _Upgrade notes for the next version will appear here._
 
-## v4.1 ➔ v4.2
+## v4.1 ➔ v4.2.1
 
 <!-- Add changes changes to this section before release. -->
 

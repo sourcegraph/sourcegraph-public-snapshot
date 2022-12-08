@@ -52,10 +52,6 @@ export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
             ],
             status: {
                 __typename: 'InsightSeriesStatus',
-                backfillQueuedAt: '2022-01-01',
-                completedJobs: 100,
-                pendingJobs: 0,
-                failedJobs: 0,
                 isLoadingData: false,
                 incompleteDatapoints: [],
             },
@@ -108,10 +104,6 @@ export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
             ],
             status: {
                 __typename: 'InsightSeriesStatus',
-                backfillQueuedAt: '2022-01-01',
-                completedJobs: 100,
-                pendingJobs: 0,
-                failedJobs: 0,
                 isLoadingData: false,
                 incompleteDatapoints: [],
             },

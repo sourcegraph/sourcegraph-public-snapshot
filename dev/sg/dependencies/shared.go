@@ -119,7 +119,7 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 // asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
 // when they depend on the plaftorm we're installing them on.
 func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
-	return category{
+	categories := category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
 		Enabled:   enableOnlyInSourcegraphRepo(),
@@ -186,6 +186,8 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 		},
 	}
+	categories.Checks = append(categories.Checks, additionalChecks...)
+	return categories
 }
 
 func categoryAdditionalSGConfiguration() category {

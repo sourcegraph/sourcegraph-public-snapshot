@@ -36,44 +36,7 @@ const defaultProps: SearchContextMenuProps = {
     authenticatedUser: null,
     isSourcegraphDotCom: false,
     showSearchContextManagement: false,
-    fetchSearchContexts: ({
-        first,
-        query,
-        after,
-    }: {
-        first: number
-        query?: string
-        after?: string
-    }): Observable<ListSearchContextsResult['searchContexts']> =>
-        of({
-            nodes: [
-                {
-                    __typename: 'SearchContext',
-                    id: '3',
-                    spec: '@username/test-version-1.5',
-                    name: 'test-version-1.5',
-                    namespace: {
-                        __typename: 'User',
-                        id: 'u1',
-                        namespaceName: 'username',
-                    },
-                    autoDefined: false,
-                    public: true,
-                    description: 'Only code in version 1.5',
-                    updatedAt: '2021-03-15T19:39:11Z',
-                    viewerCanManage: true,
-                    viewerHasAsDefault: true,
-                    viewerHasStarred: false,
-                    query: '',
-                    repositories: [],
-                },
-            ],
-            pageInfo: {
-                endCursor: null,
-                hasNextPage: false,
-            },
-            totalCount: 1,
-        }),
+    fetchSearchContexts: mockFetchSearchContexts,
     defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
     selectSearchContextSpec: () => {},
@@ -85,7 +48,15 @@ const defaultProps: SearchContextMenuProps = {
 }
 
 const emptySearchContexts = {
-    fetchSearchContexts: mockFetchSearchContexts,
+    fetchSearchContexts: (): Observable<ListSearchContextsResult['searchContexts']> =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
 }
 
 export const Default: Story = () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>
