@@ -28,7 +28,7 @@ class MouseEvents {
         return isClickDistance(this.mousedown, this.mousemove)
     }
     public isMouseupClick(mouseup: MouseEvent): boolean {
-        return isClickDistance(mouseup, this.mousemove)
+        return isClickDistance(mouseup, this.mousedown)
     }
 }
 
@@ -36,12 +36,12 @@ class MouseEvents {
 // exampole, mousedown and mouseup). The heuristic returns true based on the
 // distance between the coordinates (clientY/clientX) of the two events.
 function isClickDistance(event1: MouseEvent, event2: MouseEvent): boolean {
-    const distanceX = event1.clientX - event2.clientX
-    const distanceY = event1.clientY - event2.clientX
-    const distance = Math.abs(distanceX + distanceY)
-    // The number 10 is picked out of the blue, feel free to tweak this
+    const distanceX = Math.abs(event1.clientX - event2.clientX)
+    const distanceY = Math.abs(event1.clientY - event2.clientY)
+    const distance = distanceX + distanceY
+    // The number is picked out of the blue, feel free to tweak this
     // heuristic if it's too lenient or too aggressive.
-    return distance < 10
+    return distance < 2
 }
 
 export function tokenSelectionExtension(): Extension {
