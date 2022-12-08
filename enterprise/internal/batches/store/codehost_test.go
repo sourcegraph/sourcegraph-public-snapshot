@@ -125,9 +125,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clo
 						HasWebhooks:         false,
 					},
 				}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("Invalid code hosts returned. %s", diff)
-				}
+				assert.Equal(t, want, have)
 			})
 			t.Run("excludes codehosts w/ associated row in webhooks table", func(t *testing.T) {
 				ws := database.WebhooksWith(s.Store, nil)
@@ -145,9 +143,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clo
 						HasWebhooks:         false,
 					},
 				}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("Invalid code hosts returned. %s", diff)
-				}
+				assert.Equal(t, want, have)
 			})
 		})
 	})
