@@ -21,7 +21,7 @@ As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecate
 This includes any webhooks pointed at URLs starting with the following:
 
 * `.api/github-webhooks`
-* `.api//gitlab-webhooks`
+* `.api/gitlab-webhooks`
 * `.api/bitbucket-server-webhooks`
 * `.api/bitbucket-cloud-webhooks`
 
