@@ -178,7 +178,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         searchContextsEnabled={true}
                         showSearchContext={true}
                         showSearchContextManagement={false}
-                        defaultSearchContextSpec="global"
                         setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                         selectedSearchContextSpec={context.selectedSearchContextSpec}
                         fetchSearchContexts={fetchSearchContexts}

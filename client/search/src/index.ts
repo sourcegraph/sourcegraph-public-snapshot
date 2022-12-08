@@ -43,7 +43,6 @@ export interface SearchModeProps {
 
 export interface SearchContextProps {
     searchContextsEnabled: boolean
-    defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
@@ -59,7 +58,6 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'searchContextsEnabled'
-    | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'
     | 'fetchSearchContexts'

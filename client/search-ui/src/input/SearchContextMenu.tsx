@@ -58,7 +58,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const {
         authenticatedUser,
         selectedSearchContextSpec,
-        defaultSearchContextSpec,
         selectSearchContextSpec,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
@@ -159,11 +158,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         platformContext,
     ])
 
-    const reset = useCallback(() => {
-        selectSearchContextSpec(defaultSearchContextSpec)
-        onMenuClose()
-    }, [onMenuClose, defaultSearchContextSpec, selectSearchContextSpec])
-
     const handleContextSelect = useCallback(
         (context: string): void => {
             selectSearchContextSpec(context)
@@ -208,7 +202,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                 spec={context.spec}
                                 description={context.description}
                                 query={context.query}
-                                isDefault={context.spec === defaultSearchContextSpec}
+                                isDefault={context.viewerHasAsDefault}
                                 selected={context.spec === selectedSearchContextSpec}
                                 starred={context.viewerHasStarred}
                             />
@@ -232,52 +226,40 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
 
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </ComboboxList>
-            <div className={styles.footer}>
-                {isSourcegraphDotCom ? (
-                    <>
-                        <div className="d-flex col-7 px-0 mr-auto">
-                            <Icon
-                                className={classNames('text-merged mr-1', styles.footerIcon)}
-                                size="md"
-                                aria-hidden={true}
-                                svgPath={mdiArrowRight}
-                            />
-                            <Text className="mb-0">
-                                To search across your team's private repositories,{' '}
-                                <Link
-                                    to="https://signup.sourcegraph.com/?p=context"
-                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
-                                >
-                                    try Sourcegraph Cloud
-                                </Link>
-                                .
-                            </Text>
-                        </div>
-                        <div className="d-flex flex-column align-items-end">
-                            {showSearchContextManagement && (
-                                <ButtonLink variant="link" to="/contexts" className={styles.footerButton}>
-                                    Manage contexts
-                                </ButtonLink>
-                            )}
-                            <Button variant="link" className={styles.footerButton} onClick={reset}>
-                                Reset
-                            </Button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
-                            Reset
-                        </Button>
-                        <span className="flex-grow-1" />
-                        {showSearchContextManagement && (
+            {(isSourcegraphDotCom || showSearchContextManagement) && (
+                <div className={styles.footer}>
+                    {isSourcegraphDotCom && (
+                        <>
+                            <div className="d-flex col-7 px-0">
+                                <Icon
+                                    className={classNames('text-merged mr-1', styles.footerIcon)}
+                                    size="md"
+                                    aria-hidden={true}
+                                    svgPath={mdiArrowRight}
+                                />
+                                <Text className="mb-0">
+                                    To search across your team's private repositories,{' '}
+                                    <Link
+                                        to="https://signup.sourcegraph.com/?p=context"
+                                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                    >
+                                        try Sourcegraph Cloud
+                                    </Link>
+                                    .
+                                </Text>
+                            </div>
+                        </>
+                    )}
+                    {showSearchContextManagement && (
+                        <>
+                            <div className="flex-grow-1" />
                             <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
                                 Manage contexts
                             </ButtonLink>
-                        )}
-                    </>
-                )}
-            </div>
+                        </>
+                    )}
+                </div>
+            )}
         </Combobox>
     )
 }

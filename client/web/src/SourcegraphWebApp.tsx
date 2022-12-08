@@ -149,7 +149,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
-    defaultSearchContextSpec: string
 
     /**
      * Whether globbing is enabled for filters.
@@ -200,7 +199,6 @@ export class SourcegraphWebApp extends React.Component<
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             globbing: false,
         }
     }
@@ -405,7 +403,6 @@ export class SourcegraphWebApp extends React.Component<
                                     updateSearchContext={updateSearchContext}
                                     deleteSearchContext={deleteSearchContext}
                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     globbing={this.state.globbing}
                                     streamSearch={aggregateStreamingSearch}
                                     onCreateNotebookFromNotepad={this.onCreateNotebook}
@@ -434,11 +431,12 @@ export class SourcegraphWebApp extends React.Component<
             return
         }
 
-        const { defaultSearchContextSpec } = this.state
+        // TODO: update this to use the user's actual default search context
+        const fallbackSearchContext = 'global'
         this.subscriptions.add(
             getAvailableSearchContextSpecOrDefault({
                 spec,
-                defaultSpec: defaultSearchContextSpec,
+                defaultSpec: fallbackSearchContext,
                 platformContext: this.platformContext,
             }).subscribe(availableSearchContextSpecOrDefault => {
                 this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })

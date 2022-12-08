@@ -340,7 +340,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     searchContextsEnabled={true}
                     showSearchContext={true}
                     showSearchContextManagement={false}
-                    defaultSearchContextSpec="global"
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     selectedSearchContextSpec={context.selectedSearchContextSpec}
                     fetchSearchContexts={fetchSearchContexts}
