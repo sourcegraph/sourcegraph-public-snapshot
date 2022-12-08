@@ -30,11 +30,11 @@ export function createLineChartContent(input: LineChartContentInput): BackendIns
     )
 
     return seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
-        // " symbol breaks element query selectors in chart where we use id for
-        // points and lines. Since it's possible to have " symbols in id in case
-        // of capture-group insight replace all " symbols
-        // see https://github.com/sourcegraph/sourcegraph/issues/45376
-        id: line.seriesId.replaceAll('"', ''),
+        // Encode all special symbols that may be in the original series such as
+        // " symbol that breaks element query selectors in the chart where we use this id
+        // for points and lines.
+        // See https://github.com/sourcegraph/sourcegraph/issues/45376
+        id: encodeURIComponent(line.seriesId),
         alerts: showError ? line.status.incompleteDatapoints : [],
         data: line.points.map((point, index) => ({
             dateTime: new Date(point.dateTime),
