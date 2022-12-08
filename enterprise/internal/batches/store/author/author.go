@@ -1,16 +1,19 @@
-package store
+package author
 
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Store) GetChangesetAuthorForUser(ctx context.Context, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
-	userStore := database.UsersWith(s.logger, s)
+func GetChangesetAuthorForUser(ctx context.Context, s *store.Store, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
+
+	userStore := s.DatabaseDB().Users()
+
 	userEmailStore := database.UserEmailsWith(s)
 
 	email, _, err := userEmailStore.GetPrimaryEmail(ctx, userID)
