@@ -23,10 +23,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+const (
+	gitTreeEntryContentCacheKeyPrefix = "git_tree_entry_content"
 )
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
@@ -38,9 +43,10 @@ type GitTreeEntryResolver struct {
 	gitserverClient gitserver.Client
 	commit          *GitCommitResolver
 
-	contentOnce sync.Once
-	content     []byte
-	contentErr  error
+	contentOnce  sync.Once
+	content      []byte
+	contentCache *rcache.Cache
+	contentErr   error
 
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
@@ -51,7 +57,7 @@ type GitTreeEntryResolver struct {
 }
 
 func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient}
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient, contentCache: rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, int(60*time.Second))}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -77,14 +83,20 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-
-		r.content, r.contentErr = r.gitserverClient.ReadFile(
-			ctx,
-			r.commit.repoResolver.RepoName(),
-			api.CommitID(r.commit.OID()),
-			r.Path(),
-			authz.DefaultSubRepoPermsChecker,
-		)
+		cacheKey := r.Path() + ":" + string(r.commit.OID())
+		content, ok := r.contentCache.Get(cacheKey)
+		if !ok {
+			r.content, r.contentErr = r.gitserverClient.ReadFile(
+				ctx,
+				r.commit.repoResolver.RepoName(),
+				api.CommitID(r.commit.OID()),
+				r.Path(),
+				authz.DefaultSubRepoPermsChecker,
+			)
+			r.contentCache.Set(cacheKey, r.content)
+		} else {
+			r.content = content
+		}
 	})
 
 	return string(r.content), r.contentErr
