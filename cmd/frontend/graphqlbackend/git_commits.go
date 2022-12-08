@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -20,7 +21,12 @@ type gitCommitConnectionResolver struct {
 	query  *string
 	path   *string
 	author *string
+
+	// after corresponds to --after in the git log / git rev-spec commands. Not to be confused with
+	// "after" when used as an offset for pagination. For pagination we use "offset" as the name of
+	// the field. See next field.
 	after  *string
+	offset *int32
 
 	repo *RepositoryResolver
 
@@ -30,29 +36,37 @@ type gitCommitConnectionResolver struct {
 	err     error
 }
 
-func toValue(s *string) string {
-	if s != nil {
-		return *s
+func toValue[T any](v *T) any {
+	var result T
+	if v != nil {
+		return *v
 	}
 
-	return ""
+	return result
 }
 
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
 	do := func() ([]*gitdomain.Commit, error) {
 		var n int32
+		// IMPORTANT: We cannot use toValue here because we toValue will return 0 if r.first is nil.
+		// And n will be incorrectly set to 1. A nil value for r.first implies no limits, so skip
+		// setting a value for n completely.
 		if r.first != nil {
 			n = *r.first
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
 
+		// If no value for offset is set, then offset is 0. And this is fine.
+		offset := toValue(r.offset).(int32)
+
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
-			MessageQuery: toValue(r.query),
-			Author:       toValue(r.author),
-			After:        toValue(r.after),
-			Path:         toValue(r.path),
+			MessageQuery: toValue(r.query).(string),
+			Author:       toValue(r.author).(string),
+			After:        toValue(r.after).(string),
+			Skip:         uint(offset),
+			Path:         toValue(r.path).(string),
 		}, authz.DefaultSubRepoPermsChecker)
 	}
 
@@ -112,11 +126,19 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	// If a limit is set, we attempt to fetch N+1 commits to know if there is a next page or not. If
 	// we have more than N commits then we have a next page.
 	if totalCommits > limit {
-		// Get the limit'th commit ID from the array. This is the commit that starts the next page.
-		nextCommit := commits[limit]
-		commitGraphqlID := marshalGitCommitID(r.repo.ID(), GitObjectID(nextCommit.ID))
-
-		return graphqlutil.NextPageCursor(string(commitGraphqlID)), nil
+		// Pagination logic below.
+		//
+		// Example:
+		// Request 1: first: 100
+		// Response 1: commits: 1 to 100, endCursor: 100
+		//
+		// Request 2: first: 100, offset: 100 (endCursor from previous request)
+		// Response 2: commits: 101 to 200, endCursor: 200 (first + offset)
+		//
+		// Request 3: first: 50, offset: 200 (endCursor from previous request)
+		// Response 3: commits: 201 to 250, endCursor: 250 (first + offset)
+		endCursor := limit + int(toValue(r.offset).(int32))
+		return graphqlutil.NextPageCursor(fmt.Sprintf("%d", endCursor)), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil

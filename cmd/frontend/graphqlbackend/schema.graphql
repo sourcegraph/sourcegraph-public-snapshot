@@ -4545,6 +4545,11 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
+
+        """
+        Skip the first N commits of the repo before returning the number of commits as set in the field "first".
+        """
+        offset: Int
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
