@@ -29,11 +29,14 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 	defer tr.Finish()
 
 	db := database.NewDBWith(i.logger, i.Store)
+	tr.AddEvent("NewDBWith")
 	store := db.Repos()
+	tr.AddEvent("Repos")
 	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return []api.RepoID{}, err
 	}
+	tr.AddEvent("AuthzQueryConds")
 
 	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
 
@@ -42,6 +45,7 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 		return []api.RepoID{}, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
+	tr.AddEvent("Query")
 
 	for rows.Next() {
 		var temp int
@@ -50,6 +54,7 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 		}
 		results = append(results, api.RepoID(temp))
 	}
+	tr.AddEvent("Scan")
 
 	return results, nil
 }
