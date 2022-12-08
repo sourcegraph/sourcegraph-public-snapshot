@@ -140,7 +140,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
         UpdateWebhookResult,
         UpdateWebhookVariables
     >(UPDATE_WEBHOOK_QUERY, {
-        variables: createUpdateWebhookVariables(webhook, existingWebhook?.id),
+        variables: buildUpdateWebhookVariables(webhook, existingWebhook?.id),
         onCompleted: data => history.push(`/site-admin/webhooks/${data.updateWebhook.id}`),
     })
 
@@ -274,18 +274,11 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                     Create
                                 </Button>
                             )}
-                            {createWebhookError && (
+                            {(createWebhookError || updateWebhookError) && (
                                 <ErrorAlert
                                     className="mt-2"
-                                    prefix="Error during webhook creation"
-                                    error={createWebhookError}
-                                />
-                            )}
-                            {updateWebhookError && (
-                                <ErrorAlert
-                                    className="mt-2"
-                                    prefix="Error during webhook update"
-                                    error={updateWebhookError}
+                                    prefix={`Error during ${createWebhookError ? "creating" : "updating"} of webhook`}
+                                    error={createWebhookError || updateWebhookError}
                                 />
                             )}
                         </Form>
@@ -310,7 +303,7 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
     }
 }
 
-function createUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
+function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
     const secret =
         webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
             ? null

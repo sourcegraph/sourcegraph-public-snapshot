@@ -28,31 +28,32 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
 
     const { loading, data } = useWebhookQuery(id)
 
+    const webhook = data?.node && data.node.__typename === 'Webhook' ? data.node : undefined
     return (
         <Container>
             <PageTitle title="Incoming webhook" />
             {loading && !data && <ConnectionLoading />}
-            {data?.node && data.node.__typename === 'Webhook' && (
+            {webhook && (
                 <PageHeader
                     path={[
                         { icon: mdiCog },
                         { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
-                        { text: data.node.name },
+                        { text: webhook.name },
                     ]}
                     byline={
                         <CreatedByAndUpdatedByInfoByline
-                            createdAt={data.node.createdAt}
-                            createdBy={data.node.createdBy}
-                            updatedAt={data.node.updatedAt}
-                            updatedBy={data.node.updatedBy}
+                            createdAt={webhook.createdAt}
+                            createdBy={webhook.createdBy}
+                            updatedAt={webhook.updatedAt}
+                            updatedBy={webhook.updatedBy}
                         />
                     }
                     className="mb-3"
                     headingElement="h2"
                 />
             )}
-            {data?.node && data.node.__typename === 'Webhook' && (
-                <WebhookCreateUpdatePage existingWebhook={data.node} history={history} />
+            {webhook && (
+                <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />
             )}
         </Container>
     )
