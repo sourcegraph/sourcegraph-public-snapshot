@@ -53,8 +53,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                         id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
-                            title:
-                                '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
+                            title: '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
                         },
                     },
                     {

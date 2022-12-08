@@ -183,6 +183,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Testing
 
 - [How to write and run tests](how-to/testing.md)
+- [Run a local Sourcegraph instance behind ngrok](how-to/sourcegraph_ngrok.md)
 - Testing against code hosts
   - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
   - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)

@@ -43,9 +43,10 @@ export const ActiveExtensionsPanel: React.FunctionComponent<
         props.platformContext.sideloadedExtensionURL.next(url)
     }, [sideloadedExtensionURL, props.platformContext])
 
-    const clearSideloadedExtensionURL = useCallback(() => props.platformContext.sideloadedExtensionURL.next(null), [
-        props.platformContext,
-    ])
+    const clearSideloadedExtensionURL = useCallback(
+        () => props.platformContext.sideloadedExtensionURL.next(null),
+        [props.platformContext]
+    )
 
     return (
         <>

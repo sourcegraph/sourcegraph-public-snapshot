@@ -80,13 +80,21 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
             </Route>
             {!isSourcegraphDotCom && (
                 <Route path={`${match.url}/create`} exact={true}>
-                    <CreateBatchChangePage headingElement="h1" {...props} />
+                    <AuthenticatedCreateBatchChangePage
+                        {...props}
+                        headingElement="h1"
+                        authenticatedUser={authenticatedUser}
+                    />
                 </Route>
             )}
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </div>
 )
+
+const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
+    CreateBatchChangePageProps & { authenticatedUser: AuthenticatedUser }
+>(props => <CreateBatchChangePage {...props} authenticatedUser={props.authenticatedUser} />)
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />

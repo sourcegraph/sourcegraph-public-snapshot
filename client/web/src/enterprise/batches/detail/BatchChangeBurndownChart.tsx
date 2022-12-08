@@ -87,11 +87,10 @@ export const BatchChangeBurndownChart: React.FunctionComponent<React.PropsWithCh
 
     const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
-        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID, includeArchived }), [
-            batchChangeID,
-            queryChangesetCountsOverTime,
-            includeArchived,
-        ])
+        useMemo(
+            () => queryChangesetCountsOverTime({ batchChange: batchChangeID, includeArchived }),
+            [batchChangeID, queryChangesetCountsOverTime, includeArchived]
+        )
     )
 
     const dateTickFormatter = useMemo(() => {

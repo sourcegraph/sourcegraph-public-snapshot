@@ -11,31 +11,31 @@
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
-    "**/.eslintcache": true,
+    "**/.eslintcache": true
   },
   "files.exclude": {
-    "**/*.scss.d.ts": true,
+    "**/*.scss.d.ts": true
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
-    "**/.mocharc.json": "jsonc",
+    "**/.mocharc.json": "jsonc"
   },
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json"
     },
     {
       "fileMatch": ["dev/site-config.json"],
-      "url": "/schema/site.schema.json",
-    },
+      "url": "/schema/site.schema.json"
+    }
   ],
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
     "build.allowImplicitNetworkAccess": true,
-    "local": "github.com/sourcegraph/sourcegraph",
+    "local": "github.com/sourcegraph/sourcegraph"
   },
   "jest.jestCommandLine": "yarn test",
   "jest.showCoverageOnLoad": false,
@@ -61,9 +61,9 @@
   "nix.enableLanguageServer": true,
   "[nix]": {
     "editor.insertSpaces": true,
-    "editor.tabSize": 2,
+    "editor.tabSize": 2
   },
   "files.watcherExclude": {
-    "**/target": true,
-  },
+    "**/target": true
+  }
 }

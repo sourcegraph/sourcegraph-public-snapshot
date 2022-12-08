@@ -6,8 +6,7 @@ func validateNotebookBlock(block NotebookBlock) error {
 	if block.Type != NotebookQueryBlockType &&
 		block.Type != NotebookMarkdownBlockType &&
 		block.Type != NotebookFileBlockType &&
-		block.Type != NotebookSymbolBlockType &&
-		block.Type != NotebookComputeBlockType {
+		block.Type != NotebookSymbolBlockType {
 		return errors.Errorf("invalid block type: %s", string(block.Type))
 	}
 
@@ -19,8 +18,6 @@ func validateNotebookBlock(block NotebookBlock) error {
 		return errors.Errorf("invalid file block with id: %s", block.ID)
 	} else if block.Type == NotebookSymbolBlockType && block.SymbolInput == nil {
 		return errors.Errorf("invalid symbol block with id: %s", block.ID)
-	} else if block.Type == NotebookComputeBlockType && block.ComputeInput == nil {
-		return errors.Errorf("invalid compute block with id: %s", block.ID)
 	}
 
 	if block.Type == NotebookSymbolBlockType && block.SymbolInput != nil && block.SymbolInput.LineContext < 0 {

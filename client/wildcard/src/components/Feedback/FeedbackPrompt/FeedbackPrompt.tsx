@@ -41,9 +41,10 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
 }) => {
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const textAreaReference = useRef<HTMLInputElement>(null)
-    const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
-        setText,
-    ])
+    const handleTextChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value),
+        [setText]
+    )
 
     const [submitting, setSubmitting] = useState(false)
     const [submitResponse, setSubmitResponse] = useState<FeedbackPromptSubmitResponse>()

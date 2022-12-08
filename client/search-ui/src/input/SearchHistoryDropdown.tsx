@@ -1,31 +1,32 @@
 import React, {
-    useState,
-    useCallback,
     KeyboardEvent,
     KeyboardEventHandler,
-    useRef,
-    MouseEventHandler,
     MouseEvent,
+    MouseEventHandler,
+    useCallback,
+    useRef,
+    useState,
 } from 'react'
 
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
+import { pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import {
+    createRectangle,
+    Flipping,
     Icon,
     Popover,
-    PopoverTrigger,
     PopoverContent,
-    usePopoverContext,
-    Flipping,
-    Tooltip,
     PopoverOpenEvent,
-    createRectangle,
+    PopoverTrigger,
+    Tooltip,
+    usePopoverContext,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
@@ -43,7 +44,7 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    ({ recentSearches = [], onSelect, className, telemetryService }) => {
+    function SearchHistoryDropdown({ recentSearches = [], onSelect, className, telemetryService }) {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
@@ -149,7 +150,12 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
             onClick={clickHandler}
         >
             {recentSearches.map((search, index) => (
-                <SearchHistoryEntry key={index} index={index} search={search} selected={index === selectedIndex} />
+                <SearchHistoryEntry
+                    key={`${search.timestamp}-${search.query}`}
+                    index={index}
+                    search={search}
+                    selected={index === selectedIndex}
+                />
             ))}
         </ul>
     )
@@ -164,6 +170,11 @@ const SearchHistoryEntry: React.FunctionComponent<{
         <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
         <span className="ml-1 text-nowrap text-muted">
             <span className="sr-only">,</span>
+            {search.resultCount !== undefined && (
+                <span>
+                    {`${search.resultCount}${search.limitHit ? '+' : ''} ${pluralize('result', search.resultCount)}`} •{' '}
+                </span>
+            )}
             <Timestamp date={search.timestamp} />
         </span>
     </li>
