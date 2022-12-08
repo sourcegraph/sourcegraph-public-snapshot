@@ -4789,6 +4789,28 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
+    ): TreeEntriesConnection!
+    """
+    A paginated connection of entries in this tree.
+    """
+    entriesConnection(
+        """
+        Returns the first n files in the tree.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+        """
+        Recurse into sub-trees. If true, implies recursiveSingleChild.
+        """
+        recursive: Boolean = false
+        """
+        Recurse into sub-trees of single-child directories. If true, we return a flat list of
+        every directory that is a single child, and any directories or files that are
+        nested in a single child.
+        """
+        recursiveSingleChild: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.
@@ -4820,6 +4842,19 @@ type GitTree implements TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+}
+
+type TreeEntriesConnection {
+    nodes: [TreeEntry!]!
+    totalCount: Int!
+    pageInfo: NewPageInfo!
+}
+
+type NewPageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
 }
 
 """
