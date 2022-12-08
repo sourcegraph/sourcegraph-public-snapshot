@@ -28,15 +28,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-func NewLogJob(child job.Job) job.Job {
+func NewLogJob(inputs *search.Inputs, child job.Job) job.Job {
 	return &LogJob{
-		child: child,
+		child:  child,
+		inputs: inputs,
 	}
 }
 
 type LogJob struct {
 	child  job.Job
-	inputs search.Inputs
+	inputs *search.Inputs
 }
 
 func (l *LogJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -75,7 +76,7 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 func (l *LogJob) logBatch(
 	ctx context.Context,
 	clients job.RuntimeClients,
-	inputs search.Inputs,
+	inputs *search.Inputs,
 	stats streaming.Stats,
 	resultCount int,
 	duration time.Duration,
@@ -133,7 +134,7 @@ func (l *LogJob) logBatch(
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClients, si search.Inputs, duration time.Duration) {
+func (l *LogJob) logSearchDuration(ctx context.Context, clients job.RuntimeClients, si *search.Inputs, duration time.Duration) {
 	tr, ctx := trace.New(ctx, "LogSearchDuration", "")
 	defer tr.Finish()
 	var types []string

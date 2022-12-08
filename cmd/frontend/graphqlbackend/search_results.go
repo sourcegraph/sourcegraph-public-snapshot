@@ -600,6 +600,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
+		j = jobutil.NewLogJob(r.SearchInputs, j)
 		agg := streaming.NewAggregatingStream()
 		alert, err := j.Run(ctx, r.client.JobClients(), agg)
 		if err != nil {
