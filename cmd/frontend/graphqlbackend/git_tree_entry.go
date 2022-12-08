@@ -245,7 +245,8 @@ func (r *treeEntryStatsResolver) Languages(ctx context.Context) ([]*languageStat
 	}
 
 	path := r.tree.stat.Name()
-	inventory, err := backend.NewRepos(r.tree.commit.logger, r.tree.db, r.tree.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.tree.commit.oid), path, false)
+	reposSvc := backend.NewRepos(r.tree.commit.logger, r.tree.db, r.tree.gitserverClient)
+	inventory, err := reposSvc.GetInventory(ctx, repo, api.CommitID(r.tree.commit.oid), path, false)
 	if err != nil {
 		return nil, err
 	}

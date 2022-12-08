@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/inventory"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -65,4 +67,37 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	if have, want := newByteSize, int32(len([]byte(wantContent))); have != want {
 		t.Fatalf("wrong file size, want=%d have=%d", want, have)
 	}
+}
+
+func TestGitTreeEntry_Stats(t *testing.T) {
+	wantPath := "foobar.md"
+	wantContent := "foobar"
+	wantInventory := &inventory.Inventory{
+		Languages: []inventory.Lang{{
+			Name:       "JavaScript",
+			TotalBytes: 555,
+			TotalLines: 10,
+		}},
+	}
+
+	// repoSvc := backend.NewMockReposService()
+	backend.Mocks.Repos.GetInventory = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error) {
+		if repo.Name != "my/repo" {
+			t.Errorf("expected repo name %s, got %s", "my/repo", repo.Name)
+		}
+		if commitID != "aaaa" {
+			t.Errorf("expected commit ID %s, got %s", "aaaa", commitID)
+		}
+		return wantInventory, nil
+	}
+	db := database.NewMockDB()
+	gitserverClient := gitserver.NewMockClient()
+
+	gitTree := NewGitTreeEntryResolver(db, gitserverClient,
+		NewGitCommitResolver(db, gitserverClient, NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}), api.CommitID("aaaa"), nil),
+		CreateFileInfo(wantPath, true))
+
+	entry := NewTreeEntryStatsResolver(NewGitTreeEntryResolver(db, gitserverClient, gitTree))
+
+	langStats, err := entry.Languages(context.Background())
 }
