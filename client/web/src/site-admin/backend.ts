@@ -71,6 +71,8 @@ import {
     WebhookLogFields,
     WebhookLogsByWebhookIDResult,
     WebhookLogsByWebhookIDVariables,
+    WebhookPageHeaderResult,
+    WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
 } from '../graphql-operations'
@@ -1002,6 +1004,33 @@ export const DELETE_WEBHOOK = gql`
     }
 `
 
+export const WEBHOOK_PAGE_HEADER = gql`
+    query WebhookPageHeader {
+        webhooks {
+            nodes {
+                webhookLogs {
+                    totalCount
+                }
+            }
+        }
+
+        webhookLogs(onlyErrors: true) {
+            totalCount
+        }
+    }`
+
+export const useWebhookPageHeader = (): {loading: boolean, totalErrors: number, totalNoEvents: number} => {
+    let { data, loading } = useQuery<WebhookPageHeaderResult, WebhookPageHeaderVariables>(WEBHOOK_PAGE_HEADER, {})
+    const totalNoEvents = data?.webhooks.nodes.reduce((numNoEvents, webhook) => {
+                            if (webhook.webhookLogs?.totalCount === 0) {
+                                return numNoEvents + 1
+                            }
+                            return numNoEvents
+                        }, 0) || 0
+    const totalErrors = data?.webhookLogs.totalCount || 0
+    return { loading, totalErrors, totalNoEvents }
+}
+
 export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
@@ -1044,8 +1073,3 @@ export const CREATE_WEBHOOK_QUERY = gql`
         }
     }
 `
-
-export const useWebhooksHeaderStats = () =>
-    useQuery<>(WEBHOOK_HEADER_STATS, {
-
-    })

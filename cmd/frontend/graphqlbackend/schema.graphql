@@ -8004,6 +8004,10 @@ type Webhook implements Node {
     Null if the user was deleted.
     """
     createdBy: User
+    """
+    The logs related to this webhook.
+    """
+    webhookLogs: WebhookLogConnection
 }
 
 """

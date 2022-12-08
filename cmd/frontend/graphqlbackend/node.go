@@ -269,8 +269,8 @@ func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
-	n, ok := r.Node.(*webhookLogResolver)
+func (r *NodeResolver) ToWebhookLog() (*WebhookLogResolver, bool) {
+	n, ok := r.Node.(*WebhookLogResolver)
 	return n, ok
 }
 

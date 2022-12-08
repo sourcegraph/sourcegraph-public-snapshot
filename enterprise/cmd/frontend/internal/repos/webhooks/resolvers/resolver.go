@@ -322,6 +322,13 @@ func (r *webhookResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserRe
 	return user, err
 }
 
+func (r *webhookResolver) WebhookLogs(ctx context.Context) (*graphqlbackend.WebhookLogConnectionResolver, error) {
+	gqlID := marshalWebhookID(r.hook.ID)
+	args := &graphqlbackend.WebhookLogsArgs{WebhookID: &gqlID}
+	res, err := graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, args, graphqlbackend.WebhookLogsAllExternalServices)
+	return res, err
+}
+
 func marshalWebhookID(id int32) graphql.ID {
 	return relay.MarshalID("Webhook", id)
 }

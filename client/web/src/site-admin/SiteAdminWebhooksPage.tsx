@@ -18,11 +18,11 @@ import {
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 
-import { useWebhooksConnection } from './backend'
+import { useWebhooksConnection, useWebhookPageHeader } from './backend'
 import { WebhookNode } from './WebhookNode'
+import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
-import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -36,6 +36,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
     }, [telemetryService])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
+    const totals = useWebhookPageHeader()
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Incoming webhooks" />
@@ -52,10 +53,20 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
             />
 
             <Container>
+            { !totals.loading &&
                 <div className={styles.grid}>
-                    <PerformanceGauge count={10} countClassName={'text-danger'} label="error" />
-                    <PerformanceGauge count={10} countClassName={'text-warning'} label="no event" />
+                    <PerformanceGauge
+                        count={totals.totalErrors}
+                        countClassName={totals.totalErrors > 0 ? 'text-danger' : ''}
+                        label="error"
+                    />
+                    <PerformanceGauge
+                        count={totals.totalNoEvents}
+                        countClassName={totals.totalNoEvents > 0 ? 'text-warning' : ''}
+                        label="no event"
+                    />
                 </div>
+            }
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
