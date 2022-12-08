@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1472,6 +1473,13 @@ var (
 	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
 	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
+
+// TODO(sqs): HACK. We don't use github-proxy in the single-program install, but this env var is a package var and is set at init time, and we can't override it from within the program itself.
+func init() {
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		githubProxyRawURL = "https://api.github.com"
+	}
+}
 
 func getGithubProxyURL() *url.URL {
 	url, err := url.Parse(githubProxyRawURL)

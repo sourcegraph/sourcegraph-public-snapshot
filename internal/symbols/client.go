@@ -32,7 +32,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+func LoadConfig() {
+	symbolsURL := env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+	DefaultClient = &Client{
+		URL:                 symbolsURL,
+		HTTPClient:          defaultDoer,
+		HTTPLimiter:         parallel.NewRun(500),
+		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
+	}
+}
+
+// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
+// SYMBOLS_URL environment variable.
+var DefaultClient *Client
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -41,15 +53,6 @@ var defaultDoer = func() httpcli.Doer {
 	}
 	return d
 }()
-
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// SYMBOLS_URL environment variable.
-var DefaultClient = &Client{
-	URL:                 symbolsURL,
-	HTTPClient:          defaultDoer,
-	HTTPLimiter:         parallel.NewRun(500),
-	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
-}
 
 // Client is a symbols service client.
 type Client struct {

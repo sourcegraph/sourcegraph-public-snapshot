@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-var AdditionalJobs = map[string]job.Job{
+var additionalJobs = map[string]job.Job{
 	"codehost-version-syncing":      versions.NewSyncingJob(),
 	"insights-job":                  workerinsights.NewInsightsJob(),
 	"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
@@ -62,9 +62,8 @@ var AdditionalJobs = map[string]job.Job{
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func SetAuthzProviders(observationCtx *observation.Context) {
+func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider", ""), observationCtx)
-
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return
@@ -72,8 +71,6 @@ func SetAuthzProviders(observationCtx *observation.Context) {
 
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
-
-	ctx := context.Background()
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
