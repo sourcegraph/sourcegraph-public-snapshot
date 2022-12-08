@@ -51,7 +51,7 @@ Most importantly, you will be presented with the unique URL for this webhook whi
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
 1. Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**.
-1. Via **Site Admin > Incoming webhooks**:  In the details are for each added receiver.
+1. Via **Site Admin > Incoming webhooks**
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
 
