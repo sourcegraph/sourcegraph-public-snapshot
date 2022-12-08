@@ -63,6 +63,13 @@ function updateGlobalEnvHeaders(fromEnvAPIKey: string, toEnvAPIKey: string): voi
 }
 
 interface FetchDataInit extends RequestInit {
+    /**
+     * Queries that target all the datasets within an environment can be created
+     * and read with the same APIs as above, using the special __all__ token in
+     * the URL instead of a dataset name. Both creating and reading environment queries is supported.
+     *
+     * https://docs.honeycomb.io/api/queries/#environment-queries
+     */
     datasetIndependentEndpoint?: string
 }
 
@@ -70,9 +77,7 @@ async function fetchData<T extends object>(endpoint: string, init?: FetchDataIni
     const { datasetIndependentEndpoint, ...requestInit } = init || {}
 
     const url = new URL(HONEYCOMB_API_URL + endpoint).toString()
-    console.log(url)
     const response = await fetch(url, requestInit)
-    console.log('STATUS', response.status)
 
     if (!response.ok) {
         const errorMessage = await response.text()
