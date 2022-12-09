@@ -2521,6 +2521,23 @@ Indexes:
 
 ```
 
+# Table "public.permissions"
+```
+   Column   |           Type           | Collation | Nullable |                 Default                 
+------------+--------------------------+-----------+----------+-----------------------------------------
+ id         | integer                  |           | not null | nextval('permissions_id_seq'::regclass)
+ namespace  | text                     |           | not null | 
+ action     | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "permissions_pkey" PRIMARY KEY, btree (id)
+    "permissions_unique_namespace_action" UNIQUE, btree (namespace, action)
+Check constraints:
+    "action_not_blank" CHECK (action <> ''::text)
+    "namespace_not_blank" CHECK (namespace <> ''::text)
+
+```
+
 # Table "public.phabricator_repos"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                    
@@ -2778,6 +2795,24 @@ Indexes:
 **soft_deleted**: Number of repositories that are soft-deleted and not blocked
 
 **total**: Number of repositories that are not soft-deleted and not blocked
+
+# Table "public.roles"
+```
+   Column   |           Type           | Collation | Nullable |              Default              
+------------+--------------------------+-----------+----------+-----------------------------------
+ id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
+ name       | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ deleted_at | timestamp with time zone |           |          | 
+Indexes:
+    "roles_pkey" PRIMARY KEY, btree (id)
+    "roles_name" UNIQUE CONSTRAINT, btree (name)
+Check constraints:
+    "name_not_blank" CHECK (name <> ''::text)
+
+```
+
+**name**: The uniquely identifying name of the role.
 
 # Table "public.saved_searches"
 ```

@@ -74,6 +74,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                       <kbd>
                         Ctrl
                       </kbd>
+                      +
                       <kbd>
                         p
                       </kbd>
@@ -89,6 +90,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                       <kbd>
                         Alt
                       </kbd>
+                      +
                       <kbd>
                         x
                       </kbd>
@@ -104,6 +106,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                       <kbd>
                         Alt
                       </kbd>
+                      +
                       <kbd>
                         t
                       </kbd>
@@ -131,6 +134,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                       <kbd>
                         Ctrl
                       </kbd>
+                      +
                       <kbd>
                         k
                       </kbd>
@@ -146,9 +150,11 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                       <kbd>
                         Ctrl
                       </kbd>
+                      +
                       <kbd>
                         Shift
                       </kbd>
+                      +
                       <kbd>
                         c
                       </kbd>

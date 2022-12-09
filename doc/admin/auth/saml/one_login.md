@@ -6,11 +6,11 @@
    ID).
 1. Type "saml" in the search field and select `SAML Custom Connector (Advanced)`, which uses the SAML 2.0 version. Click "Save".
 1. Under the "Configuration" tab, set the following properties (replacing `https://sourcegraph.example.com` with your Sourcegraph URL):
-   * `Audience`:  https://sourcegraph.example.com/.auth/saml/metadata
-   * `Recipient`: https://sourcegraph.example.com/.auth/saml/acs
+   * `Audience`:  `https://sourcegraph.example.com/.auth/saml/metadata`
+   * `Recipient`: `https://sourcegraph.example.com/.auth/saml/acs`
    * `ACS (Consumer) URL Validator`: https:<span>//</span>sourcegraph\\.example\\.com\\/\\.auth\\/saml\\/acs<br>
      (This is regular expression that matches the URL `https://sourcegraph.example.com/.auth/saml/acs`)
-   * `ACS (Consumer) URL`: https://sourcegraph.example.com/.auth/saml/acs
+   * `ACS (Consumer) URL`: `https://sourcegraph.example.com/.auth/saml/acs`
 1. Under the "Parameters" tab, ensure the following parameters exist:<br>
    * Email (NameID): Email
    * DisplayName:    First Name         Include in SAML Assertion: ✓
