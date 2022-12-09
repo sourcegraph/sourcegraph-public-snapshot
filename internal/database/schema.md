@@ -2497,6 +2497,30 @@ Stores errors that occurred while performing an out-of-band migration.
 
 **migration_id**: The identifier of the migration.
 
+# Table "public.own_blame_jobs"
+```
+       Column       |           Type           | Collation | Nullable |                  Default                   
+--------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                 | integer                  |           | not null | nextval('own_blame_jobs_id_seq'::regclass)
+ state              | text                     |           |          | 'queued'::text
+ failure_message    | text                     |           |          | 
+ queued_at          | timestamp with time zone |           |          | now()
+ started_at         | timestamp with time zone |           |          | 
+ finished_at        | timestamp with time zone |           |          | 
+ process_after      | timestamp with time zone |           |          | 
+ num_resets         | integer                  |           | not null | 0
+ num_failures       | integer                  |           | not null | 0
+ last_heartbeat_at  | timestamp with time zone |           |          | 
+ execution_logs     | json[]                   |           |          | 
+ worker_hostname    | text                     |           | not null | ''::text
+ cancel             | boolean                  |           | not null | false
+ repository_id      | integer                  |           | not null | 
+ absolute_file_path | text                     |           | not null | 
+Indexes:
+    "own_blame_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.phabricator_repos"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                    
@@ -3577,6 +3601,31 @@ Foreign-key constraints:
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
+```
+
+# View "public.own_blame_jobs_with_repository_name"
+
+## View query:
+
+```sql
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.queued_at,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.last_heartbeat_at,
+    j.execution_logs,
+    j.worker_hostname,
+    j.cancel,
+    j.repository_id,
+    j.absolute_file_path,
+    r.name
+   FROM (own_blame_jobs j
+     JOIN repo r ON ((r.id = j.repository_id)));
 ```
 
 # View "public.reconciler_changesets"
