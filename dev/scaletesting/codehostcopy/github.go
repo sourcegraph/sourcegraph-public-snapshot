@@ -17,8 +17,12 @@ import (
 )
 
 type GithubCodeHost struct {
-	def *CodeHostDefinition
-	c   *github.Client
+	def     *CodeHostDefinition
+	c       *github.Client
+	page    int
+	perPage int
+	done    bool
+	err     error
 }
 
 var _ CodeHostSource[[]*store.Repo] = (*GithubCodeHost)(nil)
@@ -109,41 +113,49 @@ func (g *GithubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	return nil
 }
 
-func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+func (g *GithubCodeHost) ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error) {
 	var repos []*github.Repository
+	var resp *github.Response
+	var err error
+	var next int
 
 	if strings.HasPrefix(g.def.Path, "@") {
 		// If we're given a user and not an organization, query the user repos.
 		opts := github.RepositoryListOptions{
-			ListOptions: github.ListOptions{},
+			ListOptions: github.ListOptions{Page: start, PerPage: size},
 		}
-		for {
-			rs, resp, err := g.c.Repositories.List(ctx, strings.Replace(g.def.Path, "@", "", 1), &opts)
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, rs...)
+		repos, resp, err = g.c.Repositories.List(ctx, strings.Replace(g.def.Path, "@", "", 1), &opts)
+		if err != nil {
+			return nil, 0, err
+		}
 
-			if resp.NextPage == 0 {
-				break
-			}
-			opts.ListOptions.Page = resp.NextPage
+		if resp.StatusCode >= 300 {
+			return nil, 0, errors.Newf("failed to list repos for user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
+		}
+
+		next = resp.NextPage
+		// If next page is 0 we're at the last page, so set the last page
+		if next == 0 && g.page != resp.LastPage {
+			next = resp.LastPage
 		}
 	} else {
 		opts := github.RepositoryListByOrgOptions{
-			ListOptions: github.ListOptions{},
+			ListOptions: github.ListOptions{Page: start, PerPage: size},
 		}
-		for {
-			rs, resp, err := g.c.Repositories.ListByOrg(ctx, g.def.Path, &opts)
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, rs...)
 
-			if resp.NextPage == 0 {
-				break
-			}
-			opts.ListOptions.Page = resp.NextPage
+		repos, resp, err = g.c.Repositories.ListByOrg(ctx, g.def.Path, &opts)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if resp.StatusCode >= 300 {
+			return nil, 0, errors.Newf("failed to list repos for org %s. Got status %d code", g.def.Path, resp.StatusCode)
+		}
+
+		next = resp.NextPage
+		// If next page is 0 we're at the last page, so set the last page
+		if next == 0 && g.page != resp.LastPage {
+			next = resp.LastPage
 		}
 	}
 
@@ -151,7 +163,7 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	for _, repo := range repos {
 		u, err := url.Parse(repo.GetGitURL())
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		u.User = url.UserPassword(g.def.Username, g.def.Password)
 		u.Scheme = "https"
@@ -161,24 +173,41 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 		})
 	}
 
-	return res, nil
+	return res, next, nil
 }
 
 func (g *GithubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (g *GithubCodeHost) Err() error {
-	//TODO implement me
-	panic("implement me")
-}
+func (g *GithubCodeHost) listRepos(ctx context.Context)
 
 func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {
-	//TODO implement me
-	panic("implement me")
+	if g.done {
+		return nil
+	}
+
+	results, next, err := g.ListRepos(ctx)
+	if err != nil {
+		g.err = err
+		return nil
+	}
+
+	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
+	if next > 0 {
+		// Ensure that the next request starts at the next page
+		g.page = next
+	} else {
+		g.done = true
+	}
+
+	return results
 }
 
 func (g *GithubCodeHost) Done() bool {
-	//TODO implement me
-	panic("implement me")
+	return g.done
+}
+
+func (g *GithubCodeHost) Err() error {
+	return g.err
 }
