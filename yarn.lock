@@ -27982,7 +27982,6 @@ pvutils@latest:
     use-debounce: ^8.0.1
     use-deep-compare-effect: ^1.6.1
     use-resize-observer: ^9.0.2
-    user-agent-data-types: ^0.3.0
     utc-version: ^2.0.2
     utility-types: ^3.10.0
     uuid: ^8.3.0
@@ -31661,13 +31660,6 @@ pvutils@latest:
   version: 3.1.1
   resolution: "use@npm:3.1.1"
   checksum: 08a130289f5238fcbf8f59a18951286a6e660d17acccc9d58d9b69dfa0ee19aa038e8f95721b00b432c36d1629a9e32a464bf2e7e0ae6a244c42ddb30bdd8b33
-  languageName: node
-  linkType: hard
-
-"user-agent-data-types@npm:^0.3.0":
-  version: 0.3.0
-  resolution: "user-agent-data-types@npm:0.3.0"
-  checksum: 73a61ddfba17e7289a1312fc98c4f1f98d6353e6ace3e3159b36735e6a679b05bcb2afdfb8e602d690a89e6af44669783045ed9059f4bd0890f8e0ee8a772ee5
   languageName: node
   linkType: hard
 
