@@ -20,6 +20,7 @@ import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilKeyChanged, startWith, filter } from 'rxjs/operators'
+
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -199,12 +200,6 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
-
-                {/*{this.state.searchQuery.search && (*/}
-                {/*    <div>*/}
-                {/*        found <span ref={element => (this.resultCountainer = element)} /> results*/}
-                {/*    </div>*/}
-                {/*)}*/}
             </Container>
         )
     }
