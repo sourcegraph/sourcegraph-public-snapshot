@@ -141,7 +141,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
 
     return (
         <Card className="card">
-            <CardHeader>
+            <CardHeader className={styles.cardColHeaderWrapper}>
                 <div className="container-fluid px-2">
                     <div className="row">
                         <div
@@ -149,7 +149,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             tabIndex={0}
                             onClick={clickFiles}
                             onKeyDown={keydownFiles}
-                            className={classNames('d-flex flex-row align-itmes-start col-9 px-2', styles.cardColHeader)}
+                            className={classNames('d-flex flex-row align-items-start col-9 px-2', styles.cardColHeader)}
                         >
                             Files
                             <div className="flex-shrink-1 d-flex flex-column">

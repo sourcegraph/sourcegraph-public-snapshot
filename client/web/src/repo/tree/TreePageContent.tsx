@@ -367,7 +367,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 <div className="row">
                     <div className="col-12 col-lg-6 mb-3">
                         <Card className="card">
-                            <CardHeader>
+                            <CardHeader className={styles.cardColHeaderWrapper}>
                                 {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
                             </CardHeader>
                             <FilteredConnection<
@@ -401,7 +401,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     </div>
                     <div className="col-12 col-lg-6">
                         <Card className="card">
-                            <CardHeader>
+                            <CardHeader className={styles.cardColHeaderWrapper}>
                                 {tree.isRoot ? (
                                     <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
                                 ) : (
