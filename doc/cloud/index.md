@@ -49,7 +49,7 @@ As part of this service you will receive a number of benefits from our team, inc
   
 ### Access to all Sourcegraph features
 
-All Sourcegraph features are avilable on day-one, such as:
+All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, such as:
 
 - [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
 - [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
@@ -136,7 +136,7 @@ For all managed instances, we will provide security capabilities from Cloudflare
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
-Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report, please visit our [Security Trust Portal](https://security.sourcegraph.com).
+Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
 
 ## Accommodating special requirements
 
