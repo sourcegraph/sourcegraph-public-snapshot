@@ -4520,11 +4520,11 @@ type GitCommit implements Node {
     """
     Lists the programming languages present in the tree at this commit.
     """
-    languages: [[String!]!]!
+    languages: [String!]!
     """
     List statistics for each language present in the repository.
     """
-    languageStatistics: [[LanguageStatistics!]!]!
+    languageStatistics: [LanguageStatistics!]!
     """
     The log of commits consisting of this commit and its ancestors.
     """
