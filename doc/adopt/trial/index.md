@@ -26,19 +26,19 @@ For measuring a trial, each company will be different. Common examples we find i
 
 * ### User engagement
 
-    Sourcegraph provides usage statistics to site admins, at https://sourcegraph.example.com/site-admin/usage-stats. This page will show you how many unique users used the product per day, week, and month, along with per-user metrics so you can validate the numbers.
+    Sourcegraph provides usage statistics to site admins, at `https://sourcegraph.example.com/site-admin/usage-stats.` This page will show you how many unique users used the product per day, week, and month, along with per-user metrics so you can validate the numbers.
 
     Many larger customers rely on usage metrics, such as the percentage of trial users that come back to use Sourcegraph per week or day, to determine whether it was successful.
 
 * ### User surveys
 
-    Sourcegraph provides a built-in survey at https://sourcegraph.example.com/survey, with summary results visible to management at https://sourcegraph.example.com/site-admin/survey-results. These surveys provide both quantitative (average and NPS score) and qualitative user feedback.
+    Sourcegraph provides a built-in survey at `https://sourcegraph.example.com/survey`, with summary results visible to management at `https://sourcegraph.example.com/site-admin/survey-results`. These surveys provide both quantitative (average and NPS score) and qualitative user feedback.
 
 * ### Taking Sourcegraph away, and seeing who yells
 
     While we don't always encourage this, it can be instructive! Take Sourcegraph away for a day, and see who gets upset. Developers may feel like their superpowers were suddenly taken away.
 
-We have helped hundreds of customers run trials and cannot overemphasize enough how much we can help guide you through this process. To encourage letting us help your trial be a success (not to mention take a lot of the trial's organization off your shoulders) we will grant you an Enterprise license key free of charge for the trial's duration! [Please reach out] https://about.sourcegraph.com/contact/sales and ask for your free license key.
+We have helped hundreds of customers run trials and cannot overemphasize enough how much we can help guide you through this process. To encourage letting us help your trial be a success (not to mention take a lot of the trial's organization off your shoulders) we will grant you an Enterprise license key free of charge for the trial's duration! [Please reach out] `https://about.sourcegraph.com/contact/sales` and ask for your free license key.
 
 
 ## 2. Deploy Sourcegraph
