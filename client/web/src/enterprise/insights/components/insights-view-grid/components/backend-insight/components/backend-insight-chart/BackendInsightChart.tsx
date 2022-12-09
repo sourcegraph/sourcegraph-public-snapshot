@@ -85,28 +85,29 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         className={styles.alertOverlay}
                                     />
 
-                                {data.type === InsightContentType.Series ? (
-                                    <SeriesChart
-                                        type={SeriesBasedChartTypes.Line}
-                                        width={parent.width}
-                                        height={parent.height}
-                                        locked={locked}
-                                        className={styles.chart}
-                                        onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
-                                        seriesToggleState={seriesToggleState}
-                                        series={data.series}
-                                    />
-                                ) : (
-                                    <BarChart
-                                        aria-label="Bar chart"
-                                        width={parent.width}
-                                        height={parent.height}
-                                        {...data.content}
-                                    />
-                                )}
-                            </>
-                        )}
+                                    {data.type === InsightContentType.Series ? (
+                                        <SeriesChart
+                                            type={SeriesBasedChartTypes.Line}
+                                            width={parent.width}
+                                            height={parent.height}
+                                            locked={locked}
+                                            className={styles.chart}
+                                            onDatumClick={onDatumClick}
+                                            zeroYAxisMin={zeroYAxisMin}
+                                            seriesToggleState={seriesToggleState}
+                                            series={data.series}
+                                        />
+                                    ) : (
+                                        <BarChart
+                                            aria-label="Bar chart"
+                                            width={parent.width}
+                                            height={parent.height}
+                                            {...data.content}
+                                        />
+                                    )}
+                                </>
+                            )
+                        }
                     </ParentSize>
 
                     {isSeriesLikeInsight && (
