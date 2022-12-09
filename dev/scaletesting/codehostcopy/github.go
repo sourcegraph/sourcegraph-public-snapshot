@@ -180,14 +180,12 @@ func (g *GithubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 	return nil, errors.New("not implemented")
 }
 
-func (g *GithubCodeHost) listRepos(ctx context.Context)
-
 func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {
 	if g.done {
 		return nil
 	}
 
-	results, next, err := g.ListRepos(ctx)
+	results, next, err := g.ListRepos(ctx, g.page, g.perPage)
 	if err != nil {
 		g.err = err
 		return nil

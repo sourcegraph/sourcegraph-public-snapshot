@@ -28,7 +28,7 @@ type SSHKeyHandler interface {
 type CodeHostSource[T any] interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
-	ListRepos(ctx context.Context) ([]*store.Repo, error)
+	ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error)
 
 	Err() error
 	Next(ctx context.Context) T
