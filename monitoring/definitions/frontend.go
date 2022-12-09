@@ -951,6 +951,23 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			{
+				Title:  "Incoming webhooks",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "p95_time_to_handle_incoming_webhooks",
+							Description:    "p95 time to handle incoming webhooks",
+							Query:          "histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~\"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks\"}[5m])) by (le, route))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							Interpretation: `p95 time to handle incoming webhooks`,
+						},
+					},
+				},
+			},
 			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
