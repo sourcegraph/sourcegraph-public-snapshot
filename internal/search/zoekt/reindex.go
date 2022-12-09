@@ -35,8 +35,7 @@ func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
 	form := url.Values{}
 	form.Add("repo", strconv.Itoa(int(id)))
 
-	// http://<host:port>/indexerver/?headless
-	u = u.ResolveReference(&url.URL{Path: "/indexserver/", RawQuery: "headless"})
+	u = u.ResolveReference(&url.URL{Path: "/indexserver/debug/reindex"})
 
 	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), strings.NewReader(form.Encode()))
 	if err != nil {
@@ -50,7 +49,7 @@ func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusAccepted {
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
