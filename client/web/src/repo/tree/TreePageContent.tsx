@@ -368,7 +368,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     <div className="col-12 col-lg-6 mb-3">
                         <Card className="card">
                             <CardHeader>
-                                <Link to={`${tree.url}/-/commits`}>Commits</Link>
+                                {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
                             </CardHeader>
                             <FilteredConnection<
                                 GitCommitFields,
@@ -402,7 +402,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     <div className="col-12 col-lg-6">
                         <Card className="card">
                             <CardHeader>
-                                <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
+                                {tree.isRoot ? (
+                                    <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
+                                ) : (
+                                    'Contributors'
+                                )}
                             </CardHeader>
                             <Contributors
                                 filePath={filePath}

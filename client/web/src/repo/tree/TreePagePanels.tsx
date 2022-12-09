@@ -121,7 +121,15 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
         [sortColumn]
     )
     const clickFiles = useCallback(() => sortCallback('Files'), [sortCallback])
+    const keydownFiles = useCallback(
+        ({ key }: React.KeyboardEvent<HTMLDivElement>) => key === 'Enter' && sortCallback('Files'),
+        [sortCallback]
+    )
     const clickActivity = useCallback(() => sortCallback('Activity'), [sortCallback])
+    const keydownActivity = useCallback(
+        ({ key }: React.KeyboardEvent<HTMLDivElement>) => key === 'Enter' && sortCallback('Activity'),
+        [sortCallback]
+    )
     interface Datum {
         name: 'deleted' | 'added'
         value: number
@@ -140,7 +148,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             role="button"
                             tabIndex={0}
                             onClick={clickFiles}
-                            onKeyDown={clickFiles}
+                            onKeyDown={keydownFiles}
                             className={classNames('d-flex flex-row align-itmes-start col-9 px-2', styles.cardColHeader)}
                         >
                             Files
@@ -172,7 +180,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                             role="button"
                             tabIndex={0}
                             onClick={clickActivity}
-                            onKeyDown={clickActivity}
+                            onKeyDown={keydownActivity}
                             className={classNames(
                                 'd-flex flex-row-reverse align-items-start col-3 px-2 text-right',
                                 styles.cardColHeader
