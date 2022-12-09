@@ -7,8 +7,8 @@ import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 import { noop } from 'lodash'
 
-import { Tooltip } from '../../../Tooltip'
 import { Padding } from '../../../Popover'
+import { Tooltip } from '../../../Tooltip'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { Series, SeriesLikeChart } from '../../types'
 
