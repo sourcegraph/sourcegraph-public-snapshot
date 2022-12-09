@@ -109,7 +109,7 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 }
 
 func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
-	return nil, fmt.Errorf("not implemented for Gitlab")
+	return nil, errors.New("not implemented for Gitlab")
 }
 
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
