@@ -22,7 +22,7 @@ type BitbucketCodeHost struct {
 	c      *bitbucket.Client
 }
 
-func NewBitbucketCodeHost(ctx context.Context, logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
+func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
 	u, err := url.Parse(def.URL)
 	if err != nil {
 		return nil, err

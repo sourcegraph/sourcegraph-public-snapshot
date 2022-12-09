@@ -93,11 +93,15 @@ func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeH
 	switch cfg.Kind {
 	case "bitbucket":
 		{
-			return NewBitbucketCodeHost(ctx, logger, &cfg)
+			return NewBitbucketCodeHost(logger, &cfg)
 		}
 	case "gitlab":
 		{
 			return NewGitLabCodeHost(ctx, &cfg)
+		}
+	case "github":
+		{
+			return NewGithubCodeHost(ctx, &cfg)
 		}
 	default:
 		{
@@ -110,9 +114,13 @@ func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDe
 	switch cfg.Kind {
 	case "bitbucket":
 		{
-			return NewBitbucketCodeHost(ctx, logger, &cfg)
+			return NewBitbucketCodeHost(logger, &cfg)
 		}
 	case "github":
+		{
+			return NewGithubCodeHost(ctx, &cfg)
+		}
+	case "gitlab":
 		{
 			return NewGithubCodeHost(ctx, &cfg)
 		}
