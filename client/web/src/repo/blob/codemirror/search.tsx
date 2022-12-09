@@ -110,7 +110,7 @@ class SearchPanel implements Panel {
         this.render(this.state)
     }
 
-    public unmount(): void {
+    public destroy(): void {
         this.subscriptions.unsubscribe()
     }
 
