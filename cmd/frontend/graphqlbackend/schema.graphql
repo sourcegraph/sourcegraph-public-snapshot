@@ -4549,7 +4549,7 @@ type GitCommit implements Node {
         """
         Skip the first N commits of the repo before returning the number of commits as set in the field "first".
         """
-        afterCursor: Int
+        afterCursor: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.

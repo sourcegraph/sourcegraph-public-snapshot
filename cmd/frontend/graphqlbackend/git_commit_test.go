@@ -300,7 +300,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  repository(name: "github.com/gorilla/mux") {
 					commit(rev: "aabbc12345") {
-					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: 1) {
+					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: "1") {
 						nodes {
 						  id
 						  oid
@@ -350,7 +350,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  repository(name: "github.com/gorilla/mux") {
 					commit(rev: "aabbc12345") {
-					  ancestors(first: 3, path: "bill-of-materials.json", afterCursor: 2) {
+					  ancestors(first: 3, path: "bill-of-materials.json", afterCursor: "2") {
 						nodes {
 						  id
 						  oid

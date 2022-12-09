@@ -326,7 +326,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	Query       *string
 	Path        *string
 	After       *string
-	AfterCursor *int32
+	AfterCursor *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		db:              r.db,

@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type gitCommitConnectionResolver struct {
@@ -26,7 +27,7 @@ type gitCommitConnectionResolver struct {
 	// "after" when used as an offset for pagination. For pagination we use "offset" as the name of
 	// the field. See next field.
 	after       *string
-	afterCursor *int32
+	afterCursor *string
 
 	repo *RepositoryResolver
 
@@ -45,6 +46,17 @@ func toValue[T any](v *T) any {
 	return result
 }
 
+// afterCursorAsInt will parse the afterCursor field and return it as an int. If no value is set, it
+// will return 0. It returns a non-nil error if there are any errors in parsing the input string.
+func (r *gitCommitConnectionResolver) afterCursorAsInt() (int, error) {
+	v := toValue(r.afterCursor).(string)
+	if v == "" {
+		return 0, nil
+	}
+
+	return strconv.Atoi(v)
+}
+
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
 	do := func() ([]*gitdomain.Commit, error) {
 		var n int32
@@ -58,7 +70,10 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 
 		// If no value for afterCursor is set, then skip is 0. And this is fine as --skip=0 is the
 		// same as not setting the flag.
-		skip := toValue(r.afterCursor).(int32)
+		afterCursor, err := r.afterCursorAsInt()
+		if err != nil {
+
+		}
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
@@ -66,7 +81,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			MessageQuery: toValue(r.query).(string),
 			Author:       toValue(r.author).(string),
 			After:        toValue(r.after).(string),
-			Skip:         uint(skip),
+			Skip:         uint(afterCursor),
 			Path:         toValue(r.path).(string),
 		}, authz.DefaultSubRepoPermsChecker)
 	}
@@ -138,8 +153,13 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 		//
 		// Request 3: first: 50, afterCursor: 200 (endCursor from previous request)
 		// Response 3: commits: 201 to 250, endCursor: 250 (first + offset)
-		endCursor := limit + int(toValue(r.afterCursor).(int32))
-		return graphqlutil.NextPageCursor(fmt.Sprintf("%d", endCursor)), nil
+		after, err := r.afterCursorAsInt()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse afterCursor")
+		}
+
+		endCursor := limit + after
+		return graphqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil
