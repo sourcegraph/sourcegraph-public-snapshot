@@ -184,6 +184,7 @@ func Main() {
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
+	go goroutine.NewPeriodicGoroutine(ctx, 10*time.Minute, goroutine.HandlerFunc(gitserver.AnalyzeRepos)).Start()
 
 	gitserver.StartClonePipeline(ctx)
 
