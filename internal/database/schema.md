@@ -2776,10 +2776,11 @@ Indexes:
 
 # Table "public.role_permissions"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- role_id       | integer |           | not null | 
- permission_id | integer |           | not null | 
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ role_id       | integer                  |           | not null | 
+ permission_id | integer                  |           | not null | 
+ created_at    | timestamp with time zone |           | not null | now()
 Indexes:
     "role_permissions_pkey" PRIMARY KEY, btree (permission_id, role_id)
 Foreign-key constraints:
@@ -3166,10 +3167,11 @@ Foreign-key constraints:
 
 # Table "public.user_roles"
 ```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- user_id | integer |           | not null | 
- role_id | integer |           | not null | 
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ user_id    | integer                  |           | not null | 
+ role_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
 Indexes:
     "user_roles_pkey" PRIMARY KEY, btree (user_id, role_id)
 Foreign-key constraints:

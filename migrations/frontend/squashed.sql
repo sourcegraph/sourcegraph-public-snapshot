@@ -3367,7 +3367,8 @@ COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that a
 
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,
-    permission_id integer NOT NULL
+    permission_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE roles (
@@ -3695,7 +3696,8 @@ CREATE TABLE user_public_repos (
 
 CREATE TABLE user_roles (
     user_id integer NOT NULL,
-    role_id integer NOT NULL
+    role_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE users_id_seq
