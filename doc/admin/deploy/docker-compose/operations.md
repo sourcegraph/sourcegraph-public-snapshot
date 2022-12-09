@@ -62,7 +62,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -140,7 +140,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -208,7 +208,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp

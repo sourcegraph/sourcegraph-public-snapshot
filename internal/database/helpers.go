@@ -1,6 +1,8 @@
 package database
 
 import (
+	"strconv"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
@@ -21,9 +23,16 @@ func (o *LimitOffset) SQL() *sqlf.Query {
 	return sqlf.Sprintf("LIMIT %d OFFSET %d", o.Limit, o.Offset)
 }
 
-// relayUnmarshalID is a best effort decoding of the ID from a marshalled
-// graphql.ID
-func relayUnmarshalID(s string) (id int32, ok bool) {
-	err := relay.UnmarshalSpec(graphql.ID(s), &id)
+// maybeQueryIsID returns a possible database ID if query looks like either a
+// database ID or a graphql.ID.
+func maybeQueryIsID(query string) (int32, bool) {
+	// Query looks like an ID
+	if id, err := strconv.ParseInt(query, 10, 32); err == nil {
+		return int32(id), true
+	}
+
+	// Query looks like a GraphQL ID
+	var id int32
+	err := relay.UnmarshalSpec(graphql.ID(query), &id)
 	return id, err == nil
 }

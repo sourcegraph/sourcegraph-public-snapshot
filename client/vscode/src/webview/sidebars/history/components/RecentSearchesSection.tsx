@@ -22,11 +22,10 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
     const [collapsed, setCollapsed] = useState(false)
 
     const recentSearchesResult = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext), [
-            authenticatedUser.id,
-            itemsToLoad,
-            platformContext,
-        ])
+        useMemo(
+            () => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext),
+            [authenticatedUser.id, itemsToLoad, platformContext]
+        )
     )
 
     const recentSearches: RecentSearch[] | null = useMemo(

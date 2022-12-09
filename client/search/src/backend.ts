@@ -389,14 +389,12 @@ function fetchEvents(
 
     return result.pipe(
         map(dataOrThrowErrors),
-        map(
-            (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node || data.node.__typename !== 'User') {
-                    throw new Error('User not found')
-                }
-                return data.node.eventLogs
+        map((data: EventLogsDataResult): EventLogResult => {
+            if (!data.node || data.node.__typename !== 'User') {
+                throw new Error('User not found')
             }
-        )
+            return data.node.eventLogs
+        })
     )
 }
 

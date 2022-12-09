@@ -109,7 +109,7 @@ export const InsightIncompleteAlert: FC<InsightIncompleteAlertProps> = props => 
 
             <PopoverContent position="bottom" className={classNames(styles.alertPopover, styles.alertPopoverSmall)}>
                 {getAlertMessage(alert)}{' '}
-                <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
+                <Link to="/help/code_insights/references/incomplete_data_points" target="_blank" rel="noopener">
                     Troubleshoot
                 </Link>
             </PopoverContent>
@@ -161,7 +161,7 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
             >
                 <Text className={styles.alertDescription}>
                     Results for some points of this data series may be incomplete.{' '}
-                    <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights/references/incomplete_data_points" target="_blank" rel="noopener">
                         Troubleshoot
                     </Link>
                 </Text>

@@ -17,10 +17,10 @@ export function zeroToOneBasedPosition(position: Position): { line: number; char
     }
 }
 
-export function zeroToOneBasedRange(range: {
-    start: Position
-    end: Position
-}): { start: { line: number; character: number }; end: { line: number; character: number } } {
+export function zeroToOneBasedRange(range: { start: Position; end: Position }): {
+    start: { line: number; character: number }
+    end: { line: number; character: number }
+} {
     return {
         start: zeroToOneBasedPosition(range.start),
         end: zeroToOneBasedPosition(range.end),

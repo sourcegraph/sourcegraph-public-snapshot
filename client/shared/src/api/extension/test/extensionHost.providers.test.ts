@@ -31,10 +31,7 @@ describe('callProviders()', () => {
         it('returns empty non loading result with no providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [] }), { uri: 'file:///f.ts' })
                 ).toBe('-a', {
                     a: { isLoading: false, result: [] },
                 })
@@ -44,10 +41,7 @@ describe('callProviders()', () => {
         it('returns a result from a provider synchronously with raw values', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1)] }), { uri: 'file:///f.ts' })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -58,10 +52,9 @@ describe('callProviders()', () => {
         it('returns a result from a provider with observables', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(cold('--a', { a: 1 }))] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-l-r', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -74,10 +67,9 @@ describe('callProviders()', () => {
         it("returns a synchronous result from both providers, but doesn't wait for the second to yield", () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1), provide(2)] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1), provide(2)] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [1, LOADING] },
                     r: { isLoading: false, result: [1, 2] },
@@ -122,10 +114,9 @@ describe('callProviders()', () => {
         it('it can filter out providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    getResultsFromProviders(
-                        cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }),
-                        { uri: 'file:///f.ts' }
-                    )
+                    getResultsFromProviders(cold<Provider[]>('-a', { a: [provide(1, '*.ts'), provide(2, '*.js')] }), {
+                        uri: 'file:///f.ts',
+                    })
                 ).toBe('-(lr)', {
                     l: { isLoading: true, result: [LOADING] },
                     r: { isLoading: false, result: [1] },
@@ -218,12 +209,12 @@ describe('mergeProviderResults()', () => {
             const hover1: Hover = {
                 contents: { value: 'c1' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const hover2: Hover = {
                 contents: { value: 'c2' },
                 // TODO this is weird to cast to ranges
-                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown as Range,
             }
             const merged: HoverMerged = {
                 contents: [

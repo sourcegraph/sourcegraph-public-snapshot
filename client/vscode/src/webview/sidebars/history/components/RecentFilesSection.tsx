@@ -27,11 +27,10 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
 
     // Debt: lift this shared query up to HistorySidebarView.
     const recentFilesResult = useObservable(
-        useMemo(() => fetchRecentFileViews(authenticatedUser.id, itemsToLoad, platformContext), [
-            authenticatedUser.id,
-            itemsToLoad,
-            platformContext,
-        ])
+        useMemo(
+            () => fetchRecentFileViews(authenticatedUser.id, itemsToLoad, platformContext),
+            [authenticatedUser.id, itemsToLoad, platformContext]
+        )
     )
 
     if (!recentFilesResult) {

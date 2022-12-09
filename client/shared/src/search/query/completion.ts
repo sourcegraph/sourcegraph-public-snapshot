@@ -291,7 +291,9 @@ export async function getCompletionItems(
                 resolvedFilter,
                 tokenAtPosition,
                 async (token, type) =>
-                    (await fetchDynamicSuggestions(token, type)).flatMap(suggestion =>
+                    (
+                        await fetchDynamicSuggestions(token, type)
+                    ).flatMap(suggestion =>
                         suggestionToCompletionItems(suggestion, { globbing, filterValue: token.value?.value })
                     ),
                 column,

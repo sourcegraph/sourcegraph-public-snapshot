@@ -11,13 +11,41 @@ import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
 import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, warmupOccurrence } from './selections'
 
-const LONGPRESS_DURATION = 500
+const LONG_CLICK_DURATION = 500
+
+// Helper class to deal with mouse events for features like long-click.
+class MouseEvents {
+    // Last mousemove event.
+    public mousemove = new MouseEvent('mouseover')
+    // Last mousedown event.
+    public mousedown = new MouseEvent('mousedown')
+    // Timeout to cancel the long-click handler.
+    public longClickTimeout: NodeJS.Timeout | undefined
+    // Boolean to indicate that we triggered a long-click meaning we should
+    // ignore the next mouseup event.
+    public didLongClick = false
+    public isLongClick(): boolean {
+        return isClickDistance(this.mousedown, this.mousemove)
+    }
+    public isMouseupClick(mouseup: MouseEvent): boolean {
+        return isClickDistance(mouseup, this.mousedown)
+    }
+}
+
+// Heuristic to approximate a click event between two mouse events (for
+// exampole, mousedown and mouseup). The heuristic returns true based on the
+// distance between the coordinates (clientY/clientX) of the two events.
+function isClickDistance(event1: MouseEvent, event2: MouseEvent): boolean {
+    const distanceX = Math.abs(event1.clientX - event2.clientX)
+    const distanceY = Math.abs(event1.clientY - event2.clientY)
+    const distance = distanceX + distanceY
+    // The number is picked out of the blue, feel free to tweak this
+    // heuristic if it's too lenient or too aggressive.
+    return distance < 2
+}
 
 export function tokenSelectionExtension(): Extension {
-    let clientY = 0
-    let clientX = 0
-    let longPressTimeout: NodeJS.Timeout | undefined
-    let didLongpress = false
+    const events = new MouseEvents()
     return [
         documentHighlightsExtension(),
         modifierClickFacet.of(false),
@@ -32,29 +60,25 @@ export function tokenSelectionExtension(): Extension {
         keymap.of(tokenSelectionKeyBindings),
         syncSelectionWithURL,
         EditorView.domEventHandlers({
-            // We use `mouseup` instead of `click` because `click` does not get
+            // Approximate `click` with `mouseup` because `click` does not get
             // triggered in the scenario when the user holds down the meta-key,
             // waits for the underline decoration to get updated in the dom and
             // then clicks. We approximate the click handler by detecting
             // mouseup events that fire close to the last mousedown event.
             mouseup(event, view) {
-                if (longPressTimeout) {
-                    clearTimeout(longPressTimeout)
-                }
                 if (event.button !== MOUSE_MAIN_BUTTON) {
                     return
                 }
-                if (didLongpress) {
-                    didLongpress = false
+                if (events.longClickTimeout) {
+                    // Cancel the scheduled long-click handler.
+                    clearTimeout(events.longClickTimeout)
+                }
+                if (events.didLongClick) {
+                    // Cancel this mouseup event because a long-click was triggered.
+                    events.didLongClick = false
                     return
                 }
-                const distanceX = event.clientX - clientX
-                const distanceY = event.clientY - clientY
-                const distance = distanceX + distanceY
-                // Feel free to tweak this heuristic if it's too lenient or too
-                // aggressive.
-                const isClick = distance < 10
-                if (isClick) {
+                if (events.isMouseupClick(event)) {
                     goToDefinitionOnMouseEvent(view, event)
                 }
             },
@@ -62,12 +86,16 @@ export function tokenSelectionExtension(): Extension {
                 if (event.button !== MOUSE_MAIN_BUTTON) {
                     return
                 }
-                clientX = event.clientX
-                clientY = event.clientY
-                longPressTimeout = setTimeout(() => {
-                    didLongpress = true
-                    goToDefinitionOnMouseEvent(view, event, { isLongPress: true })
-                }, LONGPRESS_DURATION)
+                events.mousedown = event
+                events.longClickTimeout = setTimeout(() => {
+                    if (!events.isLongClick()) {
+                        // Cancel this long-click because the mouse has moved
+                        // too far of a distance.
+                        return
+                    }
+                    events.didLongClick = true // Cancel the next mouseup event.
+                    goToDefinitionOnMouseEvent(view, event, { isLongClick: true })
+                }, LONG_CLICK_DURATION)
             },
             click(event: MouseEvent) {
                 // Prevent click handlers because we handle events on mouseup.
@@ -76,6 +104,7 @@ export function tokenSelectionExtension(): Extension {
                 event.preventDefault()
             },
             mousemove(event, view) {
+                events.mousemove = event
                 const atEvent = occurrenceAtMouseEvent(view, event)
                 const hoveredOccurrence = atEvent ? atEvent.occurrence : null
                 if (hoveredOccurrence !== view.state.field(hoveredOccurrenceField)) {

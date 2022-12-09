@@ -53,10 +53,11 @@ export function startExtensionHost(
                 throw new Error('extension host is already initialized')
             }
             initialized = true
-            const { subscription: extensionHostSubscription, extensionAPI, extensionHostAPI } = initializeExtensionHost(
-                endpoints,
-                initData
-            )
+            const {
+                subscription: extensionHostSubscription,
+                extensionAPI,
+                extensionHostAPI,
+            } = initializeExtensionHost(endpoints, initData)
             subscription.add(extensionHostSubscription)
             resolve(extensionAPI)
             return extensionHostAPI
@@ -84,10 +85,11 @@ function initializeExtensionHost(
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
     const subscription = new Subscription()
 
-    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAndExtensionHostAPIs(
-        initData,
-        endpoints
-    )
+    const {
+        extensionAPI,
+        extensionHostAPI,
+        subscription: apiSubscription,
+    } = createExtensionAndExtensionHostAPIs(initData, endpoints)
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the default extension API (for testing).

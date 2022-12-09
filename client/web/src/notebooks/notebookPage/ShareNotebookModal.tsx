@@ -49,10 +49,10 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
 
     const shareLabelId = 'shareNotebookId'
 
-    const description = useMemo(() => getSelectedShareOptionDescription(selectedShareOption, isSourcegraphDotCom), [
-        selectedShareOption,
-        isSourcegraphDotCom,
-    ])
+    const description = useMemo(
+        () => getSelectedShareOptionDescription(selectedShareOption, isSourcegraphDotCom),
+        [selectedShareOption, isSourcegraphDotCom]
+    )
 
     const onDoneClick = useCallback((): void => {
         onUpdateVisibility(selectedShareOption.isPublic, selectedShareOption.namespaceId)

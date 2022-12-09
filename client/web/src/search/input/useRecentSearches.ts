@@ -15,7 +15,7 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
     query SearchHistoryEventLogsQuery($first: Int!) {
         currentUser {
             __typename
-            recentSearchLogs: eventLogs(first: $first, eventName: "SearchResultsQueried") {
+            recentSearchLogs: eventLogs(first: $first, eventName: "SearchResultsFetched") {
                 nodes {
                     argument
                     timestamp
@@ -30,7 +30,7 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
 // the user's recent searches from the event log.
 export function useRecentSearches(): {
     recentSearches: RecentSearch[] | undefined
-    addRecentSearch: (query: string) => void
+    addRecentSearch: (query: string, resultCount: number, limitHit: boolean) => void
     state: 'loading' | 'success'
 } {
     const [recentSearches, setRecentSearches] = useTemporarySetting('search.input.recentSearches', [])
@@ -98,10 +98,10 @@ export function useRecentSearches(): {
     // If the search is being added before the list is finished loading,
     // queue it to be added after loading is complete.
     const addRecentSearch = useCallback(
-        (query: string) => {
+        (query: string, resultCount: number, limitHit: boolean) => {
             const searchContext = getGlobalSearchContextFilter(query)
             if (!searchContext || omitFilter(query, searchContext.filter).trim() !== '') {
-                const recentSearch = { query, timestamp: new Date().toISOString() }
+                const recentSearch = { query, resultCount, limitHit, timestamp: new Date().toISOString() }
 
                 if (state === 'success') {
                     addOrMoveRecentSearchToTop(recentSearch)
@@ -132,12 +132,23 @@ function processEventLogs(data: SearchHistoryEventLogsQueryResult): RecentSearch
     }
     const searches = data.currentUser.recentSearchLogs.nodes
         .filter(node => node.argument && node.timestamp)
-        .map(node => ({
-            // This JSON.parse is safe, silence any TS linting warnings.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion
-            query: JSON.parse(node.argument!)?.code_search?.query_data?.combined,
-            timestamp: node.timestamp,
-        }))
+        .map(node => {
+            const argument = node.argument
+                ? (JSON.parse(node.argument) as {
+                      code_search?: {
+                          results?: { results_count?: number; limit_hit?: boolean }
+                          query_data?: { combined?: string }
+                      }
+                  })
+                : {}
+
+            return {
+                query: argument.code_search?.query_data?.combined || '',
+                resultCount: argument.code_search?.results?.results_count || 0,
+                limitHit: argument.code_search?.results?.limit_hit || false,
+                timestamp: node.timestamp,
+            }
+        })
         .filter(search => search.query)
         .filter(
             // Remove duplicates
@@ -145,6 +156,5 @@ function processEventLogs(data: SearchHistoryEventLogsQueryResult): RecentSearch
             // If a search appears earlier in the list, it is a duplicate.
             (search, index, self) => index === self.findIndex(item => item.query === search.query)
         )
-
     return searches
 }
