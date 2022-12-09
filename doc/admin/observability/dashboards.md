@@ -4454,7 +4454,11 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 <p class="subtitle">P95 time to handle incoming webhooks</p>
 
-p95 time to handle incoming webhooks
+p95 response time to incoming webhook requests from code hosts.
+
+							Increases in response time can point to too much load on the database to keep up with the incoming requests.
+
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)
 
 This panel has no related alerts.
 
