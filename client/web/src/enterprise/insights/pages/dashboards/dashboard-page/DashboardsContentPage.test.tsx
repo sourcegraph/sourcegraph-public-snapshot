@@ -193,7 +193,7 @@ describe('DashboardsContent', () => {
     it('renders a loading indicator', () => {
         const screen = renderDashboardsContent('baz')
 
-        expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
+        expect(screen.getByLabelText('Loading')).toBeInTheDocument()
     })
 
     it('renders dashboard not found', async () => {

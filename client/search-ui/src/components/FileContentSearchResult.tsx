@@ -164,9 +164,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const collapsedMatchCount = collapsedMatchGroups.matches.length
 
     const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
-    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
-        collapsedMatchGroups,
-    ])
+    const collapsedHighlightRangesCount = useMemo(
+        () => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0),
+        [collapsedMatchGroups]
+    )
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
     const collapsible = !showAllMatches && items.length > collapsedMatchCount

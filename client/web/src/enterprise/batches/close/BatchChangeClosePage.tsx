@@ -72,12 +72,10 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
-            fetchBatchChangeByNamespace,
-            namespaceID,
-            batchChangeName,
-            createdAfter,
-        ])
+        useMemo(
+            () => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter),
+            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
+        )
     )
 
     const [totalCount, setTotalCount] = useState<number>()

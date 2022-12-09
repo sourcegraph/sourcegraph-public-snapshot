@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
@@ -10,17 +10,17 @@ import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    Code,
-    Button,
-    Link,
     Alert,
-    Icon,
-    H4,
-    Text,
-    Tooltip,
+    Button,
+    Code,
     Container,
+    H4,
+    Icon,
+    Link,
     LoadingSpinner,
     PageHeader,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -41,7 +41,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
-import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
@@ -163,6 +163,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 args: { cloneStatus: 'NOT_CLONED' },
             },
             {
+                label: 'Indexed',
+                value: 'indexed',
+                tooltip: 'Show only repositories that have already been indexed',
+                args: { notIndexed: false },
+            },
+            {
                 label: 'Needs index',
                 value: 'needs-index',
                 tooltip: 'Show only repositories that need to be indexed',
@@ -257,6 +263,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been indexed for search.',
+                filter: { name: 'status', value: 'indexed' },
             },
             {
                 value: data.repositoryStats.failedFetch,

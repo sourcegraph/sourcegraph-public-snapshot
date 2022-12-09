@@ -51,9 +51,7 @@ export function loadConfig(): Config {
  *
  * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
  */
-export async function releaseVersions(
-    config: Config
-): Promise<{
+export async function releaseVersions(config: Config): Promise<{
     previous: semver.SemVer
     upcoming: semver.SemVer
 }> {

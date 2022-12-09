@@ -8,7 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, H2, Input, Select } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink, H2, Input, Select } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'
@@ -19,28 +19,44 @@ import {
     ExternalServiceKind,
     ExternalServicesResult,
     ExternalServicesVariables,
+    UpdateWebhookResult,
+    UpdateWebhookVariables,
+    WebhookFields,
 } from '../graphql-operations'
 
-import { CREATE_WEBHOOK_QUERY } from './backend'
+import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
 
-export interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {}
+interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {
+    // existingWebhook is present when this page is used as an update page.
+    existingWebhook?: WebhookFields
+}
 
-interface Webhook {
+export interface Webhook {
     name: string
     codeHostKind: ExternalServiceKind | null
     codeHostURN: string
     secret: string | null
 }
 
-export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ history }) => {
-    const [webhook, setWebhook] = useState<Webhook>({
-        name: '',
-        codeHostKind: null,
-        codeHostURN: '',
-        secret: null,
-    })
+export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ history, existingWebhook }) => {
+    const update = existingWebhook !== undefined
+    const initialWebhook = update
+        ? {
+              name: existingWebhook.name,
+              codeHostKind: existingWebhook.codeHostKind,
+              codeHostURN: existingWebhook.codeHostURN,
+              secret: existingWebhook.secret,
+          }
+        : {
+              name: '',
+              codeHostKind: null,
+              codeHostURN: '',
+              secret: null,
+          }
+
+    const [webhook, setWebhook] = useState<Webhook>(initialWebhook)
     const [kindsToUrls, setKindsToUrls] = useState<Map<ExternalServiceKind, string[]>>(new Map())
 
     const { loading, data, error } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
@@ -68,19 +84,23 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
             // by the code host configuration schema.
             if (kindToUrlMap.size !== 0) {
                 setKindsToUrls(kindToUrlMap)
-                const [currentKind] = kindToUrlMap.keys()
-                const [currentUrls] = kindToUrlMap.values()
-                // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
-                // is handled is an Input and during GraphQL query creation.
-                setWebhook(webhook => ({
-                    ...webhook,
-                    secret: generateSecret(),
-                    codeHostURN: currentUrls[0],
-                    codeHostKind: currentKind,
-                }))
+
+                // only fill the initial values for webhook creation
+                if (!update) {
+                    const [currentKind] = kindToUrlMap.keys()
+                    const [currentUrls] = kindToUrlMap.values()
+                    // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
+                    // is handled is an Input and during GraphQL query creation.
+                    setWebhook(webhook => ({
+                        ...webhook,
+                        secret: generateSecret(),
+                        codeHostURN: currentUrls[0],
+                        codeHostKind: currentKind,
+                    }))
+                }
             }
         }
-    }, [data])
+    }, [data, update])
 
     const onCodeHostTypeChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
@@ -116,6 +136,14 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
         CreateWebhookVariables
     >(CREATE_WEBHOOK_QUERY, { onCompleted: data => history.push(`/site-admin/webhooks/${data.createWebhook.id}`) })
 
+    const [updateWebhook, { error: updateWebhookError, loading: updateLoading }] = useMutation<
+        UpdateWebhookResult,
+        UpdateWebhookVariables
+    >(UPDATE_WEBHOOK_QUERY, {
+        variables: buildUpdateWebhookVariables(webhook, existingWebhook?.id),
+        onCompleted: data => history.push(`/site-admin/webhooks/${data.updateWebhook.id}`),
+    })
+
     return (
         <>
             {error && <ErrorAlert error={error} />}
@@ -144,6 +172,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                     label={<span className="small">Webhook name</span>}
                                     pattern="^[a-zA-Z0-9_'\-\/\.\s]+$"
                                     required={true}
+                                    defaultValue={update ? webhook.name : ''}
                                     onChange={event => {
                                         onNameChange(event.target.value)
                                     }}
@@ -154,6 +183,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                     className={classNames(styles.first, 'flex-1 mb-0')}
                                     label={<span className="small">Code host type</span>}
                                     required={true}
+                                    defaultValue={webhook.codeHostKind?.toString()}
                                     onChange={onCodeHostTypeChange}
                                     disabled={loading}
                                 >
@@ -168,6 +198,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                     className={classNames(styles.second, 'flex-1 mb-0')}
                                     label={<span className="small">Code host URN</span>}
                                     required={true}
+                                    defaultValue={webhook.codeHostURN}
                                     onChange={onCodeHostUrnChange}
                                     disabled={loading || !webhook.codeHostKind}
                                 >
@@ -207,15 +238,49 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                     maxLength={100}
                                 />
                             </div>
-                            <Button
-                                className="mt-2"
-                                type="submit"
-                                variant="primary"
-                                disabled={creationLoading || webhook.name.trim() === ''}
-                            >
-                                Create
-                            </Button>
-                            {createWebhookError && <ErrorAlert className="mt-2" error={createWebhookError} />}
+                            {update ? (
+                                <div className="d-flex flex-shrink-0 mt-2">
+                                    <div>
+                                        <Button
+                                            onClick={event => {
+                                                event.preventDefault()
+                                                updateWebhook().catch(
+                                                    // noop here is used because update error is handled directly when useMutation is called
+                                                    noop
+                                                )
+                                            }}
+                                            variant="primary"
+                                            disabled={updateLoading || webhook.name.trim() === ''}
+                                        >
+                                            Update
+                                        </Button>
+                                    </div>
+                                    <div className="ml-3">
+                                        <ButtonLink
+                                            to={`/site-admin/webhooks/${existingWebhook.id}`}
+                                            variant="secondary"
+                                        >
+                                            Cancel
+                                        </ButtonLink>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Button
+                                    className="mt-2"
+                                    type="submit"
+                                    variant="primary"
+                                    disabled={creationLoading || webhook.name.trim() === ''}
+                                >
+                                    Create
+                                </Button>
+                            )}
+                            {(createWebhookError || updateWebhookError) && (
+                                <ErrorAlert
+                                    className="mt-2"
+                                    prefix={`Error during ${createWebhookError ? 'creating' : 'updating'} of webhook`}
+                                    error={createWebhookError || updateWebhookError}
+                                />
+                            )}
                         </Form>
                     </div>
                 ))}
@@ -235,6 +300,22 @@ function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
             return true
         default:
             return false
+    }
+}
+
+function buildUpdateWebhookVariables(webhook: Webhook, id?: string): UpdateWebhookVariables {
+    const secret =
+        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+            ? null
+            : webhook.secret
+
+    return {
+        // should not happen when update is called
+        id: id || '',
+        name: webhook.name,
+        codeHostKind: webhook.codeHostKind || ExternalServiceKind.OTHER,
+        codeHostURN: webhook.codeHostURN,
+        secret,
     }
 }
 

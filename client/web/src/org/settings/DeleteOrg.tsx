@@ -15,10 +15,10 @@ interface DeleteOrgProps extends OrgAreaRouteContext, RouteComponentProps<{}> {}
  */
 export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOrgProps>> = props => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const toggleDeleteModal = useCallback(() => setShowDeleteModal(!showDeleteModal), [
-        setShowDeleteModal,
-        showDeleteModal,
-    ])
+    const toggleDeleteModal = useCallback(
+        () => setShowDeleteModal(!showDeleteModal),
+        [setShowDeleteModal, showDeleteModal]
+    )
 
     return (
         <Container className="mt-3 mb-5">

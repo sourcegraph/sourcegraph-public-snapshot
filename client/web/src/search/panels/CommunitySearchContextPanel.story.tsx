@@ -13,8 +13,7 @@ const config: Meta = {
     parameters: {
         design: {
             type: 'figma',
-            url:
-                'https://www.figma.com/file/zCGglxWBFm8Fv5DwdcHdAQ/Repository-group-home-page-panel-14393?node-id=1%3A159',
+            url: 'https://www.figma.com/file/zCGglxWBFm8Fv5DwdcHdAQ/Repository-group-home-page-panel-14393?node-id=1%3A159',
         },
         chromatic: { viewports: [800] },
     },

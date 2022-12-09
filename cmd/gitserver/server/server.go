@@ -54,6 +54,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1186,6 +1187,10 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	searchRunning.Inc()
 	defer searchRunning.Dec()
 
+	observeLatency := syncx.OnceFunc(func() {
+		searchLatency.Observe(time.Since(searchStart).Seconds())
+	})
+
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		tr.SetError(err)
@@ -1193,12 +1198,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var latencyOnce sync.Once
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
-		latencyOnce.Do(func() {
-			searchLatency.Observe(time.Since(searchStart).Seconds())
-		})
+		observeLatency()
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -2607,10 +2609,22 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	return nil
 }
 
-var (
-	badRefsOnce sync.Once
-	badRefs     []string
-)
+// older versions of git do not remove tags case insensitively, so we generate
+// every possible case of HEAD (2^4 = 16)
+var badRefs = syncx.OnceValue(func() []string {
+	refs := make([]string, 0, 1<<4)
+	for bits := uint8(0); bits < (1 << 4); bits++ {
+		s := []byte("HEAD")
+		for i, c := range s {
+			// lowercase if the i'th bit of bits is 1
+			if bits&(1<<i) != 0 {
+				s[i] = c - 'A' + 'a'
+			}
+		}
+		refs = append(refs, string(s))
+	}
+	return refs
+})
 
 // removeBadRefs removes bad refs and tags from the git repo at dir. This
 // should be run after a clone or fetch. If your repository contains a ref or
@@ -2621,27 +2635,12 @@ var (
 //
 // Instead we just remove this ref.
 func removeBadRefs(ctx context.Context, dir GitDir) {
-	// older versions of git do not remove tags case insensitively, so we
-	// generate every possible case of HEAD (2^4 = 16)
-	badRefsOnce.Do(func() {
-		for bits := uint8(0); bits < (1 << 4); bits++ {
-			s := []byte("HEAD")
-			for i, c := range s {
-				// lowercase if the i'th bit of bits is 1
-				if bits&(1<<i) != 0 {
-					s[i] = c - 'A' + 'a'
-				}
-			}
-			badRefs = append(badRefs, string(s))
-		}
-	})
-
-	args := append([]string{"branch", "-D"}, badRefs...)
+	args := append([]string{"branch", "-D"}, badRefs()...)
 	cmd := exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
 	_ = cmd.Run()
 
-	args = append([]string{"tag", "-d"}, badRefs...)
+	args = append([]string{"tag", "-d"}, badRefs()...)
 	cmd = exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
 	_ = cmd.Run()

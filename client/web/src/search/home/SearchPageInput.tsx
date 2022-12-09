@@ -71,7 +71,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const { recentSearches, addRecentSearch } = useRecentSearches()
+    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -86,20 +86,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     caseSensitive,
                     searchMode,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    addRecentSearch,
                     ...parameters,
                 })
             }
         },
-        [
-            props.queryState.query,
-            props.selectedSearchContextSpec,
-            props.history,
-            addRecentSearch,
-            patternType,
-            caseSensitive,
-            searchMode,
-        ]
+        [props.queryState.query, props.selectedSearchContextSpec, props.history, patternType, caseSensitive, searchMode]
     )
 
     const onSubmit = useCallback(

@@ -149,15 +149,27 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
         ),
         EditorView.theme({
             '.cm-line': {
-                paddingLeft: '0 !important', // line code content left padding is handled by .blame-decoration right margin
+                // Position relative so that the blame-decoration inside can be
+                // aligned to the start of the line
+                position: 'relative',
+                // Move the start of the line to after the blame decoration.
+                // This is necessary because the start of the line is used for
+                // aligning tab characters.
+                //
+                // 1rem is the default padding-left so we have to add it here
+                paddingLeft: 'calc(var(--blame-decoration-width) + 1rem) !important',
             },
 
             '.blame-decoration': {
+                // Remove the blame decoration from the content flow so that
+                // the tab start can be moved to the right
+                position: 'absolute',
+                left: '0',
+
                 display: 'inline-block',
                 background: 'var(--body-bg)',
                 verticalAlign: 'bottom',
                 width: 'var(--blame-decoration-width)',
-                marginRight: '1rem',
             },
 
             '.selected-line .blame-decoration, .highlighted-line .blame-decoration': {
@@ -165,8 +177,10 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
             },
 
             '.cm-content': {
-                marginLeft: 'calc(var(--blame-decoration-width) * -1)', // Make .cm-content overflow .blame-gutter
-                zIndex: 201, // override default .cm-gutters z-index 200
+                // Make .cm-content overflow .blame-gutter
+                marginLeft: 'calc(var(--blame-decoration-width) * -1)',
+                // override default .cm-gutters z-index 200
+                zIndex: 201,
             },
         }),
     ],

@@ -2,12 +2,12 @@ package queryrunner
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -21,7 +21,6 @@ import (
 )
 
 func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
-
 	searchStream := func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "searchStream")
 		defer tr.Finish()
@@ -45,7 +44,6 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 			return nil, errors.Wrap(err, "streaming.Compute")
 		}
 		tr.AddEvent("compute match context results", attribute.Int("count", streamResults.TotalCount), attribute.Bool("timeout", streamResults.DidTimeout), attribute.Int("repo_count", len(streamResults.RepoCounts)))
-
 		return streamResults, nil
 	}
 
@@ -64,41 +62,6 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 		types.Search:         makeSearchHandler(searchStream),
 	}
 
-}
-
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking.
-// It returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
-// Note that repo ID is received untyped and being cast to api.RepoID
-// err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return false, err
-	}
-
-	// casting repoID
-	var repoID api.RepoID
-	switch untypedRepoID := untypedRepoID.(type) {
-	case api.RepoID:
-		repoID = untypedRepoID
-	case string:
-		var idErr error
-		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
-		if idErr != nil {
-			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
-			return true, err
-		}
-	default:
-		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
-			untypedRepoID, untypedRepoID))
-	}
-
-	// performing the check itself
-	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-	if checkErr != nil {
-		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
-		return true, err
-	}
-	return enabled, err
 }
 
 func toRecording(record *SearchJob, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
@@ -127,10 +90,13 @@ func toRecording(record *SearchJob, value float64, recordTime time.Time, repoNam
 type streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 type streamSearchProvider func(context.Context, string) (*streaming.TabulationResult, error)
 
-func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamComputeProvider) (_ []store.RecordSeriesPointArgs, err error) {
+func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamComputeProvider, logger log.Logger) (_ []store.RecordSeriesPointArgs, err error) {
 	streamResults, err := provider(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
+	}
+	if len(streamResults.SkippedReasons) > 0 {
+		logger.Error("compute search encountered skipped events", log.String("seriesID", job.SeriesID), log.String("reasons", fmt.Sprintf("%v", streamResults.SkippedReasons)), log.String("query", job.SearchQuery))
 	}
 	if len(streamResults.Errors) > 0 {
 		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
@@ -143,8 +109,11 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 	var recordings []store.RecordSeriesPointArgs
 
 	for _, match := range streamResults.RepoCounts {
-		var subRepoEnabled bool
-		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
+		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, api.RepoID(match.RepositoryID))
+		if subRepoErr != nil {
+			logger.Error("sub-repo permissions check errored", log.String("seriesID", job.SeriesID), log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			continue
+		}
 		if subRepoEnabled {
 			continue
 		}
@@ -159,17 +128,20 @@ func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, record
 			recordings = append(recordings, toRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
 	}
+
 	return recordings, nil
 }
 
-func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamSearchProvider) ([]store.RecordSeriesPointArgs, error) {
+func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamSearchProvider, logger log.Logger) ([]store.RecordSeriesPointArgs, error) {
 	tabulationResult, err := provider(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	tr := *tabulationResult
-
+	if len(tr.SkippedReasons) > 0 {
+		logger.Error("search encountered skipped events", log.String("seriesID", job.SeriesID), log.String("reasons", fmt.Sprintf("%v", tr.SkippedReasons)), log.String("query", job.SearchQuery))
+	}
 	if len(tr.Errors) > 0 {
 		return nil, classifiedError(tr.Errors, types.Search)
 	}
@@ -185,20 +157,24 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 
 	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		var subRepoEnabled bool
 		repoID := api.RepoID(match.RepositoryID)
-		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, repoID, err)
+		subRepoEnabled, subRepoErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+		if subRepoErr != nil {
+			logger.Error("sub-repo permissions check errored", log.String("seriesID", job.SeriesID), log.String("repo", match.RepositoryName), log.Error(subRepoErr))
+			continue
+		}
 		if subRepoEnabled {
 			continue
 		}
 		recordings = append(recordings, toRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)...)
 	}
+
 	return recordings, nil
 }
 
 func makeSearchHandler(provider streamSearchProvider) InsightsHandler {
 	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		recordings, err := generateSearchRecordingsStream(ctx, job, recordTime, provider)
+		recordings, err := generateSearchRecordingsStream(ctx, job, recordTime, provider, log.Scoped("SearchRecordingsGenerator", ""))
 		if err != nil {
 			return nil, errors.Wrapf(err, "searchHandler")
 		}
@@ -208,10 +184,10 @@ func makeSearchHandler(provider streamSearchProvider) InsightsHandler {
 
 func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
 	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		computeDelegate := func(ctx context.Context, job *SearchJob, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
-			return generateComputeRecordingsStream(ctx, job, recordTime, provider)
+		computeDelegate := func(ctx context.Context, job *SearchJob, recordTime time.Time, logger log.Logger) (_ []store.RecordSeriesPointArgs, err error) {
+			return generateComputeRecordingsStream(ctx, job, recordTime, provider, logger)
 		}
-		recordings, err := computeDelegate(ctx, job, recordTime)
+		recordings, err := computeDelegate(ctx, job, recordTime, log.Scoped("ComputeRecordingsGenerator", ""))
 		if err != nil {
 			return nil, errors.Wrapf(err, "computeHandler")
 		}
@@ -221,7 +197,7 @@ func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
 
 func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		recordings, err := generateComputeRecordingsStream(ctx, job, recordTime, provider)
+		recordings, err := generateComputeRecordingsStream(ctx, job, recordTime, provider, log.Scoped("ComputeMappingRecordingsGenerator", ""))
 		if err != nil {
 			return nil, errors.Wrapf(err, "mappingComputeHandler")
 		}

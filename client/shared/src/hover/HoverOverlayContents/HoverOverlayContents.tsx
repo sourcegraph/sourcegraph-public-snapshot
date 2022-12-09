@@ -23,14 +23,8 @@ interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOr
 export const HoverOverlayContents: React.FunctionComponent<
     React.PropsWithChildren<HoverOverlayContentsProps>
 > = props => {
-    const {
-        hoverOrError,
-        iconClassName,
-        errorAlertClassName,
-        errorAlertVariant,
-        badgeClassName,
-        contentClassName,
-    } = props
+    const { hoverOrError, iconClassName, errorAlertClassName, errorAlertVariant, badgeClassName, contentClassName } =
+        props
 
     if (hoverOrError === 'loading') {
         return (

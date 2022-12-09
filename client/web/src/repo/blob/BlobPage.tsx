@@ -140,10 +140,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         !enableSelectionDrivenCodeNavigation &&
         (isLegacyLinkDrivenFeatureFlagEnabled || experimentalCodeNavigation === 'link-driven')
 
-    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
-        props.location.search,
-        props.location.hash,
-    ])
+    const lineOrRange = useMemo(
+        () => parseQueryAndHash(props.location.search, props.location.hash),
+        [props.location.search, props.location.hash]
+    )
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -197,17 +197,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      * so the user has useful content rather than a loading spinner
      */
     const formattedBlobInfoOrError = useObservable(
-        useMemo(() => {
-            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
-            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
-            if (!enableLazyBlobSyntaxHighlighting || enableCodeMirror) {
-                return of(undefined)
-            }
-
-            return createActiveSpan(
-                reactManualTracer,
-                { name: 'formattedBlobInfoOrError', parentSpan: span },
-                fetchSpan =>
+        useMemo(
+            () =>
+                createActiveSpan(reactManualTracer, { name: 'formattedBlobInfoOrError', parentSpan: span }, fetchSpan =>
                     fetchBlob({
                         repoName,
                         revision,
@@ -238,8 +230,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             return blobInfo
                         })
                     )
-            )
-        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+                ),
+            [filePath, mode, repoName, revision, span]
+        )
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`

@@ -11,7 +11,7 @@ import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -250,6 +250,8 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
         )
     }
 
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
+
     if (loading) {
         return (
             <Delay timeout={800}>
@@ -284,7 +286,11 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
                                 className={classNames('test-symbol-link', styles.link)}
                                 activeClassName={styles.linkActive}
                             >
-                                <SymbolTag kind={symbol.kind} className="mr-1 test-symbol-icon" />
+                                <SymbolKind
+                                    kind={symbol.kind}
+                                    className="mr-1 test-symbol-icon"
+                                    symbolKindTags={symbolKindTags}
+                                />
                                 <span className={classNames('test-symbol-name')}>{symbol.name}</span>
                             </NavLink>
                         </li>

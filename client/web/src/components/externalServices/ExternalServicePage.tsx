@@ -103,19 +103,15 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
         }
     )
 
-    const [
-        syncExternalService,
-        { error: syncExternalServiceError, loading: syncExternalServiceLoading },
-    ] = useSyncExternalService()
+    const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
+        useSyncExternalService()
 
     const [updated, setUpdated] = useState(false)
-    const [
-        updateExternalService,
-        { error: updateExternalServiceError, loading: updateExternalServiceLoading },
-    ] = useUpdateExternalService(result => {
-        setExternalService(result.updateExternalService)
-        setUpdated(true)
-    })
+    const [updateExternalService, { error: updateExternalServiceError, loading: updateExternalServiceLoading }] =
+        useUpdateExternalService(result => {
+            setExternalService(result.updateExternalService)
+            setUpdated(true)
+        })
 
     const onSubmit = useCallback(
         async (event?: React.FormEvent<HTMLFormElement>) => {
@@ -299,10 +295,8 @@ interface ExternalServiceSyncJobNodeProps {
 }
 
 const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node, onUpdate }) => {
-    const [
-        cancelExternalServiceSync,
-        { error: cancelSyncJobError, loading: cancelSyncJobLoading },
-    ] = useCancelExternalServiceSync()
+    const [cancelExternalServiceSync, { error: cancelSyncJobError, loading: cancelSyncJobLoading }] =
+        useCancelExternalServiceSync()
 
     const cancelJob = useCallback(
         () =>

@@ -169,10 +169,11 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     const isExecuting = batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING
 
     // Manage submitting a batch spec for execution.
-    const { executeBatchSpec, isLoading: isExecutionRequestInProgress, error: executeError } = useExecuteBatchSpec(
-        batchSpec.id,
-        executionOptions.runWithoutCache
-    )
+    const {
+        executeBatchSpec,
+        isLoading: isExecutionRequestInProgress,
+        error: executeError,
+    } = useExecuteBatchSpec(batchSpec.id, executionOptions.runWithoutCache)
 
     // Disable triggering a new execution if any of the following are true:
     // - The batch spec code is invalid.
@@ -257,7 +258,7 @@ export const useBatchSpecContext = <
     BatchSpecFields extends MinimalBatchSpecFields = MinimalBatchSpecFields
 >(): BatchSpecContextState<BatchSpecFields> => {
     const context = React.useContext<BatchSpecContextState<BatchSpecFields>>(
-        (BatchSpecContext as unknown) as React.Context<BatchSpecContextState<BatchSpecFields>>
+        BatchSpecContext as unknown as React.Context<BatchSpecContextState<BatchSpecFields>>
     )
     if (!context) {
         throw new Error('useBatchSpecContext must be used under BatchSpecContextProvider')

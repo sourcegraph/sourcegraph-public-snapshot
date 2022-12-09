@@ -10,8 +10,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { WebStory } from '../components/WebStory'
-import { ListExternalServiceFields } from '../graphql-operations'
 
+import { createExternalService } from './fixtures'
 import { SiteAdminWebhookCreatePage } from './SiteAdminWebhookCreatePage'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -70,24 +70,6 @@ export const WebhookCreatePage: Story = () => {
 }
 
 WebhookCreatePage.storyName = 'Create webhook'
-
-function createExternalService(kind: ExternalServiceKind, url: string): ListExternalServiceFields {
-    return {
-        __typename: 'ExternalService',
-        id: `service-${url}`,
-        kind,
-        displayName: `${kind}-123`,
-        config: `{"url": "${url}"}`,
-        warning: null,
-        lastSyncError: null,
-        repoCount: 0,
-        lastSyncAt: null,
-        nextSyncAt: null,
-        updatedAt: '2021-03-15T19:39:11Z',
-        createdAt: '2021-03-15T19:39:11Z',
-        webhookURL: null,
-    }
-}
 
 export const WebhookCreatePageWithError: Story = () => {
     const mockedResponse: MockedResponse[] = [

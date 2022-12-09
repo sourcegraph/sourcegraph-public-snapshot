@@ -3,6 +3,7 @@ import React from 'react'
 import { mdiClose } from '@mdi/js'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { isMacPlatform } from '@sourcegraph/common'
 import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -87,7 +88,8 @@ export function plaintextKeybindings(keybindings: Keybinding[]): string {
     return keybindings
         .map<string>(keybinding => {
             const ordered = keybinding.ordered.map(key => key.toUpperCase())
-            return [...(keybinding.held || []), ...ordered].map(key => shortcutDisplayName(key)).join('')
+            const joinString = isMacPlatform() ? '' : '+'
+            return [...(keybinding.held || []), ...ordered].map(key => shortcutDisplayName(key)).join(joinString)
         })
         .join(' or ')
 }
@@ -95,12 +97,13 @@ export const Keybindings: React.FunctionComponent<KeybindingProps> = ({ keybindi
     <>
         {keybindings.map((keybinding, index) => {
             const ordered = uppercaseOrdered ? keybinding.ordered.map(key => key.toUpperCase()) : keybinding.ordered
+            const joinString = isMacPlatform() ? '' : '+'
             return (
                 <span key={index}>
                     {index !== 0 && ' or '}
-                    {[...(keybinding.held || []), ...ordered].map((key, index) => (
-                        <kbd key={index}>{shortcutDisplayName(key)}</kbd>
-                    ))}
+                    {[...(keybinding.held || []), ...ordered]
+                        .map<React.ReactNode>((key, index) => <kbd key={index}>{shortcutDisplayName(key)}</kbd>)
+                        .reduce((previous, current) => [previous, joinString, current])}
                 </span>
             )
         })}

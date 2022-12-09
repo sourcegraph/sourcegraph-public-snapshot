@@ -90,11 +90,15 @@ const getXScaleTicks = <T,>(options: GetScaleTicksOptions): T[] => {
     return filteredTicks
 }
 
-const getTruncatedTick = (maxLength: number) => (tick: string): string =>
-    tick.length >= maxLength ? `${tick.slice(0, maxLength)}...` : tick
+const getTruncatedTick =
+    (maxLength: number) =>
+    (tick: string): string =>
+        tick.length >= maxLength ? `${tick.slice(0, maxLength)}...` : tick
 
-const getTruncatedTickFromTheEnd = (maxLength: number) => (tick: string): string =>
-    tick.length >= maxLength ? `...${tick.slice(-maxLength)}` : tick
+const getTruncatedTickFromTheEnd =
+    (maxLength: number) =>
+    (tick: string): string =>
+        tick.length >= maxLength ? `...${tick.slice(-maxLength)}` : tick
 
 /**
  * Based on aggregation mode we should pick different truncation formatters for X labels.
