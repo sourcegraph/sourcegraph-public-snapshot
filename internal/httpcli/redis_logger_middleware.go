@@ -12,12 +12,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var outboundRequestsRedisCache = rcache.NewWithTTL("outbound-requests", 604800)
+
+const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 
 func redisLoggerMiddleware() Middleware {
 	creatorStackFrame, _ := getFrames(4).Next()
@@ -27,6 +30,7 @@ func redisLoggerMiddleware() Middleware {
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 			limit := OutboundRequestLogLimit()
+			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
 
 			// Feature is turned off, do not log
 			if limit == 0 {
@@ -56,6 +60,22 @@ func redisLoggerMiddleware() Middleware {
 				}
 			}
 
+			// Pull out data if we have `resp`
+			var responseHeaders http.Header
+			var statusCode int32
+			if resp != nil {
+				responseHeaders = resp.Header
+				statusCode = int32(resp.StatusCode)
+			}
+
+			// Redact sensitive headers
+			requestHeaders := req.Header
+
+			if shouldRedactSensitiveHeaders {
+				requestHeaders = redactSensitiveHeaders(requestHeaders)
+				responseHeaders = redactSensitiveHeaders(responseHeaders)
+			}
+
 			// Create log item
 			var errorMessage string
 			if err != nil {
@@ -68,13 +88,13 @@ func redisLoggerMiddleware() Middleware {
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
-				RequestHeaders:     removeSensitiveHeaders(req.Header),
+				RequestHeaders:     requestHeaders,
 				RequestBody:        string(requestBody),
-				StatusCode:         int32(resp.StatusCode),
-				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
+				StatusCode:         statusCode,
+				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
-				CreationStackFrame: formatStackFrame(creatorStackFrame),
+				CreationStackFrame: formatStackFrame(creatorStackFrame.Function, creatorStackFrame.File, creatorStackFrame.Line),
 				CallStackFrame:     formatStackFrames(callerStackFrames),
 			}
 
@@ -185,7 +205,7 @@ func getAllValuesAfter(ctx context.Context, c *rcache.Cache, after string, limit
 	return c.GetMulti(keys...), nil
 }
 
-func removeSensitiveHeaders(headers http.Header) http.Header {
+func redactSensitiveHeaders(headers http.Header) http.Header {
 	var cleanHeaders = make(http.Header)
 	for name, values := range headers {
 		if IsRiskyHeader(name, values) {
@@ -204,22 +224,26 @@ func formatStackFrames(frames *runtime.Frames) string {
 		if !more {
 			break
 		}
-		sb.WriteString(formatStackFrame(frame))
+		sb.WriteString(formatStackFrame(frame.Function, frame.File, frame.Line))
 		sb.WriteString("\n")
 	}
 	return strings.TrimRight(sb.String(), "\n")
 }
 
-func formatStackFrame(frame runtime.Frame) string {
-	packageTreeAndFunctionName := strings.Join(strings.Split(frame.Function, "/")[3:], "/")
-	dotPieces := strings.Split(packageTreeAndFunctionName, ".")
-	packageTree := dotPieces[0]
-	functionName := dotPieces[len(dotPieces)-1]
+func formatStackFrame(function string, file string, line int) string {
+	treeAndFunc := strings.Split(function, "/")   // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*requestTracer).TraceQuery
+	pckAndFunc := treeAndFunc[len(treeAndFunc)-1] // graphqlbackend.(*requestTracer).TraceQuery
+	dotPieces := strings.Split(pckAndFunc, ".")   // ["graphqlbackend" , "(*requestTracer)", "TraceQuery"]
+	pckName := dotPieces[0]                       // graphqlbackend
+	funcName := strings.Join(dotPieces[1:], ".")  // (*requestTracer).TraceQuery
+
+	tree := strings.Join(treeAndFunc[:len(treeAndFunc)-1], "/") + "/" + pckName // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
 
 	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
-	fileName := filepath.Join(packageTree, filepath.Base(frame.File))
+	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), "/main/") // cmd/frontend/graphqlbackend/trace.go
 
-	return fmt.Sprintf("%s:%d (Function: %s)", fileName, frame.Line, functionName)
+	return fmt.Sprintf("%s:%d (Function: %s)", fileName, line, funcName)
 }
 
 const pcLen = 1024

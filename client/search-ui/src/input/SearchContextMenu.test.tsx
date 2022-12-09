@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
-import { Observable, of, throwError } from 'rxjs'
+import { of } from 'rxjs'
 import sinon from 'sinon'
 
 import { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/search'
@@ -12,44 +12,24 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
-const mockFetchAutoDefinedSearchContexts = () =>
-    of([
+const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
+    const nodes = [
         {
             __typename: 'SearchContext',
-            id: '1',
+            id: '0',
             spec: 'global',
             name: 'global',
             namespace: null,
             autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            query: '',
-            repositories: [],
             public: true,
-            updatedAt: '2021-03-15T19:39:11Z',
-            viewerCanManage: false,
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            name: 'username',
-            namespace: {
-                __typename: 'User',
-                id: 'u1',
-                namespaceName: 'username',
-            },
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
+            description: 'All code on Sourcegraph',
             query: '',
-            repositories: [],
-            public: true,
             updatedAt: '2021-03-15T19:39:11Z',
+            repositories: [],
             viewerCanManage: false,
+            viewerHasAsDefault: true,
+            viewerHasStarred: false,
         },
-    ] as SearchContextMinimalFields[])
-
-const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
-    const nodes = [
         {
             __typename: 'SearchContext',
             id: '3',
@@ -67,6 +47,8 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
             viewerCanManage: true,
+            viewerHasAsDefault: false,
+            viewerHasStarred: false,
         },
         {
             __typename: 'SearchContext',
@@ -85,6 +67,8 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
             viewerCanManage: true,
+            viewerHasAsDefault: false,
+            viewerHasStarred: false,
         },
     ].filter(
         context => !query || context.spec.toLowerCase().includes(query.toLowerCase())
@@ -108,7 +92,6 @@ describe('SearchContextMenu', () => {
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts,
         fetchSearchContexts: mockFetchSearchContexts,
         onMenuClose: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
@@ -140,11 +123,11 @@ describe('SearchContextMenu', () => {
             clock.tick(50)
         })
 
-        const item = screen.getAllByTestId('search-context-menu-item')[1]
+        const item = screen.getAllByTestId('search-context-menu-item')[0]
         userEvent.click(item)
 
         sinon.assert.calledOnce(selectSearchContextSpec)
-        sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
+        sinon.assert.calledWithExactly(selectSearchContextSpec, 'global')
     })
 
     it('should filter list by spec when searching', () => {
@@ -159,9 +142,8 @@ describe('SearchContextMenu', () => {
         })
 
         const items = screen.getAllByTestId('search-context-menu-item')
-        expect(items.length).toBe(2)
-        expect(items[0]).toHaveTextContent('@username, Your repositories on Sourcegraph')
-        expect(items[1]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
+        expect(items.length).toBe(1)
+        expect(items[0]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
 
         expect(items).toMatchSnapshot()
     })
@@ -208,23 +190,5 @@ describe('SearchContextMenu', () => {
 
         const items = screen.getAllByTestId('search-context-menu-item')
         expect(items[items.length - 1]).toHaveTextContent('Error occurred while loading search contexts')
-    })
-
-    it('should default to empty array if fetching auto-defined contexts fails', () => {
-        const errorFetchAutoDefinedSearchContexts: () => Observable<SearchContextMinimalFields[]> = () =>
-            throwError(new Error('unknown error'))
-
-        render(
-            <SearchContextMenu {...defaultProps} fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts} />
-        )
-
-        act(() => {
-            // Wait for debounce
-            clock.tick(50)
-        })
-
-        const items = screen.getAllByTestId('search-context-menu-item')
-        // With no auto-defined contexts, the first context should be a user-defined context
-        expect(items[0]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
     })
 })

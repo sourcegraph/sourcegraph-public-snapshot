@@ -15,10 +15,10 @@ type Service struct {
 	operations *operations
 }
 
-func newService(store store.Store, observationContext *observation.Context) *Service {
+func newService(observationCtx *observation.Context, store store.Store) *Service {
 	return &Service{
 		store:      store,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

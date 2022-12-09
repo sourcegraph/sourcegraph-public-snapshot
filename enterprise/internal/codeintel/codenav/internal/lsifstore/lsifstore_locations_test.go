@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
@@ -17,46 +18,200 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const testBundleID = 1
+const (
+	testLSIFUploadID = 1
+	testSCIPUploadID = 2408551
+)
+
+func TestDatabaseDefinitions(t *testing.T) {
+	store := populateTestStore(t)
+
+	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
+	//                   ^^^^^^^^^
+	// -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
+	//                             ^^^^^^^^^
+	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
+	//                              ^^^^^^^^^
+
+	lsifDefinitionLocations := []shared.Location{
+		{
+			DumpID: testLSIFUploadID,
+			Path:   "protocol/writer.go",
+			Range:  newRange(85, 17, 85, 26),
+		},
+	}
+
+	// `const lru = new LRU<string, V>(cacheOptions)`
+	//        ^^^
+	// -> `    if (lru.has(key)) {`
+	//             ^^^
+	// -> `        return lru.get(key)!`
+	//                    ^^^
+	// -> `    lru.set(key, value)`
+	//         ^^^
+
+	scipDefinitionLocations := []shared.Location{
+		{
+			DumpID: testSCIPUploadID,
+			Path:   "template/src/lsif/util.ts",
+			Range:  newRange(7, 10, 7, 13),
+		},
+	}
+
+	// Symbol name search for
+	//
+	// `export interface HoverPayload {`
+	//                   ^^^^^^^^^^^^
+
+	scipNonLocalDefinitionLocations := []shared.Location{
+		{
+			DumpID: testSCIPUploadID,
+			Path:   "template/src/lsif/definition-hover.ts",
+			Range:  newRange(21, 17, 21, 29),
+		},
+	}
+
+	testCases := []struct {
+		uploadID        int
+		path            string
+		line, character int
+		totalCount      int
+		limit           int
+		offset          int
+		expected        []shared.Location
+	}{
+		// LSIF
+		{testLSIFUploadID, "internal/index/indexer.go", 380, 25, 1, 1, 0, lsifDefinitionLocations},
+		{testLSIFUploadID, "internal/index/indexer.go", 529, 25, 1, 1, 0, lsifDefinitionLocations},
+		{testLSIFUploadID, "protocol/writer.go", 85, 20, 1, 1, 0, lsifDefinitionLocations},
+
+		// SCIP (local)
+		{testSCIPUploadID, "template/src/lsif/util.ts", 7, 12, 1, 1, 0, scipDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 10, 13, 1, 1, 0, scipDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 19, 1, 1, 0, scipDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 15, 10, 1, 1, 0, scipDefinitionLocations},
+
+		// SCIP (non-local)
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 6, 15, 1, 1, 0, scipNonLocalDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 20, 1, 1, 0, scipNonLocalDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 385, 20, 1, 1, 0, scipNonLocalDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/definition-hover.ts", 18, 20, 1, 1, 0, scipNonLocalDefinitionLocations},
+		{testSCIPUploadID, "template/src/lsif/definition-hover.ts", 123, 52, 1, 1, 0, scipNonLocalDefinitionLocations},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			if actual, totalCount, err := store.GetDefinitionLocations(
+				context.Background(),
+				testCase.uploadID,
+				testCase.path,
+				testCase.line,
+				testCase.character,
+				testCase.limit,
+				testCase.offset,
+			); err != nil {
+				t.Fatalf("unexpected error %s", err)
+			} else {
+				if totalCount != testCase.totalCount {
+					t.Errorf("unexpected count. want=%d have=%d", testCase.totalCount, totalCount)
+				}
+				if diff := cmp.Diff(testCase.expected, actual); diff != "" {
+					t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
 
 func TestDatabaseReferences(t *testing.T) {
 	store := populateTestStore(t)
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
 	//                   ^^^^^^^^^
-	//
 	// -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
 	//                             ^^^^^^^^^
-	//
 	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
 	//                              ^^^^^^^^^
 
-	expected := []shared.Location{
-		{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
-		{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
-		{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
+	lsifExpected := []shared.Location{
+		{DumpID: testLSIFUploadID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
+		{DumpID: testLSIFUploadID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
+		{DumpID: testLSIFUploadID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
+	}
+
+	// `const lru = new LRU<string, V>(cacheOptions)`
+	//        ^^^
+	// -> `    if (lru.has(key)) {`
+	//             ^^^
+	// -> `        return lru.get(key)!`
+	//                    ^^^
+	// -> `    lru.set(key, value)`
+	//         ^^^
+
+	scipExpected := []shared.Location{
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(7, 10, 7, 13)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(10, 12, 10, 15)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(12, 19, 12, 22)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(15, 8, 15, 11)},
+	}
+
+	// Symbol name search for
+	//
+	// `export interface HoverPayload {`
+	//                   ^^^^^^^^^^^^
+
+	scipNonLocalExpected := []shared.Location{
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/ranges.ts", Range: newRange(6, 9, 6, 21)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/ranges.ts", Range: newRange(38, 12, 38, 24)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/ranges.ts", Range: newRange(385, 12, 385, 24)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/definition-hover.ts", Range: newRange(18, 12, 18, 24)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/definition-hover.ts", Range: newRange(123, 45, 123, 57)},
 	}
 
 	testCases := []struct {
-		limit    int
-		offset   int
-		expected []shared.Location
+		uploadID        int
+		path            string
+		line, character int
+		totalCount      int
+		limit           int
+		offset          int
+		expected        []shared.Location
 	}{
-		{5, 0, expected},
-		{2, 0, expected[:2]},
-		{2, 1, expected[1:]},
-		{5, 5, expected[:0]},
+		// LSIF
+		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 5, 0, lsifExpected},
+		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 2, 0, lsifExpected[:2]},
+		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 2, 1, lsifExpected[1:]},
+		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 5, 5, lsifExpected[:0]},
+
+		// SCIP (local)
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 5, 0, scipExpected},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 2, 0, scipExpected[:2]},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 2, 1, scipExpected[1:3]},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 5, 5, scipExpected[:0]},
+
+		// SCIP (non-local)
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 0, scipNonLocalExpected},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 0, scipNonLocalExpected[:2]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 1, scipNonLocalExpected[1:3]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 5, scipNonLocalExpected[:0]},
 	}
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			if actual, totalCount, err := store.GetReferenceLocations(context.Background(), testBundleID, "protocol/writer.go", 85, 20, testCase.limit, testCase.offset); err != nil {
+			if actual, totalCount, err := store.GetReferenceLocations(
+				context.Background(),
+				testCase.uploadID,
+				testCase.path,
+				testCase.line,
+				testCase.character,
+				testCase.limit,
+				testCase.offset,
+			); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else {
-				if totalCount != 3 {
-					t.Errorf("unexpected count. want=%d have=%d", 3, totalCount)
+				if totalCount != testCase.totalCount {
+					t.Errorf("unexpected count. want=%d have=%d", testCase.totalCount, totalCount)
 				}
-
 				if diff := cmp.Diff(testCase.expected, actual); diff != "" {
 					t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
 				}
@@ -67,12 +222,18 @@ func TestDatabaseReferences(t *testing.T) {
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 
-	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
+	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
+	loadTestFile(t, codeIntelDB, "./testdata/lsif-go@ad3507cb.sql")
+	return store
+}
+
+func loadTestFile(t testing.TB, codeIntelDB codeintelshared.CodeIntelDB, filepath string) {
+	contents, err := os.ReadFile(filepath)
 	if err != nil {
-		t.Fatalf("unexpected error reading testdata: %s", err)
+		t.Fatalf("unexpected error reading testdata from %q: %s", filepath, err)
 	}
 
 	tx, err := codeIntelDB.Transact(context.Background())
@@ -107,6 +268,314 @@ func populateTestStore(t testing.TB) LsifStore {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
+}
 
-	return store
+func TestExtractOccurrenceData(t *testing.T) {
+	t.Run("definitions", func(t *testing.T) {
+		testCases := []struct {
+			explanation    string
+			document       *scip.Document
+			occurrence     *scip.Occurrence
+			expectedRanges []*scip.Range
+		}{
+			{
+				explanation: "#1 happy path: symbol name matches and is definition",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react 17.1 main.go func1",
+							SymbolRoles: 1, // is definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func3",
+							Relationships: []*scip.Relationship{
+								{IsReference: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1, // is definition
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{1, 100, 1, 200}),
+				},
+			},
+			{
+				explanation: "#2 no ranges available: symbol name does not match",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 1, // is definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsReference: false},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-jest main.js func7",
+					SymbolRoles: 1, // is definition
+				},
+				expectedRanges: []*scip.Range{},
+			},
+			{
+				explanation: "#3 symbol name match but the SymbolRole is not a definition",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 0, // not a definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsReference: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-test index.js func2",
+					SymbolRoles: 0, // not a definition
+				},
+				expectedRanges: []*scip.Range{},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).definitions); diff != "" {
+				t.Errorf("unexpected ranges (-want +got):\n%s  -- %s", diff, testCase.explanation)
+			}
+		}
+	})
+
+	t.Run("references", func(t *testing.T) {
+		testCases := []struct {
+			explanation    string
+			document       *scip.Document
+			occurrence     *scip.Occurrence
+			expectedRanges []*scip.Range
+		}{
+			{
+				explanation: "#1 happy path: symbol name matches and it is a reference",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react 17.1 main.go func1",
+							SymbolRoles: 0, // not a definition so its a reference
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func1",
+							Relationships: []*scip.Relationship{
+								{IsReference: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 0, // not a definition so its a reference
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{1, 100, 1, 200}),
+				},
+			},
+			{
+				explanation: "#2 no ranges available: symbol name does not match",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 1, // is a definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsReference: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-jest main.js func7",
+					SymbolRoles: 0, // not a definition so its a reference
+				},
+				expectedRanges: []*scip.Range{},
+			},
+			{
+				explanation: "#3 symbol name match but it is not a reference",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{5, 500, 7, 700},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 1, // is a definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsReference: false},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-test index.js func2",
+					SymbolRoles: 0, // not a definition so its a reference
+				},
+				expectedRanges: []*scip.Range{},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).references); diff != "" {
+				t.Errorf("unexpected ranges (-want +got):\n%s  -- %s", diff, testCase.explanation)
+			}
+		}
+	})
+
+	t.Run("implementations", func(t *testing.T) {
+		testCases := []struct {
+			explanation    string
+			document       *scip.Document
+			occurrence     *scip.Occurrence
+			expectedRanges []*scip.Range
+		}{
+			{
+				explanation: "#1 happy path: symbol name match and it is a definition or an interface definition",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react 17.1 main.go func1",
+							SymbolRoles: 1, // Definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func2",
+							Relationships: []*scip.Relationship{
+								{IsImplementation: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1,
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{1, 100, 1, 200}),
+				},
+			},
+			{
+				explanation: "#2 no ranges available: symbol name does not match",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{1, 100, 1, 200},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 1,
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsImplementation: true},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-jest main.js func7",
+					SymbolRoles: 1,
+				},
+				expectedRanges: []*scip.Range{},
+			},
+			{
+				explanation: "#3 symbol name match and occurrence is a definition",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{5, 500, 7, 700},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 1, // is definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsTypeDefinition: true},
+								{IsImplementation: false},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-test index.js func2",
+					SymbolRoles: 1, // is definition
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{5, 500, 7, 700}),
+				},
+			},
+			{
+				explanation: "#4 neither occurrence nor document's occurrence are a definition",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{5, 500, 7, 700},
+							Symbol:      "react-test index.js func2",
+							SymbolRoles: 0,
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react-test index.js func2",
+							Relationships: []*scip.Relationship{
+								{IsTypeDefinition: true},
+								{IsImplementation: false},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react-test index.js func2",
+					SymbolRoles: 0,
+				},
+				expectedRanges: []*scip.Range{},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).implementations); diff != "" {
+				t.Errorf("unexpected ranges (-want +got):\n%s -- %s", diff, testCase.explanation)
+			}
+		}
+	})
 }

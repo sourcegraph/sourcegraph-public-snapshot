@@ -2,11 +2,11 @@ package aggregation
 
 import (
 	"context"
-	"regexp"
 	"sync"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"

@@ -45,14 +45,15 @@ export interface UseCodeIntelStatusPayload {
 }
 
 export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters): UseCodeIntelStatusResult => {
-    const { data: rawData, error, loading } = useQuery<CodeIntelStatusResult, CodeIntelStatusVariables>(
-        codeIntelStatusQuery,
-        {
-            variables,
-            notifyOnNetworkStatusChange: false,
-            fetchPolicy: 'no-cache',
-        }
-    )
+    const {
+        data: rawData,
+        error,
+        loading,
+    } = useQuery<CodeIntelStatusResult, CodeIntelStatusVariables>(codeIntelStatusQuery, {
+        variables,
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+    })
 
     const repo = rawData?.repository
     const path = repo?.commit?.path
@@ -123,10 +124,11 @@ export interface UseRequestedLanguageSupportResult {
 export const useRequestedLanguageSupportQuery = ({
     variables,
 }: UseRequestedLanguageSupportParameters): UseRequestedLanguageSupportResult => {
-    const { data: rawData, error, loading } = useQuery<
-        RequestedLanguageSupportResult,
-        RequestedLanguageSupportVariables
-    >(requestedLanguageSupportQuery, {
+    const {
+        data: rawData,
+        error,
+        loading,
+    } = useQuery<RequestedLanguageSupportResult, RequestedLanguageSupportVariables>(requestedLanguageSupportQuery, {
         variables,
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',

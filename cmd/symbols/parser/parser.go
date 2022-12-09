@@ -39,18 +39,18 @@ type parser struct {
 }
 
 func NewParser(
+	observationCtx *observation.Context,
 	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
-	observationContext *observation.Context,
 ) Parser {
 	return &parser{
 		parserPool:         parserPool,
 		repositoryFetcher:  repositoryFetcher,
 		requestBufferSize:  requestBufferSize,
 		numParserProcesses: numParserProcesses,
-		operations:         newOperations(observationContext),
+		operations:         newOperations(observationCtx),
 	}
 }
 

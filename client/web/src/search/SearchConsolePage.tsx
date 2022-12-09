@@ -52,9 +52,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
-        props.location.search,
-    ])
+    const searchQuery = useMemo(
+        () => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''),
+        [props.location.search]
+    )
 
     const patternType = useMemo(
         () => parseSearchURLPatternType(props.location.search) || SearchPatternType.structural,

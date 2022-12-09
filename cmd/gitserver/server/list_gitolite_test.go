@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -111,6 +112,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {

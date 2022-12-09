@@ -59,7 +59,9 @@ ENV \
     JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME="" \
     JCLOUDS_FILESYSTEM_BASEDIR="/data"
 
-EXPOSE 9000
+RUN mkdir -p /data && chown -R sourcegraph:sourcegraph /data
 USER sourcegraph
+
+EXPOSE 9000
 WORKDIR /opt/s3proxy
 ENTRYPOINT ["/sbin/tini", "--", "/opt/s3proxy/run-docker-container.sh"]

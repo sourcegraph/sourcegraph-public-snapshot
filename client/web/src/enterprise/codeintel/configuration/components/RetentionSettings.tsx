@@ -24,9 +24,9 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
     policy,
     setPolicy,
 }) => {
-    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(
-        updates: { [P in K]: CodeIntelligenceConfigurationPolicyFields[P] }
-    ): void => {
+    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
+        [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
+    }): void => {
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 

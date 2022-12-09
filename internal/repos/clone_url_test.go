@@ -166,7 +166,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 		Want        string
 	}{
 		{"https://github.com", "https://github.com/foo/bar", "", "", "https://github.com/foo/bar"},
-		{"https://github.com", "https://github.com/foo/bar", "abcd", "", "https://abcd@github.com/foo/bar"},
+		{"https://github.com", "https://github.com/foo/bar", "abcd", "", "https://oauth2:abcd@github.com/foo/bar"},
 		{"https://github.com", "https://github.com/foo/bar", "abcd", "ssh", "git@github.com:foo/bar.git"},
 	}
 

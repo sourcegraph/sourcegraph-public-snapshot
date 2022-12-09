@@ -54,15 +54,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const {
-        namespaceID,
-        batchChangeName,
-        history,
-        location,
-        telemetryService,
-        authenticatedUser,
-        deleteBatchChange,
-    } = props
+    const { namespaceID, batchChangeName, history, location, telemetryService, authenticatedUser, deleteBatchChange } =
+        props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')

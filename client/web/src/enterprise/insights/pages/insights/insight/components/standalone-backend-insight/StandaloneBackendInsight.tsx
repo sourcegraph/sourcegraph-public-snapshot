@@ -22,13 +22,19 @@ import {
     DrillDownFiltersStep,
     BackendInsightChart,
     BackendInsightErrorAlert,
-    BackendInsightTimeoutIcon,
+    InsightIncompleteAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
-import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
+import {
+    BackendInsightData,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    useSaveInsightAsNewView,
+} from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
@@ -45,7 +51,8 @@ interface StandaloneBackendInsight extends TelemetryProps {
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
@@ -118,17 +125,15 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
-        await createInsight({
-            insight: {
-                ...insight,
-                title: values.insightName,
-                filters,
-            },
+        await saveAsNewView({
+            insight,
+            filters,
+            title: values.insightName,
             dashboard: null,
-        }).toPromise()
+        })
 
         setOriginalInsightFilters(filters)
-        history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
+        history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
@@ -162,7 +167,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 onMouseLeave={trackMouseLeave}
             >
                 <InsightCardHeader title={insight.title}>
-                    {insightData?.isAllSeriesErrored && <BackendInsightTimeoutIcon timeoutLevel="insight" />}
+                    {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                     <StandaloneInsightContextMenu
                         insight={insight}
                         zeroYAxisMin={zeroYAxisMin}
@@ -174,8 +179,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <BackendInsightErrorAlert error={error} />
                 ) : loading || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : error ? (
-                    <BackendInsightErrorAlert error={error} />
                 ) : (
                     <BackendInsightChart
                         {...insightData}

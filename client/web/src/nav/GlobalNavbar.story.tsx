@@ -3,7 +3,6 @@ import { createMemoryHistory } from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -43,7 +42,6 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
     routes: [],
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     showKeyboardShortcutsHelp: () => undefined,

@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -36,7 +37,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore *workerStoreExtra, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -66,7 +67,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	}))
 
 	return dbworker.NewWorker[*Job](ctx, workerStore, &workHandler{
-		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
+		baseWorkerStore: workerStore,
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
@@ -91,8 +92,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store[*Job] {
-	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options[*Job]{
+func CreateDBWorkerStore(observationContext *observation.Context, s *basestore.Store) *workerStoreExtra {
+	options := dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
@@ -105,7 +106,20 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		MaxNumRetries:     10,
 		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
-	}, observationContext)
+	}
+	inner := dbworkerstore.New(observationContext, s.Handle(), options)
+	return &workerStoreExtra{Store: inner, options: options}
+}
+
+type workerStoreExtra struct {
+	dbworkerstore.Store[*Job]
+	options dbworkerstore.Options[*Job]
+}
+
+// WillRetry will return true if the next iteration of this job is valid (would
+// retry) or false if this is the last iteration.
+func (w *workerStoreExtra) WillRetry(job *Job) bool {
+	return int(job.NumFailures)+1 < w.options.MaxNumRetries
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {
@@ -272,32 +286,39 @@ type JobsStatus struct {
 }
 
 // QueryJobsStatus queries the current status of jobs for the specified series.
-func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (*JobsStatus, error) {
+func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (_ *JobsStatus, err error) {
 	var status JobsStatus
-	for _, work := range []struct {
-		stateName string
-		result    *uint64
-	}{
-		{"queued", &status.Queued},
-		{"processing", &status.Processing},
-		{"completed", &status.Completed},
-		{"errored", &status.Errored},
-		{"failed", &status.Failed},
-	} {
-		value, _, err := basestore.ScanFirstInt(workerBaseStore.Query(
-			ctx,
-			sqlf.Sprintf(queryJobsStatusFmtStr, seriesID, work.stateName)),
-		)
-		if err != nil {
+
+	rows, err := workerBaseStore.Query(ctx, sqlf.Sprintf(queryJobsStatusSql, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var state string
+		var value int
+		if err := rows.Scan(&state, &value); err != nil {
 			return nil, err
 		}
-		*work.result = uint64(value)
+		switch state {
+		case "queued":
+			status.Queued = uint64(value)
+		case "processing":
+			status.Processing = uint64(value)
+		case "completed":
+			status.Completed = uint64(value)
+		case "errored":
+			status.Errored = uint64(value)
+		case "failed":
+			status.Failed = uint64(value)
+		}
 	}
 	return &status, nil
 }
 
-const queryJobsStatusFmtStr = `
-SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
+const queryJobsStatusSql = `
+SELECT state, COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {

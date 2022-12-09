@@ -68,8 +68,6 @@ var DeploySourcegraphDockerImages = []string{
 	"indexed-searcher",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	// TODO(blobstore): remove minio support
-	"minio",
 	"blobstore",
 	"node-exporter",
 	"postgres-12-alpine",

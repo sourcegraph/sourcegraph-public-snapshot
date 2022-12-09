@@ -121,13 +121,9 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
-elm-stuff
 
 # Extensions
 /client/extension-api/dist
-
-# Compute Component
-/client/web/src/search/results/components/compute/public/dist
 
 # Direnv
 .envrc

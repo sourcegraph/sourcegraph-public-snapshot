@@ -21,9 +21,8 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
-    const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] = useTemporarySetting(
-        'batches.minSavedPerChangeset'
-    )
+    const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] =
+        useTemporarySetting('batches.minSavedPerChangeset')
 
     const { data, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
         GLOBAL_CHANGESETS_STATS,

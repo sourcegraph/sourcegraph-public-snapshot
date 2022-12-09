@@ -2,48 +2,23 @@
 
 #### Setup Batch Changes 
 
-<ol>
-  <li>
-    Using Batch Changes requires a <a href="../../../admin/external_service">code host connection</a> to a supported code host (currently GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, and Bitbucket Cloud).
-  </li>
-  <li>
-    (Optional) <a href="../../../admin/repo/permissions">Configure repository permissions</a>, which Batch Changes will respect.
-  </li>
-  <li>
-    <a href="configuring_credentials">Configure credentials</a>.
-  </li>
-  <li>
-    Setup webhooks to make sure changesets sync fast. See <a href="../references/requirements#batch-changes-effect-on-code-host-rate-limits">Batch Changes effect on codehost rate limits</a>.
-    <ul>
-      <li>
-        <a href="../../admin/external_service/github#webhooks">GitHub</a>
-      </li>
-      <li>
-        <a href="../../admin/external_service/bitbucket_server#webhooks">Bitbucket Server / Bitbucket Data Center</a>
-      </li>
-      <li>
-        <a href="../../admin/external_service/gitlab#webhook-setup">GitLab</a>
-      </li>
-      <li>
-        <a href="../../admin/external_service/bitbucket_cloud#webhooks">Bitbucket Cloud</a>
-      </li>
-    </ul>
-    <aside class="note">
-      NOTE: Incoming webhooks can be viewed in <strong>Site Admin &gt; Batch Changes &gt; Incoming webhooks</strong>. Webhook logging can be configured through the <a href="../../admin/config/batch_changes#incoming-webhooks">incoming webhooks site configuration</a>.
-    </aside>
-  </li>
-  <li>
-    Configure any desired optional features, such as:
-    <ul>
-      <li>
-        <a href="../../../admin/config/batch_changes#rollout-windows">Rollout windows</a>, which control the rate at which Batch Changes will publish changesets on code hosts.
-      </li>
-      <li>
-        <a href="../../../admin/config/batch_changes#forks">Forks</a>, which push branches created by Batch Changes onto forks of the upstream repository instead than the repository itself.
-    </ul>
-  </li>
-</ol>
+1. Using Batch Changes requires a [code host connection](../../admin/external_services/index.md) to a supported code host (currently GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, and Bitbucket Cloud).
 
+1. (Optional) [Configure repository permissions](../../admin/repo/permissions.md), which Batch Changes will respect.
+
+1. [Configure credentials](configuring_credentials.md).
+
+1. Setup webhooks to make sure changesets sync fast. See [Batch Changes effect on codehost rate limits](../references/requirements.md#batch-changes-effect-on-code-host-rate-limits).
+    * [GitHub](../../admin/external_service/github.md#webhooks)
+    * [Bitbucket Server / Bitbucket Data Center](../../admin/external_service/bitbucket_server.md#webhooks)
+    * [Bitbucket Cloud](../../admin/external_service/bitbucket_cloud.md#webhooks)
+    * [GitLab](../../admin/external_service/gitlab.md#webhook-setup)
+
+    > NOTE: Incoming webhooks can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
+
+1. Configure any desired optional features, such as:
+    * [Rollout windows]("../../../admin/config/batch_changes#rollout-windows"), which control the rate at which Batch Changes will publish changesets on code hosts.
+    * [Forks]("../../../admin/config/batch_changes#forks"), which push branches created by Batch Changes onto forks of the upstream repository instead than the repository itself.
 
 #### Disable Batch Changes
 - [Disable Batch Changes](../explanations/permissions_in_batch_changes.md#disabling-batch-changes).

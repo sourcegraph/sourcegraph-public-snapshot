@@ -15,13 +15,13 @@ interface Props {
     /** An optional class name. */
     className?: string
 
-    /** Whether or not the input should take up all horizontal space (flex:1) */
+    /** Whether the input should take up all horizontal space (flex:1) */
     flex?: boolean
 
     /** The size of the input element. */
     size?: number
 
-    /** Whether or not the text to be copied is a password. */
+    /** Whether the text to be copied is a password. */
     password?: boolean
 
     /** The label used for screen readers */

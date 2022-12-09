@@ -41,7 +41,7 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	webhook, err := ws.CreateWebhook(ctx, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
@@ -52,15 +52,49 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
+
 	id, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	err = ws.DeleteWebhook(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "delete webhook")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	whID, err := unmarshalWebhookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	var name string
+	if args.Name != nil {
+		name = *args.Name
+	}
+	var codeHostKind string
+	if args.CodeHostKind != nil {
+		codeHostKind = *args.CodeHostKind
+	}
+	var codeHostURN string
+	if args.CodeHostURN != nil {
+		codeHostURN = *args.CodeHostURN
+	}
+
+	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, args.Secret)
+	if err != nil {
+		return nil, errors.Wrap(err, "update webhook")
+	}
+
+	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
 func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.ListWebhookArgs) (graphqlbackend.WebhookConnectionResolver, error) {
@@ -286,6 +320,15 @@ func (r *webhookResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserRe
 	}
 
 	return user, err
+}
+
+func (r *webhookResolver) WebhookLogs(ctx context.Context, args *graphqlbackend.WebhookLogsArgs) (*graphqlbackend.WebhookLogConnectionResolver, error) {
+	gqlID := marshalWebhookID(r.hook.ID)
+	// We need to make a new args struct, otherwise the pointer gets shared
+	// between resolvers.
+	resolverArgs := *args
+	resolverArgs.WebhookID = &gqlID
+	return graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, &resolverArgs, graphqlbackend.WebhookLogsAllExternalServices)
 }
 
 func marshalWebhookID(id int32) graphql.ID {

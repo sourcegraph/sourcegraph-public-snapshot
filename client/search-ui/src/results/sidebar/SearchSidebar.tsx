@@ -62,10 +62,10 @@ export const SearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props =>
         [setCollapsedSections]
     )
 
-    const sidebarStore = useMemo(() => ({ collapsedSections, persistToggleState }), [
-        collapsedSections,
-        persistToggleState,
-    ])
+    const sidebarStore = useMemo(
+        () => ({ collapsedSections, persistToggleState }),
+        [collapsedSections, persistToggleState]
+    )
 
     return (
         <aside

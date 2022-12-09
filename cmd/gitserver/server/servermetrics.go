@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {
+func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -44,7 +44,7 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 
 	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
 	m := mountinfo.NewCollector(s.Logger, opts, map[string]string{"reposDir": s.ReposDir})
-	observationContext.Registerer.MustRegister(m)
+	observationCtx.Registerer.MustRegister(m)
 
 	metrics.MustRegisterDiskMonitor(s.ReposDir)
 
@@ -72,5 +72,5 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 	prometheus.MustRegister(c)
 
 	// Register uniform observability via internal/observation
-	s.operations = newOperations(observationContext)
+	s.operations = newOperations(observationCtx)
 }

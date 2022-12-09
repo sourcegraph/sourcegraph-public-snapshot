@@ -9,6 +9,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
 import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -31,12 +32,17 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 
+import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
+import { SearchContextStarButton } from './SearchContextStarButton'
+
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
-        PlatformContextProps<'requestGraphQL'> {}
+        PlatformContextProps<'requestGraphQL'> {
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+}
 
 const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
@@ -95,8 +101,8 @@ const SearchContextRepositories: React.FunctionComponent<
     )
 
     return (
-        <>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <div className="d-flex justify-content-between align-items-center">
                 {filteredRepositories.length > 0 && (
                     <H3>
                         <span>
@@ -115,7 +121,7 @@ const SearchContextRepositories: React.FunctionComponent<
             </div>
             {repositories.length > 0 && (
                 <>
-                    <div className="d-flex">
+                    <div className="d-flex mt-3">
                         <div className="w-50">Repositories</div>
                         <div className="w-50">Revisions</div>
                     </div>
@@ -131,14 +137,17 @@ const SearchContextRepositories: React.FunctionComponent<
                     />
                 </>
             )}
-        </>
+        </div>
     )
 }
 
-export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<SearchContextPageProps>> = props => {
+export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = ({
+    match,
+    fetchSearchContextBySpec,
+    platformContext,
+    authenticatedUser,
+}) => {
     const LOADING = 'loading' as const
-
-    const { match, fetchSearchContextBySpec, platformContext } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
@@ -151,6 +160,43 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
         )
     )
 
+    const searchContext =
+        searchContextOrError === LOADING || isErrorLike(searchContextOrError) ? null : searchContextOrError
+
+    const { starred, toggleStar } = useToggleSearchContextStar(
+        searchContext?.viewerHasStarred || false,
+        searchContext?.id || undefined,
+        authenticatedUser?.id || undefined
+    )
+
+    const [alert, setAlert] = useState('')
+    const toggleStarWithErrorHandling = useCallback(() => {
+        setAlert('') // Clear previous alerts
+        toggleStar().catch(error => {
+            if (isErrorLike(error)) {
+                setAlert(error.message)
+            }
+        })
+    }, [setAlert, toggleStar])
+
+    const actions = searchContext && (
+        <div className={styles.actions}>
+            {searchContext && authenticatedUser && !searchContext.autoDefined && (
+                <SearchContextStarButton starred={starred} onClick={toggleStarWithErrorHandling} />
+            )}
+            {searchContext.viewerCanManage && (
+                <Button
+                    to={`/contexts/${searchContext.spec}/edit`}
+                    data-testid="edit-search-context-link"
+                    variant="secondary"
+                    as={Link}
+                >
+                    Edit
+                </Button>
+            )}
+        </div>
+    )
+
     return (
         <div className="w-100">
             <Page>
@@ -160,24 +206,10 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                             <LoadingSpinner inline={false} />
                         </div>
                     )}
-                    {searchContextOrError && !isErrorLike(searchContextOrError) && searchContextOrError !== LOADING && (
+                    {searchContext && (
                         <>
-                            <PageTitle title={searchContextOrError.spec} />
-                            <PageHeader
-                                className="mb-2"
-                                actions={
-                                    searchContextOrError.viewerCanManage && (
-                                        <Button
-                                            to={`/contexts/${searchContextOrError.spec}/edit`}
-                                            data-testid="edit-search-context-link"
-                                            variant="secondary"
-                                            as={Link}
-                                        >
-                                            Edit
-                                        </Button>
-                                    )
-                                }
-                            >
+                            <PageTitle title={searchContext.spec} />
+                            <PageHeader className="mb-2" actions={actions}>
                                 <PageHeader.Heading as="h2" styleAs="h1">
                                     <PageHeader.Breadcrumb icon={mdiMagnify} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
@@ -185,13 +217,13 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                         <div>
                                             <span
                                                 className={classNames(
-                                                    !searchContextOrError.public && 'mr-2',
+                                                    !searchContext.public && 'mr-2',
                                                     styles.searchContextPageTitleSpec
                                                 )}
                                             >
-                                                {searchContextOrError.spec}
+                                                {searchContext.spec}
                                             </span>
-                                            {!searchContextOrError.public && (
+                                            {!searchContext.public && (
                                                 <Badge
                                                     variant="secondary"
                                                     pill={true}
@@ -205,35 +237,36 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
                             </PageHeader>
-                            {!searchContextOrError.autoDefined && (
+                            {!searchContext.autoDefined && (
                                 <div className="text-muted">
                                     <span className="ml-1">
-                                        Updated <Timestamp date={searchContextOrError.updatedAt} noAbout={true} />
+                                        Updated <Timestamp date={searchContext.updatedAt} noAbout={true} />
                                     </span>
                                 </div>
                             )}
-                            <Container className="mt-4">
-                                {searchContextOrError.description && (
-                                    <div className="mb-3">
-                                        <Markdown
-                                            dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
-                                        />
-                                    </div>
+                            {alert && (
+                                <Alert variant="danger" className="mt-3">
+                                    {alert}
+                                </Alert>
+                            )}
+                            <Container className={classNames('mt-4', styles.container)}>
+                                {searchContext.description && (
+                                    <Markdown dangerousInnerHTML={renderMarkdown(searchContext.description)} />
                                 )}
-                                {!searchContextOrError.autoDefined && searchContextOrError.query.length === 0 && (
-                                    <SearchContextRepositories repositories={searchContextOrError.repositories} />
+                                {!searchContext.autoDefined && searchContext.query.length === 0 && (
+                                    <SearchContextRepositories repositories={searchContext.repositories} />
                                 )}
-                                {searchContextOrError.query.length > 0 && (
+                                {searchContext.query.length > 0 && (
                                     <Link
                                         to={`/search?${buildSearchURLQuery(
-                                            searchContextOrError.query,
+                                            searchContext.query,
                                             SearchPatternType.regexp,
                                             false
                                         )}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
-                                        <SyntaxHighlightedSearchQuery query={searchContextOrError.query} />
+                                        <SyntaxHighlightedSearchQuery query={searchContext.query} />
                                     </Link>
                                 )}
                             </Container>

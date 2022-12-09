@@ -11,7 +11,8 @@ import { filter } from 'rxjs/operators'
 export class LocalStorageSubject<T>
     // eslint-disable-next-line rxjs/no-subclass
     extends Observable<T>
-    implements NextObserver<T>, Pick<BehaviorSubject<T>, 'value'> {
+    implements NextObserver<T>, Pick<BehaviorSubject<T>, 'value'>
+{
     constructor(private key: string, private defaultValue: T) {
         super(subscriber => {
             subscriber.next(this.value)

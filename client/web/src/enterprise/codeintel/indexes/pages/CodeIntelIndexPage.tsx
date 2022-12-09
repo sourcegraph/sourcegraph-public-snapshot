@@ -55,11 +55,10 @@ export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeI
     }, [deleteError])
 
     const indexOrError = useObservable(
-        useMemo(() => queryLisfIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)), [
-            id,
-            queryLisfIndex,
-            apolloClient,
-        ])
+        useMemo(
+            () => queryLisfIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            [id, queryLisfIndex, apolloClient]
+        )
     )
 
     const deleteIndex = useCallback(async (): Promise<void> => {
