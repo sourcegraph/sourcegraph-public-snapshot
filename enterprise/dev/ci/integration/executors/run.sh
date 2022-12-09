@@ -18,7 +18,7 @@ cleanup() {
   pushd "$root_dir"/enterprise/dev/ci/integration/executors/ 1>/dev/null
   docker-compose logs >"${root_dir}/docker-compose.log"
   docker-compose down --volumes --timeout 30 # seconds
-  docker volume rm executors-e2e
+  docker volume rm executors-e2e || true
   popd 1>/dev/null
   rm -rf "${TMP_WORK_DIR}"
 }
