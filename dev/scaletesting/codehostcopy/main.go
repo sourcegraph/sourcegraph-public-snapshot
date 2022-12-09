@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 )
 
@@ -24,10 +25,14 @@ type SSHKeyHandler interface {
 	DropSSHKey(ctx context.Context, keyID int64) error
 }
 
-type CodeHostSource interface {
+type CodeHostSource[T any] interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
 	ListRepos(ctx context.Context) ([]*store.Repo, error)
+
+	Err() error
+	Next(ctx context.Context) T
+	Done() bool
 }
 
 type CodeHostDestination interface {

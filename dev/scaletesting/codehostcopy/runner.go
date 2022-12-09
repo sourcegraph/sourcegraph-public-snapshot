@@ -10,13 +10,14 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type Runner struct {
-	source      CodeHostSource
+	source      CodeHostSource[[]*store.Repo]
 	destination CodeHostDestination
 	store       *store.Store
 	logger      log.Logger
@@ -35,7 +36,7 @@ func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
 	}, fields...)
 }
 
-func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest CodeHostDestination) *Runner {
+func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource[[]*store.Repo], dest CodeHostDestination) *Runner {
 	return &Runner{
 		logger:      logger,
 		source:      source,
