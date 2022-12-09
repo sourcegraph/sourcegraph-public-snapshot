@@ -13,7 +13,8 @@ interface StackedMeterProps<Datum> {
     minBarWidth?: number
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
-    getDatumColor: (datum: Datum) => string | undefined
+    getDatumColor?: (datum: Datum) => string
+    getDatumClassName?: (datum: Datum) => string
     className?: string
     rightToLeft?: boolean
     children?: ({ path, datum }: { path: string; datum: Datum }) => React.ReactNode
@@ -29,6 +30,7 @@ export function StackedMeter<Datum>({
     getDatumValue,
     getDatumName,
     getDatumColor,
+    getDatumClassName,
     children,
     rightToLeft,
     minBarWidth,
@@ -62,17 +64,15 @@ export function StackedMeter<Datum>({
                     const barWidth = xScale(value)
                     const barXEnd = xScale(stackedDatum.stackedValue)
 
-                    const name = getDatumName(stackedDatum.datum)
-                    const color = getDatumColor(stackedDatum.datum)
-
                     return (
                         <BarRounded
-                            key={`bar-group-bar-${name}`}
+                            key={`bar-group-bar-${getDatumName(stackedDatum.datum)}`}
                             x={barXEnd - barWidth}
                             y={barY}
                             width={barWidth}
                             height={barHeight}
-                            fill={color}
+                            fill={getDatumColor?.(stackedDatum.datum)}
+                            className={getDatumClassName?.(stackedDatum.datum)}
                             radius={barRadius || 0}
                             left={isFirstBar}
                             right={isLastBar}

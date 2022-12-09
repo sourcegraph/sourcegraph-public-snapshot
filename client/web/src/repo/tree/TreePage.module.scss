@@ -40,6 +40,14 @@
     border-radius: 5px;
 }
 
+.diff-stat-added {
+    fill: var(--diff-add-fg);
+}
+
+.diff-stat-deleted {
+    fill: var(--diff-remove-fg);
+}
+
 .container {
     overflow-y: auto;
     height: 100%;
@@ -125,4 +133,20 @@
     &--no-columns {
         max-width: 18rem;
     }
+}
+
+.sort-dsc-icon {
+    padding: 0;
+    margin: -0.125rem 0 0 0;
+    color: var(--text-muted);
+}
+
+.sort-asc-icon {
+    padding: 0;
+    margin: -0.625rem 0 0 0;
+    color: var(--text-muted);
+}
+
+.sort-selected-icon {
+    color: var(--body-color);
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuUp, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -69,7 +69,10 @@ export interface FilePanelProps {
 }
 
 export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePanelProps>> = ({ entries, diffStats }) => {
-    const [sortColumn, setSortColumn] = useState<'Files' | 'Activity'>('Files')
+    const [sortColumn, setSortColumn] = useState<{
+        column: 'Files' | 'Activity'
+        direction: 'asc' | 'desc'
+    }>({ column: 'Files', direction: 'asc' })
 
     const diffStatsByPath: { [path: string]: DiffStat } = {}
     let maxLinesChanged = 1
@@ -82,24 +85,51 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
         }
     }
 
-    let sortedEntries = entries
-    switch (sortColumn) {
+    let sortedEntries = [...entries]
+    const { column, direction } = sortColumn
+    switch (column) {
+        case 'Files':
+            if (direction === 'desc') {
+                sortedEntries.reverse()
+            }
+            break
         case 'Activity':
             sortedEntries = [...entries]
             if (diffStats) {
                 sortedEntries.sort((entry1, entry2) => {
                     const stats1: DiffStat = diffStatsByPath[entry1.name]
                     const stats2: DiffStat = diffStatsByPath[entry2.name]
-                    return (stats2 ? stats2.added + stats2.deleted : 0) - (stats1 ? stats1.added + stats1.deleted : 0)
+                    let difference =
+                        (stats2 ? stats2.added + stats2.deleted : 0) - (stats1 ? stats1.added + stats1.deleted : 0)
+                    if (direction === 'desc') {
+                        difference *= -1
+                    }
+                    return difference
                 })
             }
             break
     }
 
-    const callbacks = {
-        clickFiles: useCallback(() => setSortColumn('Files'), []),
-        clickActivity: useCallback(() => setSortColumn('Activity'), []),
+    const sortCallback = useCallback(
+        (column: 'Files' | 'Activity'): void => {
+            if (sortColumn.column === column && sortColumn.direction === 'asc') {
+                setSortColumn({ column, direction: 'desc' })
+            } else {
+                setSortColumn({ column, direction: 'asc' })
+            }
+        },
+        [sortColumn]
+    )
+    const clickFiles = useCallback(() => sortCallback('Files'), [sortCallback])
+    const clickActivity = useCallback(() => sortCallback('Activity'), [sortCallback])
+    interface Datum {
+        name: 'deleted' | 'added'
+        value: number
+        className: string
     }
+    const getDatumValue = useCallback((datum: Datum) => datum.value, [])
+    const getDatumName = useCallback((datum: Datum) => datum.name, [])
+    const getDatumClassName = useCallback((datum: Datum) => datum.className, [])
 
     return (
         <Card className="card">
@@ -109,20 +139,67 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                         <div
                             role="button"
                             tabIndex={0}
-                            onClick={callbacks.clickFiles}
-                            onKeyDown={callbacks.clickFiles}
-                            className={classNames('col-9 px-2', styles.cardColHeader)}
+                            onClick={clickFiles}
+                            onKeyDown={clickFiles}
+                            className={classNames('d-flex flex-row align-itmes-start col-9 px-2', styles.cardColHeader)}
                         >
                             Files
+                            <div className="flex-shrink-1 d-flex flex-column">
+                                <Icon
+                                    aria-label="Sort ascending"
+                                    svgPath={mdiMenuUp}
+                                    className={classNames(
+                                        styles.sortDscIcon,
+                                        sortColumn.column === 'Files' &&
+                                            sortColumn.direction === 'desc' &&
+                                            styles.sortSelectedIcon
+                                    )}
+                                />
+                                <Icon
+                                    aria-label="Sort descending"
+                                    svgPath={mdiMenuDown}
+                                    className={classNames(
+                                        styles.sortAscIcon,
+                                        sortColumn.column === 'Files' &&
+                                            sortColumn.direction === 'asc' &&
+                                            styles.sortSelectedIcon
+                                    )}
+                                />
+                            </div>
                         </div>
                         <div
                             title="1 month activity"
                             role="button"
                             tabIndex={0}
-                            onClick={callbacks.clickActivity}
-                            onKeyDown={callbacks.clickActivity}
-                            className={classNames('col-3 px-2 text-right', styles.cardColHeader)}
+                            onClick={clickActivity}
+                            onKeyDown={clickActivity}
+                            className={classNames(
+                                'd-flex flex-row-reverse align-items-start col-3 px-2 text-right',
+                                styles.cardColHeader
+                            )}
                         >
+                            <div className="flex-shrink-1 d-flex flex-column">
+                                <Icon
+                                    aria-label="Sort ascending"
+                                    svgPath={mdiMenuUp}
+                                    className={classNames(
+                                        styles.sortDscIcon,
+                                        sortColumn.column === 'Activity' &&
+                                            sortColumn.direction === 'desc' &&
+                                            styles.sortSelectedIcon
+                                    )}
+                                />
+                                <Icon
+                                    aria-label="Sort descending"
+                                    svgPath={mdiMenuDown}
+                                    className={classNames(
+                                        styles.sortAscIcon,
+                                        sortColumn.column === 'Activity' &&
+                                            sortColumn.direction === 'asc' &&
+                                            styles.sortSelectedIcon
+                                    )}
+                                />
+                            </div>
                             Recent activity
                         </div>
                     </div>
@@ -180,17 +257,17 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                                     {
                                                         name: 'deleted',
                                                         value: diffStatsByPath[entry.name].deleted,
-                                                        color: 'red',
+                                                        className: styles.diffStatDeleted,
                                                     },
                                                     {
                                                         name: 'added',
                                                         value: diffStatsByPath[entry.name].added,
-                                                        color: 'green',
+                                                        className: styles.diffStatAdded,
                                                     },
                                                 ]}
-                                                getDatumValue={datum => datum.value} // TODO: factor out
-                                                getDatumName={datum => datum.name}
-                                                getDatumColor={datum => datum.color}
+                                                getDatumValue={getDatumValue}
+                                                getDatumName={getDatumName}
+                                                getDatumClassName={getDatumClassName}
                                                 minBarWidth={10}
                                                 className={styles.barSvg}
                                                 barRadius={5}
