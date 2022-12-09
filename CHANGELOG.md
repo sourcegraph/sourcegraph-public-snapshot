@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Batch Changes: Watchdog that checks for docker responsiveness while running commands has been added. [#898](https://github.com/sourcegraph/src-cli/pull/898)
+
 ### Changed
 
 ### Fixed

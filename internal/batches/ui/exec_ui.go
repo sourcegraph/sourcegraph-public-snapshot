@@ -52,4 +52,6 @@ type ExecUI interface {
 	UploadingWorkspaceFiles()
 	UploadingWorkspaceFilesWarning(error)
 	UploadingWorkspaceFilesSuccess()
+
+	DockerWatchDogWarning(error)
 }

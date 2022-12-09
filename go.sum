@@ -378,8 +378,8 @@ github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9 h1:JjFyvx9hCD5+Jpu
 github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9/go.mod h1:UxiwB6C3xk3xOySJpW1R0MDUyfGuJRFS5Z8C+SA5p2I=
 github.com/sourcegraph/scip v0.2.3 h1:6nRsTlNTELn+1V7JxLrDVbBpb9H1gAbUF48N7x5B8Y4=
 github.com/sourcegraph/scip v0.2.3/go.mod h1:3D/RLCMvrrSam85RtFmC67SE/jhV9++hpCR5MTDzbA0=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20221129022201-2804729b069c h1:bjTcIdEx6FvUXIbD1Ckjp7SfvV4jTyJ7RozZH/HVj9M=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20221129022201-2804729b069c/go.mod h1:PmWmo2ysXWCHcbtp08cDXKGD+8NQzrkj2UjdRBu9H0k=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20221207201520-eeeaf1f74c51 h1:G9XMyQ0SKC53PP9WPSkQqRFvwkZNYRdMHvdm5K3b8Lw=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20221207201520-eeeaf1f74c51/go.mod h1:pLXoYrwkmERkPVv1dpLcq0Epo21Kh4EgrdZXdnafmyQ=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

@@ -221,6 +221,10 @@ func (ui *TUI) CreatingBatchSpecError(err error) error {
 	return prettyPrintBatchUnlicensedError(ui.Out, err)
 }
 
+func (ui *TUI) DockerWatchDogWarning(err error) {
+	dockerWatchDogWarning(ui.Out, err)
+}
+
 func (ui *TUI) PreviewBatchSpec(batchSpecURL string) {
 	ui.Out.Write("")
 	block := ui.Out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "To preview or apply the batch spec, go to:"))
@@ -448,4 +452,12 @@ func batchCompletePending(p output.Pending, message string) {
 
 func batchCompleteWarning(p output.Pending, message string) {
 	p.Complete(output.Line(batchWarningEmoji, batchWarningColor, message))
+}
+
+func dockerWatchDogWarning(out *output.Output, err error) {
+	block := out.Block(output.Line("🐳", output.StyleWarning, "It seems your Docker engine might be frozen."))
+	block.WriteLine(output.Line("", output.StyleWarning, "If there's no progress in the next couple minutes, you may want to try restarting Docker and running the command again."))
+	block.WriteLine(output.Linef("", output.StyleWarning, "Error: %s", err.Error()))
+	block.Write("")
+	block.Close()
 }

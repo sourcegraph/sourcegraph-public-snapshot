@@ -22,7 +22,7 @@ require (
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/scip v0.2.3
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221129022201-2804729b069c
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221207201520-eeeaf1f74c51
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.2.0
 	golang.org/x/sync v0.1.0

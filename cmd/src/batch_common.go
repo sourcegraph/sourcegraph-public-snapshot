@@ -32,9 +32,13 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
+	"github.com/sourcegraph/src-cli/internal/batches/watchdog"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
+
+// We check for docker responsiveness every minute
+const dockerWatchDuration = 1 * time.Minute
 
 // batchExecutionFlags are common to batch changes that are executed both
 // locally and remotely.
@@ -251,6 +255,15 @@ type executeBatchSpecOpts struct {
 	client api.Client
 }
 
+func createDockerWatchdog(ctx context.Context, execUI ui.ExecUI) *watchdog.WatchDog {
+	return watchdog.New(dockerWatchDuration, func() {
+		_, err := docker.NCPU(ctx)
+		if err != nil {
+			execUI.DockerWatchDogWarning(errors.Wrap(err, "docker watchdog"))
+		}
+	})
+}
+
 // executeBatchSpec performs all the steps required to upload the batch spec to
 // Sourcegraph, including execution as needed and applying the resulting batch
 // spec if specified.
@@ -263,7 +276,11 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 		execUI = &ui.TUI{Out: out}
 	}
 
+	w := createDockerWatchdog(ctx, execUI)
+	go w.Start()
+
 	defer func() {
+		w.Stop()
 		if err != nil {
 			execUI.ExecutionError(err)
 		}
