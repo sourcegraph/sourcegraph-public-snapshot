@@ -51,7 +51,7 @@ func (s SQLColumns) FmtStr() string {
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")

@@ -3,8 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
-	"github.com/sourcegraph/log/logtest"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
