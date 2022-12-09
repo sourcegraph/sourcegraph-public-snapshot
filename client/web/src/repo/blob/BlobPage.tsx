@@ -140,10 +140,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         !enableSelectionDrivenCodeNavigation &&
         (isLegacyLinkDrivenFeatureFlagEnabled || experimentalCodeNavigation === 'link-driven')
 
-    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
-        props.location.search,
-        props.location.hash,
-    ])
+    const lineOrRange = useMemo(
+        () => parseQueryAndHash(props.location.search, props.location.hash),
+        [props.location.search, props.location.hash]
+    )
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {

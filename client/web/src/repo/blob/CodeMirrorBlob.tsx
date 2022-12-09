@@ -129,9 +129,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
-    const blameVisibility = useMemo(() => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []), [
-        isBlameVisible,
-    ])
+    const blameVisibility = useMemo(
+        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
+        [isBlameVisible]
+    )
     const blameDecorations = useMemo(
         () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
         [isBlameVisible, blameHunks]
