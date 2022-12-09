@@ -38,6 +38,8 @@ func (wr *WebhookRouter) HandleBitbucketCloudWebhook(logger log.Logger, w http.R
 	if err != nil {
 		logger.Error("Error handling bitbucket cloud webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
+			// Not found should only be returned if the webhook endpoint does not exist,
+			// so we return Bad Request instead.
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

@@ -161,7 +161,10 @@ func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHos
 			// Don't log the error, because webhook processing can fail for
 			// valid reasons (repo does not exist on Sourcegraph).
 			// Valid errors should be logged within the handler itself.
-			handler(ctx, wr.DB, codeHostURN, e)
+			err := handler(ctx, wr.DB, codeHostURN, e)
+			if err != nil {
+				wr.Logger.Error("error while handing webhook event", log.Error(err))
+			}
 			return nil
 		})
 	}

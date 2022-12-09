@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,7 +42,7 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ databa
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
-	if err != nil {
+	if err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
 	}
 
