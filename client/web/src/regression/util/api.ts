@@ -52,6 +52,7 @@ import {
     SiteProductVersionVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
+    ViewerSettingsVariables,
     DeleteOrganizationVariables,
     CreateOrganizationVariables,
     CreateUserVariables,
@@ -465,35 +466,6 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
             map(dataOrThrowErrors),
             map(({ site }) => site.productVersion)
         )
-        .toPromise()
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
-export async function setUserEmailVerified(
-    gqlClient: GraphQLClient,
-    username: string,
-    email: string,
-    verified: boolean
-): Promise<void> {
-    const user = await getUser(gqlClient, username)
-    if (!user) {
-        throw new Error(`User ${username} does not exist`)
-    }
-    await gqlClient
-        .mutateGraphQL<SetUserEmailVerifiedResult, SetUserEmailVerifiedVariables>(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: user.id, email, verified }
-        )
-        .pipe(map(dataOrThrowErrors))
         .toPromise()
 }
 
