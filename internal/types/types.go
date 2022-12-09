@@ -1721,7 +1721,7 @@ type OutboundRequestLogItem struct {
 }
 
 type SlowRequest struct {
-	ID        string         `json:"id"`
+	Index     string         `json:"index"`
 	Start     time.Time      `json:"start"`
 	Duration  time.Duration  `json:"duration"`
 	UserID    int32          `json:"userId"`

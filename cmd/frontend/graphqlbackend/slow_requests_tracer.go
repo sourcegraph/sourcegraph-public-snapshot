@@ -6,9 +6,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -67,7 +64,7 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.FIFOList, after int,
 		if err := json.Unmarshal(raw, &req); err != nil {
 			return nil, err
 		}
-		req.ID = strconv.Itoa(i + after)
+		req.Index = strconv.Itoa(i + after)
 		reqs = append(reqs, &req)
 	}
 	return reqs, nil
@@ -82,14 +79,9 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	var after string
+	after := "0"
 	if args.After != nil {
-		err := relay.UnmarshalSpec(*args.After, &after)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		after = "0"
+		after = *args.After
 	}
 	return &slowRequestConnectionResolver{
 		after:   after,
@@ -98,16 +90,16 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 }
 
 type slowRequestConnectionResolver struct {
-	after string
-
-	err     error
-	once    sync.Once
-	reqs    []*types.SlowRequest
+	after   string
 	perPage int
+
+	err  error
+	once sync.Once
+	reqs []*types.SlowRequest
 }
 
 type slowRequestsArgs struct {
-	After *graphql.ID
+	After *string
 }
 
 type slowRequestResolver struct {
@@ -163,13 +155,13 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	if int32(n+r.perPage) >= total {
 		return graphqlutil.HasNextPage(false), nil
 	} else {
-		return graphqlutil.NextPageCursor(string(relay.MarshalID("SlowRequest", reqs[len(reqs)-1].ID))), nil
+		return graphqlutil.NextPageCursor(reqs[len(reqs)-1].Index), nil
 	}
 }
 
 // ID returns an opaque ID for that node.
-func (r *slowRequestResolver) ID() graphql.ID {
-	return relay.MarshalID("SlowRequest", r.req.ID)
+func (r *slowRequestResolver) Index() string {
+	return r.req.Index
 }
 
 // Start returns the start time of the slow request.
@@ -184,8 +176,12 @@ func (r *slowRequestResolver) Duration() float64 {
 
 // UserId returns the user identifier if there is one associated with the
 // slow request. Blank if none.
-func (r *slowRequestResolver) UserId() string {
-	return strconv.Itoa(int(r.req.UserID))
+func (r *slowRequestResolver) UserId() *string {
+	if r.req.UserID != 0 {
+		n := strconv.Itoa(int(r.req.UserID))
+		return &n
+	}
+	return nil
 }
 
 // Name returns the GraqhQL request name, if any. Blank if none.
@@ -195,34 +191,34 @@ func (r *slowRequestResolver) Name() string {
 
 // RepoName guesses the name of the associated repository if possible.
 // Blank if none.
-func (r *slowRequestResolver) RepoName() string {
+func (r *slowRequestResolver) RepoName() *string {
 	if repoName, ok := r.req.Variables["repoName"]; ok {
 		if str, ok := repoName.(string); ok {
-			return str
+			return &str
 		}
 	}
 	if repoName, ok := r.req.Variables["repository"]; ok {
 		if str, ok := repoName.(string); ok {
-			return str
+			return &str
 		}
 	}
-	return ""
+	return nil
 }
 
 // Filepath guesses the name of the associated filepath if possible.
 // Blank if none.
-func (r *slowRequestResolver) Filepath() string {
+func (r *slowRequestResolver) Filepath() *string {
 	if filepath, ok := r.req.Variables["filePath"]; ok {
 		if str, ok := filepath.(string); ok {
-			return str
+			return &str
 		}
 	}
 	if path, ok := r.req.Variables["path"]; ok {
 		if str, ok := path.(string); ok {
-			return str
+			return &str
 		}
 	}
-	return ""
+	return nil
 }
 
 // Query returns the GraphQL query performed by the slow request.

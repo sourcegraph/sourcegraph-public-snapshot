@@ -147,7 +147,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
 }
 
 const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<SlowRequest> }> = ({ node }) => {
-    const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
+    const roundedSecond = Number(node.duration.toFixed(2))
     const [copied, setCopied] = useState(false)
 
     const copyToClipboard = (text: string): void => {
@@ -157,14 +157,14 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
     }
 
     return (
-        <React.Fragment key={node.id}>
+        <React.Fragment key={node.Index}>
             <span className={styles.separator} />
             <div className="flex-bounded">
                 <Timestamp date={node.start} noAbout={true} strict={true} />
             </div>
             <div>
-                <Tooltip content={'Repo Name: ' + node.repoName}>
-                    <Code>{shortenRepoName(node.repoName)}</Code>
+                <Tooltip content={'Repo Name: ' + node.repoName ? node.repoName : ''}>
+                    <Code>{node.repoName ? shortenRepoName(node.repoName) : ''}</Code>
                 </Tooltip>
             </div>
             <div>
@@ -181,7 +181,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
             </div>
             <div>
                 <Tooltip content={'Filepath: ' + node.filepath}>
-                    <Code>{ellipsis(node.filepath, 30)}</Code>
+                    <Code>{node.filepath ? ellipsis(node.filepath, 30) : ''}</Code>
                 </Tooltip>
             </div>
             <div className={classNames('d-flex flex-row')}>
@@ -255,7 +255,7 @@ function matchesString(request: SlowRequest, query: string): boolean {
     const lQuery = query.toLowerCase()
     return (
         request.name.toLowerCase().includes(lQuery) ||
-        request.repoName.toLowerCase().includes(lQuery) ||
+        request.repoName?.toLowerCase().includes(lQuery) ||
         request.errors.some(error => error.toLowerCase().includes(lQuery), false)
     )
 }
@@ -268,7 +268,7 @@ function ellipsis(str: string, len: number): string {
 }
 
 function shortenRepoName(repoName: string): string {
-    return repoName.split('/').at(-1) || ''
+    return repoName?.split('/').at(-1) || ''
 }
 
 function buildCurlCommand(request: SlowRequest): string {

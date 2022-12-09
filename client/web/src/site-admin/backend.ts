@@ -288,10 +288,10 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
 }
 
 export const SLOW_REQUESTS = gql`
-    query SlowRequests($after: ID) {
+    query SlowRequests($after: String) {
         slowRequests(after: $after) {
             nodes {
-                id
+                index
                 userId
                 start
                 duration

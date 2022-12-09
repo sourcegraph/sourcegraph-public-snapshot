@@ -1662,13 +1662,13 @@ type Query {
     ): WebhookConnection!
 
     """
-    List slow GraphQL requests that were recently captured.
+    List slow GraphQL requests that were recently captured (requires site-admin permissions).
     """
     slowRequests(
         """
         Opaque pagnination cursor.
         """
-        after: ID
+        after: String
     ): SlowRequestConnection!
 }
 
@@ -8344,9 +8344,9 @@ A logged slow GraphQL request, captured by the backend.
 """
 type SlowRequest {
     """
-    The unique resource identifier for this request.
+    The index of this request.
     """
-    id: ID!
+    index: String!
     """
     The date at which this request was started.
     """
@@ -8358,7 +8358,7 @@ type SlowRequest {
     """
     The user identifier associated if that request.
     """
-    userId: String!
+    userId: String
     """
     The name of the GraphQL request.
     """
@@ -8370,7 +8370,7 @@ type SlowRequest {
     """
     The repository name referenced by the request, if applicable.
     """
-    repoName: String!
+    repoName: String
     """
     The variables used to build the GraphQL request.
     """
@@ -8380,11 +8380,11 @@ type SlowRequest {
     """
     errors: [String!]!
     """
-    The query used to build the GraphQL request.
+    The GraphQL query.
     """
     query: String!
     """
     The file path referenced by the request, if applicable.
     """
-    filepath: String!
+    filepath: String
 }
