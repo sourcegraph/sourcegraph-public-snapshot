@@ -4520,11 +4520,11 @@ type GitCommit implements Node {
     """
     Lists the programming languages present in the tree at this commit.
     """
-    languages(paths: [String!]): [[String!]!]!
+    languages: [[String!]!]!
     """
     List statistics for each language present in the repository.
     """
-    languageStatistics(paths: [String!]): [[LanguageStatistics!]!]!
+    languageStatistics: [[LanguageStatistics!]!]!
     """
     The log of commits consisting of this commit and its ancestors.
     """
@@ -4662,16 +4662,6 @@ type Submodule {
 }
 
 """
-Statistics for a tree entry
-"""
-type GitTreeEntryStats {
-    """
-	Language statistics
-    """
-  	languages: [LanguageStatistics!]!
-}
-
-"""
 A file, directory, or other tree entry.
 """
 interface TreeEntry {
@@ -4733,8 +4723,6 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
-
-	stats: GitTreeEntryStats!
 }
 
 """
@@ -4890,9 +4878,7 @@ type GitTree implements TreeEntry {
         Recurse into sub-trees of single-child directories
         """
         recursiveSingleChild: Boolean = false
-  ): Boolean!
-
-  stats: GitTreeEntryStats!
+    ): Boolean!
 }
 
 """
@@ -5207,8 +5193,6 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
-
-	stats: GitTreeEntryStats!
 }
 
 """
