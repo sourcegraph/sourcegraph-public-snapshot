@@ -299,7 +299,10 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, cli *gh.Client, ac
 			} else {
 				repos, resp, err = cli.Teams.ListTeamReposBySlug(ctx, group.Org, group.Team, listOpts)
 			}
-			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StatusForbidden {
+			if github.IsNotFound(err) ||
+				github.HTTPErrorCode(err) == http.StatusForbidden ||
+				resp.StatusCode == http.StatusForbidden ||
+				resp.StatusCode == http.StatusNotFound {
 				// If we get a 403/404 here, something funky is going on and this is very
 				// unexpected. Since this is likely not transient, instead of bailing out and
 				// potentially causing unbounded retries later, we let this result proceed to

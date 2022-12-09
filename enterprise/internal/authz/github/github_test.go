@@ -147,56 +147,40 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}),
 		)
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
-		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-			switch org {
-			case *newmockOrgRead.Login:
-				switch page {
-				case 1:
-					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}, // existing repo
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
-					}, true, 1, nil
-				case 2:
-					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
-					}, false, 1, nil
-				}
-			case *newmockOrgNoRead2.Login:
-				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
-			}
-			t.Fatalf("unexpected call to ListOrgRepositories with org %q page %d", org, page)
-			return nil, false, 1, nil
-		}
-		newMockListOrgRepositories = mock.WithRequestMatchHandler(
-			mock.GetOrgsReposByOrg,
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if strings.Contains(r.URL.String(), "/"+*(newmockOrgRead.Login)+"/") {
-					switch r.URL.Query().Get("page") {
-					case "":
-						fallthrough
-					case "1":
-						addLinkHeader(t, w, 2)
-						w.Write(mock.MustMarshal([]*gh.Repository{
-							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=")},
-							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=")},
-						}))
-					case "2":
-						w.Write(mock.MustMarshal([]*gh.Repository{
-							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=")},
-						}))
+		newMockListOrgRepositories = func(counter *int) mock.MockBackendOption {
+			return mock.WithRequestMatchHandler(
+				mock.GetOrgsReposByOrg,
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if counter != nil {
+						*counter++
 					}
-					return
-				}
-				if strings.Contains(r.URL.String(), "/"+*(newmockOrgNoRead2.Login)+"/") {
-					w.Write(mock.MustMarshal([]*gh.Repository{
-						{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=")},
-					}))
-					return
-				}
-				t.Fatalf("unexpected call to list org repositories with URL %q", r.URL.String())
-			}),
-		)
+					if strings.Contains(r.URL.String(), "/"+*(newmockOrgRead.Login)+"/") {
+						switch r.URL.Query().Get("page") {
+						case "":
+							fallthrough
+						case "1":
+							addLinkHeader(t, w, 2)
+							w.Write(mock.MustMarshal([]*gh.Repository{
+								{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=")},
+								{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=")},
+							}))
+						case "2":
+							w.Write(mock.MustMarshal([]*gh.Repository{
+								{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=")},
+							}))
+						}
+						return
+					}
+					if strings.Contains(r.URL.String(), "/"+*(newmockOrgNoRead2.Login)+"/") {
+						w.Write(mock.MustMarshal([]*gh.Repository{
+							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=")},
+						}))
+						return
+					}
+					t.Fatalf("unexpected call to list org repositories with URL %q", r.URL.String())
+				}),
+			)
+		}
 	)
 
 	t.Run("cache disabled", func(t *testing.T) {
@@ -273,7 +257,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
 				mockListOrgMembership,
-				newMockListOrgRepositories,
+				newMockListOrgRepositories(nil),
 				mock.WithRequestMatch(
 					mock.GetUserTeams,
 					[]*gh.Team{},
@@ -308,7 +292,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
 				mockListOrgMembership,
-				newMockListOrgRepositories,
+				newMockListOrgRepositories(nil),
 				mock.WithRequestMatchPages(
 					mock.GetUserTeams,
 					[]*gh.Team{
@@ -370,35 +354,28 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		makeStatusCodeTest := func(code int) func(t *testing.T) {
 			return func(t *testing.T) {
-				mockClient := newMockClientWithTokenMock()
-				mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-					func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-						switch page {
-						case 1:
-							return []*github.Team{
-								// should not get repos from this team because parent org has default read permissions
-								{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
-								// should not get repos from this team since it has no repos
-								{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
-							}, true, 1, nil
-						case 2:
-							return []*github.Team{
-								// should get repos from this team
-								{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-							}, false, 1, nil
-						}
-						return nil, false, 1, nil
-					})
-				mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
-				mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-					func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-						return nil, false, 1, &github.APIError{Code: code}
-					})
-
-				p := setupProvider(t, mockClient)
+				p := setupProvider(t, nil)
 				mockHTTPClient := mock.NewMockedHTTPClient(
 					mockListAffiliatedRepositories,
 					mockListOrgDetails,
+					mockListOrgMembership,
+					newMockListOrgRepositories(nil),
+					mock.WithRequestMatchHandler(
+						mock.GetOrgsTeamsReposByOrgByTeamSlug,
+						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(code)
+						}),
+					),
+					mock.WithRequestMatchPages(
+						mock.GetUserTeams,
+						[]*gh.Team{
+							{Organization: newmockOrgRead, Name: gh.String("ns team"), Slug: gh.String("ns-team")},
+							{Organization: newmockOrgNoRead, Name: gh.String("ns team"), Slug: gh.String("ns-team"), ReposCount: gh.Int(0)},
+						},
+						[]*gh.Team{
+							{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)},
+						},
+					),
 				)
 				p.baseHTTPClient = mockHTTPClient
 
@@ -434,31 +411,26 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		t.Run("cache and invalidate: user in orgs and teams", func(t *testing.T) {
 			callsToListOrgRepos := 0
 			callsToListTeamRepos := 0
-			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					return []*github.Team{
-						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-					}, false, 1, nil
-				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(
-				func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					callsToListOrgRepos++
-					return mockListOrgRepositories(ctx, org, page, repoType)
-				})
-			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-				func(_ context.Context, _, _ string, _ int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					callsToListTeamRepos++
-					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
-					}, false, 1, nil
-				})
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-			p.client = mockClientFunc(mockClient)
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
+				mockListOrgMembership,
+				mock.WithRequestMatchPages(
+					mock.GetUserTeams,
+					[]*gh.Team{{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
+				),
+				newMockListOrgRepositories(&callsToListOrgRepos),
+				mock.WithRequestMatchHandler(
+					mock.GetOrgsTeamsReposByOrgByTeamSlug,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						callsToListTeamRepos++
+						w.Write(mock.MustMarshal([]*gh.Repository{
+							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=")},
+						}))
+					}),
+				),
 			)
 			p.baseHTTPClient = mockHTTPClient
 			memCache := memGroupsCache()
@@ -534,30 +506,26 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("cache partial update", func(t *testing.T) {
-			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					return []*github.Team{
-						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-					}, false, 1, nil
-				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
-			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-				func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
-					}, false, 1, nil
-				})
-
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
+				mockListOrgMembership,
+				mock.WithRequestMatchPages(
+					mock.GetUserTeams,
+					[]*gh.Team{{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
+				),
+				newMockListOrgRepositories(nil),
+				mock.WithRequestMatch(
+					mock.GetOrgsTeamsReposByOrgByTeamSlug,
+					[]*gh.Repository{
+						{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=")},
+					},
+				),
 			)
 			p.baseHTTPClient = mockHTTPClient
-			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
