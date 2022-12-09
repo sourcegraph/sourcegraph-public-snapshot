@@ -11,9 +11,10 @@ export const SET_DEFAULT_SEARCH_CONTEXT_MUTATION = gql`
     }
 `
 
-export function useDefaultContext(
-    initialDefaultSearchContextId: string | undefined
-): { defaultContext: string | undefined; setAsDefault: (searchContextId?: string, userId?: string) => Promise<void> } {
+export function useDefaultContext(initialDefaultSearchContextId: string | undefined): {
+    defaultContext: string | undefined
+    setAsDefault: (searchContextId?: string, userId?: string) => Promise<void>
+} {
     const [defaultContext, setDefaultContext] = useState(initialDefaultSearchContextId)
     useEffect(() => {
         setDefaultContext(initialDefaultSearchContextId)
