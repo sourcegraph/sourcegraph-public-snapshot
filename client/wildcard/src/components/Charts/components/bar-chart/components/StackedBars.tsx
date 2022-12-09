@@ -85,7 +85,7 @@ interface StackedDatum<Datum> {
     stackedValue: number
 }
 
-export function getStackedData<Datum>(input: GetStackedDataInput<Datum>): StackedCategory<Datum>[] {
+function getStackedData<Datum>(input: GetStackedDataInput<Datum>): StackedCategory<Datum>[] {
     const { categories, getDatumValue } = input
 
     return categories.map<StackedCategory<Datum>>(category => ({
