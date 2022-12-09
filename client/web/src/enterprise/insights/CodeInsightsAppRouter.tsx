@@ -65,16 +65,12 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route
                     path={`${match.url}/edit/:insightId`}
-                    render={props => (
-                        <EditInsightLazyPage insightID={props.match.params.insightId} />
-                    )}
+                    render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
                 />
 
                 <Route
                     path={`${match.url}/dashboards/:dashboardId/edit`}
-                    render={props => (
-                        <EditDashboardPage dashboardId={props.match.params.dashboardId} />
-                    )}
+                    render={props => <EditDashboardPage dashboardId={props.match.params.dashboardId} />}
                 />
 
                 <Route
