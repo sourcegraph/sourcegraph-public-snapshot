@@ -51,6 +51,7 @@ func (s SQLColumns) FmtStr() string {
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
+// time.Now should be used over timeutil.Now to avoid creating the same value between different requests.
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
