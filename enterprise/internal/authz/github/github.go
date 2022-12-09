@@ -44,6 +44,7 @@ type Provider struct {
 
 	baseHTTPClient *http.Client
 	baseToken      string
+	baseURL        *url.URL
 }
 
 type ProviderOptions struct {
@@ -59,8 +60,8 @@ type ProviderOptions struct {
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
+	apiURL, isGitHubDotCom := github.APIRoot(opts.GitHubURL)
 	if opts.GitHubClient == nil {
-		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
 			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
@@ -76,6 +77,11 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		}
 	}
 
+	var baseURL *url.URL
+	if !isGitHubDotCom {
+		baseURL = apiURL
+	}
+
 	return &Provider{
 		urn:         urn,
 		codeHost:    codeHost,
@@ -86,6 +92,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		db:             opts.DB,
 		baseHTTPClient: opts.BaseHTTPClient,
 		baseToken:      opts.BaseToken,
+		baseURL:        baseURL,
 	}
 }
 
@@ -382,7 +389,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, account, p.baseHTTPClient)
+	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, account, p.baseHTTPClient, p.baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +407,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	cli, err := github.NewGitHubClientWithToken(ctx, p.baseToken, p.baseHTTPClient)
+	cli, err := github.NewGitHubClientWithToken(ctx, p.baseToken, p.baseHTTPClient, p.baseURL)
 	if err != nil {
 		return nil, err
 	}

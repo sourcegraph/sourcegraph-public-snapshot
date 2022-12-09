@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Client) (*github.Client, error) {
+func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
 	if cli == nil {
 		cli, _ = httpcli.ExternalClientFactory.Client()
 	}
@@ -34,10 +34,16 @@ func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Clien
 		Source: oauth2Config.TokenSource(ctx, &oauth2.Token{AccessToken: token}),
 		Base:   cli.Transport,
 	}
-	return github.NewClient(cli), nil
+
+	ghClient := github.NewClient(cli)
+	if baseURL != nil {
+		ghClient.BaseURL = baseURL
+	}
+
+	return ghClient, nil
 }
 
-func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client) (*github.Client, error) {
+func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
 	if acct == nil {
 		return github.NewClient(cli), nil
 	}
@@ -79,7 +85,12 @@ func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Acc
 		Base:   cli.Transport,
 	}
 
-	return github.NewClient(cli), nil
+	ghClient := github.NewClient(cli)
+	if baseURL != nil {
+		ghClient.BaseURL = baseURL
+	}
+
+	return ghClient, nil
 }
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
