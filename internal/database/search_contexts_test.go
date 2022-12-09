@@ -1087,7 +1087,7 @@ func TestSearchContexts_DefaultContexts(t *testing.T) {
 	}
 
 	// There should be no default context
-	defaultContext, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
+	_, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
