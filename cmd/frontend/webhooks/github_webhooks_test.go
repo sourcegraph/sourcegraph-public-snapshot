@@ -91,8 +91,8 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
-		t.Errorf("Expected %q, got %q", want, have)
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
+		t.Errorf("Expected no error, got %q", err)
 	}
 	if len(called) != 2 {
 		t.Errorf("Expected called to be 2, got %v", called)
