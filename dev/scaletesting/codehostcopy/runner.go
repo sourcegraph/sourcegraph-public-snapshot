@@ -89,16 +89,14 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	// If we're starting fresh, really fetch them.
 	if len(srcRepos) == 0 {
 		r.logger.Info("No existing state found, creating ...")
-		repos, err := r.source.ListRepos(ctx)
-		if err != nil {
-			r.logger.Error("failed to list repositories from source", log.Error(err))
-			return err
+		for !r.source.Done() && r.source.Err() != nil {
+			repos := r.source.Next(ctx)
+			if err = r.store.Insert(repos); err != nil {
+				r.logger.Error("failed to insert repositories from source", log.Error(err))
+			}
 		}
-		srcRepos = repos
-		if err := r.store.Insert(repos); err != nil {
-			r.logger.Error("failed to insert repositories from source", log.Error(err))
-			return err
-		}
+
+		srcRepos, err = r.store.Load()
 		r.logger.Info(fmt.Sprintf("Found %d repos in source", len(srcRepos)))
 	} else {
 		r.logger.Info(fmt.Sprintf("Resuming work (%d repos)", len(srcRepos)))
