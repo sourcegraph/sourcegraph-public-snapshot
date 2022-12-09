@@ -143,7 +143,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     revision,
                     filePath,
                     first: 2500,
-                    numFilenamesPerDirectory: 20,
                     requestGraphQL: props.platformContext.requestGraphQL,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
             [repoName, commitID, revision, filePath, props.platformContext]
