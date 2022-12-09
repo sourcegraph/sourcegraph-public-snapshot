@@ -135,11 +135,8 @@ func (r *slowRequestConnectionResolver) Nodes(ctx context.Context) ([]*slowReque
 }
 
 func (r *slowRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	n, err := slowRequestRedisFIFOList.Size()
-	if err != nil {
-		return 0, err
-	}
-	return int32(n), nil
+	_, err := r.fetch(ctx)
+	return r.totalCount, err
 }
 
 func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
