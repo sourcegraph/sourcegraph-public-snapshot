@@ -27,6 +27,7 @@ import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-dec
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
@@ -214,6 +215,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
