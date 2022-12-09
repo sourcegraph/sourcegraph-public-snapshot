@@ -82,7 +82,8 @@ export function registerBuiltinClientCommands(
         registerCommand({
             command: 'updateConfiguration',
             run: (...anyArguments: any[]): Promise<void> => {
-                const args = anyArguments as Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
+                const args =
+                    anyArguments as Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
                 return updateSettings(context, convertUpdateConfigurationCommandArguments(args))
             },
         })

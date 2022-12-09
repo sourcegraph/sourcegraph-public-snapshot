@@ -103,7 +103,7 @@ export function mockGetUserSearchContextNamespaces(): Maybe<Scalars['ID']>[] {
     return []
 }
 
-export const mockAuthenticatedUser = ({
+export const mockAuthenticatedUser = {
     __typename: 'User',
     id: '1',
     username: 'user',
@@ -111,4 +111,4 @@ export const mockAuthenticatedUser = ({
         __typename: 'OrgConnection',
         nodes: [],
     },
-} as unknown) as AuthenticatedUser
+} as unknown as AuthenticatedUser

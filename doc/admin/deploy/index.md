@@ -111,7 +111,7 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 - A second PostgreSQL instance for storing large-volume code graph data.
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
-- A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._
+- A `sourcegraph/blobstore` instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._
 - A [Jaeger](https://www.jaegertracing.io/) instance for end-to-end distributed tracing.
 
 > NOTE: As a best practice, configure your Sourcegraph instance to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease hosting costs as persistent volumes are often more expensive than object storage space.
@@ -123,7 +123,7 @@ See the following guides to use an external or managed version of each service t
 - [PostgreSQL Guide](../postgres.md)
 - See [Using your PostgreSQL server](../external_services/postgres.md) to replace the bundled PostgreSQL instances.
 - See [Using your Redis server](../external_services/redis.md) to replace the bundled Redis instances.
-- See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled MinIO instance.
+- See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled blobstore instance.
 - See [Using an external Jaeger instance](../observability/tracing.md#use-an-external-jaeger-instance) in our [tracing documentation](../observability/tracing.md) to replace the bundled Jaeger instance.Use-an-external-Jaeger-instance
 
 > NOTE: Using Sourcegraph with an external service is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.

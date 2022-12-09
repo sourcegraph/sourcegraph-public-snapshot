@@ -175,8 +175,8 @@ func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.externalService.NextSyncAt}
 }
 
-func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
-	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
+func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *WebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
+	return NewWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
 }
 
 type externalServiceSyncJobsArgs struct {

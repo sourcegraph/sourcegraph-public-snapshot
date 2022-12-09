@@ -14,7 +14,9 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 _Upgrade notes for the next version will appear here._
 
-## v4.1 ➔ v4.2
+## v4.1 ➔ v4.2.1
+
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
 
 As a template, perform the same actions as the following diffs in your own deployment:
 

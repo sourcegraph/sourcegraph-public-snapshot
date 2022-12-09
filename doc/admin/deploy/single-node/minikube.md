@@ -100,36 +100,36 @@ If you are on **Linux**, an URL will then be displayed in the service list if th
 
 ```
 |----------------|-------------------------------|--------------|---------------------------|
-|   NAMESPACE    |             NAME              | TARGET PORT  |            URL            |
-|----------------|-------------------------------|--------------|---------------------------|
-| default        | kubernetes                    | No node port |
-| kube-system    | kube-dns                      | No node port |
-| ns-sourcegraph | backend                       | No node port |
-| ns-sourcegraph | codeinsights-db               | No node port |
-| ns-sourcegraph | codeintel-db                  | No node port |
-| ns-sourcegraph | github-proxy                  | No node port |
-| ns-sourcegraph | gitserver                     | No node port |
-| ns-sourcegraph | grafana                       | No node port |
-| ns-sourcegraph | indexed-search                | No node port |
-| ns-sourcegraph | indexed-search-indexer        | No node port |
-| ns-sourcegraph | jaeger-collector              | No node port |
-| ns-sourcegraph | jaeger-query                  | No node port |
-| ns-sourcegraph | minio                         | No node port |
-| ns-sourcegraph | pgsql                         | No node port |
-| ns-sourcegraph | precise-code-intel-worker     | No node port |
-| ns-sourcegraph | prometheus                    | No node port |
-| ns-sourcegraph | query-runner                  | No node port |
-| ns-sourcegraph | redis-cache                   | No node port |
-| ns-sourcegraph | redis-store                   | No node port |
-| ns-sourcegraph | repo-updater                  | No node port |
-| ns-sourcegraph | searcher                      | No node port |
-| ns-sourcegraph | sourcegraph                   |         3080 | http://127.0.0.1:32034 |
-| ns-sourcegraph | sourcegraph-frontend          | No node port |
-| ns-sourcegraph | sourcegraph-frontend-internal | No node port |
-| ns-sourcegraph | symbols                       | No node port |
-| ns-sourcegraph | syntect-server                | No node port |
-| ns-sourcegraph | worker                        | No node port |
-|----------------|-------------------------------|--------------|---------------------------|
+| NAMESPACE        | NAME                            | TARGET PORT    | URL                         |
+| ---------------- | ------------------------------- | -------------- | --------------------------- |
+| default          | kubernetes                      | No node port   |
+| kube-system      | kube-dns                        | No node port   |
+| ns-sourcegraph   | backend                         | No node port   |
+| ns-sourcegraph   | codeinsights-db                 | No node port   |
+| ns-sourcegraph   | codeintel-db                    | No node port   |
+| ns-sourcegraph   | github-proxy                    | No node port   |
+| ns-sourcegraph   | gitserver                       | No node port   |
+| ns-sourcegraph   | grafana                         | No node port   |
+| ns-sourcegraph   | indexed-search                  | No node port   |
+| ns-sourcegraph   | indexed-search-indexer          | No node port   |
+| ns-sourcegraph   | jaeger-collector                | No node port   |
+| ns-sourcegraph   | jaeger-query                    | No node port   |
+| ns-sourcegraph   | blobstore                       | No node port   |
+| ns-sourcegraph   | pgsql                           | No node port   |
+| ns-sourcegraph   | precise-code-intel-worker       | No node port   |
+| ns-sourcegraph   | prometheus                      | No node port   |
+| ns-sourcegraph   | query-runner                    | No node port   |
+| ns-sourcegraph   | redis-cache                     | No node port   |
+| ns-sourcegraph   | redis-store                     | No node port   |
+| ns-sourcegraph   | repo-updater                    | No node port   |
+| ns-sourcegraph   | searcher                        | No node port   |
+| ns-sourcegraph   | sourcegraph                     | 3080           | http://127.0.0.1:32034      |
+| ns-sourcegraph   | sourcegraph-frontend            | No node port   |
+| ns-sourcegraph   | sourcegraph-frontend-internal   | No node port   |
+| ns-sourcegraph   | symbols                         | No node port   |
+| ns-sourcegraph   | syntect-server                  | No node port   |
+| ns-sourcegraph   | worker                          | No node port   |
+| ---------------- | ------------------------------- | -------------- | --------------------------- |
 ```
 
 That's it! You can now access the local Sourcegraph instance in browser using the URL or IP address retrieved from the previous steps 🎉

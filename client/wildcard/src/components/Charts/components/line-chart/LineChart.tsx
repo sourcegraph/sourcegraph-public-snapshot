@@ -6,6 +6,7 @@ import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 import { noop } from 'lodash'
 
+import { Padding } from '../../../Popover'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { Series, SeriesLikeChart } from '../../types'
 
@@ -67,10 +68,13 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
      * @returns a SeriesWithData array that has been filtered
      */
     getActiveSeries?: <S extends Pick<Series<Datum>, 'id'>>(dataSeries: S[]) => S[]
+
+    /** Visual content padding for the SVG element */
+    padding?: Padding
 }
 
 const identity = <T,>(argument: T): T => argument
-const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 20, left: 0 }
+const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 0, left: 0 }
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -87,15 +91,16 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         getLineGroupStyle,
         getActiveSeries = identity,
         onDatumClick = noop,
+        padding = DEFAULT_LINE_CHART_PADDING,
         ...attributes
     } = props
 
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
-    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
-        dataSeries,
-        zeroYAxisMin,
-    ])
+    const { minX, maxX, minY, maxY } = useMemo(
+        () => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }),
+        [dataSeries, zeroYAxisMin]
+    )
 
     const xScale = useMemo(
         () =>
@@ -138,7 +143,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             height={height}
             xScale={xScale}
             yScale={yScale}
-            padding={DEFAULT_LINE_CHART_PADDING}
+            padding={padding}
         >
             <SvgAxisLeft />
 

@@ -170,10 +170,10 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
     }, [isAdminAnalyticsDisabled, props.sideBarGroups])
 
-    const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
-        isAdminAnalyticsDisabled,
-        props.routes,
-    ])
+    const routes = useMemo(
+        () => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes),
+        [isAdminAnalyticsDisabled, props.routes]
+    )
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {

@@ -39,7 +39,6 @@ export function submitSearch({
     selectedSearchContextSpec,
     searchMode,
     source,
-    addRecentSearch,
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(
         query,
@@ -66,6 +65,5 @@ export function submitSearch({
         },
         { source }
     )
-    addRecentSearch?.(queryWithContext)
     history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
 }

@@ -9874,6 +9874,10 @@ type MockLsifStore struct {
 	// object controlling the behavior of the method
 	// DeleteLsifDataByUploadIds.
 	DeleteLsifDataByUploadIdsFunc *LsifStoreDeleteLsifDataByUploadIdsFunc
+	// DeleteUnreferencedDocumentsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteUnreferencedDocuments.
+	DeleteUnreferencedDocumentsFunc *LsifStoreDeleteUnreferencedDocumentsFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LsifStoreDoneFunc
@@ -9934,6 +9938,11 @@ func NewMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
+				return
+			},
+		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -10034,6 +10043,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.DeleteLsifDataByUploadIds")
 			},
 		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (int, error) {
+				panic("unexpected invocation of MockLsifStore.DeleteUnreferencedDocuments")
+			},
+		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockLsifStore.Done")
@@ -10128,6 +10142,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 	return &MockLsifStore{
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: i.DeleteLsifDataByUploadIds,
+		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: i.DeleteUnreferencedDocuments,
 		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: i.Done,
@@ -10296,6 +10313,124 @@ func (c LsifStoreDeleteLsifDataByUploadIdsFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreDeleteLsifDataByUploadIdsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// LsifStoreDeleteUnreferencedDocumentsFunc describes the behavior when the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// is invoked.
+type LsifStoreDeleteUnreferencedDocumentsFunc struct {
+	defaultHook func(context.Context, int, time.Duration, time.Time) (int, error)
+	hooks       []func(context.Context, int, time.Duration, time.Time) (int, error)
+	history     []LsifStoreDeleteUnreferencedDocumentsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUnreferencedDocuments delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) DeleteUnreferencedDocuments(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) (int, error) {
+	r0, r1 := m.DeleteUnreferencedDocumentsFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteUnreferencedDocumentsFunc.appendCall(LsifStoreDeleteUnreferencedDocumentsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// is invoked and the hook queue is empty.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) appendCall(r0 LsifStoreDeleteUnreferencedDocumentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LsifStoreDeleteUnreferencedDocumentsFuncCall objects describing the
+// invocations of this function.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) History() []LsifStoreDeleteUnreferencedDocumentsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreDeleteUnreferencedDocumentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreDeleteUnreferencedDocumentsFuncCall is an object that describes
+// an invocation of method DeleteUnreferencedDocuments on an instance of
+// MockLsifStore.
+type LsifStoreDeleteUnreferencedDocumentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreDoneFunc describes the behavior when the Done method of the

@@ -62,49 +62,48 @@ interface RenderCommandPaletteProps
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 }
 
-export const renderCommandPalette = ({
-    extensionsController,
-    history,
-    render,
-    ...props
-}: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
-    render(
-        <ShortcutProvider>
-            <CommandListPopoverButton
-                {...props}
-                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
-                menu={ContributableMenu.CommandPalette}
+export const renderCommandPalette =
+    ({ extensionsController, history, render, ...props }: RenderCommandPaletteProps) =>
+    (mount: HTMLElement): void => {
+        render(
+            <ShortcutProvider>
+                <CommandListPopoverButton
+                    {...props}
+                    popoverClassName={classNames('command-list-popover', props.popoverClassName)}
+                    menu={ContributableMenu.CommandPalette}
+                    extensionsController={extensionsController}
+                    location={history.location}
+                />
+                <Notifications
+                    extensionsController={extensionsController}
+                    notificationItemStyleProps={{
+                        notificationItemClassNames: props.notificationClassNames,
+                    }}
+                />
+            </ShortcutProvider>,
+            mount
+        )
+    }
+
+export const renderGlobalDebug =
+    ({
+        extensionsController,
+        platformContext,
+        history,
+        render,
+        sourcegraphURL,
+    }: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) =>
+    (mount: HTMLElement): void => {
+        render(
+            <GlobalDebug
                 extensionsController={extensionsController}
                 location={history.location}
-            />
-            <Notifications
-                extensionsController={extensionsController}
-                notificationItemStyleProps={{
-                    notificationItemClassNames: props.notificationClassNames,
-                }}
-            />
-        </ShortcutProvider>,
-        mount
-    )
-}
-
-export const renderGlobalDebug = ({
-    extensionsController,
-    platformContext,
-    history,
-    render,
-    sourcegraphURL,
-}: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
-    render(
-        <GlobalDebug
-            extensionsController={extensionsController}
-            location={history.location}
-            platformContext={platformContext}
-            sourcegraphURL={sourcegraphURL}
-        />,
-        mount
-    )
-}
+                platformContext={platformContext}
+                sourcegraphURL={sourcegraphURL}
+            />,
+            mount
+        )
+    }
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
@@ -194,21 +193,23 @@ export const applyDecorations = (
             if (decoration.after) {
                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
 
-                const linkTo = (url: string) => (element: HTMLElement): HTMLElement => {
-                    const link = document.createElement('a')
-                    link.setAttribute('href', url)
+                const linkTo =
+                    (url: string) =>
+                    (element: HTMLElement): HTMLElement => {
+                        const link = document.createElement('a')
+                        link.setAttribute('href', url)
 
-                    // External URLs should open in a new tab, whereas relative URLs
-                    // should not.
-                    link.setAttribute('target', isExternalLink(url) ? '_blank' : '')
+                        // External URLs should open in a new tab, whereas relative URLs
+                        // should not.
+                        link.setAttribute('target', isExternalLink(url) ? '_blank' : '')
 
-                    // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                    link.setAttribute('rel', 'noreferrer noopener')
+                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                        link.setAttribute('rel', 'noreferrer noopener')
 
-                    link.style.color = style.color || ''
-                    link.append(element)
-                    return link
-                }
+                        link.style.color = style.color || ''
+                        link.append(element)
+                        return link
+                    }
 
                 const after = document.createElement('span')
                 after.style.color = style.color || ''

@@ -8,7 +8,18 @@ const defaultArgs: RenderChartArgs = { series: FLAT_SERIES }
 interface RenderChartArgs {
     series: typeof FLAT_SERIES
 }
-const renderChart = ({ series }: RenderChartArgs) => render(<LineChart width={400} height={400} series={series} />)
+
+/**
+ * Test padding set 1px to the left and bottom values in order to force
+ * content sync appearance. In browser runtime this padding is calculated
+ * based on chart axes sizes. In test environment size measurement API
+ * doesn't work, we have to set padding manually in order to force chart
+ * content appearance. See SVGContent component for more context.
+ */
+const TEST_PADDING = { top: 16, right: 18, bottom: 1, left: 1 }
+
+const renderChart = ({ series }: RenderChartArgs) =>
+    render(<LineChart width={400} height={400} series={series} padding={TEST_PADDING} />)
 
 describe('LineChart', () => {
     // Non-exhaustive smoke tests to check that the chart renders correctly

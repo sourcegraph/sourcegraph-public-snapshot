@@ -49,7 +49,7 @@ To set up webhooks:
    * **Name**: A unique name representing your Sourcegraph instance
    * **Scope**: `global`
    * **Endpoint**: The URL from step 6
-   * **Events**: `pr, repo`
+   * **Events**: `repo:build_status`, `pr:activity:status`, `pr:activity:event`, `pr:activity:rescope`, `pr:activity:merge`, `pr:activity:comment`, `pr:activity:reviewers`, `pr:participant:status`
    * **Secret**: The secret you configured in step 4
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 

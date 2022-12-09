@@ -54,14 +54,15 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
             </div>
         )}
 
-        {results?.state === 'complete' && results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
-            <Alert className="d-flex m-3" variant="info">
-                <Text className="m-0">
-                    <strong>Result limit hit.</strong> Modify your search with <Code>count:</Code> to return additional
-                    items.
-                </Text>
-            </Alert>
-        )}
+        {results?.state === 'complete' &&
+            results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
+                <Alert className="d-flex m-3" variant="info">
+                    <Text className="m-0">
+                        <strong>Result limit hit.</strong> Modify your search with <Code>count:</Code> to return
+                        additional items.
+                    </Text>
+                </Alert>
+            )}
 
         {children}
     </div>
