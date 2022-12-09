@@ -48,8 +48,7 @@ pkgs.mkShell {
     shellcheck
     golangci-lint
 
-    # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
-    # against it.
+    # Web tools. Need node 18.12.x, and yarn should also be built against it.
     nodejs-18_x
     (yarn.override { nodejs = nodejs-18_x; })
     nodePackages.typescript
