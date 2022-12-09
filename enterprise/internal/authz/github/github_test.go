@@ -110,7 +110,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		}
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListAffiliatedRepositories = mock.WithRequestMatchPages(
 			mock.GetUserRepos,
 			[]*gh.Repository{
@@ -122,9 +121,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		)
 
-		mockOrgNoRead   = &gh.Organization{Login: gh.String("not-sourcegraph"), DefaultRepoPermission: gh.String("none")}
-		mockOrgNoRead2  = &gh.Organization{Login: gh.String("not-sourcegraph-2"), DefaultRepoPermission: gh.String("none")}
-		mockOrgRead     = &gh.Organization{Login: gh.String("sourcegraph"), DefaultRepoPermission: gh.String("read")}
+		mockOrgNoRead      = &gh.Organization{Login: gh.String("not-sourcegraph"), DefaultRepoPermission: gh.String("none")}
+		mockOrgNoRead2     = &gh.Organization{Login: gh.String("not-sourcegraph-2"), DefaultRepoPermission: gh.String("none")}
+		mockOrgRead        = &gh.Organization{Login: gh.String("sourcegraph"), DefaultRepoPermission: gh.String("read")}
 		mockListOrgDetails = mock.WithRequestMatchPages(
 			mock.GetUserOrgs,
 			[]*gh.Organization{
