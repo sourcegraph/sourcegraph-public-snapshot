@@ -292,7 +292,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// Start at commit c1 with offset:1.
+		// Start at commit c1 with afterCursor:1.
 		// Expect c2 and c3 in the nodes. 3 in the endCursor.
 		{
 			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
@@ -300,7 +300,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  repository(name: "github.com/gorilla/mux") {
 					commit(rev: "aabbc12345") {
-					  ancestors(first: 2, path: "bill-of-materials.json", offset: 1) {
+					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: 1) {
 						nodes {
 						  id
 						  oid
@@ -342,7 +342,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// Start at commit c1 with offset:2
+		// Start at commit c1 with afterCursor:2
 		// Expect c3, c4, c5 in the nodes. No endCursor because there will be no new commits.
 		{
 			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
@@ -350,7 +350,7 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  repository(name: "github.com/gorilla/mux") {
 					commit(rev: "aabbc12345") {
-					  ancestors(first: 3, path: "bill-of-materials.json", offset: 2) {
+					  ancestors(first: 3, path: "bill-of-materials.json", afterCursor: 2) {
 						nodes {
 						  id
 						  oid

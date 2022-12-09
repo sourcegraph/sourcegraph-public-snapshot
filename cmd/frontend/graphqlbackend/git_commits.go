@@ -25,8 +25,8 @@ type gitCommitConnectionResolver struct {
 	// after corresponds to --after in the git log / git rev-spec commands. Not to be confused with
 	// "after" when used as an offset for pagination. For pagination we use "offset" as the name of
 	// the field. See next field.
-	after  *string
-	offset *int32
+	after       *string
+	afterCursor *int32
 
 	repo *RepositoryResolver
 
@@ -56,8 +56,9 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
 
-		// If no value for offset is set, then offset is 0. And this is fine.
-		offset := toValue(r.offset).(int32)
+		// If no value for afterCursor is set, then skip is 0. And this is fine as --skip=0 is the
+		// same as not setting the flag.
+		skip := toValue(r.afterCursor).(int32)
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
@@ -65,7 +66,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			MessageQuery: toValue(r.query).(string),
 			Author:       toValue(r.author).(string),
 			After:        toValue(r.after).(string),
-			Skip:         uint(offset),
+			Skip:         uint(skip),
 			Path:         toValue(r.path).(string),
 		}, authz.DefaultSubRepoPermsChecker)
 	}
@@ -132,12 +133,12 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 		// Request 1: first: 100
 		// Response 1: commits: 1 to 100, endCursor: 100
 		//
-		// Request 2: first: 100, offset: 100 (endCursor from previous request)
+		// Request 2: first: 100, afterCursor: 100 (endCursor from previous request)
 		// Response 2: commits: 101 to 200, endCursor: 200 (first + offset)
 		//
-		// Request 3: first: 50, offset: 200 (endCursor from previous request)
+		// Request 3: first: 50, afterCursor: 200 (endCursor from previous request)
 		// Response 3: commits: 201 to 250, endCursor: 250 (first + offset)
-		endCursor := limit + int(toValue(r.offset).(int32))
+		endCursor := limit + int(toValue(r.afterCursor).(int32))
 		return graphqlutil.NextPageCursor(fmt.Sprintf("%d", endCursor)), nil
 	}
 
