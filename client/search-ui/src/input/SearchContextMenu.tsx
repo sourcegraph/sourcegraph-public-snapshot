@@ -1,13 +1,13 @@
-import { useCallback, useRef, useEffect, FormEvent, useState, FC } from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
 
 import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
-import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
+import { getDefaultSearchContextSpec, SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,6 +24,8 @@ import {
     ComboboxList,
     ComboboxOption,
     ComboboxOptionText,
+    Alert,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextMenu.module.scss'
@@ -77,7 +79,9 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
     const infiniteScrollList = useRef<HTMLUListElement | null>(null)
 
-    const loadNextPageUpdates = useRef(new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' }))
+    const loadNextPageUpdates = useRef(
+        new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' })
+    )
 
     const loadNextPage = useCallback((): void => {
         if (loadingState === 'DONE' && (!lastPageInfo || lastPageInfo.hasNextPage)) {
@@ -165,6 +169,10 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         [onMenuClose, selectSearchContextSpec, telemetryService]
     )
 
+    const defaultContextExists = useObservable(
+        useMemo(() => getDefaultSearchContextSpec({ platformContext }).pipe(map(spec => !!spec)), [platformContext])
+    )
+
     return (
         <Combobox openOnFocus={true} className={classNames(styles.container, className)} onSelect={handleContextSelect}>
             <div className={styles.title}>
@@ -188,24 +196,34 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 />
             </div>
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
-                {loadingState !== 'LOADING' &&
-                    searchContexts.map((context, index) => (
-                        <>
-                            {/* Separate starred and unstarred contexts */}
-                            {index > 0 && searchContexts[index - 1].viewerHasStarred && !context.viewerHasStarred && (
-                                <div className={styles.separator} />
-                            )}
-                            <SearchContextMenuItem
-                                key={context.id}
-                                spec={context.spec}
-                                description={context.description}
-                                query={context.query}
-                                isDefault={context.viewerHasAsDefault}
-                                selected={context.spec === selectedSearchContextSpec}
-                                starred={context.viewerHasStarred}
-                            />
-                        </>
-                    ))}
+                {loadingState !== 'LOADING' && (
+                    <>
+                        {defaultContextExists === false && (
+                            <Alert variant="warning" className="mx-2 mt-2">
+                                Your default search context is no longer available.
+                                <br />
+                                <Link to="/contexts">Choose a new default context.</Link>
+                            </Alert>
+                        )}
+                        {searchContexts.map((context, index) => (
+                            <>
+                                {/* Separate starred and unstarred contexts */}
+                                {index > 0 &&
+                                    searchContexts[index - 1].viewerHasStarred &&
+                                    !context.viewerHasStarred && <div className={styles.separator} />}
+                                <SearchContextMenuItem
+                                    key={context.id}
+                                    spec={context.spec}
+                                    description={context.description}
+                                    query={context.query}
+                                    isDefault={context.viewerHasAsDefault}
+                                    selected={context.spec === selectedSearchContextSpec}
+                                    starred={context.viewerHasStarred}
+                                />
+                            </>
+                        ))}
+                    </>
+                )}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>Loading search contexts...</small>
