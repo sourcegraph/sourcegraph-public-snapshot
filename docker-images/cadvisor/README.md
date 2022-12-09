@@ -6,7 +6,9 @@ Learn more about the Sourcegraph cAdvisor distribution in the [cAdvisor document
 
 This image **is not** currently built by CI and errors that can break builds may go undetected. This is already under the attention of the dev-experience team.
 
-The base images for cadvisor are hosted in gcr.io/cadvisor/cadvisor. Note that the images are not tagged by architecture. That needs to be verified manually:
+The base images for cadvisor are hosted in gcr.io/cadvisor/cadvisor. Note that the images are not tagged by architecture, and just using `docker pull gcr.io/cadvisor/cadvisor:v0.XX.0` to get the digest **will likely return an image for the wrong architecture**!
+
+Look through the [recently released images](https://console.cloud.google.com/gcr/images/cadvisor/GLOBAL/cadvisor) and manually identify the image for the correct architecture:
 
 1. Exec in the container with `docker run -it --entrypoint /bin/sh <image name>`
 2. Run `uname -a` in the container
