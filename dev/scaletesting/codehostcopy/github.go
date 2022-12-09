@@ -209,3 +209,15 @@ func (g *GithubCodeHost) Done() bool {
 func (g *GithubCodeHost) Err() error {
 	return g.err
 }
+
+func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) {
+	return 0, nil
+}
+
+func (g *GithubCodeHost) GetPath() string {
+	return g.def.Path
+}
+
+func (g *GithubCodeHost) SetPage(total int, remainder int) {
+	g.page = (total - remainder) / g.perPage
+}

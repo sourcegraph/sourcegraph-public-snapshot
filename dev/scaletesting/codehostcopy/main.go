@@ -29,6 +29,9 @@ type CodeHostSource[T any] interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
 	ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error)
+	GetPath() string
+	GetTotalPrivateRepos(ctx context.Context) (int, error)
+	SetPage(total int, remainer int)
 
 	Err() error
 	Next(ctx context.Context) T

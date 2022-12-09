@@ -86,75 +86,77 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 		return err
 	}
 
-	// If we're starting fresh, really fetch them.
-	if len(srcRepos) == 0 {
-		r.logger.Info("No existing state found, creating ...")
-		for !r.source.Done() && r.source.Err() != nil {
-			repos := r.source.Next(ctx)
-			if err = r.store.Insert(repos); err != nil {
-				r.logger.Error("failed to insert repositories from source", log.Error(err))
-			}
-		}
+	t, err := r.source.GetTotalPrivateRepos(ctx)
+	if err != nil {
+		r.logger.Fatal("failed to get total private repos size for source", log.String("source", r.source.GetPath()), log.Error(err))
+	}
+	remainder := len(srcRepos) - t
+	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
 
-		srcRepos, err = r.store.Load()
-		r.logger.Info(fmt.Sprintf("Found %d repos in source", len(srcRepos)))
-	} else {
-		r.logger.Info(fmt.Sprintf("Resuming work (%d repos)", len(srcRepos)))
+	// Process started but not finished, set page to continue
+	if len(srcRepos) != 0 && remainder != 0 {
+		r.source.SetPage(t, remainder)
 	}
 
 	bars := []output.ProgressBar{
-		{Label: "Copying repos", Max: float64(len(srcRepos))},
+		{Label: "Copying repos", Max: float64(t)},
 	}
 	progress := out.Progress(bars, nil)
 	defer progress.Destroy()
-
 	var done int64
-	total := len(srcRepos)
 
 	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
-	for _, repo := range srcRepos {
-		repo := repo
-		g.Go(func() error {
-			// Create the repo on destination.
-			if !repo.Created {
-				toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
-				if err != nil {
-					repo.Failed = err.Error()
-					r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
-				} else {
-					repo.ToGitURL = toGitURL.String()
-					repo.Created = true
-				}
-				if err := r.store.SaveRepo(repo); err != nil {
-					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
-					return err
-				}
-			}
 
-			// Push the repo on destination.
-			if !repo.Pushed && repo.Created {
-				err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
-				if err != nil {
-					repo.Failed = err.Error()
-					r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
-				} else {
-					repo.Pushed = true
+	for !r.source.Done() && r.source.Err() != nil {
+		repos := r.source.Next(ctx)
+		if err = r.store.Insert(repos); err != nil {
+			r.logger.Error("failed to insert repositories from source", log.Error(err))
+		}
+
+		for _, repo := range repos {
+			currentRepo := repo
+			g.Go(func() error {
+				// Create the repo on destination.
+				if !currentRepo.Created {
+					toGitURL, cErr := r.destination.CreateRepo(ctx, currentRepo.Name)
+					if cErr != nil {
+						currentRepo.Failed = cErr.Error()
+						r.logger.Error("failed to create repo", logRepo(currentRepo, log.Error(cErr))...)
+					} else {
+						currentRepo.ToGitURL = toGitURL.String()
+						currentRepo.Created = true
+					}
+					if cErr = r.store.SaveRepo(currentRepo); cErr != nil {
+						r.logger.Error("failed to save repo", logRepo(currentRepo, log.Error(cErr))...)
+						return cErr
+					}
 				}
-				if err := r.store.SaveRepo(repo); err != nil {
-					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
-					return err
+
+				// Push the repo on destination.
+				if !currentRepo.Pushed && currentRepo.Created {
+					cErr := pushRepo(ctx, currentRepo, r.source.GitOpts(), r.destination.GitOpts())
+					if cErr != nil {
+						currentRepo.Failed = cErr.Error()
+						r.logger.Error("failed to push repo", logRepo(currentRepo, log.Error(cErr))...)
+					} else {
+						currentRepo.Pushed = true
+					}
+					if cErr = r.store.SaveRepo(currentRepo); cErr != nil {
+						r.logger.Error("failed to save repo", logRepo(currentRepo, log.Error(cErr))...)
+						return cErr
+					}
 				}
-			}
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(0, float64(done))
-			progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, total))
-			return nil
-		})
+				atomic.AddInt64(&done, 1)
+				progress.SetValue(0, float64(done))
+				progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, t))
+				return nil
+			})
+		}
 	}
 	errs := g.Wait()
-	for _, err := range errs {
-		if err != nil {
-			return err
+	for _, e := range errs {
+		if e != nil {
+			return e
 		}
 	}
 	return nil
