@@ -122,7 +122,7 @@ func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDe
 		}
 	case "gitlab":
 		{
-			return NewGithubCodeHost(ctx, &cfg)
+			return NewGitLabCodeHost(ctx, &cfg)
 		}
 	default:
 		{

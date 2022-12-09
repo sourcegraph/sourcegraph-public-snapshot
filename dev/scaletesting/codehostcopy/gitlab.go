@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/run"
 
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -105,6 +106,10 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 		return errors.Newf("failed to delete key %v. Got status %d code", keyID, res.StatusCode)
 	}
 	return nil
+}
+
+func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+	return nil, fmt.Errorf("not implemented for Gitlab")
 }
 
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
