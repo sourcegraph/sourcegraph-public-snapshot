@@ -1,33 +1,10 @@
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
-
-export const overviewGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Statistics',
-        icon: EarthIcon,
-    },
-    items: [
-        {
-            label: 'Overview',
-            to: '/site-admin',
-            exact: true,
-        },
-        {
-            label: 'Usage stats',
-            to: '/site-admin/usage-statistics',
-        },
-        {
-            label: 'Feedback survey',
-            to: '/site-admin/surveys',
-        },
-    ],
-}
 
 export const configurationGroup: SiteAdminSideBarGroup = {
     header: {
@@ -156,7 +133,6 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
     configurationGroup,
     repositoriesGroup,
     usersGroup,

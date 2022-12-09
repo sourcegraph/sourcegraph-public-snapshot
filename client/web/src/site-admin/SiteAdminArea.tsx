@@ -1,7 +1,6 @@
 import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -19,10 +18,8 @@ import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { RouteDescriptor } from '../util/contributions'
 
-import { overviewGroup } from './sidebaritems'
 import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
@@ -161,19 +158,9 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
 
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
+    const adminSideBarGroups = useMemo(() => [analyticsGroup, ...props.sideBarGroups], [props.sideBarGroups])
 
-    const adminSideBarGroups = useMemo(() => {
-        if (isAdminAnalyticsDisabled) {
-            return props.sideBarGroups
-        }
-        return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
-    }, [isAdminAnalyticsDisabled, props.sideBarGroups])
-
-    const routes = useMemo(
-        () => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes),
-        [isAdminAnalyticsDisabled, props.routes]
-    )
+    const routes = useMemo(() => [...analyticsRoutes, ...props.routes], [props.routes])
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {

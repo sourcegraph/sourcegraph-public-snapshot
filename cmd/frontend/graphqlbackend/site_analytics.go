@@ -21,10 +21,6 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-disabled", false) {
-		return nil, errors.New("'admin-analytics-disabled' feature flag is enabled")
-	}
-
 	cache := !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-cache-disabled", false)
 
 	return &siteAnalyticsResolver{r.db, cache}, nil

@@ -7,7 +7,6 @@ import {
     apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    overviewGroup,
     repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
@@ -128,7 +127,6 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,

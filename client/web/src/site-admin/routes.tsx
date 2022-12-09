@@ -4,12 +4,6 @@ import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
-        // Render empty page if no page selected
-        path: '',
-        render: lazyComponent(() => import('./overview/SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
-        exact: true,
-    },
-    {
         path: '/configuration',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminConfigurationPage'), 'SiteAdminConfigurationPage'),
@@ -36,10 +30,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         exact: true,
-        render: lazyComponent(
-            () => import('./SiteAdminAllUsersPage/FeatureFlaggedUsersPage'),
-            'FeatureFlaggedUsersPage'
-        ),
+        render: lazyComponent(() => import('./UserManagement'), 'UsersManagement'),
     },
     {
         path: '/users/new',
@@ -50,11 +41,6 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/tokens',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage'),
-    },
-    {
-        path: '/usage-statistics',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminUsageStatisticsPage'), 'SiteAdminUsageStatisticsPage'),
     },
     {
         path: '/updates',

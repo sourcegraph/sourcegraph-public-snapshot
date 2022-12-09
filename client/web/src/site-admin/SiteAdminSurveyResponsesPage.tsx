@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -21,7 +22,7 @@ import {
     Card,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import {
@@ -39,9 +40,42 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
 import { ValueLegendItem } from './analytics/components/ValueLegendList'
-import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminSurveyResponsesPage.module.scss'
+
+const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: '',
+        type: 'radio',
+        id: 'user-activity-filters',
+        values: [
+            {
+                label: 'All users',
+                value: 'all',
+                tooltip: 'Show all users',
+                args: { activePeriod: UserActivePeriod.ALL_TIME },
+            },
+            {
+                label: 'Active today',
+                value: 'today',
+                tooltip: 'Show users active since this morning at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.TODAY },
+            },
+            {
+                label: 'Active this week',
+                value: 'week',
+                tooltip: 'Show users active since Monday at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_WEEK },
+            },
+            {
+                label: 'Active this month',
+                value: 'month',
+                tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_MONTH },
+            },
+        ],
+    },
+]
 
 interface SurveyResponseNodeProps {
     /**
