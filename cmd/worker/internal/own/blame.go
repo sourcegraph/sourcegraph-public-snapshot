@@ -91,7 +91,7 @@ var blameJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("own_blame_jobs.worker_hostname"),
 	sqlf.Sprintf("own_blame_jobs.cancel"),
 	sqlf.Sprintf("own_blame_jobs.repository_id"),
-	sqlf.Sprintf("own_blame_jobs.repository_name"),
+	sqlf.Sprintf("own_blame_jobs.absolute_file_path"),
 }
 
 func scanExampleJob(s dbutil.Scanner) (*BlameJob, error) {
@@ -159,10 +159,11 @@ func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob])
 	})
 }
 
-func makeResetter(logger log.Logger, workerStore dbworkerstore.Store[*BlameJob]) *dbworker.Resetter[*BlameJob] {
-	return dbworker.NewResetter[*BlameJob](logger, workerStore, dbworker.ResetterOptions{
+func makeResetter(logger log.Logger, workerStore dbworkerstore.Store[*BlameJob], m dbworker.ResetterMetrics) *dbworker.Resetter[*BlameJob] {
+	return dbworker.NewResetter(logger, workerStore, dbworker.ResetterOptions{
 		Name:     "own_blame_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
+		Metrics:  m,
 	})
 }
 
@@ -192,9 +193,10 @@ func (j *ownBlameJob) Routines(_ context.Context, observationCtx *observation.Co
 	store := makeStore(observationCtx, wdb.Handle())
 
 	rootContext := actor.WithInternalActor(context.Background())
+	resetterMetrics := dbworker.NewMetrics(observationCtx, "own_blame")
 
 	return []goroutine.BackgroundRoutine{
 		makeWorker(rootContext, store),
-		makeResetter(observationCtx.Logger.Scoped("OwnBlameJob.Resetter", ""), store),
+		makeResetter(observationCtx.Logger.Scoped("OwnBlameJob.Resetter", ""), store, *resetterMetrics),
 	}, nil
 }
