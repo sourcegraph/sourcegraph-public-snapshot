@@ -32,8 +32,8 @@ import {
 } from '../../components/FilteredConnection/ui'
 import {
     BlobFileFields,
-    CommitAtTime2Result,
-    CommitAtTime2Variables,
+    CommitAtTimeResult,
+    CommitAtTimeVariables,
     DiffSinceResult,
     DiffSinceVariables,
     GitCommitFields,
@@ -114,9 +114,9 @@ export const fetchCommit = (args: {
     revspec: Scalars['String']
     beforespec: Scalars['String'] | null
 }): Observable<GitCommitFields> =>
-    requestGraphQL<CommitAtTime2Result, CommitAtTime2Variables>(
+    requestGraphQL<CommitAtTimeResult, CommitAtTimeVariables>(
         gql`
-            query CommitAtTime2($repo: String!, $revspec: String!, $beforespec: String) {
+            query CommitAtTime($repo: String!, $revspec: String!, $beforespec: String) {
                 repository(name: $repo) {
                     commit(rev: $revspec) {
                         ancestors(first: 1, before: $beforespec) {
