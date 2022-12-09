@@ -9,7 +9,7 @@ We suggest configuring both when using Sourcegraph Enterprise. If you do not con
 
 ## Authentication in Sourcegraph
 
-Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add the following to your site config at https://sourcegraph.yourdomain.com/siteadmin/configuration ([Learn more about viewing and editing your site configuration.](./site_config.md#view-and-edit-site-configuration))
+Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add the following to your site config at `https://sourcegraph.yourdomain.com/siteadmin/configuration` ([Learn more about viewing and editing your site configuration.](./site_config.md#view-and-edit-site-configuration))
 
 ```
 auth.enableUsernameChanges: false

@@ -141,17 +141,9 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
-	var wgLogLatency sync.WaitGroup
-	defer wgLogLatency.Wait()
 	logLatency := func() {
-		wgLogLatency.Add(1)
-		go func() {
-			defer wgLogLatency.Done()
-			metricLatency.WithLabelValues(string(GuessSource(r))).
-				Observe(time.Since(start).Seconds())
-
-			graphqlbackend.LogSearchLatency(ctx, h.db, inputs, int32(time.Since(start).Milliseconds()))
-		}()
+		metricLatency.WithLabelValues(string(GuessSource(r))).
+			Observe(time.Since(start).Seconds())
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the

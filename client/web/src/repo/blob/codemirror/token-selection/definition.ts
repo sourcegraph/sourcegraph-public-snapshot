@@ -78,7 +78,7 @@ export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
 export function goToDefinitionOnMouseEvent(
     view: EditorView,
     event: MouseEvent,
-    options?: { isLongPress?: boolean }
+    options?: { isLongClick?: boolean }
 ): void {
     const atEvent = occurrenceAtMouseEvent(view, event)
     if (!atEvent) {
@@ -87,7 +87,7 @@ export function goToDefinitionOnMouseEvent(
     if (isInteractiveOccurrence(atEvent.occurrence)) {
         selectOccurrence(view, atEvent.occurrence)
     }
-    if (!isModifierKey(event) && !options?.isLongPress) {
+    if (!isModifierKey(event) && !options?.isLongClick) {
         return
     }
     const spinner = new LoadingTooltip(view, preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY }))

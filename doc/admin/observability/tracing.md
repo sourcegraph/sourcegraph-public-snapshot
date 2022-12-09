@@ -110,5 +110,5 @@ services, in addition to the other tracing mechanisms listed above.
 This provides simple tracing information within a single process.
 It can be used as an alternative when Jaeger is not available or as a supplement to Jaeger.
 
-Site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. From
+Site admins can access `net/trace` information at `https://sourcegraph.example.com/-/debug/`. From
 there, click **Requests** to view the traces for that service.

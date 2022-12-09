@@ -1052,6 +1052,11 @@ type HTTPHeaderAuthProvider struct {
 	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
 }
+type Header struct {
+	Key       string `json:"key"`
+	Sensitive bool   `json:"sensitive,omitempty"`
+	Value     string `json:"value"`
+}
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
@@ -1681,6 +1686,8 @@ type SAMLAuthProvider struct {
 // SMTPServerConfig description: The SMTP server used to send transactional emails.
 // Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
+	// AdditionalHeaders description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
+	AdditionalHeaders []*Header `json:"additionalHeaders,omitempty"`
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
