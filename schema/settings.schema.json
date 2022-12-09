@@ -134,7 +134,7 @@
           }
         },
         "showSearchContextManagement": {
-          "description": "Enables search context management.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -166,7 +166,7 @@
           }
         },
         "showComputeComponent": {
-          "description": "Enables display of compute components (currently Notebook blocks)",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -201,6 +201,14 @@
           "description": "Enables the new file sidebar experience with merged file and symbol entries.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeNavigation": {
+          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
+          "type": "string",
+          "enum": ["selection-driven", "link-driven"],
           "!go": {
             "pointer": true
           }
@@ -449,6 +457,11 @@
           "description": "Preload definitions for available tokens in the visible viewport.",
           "type": "boolean",
           "default": false
+        },
+        "symbolKindTags": {
+          "description": "Show the initial letter of the symbol kind instead of icons.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"
@@ -617,7 +630,7 @@
       "type": "boolean"
     },
     "codeIntel.blobKeyboardNavigation": {
-      "description": "Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available",
+      "description": "DEPRECATED. Use 'experimentalFeatures.codeNavigation':'link-driven' instead.",
       "type": "string",
       "enum": ["none", "token"]
     },
@@ -735,6 +748,12 @@
       "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
       "type": "boolean",
       "default": false
+    },
+    "history.defaultPageSize": {
+      "description": "Custom page size for the history tab. If set, the history tab will populate that number of commits the first time the history tab is opened and then double the number of commits progressively.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
@@ -29,11 +27,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	logger = log.Scoped("service", "executor service")
 
 	// Initialize tracing/metrics
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationCtx := observation.NewContext(logger)
 
 	// Determine telemetry data.
 	queueTelemetryOptions := func() queue.TelemetryOptions {
@@ -43,7 +37,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 		return newQueueTelemetryOptions(ctx, cfg.UseFirecracker, logger)
 	}()
-	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
+	logger.Debug("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
 
 	opts := apiWorkerOptions(cfg, queueTelemetryOptions)
 
@@ -66,7 +60,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		if err := validateSrcCLIVersion(cliCtx.Context, logger, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
+		if err := validateSrcCLIVersion(cliCtx.Context, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
 			return err
 		}
 
@@ -88,7 +82,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker, err := worker.NewWorker(logger, nameSet, opts, observationContext)
+	worker, err := worker.NewWorker(observationCtx, nameSet, opts)
 	if err != nil {
 		cancel()
 		return err
@@ -103,10 +97,10 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 			cfg.VMPrefix,
 			nameSet,
 			cfg.CleanupTaskInterval,
-			janitor.NewMetrics(observationContext),
+			janitor.NewMetrics(observationCtx),
 		))
 
-		mustRegisterVMCountMetric(logger, observationContext, cfg.VMPrefix)
+		mustRegisterVMCountMetric(logger, observationCtx, cfg.VMPrefix)
 	}
 
 	go func() {
@@ -126,8 +120,8 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	return nil
 }
 
-func mustRegisterVMCountMetric(logger log.Logger, observationContext *observation.Context, prefix string) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+func mustRegisterVMCountMetric(logger log.Logger, observationCtx *observation.Context, prefix string) {
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_executor_vms_total",
 		Help: "Total number of running VMs.",
 	}, func() float64 {

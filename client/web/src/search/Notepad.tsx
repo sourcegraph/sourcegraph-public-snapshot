@@ -679,9 +679,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     )
 }
 
-function getUIComponentsForEntry(
-    entry: NotepadEntry | NotepadEntryInput
-): {
+function getUIComponentsForEntry(entry: NotepadEntry | NotepadEntryInput): {
     icon: React.ReactElement
     title: React.ReactElement
     location: LocationDescriptorObject | string

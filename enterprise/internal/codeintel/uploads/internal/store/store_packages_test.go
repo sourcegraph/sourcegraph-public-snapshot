@@ -18,7 +18,7 @@ import (
 func TestUpdatePackages(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// for foreign key relation
 	insertUploads(t, db, types.Upload{ID: 42})
@@ -50,7 +50,7 @@ func TestUpdatePackages(t *testing.T) {
 func TestUpdatePackagesEmpty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if err := store.UpdatePackages(context.Background(), 0, nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
@@ -71,6 +71,7 @@ func insertPackages(t testing.TB, store Store, packages []shared.Package) {
 		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
 			{
 				Scheme:  pkg.Scheme,
+				Manager: pkg.Manager,
 				Name:    pkg.Name,
 				Version: pkg.Version,
 			},
@@ -87,6 +88,7 @@ func insertPackageReferences(t testing.TB, store Store, packageReferences []shar
 			{
 				Package: precise.Package{
 					Scheme:  packageReference.Scheme,
+					Manager: packageReference.Manager,
 					Name:    packageReference.Name,
 					Version: packageReference.Version,
 				},

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -60,7 +61,7 @@ type ResourceOptions struct {
 	DiskSpace string
 }
 
-func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) (*Client, error) {
+func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func New(options Options, metricsGatherer prometheus.Gatherer, observationContex
 		client:          client,
 		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 	}, nil
 }
 
@@ -81,6 +82,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
+		Version:      version.Version(),
 		ExecutorName: c.options.ExecutorName,
 		NumCPUs:      c.options.ResourceOptions.NumCPUs,
 		Memory:       c.options.ResourceOptions.Memory,

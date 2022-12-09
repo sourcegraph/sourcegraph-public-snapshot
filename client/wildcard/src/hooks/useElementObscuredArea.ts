@@ -15,7 +15,8 @@ const SCROLL_THROTTLE_WAIT = 50
  * Returns area obscured by scrolling of an element.
  */
 export function useElementObscuredArea<T extends HTMLElement>(
-    elementReference: React.MutableRefObject<T | null>
+    elementReference: React.MutableRefObject<T | null>,
+    lazy?: boolean
 ): ElementObscuredArea {
     const [obscured, setObscured] = React.useState<ElementObscuredArea>({
         top: 0,
@@ -47,13 +48,25 @@ export function useElementObscuredArea<T extends HTMLElement>(
     React.useEffect(() => {
         const element = elementReference?.current
         if (element) {
-            calculate()
+            if (lazy) {
+                scheduleIntoNextFrame(calculate)
+            } else {
+                calculate()
+            }
             element.addEventListener('scroll', calculate, { passive: true })
         }
         return () => {
             element?.removeEventListener('scroll', calculate)
         }
-    }, [elementReference, calculate])
+    }, [elementReference, calculate, lazy])
 
     return obscured
+}
+
+function scheduleIntoNextFrame(callback: () => void): void {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            callback()
+        })
+    })
 }

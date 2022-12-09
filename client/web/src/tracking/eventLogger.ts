@@ -19,6 +19,10 @@ export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
+export const ORIGINAL_REFERRER_KEY = 'originalReferrer'
+export const MKTO_ORIGINAL_REFERRER_KEY = '_mkto_referrer'
+export const SESSION_REFERRER_KEY = 'sessionReferrer'
+export const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -77,6 +81,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private deviceID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
+    private originalReferrer?: string
+    private sessionReferrer?: string
+    private sessionFirstURL?: string
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -233,6 +240,66 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         return lastSourceURL
     }
 
+    public getOriginalReferrer(): string {
+        // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
+        const originalReferrer =
+            this.originalReferrer ||
+            cookies.get(ORIGINAL_REFERRER_KEY) ||
+            cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
+            document.referrer
+        try {
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
+            const url = new URL(originalReferrer)
+            if (url.hostname === 'sourcegraph.com') {
+                this.originalReferrer = ''
+                cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
+                return this.originalReferrer
+            }
+            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+            return originalReferrer
+        } catch {
+            this.originalReferrer = ''
+            cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
+            return this.originalReferrer
+        }
+    }
+
+    public getSessionReferrer(): string {
+        // Gets the session referrer from the cookie
+        const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
+        try {
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
+            const url = new URL(sessionReferrer)
+            if (url.hostname === 'sourcegraph.com') {
+                this.sessionReferrer = ''
+                cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
+                return this.sessionReferrer
+            }
+            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+            return sessionReferrer
+        } catch {
+            this.sessionReferrer = ''
+            cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
+            return this.sessionReferrer
+        }
+    }
+
+    public getSessionFirstURL(): string {
+        const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
+        this.sessionFirstURL = redactedURL
+        return this.sessionFirstURL
+    }
+
     public getDeviceSessionID(): string {
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
         if (!deviceSessionID || deviceSessionID === '') {
@@ -311,9 +378,27 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
+        let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
+        if (!originalReferrer) {
+            originalReferrer = this.getOriginalReferrer()
+        }
+
+        let sessionReferrer = cookies.get(SESSION_REFERRER_KEY)
+        if (!sessionReferrer) {
+            sessionReferrer = this.getSessionReferrer()
+        }
+
+        let sessionFirstURL = cookies.get(SESSION_FIRST_URL_KEY)
+        if (!sessionFirstURL) {
+            sessionFirstURL = this.getSessionFirstURL()
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+        this.originalReferrer = originalReferrer
+        this.sessionReferrer = sessionReferrer
+        this.sessionFirstURL = sessionFirstURL
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {

@@ -19,8 +19,8 @@ import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileRe
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Button, Code } from '@sourcegraph/wildcard'
@@ -264,7 +264,14 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     data-testid="file-match-children-item"
                     onClick={() => openSymbol(symbol.url)}
                 >
-                    <SymbolIcon kind={symbol.kind} className="mr-1" />
+                    <SymbolKind
+                        kind={symbol.kind}
+                        className="mr-1"
+                        symbolKindTags={
+                            isSettingsValid(props.settingsCascade) &&
+                            props.settingsCascade.final.experimentalFeatures?.symbolKindTags
+                        }
+                    />
                     <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}

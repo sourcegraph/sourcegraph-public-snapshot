@@ -56,10 +56,10 @@ export function useTour(tourKey: string): UseTourReturnType {
         [setAllToursState, tourKey]
     )
 
-    const restart = useCallback((): void => setAllToursState(previousState => omit(previousState, tourKey)), [
-        setAllToursState,
-        tourKey,
-    ])
+    const restart = useCallback(
+        (): void => setAllToursState(previousState => omit(previousState, tourKey)),
+        [setAllToursState, tourKey]
+    )
 
     return {
         ...allToursSate?.[tourKey],

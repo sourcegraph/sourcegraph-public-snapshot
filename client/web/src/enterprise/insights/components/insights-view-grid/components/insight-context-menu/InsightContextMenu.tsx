@@ -70,10 +70,11 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                 {({ isOpen }) => (
                     <>
                         <MenuButton
-                            data-testid="InsightContextMenuButton"
-                            className={classNames('p-1 ml-1 d-inline-flex', styles.button)}
                             aria-label="Insight options"
                             outline={true}
+                            variant="icon"
+                            data-testid="InsightContextMenuButton"
+                            className={classNames('p-1 d-inline-flex', styles.button)}
                         >
                             <Icon
                                 className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}

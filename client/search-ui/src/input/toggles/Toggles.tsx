@@ -146,8 +146,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         {
                             condition:
                                 findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
-                            reason:
-                                'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
+                            reason: 'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
                         },
                         {
                             condition: patternType === SearchPatternType.structural,

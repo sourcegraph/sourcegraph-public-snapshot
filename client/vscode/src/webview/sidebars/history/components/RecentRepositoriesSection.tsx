@@ -25,11 +25,10 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
 
     // Debt: lift this shared query up to HistorySidebarView.
     const recentRepositoriesResult = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext), [
-            authenticatedUser.id,
-            itemsToLoad,
-            platformContext,
-        ])
+        useMemo(
+            () => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext),
+            [authenticatedUser.id, itemsToLoad, platformContext]
+        )
     )
 
     if (!recentRepositoriesResult) {

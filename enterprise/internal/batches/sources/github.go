@@ -308,7 +308,7 @@ func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (
 }
 
 type githubClientFork interface {
-	Fork(context.Context, string, string, *string) (*github.Repository, error)
+	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
 }
 
 func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
@@ -322,7 +322,9 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 		return nil, errors.New("parsing repo name")
 	}
 
-	fork, err := client.Fork(ctx, owner, name, namespace)
+	forkName := owner + "-" + name
+
+	fork, err := client.Fork(ctx, owner, name, namespace, forkName)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}

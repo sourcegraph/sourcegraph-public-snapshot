@@ -67,24 +67,24 @@ func (bt *BitbucketCodeHost) DropSSHKey(ctx context.Context, keyID int64) error 
 // url is extracted. Note that the repo name has the following format: <project key>_-_<repo name>. Thus if you
 // just want the repo name you would have to strip the project key and '_-_' separator out.
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
-	bt.logger.Info("fetching repos")
+	bt.logger.Debug("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
 	if err != nil {
-		bt.logger.Error("failed to list repos", log.Error(err))
+		bt.logger.Debug("failed to list repos", log.Error(err))
+		return nil, err
 	}
 
-	bt.logger.Info("fetched list of repos", log.Int("repos", len(repos)))
+	bt.logger.Debug("fetched list of repos", log.Int("repos", len(repos)))
 
 	results := make([]*store.Repo, 0, len(repos))
 	for _, r := range repos {
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
-			bt.logger.Warn("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
-			continue
+			bt.logger.Debug("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
+			return nil, err
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
-		cloneUrl.User = url.UserPassword(bt.def.Username, bt.def.Password)
 		results = append(results, &store.Repo{
 			Name:   fmt.Sprintf("%s%s%s", r.Project.Key, separator, r.Name),
 			GitURL: cloneUrl.String(),
@@ -109,6 +109,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	var apiErr *bitbucket.APIError
 	_, err := bt.c.GetProjectByKey(ctx, key)
 	if err != nil {
+		var apiErr *bitbucket.APIError
 		// if the error is an api error, log it and continue
 		// otherwise something severe is wrong and we must quit
 		// early
@@ -120,7 +121,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 				if err != nil {
 					return nil, err
 				}
-				bt.logger.Info("created project", log.String("project", p.Key))
+				bt.logger.Debug("created project", log.String("project", p.Key))
 			}
 		} else {
 			return nil, err

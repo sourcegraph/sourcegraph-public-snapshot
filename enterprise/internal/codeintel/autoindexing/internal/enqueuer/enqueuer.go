@@ -24,17 +24,17 @@ type IndexEnqueuer struct {
 }
 
 func NewIndexEnqueuer(
+	observationCtx *observation.Context,
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
 	gitserverClient GitserverClient,
 	jobSelector *jobselector.JobSelector,
-	observationContext *observation.Context,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserverClient,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 		jobSelector:     jobSelector,
 	}
 }
@@ -74,6 +74,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
+			otlog.String("manager", pkg.Manager),
 			otlog.String("name", pkg.Name),
 			otlog.String("version", pkg.Version),
 		},

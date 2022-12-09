@@ -160,7 +160,7 @@ func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
 
 // Progress returns the ratio between the number of upload records that have been completely
 // migrated over the total number of upload records. A record is migrated if its schema version
-// is no less than (on upgradees) or no greater than (on downgrades) than the target migration
+// is no less than (on upgrades) or no greater than (on downgrades) than the target migration
 // version.
 func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
 	table := "min_schema_version"

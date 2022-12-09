@@ -22,8 +22,7 @@ const config: Meta = {
             {
                 type: 'figma',
                 name: 'Figma',
-                url:
-                    'https://www.figma.com/file/LZoW17Fy6eqOfnxjxIRB7d/%F0%9F%93%91-Pagination-Experiments?t=0QPBSel9sN03v8us-1',
+                url: 'https://www.figma.com/file/LZoW17Fy6eqOfnxjxIRB7d/%F0%9F%93%91-Pagination-Experiments?t=0QPBSel9sN03v8us-1',
             },
         ],
     },
@@ -36,10 +35,22 @@ export const Simple: Story = (args = {}) => {
 
     const [page, setPage] = useState(1)
 
-    const goToNextPage = () => setPage(page => (page < totalPages ? page + 1 : page))
-    const goToPreviousPage = () => setPage(page => (page > 1 ? page - 1 : page))
-    const goToFirstPage = () => setPage(1)
-    const goToLastPage = () => setPage(totalPages)
+    const goToNextPage = async () => {
+        await sleep(2000)
+        setPage(page => (page < totalPages ? page + 1 : page))
+    }
+    const goToPreviousPage = async () => {
+        await sleep(2000)
+        setPage(page => (page > 1 ? page - 1 : page))
+    }
+    const goToFirstPage = async () => {
+        await sleep(2000)
+        setPage(1)
+    }
+    const goToLastPage = async () => {
+        await sleep(2000)
+        setPage(totalPages)
+    }
 
     const hasNextPage = page < totalPages
     const hasPreviousPage = page > 1
@@ -80,4 +91,8 @@ Simple.parameters = {
         enableDarkMode: true,
         disableSnapshot: false,
     },
+}
+
+function sleep(timeout: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, timeout))
 }

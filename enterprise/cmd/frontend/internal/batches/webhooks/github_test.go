@@ -167,7 +167,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s, gsClient)
+		hook := NewGitHubWebhook(s, gsClient, logtest.Scoped(t))
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -226,7 +226,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0o666)
 					if err != nil {
 						t.Fatal(err)
 					}

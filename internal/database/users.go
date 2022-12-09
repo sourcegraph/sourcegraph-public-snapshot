@@ -813,8 +813,13 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
-	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
-	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator user accounts.
+	// Filter out users with a known Sourcegraph admin username
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
+	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
 	ExcludeSourcegraphOperators bool
 
 	*LimitOffset
@@ -890,7 +895,15 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		items := []*sqlf.Query{
+			sqlf.Sprintf("username ILIKE %s", query),
+			sqlf.Sprintf("display_name ILIKE %s", query),
+		}
+		// Query looks like an ID
+		if id, ok := maybeQueryIsID(opt.Query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {

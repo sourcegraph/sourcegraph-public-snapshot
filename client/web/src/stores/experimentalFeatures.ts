@@ -12,9 +12,7 @@ const defaultSettings: SettingsExperimentalFeatures = {
      */
     showMultilineSearchConsole: false,
     showSearchContext: true,
-    showSearchContextManagement: true,
     showSearchNotebook: true,
-    showComputeComponent: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,

@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -116,7 +116,7 @@ func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedRes
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, &APIError{
 			StatusCode: resp.StatusCode,
 			Message:    string(body),
@@ -143,14 +143,14 @@ func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, &APIError{
 			StatusCode: resp.StatusCode,
 			Message:    string(body),
 		}
 	}
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, error) {
@@ -166,14 +166,14 @@ func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, &APIError{
 			StatusCode: resp.StatusCode,
 			Message:    string(body),
 		}
 	}
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 // getAll continuously calls getPaged by adjusting the start query parameter based on the previous

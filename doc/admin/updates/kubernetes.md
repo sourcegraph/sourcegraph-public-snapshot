@@ -24,8 +24,15 @@
 
 <!-- Add changes changes to this section before release. -->
 
+_Upgrade notes for the next version will appear here._
+
+## v4.1 ➔ v4.2.1
+
+<!-- Add changes changes to this section before release. -->
+
 **Notes**:
 
+- `minio` has been replaced with `blobstore`. Please see the update notes here: https://docs.sourcegraph.com/admin/how-to/blobstore_update_notes
 - This upgrade adds a [node-exporter](https://github.com/prometheus/node_exporter) DaemonSet, which collects crucial machine-level metrics that help Sourcegraph scale your deployment.
   - **Note**: Similarly to `cadvisor`,  `node-exporter`:
     - runs as a DaemonSet
@@ -34,13 +41,9 @@
 
   For more information, see [deploy-sourcegraph-helm's Changelog](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) or contact customer support.
 
-_Upgrade notes for the next version will appear here._
-
 ## v4.0 ➔ v4.1.3
 
 <!-- Add changes changes to this section before release. -->
-
-_Upgrade notes for the next version will appear here._
 
 ## v3.43 ➔ v4.0
 

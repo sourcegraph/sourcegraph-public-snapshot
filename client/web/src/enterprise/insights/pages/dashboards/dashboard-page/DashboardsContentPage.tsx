@@ -14,7 +14,7 @@ import { DashboardsContent } from './components/dashboards-content/DashboardsCon
 
 export interface DashboardsContentPageProps extends TelemetryProps {
     /**
-     * Possible dashboard id. All insights on the page will be get from
+     * Possible dashboard id. All insights on the page will be got from
      * dashboard's info from the user or org settings by the dashboard id.
      * In case if id is undefined we get insights from the final
      * version of merged settings (all insights)
@@ -27,10 +27,10 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { url } = useRouteMatch()
 
     const { dashboards, loading } = useInsightDashboards()
-    const currentDashboard = useMemo(() => dashboards?.find(dashboard => dashboard.id === dashboardID), [
-        dashboardID,
-        dashboards,
-    ])
+    const currentDashboard = useMemo(
+        () => dashboards?.find(dashboard => dashboard.id === dashboardID),
+        [dashboardID, dashboards]
+    )
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
@@ -39,11 +39,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     }
 
     if (loading || !dashboards) {
-        return (
-            <div data-testid="loading-spinner">
-                <LoadingSpinner aria-live="off" inline={false} />
-            </div>
-        )
+        return <LoadingSpinner aria-live="off" inline={false} />
     }
 
     return (

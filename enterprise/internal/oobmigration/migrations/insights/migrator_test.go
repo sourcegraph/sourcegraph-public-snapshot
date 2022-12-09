@@ -26,7 +26,7 @@ func TestInsightsMigrator(t *testing.T) {
 	}
 
 	// We can still run this test even if a dev has disabled code insights in
-	// there env.
+	// their env.
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
 	ctx := context.Background()
@@ -34,7 +34,7 @@ func TestInsightsMigrator(t *testing.T) {
 	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 	insightsDB := dbtest.NewInsightsDB(logger, t)
 	frontendStore := basestore.NewWithHandle(frontendDB.Handle())
-	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(insightsDB, sql.TxOptions{}))
+	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, insightsDB, sql.TxOptions{}))
 
 	wd, err := os.Getwd()
 	if err != nil {

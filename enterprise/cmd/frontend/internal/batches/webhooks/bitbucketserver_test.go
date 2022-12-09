@@ -40,6 +40,7 @@ import (
 // Run from integration_test.go
 func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
@@ -173,7 +174,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s, gsClient)
+		hook := NewBitbucketServerWebhook(s, gsClient, logger)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {
@@ -225,7 +226,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0o666)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -238,7 +239,6 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
-
 			})
 		}
 	}

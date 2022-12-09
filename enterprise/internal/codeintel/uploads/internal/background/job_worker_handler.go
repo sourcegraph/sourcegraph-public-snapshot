@@ -32,6 +32,7 @@ import (
 )
 
 func NewUploadProcessorWorker(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
@@ -42,11 +43,11 @@ func NewUploadProcessorWorker(
 	workerBudget int64,
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
-	observationContext *observation.Context,
 ) *workerutil.Worker[codeinteltypes.Upload] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := NewUploadProcessorHandler(
+		observationCtx,
 		store,
 		lsifstore,
 		gitserverClient,
@@ -55,10 +56,9 @@ func NewUploadProcessorWorker(
 		uploadStore,
 		workerConcurrency,
 		workerBudget,
-		observationContext,
 	)
 
-	metrics := workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
+	metrics := workerutil.NewMetrics(observationCtx, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
 		Name:                 "precise_code_intel_upload_worker",
@@ -90,6 +90,7 @@ var (
 )
 
 func NewUploadProcessorHandler(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
@@ -98,9 +99,8 @@ func NewUploadProcessorHandler(
 	uploadStore uploadstore.Store,
 	numProcessorRoutines int,
 	budgetMax int64,
-	observationContext *observation.Context,
 ) workerutil.Handler[codeinteltypes.Upload] {
-	operations := newOperations(observationContext)
+	operations := newOperations(observationCtx)
 
 	return &handler{
 		store:           store,
@@ -217,9 +217,24 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	}
 
 	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
-		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
-		if err != nil {
-			return errors.Wrap(err, "conversion.Correlate")
+		const (
+			lsifContentType = "application/x-ndjson+lsif"
+			scipContentType = "application/x-protobuf+scip"
+		)
+		var (
+			groupedBundleData  *precise.GroupedBundleDataChans
+			correlatedSCIPData lsifstore.ProcessedSCIPData
+		)
+		if upload.ContentType == lsifContentType {
+			if groupedBundleData, err = conversion.Correlate(ctx, r, upload.Root, getChildren); err != nil {
+				return errors.Wrap(err, "conversion.Correlate")
+			}
+		} else if upload.ContentType == scipContentType {
+			if correlatedSCIPData, err = correlateSCIP(ctx, r, upload.Root, getChildren); err != nil {
+				return errors.Wrap(err, "conversion.Correlate")
+			}
+		} else {
+			return errors.Newf("unsupported content type %q", upload.ContentType)
 		}
 
 		// Find the commit date for the commit attached to this upload record and insert it into the
@@ -244,18 +259,35 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		// Note: this is writing to a different database than the block below, so we need to use a
-		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
-			if isUniqueConstraintViolation(err) {
-				// If this is a unique constraint violation, then we've previously processed this same
-				// upload record up to this point, but failed to perform the transaction below. We can
-				// safely assume that the entire index's data is in the codeintel database, as it's
-				// parsed deterministically and written atomically.
-				logger.Warn("LSIF data already exists for upload record")
-				trace.Log(otlog.Bool("rewriting", true))
-			} else {
-				return err
+		if upload.ContentType == lsifContentType {
+			// Note: this is writing to a different database than the block below, so we need to use a
+			// different transaction context (managed by the writeData function).
+			if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
+				if isUniqueConstraintViolation(err) {
+					// If this is a unique constraint violation, then we've previously processed this same
+					// upload record up to this point, but failed to perform the transaction below. We can
+					// safely assume that the entire index's data is in the codeintel database, as it's
+					// parsed deterministically and written atomically.
+					logger.Warn("LSIF data already exists for upload record")
+					trace.Log(otlog.Bool("rewriting", true))
+				} else {
+					return err
+				}
+			}
+		} else if upload.ContentType == scipContentType {
+			// Note: this is writing to a different database than the block below, so we need to use a
+			// different transaction context (managed by the writeData function).
+			if err := writeSCIPData(ctx, s.lsifstore, upload, repo, isDefaultBranch, correlatedSCIPData, trace); err != nil {
+				if isUniqueConstraintViolation(err) {
+					// If this is a unique constraint violation, then we've previously processed this same
+					// upload record up to this point, but failed to perform the transaction below. We can
+					// safely assume that the entire index's data is in the codeintel database, as it's
+					// parsed deterministically and written atomically.
+					logger.Warn("SCIP data already exists for upload record")
+					trace.Log(otlog.Bool("rewriting", true))
+				} else {
+					return err
+				}
 			}
 		}
 
@@ -271,14 +303,31 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
-			// Update package and package reference data to support cross-repo queries.
-			if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
-				return errors.Wrap(err, "store.UpdatePackages")
-			}
-			trace.Log(otlog.Int("packageReferences", len(groupedBundleData.Packages)))
-			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
-				return errors.Wrap(err, "store.UpdatePackageReferences")
+			if upload.ContentType == lsifContentType {
+				trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
+				// Update package and package reference data to support cross-repo queries.
+				if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
+					return errors.Wrap(err, "store.UpdatePackages")
+				}
+				trace.Log(otlog.Int("packageReferences", len(groupedBundleData.Packages)))
+				if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
+					return errors.Wrap(err, "store.UpdatePackageReferences")
+				}
+			} else if upload.ContentType == scipContentType {
+				packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
+				if err != nil {
+					return err
+				}
+
+				trace.Log(otlog.Int("packages", len(packages)))
+				// Update package and package reference data to support cross-repo queries.
+				if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
+					return errors.Wrap(err, "store.UpdatePackages")
+				}
+				trace.Log(otlog.Int("packageReferences", len(packages)))
+				if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
+					return errors.Wrap(err, "store.UpdatePackageReferences")
+				}
 			}
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to

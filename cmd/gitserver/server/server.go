@@ -54,6 +54,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -276,6 +277,10 @@ type Server struct {
 	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
 
+	// ObservationCtx is used to initialize an operations struct
+	// with the appropriate metrics register etc.
+	ObservationCtx *observation.Context
+
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
@@ -497,6 +502,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
+	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -719,7 +725,7 @@ var (
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
-	s.Logger.Info("starting syncRepoState", log.Bool("fullSync", fullSync))
+	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
@@ -1181,6 +1187,10 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	searchRunning.Inc()
 	defer searchRunning.Dec()
 
+	observeLatency := syncx.OnceFunc(func() {
+		searchLatency.Observe(time.Since(searchStart).Seconds())
+	})
+
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		tr.SetError(err)
@@ -1188,12 +1198,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var latencyOnce sync.Once
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
-		latencyOnce.Do(func() {
-			searchLatency.Observe(time.Since(searchStart).Seconds())
-		})
+		observeLatency()
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -1520,7 +1527,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 // constructs and memoizes a no-op operations value (for use in tests).
 func (s *Server) ensureOperations() *operations {
 	if s.operations == nil {
-		s.operations = newOperations(&observation.TestContext)
+		s.operations = newOperations(s.ObservationCtx)
 	}
 
 	return s.operations
@@ -2209,7 +2216,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	removeBadRefs(ctx, tmp)
 
 	if err := setHEAD(ctx, logger, tmp, syncer, remoteURL); err != nil {
-		logger.Error("Failed to ensure HEAD exists", log.Error(err))
+		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2602,10 +2609,22 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	return nil
 }
 
-var (
-	badRefsOnce sync.Once
-	badRefs     []string
-)
+// older versions of git do not remove tags case insensitively, so we generate
+// every possible case of HEAD (2^4 = 16)
+var badRefs = syncx.OnceValue(func() []string {
+	refs := make([]string, 0, 1<<4)
+	for bits := uint8(0); bits < (1 << 4); bits++ {
+		s := []byte("HEAD")
+		for i, c := range s {
+			// lowercase if the i'th bit of bits is 1
+			if bits&(1<<i) != 0 {
+				s[i] = c - 'A' + 'a'
+			}
+		}
+		refs = append(refs, string(s))
+	}
+	return refs
+})
 
 // removeBadRefs removes bad refs and tags from the git repo at dir. This
 // should be run after a clone or fetch. If your repository contains a ref or
@@ -2616,27 +2635,12 @@ var (
 //
 // Instead we just remove this ref.
 func removeBadRefs(ctx context.Context, dir GitDir) {
-	// older versions of git do not remove tags case insensitively, so we
-	// generate every possible case of HEAD (2^4 = 16)
-	badRefsOnce.Do(func() {
-		for bits := uint8(0); bits < (1 << 4); bits++ {
-			s := []byte("HEAD")
-			for i, c := range s {
-				// lowercase if the i'th bit of bits is 1
-				if bits&(1<<i) != 0 {
-					s[i] = c - 'A' + 'a'
-				}
-			}
-			badRefs = append(badRefs, string(s))
-		}
-	})
-
-	args := append([]string{"branch", "-D"}, badRefs...)
+	args := append([]string{"branch", "-D"}, badRefs()...)
 	cmd := exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
 	_ = cmd.Run()
 
-	args = append([]string{"tag", "-d"}, badRefs...)
+	args = append([]string{"tag", "-d"}, badRefs()...)
 	cmd = exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
 	_ = cmd.Run()
@@ -2648,7 +2652,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
-		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
 	}
 }
 

@@ -92,6 +92,15 @@ mutation {
 	}
 }`,
 			}, {
+				name: "reindexRepository",
+				query: `
+mutation {
+	reindexRepository(repository: "UmVwb3NpdG9yeTox") {
+		alwaysNil
+	}
+}`,
+			},
+			{
 				name: "updateMirrorRepository",
 				query: `
 mutation {

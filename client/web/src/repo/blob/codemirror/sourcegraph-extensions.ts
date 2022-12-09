@@ -68,12 +68,14 @@ export function sourcegraphExtensions({
     extensionsController,
     disableStatusBar,
     disableDecorations,
+    enableSelectionDrivenCodeNavigation,
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
     extensionsController: RequiredExtensionsControllerProps['extensionsController']
     disableStatusBar?: boolean
     disableDecorations?: boolean
+    enableSelectionDrivenCodeNavigation?: boolean
 }): Extension {
     const subscriptions = new Subscription()
 
@@ -132,9 +134,11 @@ export function sourcegraphExtensions({
             },
         })),
         // This needs to come before document highlights so that the hovered
-        // token is highlighted differently
-        hovercardDataSource(contextObservable),
-        documentHighlightsDataSource(contextObservable),
+        // token is highlighted differently. Hovercard datasource is disabled
+        // when selection-driven navigation is enabled because it reimplements
+        // hover logic in the file 'token-selection/hover.ts'.
+        enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
+        enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
         disableDecorations ? [] : textDocumentDecorations(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
         disableStatusBar
@@ -233,9 +237,10 @@ class SelectionManager implements PluginValue {
             // Used to convert SelectedLineRange type to a valid LineOrPositionOrRange type to keep TypeScript happy
             let lprSelection: LineOrPositionOrRange = {}
             if (selection) {
-                lprSelection = selection.endLine
-                    ? { line: selection.line, endLine: selection.endLine }
-                    : { line: selection.line, character: selection.character }
+                lprSelection =
+                    selection.line !== selection.endLine
+                        ? { line: selection.line, endLine: selection.endLine }
+                        : { line: selection.line, character: selection.character }
             }
             context.extensionHostAPI
                 .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(lprSelection))

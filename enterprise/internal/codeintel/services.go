@@ -3,48 +3,43 @@ package codeintel
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	ossdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Services struct {
 	AutoIndexingService *autoindexing.Service
 	CodenavService      *codenav.Service
-	DependenciesService *dependencies.Service
+	DependenciesService *ossdependencies.Service
 	PoliciesService     *policies.Service
 	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
 }
 
-type Databases struct {
-	DB          database.DB
-	CodeIntelDB codeintelshared.CodeIntelDB
+type ServiceDependencies struct {
+	DB              database.DB
+	CodeIntelDB     codeintelshared.CodeIntelDB
+	GitserverClient *gitserver.Client
+	ObservationCtx  *observation.Context
 }
 
-// GetServices creates or returns an already-initialized codeintel service collection.
-// If the service collection is not yet initialized, a new one will be constructed using
-// the given database handles.
-func GetServices(dbs Databases) (Services, error) {
-	return initServicesMemo.Init(dbs)
-}
+func NewServices(deps ServiceDependencies) (Services, error) {
+	db, codeIntelDB := deps.DB, deps.CodeIntelDB
+	gitserverClient := gitserver.New(scopedContext("gitserver", deps.ObservationCtx), db)
 
-var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (Services, error) {
-	db, codeIntelDB := dbs.DB, dbs.CodeIntelDB
-	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
-
-	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	dependenciesSvc := dependencies.GetService(db)
-	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.GetService(db, uploadsSvc, gitserverClient)
+	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
+	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
+	policiesSvc := policies.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
+	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
@@ -54,8 +49,8 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (S
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 	}, nil
-})
+}
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "worker", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "worker", component, parent)
 }

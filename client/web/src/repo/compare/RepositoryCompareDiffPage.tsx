@@ -6,8 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -16,10 +15,11 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
-import { queryGraphQL } from '../../backend/graphql'
+import { requestGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
-import { RepositoryComparisonDiffResult } from '../../graphql-operations'
+import { ConnectionQueryArguments } from '../../components/FilteredConnection'
+import { RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
@@ -29,11 +29,11 @@ export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-    first?: number
-    after?: string | null
-    paths?: string[]
+    first: number | null
+    after: string | null
+    paths: string[] | null
 }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
-    return queryGraphQL(
+    return requestGraphQL<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
         gql`
             query RepositoryComparisonDiff(
                 $repo: ID!
@@ -44,6 +44,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $paths: [String!]
             ) {
                 node(id: $repo) {
+                    __typename
                     ... on Repository {
                         comparison(base: $base, head: $head) {
                             fileDiffs(first: $first, after: $after, paths: $paths) {
@@ -70,13 +71,15 @@ export function queryRepositoryComparisonFileDiffs(args: {
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.node) {
-                throw createAggregateError(errors)
+        map(result => {
+            const data = dataOrThrowErrors(result)
+
+            const repo = data.node
+            if (repo === null) {
+                throw new Error('Repository not found')
             }
-            const repo = data.node as RepositoryComparisonDiff
-            if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
-                throw createAggregateError(errors)
+            if (repo.__typename !== 'Repository') {
+                throw new Error('Not a repository')
             }
             return repo.comparison.fileDiffs
         })
@@ -138,9 +141,12 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
+    private queryDiffs = (
+        args: ConnectionQueryArguments
+    ): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
         queryRepositoryComparisonFileDiffs({
-            ...args,
+            first: args.first ?? null,
+            after: args.after ?? null,
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,

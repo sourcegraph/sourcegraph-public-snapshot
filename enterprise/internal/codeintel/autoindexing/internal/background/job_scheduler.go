@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -34,23 +33,16 @@ type indexSchedulerJob struct {
 	indexEnqueuer IndexEnqueuer
 }
 
-var backgroundMetrics = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
-	return metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_autoindexing_background",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	), nil
-})
+var m = new(metrics.SingletonREDMetrics)
 
 func NewScheduler(
+	observationCtx *observation.Context,
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
 	interval time.Duration,
 	config IndexSchedulerConfig,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
 		uploadSvc:     uploadSvc,
@@ -59,21 +51,34 @@ func NewScheduler(
 		indexEnqueuer: indexEnqueuer,
 	}
 
-	metrics, _ := backgroundMetrics.Init(observationContext)
+	metrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_autoindexing_background",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
-	}), observationContext.Operation(observation.Op{
-		Name:              "codeintel.indexing.HandleIndexSchedule",
-		MetricLabelValues: []string{"HandleIndexSchedule"},
-		Metrics:           metrics,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.As(err, &inference.LimitError{}) {
-				return observation.EmitForDefault.Without(observation.EmitForMetrics)
-			}
-			return observation.EmitForDefault
-		},
-	}))
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		context.Background(),
+		"codeintel.autoindexing-background-scheduler", "schedule autoindexing jobs in the background using defined or inferred configurations",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
+		}),
+		observationCtx.Operation(observation.Op{
+			Name:              "codeintel.indexing.HandleIndexSchedule",
+			MetricLabelValues: []string{"HandleIndexSchedule"},
+			Metrics:           metrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				if errors.As(err, &inference.LimitError{}) {
+					return observation.EmitForDefault.Without(observation.EmitForMetrics)
+				}
+				return observation.EmitForDefault
+			},
+		}),
+	)
 }
 
 func (b indexSchedulerJob) handleScheduler(
@@ -188,31 +193,36 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 }
 
 func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		if !autoIndexingEnabled() {
-			return nil
-		}
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if !autoIndexingEnabled() {
+				return nil
+			}
 
-		tx, err := store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() { err = tx.Done(err) }()
+			tx, err := store.Transact(ctx)
+			if err != nil {
+				return err
+			}
+			defer func() { err = tx.Done(err) }()
 
-		repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-		if err != nil {
-			return err
-		}
-
-		ids := make([]int, 0, len(repoRevs))
-		for _, repoRev := range repoRevs {
-			if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+			if err != nil {
 				return err
 			}
 
-			ids = append(ids, repoRev.ID)
-		}
+			ids := make([]int, 0, len(repoRevs))
+			for _, repoRev := range repoRevs {
+				if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+					return err
+				}
 
-		return tx.MarkRepoRevsAsProcessed(ctx, ids)
-	}))
+				ids = append(ids, repoRev.ID)
+			}
+
+			return tx.MarkRepoRevsAsProcessed(ctx, ids)
+		}),
+	)
 }

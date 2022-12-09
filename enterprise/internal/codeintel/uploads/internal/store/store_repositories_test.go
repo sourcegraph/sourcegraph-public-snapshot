@@ -29,6 +29,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (
@@ -45,11 +46,11 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(101, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false),
-			(102, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false),
-			(103, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false),
-			(104, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false),
-			(105, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false)
+			(101, 50, 'policy 1', 'GIT_COMMIT', 'HEAD', null, true, 0, false, true,  0, false),
+			(102, 51, 'policy 2', 'GIT_COMMIT', 'HEAD', null, true, 0, false, true,  0, false),
+			(103, 52, 'policy 3', 'GIT_TREE',   'ef/',  null, true, 0, false, true,  0, false),
+			(104, 53, 'policy 4', 'GIT_TREE',   'gh/',  null, true, 0, false, true,  0, false),
+			(105, 54, 'policy 5', 'GIT_TREE',   'gh/',  null, true, 0, false, false, 0, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -104,6 +105,26 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
+
+	// 110 minutes later, nothing is ready to go (too close to last index scan)
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Update repo 50 (GIT_COMMIT/HEAD policy), and 51 (GIT_TREE policy)
+	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s WHERE repo_id IN (50, 52)`, now.Add(time.Minute*105))
+	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
+	}
+
+	// 110 minutes later, updated repositories are ready for re-indexing
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
 }
 
 func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
@@ -116,6 +137,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (
@@ -187,6 +209,7 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (
@@ -258,7 +281,7 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "")
@@ -289,7 +312,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "")
@@ -323,7 +346,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 func TestHasRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	testCases := []struct {
 		repositoryID int
@@ -355,7 +378,7 @@ func TestHasRepository(t *testing.T) {
 func TestSetRepositoriesForRetentionScan(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, RepositoryID: 50, State: "completed"},
@@ -424,7 +447,7 @@ func TestSetRepositoriesForRetentionScan(t *testing.T) {
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "should not be dirty")
 	deleteRepo(t, db, 50, time.Now())
@@ -472,6 +495,6 @@ func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 	return store
 }

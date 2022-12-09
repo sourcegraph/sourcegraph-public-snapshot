@@ -95,7 +95,7 @@ type UIPosition = UIPositionSpec['position']
 /**
  * Hover information received from a hover source.
  */
-type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
+export type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
 
 /**
  * A {@link Hovercard} represent a currently visible hovercard.
@@ -550,7 +550,7 @@ const dummyOverlayPosition = { left: 0, bottom: 0 }
  * data source and the component props, and updates the component as it receives
  * changes.
  */
-class HovercardView implements TooltipView {
+export class HovercardView implements TooltipView {
     public dom: HTMLElement
     private root: Root | null = null
     private nextContainer = new Subject<HTMLElement>()

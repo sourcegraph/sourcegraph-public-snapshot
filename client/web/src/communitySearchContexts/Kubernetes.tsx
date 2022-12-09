@@ -12,8 +12,7 @@ export const kubernetes: CommunitySearchContextMetadata = {
     description: 'Explore Kubernetes repositories on GitHub. Search with examples below.',
     examples: [
         {
-            title:
-                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
+            title: 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
             query: 'file:pod.yaml content:"kind: ReplicationController"',
             patternType: SearchPatternType.standard,
         },

@@ -176,6 +176,8 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return '**Built-in predicate**. Search only inside repositories that are tagged with the given tag'
         case 'has':
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
+        case 'has.key':
+            return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
     }
     return ''
 }
@@ -203,8 +205,10 @@ export const toHover = (token: DecoratedToken): string => {
     return ''
 }
 
-const inside = (offset: number) => ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
-    range.start <= offset && range.end > offset
+const inside =
+    (offset: number) =>
+    ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
+        range.start <= offset && range.end > offset
 
 /**
  * Returns the hover result for a hovered search token in the Monaco query input.

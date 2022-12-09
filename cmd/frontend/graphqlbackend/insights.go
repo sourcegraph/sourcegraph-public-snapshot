@@ -35,6 +35,7 @@ type InsightsResolver interface {
 	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
+	SaveInsightAsNewView(ctx context.Context, args SaveInsightAsNewViewArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -109,7 +110,6 @@ type InsightSeriesResolver interface {
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
-	DirtyMetadata(ctx context.Context) ([]InsightDirtyQueryResolver, error)
 }
 
 type InsightResolver interface {
@@ -123,12 +123,6 @@ type InsightConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-type InsightDirtyQueryResolver interface {
-	Reason(ctx context.Context) string
-	Time(ctx context.Context) gqlutil.DateTime
-	Count(ctx context.Context) int32
 }
 
 type InsightsDashboardsArgs struct {
@@ -435,6 +429,17 @@ type LineChartOptionsInput struct {
 	Title *string
 }
 
+type SaveInsightAsNewViewArgs struct {
+	Input SaveInsightAsNewViewInput
+}
+
+type SaveInsightAsNewViewInput struct {
+	InsightViewID graphql.ID
+	Options       LineChartOptionsInput
+	Dashboard     *graphql.ID
+	ViewControls  *InsightViewControlsInput
+}
+
 type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
 }
@@ -459,9 +464,15 @@ type SearchInsightLivePreviewSeriesResolver interface {
 
 type IncompleteDatapointAlert interface {
 	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	ToGenericIncompleteDatapointAlert() (GenericIncompleteDatapointAlert, bool)
 	Time() gqlutil.DateTime
 }
 
 type TimeoutDatapointAlert interface {
 	Time() gqlutil.DateTime
+}
+
+type GenericIncompleteDatapointAlert interface {
+	Time() gqlutil.DateTime
+	Reason() string
 }

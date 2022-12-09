@@ -27,7 +27,7 @@ func TestDequeue(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `{"id": 42}`,
 	}
@@ -53,7 +53,7 @@ func TestDequeueNoRecord(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
 	}
@@ -75,7 +75,7 @@ func TestDequeueBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}
@@ -454,7 +454,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client, err := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	client, err := New(&observation.TestContext, options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }))
 	require.NoError(t, err)
 	f(client)
 }

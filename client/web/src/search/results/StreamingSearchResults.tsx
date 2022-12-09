@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
-import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -25,6 +25,7 @@ import { useDeepMemo } from '@sourcegraph/wildcard'
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
@@ -32,6 +33,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
+import { useRecentSearches } from '../input/useRecentSearches'
 import { DidYouMean } from '../suggestion/DidYouMean'
 import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
@@ -75,6 +77,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', false)
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
@@ -102,6 +105,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
     )
+    const { addRecentSearch } = useRecentSearches()
 
     const options: StreamSearchOptions = useMemo(
         () => ({
@@ -173,8 +177,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             telemetryService.log('SearchResultsFetched', {
                 code_search: {
                     // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                    query_data: {
+                        combined: submittedURLQuery,
+                    },
                     results: {
-                        results_count: results.results.length,
+                        results_count: results.progress.matchCount,
+                        limit_hit: limitHit(results.progress),
                         any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
                         alert: results.alert ? results.alert.title : null,
                     },
@@ -188,7 +196,17 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 code_search: { error_message: asError(results.error).message },
             })
         }
-    }, [results, telemetryService])
+    }, [results, submittedURLQuery, telemetryService])
+
+    useEffect(() => {
+        if (results?.state === 'complete') {
+            // Add the recent search in the next queue execution to avoid updating a React component while rendering another component.
+            setTimeout(
+                () => addRecentSearch(submittedURLQuery, results.progress.matchCount, limitHit(results.progress)),
+                0
+            )
+        }
+    }, [addRecentSearch, results, submittedURLQuery])
 
     useEffect(() => {
         if (
@@ -421,6 +439,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
+                            enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                         />
                     </div>
                 </>

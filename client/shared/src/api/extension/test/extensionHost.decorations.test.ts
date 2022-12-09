@@ -50,8 +50,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
                 uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/',
                 files: [
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         isDirectory: false,
                         path: 'extensions/typescript/src/package.ts',
                     },
@@ -65,8 +64,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
             {
                 'extensions/typescript/src/package.ts': [
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a1',
                         },
@@ -85,8 +83,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
             {
                 'extensions/typescript/src/package.ts': [
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a2',
                         },
@@ -96,15 +93,13 @@ describe('extensionHostAPI.getFileDecorations()', () => {
             {
                 'extensions/typescript/src/package.ts': [
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a2',
                         },
                     },
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'b',
                         },
@@ -122,8 +117,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
             {
                 'extensions/typescript/src/package.ts': [
                     {
-                        uri:
-                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
+                        uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a3',
                         },

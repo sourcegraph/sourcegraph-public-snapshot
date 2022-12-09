@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewMetricReporter[T workerutil.Record](observationContext *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
 	// Emit metrics to control alerts.
-	initPrometheusMetric(observationContext, queueName, store)
+	initPrometheusMetric(observationCtx, queueName, store)
 
 	// Emit metrics to control executor auto-scaling.
 	return initExternalMetricReporters(queueName, store, metricsConfig)
@@ -38,10 +38,14 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 	}
 
 	ctx := context.Background()
-	return goroutine.NewPeriodicGoroutine(ctx, 5*time.Second, &externalEmitter[T]{
-		queueName:  queueName,
-		store:      store,
-		reporters:  reporters,
-		allocation: metricsConfig.Allocations[queueName],
-	}), nil
+	return goroutine.NewPeriodicGoroutine(ctx,
+		"executors.autoscaler-metrics",
+		"emits metrics to GCP/AWS for auto-scaling",
+		5*time.Second, &externalEmitter[T]{
+			queueName:  queueName,
+			store:      store,
+			reporters:  reporters,
+			allocation: metricsConfig.Allocations[queueName],
+		},
+	), nil
 }

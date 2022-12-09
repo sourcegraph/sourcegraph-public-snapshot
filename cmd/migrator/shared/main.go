@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	ossmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -31,12 +28,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 })
 
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations := store.NewOperations(observationContext)
+	observationCtx := observation.NewContext(logger)
 
 	outputFactory := func() *output.Output { return out }
 
@@ -46,7 +38,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			return nil, err
 		}
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+			return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 		}
 		r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
 		if err != nil {

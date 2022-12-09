@@ -128,9 +128,12 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
  *
  * @param extensionID The extension ID (string)
  */
-export function splitExtensionID(
-    extensionID: string
-): { publisher: string; name: string; host?: string; isSourcegraphExtension?: boolean } {
+export function splitExtensionID(extensionID: string): {
+    publisher: string
+    name: string
+    host?: string
+    isSourcegraphExtension?: boolean
+} {
     const parts = extensionID.split('/')
     if (parts.length === 3) {
         return {

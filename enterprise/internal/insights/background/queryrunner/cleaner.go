@@ -18,26 +18,28 @@ import (
 // This is particularly important because the historical enqueuer can produce e.g.
 // num_series*num_repos*num_timeframes jobs (example: 20*40,000*6 in an average case) which
 // can quickly add up to be millions of jobs left in a "completed" state in the DB.
-func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCleaner(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"insights_query_runner_cleaner",
 		metrics.WithCountHelp("Total number of insights queryrunner cleaner executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "QueryRunner.Cleaner.Run",
 		Metrics: metrics,
 	})
 
 	// We look for jobs to cleanup every hour.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
-		"insights_query_runner_cleaner",
-		func(ctx context.Context) error {
-			// TODO(slimsag): future: recording the number of jobs cleaned up in a metric would be nice.
-			_, err := cleanJobs(ctx, workerBaseStore)
-			return err
-		},
-	), operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		ctx, "insights.query_runner_cleaner", "removes completed or failed query runner jobs",
+		1*time.Hour, goroutine.HandlerFunc(
+			func(ctx context.Context) error {
+				// TODO(slimsag): future: recording the number of jobs cleaned up in a metric would be nice.
+				_, err := cleanJobs(ctx, workerBaseStore)
+				return err
+			},
+		), operation,
+	)
 }
 
 // cleanJobs

@@ -2,51 +2,57 @@ import { formatISO } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Series } from '@sourcegraph/wildcard'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
 import { BackendInsight, InsightFilters, SearchBasedInsightSeries } from '../../types'
-import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
+import { BackendInsightDatum, BackendInsightSeries } from '../code-insights-backend-types'
 
 import { getParsedSeriesMetadata } from './parse-series-metadata'
 
 type SeriesDefinition = Record<string, SearchBasedInsightSeries>
 
+interface LineChartContentInput {
+    insight: BackendInsight
+    seriesData: InsightDataSeries[]
+    showError: boolean
+}
+
 /**
  * Generates line chart content for visx chart. Note that this function relies on the fact that
  * all series are indexed.
  */
-export function createLineChartContent(
-    insight: BackendInsight,
-    seriesData: InsightDataSeries[]
-): SeriesChartContent<BackendInsightDatum> {
+export function createLineChartContent(input: LineChartContentInput): BackendInsightSeries<BackendInsightDatum>[] {
+    const { insight, seriesData, showError } = input
     const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
     const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id, definition])
     )
 
-    return {
-        series: seriesData.map<Series<BackendInsightDatum>>(line => ({
-            id: line.seriesId,
-            data: line.points.map((point, index) => ({
-                dateTime: new Date(point.dateTime),
-                value: point.value,
-                link: generateLinkURL({
-                    point,
-                    previousPoint: line.points[index - 1],
-                    query: seriesDefinitionMap[line.seriesId].query,
-                    filters: insight.filters,
-                    repositories: insight.repositories,
-                }),
-            })),
-            name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
-            color: seriesDefinitionMap[line.seriesId]?.stroke,
-            getYValue: datum => datum.value,
-            getXValue: datum => datum.dateTime,
-            getLinkURL: datum => datum.link,
+    return seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
+        // Encode all special symbols that may be in the original series such as
+        // " symbol that breaks element query selectors in the chart where we use this id
+        // for points and lines.
+        // See https://github.com/sourcegraph/sourcegraph/issues/45376
+        id: encodeURIComponent(line.seriesId),
+        alerts: showError ? line.status.incompleteDatapoints : [],
+        data: line.points.map((point, index) => ({
+            dateTime: new Date(point.dateTime),
+            value: point.value,
+            link: generateLinkURL({
+                point,
+                previousPoint: line.points[index - 1],
+                query: seriesDefinitionMap[line.seriesId].query,
+                filters: insight.filters,
+                repositories: insight.repositories,
+            }),
         })),
-    }
+        name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
+        color: seriesDefinitionMap[line.seriesId]?.stroke,
+        getYValue: datum => datum.value,
+        getXValue: datum => datum.dateTime,
+        getLinkURL: datum => datum.link,
+    }))
 }
 
 /**

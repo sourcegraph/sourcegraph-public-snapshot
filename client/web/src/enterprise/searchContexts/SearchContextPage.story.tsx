@@ -3,6 +3,7 @@ import { subDays } from 'date-fns'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { SearchContextFields, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
+import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
@@ -53,6 +54,8 @@ const mockContext: SearchContextFields = {
     repositories,
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,
+    viewerHasAsDefault: false,
+    viewerHasStarred: true,
 }
 
 const fetchPublicContext = (): Observable<SearchContextFields> => of(mockContext)
@@ -64,12 +67,17 @@ const fetchPrivateContext = (): Observable<SearchContextFields> =>
         name: 'private-ctx',
         namespace: null,
         public: false,
+        viewerHasStarred: false,
     })
 
 const fetchAutoDefinedContext = (): Observable<SearchContextFields> =>
     of({
         ...mockContext,
         autoDefined: true,
+        viewerHasStarred: false,
+        viewerHasAsDefault: true,
+        spec: 'auto-ctx',
+        name: 'auto-ctx',
     })
 
 export const PublicContext: Story = () => (
@@ -79,12 +87,28 @@ export const PublicContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchPublicContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
 )
 
 PublicContext.storyName = 'public context'
+
+export const PublicContextUnauthenticated: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={fetchPublicContext}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={null}
+            />
+        )}
+    </WebStory>
+)
+
+PublicContextUnauthenticated.storyName = 'public context, unauthenticated user'
 
 export const AutodefinedContext: Story = () => (
     <WebStory>
@@ -93,6 +117,7 @@ export const AutodefinedContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchAutoDefinedContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -107,6 +132,7 @@ export const PrivateContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchPrivateContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -121,6 +147,7 @@ export const Loading: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={() => NEVER}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -135,6 +162,7 @@ export const ErrorStory: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>

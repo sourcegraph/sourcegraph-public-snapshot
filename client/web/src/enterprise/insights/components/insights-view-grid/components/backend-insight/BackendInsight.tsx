@@ -14,7 +14,13 @@ import {
     GetInsightViewVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import {
+    BackendInsight,
+    BackendInsightData,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    useSaveInsightAsNewView,
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
@@ -29,6 +35,7 @@ import {
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
+    InsightIncompleteAlert,
     parseSeriesLimit,
 } from './components'
 
@@ -43,7 +50,8 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
@@ -81,15 +89,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 },
             },
             onCompleted: data => {
-                // This query requests a list of 1 insightview if there is an error and the insightView will be null and error is populated
+                // This query requests a list of 1 insight view if there is an error and the insightView
+                // will be null and error is populated
                 const node = data.insightViews.nodes[0]
+
                 seriesToggleState.setSelectedSeriesIds([])
-                if (!isDefined(node)) {
-                    setInsightData(undefined)
-                    return
-                }
-                const parsedData = createBackendInsightData({ ...insight, filters }, node)
-                setInsightData(parsedData)
+                setInsightData(isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined)
             },
         }
     )
@@ -129,14 +134,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             return
         }
 
-        await createInsight({
-            insight: {
-                ...insight,
-                title: insightName,
-                filters,
-            },
+        await saveNewView({
+            insight,
+            filters,
+            title: insightName,
             dashboard: currentDashboard,
-        }).toPromise()
+        })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         setOriginalInsightFilters(filters)
@@ -172,6 +175,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             >
                 {isVisible && (
                     <>
+                        {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}

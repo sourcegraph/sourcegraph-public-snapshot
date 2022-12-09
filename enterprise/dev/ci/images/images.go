@@ -68,7 +68,7 @@ var DeploySourcegraphDockerImages = []string{
 	"indexed-searcher",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	"minio",
+	"blobstore",
 	"node-exporter",
 	"postgres-12-alpine",
 	"postgres_exporter",

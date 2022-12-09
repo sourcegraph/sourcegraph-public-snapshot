@@ -7,7 +7,10 @@ import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -75,8 +78,10 @@ const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChi
 
 const BATCH_COUNT = 15
 
-const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
-    const { connection, startPolling, stopPolling, ...rest } = useConnection<
+const useBulkOperationsListConnection = (
+    batchChangeID: Scalars['ID']
+): UseShowMorePaginationResult<BulkOperationFields> => {
+    const { connection, startPolling, stopPolling, ...rest } = useShowMorePagination<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
         BulkOperationFields

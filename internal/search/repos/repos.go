@@ -137,6 +137,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 			Key:     filter.Key,
 			Value:   filter.Value,
 			Negated: filter.Negated,
+			KeyOnly: filter.KeyOnly,
 		})
 	}
 

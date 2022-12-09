@@ -71,11 +71,8 @@ export function useQueryExamples(
     isSourcegraphDotCom: boolean = false
 ): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
-    const [
-        cachedQueryExamplesContent,
-        setCachedQueryExamplesContent,
-        cachedQueryExamplesContentLoadStatus,
-    ] = useTemporarySetting('search.homepage.queryExamplesContent')
+    const [cachedQueryExamplesContent, setCachedQueryExamplesContent, cachedQueryExamplesContentLoadStatus] =
+        useTemporarySetting('search.homepage.queryExamplesContent')
 
     const loadQueryExamples = useCallback(
         (selectedSearchContextSpec: string) =>

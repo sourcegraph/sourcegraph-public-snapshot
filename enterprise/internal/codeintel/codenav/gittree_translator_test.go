@@ -20,7 +20,7 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var client = codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+var client = codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
 
 func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 	args := &requestArgs{
@@ -52,7 +52,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	posIn := types.Position{Line: 302, Character: 15}
 
@@ -85,7 +85,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	posIn := types.Position{Line: 10, Character: 15}
 
@@ -121,7 +121,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	posIn := types.Position{Line: 302, Character: 15}
 
@@ -159,7 +159,7 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	rIn := types.Range{
 		Start: types.Position{Line: 302, Character: 15},
@@ -198,7 +198,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(nil))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	rIn := types.Range{
 		Start: types.Position{Line: 302, Character: 15},
@@ -237,7 +237,7 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(database.NewMockDB(), gitserverClient, &observation.TestContext)
+	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
 
 	rIn := types.Range{
 		Start: types.Position{Line: 302, Character: 15},

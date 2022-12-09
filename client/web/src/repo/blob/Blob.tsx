@@ -130,14 +130,18 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables keyboard navigation across precise code intelligence
-    tokenKeyboardNavigation?: boolean
+    // Enables experimental navigation by rendering links for all interactive tokens.
+    enableLinkDrivenCodeNavigation?: boolean
+    // Enables experimental navigation by making interactive tokens selectable on click.
+    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
     role?: string
     ariaLabel?: string
+
+    supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
     blameHunks?: { current: BlameHunk[] | undefined }
@@ -252,9 +256,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextBlobElement = useCallback((blobElement: HTMLElement | null) => blobElements.next(blobElement), [
-        blobElements,
-    ])
+    const nextBlobElement = useCallback(
+        (blobElement: HTMLElement | null) => blobElements.next(blobElement),
+        [blobElements]
+    )
 
     const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
     const nextOverlayElement = useCallback(
@@ -278,9 +283,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Emits on changes from URL search params
     const urlSearchParameters = useMemo(() => new ReplaySubject<URLSearchParams>(1), [])
-    const nextUrlSearchParameters = useCallback((value: URLSearchParams) => urlSearchParameters.next(value), [
-        urlSearchParameters,
-    ])
+    const nextUrlSearchParameters = useCallback(
+        (value: URLSearchParams) => urlSearchParameters.next(value),
+        [urlSearchParameters]
+    )
     useEffect(() => {
         nextUrlSearchParameters(new URLSearchParams(location.search))
     }, [nextUrlSearchParameters, location.search])
@@ -291,10 +297,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
-        location.search,
-        location.hash,
-    ])
+    const parsedHash = useMemo(
+        () => parseQueryAndHash(location.search, location.hash),
+        [location.search, location.hash]
+    )
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -355,9 +361,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
-        urlSearchParameters,
-    ])
+    const popoverParameter = useMemo(
+        () => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))),
+        [urlSearchParameters]
+    )
 
     const hoverifier = useMemo(
         () =>

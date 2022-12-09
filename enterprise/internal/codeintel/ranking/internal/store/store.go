@@ -45,11 +45,11 @@ type store struct {
 }
 
 // New returns a new ranking store.
-func New(db database.DB, observationContext *observation.Context) Store {
+func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		logger:     logger.Scoped("ranking.store", ""),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 
@@ -140,7 +140,7 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (ma
 		return nil
 	}
 
-	if err := basestore.NewCallbackScanner[any](scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
+	if err := basestore.NewCallbackScanner(scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
 		return nil, false, err
 	}
 	return pathRanksWithPrecision, true, nil

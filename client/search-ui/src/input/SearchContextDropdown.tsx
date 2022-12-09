@@ -50,7 +50,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         showSearchContextManagement,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
-        fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
         submitSearch,
         className,
@@ -160,7 +159,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
             </Tooltip>
             <PopoverContent
                 position={Position.bottomStart}
-                className={classNames('a11y-ignore', styles.menu)}
+                className={classNames('a11y-ignore overflow-hidden', styles.menu)}
                 data-testid="dropdown-content"
                 targetPadding={popoverPadding}
             >
@@ -168,7 +167,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                     {...props}
                     showSearchContextManagement={showSearchContextManagement}
                     selectSearchContextSpec={selectSearchContextSpec}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     className={menuClassName}
                     onMenuClose={handleMenuClose}
