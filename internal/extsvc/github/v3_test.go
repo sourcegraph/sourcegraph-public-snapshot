@@ -289,45 +289,6 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	)
 }
 
-func TestGetAuthenticatedUserOrgDetailsAndMembership(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgDetailsAndMembership")
-	defer save()
-
-	ctx := context.Background()
-	var err error
-	orgs := make([]OrgDetailsAndMembership, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageOrgs []OrgDetailsAndMembership
-		pageOrgs, hasNextPage, _, err = cli.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
-		if err != nil {
-			t.Fatal(err)
-		}
-		orgs = append(orgs, pageOrgs...)
-	}
-
-	for _, org := range orgs {
-		if org.OrgDetails == nil {
-			t.Fatal("expected org details, got nil")
-		}
-		if org.OrgDetails.DefaultRepositoryPermission == "" {
-			t.Fatal("expected default repo permissions data")
-		}
-		if org.OrgMembership == nil {
-			t.Fatal("expected org membership, got nil")
-		}
-		if org.OrgMembership.Role == "" {
-			t.Fatal("expected org membership data")
-		}
-	}
-
-	testutil.AssertGolden(t,
-		"testdata/golden/GetAuthenticatedUserOrgDetailsAndMembership",
-		update("GetAuthenticatedUserOrgDetailsAndMembership"),
-		orgs,
-	)
-}
-
 func TestListOrgRepositories(t *testing.T) {
 	cli, save := newV3TestClient(t, "ListOrgRepositories")
 	defer save()

@@ -23,10 +23,6 @@ type MockClient struct {
 	// object controlling the behavior of the method
 	// GetAuthenticatedOAuthScopes.
 	GetAuthenticatedOAuthScopesFunc *ClientGetAuthenticatedOAuthScopesFunc
-	// GetAuthenticatedUserOrgsDetailsAndMembershipFunc is an instance of a
-	// mock function object controlling the behavior of the method
-	// GetAuthenticatedUserOrgsDetailsAndMembership.
-	GetAuthenticatedUserOrgsDetailsAndMembershipFunc *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc
 	// GetAuthenticatedUserTeamsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetAuthenticatedUserTeams.
@@ -71,11 +67,6 @@ func NewMockClient() *MockClient {
 	return &MockClient{
 		GetAuthenticatedOAuthScopesFunc: &ClientGetAuthenticatedOAuthScopesFunc{
 			defaultHook: func(context.Context) (r0 []string, r1 error) {
-				return
-			},
-		},
-		GetAuthenticatedUserOrgsDetailsAndMembershipFunc: &ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc{
-			defaultHook: func(context.Context, int) (r0 []github.OrgDetailsAndMembership, r1 bool, r2 int, r3 error) {
 				return
 			},
 		},
@@ -146,11 +137,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.GetAuthenticatedOAuthScopes")
 			},
 		},
-		GetAuthenticatedUserOrgsDetailsAndMembershipFunc: &ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc{
-			defaultHook: func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error) {
-				panic("unexpected invocation of MockClient.GetAuthenticatedUserOrgsDetailsAndMembership")
-			},
-		},
 		GetAuthenticatedUserTeamsFunc: &ClientGetAuthenticatedUserTeamsFunc{
 			defaultHook: func(context.Context, int) ([]*github.Team, bool, int, error) {
 				panic("unexpected invocation of MockClient.GetAuthenticatedUserTeams")
@@ -214,7 +200,6 @@ func NewStrictMockClient() *MockClient {
 // is redefined here as it is unexported in the source package.
 type surrogateMockClient interface {
 	GetAuthenticatedOAuthScopes(context.Context) ([]string, error)
-	GetAuthenticatedUserOrgsDetailsAndMembership(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)
 	GetAuthenticatedUserTeams(context.Context, int) ([]*github.Team, bool, int, error)
 	GetOrganization(context.Context, string) (*github.OrgDetails, error)
 	GetRepository(context.Context, string, string) (*github.Repository, error)
@@ -234,9 +219,6 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 	return &MockClient{
 		GetAuthenticatedOAuthScopesFunc: &ClientGetAuthenticatedOAuthScopesFunc{
 			defaultHook: i.GetAuthenticatedOAuthScopes,
-		},
-		GetAuthenticatedUserOrgsDetailsAndMembershipFunc: &ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc{
-			defaultHook: i.GetAuthenticatedUserOrgsDetailsAndMembership,
 		},
 		GetAuthenticatedUserTeamsFunc: &ClientGetAuthenticatedUserTeamsFunc{
 			defaultHook: i.GetAuthenticatedUserTeams,
@@ -380,126 +362,6 @@ func (c ClientGetAuthenticatedOAuthScopesFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientGetAuthenticatedOAuthScopesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc describes the
-// behavior when the GetAuthenticatedUserOrgsDetailsAndMembership method of
-// the parent MockClient instance is invoked.
-type ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc struct {
-	defaultHook func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)
-	hooks       []func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)
-	history     []ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall
-	mutex       sync.Mutex
-}
-
-// GetAuthenticatedUserOrgsDetailsAndMembership delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockClient) GetAuthenticatedUserOrgsDetailsAndMembership(v0 context.Context, v1 int) ([]github.OrgDetailsAndMembership, bool, int, error) {
-	r0, r1, r2, r3 := m.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.nextHook()(v0, v1)
-	m.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.appendCall(ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall{v0, v1, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the
-// GetAuthenticatedUserOrgsDetailsAndMembership method of the parent
-// MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) SetDefaultHook(hook func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetAuthenticatedUserOrgsDetailsAndMembership method of the parent
-// MockClient instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) PushHook(hook func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) SetDefaultReturn(r0 []github.OrgDetailsAndMembership, r1 bool, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) PushReturn(r0 []github.OrgDetailsAndMembership, r1 bool, r2 int, r3 error) {
-	f.PushHook(func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) nextHook() func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) appendCall(r0 ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall objects
-// describing the invocations of this function.
-func (f *ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc) History() []ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall is an object
-// that describes an invocation of method
-// GetAuthenticatedUserOrgsDetailsAndMembership on an instance of
-// MockClient.
-type ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []github.OrgDetailsAndMembership
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGetAuthenticatedUserOrgsDetailsAndMembershipFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // ClientGetAuthenticatedUserTeamsFunc describes the behavior when the

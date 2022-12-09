@@ -376,34 +376,6 @@ type OrgDetailsAndMembership struct {
 	*OrgMembership
 }
 
-// GetAuthenticatedUserOrgsDetailsAndMembership returns the organizations associated with the currently
-// authenticated user as well as additional information about each org by making API
-// requests for each org (see `OrgDetails` and `OrgMembership` docs for more details).
-func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (
-	orgs []OrgDetailsAndMembership,
-	hasNextPage bool,
-	rateLimitCost int,
-	err error,
-) {
-	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
-	if err != nil {
-		return
-	}
-	orgs = make([]OrgDetailsAndMembership, len(orgNames))
-	for i, org := range orgNames {
-		if _, err = c.get(ctx, "/orgs/"+org.Login, &orgs[i].OrgDetails); err != nil {
-			return nil, false, cost + 2*i, err
-		}
-		if _, err = c.get(ctx, "/user/memberships/orgs/"+org.Login, &orgs[i].OrgMembership); err != nil {
-			return nil, false, cost + 2*i, err
-		}
-	}
-	return orgs,
-		hasNextPage,
-		cost + 2*len(orgs), // 2 requests per org
-		nil
-}
-
 type restTeam struct {
 	Name string `json:"name,omitempty"`
 	Slug string `json:"slug,omitempty"`
