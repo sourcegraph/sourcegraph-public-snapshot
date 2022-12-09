@@ -5,13 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"strconv"
+	"github.com/google/uuid"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/dineshappavoo/basex"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
@@ -50,16 +48,16 @@ func (s SQLColumns) FmtStr() string {
 	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
-// seededRand is used in RandomID() to generate a "random" number.
-// time.Now should be used over timeutil.Now to avoid creating the same value between different requests.
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
 // RandomID generates a random ID to be used for identifiers in the database.
 func RandomID() (string, error) {
-	return basex.Encode(strconv.Itoa(seededRand.Int()))
+	random, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	return random.String(), nil
 }
 
 // Store exposes methods to read and write batches domain models
