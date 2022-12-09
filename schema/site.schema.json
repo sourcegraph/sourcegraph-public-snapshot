@@ -1161,6 +1161,33 @@
         "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
+        },
+        "additionalHeaders": {
+          "description": "Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.",
+          "type": "array",
+          "items": {
+            "title": "Header",
+            "type": "object",
+            "required": ["key", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "sensitive": {
+                "type": "boolean"
+              }
+            },
+            "examples": [
+              {
+                "key": "",
+                "value": ""
+              }
+            ]
+          }
         }
       },
       "default": null,

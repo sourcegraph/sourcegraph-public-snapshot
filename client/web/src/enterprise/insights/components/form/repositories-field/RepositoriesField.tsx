@@ -22,7 +22,11 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
     const [caretPosition, setCaretPosition] = useState<number | null>(null)
     const [panel, setPanel] = useState(false)
 
-    const { repositories, value: search, index: searchTermIndex } = getSuggestionsSearchTerm({
+    const {
+        repositories,
+        value: search,
+        index: searchTermIndex,
+    } = getSuggestionsSearchTerm({
         value,
         caretPosition,
     })
@@ -68,8 +72,9 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
                 }
 
                 const isLastItemEdited = searchTermIndex === repositories.length - 1
-                const endOfSelectedItem = [...repositories.slice(0, searchTermIndex), selectValue].join(separatorString)
-                    .length
+                const endOfSelectedItem = [...repositories.slice(0, searchTermIndex), selectValue].join(
+                    separatorString
+                ).length
 
                 const nextCaretPosition = isLastItemEdited
                     ? // Put cursor at the end the input value

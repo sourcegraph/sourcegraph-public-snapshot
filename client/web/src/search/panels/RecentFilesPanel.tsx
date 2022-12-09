@@ -52,9 +52,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
     const [recentFiles, setRecentFiles] = useState<null | RecentFilesFragment['recentFilesLogs']>(
         recentFilesFragment?.recentFilesLogs ?? null
     )
-    useEffect(() => setRecentFiles(recentFilesFragment?.recentFilesLogs ?? null), [
-        recentFilesFragment?.recentFilesLogs,
-    ])
+    useEffect(
+        () => setRecentFiles(recentFilesFragment?.recentFilesLogs ?? null),
+        [recentFilesFragment?.recentFilesLogs]
+    )
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
     const [isLoadingMore, setIsLoadingMore] = useState(false)

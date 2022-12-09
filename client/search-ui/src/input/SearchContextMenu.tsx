@@ -78,9 +78,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
     const infiniteScrollList = useRef<HTMLUListElement | null>(null)
 
-    const loadNextPageUpdates = useRef(
-        new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' })
-    )
+    const loadNextPageUpdates = useRef(new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' }))
 
     const loadNextPage = useCallback((): void => {
         if (loadingState === 'DONE' && (!lastPageInfo || lastPageInfo.hasNextPage)) {

@@ -201,9 +201,8 @@ export class FilteredConnection<
     public componentDidMount(): void {
         const activeFilterValuesChanges = this.activeFilterValuesChanges.pipe(startWith(this.state.activeFilterValues))
 
-        const queryChanges = (this.props.querySubject
-            ? merge(this.queryInputChanges, this.props.querySubject)
-            : this.queryInputChanges
+        const queryChanges = (
+            this.props.querySubject ? merge(this.queryInputChanges, this.props.querySubject) : this.queryInputChanges
         ).pipe(
             distinctUntilChanged(),
             tap(query => !this.props.hideSearch && this.setState({ query })),
@@ -250,9 +249,7 @@ export class FilteredConnection<
             combineLatest([
                 queryChanges,
                 activeFilterValuesChanges,
-                refreshRequests.pipe(
-                    startWith<{ forceRefresh: boolean }>({ forceRefresh: false })
-                ),
+                refreshRequests.pipe(startWith<{ forceRefresh: boolean }>({ forceRefresh: false })),
             ])
                 .pipe(
                     // Track whether the query or the active order or filter changed
@@ -305,15 +302,16 @@ export class FilteredConnection<
                                 share()
                             )
 
-                        return (shouldRefresh
-                            ? merge(
-                                  result,
-                                  of({
-                                      connectionOrError: undefined,
-                                      loading: true,
-                                  }).pipe(delay(250), takeUntil(result))
-                              )
-                            : result
+                        return (
+                            shouldRefresh
+                                ? merge(
+                                      result,
+                                      of({
+                                          connectionOrError: undefined,
+                                          loading: true,
+                                      }).pipe(delay(250), takeUntil(result))
+                                  )
+                                : result
                         ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(

@@ -84,9 +84,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<
         },
         [setPersistedIsVisible, props.telemetryService]
     )
-    const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
-        props.telemetryService,
-    ])
+    const handleSymbolClick = useCallback(
+        () => props.telemetryService.log('SymbolTreeViewClicked'),
+        [props.telemetryService]
+    )
 
     if (!isVisible) {
         return (

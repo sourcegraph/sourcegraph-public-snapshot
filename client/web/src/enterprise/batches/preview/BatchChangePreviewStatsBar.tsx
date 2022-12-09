@@ -47,11 +47,10 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
     /** We use this to recalculate the stats when the publication states are modified. */
     const stats = useObservable<ApplyPreviewStatsFields['stats']>(
-        useMemo(() => queryApplyPreviewStats({ batchSpec, publicationStates }), [
-            publicationStates,
-            batchSpec,
-            queryApplyPreviewStats,
-        ])
+        useMemo(
+            () => queryApplyPreviewStats({ batchSpec, publicationStates }),
+            [publicationStates, batchSpec, queryApplyPreviewStats]
+        )
     )
 
     if (!stats) {

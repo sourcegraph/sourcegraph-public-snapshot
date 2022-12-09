@@ -28,9 +28,7 @@ export interface UseUiFeatures {
             }
         }
         getContextActionsPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
-        getAddRemoveInsightsPermission: (
-            dashboard?: InsightDashboard
-        ) => {
+        getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
             disabled: boolean
             tooltip: string | undefined
         }

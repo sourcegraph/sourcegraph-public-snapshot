@@ -82,15 +82,17 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
 
     /** Emits whenever the ref callback for the code element is called */
     const codeElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextCodeElement = useCallback((element: HTMLElement | null): void => codeElements.next(element), [
-        codeElements,
-    ])
+    const nextCodeElement = useCallback(
+        (element: HTMLElement | null): void => codeElements.next(element),
+        [codeElements]
+    )
 
     /** Emits whenever the ref callback for the blob element is called */
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextBlobElement = useCallback((element: HTMLElement | null): void => blobElements.next(element), [
-        blobElements,
-    ])
+    const nextBlobElement = useCallback(
+        (element: HTMLElement | null): void => blobElements.next(element),
+        [blobElements]
+    )
 
     const extensionInfoChanges = useMemo(() => new ReplaySubject<FileHunksProps['extensionInfo'] | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {

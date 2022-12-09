@@ -2,9 +2,8 @@ import React, { useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Badge, LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -27,16 +26,10 @@ import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 export interface EditInsightPageProps {
     /** Normalized insight id <type insight>.insight.<name of insight> */
     insightID: string
-
-    /**
-     * Authenticated user info, Used to decide where code insight will appear
-     * in personal dashboard (private) or in organisation dashboard (public)
-     */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
 export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<EditInsightPageProps>> = props => {
-    const { insightID, authenticatedUser } = props
+    const { insightID } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
     const { licensed, insight: insightFeatures } = useUiFeatures()
@@ -53,21 +46,7 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
     }
 
     if (!insight) {
-        return (
-            <HeroPage
-                icon={MapSearchIcon}
-                title="Oops, we couldn't find that insight"
-                subtitle={
-                    <span>
-                        We couldn't find that insight. Try to find the insight with ID:{' '}
-                        <Badge variant="secondary" as="code">
-                            {insightID}
-                        </Badge>{' '}
-                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
-                    </span>
-                }
-            />
-        )
+        return <HeroPage icon={MapSearchIcon} title="Oops, we couldn't find that insight" />
     }
 
     return (

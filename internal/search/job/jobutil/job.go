@@ -54,7 +54,9 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		}
 	}
 
-	return NewAlertJob(inputs, jobTree), nil
+	job := NewAlertJob(inputs, jobTree)
+	job = NewLogJob(inputs, job)
+	return job, nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
