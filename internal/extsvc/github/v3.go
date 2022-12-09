@@ -368,14 +368,6 @@ func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int
 	return orgs, respState.hasNextPage(), 1, err
 }
 
-// OrgDetailsAndMembership is a results container for the results from the API calls made
-// in GetAuthenticatedUserOrgsDetailsAndMembership
-type OrgDetailsAndMembership struct {
-	*OrgDetails
-
-	*OrgMembership
-}
-
 type restTeam struct {
 	Name string `json:"name,omitempty"`
 	Slug string `json:"slug,omitempty"`
