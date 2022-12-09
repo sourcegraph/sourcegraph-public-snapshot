@@ -28,7 +28,7 @@ The following settings should be the same for the [`precise-code-intel-worker`](
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code graph uploads. S3, GCS, and MinIO are supported. |
+| `_UPLOAD_BACKEND` | `Blobstore` | The target file service for code graph uploads. S3, GCS, and Blobstore are supported. In older versions of Sourcegraph (before v3.4.2) `Minio` was also a valid value. |
 | `_UPLOAD_MANAGE_BUCKET` | `false` | Whether or not the client should manage the target bucket configuration |
 | `_UPLOAD_BUCKET` | `lsif-uploads` | The name of the bucket to store LSIF uploads in |
 | `_UPLOAD_TTL` | `168h` | The maximum age of an upload before deletion |
@@ -114,7 +114,7 @@ The following settings should be the same for the [`frontend`](#frontend) servic
 
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| `_UPLOAD_BACKEND` | `MinIO` | The target file service for code graph data uploads. S3, GCS, and MinIO are supported. |
+| `_UPLOAD_BACKEND` | `Blobstore` | The target file service for code graph data uploads. S3, GCS, and Blobstore are supported. In older versions of Sourcegraph (before v3.4.2) `Minio` was also a valid value. |
 | `_UPLOAD_MANAGE_BUCKET` | `false` | Whether or not the client should manage the target bucket configuration |
 | `_UPLOAD_BUCKET` | `lsif-uploads` | The name of the bucket to store LSIF uploads in |
 | `_UPLOAD_TTL` | `168h` | The maximum age of an upload before deletion |

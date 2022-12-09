@@ -28,6 +28,7 @@ type Services struct {
 	BatchesChangesFileUploadHandler http.Handler
 
 	GitHubSyncWebhook           webhooks.Registerer
+	PermissionsGitHubWebhook    webhooks.Registerer
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
 	RankingService              RankingService
 	NewExecutorProxyHandler     NewExecutorProxyHandler
@@ -74,6 +75,7 @@ type NewComputeStreamHandler func() http.Handler
 func DefaultServices() Services {
 	return Services{
 		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
+		PermissionsGitHubWebhook:        &emptyWebhookHandler{name: "permissions github webhook"},
 		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
 		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
 		BatchesBitbucketServerWebhook:   &emptyWebhookHandler{name: "batches bitbucket server webhook"},

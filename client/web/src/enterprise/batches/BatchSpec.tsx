@@ -40,10 +40,10 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)
     // JSON document that's difficult to read unless indented.
     const inputIsJSON = isJSON(originalInput)
-    const input = useMemo(() => (inputIsJSON ? JSON.stringify(JSON.parse(originalInput), null, 2) : originalInput), [
-        inputIsJSON,
-        originalInput,
-    ])
+    const input = useMemo(
+        () => (inputIsJSON ? JSON.stringify(JSON.parse(originalInput), null, 2) : originalInput),
+        [inputIsJSON, originalInput]
+    )
 
     return (
         <MonacoBatchSpecEditor
@@ -61,46 +61,44 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
     asButton: boolean
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<
-    React.PropsWithChildren<BatchSpecDownloadLinkProps>
-> = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
-    const component = asButton ? (
-        <Button
-            variant="primary"
-            as={AnchorLink}
-            download={getFileName(name)}
-            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={className}
-            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
-        >
-            {children}
-        </Button>
-    ) : (
-        <Link
-            download={getFileName(name)}
-            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-            className={className}
-            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
-        >
-            {children}
-        </Link>
-    )
+export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChildren<BatchSpecDownloadLinkProps>> =
+    React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
+        const component = asButton ? (
+            <Button
+                variant="primary"
+                as={AnchorLink}
+                download={getFileName(name)}
+                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+                onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+            >
+                {children}
+            </Button>
+        ) : (
+            <Link
+                download={getFileName(name)}
+                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                className={className}
+                onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+            >
+                {children}
+            </Link>
+        )
 
-    return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
-})
+        return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
+    })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
-export const BatchSpecDownloadButton: React.FunctionComponent<
-    BatchSpecProps & Pick<BatchChangeFields, 'name'>
-> = React.memo(function BatchSpecDownloadButton(props) {
-    return (
-        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
-            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
-        </BatchSpecDownloadLink>
-    )
-})
+export const BatchSpecDownloadButton: React.FunctionComponent<BatchSpecProps & Pick<BatchChangeFields, 'name'>> =
+    React.memo(function BatchSpecDownloadButton(props) {
+        return (
+            <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+                <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+            </BatchSpecDownloadLink>
+        )
+    })
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 

@@ -144,6 +144,7 @@ describe('Code insights [Dashboard card]', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_COMPUTE')
         await driver.page.waitForSelector('[aria-label="Bar chart"]')
+        await driver.page.waitForSelector('[aria-label="Bar chart content"]')
 
         const numberOfBars = await driver.page.$$eval('[aria-label="Bar chart"] rect', elements => elements.length)
 

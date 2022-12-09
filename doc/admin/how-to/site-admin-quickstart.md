@@ -60,7 +60,7 @@ For more info, check out our complete [repository permission documentation.](../
 
 
 ### External services 
-By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and MinIO. 
+By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and blobstore. 
 
 Your Sourcegraph instance can also be configured to use existing external services if you wish. For more information on configuring Sourcegraph to use your external services, please reference this [documentation.](../external_services/index.md)
 

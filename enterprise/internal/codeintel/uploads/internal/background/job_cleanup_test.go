@@ -114,6 +114,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 			MinimumTimeSinceLastCheck:      1 * time.Hour,
 			CommitResolverBatchSize:        10,
 			AuditLogMaxAge:                 1 * time.Hour,
+			UnreferencedDocumentMaxAge:     1 * time.Hour,
 			CommitResolverMaximumCommitLag: 1 * time.Hour,
 			UploadTimeout:                  1 * time.Hour,
 		}); err != nil {

@@ -65,20 +65,18 @@ const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
             breakpointName =>
                 [
                     breakpointName,
-                    viewIds.map(
-                        (id, index): ReactGridLayout => {
-                            const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
-                            return {
-                                i: id,
-                                h: DEFAULT_HEIGHT,
-                                w: width,
-                                x: (index * width) % COLUMNS[breakpointName],
-                                y: Math.floor((index * width) / COLUMNS[breakpointName]),
-                                minW: MIN_WIDTHS[breakpointName],
-                                minH: 2,
-                            }
+                    viewIds.map((id, index): ReactGridLayout => {
+                        const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
+                        return {
+                            i: id,
+                            h: DEFAULT_HEIGHT,
+                            w: width,
+                            x: (index * width) % COLUMNS[breakpointName],
+                            y: Math.floor((index * width) / COLUMNS[breakpointName]),
+                            minW: MIN_WIDTHS[breakpointName],
+                            minH: 2,
                         }
-                    ),
+                    }),
                 ] as const
         )
     )
@@ -138,11 +136,10 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
     const activeBreakpoint = useMemo(() => findBreakpointByWidth(width), [width])
 
-    const context = useMemo(() => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }), [
-        gridElements,
-        gridLayouts,
-        activeBreakpoint,
-    ])
+    const context = useMemo(
+        () => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }),
+        [gridElements, gridLayouts, activeBreakpoint]
+    )
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),

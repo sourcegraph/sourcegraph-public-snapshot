@@ -141,14 +141,8 @@ type RepositoriesParseResult =
       }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
-    const {
-        authenticatedUser,
-        onSubmit,
-        searchContext,
-        deleteSearchContext,
-        isSourcegraphDotCom,
-        platformContext,
-    } = props
+    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
+        props
     const history = useHistory()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =

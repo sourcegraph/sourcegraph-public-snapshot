@@ -41,10 +41,10 @@ export const useBatchChangesLicense = (): UseBatchChangesLicenseResult => {
         : false
     const maxUnlicensedChangesets = licenseAndUsageInfo ? licenseAndUsageInfo.maxUnlicensedChangesets : 0
 
-    const exceedsLicense = useCallback((count: number) => isUnlicensed && count > maxUnlicensedChangesets, [
-        isUnlicensed,
-        maxUnlicensedChangesets,
-    ])
+    const exceedsLicense = useCallback(
+        (count: number) => isUnlicensed && count > maxUnlicensedChangesets,
+        [isUnlicensed, maxUnlicensedChangesets]
+    )
 
     return { licenseAndUsageInfo, isUnlicensed, maxUnlicensedChangesets, exceedsLicense }
 }

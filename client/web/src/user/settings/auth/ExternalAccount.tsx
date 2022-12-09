@@ -24,9 +24,10 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
-    const toggleRemoveAccountModal = useCallback(() => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen), [
-        isRemoveAccountModalOpen,
-    ])
+    const toggleRemoveAccountModal = useCallback(
+        () => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen),
+        [isRemoveAccountModalOpen]
+    )
 
     const navigateToAuthProvider = useCallback((): void => {
         setIsLoading(true)

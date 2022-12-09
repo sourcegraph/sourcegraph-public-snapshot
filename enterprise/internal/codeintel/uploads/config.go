@@ -27,6 +27,8 @@ type janitorConfig struct {
 	MinimumTimeSinceLastCheck      time.Duration
 	CommitResolverBatchSize        int
 	AuditLogMaxAge                 time.Duration
+	UnreferencedDocumentBatchSize  int
+	UnreferencedDocumentMaxAge     time.Duration
 	CommitResolverMaximumCommitLag time.Duration
 	UploadTimeout                  time.Duration
 	ReconcilerBatchSize            int
@@ -45,6 +47,8 @@ func (c *janitorConfig) Load() {
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
 	c.AuditLogMaxAge = c.GetInterval(auditLogMaxAgeName, "720h", "The maximum time a code intel audit log record can remain on the database.")
+	c.UnreferencedDocumentBatchSize = c.GetInt("CODEINTEL_UPLOADS_UNREFERENCED_DOCUMENT_BATCH_SIZE", "100", "The number of unreferenced SCIP documents to consider for deletion at a time.")
+	c.UnreferencedDocumentMaxAge = c.GetInterval("CODEINTEL_UPLOADS_UNREFERENCED_DOCUMENT_MAX_AGE", "24h", "The maximum time an unreferenced SCIP document should remain in the database.")
 	c.CommitResolverMaximumCommitLag = c.GetInterval(commitResolverMaximumCommitLagName, "0s", "The maximum acceptable delay between accepting an upload and its commit becoming resolvable. Be cautious about setting this to a large value, as uploads for unresolvable commits will be retried periodically during this interval.")
 	c.UploadTimeout = c.GetInterval(uploadTimeoutName, "24h", "The maximum time an upload can be in the 'uploading' state.")
 	c.ReconcilerBatchSize = c.GetInt("CODEINTEL_UPLOADS_RECONCILER_BATCH_SIZE", "1000", "The number of uploads to reconcile in one cleanup routine invocation.")
