@@ -24,6 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Client) (*github.Client, error) {
+	if cli == nil {
+		cli, _ = httpcli.ExternalClientFactory.Client()
+	}
+
+	oauth2Config := oauth2.Config{}
+	cli.Transport = &oauth2.Transport{
+		Source: oauth2Config.TokenSource(ctx, &oauth2.Token{AccessToken: token}),
+		Base:   cli.Transport,
+	}
+	return github.NewClient(cli), nil
+}
+
 func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client) (*github.Client, error) {
 	if acct == nil {
 		return github.NewClient(cli), nil

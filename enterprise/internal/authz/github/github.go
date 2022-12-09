@@ -43,6 +43,7 @@ type Provider struct {
 	db database.DB
 
 	baseHTTPClient *http.Client
+	baseToken      string
 }
 
 type ProviderOptions struct {
@@ -84,6 +85,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		},
 		db:             opts.DB,
 		baseHTTPClient: opts.BaseHTTPClient,
+		baseToken:      opts.BaseToken,
 	}
 }
 
@@ -224,7 +226,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, cli *gh.Client, ac
 	listOpts := &gh.RepositoryListOptions{
 		Visibility:  "private",
 		Affiliation: strings.Join(affiliations, ","),
+		Sort:        "created",
 		ListOptions: gh.ListOptions{
+			Page:    1,
 			PerPage: repoSetSize,
 		},
 	}
@@ -295,14 +299,14 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, cli *gh.Client, ac
 			var repos []*gh.Repository
 			var resp *gh.Response
 			if isOrg {
-				repos, resp, err = cli.Repositories.ListByOrg(ctx, group.Org, &gh.RepositoryListByOrgOptions{ListOptions: *listOpts})
+				repos, resp, err = cli.Repositories.ListByOrg(ctx, group.Org, &gh.RepositoryListByOrgOptions{Sort: "created", ListOptions: *listOpts})
 			} else {
 				repos, resp, err = cli.Teams.ListTeamReposBySlug(ctx, group.Org, group.Team, listOpts)
 			}
 			if github.IsNotFound(err) ||
 				github.HTTPErrorCode(err) == http.StatusForbidden ||
-				resp.StatusCode == http.StatusForbidden ||
-				resp.StatusCode == http.StatusNotFound {
+				resp != nil && (resp.StatusCode == http.StatusForbidden ||
+					resp.StatusCode == http.StatusNotFound) {
 				// If we get a 403/404 here, something funky is going on and this is very
 				// unexpected. Since this is likely not transient, instead of bailing out and
 				// potentially causing unbounded retries later, we let this result proceed to
@@ -396,7 +400,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, nil, p.baseHTTPClient)
+	cli, err := github.NewGitHubClientWithToken(ctx, p.baseToken, p.baseHTTPClient)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?page=1&per_page=100&affiliation=direct
+    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?affiliation=direct&page=1&per_page=100
     method: GET
   response:
     body: '[{"login":"sourcegraph-vcr-bob","id":66464926,"node_id":"MDQ6VXNlcjY2NDY0OTI2","avatar_url":"https://avatars.githubusercontent.com/u/66464926?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-bob","html_url":"https://github.com/sourcegraph-vcr-bob","followers_url":"https://api.github.com/users/sourcegraph-vcr-bob/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-bob/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-bob/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-bob/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-bob/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-bob/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-bob/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-bob/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-bob/received_events","type":"User","site_admin":false,"permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true}}]'
