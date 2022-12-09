@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS permissions (
 
     created_at timestamp with time zone DEFAULT now() NOT NULL,
 
-    CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
+    CONSTRAINT namespace_not_blank CHECK (namespace <> ''::text),
+    CONSTRAINT action_not_blank CHECK (action <> ''::text)
 );
 
 -- Enforce uniqueness of actions in a given namespace
