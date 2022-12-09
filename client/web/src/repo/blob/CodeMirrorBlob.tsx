@@ -26,7 +26,7 @@ import { blobPropsFacet } from './codemirror'
 import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
-import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { selectableLineNumbers, SelectedLineRange, selectLines, shouldScrollIntoView } from './codemirror/linenumbers'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
@@ -214,13 +214,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
-<<<<<<< HEAD
-            settingsCompartment.of(settings),
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
-=======
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
->>>>>>> 0a15ef1e6e (Fix #41413 preserve scroll position when wrapping code)
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
