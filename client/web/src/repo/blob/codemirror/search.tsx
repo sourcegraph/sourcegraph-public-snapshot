@@ -20,7 +20,7 @@ import { History } from 'history'
 import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 import { BehaviorSubject, Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilKeyChanged, filter, startWith } from 'rxjs/operators'
+import { debounceTime, distinctUntilKeyChanged, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
@@ -247,7 +247,7 @@ class SearchPanel implements Panel {
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
 
-    private updateSelectedSearchMatch = ({ from }: { from: number }) => {
+    private updateSelectedSearchMatch = ({ from }: { from: number }): void => {
         const match = this.matches.get(from)
         this.currentMatchIndex.next(match?.index ?? -1)
     }
@@ -281,6 +281,8 @@ class SearchPanel implements Panel {
 
     private calculateMatches = (query: SearchQuery): void => {
         this.matches.clear()
+        this.currentMatchIndex.next(-1)
+
         const regex = new RegExp(
             query.regexp ? query.search : escapeRegExp(query.search),
             `gm${query.caseSensitive ? '' : 'i'}`
