@@ -215,7 +215,7 @@ func compareBatchSpecDeepCmpopts() []cmp.Option {
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecDeep{}, "ID", "CreatedAt", "FinishedAt", "StartedAt", "ExpiresAt"),
 		cmpopts.IgnoreFields(gqltestutil.ChangesetSpec{}, "ID"),
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspace{}, "QueuedAt", "StartedAt", "FinishedAt"),
-		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspaceStep{}, "StartedAt", "FinishedAt"),
+		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspaceStep{}, "StartedAt", "FinishedAt", "OutputLines"),
 		cmpopts.IgnoreFields(gqltestutil.WorkspaceChangesetSpec{}, "ID"),
 		cmpopts.IgnoreFields(gqltestutil.Namespace{}, "ID"),
 		cmpopts.IgnoreFields(gqltestutil.Executor{}, "Hostname"),
