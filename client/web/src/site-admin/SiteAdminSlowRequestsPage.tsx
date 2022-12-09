@@ -157,7 +157,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
     }
 
     return (
-        <React.Fragment key={node.Index}>
+        <React.Fragment key={node.index}>
             <span className={styles.separator} />
             <div className="flex-bounded">
                 <Timestamp date={node.start} noAbout={true} strict={true} />
