@@ -268,7 +268,7 @@ export class SourcegraphWebApp extends React.Component<
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
-            this.setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
+            this.setSelectedSearchContextSpecWithNoChecks(GLOBAL_SEARCH_CONTEXT_SPEC)
         }
         if (!parsedSearchQuery) {
             // If no query is present (e.g. search page, settings page),
@@ -426,6 +426,13 @@ export class SourcegraphWebApp extends React.Component<
     private getSelectedSearchContextSpec = (): string | undefined =>
         getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
+    private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
+        this.setState({ selectedSearchContextSpec: spec })
+        this.setWorkspaceSearchContext(spec).catch(error => {
+            logger.error('Error sending search context to extensions', error)
+        })
+    }
+
     private setSelectedSearchContextSpec = (spec: string): void => {
         if (!this.props.searchContextsEnabled) {
             return
@@ -433,11 +440,7 @@ export class SourcegraphWebApp extends React.Component<
 
         // The global search context is always available.
         if (spec === GLOBAL_SEARCH_CONTEXT_SPEC) {
-            this.setState({ selectedSearchContextSpec: spec })
-            this.setWorkspaceSearchContext(spec).catch(error => {
-                logger.error('Error sending search context to extensions', error)
-            })
-            return
+            this.setSelectedSearchContextSpecWithNoChecks(spec)
         }
 
         // Check if the wanted search context is available.
@@ -447,10 +450,7 @@ export class SourcegraphWebApp extends React.Component<
                 platformContext: this.platformContext,
             }).subscribe(isAvailable => {
                 if (isAvailable) {
-                    this.setState({ selectedSearchContextSpec: spec })
-                    this.setWorkspaceSearchContext(spec).catch(error => {
-                        logger.error('Error sending search context to extensions', error)
-                    })
+                    this.setSelectedSearchContextSpecWithNoChecks(spec)
                 } else if (!this.state.selectedSearchContextSpec) {
                     // If the wanted search context is not available and
                     // there is no currently selected search context,
@@ -470,10 +470,7 @@ export class SourcegraphWebApp extends React.Component<
         this.subscriptions.add(
             getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
                 // Fall back to global if no default is returned.
-                this.setState({ selectedSearchContextSpec: spec || GLOBAL_SEARCH_CONTEXT_SPEC })
-                this.setWorkspaceSearchContext(spec || GLOBAL_SEARCH_CONTEXT_SPEC).catch(error => {
-                    logger.error('Error sending search context to extensions', error)
-                })
+                this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
         )
     }
