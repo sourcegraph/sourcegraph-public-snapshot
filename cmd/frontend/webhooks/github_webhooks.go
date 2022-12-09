@@ -97,7 +97,6 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

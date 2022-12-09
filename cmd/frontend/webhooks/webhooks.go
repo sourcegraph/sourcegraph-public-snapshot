@@ -24,7 +24,8 @@ type webhookEventHandlers map[string][]WebhookHandler
 // and routing to any registered WebhookHandlers, events are routed by their code host kind
 // and event type.
 type WebhookRouter struct {
-	DB database.DB
+	Logger log.Logger
+	DB     database.DB
 
 	mu sync.RWMutex
 	// Mapped by codeHostKind: webhookEvent: handlers
@@ -157,7 +158,11 @@ func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHos
 		// capture the handler variable within this loop
 		handler := handler
 		g.Go(func() error {
-			return handler(ctx, wr.DB, codeHostURN, e)
+			// Don't log the error, because webhook processing can fail for
+			// valid reasons (repo does not exist on Sourcegraph).
+			// Valid errors should be logged within the handler itself.
+			handler(ctx, wr.DB, codeHostURN, e)
+			return nil
 		})
 	}
 	return g.Wait()

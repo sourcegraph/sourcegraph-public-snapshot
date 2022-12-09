@@ -55,7 +55,6 @@ func (wr *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseW
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

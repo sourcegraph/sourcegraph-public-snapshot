@@ -33,7 +33,6 @@ func (wr *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

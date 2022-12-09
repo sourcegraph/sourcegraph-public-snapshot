@@ -89,7 +89,8 @@ func NewHandler(
 	)
 
 	wh := webhooks.WebhookRouter{
-		DB: db,
+		Logger: logger.Scoped("WebhookRouter", "router used to redirect webhook requests to correct handlers"),
+		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)
