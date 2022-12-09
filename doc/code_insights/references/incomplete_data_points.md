@@ -22,8 +22,7 @@ In addition:
 1. Timeout errors on points that have been snapshot after the creation date of the insight are more likely to occur on insights running complex searches over large numbers of repositories, because snapshot points are calculated by running a single global search against the current index.
 You can read more about this case in our [limitations](../explanations/current_limitations_of_code_insights.md#accuracy-considerations-for-an-insight-query-returning-a-large-result-set).
 
-
-If the data is available, the error alert should inform you for which times the search has timed out.
+If the data is available, the error alert will inform you which times the search has timed out.
 
 ## Other errors
 
