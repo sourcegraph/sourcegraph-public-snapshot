@@ -334,7 +334,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, 2, terminalCount)
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retry that exceeds max attempts calls back", `{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Want("ensure retry that exceeds max attempts calls back", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("ensure retry with all terminal errors has no errors to continue", func(t *testing.T) {
@@ -369,7 +369,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, float64(0), itr.PercentComplete)
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retry with only terminal errors reports no errors", nil).Equal(t, string(jsonify))
+		autogold.Want("ensure retry with only terminal errors reports no errors", `{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 
