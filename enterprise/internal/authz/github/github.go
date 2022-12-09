@@ -529,8 +529,10 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 			var err error
 			if group.Team == "" {
 				memberListOpts := &gh.ListMembersOptions{
-					Role:        "admin",
 					ListOptions: listOpts,
+				}
+				if group.adminsOnly {
+					memberListOpts.Role = "admin"
 				}
 				members, resp, err = cli.Organizations.ListMembers(ctx, owner, memberListOpts)
 			} else {
@@ -654,9 +656,9 @@ type repoAffiliatedGroup struct {
 // Returned groups are populated from cache if a valid value is available.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, cli *gh.Client, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
 	// Check if repo belongs in an org
-	org, _, err := cli.Organizations.Get(ctx, owner)
+	org, resp, err := cli.Organizations.Get(ctx, owner)
 	if err != nil {
-		if github.IsNotFound(err) {
+		if github.IsNotFound(err) || resp.StatusCode == 404 {
 			// Owner is most likely not an org. User repos don't have teams or org permissions,
 			// so we are done - this is fine, so don't propagate error.
 			return groups, nil
