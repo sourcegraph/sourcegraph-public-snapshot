@@ -23,6 +23,8 @@ In addition:
 You can read more about this case in our [limitations](../explanations/current_limitations_of_code_insights#accuracy-considerations-for-an-insight-query-returning-a-large-result-set).
 
 
+If the data is available, the error alert should inform you for which times the search has timed out.
+
 ## Other errors
 
 For other errors, please reach out to our support team through your usual channels or at support@sourcegraph.com. 
