@@ -2791,7 +2791,10 @@ type ExternalService implements Node {
         Only include webhook logs on or before this time.
         """
         until: DateTime
-    ): WebhookLogConnection! @deprecated(reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks")
+    ): WebhookLogConnection!
+        @deprecated(
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks"
+        )
 
     """
     The list of recent sync jobs for this external service.
