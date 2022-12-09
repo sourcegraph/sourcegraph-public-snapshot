@@ -154,8 +154,8 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 	const delay = 24 * time.Hour
 	for {
 		if err := refreshAnalyticsCache(ctx, db); err != nil {
-        	logger.Error("Error refreshing admin analytics cache", log.Error(err))
-        }
+			logger.Error("Error refreshing admin analytics cache", log.Error(err))
+		}
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second
