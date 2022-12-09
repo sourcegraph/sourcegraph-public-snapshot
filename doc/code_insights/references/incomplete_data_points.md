@@ -1,4 +1,4 @@
-# Incomplete data errors
+# Incomplete data points
 
 There are a few cases when a code insight may not return complete data. 
 
