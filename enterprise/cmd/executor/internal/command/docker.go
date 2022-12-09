@@ -14,7 +14,7 @@ const ScriptsPath = ".sourcegraph-executor"
 // will be run _directly_ on the host. Otherwise, the command will be run inside
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
-func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
+func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - make this a non-special case
 	if spec.Image == "" {
 		return command{
@@ -34,7 +34,9 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 	return command{
 		Key: spec.Key,
 		Command: flatten(
-			"docker", "run", "--rm",
+			"docker",
+			dockerConfigFlag(dockerConfigPath),
+			"run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
@@ -61,6 +63,13 @@ func dockerResourceFlags(options ResourceOptions) []string {
 
 func dockerVolumeFlags(wd string) []string {
 	return []string{"-v", wd + ":/data"}
+}
+
+func dockerConfigFlag(dockerConfigPath string) []string {
+	if dockerConfigPath == "" {
+		return nil
+	}
+	return []string{"--config", dockerConfigPath}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -118,8 +119,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 
 	options := command.Options{
 		ExecutorName:       name,
+		DockerOptions:      h.options.DockerOptions,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
+	}
+	if job.DockerAuthConfig != "" {
+		if err := json.Unmarshal([]byte(job.DockerAuthConfig), &options.DockerOptions.DockerAuthConfig); err != nil {
+			return err
+		}
 	}
 	runner := h.runnerFactory(workspace.Path(), commandLogger, options, h.operations)
 

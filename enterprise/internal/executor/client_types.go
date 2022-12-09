@@ -60,6 +60,8 @@ type Job struct {
 	// environment variables, as well as secret values passed along with the dequeued job
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
+
+	DockerAuthConfig string `json:"dockerAuthConfig"`
 }
 
 func (j Job) MarshalJSON() ([]byte, error) {
@@ -76,6 +78,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 			DockerSteps:         j.DockerSteps,
 			CliSteps:            j.CliSteps,
 			RedactedValues:      j.RedactedValues,
+			DockerAuthConfig:    j.DockerAuthConfig,
 		}
 		v2.VirtualMachineFiles = make(map[string]v2VirtualMachineFile, len(j.VirtualMachineFiles))
 		for k, v := range j.VirtualMachineFiles {
@@ -132,6 +135,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		j.DockerSteps = v2.DockerSteps
 		j.CliSteps = v2.CliSteps
 		j.RedactedValues = v2.RedactedValues
+		j.DockerAuthConfig = v2.DockerAuthConfig
 		return nil
 	}
 	var v1 v1Job
@@ -177,6 +181,7 @@ type v2Job struct {
 	DockerSteps         []DockerStep                    `json:"dockerSteps"`
 	CliSteps            []CliStep                       `json:"cliSteps"`
 	RedactedValues      map[string]string               `json:"redactedValues"`
+	DockerAuthConfig    string                          `json:"dockerAuthConfig"`
 }
 
 type v1Job struct {

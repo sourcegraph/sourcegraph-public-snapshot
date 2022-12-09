@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"runtime"
 	"strconv"
 	"time"
@@ -42,6 +43,7 @@ type Config struct {
 	DockerRegistryNodeExporterURL string
 	WorkerHostname                string
 	DockerRegistryMirrorURL       string
+	DockerAuthConfig              string
 }
 
 func (c *Config) Load() {
@@ -70,6 +72,7 @@ func (c *Config) Load() {
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
+	c.DockerAuthConfig = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 
 	hn := hostname.Get()
 	// Be unique but also descriptive.
@@ -79,6 +82,12 @@ func (c *Config) Load() {
 func (c *Config) Validate() error {
 	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
+
+	if c.DockerAuthConfig != "" {
+		if err := json.Unmarshal([]byte(c.DockerAuthConfig), &dockerAuthConfig{}); err != nil {
+			c.AddError(errors.Wrap(err, "invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse"))
+		}
 	}
 
 	if c.UseFirecracker {
@@ -103,4 +112,14 @@ func (c *Config) Validate() error {
 	}
 
 	return c.BaseConfig.Validate()
+}
+
+type dockerAuthConfig struct {
+	Auths dockerAuthConfigAuths `json:"auths"`
+}
+
+type dockerAuthConfigAuths map[string]dockerAuthConfigAuth
+
+type dockerAuthConfigAuth struct {
+	Auth []byte `json:"auth"`
 }

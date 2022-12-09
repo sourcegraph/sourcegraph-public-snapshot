@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -96,6 +97,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
 		WorkerOptions:      workerOptions(c),
+		DockerOptions:      dockerOptions(c),
 		FirecrackerOptions: firecrackerOptions(c),
 		ResourceOptions:    resourceOptions(c),
 		GitServicePath:     "/.executors/git",
@@ -123,6 +125,18 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
+	}
+}
+
+func dockerOptions(c *config.Config) command.DockerOptions {
+	var a command.DockerAuthConfig
+	if c.DockerAuthConfig != "" {
+		if err := json.Unmarshal([]byte(c.DockerAuthConfig), &a); err != nil {
+			panic("invalid")
+		}
+	}
+	return command.DockerOptions{
+		DockerAuthConfig: a,
 	}
 }
 
