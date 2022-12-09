@@ -455,7 +455,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			r.gitserverClient,
 			r.repoResolver,
 			desc.BaseRev,
-			string(desc.Diff),
+			desc.Diff,
 		)
 	}
 

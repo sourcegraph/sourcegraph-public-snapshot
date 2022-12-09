@@ -2,6 +2,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
+
 import { Button } from '../../Button'
 import { PopoverTrigger } from '../../Popover'
 
@@ -39,7 +41,7 @@ describe('FeedbackPrompt', () => {
             target: { value: sampleFeedback.feedback },
         })
 
-        expect(screen.getByText('Send')).toBeEnabled()
+        assertAriaEnabled(screen.getByText('Send'))
 
         userEvent.click(screen.getByText('Send'))
     }
@@ -49,11 +51,11 @@ describe('FeedbackPrompt', () => {
     })
 
     test('should enable/disable submit button correctly', () => {
-        expect(screen.getByText('Send')).toBeDisabled()
+        assertAriaDisabled(screen.getByText('Send'))
 
         userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
-        expect(screen.getByText('Send')).toBeEnabled()
+        assertAriaEnabled(screen.getByText('Send'))
     })
 
     test('should render submit success correctly', async () => {

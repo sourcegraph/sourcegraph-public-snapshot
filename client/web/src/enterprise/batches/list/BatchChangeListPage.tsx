@@ -8,12 +8,12 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -107,7 +107,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         { onCompleted: onUsageCheckCompleted }
     )
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangesByNamespaceResult | BatchChangesResult,
         BatchChangesByNamespaceVariables | BatchChangesVariables,
         ListBatchChange
@@ -151,7 +151,22 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                actions={
+                    canCreate ? (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} />
+                    ) : (
+                        <Button
+                            as={Link}
+                            to="https://signup.sourcegraph.com/?p=batch"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Batch Changes
+                        </Button>
+                    )
+                }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             >
@@ -160,7 +175,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+            <BatchChangeListTabHeader
+                selectedTab={selectedTab}
+                setSelectedTab={setSelectedTab}
+                isSourcegraphDotCom={isSourcegraphDotCom}
+            />
             {selectedTab === 'gettingStarted' && (
                 <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
@@ -267,8 +286,9 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
+        isSourcegraphDotCom: boolean
     }>
-> = ({ selectedTab, setSelectedTab }) => {
+> = ({ selectedTab, setSelectedTab, isSourcegraphDotCom }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -286,19 +306,21 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     return (
         <nav className="overflow-auto mb-2" aria-label="Batch Changes">
             <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
-                <div className="nav-item">
-                    <Link
-                        to=""
-                        onClick={onSelectBatchChanges}
-                        className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                        aria-selected={selectedTab === 'batchChanges'}
-                        role="tab"
-                    >
-                        <span className="text-content" data-tab-content="All batch changes">
-                            All batch changes
-                        </span>
-                    </Link>
-                </div>
+                {!isSourcegraphDotCom && (
+                    <div className="nav-item">
+                        <Link
+                            to=""
+                            onClick={onSelectBatchChanges}
+                            className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
+                            aria-selected={selectedTab === 'batchChanges'}
+                            role="tab"
+                        >
+                            <span className="text-content" data-tab-content="All batch changes">
+                                All batch changes
+                            </span>
+                        </Link>
+                    </div>
+                )}
                 <div className="nav-item">
                     <Link
                         to=""

@@ -11,7 +11,6 @@ import (
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,8 +23,9 @@ const providerType = "openidconnect"
 // Provider is an implementation of providers.Provider for the OpenID Connect
 // authentication.
 type Provider struct {
-	config     schema.OpenIDConnectAuthProvider
-	authPrefix string
+	config      schema.OpenIDConnectAuthProvider
+	authPrefix  string
+	callbackUrl string
 
 	mu         sync.Mutex
 	oidc       *oidcProvider
@@ -34,10 +34,11 @@ type Provider struct {
 
 // NewProvider creates and returns a new OpenID Connect authentication provider
 // using the given config.
-func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string) providers.Provider {
+func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string) providers.Provider {
 	return &Provider{
-		config:     config,
-		authPrefix: authPrefix,
+		config:      config,
+		authPrefix:  authPrefix,
+		callbackUrl: callbackUrl,
 	}
 }
 
@@ -122,7 +123,7 @@ func (p *Provider) oauth2Config() *oauth2.Config {
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
 		RedirectURL: globals.ExternalURL().
-			ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).
+			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 
 		Endpoint: p.oidc.Endpoint(),
@@ -157,7 +158,7 @@ func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(context.Background(), issuerURL)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}

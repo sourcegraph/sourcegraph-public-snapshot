@@ -27,6 +27,7 @@ import {
     WidgetType,
 } from '@codemirror/view'
 import classNames from 'classnames'
+import { useHistory } from 'react-router'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -121,7 +122,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
-
+    ariaLabelledby,
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
     searchHistory,
@@ -148,6 +149,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
         [editorReference, onEditorCreated]
     )
 
+    const history = useHistory()
+
     const autocompletion = useMemo(
         () =>
             createDefaultSuggestions({
@@ -155,9 +158,17 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
+                history,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
+        [
+            globbing,
+            isSourcegraphDotCom,
+            history,
+            applySuggestionsOnEnter,
+            fetchStreamSuggestions,
+            selectedSearchContextSpec,
+        ]
     )
 
     const extensions = useMemo(() => {
@@ -166,6 +177,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             callbacksField,
             autocompletion,
         ]
+
+        if (ariaLabelledby) {
+            extensions.push(EditorView.contentAttributes.of({ 'aria-labelledby': ariaLabelledby }))
+        }
 
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
@@ -207,6 +222,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
         return extensions
     }, [
         ariaLabel,
+        ariaLabelledby,
         autocompletion,
         placeholder,
         preventNewLine,

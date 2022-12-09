@@ -7,11 +7,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -40,8 +37,12 @@ type externalServiceResolver struct {
 const externalServiceIDKind = "ExternalService"
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := UnmarshalExternalServiceID(gqlID)
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
 
+	id, err := UnmarshalExternalServiceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +52,6 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
-		return nil, err
-	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
 }
 
@@ -190,20 +188,6 @@ func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
 }
 
 var scopeCache = rcache.New("extsvc_token_scope")
-
-func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, r.logger.Scoped("GrantedScopes", ""), scopeCache, r.db, r.externalService)
-	if err != nil {
-		// It's possible that we fail to fetch scope from the code host, in this case we
-		// don't want the entire resolver to fail.
-		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
-		return nil, nil
-	}
-	if scopes == nil {
-		return nil, nil
-	}
-	return &scopes, nil
-}
 
 func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
 	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))

@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,7 +19,7 @@ const bulkProcessorMaxNumRetries = 10
 // makes to process a changeset job when it stalls (process crashes, etc.).
 const bulkProcessorMaxNumResets = 60
 
-var bulkOperationWorkerStoreOpts = dbworkerstore.Options{
+var bulkOperationWorkerStoreOpts = dbworkerstore.Options[*types.ChangesetJob]{
 	Name:              "batches_bulk_worker_store",
 	TableName:         "changeset_jobs",
 	ColumnExpressions: changesetJobColumns.ToSqlf(),
@@ -34,6 +35,6 @@ var bulkOperationWorkerStoreOpts = dbworkerstore.Options{
 	MaxNumRetries: bulkProcessorMaxNumRetries,
 }
 
-func NewBulkOperationWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewBulkOperationWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.ChangesetJob] {
 	return dbworkerstore.NewWithMetrics(handle, bulkOperationWorkerStoreOpts, observationContext)
 }

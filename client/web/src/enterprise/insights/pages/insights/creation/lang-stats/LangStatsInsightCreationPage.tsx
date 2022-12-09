@@ -2,7 +2,6 @@ import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -72,26 +71,20 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
-            try {
-                const insight = getSanitizedLangStatsInsight(values)
+            const insight = getSanitizedLangStatsInsight(values)
 
-                await onInsightCreateRequest({ insight })
+            await onInsightCreateRequest({ insight })
 
-                // Clear initial values if user successfully created search insight
-                setInitialFormValues(undefined)
-                telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
-                telemetryService.log(
-                    'InsightAddition',
-                    { insightType: CodeInsightTrackType.LangStatsInsight },
-                    { insightType: CodeInsightTrackType.LangStatsInsight }
-                )
+            // Clear initial values if user successfully created search insight
+            setInitialFormValues(undefined)
+            telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+            telemetryService.log(
+                'InsightAddition',
+                { insightType: CodeInsightTrackType.LangStatsInsight },
+                { insightType: CodeInsightTrackType.LangStatsInsight }
+            )
 
-                onSuccessfulCreation()
-            } catch (error) {
-                return { [FORM_ERROR]: asError(error) }
-            }
-
-            return
+            onSuccessfulCreation()
         },
         [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
     )

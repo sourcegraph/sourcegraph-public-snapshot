@@ -210,19 +210,115 @@ type TaskPreparingStepMetadata struct {
 }
 
 type TaskStepMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-	Step   int    `json:"step,omitempty"`
+	Version int
+	TaskID  string
+	Step    int
 
+	RunScript string
+	Env       map[string]string
+
+	Out string
+
+	Diff    []byte
+	Outputs map[string]any
+
+	ExitCode int
+	Error    string
+}
+
+func (m TaskStepMetadata) MarshalJSON() ([]byte, error) {
+	if m.Version == 2 {
+		return json.Marshal(v2TaskStepMetadata{
+			Version:   2,
+			TaskID:    m.TaskID,
+			Step:      m.Step,
+			RunScript: m.RunScript,
+			Env:       m.Env,
+			Out:       m.Out,
+			Diff:      m.Diff,
+			Outputs:   m.Outputs,
+			ExitCode:  m.ExitCode,
+			Error:     m.Error,
+		})
+	}
+	return json.Marshal(v1TaskStepMetadata{
+		TaskID:    m.TaskID,
+		Step:      m.Step,
+		RunScript: m.RunScript,
+		Env:       m.Env,
+		Out:       m.Out,
+		Diff:      string(m.Diff),
+		Outputs:   m.Outputs,
+		ExitCode:  m.ExitCode,
+		Error:     m.Error,
+	})
+}
+
+func (m *TaskStepMetadata) UnmarshalJSON(data []byte) error {
+	var version versionTaskStepMetadata
+	if err := json.Unmarshal(data, &version); err != nil {
+		return err
+	}
+	if version.Version == 2 {
+		var v2 v2TaskStepMetadata
+		if err := json.Unmarshal(data, &v2); err != nil {
+			return err
+		}
+		m.Version = v2.Version
+		m.TaskID = v2.TaskID
+		m.Step = v2.Step
+		m.RunScript = v2.RunScript
+		m.Env = v2.Env
+		m.Out = v2.Out
+		m.Diff = v2.Diff
+		m.Outputs = v2.Outputs
+		m.ExitCode = v2.ExitCode
+		m.Error = v2.Error
+		return nil
+	}
+	var v1 v1TaskStepMetadata
+	if err := json.Unmarshal(data, &v1); err != nil {
+		return errors.Wrap(err, string(data))
+	}
+	m.TaskID = v1.TaskID
+	m.Step = v1.Step
+	m.RunScript = v1.RunScript
+	m.Env = v1.Env
+	m.Out = v1.Out
+	m.Diff = []byte(v1.Diff)
+	m.Outputs = v1.Outputs
+	m.ExitCode = v1.ExitCode
+	m.Error = v1.Error
+	return nil
+}
+
+type versionTaskStepMetadata struct {
+	Version int `json:"version,omitempty"`
+}
+
+type v2TaskStepMetadata struct {
+	Version   int               `json:"version,omitempty"`
+	TaskID    string            `json:"taskID,omitempty"`
+	Step      int               `json:"step,omitempty"`
 	RunScript string            `json:"runScript,omitempty"`
 	Env       map[string]string `json:"env,omitempty"`
+	Out       string            `json:"out,omitempty"`
+	Diff      []byte            `json:"diff,omitempty"`
+	Outputs   map[string]any    `json:"outputs,omitempty"`
+	ExitCode  int               `json:"exitCode,omitempty"`
+	Error     string            `json:"error,omitempty"`
+}
 
-	Out string `json:"out,omitempty"`
-
-	Diff    string         `json:"diff,omitempty"`
-	Outputs map[string]any `json:"outputs,omitempty"`
-
-	ExitCode int    `json:"exitCode,omitempty"`
-	Error    string `json:"error,omitempty"`
+type v1TaskStepMetadata struct {
+	TaskID    string            `json:"taskID,omitempty"`
+	Step      int               `json:"step,omitempty"`
+	RunScript string            `json:"runScript,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
+	Out       string            `json:"out,omitempty"`
+	Diff      string            `json:"diff,omitempty"`
+	Outputs   map[string]any    `json:"outputs,omitempty"`
+	ExitCode  int               `json:"exitCode,omitempty"`
+	Error     string            `json:"error,omitempty"`
 }
 
 type CacheAfterStepResultMetadata struct {

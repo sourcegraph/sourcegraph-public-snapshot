@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -70,16 +71,12 @@ type Options struct {
 	// the /metrics path.
 	NodeExporterEndpoint string
 
-	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// DockerRegistryNodeExporterEndpoint is the URL of the intermediary caching docker registry,
 	// for scraping and forwarding metrics.
 	DockerRegistryNodeExporterEndpoint string
 }
 
-// NewWorker creates a worker that polls a remote job queue API for work. The returned
-// routine contains both a worker that periodically polls for new work to perform, as well
-// as a heartbeat routine that will periodically hit the remote API with the work that is
-// currently being performed, which is necessary so the job queue API doesn't hand out jobs
-// it thinks may have been dropped.
+// NewWorker creates a worker that polls a remote job queue API for work.
 func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
 	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
@@ -108,7 +105,7 @@ func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, obs
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[executor.Job](ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

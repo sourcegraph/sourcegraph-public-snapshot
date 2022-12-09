@@ -16,9 +16,9 @@ export function getFuzzyFinderFeatureFlags(
         fuzzyFinderSymbols,
         fuzzyFinderNavbar,
     } = getExperimentalFeatures(finalSettings)
-    // Intentionally skip "Actions" when `fuzzyFinderAll` is true
+    // Intentionally skip fuzzyFinderActions because we don't have enough actions implemented
+    // Intentionally skip fuzzyFinderNavbar because the navbar is already too busy and we need to explore alternative solutions for the discoverability problem
     fuzzyFinderRepositories = fuzzyFinderAll || fuzzyFinderRepositories
-    fuzzyFinderNavbar = fuzzyFinderAll || fuzzyFinderNavbar
     fuzzyFinderSymbols = fuzzyFinderAll || fuzzyFinderSymbols
     return { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols, fuzzyFinderNavbar }
 }

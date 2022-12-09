@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, H2 } from '@sourcegraph/wildcard'
 
 import { CodeInsightExampleCard } from '../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 
@@ -39,12 +39,11 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <H2>Common uses for Code Insights</H2>
+                <H2>Use Code Insights to...</H2>
 
-                <Text className="text-muted">
-                    Here's what it'd look like if you used Code Insights for these common use cases.{' '}
-                    <Link to="/help/code_insights/references/common_use_cases">See more use cases.</Link>
-                </Text>
+                <Link to="/help/code_insights/references/common_use_cases" target="_blank" rel="noopener">
+                    See more use cases
+                </Link>
 
                 {!isMobileLayout && (
                     <ul className={styles.list}>

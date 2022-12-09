@@ -68,6 +68,5 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	if !found {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := dequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
+	require.Equal(t, backfill.Id, dequeue.backfillId)
 }

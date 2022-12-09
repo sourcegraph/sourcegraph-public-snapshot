@@ -24,7 +24,7 @@ const StalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const IndexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options{
+var IndexWorkerStoreOptions = dbworkerstore.Options[types.Index]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -106,7 +106,7 @@ const StalledDependencySyncingJobMaxAge = time.Second * 25
 // moved into "errored" rather than "queued" on its next reset.
 const DependencySyncingJobMaxNumResets = 3
 
-var DependencySyncingJobWorkerStoreOptions = dbworkerstore.Options{
+var DependencySyncingJobWorkerStoreOptions = dbworkerstore.Options[shared.DependencySyncingJob]{
 	Name:              "codeintel_dependency_syncing",
 	TableName:         "lsif_dependency_syncing_jobs",
 	ColumnExpressions: dependencySyncingJobColumns,
@@ -154,7 +154,7 @@ const StalledDependencyIndexingJobMaxAge = time.Second * 25
 // moved into "errored" rather than "queued" on its next reset.
 const DependencyIndexingJobMaxNumResets = 3
 
-var DependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
+var DependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options[shared.DependencyIndexingJob]{
 	Name:              "codeintel_dependency_indexing",
 	TableName:         "lsif_dependency_indexing_jobs",
 	ColumnExpressions: dependencyIndexingJobColumns,

@@ -16,3 +16,4 @@ To preserve order, individual documents are prefixed by the **current epoch Unix
 6. _2022-07-08_ [Consolidate redis-store and redis-cache in a single instance](1657287546-consolidate-redis-store-and-redis-cache-in-a-single-instance.md)
 7. _2022-07-21_ [Deprecate raw git commands in gitserver](1658418787-deprecate-raw-git-commands.md)
 8. _2022-11-02_ [Audit log on top of structured logging](1667380209-audit-log-on-top-of-structured-logging.md)
+9. _2022-11-22_ [Do not adopt git fork from Microsoft](1669125523-do-not-adopt-git-fork-from-microsoft.md)

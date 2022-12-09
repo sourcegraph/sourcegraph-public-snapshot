@@ -123,7 +123,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.M
 	switch {
 	case c.OptionsLabelValues.Query != "":
 		variable.Type = "query"
-		expr, err := promql.Inject(c.OptionsLabelValues.Query, injectLabelMatchers, nil)
+		expr, err := promql.InjectMatchers(c.OptionsLabelValues.Query, injectLabelMatchers, nil)
 		if err != nil {
 			return variable, errors.Wrap(err, "OptionsLabelValues.Query")
 		}
@@ -133,6 +133,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.M
 			Value: Int64Ptr(2), // Refresh on time range change
 		}
 		variable.Sort = 3
+		variable.Options = []sdk.Option{} // Cannot be null in later versions of Grafana
 
 	case len(c.Options.Options) > 0:
 		// Set the type

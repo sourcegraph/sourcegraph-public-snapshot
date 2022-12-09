@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -97,9 +98,9 @@ func TestNpmCloneCommand(t *testing.T) {
 				},
 			},
 		},
-		Tarballs: map[string][]byte{
-			exampleNpmVersion:  tgz1,
-			exampleNpmVersion2: tgz2,
+		Tarballs: map[string]io.Reader{
+			exampleNpmVersion:  bytes.NewReader(tgz1),
+			exampleNpmVersion2: bytes.NewReader(tgz2),
 		},
 	}
 
@@ -235,7 +236,7 @@ var _ fs.FileInfo = &fileInfo{}
 
 func (info *fileInfo) Name() string       { return path.Base(info.path) }
 func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
-func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
+func (info *fileInfo) Mode() fs.FileMode  { return 0o600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
 func (info *fileInfo) Sys() any           { return nil }

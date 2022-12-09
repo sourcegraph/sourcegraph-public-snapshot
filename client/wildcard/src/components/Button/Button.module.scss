@@ -29,10 +29,9 @@
     border-radius: var(--border-radius);
     padding: 0.375rem 0.75rem;
 
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         cursor: not-allowed;
-        // This is needed to properly support Tooltip behavior on disabled buttons
-        pointer-events: none;
     }
 
     &:hover {
@@ -41,12 +40,35 @@
     }
 }
 
+// Handle a special case for Button as="input" type="checkbox | radio"
+// since button doesn't use disabled attribute we enforce/mimic the native
+// disabled control styles.
+input.btn {
+    &:focus {
+        outline: 2px solid var(--primary-2);
+        outline-offset: 2px;
+    }
+
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+
+        :global(.theme-light) & {
+            filter: brightness(0.9);
+        }
+
+        :global(.theme-dark) & {
+            filter: brightness(0.5);
+        }
+    }
+}
+
 .btn-link {
     color: var(--link-color);
     background-color: var(--link-1);
 
     &:global(.disabled),
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         :global(.theme-light) & {
             opacity: 0.2;
         }
@@ -56,7 +78,7 @@
         }
     }
 
-    &:not(:disabled):not(:global(.disabled)) {
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         &:hover:not(:global(.focus)):not(:focus),
         &:active,
         &:global(.active) {
@@ -115,16 +137,17 @@
     border: none;
     cursor: pointer;
 
-    &:focus-visible:not(:disabled):not(:global(.disabled)) {
+    &:focus-visible:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         box-shadow: 0 0 0 2px var(--primary-2);
     }
 
-    &:hover:not(:disabled):not(:global(.disabled)) {
+    &:hover:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         color: var(--body-color);
     }
 
     // Add color for disabled state of button icon
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         :global(.theme-light) & {
             color: var(--btn-icon-disabled-light-color);
         }
@@ -154,7 +177,8 @@
     background-color: var(--btn-base-color);
 
     &:global(.disabled),
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         opacity: 1;
         background-color: var(--btn-light-color-variant);
         border-color: var(--btn-light-color-variant);
@@ -167,7 +191,7 @@
         }
     }
 
-    &:not(:disabled):not(:global(.disabled)) {
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         &:hover:not(:global(.focus)):not(:focus),
         &:active,
         &:global(.active) {
@@ -208,14 +232,15 @@
     background-color: transparent;
 
     &:global(.disabled),
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         --btn-light-disabled-text-color: var(--text-disabled);
         --btn-dark-disabled-text-color: var(--text-disabled);
 
         background-color: transparent;
     }
 
-    &:not(:disabled):not(:global(.disabled)) {
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         // Set inlined icons to match outline border
         // except [data-caret] attribute (which can be used for button carret
         svg:not([data-caret]) {
@@ -327,11 +352,12 @@
     // btn-secondary needs specific styles to ensure good contrast
     .btn-secondary {
         &:global(.disabled),
-        &:disabled {
+        &:disabled,
+        &[aria-disabled='true'] {
             border-color: var(--input-disabled-bg);
         }
 
-        &:not(:disabled):not(:global(.disabled)) {
+        &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
             &:hover:not(:global(.focus)):not(:focus),
             &:active,
             &:global(.active) {

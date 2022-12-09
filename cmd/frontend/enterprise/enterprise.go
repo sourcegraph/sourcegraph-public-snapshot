@@ -21,8 +21,8 @@ type Services struct {
 	// Batch Changes Services
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
-	BatchesBitbucketServerWebhook   http.Handler
-	BatchesBitbucketCloudWebhook    http.Handler
+	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
+	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -76,8 +76,8 @@ func DefaultServices() Services {
 		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
 		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
 		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
-		BatchesBitbucketServerWebhook:   makeNotFoundHandler("batches bitbucket server webhook"),
-		BatchesBitbucketCloudWebhook:    makeNotFoundHandler("batches bitbucket cloud webhook"),
+		BatchesBitbucketServerWebhook:   &emptyWebhookHandler{name: "batches bitbucket server webhook"},
+		BatchesBitbucketCloudWebhook:    &emptyWebhookHandler{name: "batches bitbucket cloud webhook"},
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),

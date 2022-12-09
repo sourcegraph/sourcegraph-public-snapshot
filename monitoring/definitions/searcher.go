@@ -54,7 +54,7 @@ func Searcher() *monitoring.Dashboard {
 			},
 
 			{
-				Title:  "Hybrid (experimental)",
+				Title:  "Index use",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -62,12 +62,15 @@ func Searcher() *monitoring.Dashboard {
 							Name:        "searcher_hybrid_final_state_total",
 							Description: "hybrid search final state over 10m",
 							Interpretation: `
-This graph should be empty unless you enable the feature flag "search-hybrid".
+This graph is about our interactions with the search index (zoekt) to help
+complete unindexed search requests. Searcher will use indexed search for the
+files that have not changed between the unindexed commit and the index.
 
 This graph should mostly be "success". The next most common state should be
-"diff-too-large", which happens if the commit is too far from the indexed
-commit. Otherwise other state should be rare and likely are a sign for further
-investigation.
+"search-canceled" which happens when result limits are hit or the user starts
+a new search. Finally the next most common should be "diff-too-large", which
+happens if the commit is too far from the indexed commit. Otherwise other
+state should be rare and likely are a sign for further investigation.
 
 Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
 indexing a subset of repositories. Otherwise every other state should occur

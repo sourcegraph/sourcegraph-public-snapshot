@@ -130,6 +130,16 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
 		}
 	}
+
+	// Exclude Sourcegraph Operator user accounts
+	conds = append(conds, sqlf.Sprintf(`
+NOT EXISTS (
+	SELECT FROM user_external_accounts
+	WHERE
+		service_type = 'sourcegraph-operator'
+	AND user_id = aggregated_stats.id
+)
+`))
 	return conds, nil
 }
 

@@ -39,7 +39,7 @@ func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 		tx.Handle(),
 		"t_lsif_packages",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version"},
+		[]string{"scheme", "manager", "name", "version"},
 		loadPackagesChannel(packages),
 	); err != nil {
 		return err
@@ -53,14 +53,15 @@ func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 const updatePackagesTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_lsif_packages (
 	scheme text NOT NULL,
+	manager text NOT NULL,
 	name text NOT NULL,
 	version text NOT NULL
 ) ON COMMIT DROP
 `
 
 const updatePackagesInsertQuery = `
-INSERT INTO lsif_packages (dump_id, scheme, name, version)
-SELECT %s, source.scheme, source.name, source.version
+INSERT INTO lsif_packages (dump_id, scheme, manager, name, version)
+SELECT %s, source.scheme, source.manager, source.name, source.version
 FROM t_lsif_packages source
 `
 
@@ -71,7 +72,7 @@ func loadPackagesChannel(packages []precise.Package) <-chan []any {
 		defer close(ch)
 
 		for _, p := range packages {
-			ch <- []any{p.Scheme, p.Name, p.Version}
+			ch <- []any{p.Scheme, p.Manager, p.Name, p.Version}
 		}
 	}()
 

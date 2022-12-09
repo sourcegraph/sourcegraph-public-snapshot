@@ -157,6 +157,23 @@ const batchChangeFragment = gql`
         currentSpec {
             id
             originalInput
+            description {
+                __typename
+                name
+            }
+            files {
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    id
+                    name
+                    binary
+                    byteSize
+                }
+            }
             source
             supersedingBatchSpec {
                 createdAt
@@ -619,6 +636,7 @@ const changesetDiffFragment = gql`
     fragment ChangesetDiffFields on ExternalChangeset {
         currentSpec {
             description {
+                __typename
                 ... on GitBranchChangesetDescription {
                     commits {
                         diff

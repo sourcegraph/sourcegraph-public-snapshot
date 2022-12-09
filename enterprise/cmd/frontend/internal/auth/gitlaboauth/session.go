@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"golang.org/x/oauth2"
 
@@ -18,8 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -107,100 +104,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	return actor.FromUser(userID), "", nil
-}
-
-func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
-	}
-
-	p := oauth.GetProvider(extsvc.TypeGitLab, providerID)
-	if p == nil {
-		return nil, "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
-	}
-
-	gUser, err := UserFromContext(ctx)
-	if err != nil {
-		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
-	}
-
-	// We have a special flow enabled when a user added code host has been created
-	// without `api` scope and we then enable private code on the instance. In this
-	// case we allow the user to request the additional scope. This means that at
-	// this point we may already have a code host and we just need to update the
-	// token with the new one.
-
-	tx, err := s.db.ExternalServices().Transact(ctx)
-	if err != nil {
-		return
-	}
-	defer func() {
-		err = tx.Done(err)
-		safeErrMsg = "Error committing transaction"
-	}()
-
-	services, err := tx.List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: actor.UID,
-		Kinds:           []string{extsvc.KindGitLab},
-	})
-	if err != nil {
-		return nil, "Error checking for existing external service", err
-	}
-	now := time.Now()
-
-	if len(services) == 0 {
-		// Nothing found, create new one
-		svc = &types.ExternalService{
-			Kind:        extsvc.KindGitLab,
-			DisplayName: fmt.Sprintf("GitLab (%s)", gUser.Username),
-			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "token": "%s",
-  "token.type": "oauth",
-  "token.oauth.refresh": "%s",
-  "token.oauth.expiry": %d,
-  "projectQuery": ["projects?id_before=0"]
-}
-`, p.ServiceID, token.AccessToken, token.RefreshToken, token.Expiry.Unix())),
-			NamespaceUserID: actor.UID,
-		}
-	} else if len(services) > 1 {
-		return nil, "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
-	} else {
-		// We have an existing service, update it
-		svc = services[0]
-
-		rawConfig, err := svc.Config.Decrypt(ctx)
-		if err != nil {
-			return nil, "", err
-		}
-
-		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
-		if err != nil {
-			return nil, "Error updating OAuth token", err
-		}
-		rawConfig, err = jsonc.Edit(rawConfig, "oauth", "token.type")
-		if err != nil {
-			return nil, "Error updating token type", err
-		}
-		rawConfig, err = jsonc.Edit(rawConfig, token.RefreshToken, "token.oauth.refresh")
-		if err != nil {
-			return nil, "Error updating refresh token", err
-		}
-		rawConfig, err = jsonc.Edit(rawConfig, token.Expiry.Unix(), "token.oauth.expiry")
-		if err != nil {
-			return nil, "Error updating token expiry", err
-		}
-		svc.Config.Set(rawConfig)
-		svc.UpdatedAt = now
-	}
-	err = tx.Upsert(ctx, svc)
-	if err != nil {
-		return nil, "Could not create code host connection.", err
-	}
-	return svc, "", nil // success
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

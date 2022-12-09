@@ -647,7 +647,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create and update a webhook
-			webhook, err := db.Webhooks(nil).Create(ctx, extsvc.KindGitHub, testURN, user.ID, types.NewUnencryptedSecret("testSecret"))
+			webhook, err := db.Webhooks(nil).Create(ctx, "github webhook", extsvc.KindGitHub, testURN, user.ID, types.NewUnencryptedSecret("testSecret"))
 			if err != nil {
 				t.Fatal(err)
 			}

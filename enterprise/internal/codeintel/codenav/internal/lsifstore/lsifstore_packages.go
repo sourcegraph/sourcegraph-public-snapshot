@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"errors"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -19,13 +20,20 @@ func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, p
 	}})
 	defer endObservation(1, observation.Args{})
 
-	query := sqlf.Sprintf(packageInformationQuery, bundleID, path)
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, query))
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		packageInformationQuery,
+		bundleID,
+		path,
+	)))
 	if err != nil || !exists {
 		return precise.PackageInformationData{}, false, err
 	}
 
-	packageInformationData, exists := documentData.Document.PackageInformation[precise.ID(packageInformationID)]
+	if documentData.SCIPData != nil {
+		return precise.PackageInformationData{}, false, errors.New("unexpected SCIP payload in GetPackageInformation")
+	}
+
+	packageInformationData, exists := documentData.LSIFData.PackageInformation[precise.ID(packageInformationID)]
 	return packageInformationData, exists, nil
 }
 
@@ -38,7 +46,8 @@ SELECT
 	NULL AS hovers,
 	NULL AS monikers,
 	packages,
-	NULL AS diagnostics
+	NULL AS diagnostics,
+	NULL AS scip_document
 FROM
 	lsif_data_documents
 WHERE

@@ -470,6 +470,27 @@ func TestCreatingSearchContexts(t *testing.T) {
 			},
 			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
 		},
+		{
+			name:          "can create search context with repo:has query",
+			searchContext: &types.SearchContext{Name: "repo_has_kvp", Query: "repo:has(key:value)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.tag query",
+			searchContext: &types.SearchContext{Name: "repo_has_tag", Query: "repo:has.tag(tag)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.key query",
+			searchContext: &types.SearchContext{Name: "repo_has_key", Query: "repo:has.key(key)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "cannot create search context with unsupported repo field predicate in query",
+			searchContext: &types.SearchContext{Name: "unsupported_repo_predicate", Query: "repo:has.content(foo)"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported repo field predicate in search context query: %q", "has.content(foo)"),
+		},
 	}
 
 	for _, tt := range tests {

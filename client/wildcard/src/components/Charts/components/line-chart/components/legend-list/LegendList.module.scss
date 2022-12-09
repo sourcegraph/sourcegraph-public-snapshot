@@ -1,7 +1,8 @@
 .legend-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
 
     // Reset ul styles (bullets, paddings, margins)
     list-style: none;

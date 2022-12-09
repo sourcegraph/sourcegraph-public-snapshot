@@ -53,6 +53,7 @@ drift \
     [-version=<version>] \
     [-file=<path to description file>]
 ```
+> Note: the drig `-version` argument requires the version to be specified with the `v` prefix, for example `-version=v3.40.2`
 
 **Required arguments**:
 
@@ -287,7 +288,7 @@ The corresponding changes the `configure/migrator/migrator.Job.yaml` file would 
 image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
 ```
 ```yaml
-args: ["upgrade", "--from=3.40.2", "--to=v4.1.2"]
+args: ["upgrade", "--from=3.40.2", "--to=4.1.2"]
 ```
 
 Next, apply the job and wait for it to complete.

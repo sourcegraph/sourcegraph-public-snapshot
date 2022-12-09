@@ -158,7 +158,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	if err != nil {
 		return err
 	}
-	cniConfigFile := path.Join(tmpDir, "10-sourcegraph-executors.conflist")
+	cniConfigFile := path.Join(cniConfigDir, "10-sourcegraph-executors.conflist")
 	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.ResourceOptions.MaxIngressBandwidth, options.ResourceOptions.MaxEgressBandwidth)), os.ModePerm)
 	if err != nil {
 		return err

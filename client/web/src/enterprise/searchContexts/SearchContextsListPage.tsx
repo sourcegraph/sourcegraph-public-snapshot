@@ -10,6 +10,7 @@ import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
@@ -70,10 +71,23 @@ export const SearchContextsListPage: React.FunctionComponent<
             <Page>
                 <PageHeader
                     actions={
-                        <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} />
-                            Create search context
-                        </Button>
+                        <>
+                            <Button to="/contexts/new" variant="primary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                Create search context
+                            </Button>
+                            {props.isSourcegraphDotCom && (
+                                <Button
+                                    to="https://signup.sourcegraph.com/?p=context"
+                                    className="d-block mt-2"
+                                    as={Link}
+                                    variant="secondary"
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                >
+                                    Search private code
+                                </Button>
+                            )}
+                        </>
                     }
                     description={
                         <span className="text-muted">
@@ -87,7 +101,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                             </Link>
                         </span>
                     }
-                    className="mb-3"
+                    className="align-items-center mb-3"
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <PageHeader.Breadcrumb icon={mdiMagnify} to="/search" aria-label="Code Search" />

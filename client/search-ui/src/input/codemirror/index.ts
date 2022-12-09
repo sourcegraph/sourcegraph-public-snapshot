@@ -1,5 +1,6 @@
 import { ChangeSpec, EditorState, Extension } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers-utils'
@@ -67,10 +68,12 @@ export const createDefaultSuggestions = ({
     fetchSuggestions,
     disableFilterCompletion,
     disableSymbolCompletion,
+    history,
     applyOnEnter,
     showWhenEmpty,
 }: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+    history?: H.History
     /**
      * Whether or not to allow suggestions selection by Enter key.
      */
@@ -84,7 +87,9 @@ export const createDefaultSuggestions = ({
             disableSymbolCompletion,
             disableFilterCompletion,
             showWhenEmpty,
+            applyOnEnter,
         }),
+        history,
         applyOnEnter
     ),
     loadingIndicator(),

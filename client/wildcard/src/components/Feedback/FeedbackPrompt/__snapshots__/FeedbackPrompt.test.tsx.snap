@@ -59,23 +59,19 @@ exports[`FeedbackPrompt should render correctly 1`] = `
         >
           Send feedback to Sourcegraph
         </h3>
-        <label
-          class="label label textarea"
-        >
-          <textarea
-            aria-labelledby="feedback-prompt-question"
-            class="textarea form-control resizeNone textarea"
-            rows="3"
-          />
-        </label>
+        <textarea
+          aria-labelledby="feedback-prompt-question"
+          class="form-control textarea resizeNone textarea textarea"
+          rows="3"
+        />
         <p
           class="small text-muted"
         >
           You're not signed in. Please tell us how to contact you if you want a reply.
         </p>
         <button
+          aria-disabled="true"
           class="button"
-          disabled=""
           role="menuitem"
           type="submit"
         >
@@ -151,17 +147,13 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
         >
           Send feedback to Sourcegraph
         </h3>
-        <label
-          class="label label textarea"
+        <textarea
+          aria-labelledby="feedback-prompt-question"
+          class="form-control textarea resizeNone textarea textarea"
+          rows="3"
         >
-          <textarea
-            aria-labelledby="feedback-prompt-question"
-            class="textarea form-control resizeNone textarea"
-            rows="3"
-          >
-            Lorem ipsum dolor sit amet
-          </textarea>
-        </label>
+          Lorem ipsum dolor sit amet
+        </textarea>
         <p
           class="small text-muted"
         >
@@ -184,6 +176,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           </span>
         </div>
         <button
+          aria-disabled="false"
           class="button"
           role="menuitem"
           type="submit"
