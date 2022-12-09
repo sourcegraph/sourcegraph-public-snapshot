@@ -55,7 +55,7 @@ class SearchPanel implements Panel {
     private root: Root | null = null
     private input: HTMLInputElement | null = null
     private searchQuery = new Subject<SearchQuery>()
-    private subsciptions = new Subscription()
+    private subscriptions = new Subscription()
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
@@ -69,7 +69,7 @@ class SearchPanel implements Panel {
             history: this.view.state.facet(blobPropsFacet).history,
         }
 
-        this.subsciptions.add(
+        this.subscriptions.add(
             this.searchQuery
                 .pipe(
                     startWith(this.state.searchQuery),
@@ -115,7 +115,7 @@ class SearchPanel implements Panel {
     }
 
     public unmount(): void {
-        this.subsciptions.unsubscribe()
+        this.subscriptions.unsubscribe()
     }
 
     private render({
@@ -202,6 +202,12 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
+
+                {/*{this.state.searchQuery.search && (*/}
+                {/*    <div>*/}
+                {/*        found <span ref={element => (this.resultCountainer = element)} /> results*/}
+                {/*    </div>*/}
+                {/*)}*/}
             </Container>
         )
     }
