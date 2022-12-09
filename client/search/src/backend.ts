@@ -29,8 +29,8 @@ import {
     highlightCodeVariables,
     SearchContextsOrderBy,
     SearchContextFields,
-    DefaultSearchContextResult,
-    DefaultSearchContextVariables,
+    DefaultSearchContextSpecResult,
+    DefaultSearchContextSpecVariables,
 } from './graphql-operations'
 
 const searchContextFragment = gql`
@@ -416,15 +416,15 @@ export function fetchRecentFileViews(
     return fetchEvents(userId, first, 'ViewBlob', platformContext)
 }
 
-export function fetchDefaultSearchContext(
+export function fetchDefaultSearchContextSpec(
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<SearchContextFields | null> {
+): Observable<string | null> {
     return platformContext
-        .requestGraphQL<DefaultSearchContextResult, DefaultSearchContextVariables>({
+        .requestGraphQL<DefaultSearchContextSpecResult, DefaultSearchContextSpecVariables>({
             request: gql`
-                query DefaultSearchContext {
+                query DefaultSearchContextSpec {
                     defaultSearchContext {
-                        ...SearchContextFields
+                        spec
                     }
                 }
                 ${searchContextFragment}
@@ -432,5 +432,5 @@ export function fetchDefaultSearchContext(
             variables: {},
             mightContainPrivateInfo: true,
         })
-        .pipe(map(result => (isErrorGraphQLResult(result) ? null : result.data?.defaultSearchContext)))
+        .pipe(map(result => (isErrorGraphQLResult(result) ? null : result.data?.defaultSearchContext?.spec ?? null)))
 }

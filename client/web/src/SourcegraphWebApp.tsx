@@ -170,6 +170,8 @@ const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
+const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
+
 setLinkComponent(RouterLink)
 
 const history = createBrowserHistory()
@@ -266,7 +268,7 @@ export class SourcegraphWebApp extends React.Component<
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
-            this.setSelectedSearchContextSpec('global')
+            this.setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
         }
         if (!parsedSearchQuery) {
             // If no query is present (e.g. search page, settings page),
@@ -429,6 +431,15 @@ export class SourcegraphWebApp extends React.Component<
             return
         }
 
+        // The global search context is always available.
+        if (spec === GLOBAL_SEARCH_CONTEXT_SPEC) {
+            this.setState({ selectedSearchContextSpec: spec })
+            this.setWorkspaceSearchContext(spec).catch(error => {
+                logger.error('Error sending search context to extensions', error)
+            })
+            return
+        }
+
         // Check if the wanted search context is available.
         this.subscriptions.add(
             isSearchContextSpecAvailable({
@@ -459,8 +470,8 @@ export class SourcegraphWebApp extends React.Component<
         this.subscriptions.add(
             getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
                 // Fall back to global if no default is returned.
-                this.setState({ selectedSearchContextSpec: spec || 'global' })
-                this.setWorkspaceSearchContext(spec).catch(error => {
+                this.setState({ selectedSearchContextSpec: spec || GLOBAL_SEARCH_CONTEXT_SPEC })
+                this.setWorkspaceSearchContext(spec || GLOBAL_SEARCH_CONTEXT_SPEC).catch(error => {
                     logger.error('Error sending search context to extensions', error)
                 })
             })

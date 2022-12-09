@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -13,7 +13,7 @@ import {
     updateSearchContext,
     deleteSearchContext,
     isSearchContextAvailable,
-    fetchDefaultSearchContext,
+    fetchDefaultSearchContextSpec,
 } from './backend'
 import { SearchPatternType } from './graphql-operations'
 import { SearchMode } from './searchQueryState'
@@ -87,6 +87,9 @@ export const getAvailableSearchContextSpecOrFallback = memoizeObservable(
 
 export const getDefaultSearchContextSpec = memoizeObservable(
     ({ platformContext }: { platformContext: Pick<PlatformContext, 'requestGraphQL'> }): Observable<string> =>
-        fetchDefaultSearchContext(platformContext).pipe(map(context => context?.spec || '')),
+        fetchDefaultSearchContextSpec(platformContext).pipe(
+            map(spec => spec || ''),
+            catchError(() => '')
+        ),
     () => 'default'
 )
