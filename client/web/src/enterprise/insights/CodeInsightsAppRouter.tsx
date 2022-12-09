@@ -5,14 +5,14 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-import { GetFirstAvailableDashboardResult } from '../../graphql-operations'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
+import { GetFirstAvailableDashboardResult } from '../../graphql-operations'
 
 import { CodeInsightsBackendContext } from './core'
 import { useApi } from './hooks'

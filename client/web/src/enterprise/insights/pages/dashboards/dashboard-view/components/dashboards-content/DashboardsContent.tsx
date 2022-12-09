@@ -5,8 +5,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import { useHistory } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
