@@ -2509,6 +2509,7 @@ Indexes:
     "permissions_pkey" PRIMARY KEY, btree (id)
     "permissions_unique_namespace_action" UNIQUE, btree (namespace, action)
 Check constraints:
+    "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
 
 ```

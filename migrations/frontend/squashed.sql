@@ -3132,6 +3132,7 @@ CREATE TABLE permissions (
     namespace text NOT NULL,
     action text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
 );
 

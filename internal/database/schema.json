@@ -16140,6 +16140,13 @@
       ],
       "Constraints": [
         {
+          "Name": "action_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
+        },
+        {
           "Name": "namespace_not_blank",
           "ConstraintType": "c",
           "RefTableName": "",
