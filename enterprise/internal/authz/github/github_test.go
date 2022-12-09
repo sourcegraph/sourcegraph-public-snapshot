@@ -646,21 +646,14 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		}
 
 		//nolint:unparam // Allow returning nil error on all code paths
-		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
-			switch page {
-			case 1:
-				return []*github.Collaborator{
-					{DatabaseID: 57463526},
-					{DatabaseID: 67471},
-				}, true, nil
-			case 2:
-				return []*github.Collaborator{
-					{DatabaseID: 187831},
-				}, false, nil
-			}
-
-			return []*github.Collaborator{}, false, nil
-		}
+		mockListCollaborators = mock.WithRequestMatchPages(
+			mock.GetReposCollaboratorsByOwnerByRepo,
+			[]*gh.User{
+				{ID: gh.Int64(57463526)},
+				{ID: gh.Int64(67471)},
+			},
+			[]*gh.User{{ID: gh.Int64(187831)}},
+		)
 	)
 
 	t.Run("cache disabled", func(t *testing.T) {
@@ -668,15 +661,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
 		})
-		mockClient := newMockClientWithTokenMock()
-		mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-			func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-				if affiliation != "" {
-					t.Fatal("unexpected affiliation filter provided")
-				}
-				return mockListCollaborators(ctx, owner, repo, page, affiliation)
-			})
-		p.client = mockClientFunc(mockClient)
+		mockHTTPClient := mock.NewMockedHTTPClient(
+			mockListCollaborators,
+		)
+		p.baseHTTPClient = mockHTTPClient
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(), &mockUserRepo,
 			authz.FetchPermsOptions{})
@@ -711,14 +699,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 						t.Fatalf("unexpected call to get organization url %q", r.URL.String())
 					}),
 				),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{{ID: gh.Int64(187831)}},
-				),
+				mockListCollaborators,
 			)
 			p.baseHTTPClient = mockHTTPClient
 			if p.groupsCache == nil {
@@ -775,14 +756,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 							w.Write(mock.MustMarshal([]*gh.User{}))
 						}
 					})),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{{ID: gh.Int64(187831)}},
-				),
+				mockListCollaborators,
 			)
 			p.baseHTTPClient = mockHTTPClient
 			memCache := memGroupsCache()
@@ -851,14 +825,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 						Private:    gh.Bool(true),
 						Visibility: gh.String("internal"),
 					}),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{{ID: gh.Int64(187831)}},
-				),
+				mockListCollaborators,
 			)
 			p.baseHTTPClient = mockHTTPClient
 
@@ -963,14 +930,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 						mock.WriteError(w, http.StatusNotFound, "team not found")
 					}),
 				),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{{ID: gh.Int64(187831)}},
-				),
+				mockListCollaborators,
 			)
 			p.baseHTTPClient = mockHTTPClient
 			memCache := memGroupsCache()
@@ -1026,14 +986,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 						}
 					}),
 				),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{{ID: gh.Int64(187831)}},
-				),
+				mockListCollaborators,
 			)
 			p.baseHTTPClient = mockHTTPClient
 			memCache := memGroupsCache()
@@ -1136,16 +1089,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 						mock.WriteError(w, http.StatusNotFound, "team not found")
 					}),
 				),
-				mock.WithRequestMatchPages(
-					mock.GetReposCollaboratorsByOwnerByRepo,
-					[]*gh.User{
-						{ID: gh.Int64(57463526)},
-						{ID: gh.Int64(67471)},
-					},
-					[]*gh.User{
-						{ID: gh.Int64(187831)},
-					},
-				),
+				mockListCollaborators,
 				mock.WithRequestMatch(
 					mock.GetOrgsMembersByOrg,
 					[]*gh.User{},
