@@ -73,7 +73,7 @@ class SearchPanel implements Panel {
             this.searchQuery
                 .pipe(
                     startWith(this.state.searchQuery),
-                    debounceTime(200),
+                    debounceTime(100),
                     filter(searchQuery => searchQuery.valid),
                     distinctUntilKeyChanged('search')
                 )
