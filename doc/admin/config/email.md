@@ -2,10 +2,10 @@
 
 Sourcegraph uses an SMTP server of your choosing to send emails for:
 
-* [Code Monitoring](../../code_monitoring/index.md) notifications
-* Password reset requests
-* Email verification when built-in authentication is enabled
-* Inviting other users to Sourcegraph itself, or to an organization/team on Sourcegraph
+- [Code Monitoring](../../code_monitoring/index.md) notifications
+- Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
+- Important updates to a user accounts (for example, creation of API keys)
+- For [`builtin` authentication](../auth/index.md#builtin-password-authentication), password resets and email verification
 
 > NOTE: Sourcegraph Cloud customers can take advantage of mananged SMTP servers - [learn more](../../cloud/index.md#managed-smtp).
 
