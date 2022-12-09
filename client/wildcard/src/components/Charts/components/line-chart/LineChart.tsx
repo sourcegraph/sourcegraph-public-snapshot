@@ -70,7 +70,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 }
 
 const identity = <T,>(argument: T): T => argument
-const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 20, left: 0 }
+const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 0, left: 0 }
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
