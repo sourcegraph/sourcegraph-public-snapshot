@@ -31,7 +31,7 @@ type CodeHostSource[T any] interface {
 	ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error)
 	GetPath() string
 	GetTotalPrivateRepos(ctx context.Context) (int, error)
-	SetPage(total int, remainer int)
+	SetPage(total int, remainder int)
 
 	Err() error
 	Next(ctx context.Context) T

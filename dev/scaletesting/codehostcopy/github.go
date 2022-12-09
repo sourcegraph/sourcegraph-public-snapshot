@@ -211,7 +211,27 @@ func (g *GithubCodeHost) Err() error {
 }
 
 func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) {
-	return 0, nil
+	if strings.HasPrefix(g.def.Path, "@") {
+		u, resp, err := g.c.Users.Get(ctx, strings.Replace(g.def.Path, "@", "", 1))
+		if err != nil {
+			return 0, err
+		}
+		if resp.StatusCode >= 300 {
+			return 0, errors.Newf("failed to get user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
+		}
+
+		return u.GetOwnedPrivateRepos(), nil
+	} else {
+		o, resp, err := g.c.Organizations.Get(ctx, g.def.Path)
+		if err != nil {
+			return 0, err
+		}
+		if resp.StatusCode >= 300 {
+			return 0, errors.Newf("failed to get org %s. Got status %d code", g.def.Path, resp.StatusCode)
+		}
+
+		return o.GetOwnedPrivateRepos(), nil
+	}
 }
 
 func (g *GithubCodeHost) GetPath() string {

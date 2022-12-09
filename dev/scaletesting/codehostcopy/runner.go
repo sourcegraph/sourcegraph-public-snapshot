@@ -90,7 +90,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	if err != nil {
 		r.logger.Fatal("failed to get total private repos size for source", log.String("source", r.source.GetPath()), log.Error(err))
 	}
-	remainder := len(srcRepos) - t
+	remainder := t - len(srcRepos)
 	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
 
 	// Process started but not finished, set page to continue
@@ -107,7 +107,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 
 	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
 
-	for !r.source.Done() && r.source.Err() != nil {
+	for !r.source.Done() && r.source.Err() == nil {
 		repos := r.source.Next(ctx)
 		if err = r.store.Insert(repos); err != nil {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
