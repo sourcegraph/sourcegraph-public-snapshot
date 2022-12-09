@@ -19,7 +19,7 @@ import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutlin
 import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
 import { Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged, startWith, filter } from 'rxjs/operators'
+import { debounceTime, distinctUntilKeyChanged, startWith, filter } from 'rxjs/operators'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -75,12 +75,7 @@ class SearchPanel implements Panel {
                     startWith(this.state.searchQuery),
                     debounceTime(200),
                     filter(searchQuery => searchQuery.valid),
-                    distinctUntilChanged(
-                        (previous, current) =>
-                            previous.search === current.search &&
-                            previous.caseSensitive === current.caseSensitive &&
-                            previous.regexp === current.regexp
-                    )
+                    distinctUntilKeyChanged('search')
                 )
                 .subscribe(searchQuery => this.commit(searchQuery))
         )
@@ -146,20 +141,22 @@ class SearchPanel implements Panel {
                         variant="small"
                         placeholder="Find..."
                         autoComplete="off"
-                        onChange={event => this.updateSearchQuery({ search: event.target.value })}
+                        onChange={event => this.searchQuery.next(this.buildSearchQuery({ search: event.target.value }))}
                         main-field="true"
                         role="search"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.caseSensitive}
-                        onToggle={() => this.updateSearchQuery({ caseSensitive: !searchQuery.caseSensitive })}
+                        onToggle={() =>
+                            this.commit(this.buildSearchQuery({ caseSensitive: !searchQuery.caseSensitive }))
+                        }
                         iconSvgPath={mdiFormatLetterCase}
                         title="Case sensitivity"
                         className="test-blob-view-search-case-sensitive"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
-                        onToggle={() => this.updateSearchQuery({ regexp: !searchQuery.regexp })}
+                        onToggle={() => this.commit(this.buildSearchQuery({ regexp: !searchQuery.regexp }))}
                         iconSvgPath={mdiRegex}
                         title="Regular expression"
                         className="test-blob-view-search-regexp"
@@ -212,18 +209,20 @@ class SearchPanel implements Panel {
         )
     }
 
-    private updateSearchQuery = ({
+    private buildSearchQuery = ({
         search,
         caseSensitive,
         regexp,
-    }: { search?: string; caseSensitive?: boolean; regexp?: boolean } = {}): void => {
-        const query = new SearchQuery({
+    }: {
+        search?: string
+        caseSensitive?: boolean
+        regexp?: boolean
+    }): SearchQuery =>
+        new SearchQuery({
             search: search ?? this.state.searchQuery.search,
             caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
             regexp: regexp ?? this.state.searchQuery.regexp,
         })
-        this.searchQuery.next(query)
-    }
 
     private setOverrideBrowserSearch = (override: boolean): void =>
         this.view.dispatch({
