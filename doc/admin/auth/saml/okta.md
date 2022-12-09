@@ -6,7 +6,7 @@
 1. On the left hand side, click on the “Applications” menu, and then select the “Applications” item.
 1. Click on “Create App Integration”. Another screen should pop-up, listing sign-in methods. Choose “SAML 2.0”. Click "Next".
 1. You should now see “Create SAML Integration” on this page, and you will be on “General Settings”. Specify a name for “App name” (Ex: “Sourcegraph”). Click “Next”.
-1. Now you should be on “Configure SAML”. On this page, you will need your Sourcegraph URL (Ex: https://sourcegraph.example.com). Follow along with the following instructions, replacing `<URL>` with your Sourcegraph URL:
+1. Now you should be on “Configure SAML”. On this page, you will need your Sourcegraph URL (Ex: `https://sourcegraph.example.com`). Follow along with the following instructions, replacing `<URL>` with your Sourcegraph URL:
     - In section A ("SAML Settings"), under "General":
       - For “Single sign on URL”, set the value to `<URL>`/.auth/saml/acs
         - Under this box, there should be a checkbox labeled “Use this for Recipient URL and Destination URL”. Check the box if it is not already selected.
