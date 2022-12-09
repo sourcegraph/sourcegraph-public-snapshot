@@ -369,7 +369,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, float64(0), itr.PercentComplete)
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retry that exceeds max attempts calls back", nil).Equal(t, string(jsonify))
+		autogold.Want("ensure retry with only terminal errors reports no errors", nil).Equal(t, string(jsonify))
 	})
 }
 
