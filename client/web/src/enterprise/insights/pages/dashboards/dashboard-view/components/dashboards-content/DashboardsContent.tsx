@@ -6,6 +6,7 @@ import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
@@ -31,15 +32,15 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const { currentDashboard, dashboards, telemetryService } = props
 
     const history = useHistory()
+    const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
     const [copyURL, isCopied] = useCopyURLHandler()
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    useEffect(() => {
-        telemetryService.logViewEvent('Insights')
-    }, [telemetryService])
+    useEffect(() => telemetryService.logViewEvent('Insights'), [telemetryService])
+    useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
 
     const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
         history.push(`/insights/dashboards/${dashboard.id}`)
