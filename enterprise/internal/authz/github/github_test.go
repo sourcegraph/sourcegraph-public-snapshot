@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -99,7 +98,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	var (
-		authData    = json.RawMessage(`{"access_token": "my_access_token"}`)
+		authToken   = "my_access_token"
+		authData    = json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, authToken))
 		mockAccount = &extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				AccountID:   "4567",
@@ -112,51 +112,34 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 
 		//nolint:unparam // Returning constant value for 'int' result is OK
-		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-			switch page {
-			case 1:
-				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
-				}, true, 1, nil
-			case 2:
-				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
-				}, false, 1, nil
-			}
+		mockListAffiliatedRepositories = mock.WithRequestMatchPages(
+			mock.GetUserRepos,
+			[]*gh.Repository{
+				{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=")},
+				{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=")},
+			},
+			[]*gh.Repository{
+				{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=")},
+			},
+		)
 
-			return []*github.Repository{}, false, 1, nil
-		}
-
-		mockOrgNoRead  = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgNoRead2 = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead    = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		//nolint:unparam // Returning constant value for 'int' result is OK
-		mockListOrgDetails = func(_ context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
-			switch page {
-			case 1:
-				return []github.OrgDetailsAndMembership{{
-					// does not have access to this org
-					OrgDetails: mockOrgNoRead,
-				}, {
-					// does not have access to this org
-					OrgDetails: mockOrgNoRead2,
-					// but is an admin, so has access to all org repos
-					OrgMembership: &github.OrgMembership{State: "active", Role: "admin"},
-				}}, true, 1, nil
-			case 2:
-				return []github.OrgDetailsAndMembership{{
-					// has access to this org
-					OrgDetails: mockOrgRead,
-				}}, false, 1, nil
-			}
-			return nil, false, 1, nil
-		}
+		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
+		newmockOrgNoRead   = &gh.Organization{Login: gh.String("not-sourcegraph"), DefaultRepoPermission: gh.String("none")}
+		newmockOrgNoRead2  = &gh.Organization{Login: gh.String("not-sourcegraph-2"), DefaultRepoPermission: gh.String("none")}
+		newmockOrgRead     = &gh.Organization{Login: gh.String("sourcegraph"), DefaultRepoPermission: gh.String("read")}
+		mockListOrgDetails = mock.WithRequestMatchPages(
+			mock.GetUserOrgs,
+			[]*gh.Organization{
+				newmockOrgNoRead,
+				newmockOrgNoRead2,
+			},
+			[]*gh.Organization{newmockOrgRead})
 
 		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			switch org {
-			case mockOrgRead.Login:
+			case *newmockOrgRead.Login:
 				switch page {
 				case 1:
 					return []*github.Repository{
@@ -168,7 +151,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
 					}, false, 1, nil
 				}
-			case mockOrgNoRead2.Login:
+			case *newmockOrgNoRead2.Login:
 				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
 			}
 			t.Fatalf("unexpected call to ListOrgRepositories with org %q page %d", org, page)
@@ -177,20 +160,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	)
 
 	t.Run("cache disabled", func(t *testing.T) {
-		mockClient := newMockClientWithTokenMock()
-		mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(
-			func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-				if len(affiliations) != 0 {
-					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
-				}
-				return mockListAffiliatedRepositories(ctx, visibility, page, affiliations...)
-			})
-
+		mockHTTPClient := mock.NewMockedHTTPClient(
+			mockListAffiliatedRepositories,
+		)
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: time.Duration(-1),
 		})
-		p.client = mockClientFunc(mockClient)
+		p.baseHTTPClient = mockHTTPClient
 		if p.groupsCache != nil {
 			t.Fatal("expected nil groupsCache")
 		}
@@ -215,28 +192,21 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("cache enabled", func(t *testing.T) {
 		t.Run("user has no orgs and teams", func(t *testing.T) {
-			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
-					// No orgs
-					return nil, false, 1, nil
-				})
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					// No teams
-					return nil, false, 1, nil
-				})
-			// should call with token
-			calledWithToken := false
-			mockClient.WithAuthenticatorFunc.SetDefaultHook(
-				func(_ auth.Authenticator) client {
-					calledWithToken = true
-					return mockClient
-				})
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mockListAffiliatedRepositories,
+				mock.WithRequestMatch(
+					mock.GetUserOrgs,
+					[]*gh.Organization{},
+				),
+				mock.WithRequestMatch(
+					mock.GetUserTeams,
+					[]*gh.Team{},
+				),
+			)
+			assertClientCalledWithAuth(t, mockHTTPClient, authToken)
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-			p.client = mockClientFunc(mockClient)
+			p.baseHTTPClient = mockHTTPClient
 			if p.groupsCache == nil {
 				t.Fatal("expected groupsCache")
 			}
@@ -245,10 +215,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			repoIDs, err := p.FetchUserPerms(context.Background(), mockAccount, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
-			}
-
-			if !calledWithToken {
-				t.Fatal("!calledWithToken")
 			}
 
 			wantRepoIDs := []extsvc.RepoID{
@@ -263,8 +229,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		t.Run("user in orgs", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
 			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
 				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 					// No teams
@@ -273,6 +237,15 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
 
 			p := setupProvider(t, mockClient)
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mockListAffiliatedRepositories,
+				mockListOrgDetails,
+				mock.WithRequestMatch(
+					mock.GetUserTeams,
+					[]*gh.Team{},
+				),
+			)
+			p.baseHTTPClient = mockHTTPClient
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -297,8 +270,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		t.Run("user in orgs and teams", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
 			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
 				func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 					switch page {
@@ -342,6 +313,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})
 
 			p := setupProvider(t, mockClient)
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mockListAffiliatedRepositories,
+				mockListOrgDetails,
+			)
+			p.baseHTTPClient = mockHTTPClient
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -369,8 +345,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		makeStatusCodeTest := func(code int) func(t *testing.T) {
 			return func(t *testing.T) {
 				mockClient := newMockClientWithTokenMock()
-				mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-				mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
 				mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
 					func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 						switch page {
@@ -396,6 +370,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					})
 
 				p := setupProvider(t, mockClient)
+				mockHTTPClient := mock.NewMockedHTTPClient(
+					mockListAffiliatedRepositories,
+					mockListOrgDetails,
+				)
+				p.baseHTTPClient = mockHTTPClient
 
 				repoIDs, err := p.FetchUserPerms(context.Background(),
 					mockAccount,
@@ -430,8 +409,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			callsToListOrgRepos := 0
 			callsToListTeamRepos := 0
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
 			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
 				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 					return []*github.Team{
@@ -453,6 +430,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 			p.client = mockClientFunc(mockClient)
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mockListAffiliatedRepositories,
+				mockListOrgDetails,
+			)
+			p.baseHTTPClient = mockHTTPClient
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -527,8 +509,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		t.Run("cache partial update", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
 			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
 				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 					return []*github.Team{
@@ -546,6 +526,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mockListAffiliatedRepositories,
+				mockListOrgDetails,
+			)
+			p.baseHTTPClient = mockHTTPClient
 			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
@@ -1227,4 +1212,30 @@ func setupProvider(t *testing.T, mc *MockClient) *Provider {
 func addLinkHeader(t *testing.T, w http.ResponseWriter, nextPage int) {
 	t.Helper()
 	w.Header().Add("Link", fmt.Sprintf(`<https://api.github.com/orgs/org/members?page=%d>; rel="next"`, nextPage))
+}
+
+type confirmAuthTransport struct {
+	t     *testing.T
+	base  http.RoundTripper
+	token string
+}
+
+func (tr *confirmAuthTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	tr.t.Helper()
+	want := fmt.Sprintf("Bearer %s", tr.token)
+	got := r.Header.Get("Authorization")
+	if got != want {
+		tr.t.Fatalf("Incorrect token got %s expected %s", got, want)
+	}
+	return tr.base.RoundTrip(r)
+}
+
+func assertClientCalledWithAuth(t *testing.T, client *http.Client, token string) {
+	t.Helper()
+	confirmAuth := &confirmAuthTransport{
+		t:     t,
+		base:  client.Transport,
+		token: token,
+	}
+	client.Transport = confirmAuth
 }
