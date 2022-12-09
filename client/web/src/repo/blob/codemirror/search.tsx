@@ -202,12 +202,6 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
-
-                {/*{this.state.searchQuery.search && (*/}
-                {/*    <div>*/}
-                {/*        found <span ref={element => (this.resultCountainer = element)} /> results*/}
-                {/*    </div>*/}
-                {/*)}*/}
             </Container>
         )
     }
