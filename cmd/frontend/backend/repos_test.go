@@ -201,7 +201,6 @@ func TestReposGetInventory(t *testing.T) {
 
 	tests := []struct {
 		useEnhancedLanguageDetection bool
-		path                         string
 		want                         *inventory.Inventory
 	}{
 		{
@@ -222,15 +221,6 @@ func TestReposGetInventory(t *testing.T) {
 				},
 			},
 		},
-		{
-			useEnhancedLanguageDetection: true,
-			path:                         "a",
-			want: &inventory.Inventory{
-				Languages: []inventory.Lang{
-					{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
-				},
-			},
-		},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("useEnhancedLanguageDetection=%v", test.useEnhancedLanguageDetection), func(t *testing.T) {
@@ -239,7 +229,7 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
 			defer func() { useEnhancedLanguageDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, test.path, false)
+			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
 			if err != nil {
 				t.Fatal(err)
 			}
