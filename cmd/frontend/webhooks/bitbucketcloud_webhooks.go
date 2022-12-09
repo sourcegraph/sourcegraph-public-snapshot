@@ -38,9 +38,8 @@ func (wr *WebhookRouter) HandleBitbucketCloudWebhook(logger log.Logger, w http.R
 	if err != nil {
 		logger.Error("Error handling bitbucket cloud webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

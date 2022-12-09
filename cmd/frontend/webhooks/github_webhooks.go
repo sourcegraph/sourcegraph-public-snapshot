@@ -94,7 +94,7 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 	if err != nil {
 		logger.Error("Error handling github webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}

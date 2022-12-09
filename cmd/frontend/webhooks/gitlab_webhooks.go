@@ -52,7 +52,7 @@ func (wr *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseW
 	if err != nil {
 		logger.Error("Error handling gitlab webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
