@@ -35,6 +35,7 @@ popd
 source /root/.sg_envrc
 
 SOURCEGRAPH_REPORTED_VERSION_OLD=$(curl -fs "$URL/__version")
+echo
 echo "--- Sourcegraph instance (before upgrade) is reporting version: '$SOURCEGRAPH_REPORTED_VERSION_OLD'"
 
 # Stop old Sourcegraph release
@@ -80,6 +81,7 @@ curl -f "$URL"
 curl -f "$URL"/healthz
 
 SOURCEGRAPH_REPORTED_VERSION_NEW=$(curl -fs "$URL/__version")
+echo
 echo "--- Sourcegraph instance (after upgrade) is reporting version: '$SOURCEGRAPH_REPORTED_VERSION_NEW'"
 
 if [ "$SOURCEGRAPH_REPORTED_VERSION_NEW" == "$SOURCEGRAPH_REPORTED_VERSION_OLD" ]; then
