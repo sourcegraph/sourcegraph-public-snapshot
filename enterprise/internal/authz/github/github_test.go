@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -123,22 +122,20 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		)
 
-		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		newmockOrgNoRead   = &gh.Organization{Login: gh.String("not-sourcegraph"), DefaultRepoPermission: gh.String("none")}
-		newmockOrgNoRead2  = &gh.Organization{Login: gh.String("not-sourcegraph-2"), DefaultRepoPermission: gh.String("none")}
-		newmockOrgRead     = &gh.Organization{Login: gh.String("sourcegraph"), DefaultRepoPermission: gh.String("read")}
+		mockOrgNoRead   = &gh.Organization{Login: gh.String("not-sourcegraph"), DefaultRepoPermission: gh.String("none")}
+		mockOrgNoRead2  = &gh.Organization{Login: gh.String("not-sourcegraph-2"), DefaultRepoPermission: gh.String("none")}
+		mockOrgRead     = &gh.Organization{Login: gh.String("sourcegraph"), DefaultRepoPermission: gh.String("read")}
 		mockListOrgDetails = mock.WithRequestMatchPages(
 			mock.GetUserOrgs,
 			[]*gh.Organization{
-				newmockOrgNoRead,
-				newmockOrgNoRead2,
+				mockOrgNoRead,
+				mockOrgNoRead2,
 			},
-			[]*gh.Organization{newmockOrgRead})
+			[]*gh.Organization{mockOrgRead})
 		mockListOrgMembership = mock.WithRequestMatchHandler(
 			mock.GetUserMembershipsOrgsByOrg,
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if strings.Contains(r.URL.String(), *newmockOrgNoRead2.Login) {
+				if strings.Contains(r.URL.String(), *mockOrgNoRead2.Login) {
 					w.Write(mock.MustMarshal(&gh.Membership{
 						State: gh.String("active"),
 						Role:  gh.String("admin"),
@@ -147,14 +144,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}),
 		)
 
-		newMockListOrgRepositories = func(counter *int) mock.MockBackendOption {
+		mockListOrgRepositories = func(counter *int) mock.MockBackendOption {
 			return mock.WithRequestMatchHandler(
 				mock.GetOrgsReposByOrg,
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if counter != nil {
 						*counter++
 					}
-					if strings.Contains(r.URL.String(), "/"+*(newmockOrgRead.Login)+"/") {
+					if strings.Contains(r.URL.String(), "/"+*(mockOrgRead.Login)+"/") {
 						switch r.URL.Query().Get("page") {
 						case "":
 							fallthrough
@@ -171,7 +168,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						}
 						return
 					}
-					if strings.Contains(r.URL.String(), "/"+*(newmockOrgNoRead2.Login)+"/") {
+					if strings.Contains(r.URL.String(), "/"+*(mockOrgNoRead2.Login)+"/") {
 						w.Write(mock.MustMarshal([]*gh.Repository{
 							{NodeID: gh.String("MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=")},
 						}))
@@ -252,12 +249,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs", func(t *testing.T) {
-			p := setupProvider(t, nil)
+			p := setupProvider(t)
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
 				mockListOrgMembership,
-				newMockListOrgRepositories(nil),
+				mockListOrgRepositories(nil),
 				mock.WithRequestMatch(
 					mock.GetUserTeams,
 					[]*gh.Team{},
@@ -287,26 +284,26 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs and teams", func(t *testing.T) {
-			p := setupProvider(t, nil)
+			p := setupProvider(t)
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
 				mockListOrgMembership,
-				newMockListOrgRepositories(nil),
+				mockListOrgRepositories(nil),
 				mock.WithRequestMatchPages(
 					mock.GetUserTeams,
 					[]*gh.Team{
-						{Organization: newmockOrgRead, Name: gh.String("ns team"), Slug: gh.String("ns-team")},
-						{Organization: newmockOrgNoRead, Name: gh.String("ns team"), Slug: gh.String("ns-team"), ReposCount: gh.Int(0)},
+						{Organization: mockOrgRead, Name: gh.String("ns team"), Slug: gh.String("ns-team")},
+						{Organization: mockOrgNoRead, Name: gh.String("ns team"), Slug: gh.String("ns-team"), ReposCount: gh.Int(0)},
 					},
 					[]*gh.Team{
-						{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)},
+						{Organization: mockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)},
 					},
 				),
 				mock.WithRequestMatchHandler(
 					mock.GetOrgsTeamsReposByOrgByTeamSlug,
 					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						if strings.Contains(r.URL.String(), fmt.Sprintf("/%s/teams/%s/", *(newmockOrgNoRead.Login), "ns-team-2")) {
+						if strings.Contains(r.URL.String(), fmt.Sprintf("/%s/teams/%s/", *(mockOrgNoRead.Login), "ns-team-2")) {
 							switch r.URL.Query().Get("page") {
 							case "":
 								fallthrough
@@ -354,12 +351,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		makeStatusCodeTest := func(code int) func(t *testing.T) {
 			return func(t *testing.T) {
-				p := setupProvider(t, nil)
+				p := setupProvider(t)
 				mockHTTPClient := mock.NewMockedHTTPClient(
 					mockListAffiliatedRepositories,
 					mockListOrgDetails,
 					mockListOrgMembership,
-					newMockListOrgRepositories(nil),
+					mockListOrgRepositories(nil),
 					mock.WithRequestMatchHandler(
 						mock.GetOrgsTeamsReposByOrgByTeamSlug,
 						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -369,11 +366,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					mock.WithRequestMatchPages(
 						mock.GetUserTeams,
 						[]*gh.Team{
-							{Organization: newmockOrgRead, Name: gh.String("ns team"), Slug: gh.String("ns-team")},
-							{Organization: newmockOrgNoRead, Name: gh.String("ns team"), Slug: gh.String("ns-team"), ReposCount: gh.Int(0)},
+							{Organization: mockOrgRead, Name: gh.String("ns team"), Slug: gh.String("ns-team")},
+							{Organization: mockOrgNoRead, Name: gh.String("ns team"), Slug: gh.String("ns-team"), ReposCount: gh.Int(0)},
 						},
 						[]*gh.Team{
-							{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)},
+							{Organization: mockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)},
 						},
 					),
 				)
@@ -419,9 +416,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				mockListOrgMembership,
 				mock.WithRequestMatchPages(
 					mock.GetUserTeams,
-					[]*gh.Team{{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
+					[]*gh.Team{{Organization: mockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
 				),
-				newMockListOrgRepositories(&callsToListOrgRepos),
+				mockListOrgRepositories(&callsToListOrgRepos),
 				mock.WithRequestMatchHandler(
 					mock.GetOrgsTeamsReposByOrgByTeamSlug,
 					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -515,9 +512,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				mockListOrgMembership,
 				mock.WithRequestMatchPages(
 					mock.GetUserTeams,
-					[]*gh.Team{{Organization: newmockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
+					[]*gh.Team{{Organization: mockOrgNoRead, Name: gh.String("ns team 2"), Slug: gh.String("ns-team-2"), ReposCount: gh.Int(3)}},
 				),
-				newMockListOrgRepositories(nil),
+				mockListOrgRepositories(nil),
 				mock.WithRequestMatch(
 					mock.GetOrgsTeamsReposByOrgByTeamSlug,
 					[]*gh.Repository{
@@ -531,14 +528,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			// cache populated from repo-centric sync (should add self)
 			p.groupsCache.setGroup(cachedGroup{
-				Org:          mockOrgRead.Login,
+				Org:          *mockOrgRead.Login,
 				Users:        []extsvc.AccountID{"1234"},
 				Repositories: []extsvc.RepoID{},
 			},
 			)
 			// cache populated from user-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
-				Org:          mockOrgNoRead.Login,
+				Org:          *mockOrgNoRead.Login,
 				Team:         "ns-team-2",
 				Users:        []extsvc.AccountID{},
 				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
@@ -555,7 +552,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			// mock user should have added self to complete cache
-			group, found := p.groupsCache.getGroup(mockOrgRead.Login, "")
+			group, found := p.groupsCache.getGroup(*mockOrgRead.Login, "")
 			if !found {
 				t.Fatal("expected group")
 			}
@@ -564,7 +561,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			// mock user should not have added self to incomplete cache
-			group, found = p.groupsCache.getGroup(mockOrgNoRead.Login, "ns-team-2")
+			group, found = p.groupsCache.getGroup(*mockOrgNoRead.Login, "ns-team-2")
 			if !found {
 				t.Fatal("expected group")
 			}
@@ -1196,9 +1193,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 	})
 }
 
-func setupProvider(t *testing.T, mc *MockClient) *Provider {
+func setupProvider(t *testing.T) *Provider {
 	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-	p.client = mockClientFunc(mc)
 	p.groupsCache = memGroupsCache()
 	return p
 }
