@@ -34,10 +34,9 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 	slowRequestConfWatchOnce.Do(func() {
 		conf.Watch(func() {
 			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
-			if limit == 0 {
-				limit = slowRequestRedisFIFOListDefaultSize
+			if limit != slowRequestRedisFIFOList.MaxSize() {
+				slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
 			}
-			slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
 		})
 	})
 
@@ -58,14 +57,14 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.FIFOList, after int,
 		return nil, err
 	}
 
-	reqs := make([]*types.SlowRequest, 0, len(raws))
+	reqs := make([]*types.SlowRequest, len(raws))
 	for i, raw := range raws {
 		var req types.SlowRequest
 		if err := json.Unmarshal(raw, &req); err != nil {
 			return nil, err
 		}
 		req.Index = strconv.Itoa(i + after)
-		reqs = append(reqs, &req)
+		reqs[i] = &req
 	}
 	return reqs, nil
 }
@@ -90,8 +89,9 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 }
 
 type slowRequestConnectionResolver struct {
-	after   string
-	perPage int
+	after      string
+	perPage    int
+	totalCount int32
 
 	err  error
 	once sync.Once
@@ -113,6 +113,10 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 			r.err = err
 		}
 		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisFIFOList, n, r.perPage)
+		r.totalCount, err = r.TotalCount(ctx)
+		if err != nil {
+			errors.Append(r.err, err)
+		}
 	})
 	return r.reqs, r.err
 }
