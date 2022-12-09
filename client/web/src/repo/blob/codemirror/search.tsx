@@ -17,15 +17,16 @@ import { Compartment, Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
+import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
-import { Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilKeyChanged, startWith, filter } from 'rxjs/operators'
+import { BehaviorSubject, Subject, Subscription } from 'rxjs'
+import { debounceTime, distinctUntilKeyChanged, filter, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
@@ -57,6 +58,8 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement | null = null
     private searchQuery = new Subject<SearchQuery>()
     private subscriptions = new Subscription()
+    private matches: Map<number, { from: number; to: number; index: number }> = new Map()
+    private currentMatchIndex = new BehaviorSubject<number>(-1)
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
@@ -72,13 +75,14 @@ class SearchPanel implements Panel {
 
         this.subscriptions.add(
             this.searchQuery
-                .pipe(
-                    startWith(this.state.searchQuery),
-                    debounceTime(100),
-                    filter(searchQuery => searchQuery.valid),
-                    distinctUntilKeyChanged('search')
-                )
+                .pipe(startWith(this.state.searchQuery), debounceTime(100), distinctUntilKeyChanged('search'))
                 .subscribe(searchQuery => this.commit(searchQuery))
+        )
+
+        this.subscriptions.add(
+            this.currentMatchIndex.subscribe(currentMatchIndex =>
+                this.render({ ...this.state, currentMatchIndex, totalMatches: this.matches.size })
+            )
         )
     }
 
@@ -102,12 +106,16 @@ class SearchPanel implements Panel {
 
         if (newState !== this.state) {
             this.state = newState
-            this.render(newState)
+            this.render({
+                ...newState,
+                currentMatchIndex: this.currentMatchIndex.value,
+                totalMatches: this.matches.size,
+            })
         }
     }
 
     public mount(): void {
-        this.render(this.state)
+        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex.value, totalMatches: this.matches.size })
     }
 
     public destroy(): void {
@@ -118,10 +126,14 @@ class SearchPanel implements Panel {
         searchQuery,
         overrideBrowserSearch,
         history,
+        currentMatchIndex,
+        totalMatches,
     }: {
         searchQuery: SearchQuery
         overrideBrowserSearch: boolean
         history: History
+        currentMatchIndex: number
+        totalMatches: number
     }): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
@@ -142,6 +154,7 @@ class SearchPanel implements Panel {
                         variant="small"
                         placeholder="Find..."
                         autoComplete="off"
+                        inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
                         onChange={event => this.searchQuery.next(this.buildSearchQuery({ search: event.target.value }))}
                         main-field="true"
                         role="search"
@@ -169,7 +182,7 @@ class SearchPanel implements Panel {
                     size="sm"
                     outline={true}
                     variant="secondary"
-                    onClick={() => findPrevious(this.view)}
+                    onClick={this.findPrevious}
                     data-testid="blob-view-search-previous"
                 >
                     <Icon svgPath={mdiChevronUp} aria-hidden={true} />
@@ -182,14 +195,24 @@ class SearchPanel implements Panel {
                     size="sm"
                     outline={true}
                     variant="secondary"
-                    onClick={() => findNext(this.view)}
+                    onClick={this.findNext}
                     data-testid="blob-view-search-next"
                 >
                     <Icon svgPath={mdiChevronDown} aria-hidden={true} />
                     Next
                 </Button>
 
-                <div>
+                {searchQuery.search ? (
+                    <div>
+                        <Text className="m-0">
+                            {currentMatchIndex > 0 && totalMatches > 0
+                                ? `${currentMatchIndex} / ${totalMatches}`
+                                : '0 results'}
+                        </Text>
+                    </div>
+                ) : null}
+
+                <div className="ml-auto">
                     <Label className="mb-0">
                         <Toggle
                             className="mr-1 align-text-bottom"
@@ -224,19 +247,50 @@ class SearchPanel implements Panel {
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
 
-    // Taken from CodeMirror's default serach panel implementation. This is
+    private updateSelectedSearchMatch = ({ from }: { from: number }) => {
+        const match = this.matches.get(from)
+        this.currentMatchIndex.next(match?.index ?? -1)
+    }
+
+    private findNext = (): void => {
+        findNext(this.view)
+        this.updateSelectedSearchMatch(this.view.state.selection.ranges[0])
+    }
+
+    private findPrevious = (): void => {
+        findPrevious(this.view)
+        this.updateSelectedSearchMatch(this.view.state.selection.ranges[0])
+    }
+
+    // Taken from CodeMirror's default search panel implementation. This is
     // necessary so that pressing Meta+F (and other CodeMirror keybindings) will
     // trigger the configured event handlers and not just fall back to the
     // browser's default behavior.
     private onkeydown = (event: KeyboardEvent): void => {
         if (runScopeHandlers(this.view, event, 'search-panel')) {
             event.preventDefault()
-        } else if (event.keyCode === 13 && event.target === this.input) {
+        } else if (event.code === 'Enter' && event.target === this.input) {
             event.preventDefault()
             if (event.shiftKey) {
-                findPrevious(this.view)
+                this.findPrevious()
             } else {
-                findNext(this.view)
+                this.findNext()
+            }
+        }
+    }
+
+    private calculateMatches = (query: SearchQuery): void => {
+        this.matches.clear()
+        const regex = new RegExp(
+            query.regexp ? query.search : escapeRegExp(query.search),
+            `gm${query.caseSensitive ? '' : 'i'}`
+        )
+        let index = 1
+        const matches = [...this.view.state.facet(blobPropsFacet).blobInfo.content.matchAll(regex)]
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                this.matches.set(match.index, { from: match.index, to: match.index + match[0].length, index })
+                index++
             }
         }
     }
@@ -246,6 +300,8 @@ class SearchPanel implements Panel {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
             if (query.search) {
+                this.calculateMatches(query)
+
                 // The following code scrolls next match into view if there is no
                 // match in the visible viewport. This is done by searching for the
                 // text from the currently top visible line and determining whether
@@ -271,16 +327,13 @@ class SearchPanel implements Panel {
                     }
                 }
 
-                const matchLineBlock = this.view.lineBlockAt(result.value.from)
-                const matchLineCenter = matchLineBlock.top + matchLineBlock.height / 2
+                this.updateSelectedSearchMatch(result.value)
 
-                if (matchLineCenter < scrollTop || matchLineCenter > scrollTop + this.view.scrollDOM.clientHeight) {
-                    this.view.dispatch({
-                        effects: EditorView.scrollIntoView(result.value.from, {
-                            y: 'center',
-                        }),
-                    })
-                }
+                this.view.dispatch({
+                    selection: { anchor: result.value.from, head: result.value.to },
+                    scrollIntoView: true,
+                    userEvent: 'select.search',
+                })
             }
         }
     }
