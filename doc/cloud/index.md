@@ -46,6 +46,13 @@ As part of this service you will receive a number of benefits from our team, inc
   - [Adding repositories from all of your code hosts to Sourcegraph](../admin/external_service/index.md)
   - [Integrating your single sign-on provider with Sourcegraph](../admin/auth/index.md)
   - [Configuring Sourcegraph](../admin/config/index.md)
+  
+### Access to all Sourcegraph features
+
+All Sourcegraph features are avilable on day-one, such as:
+
+- [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
+- [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
 
 ### Access restrictions
 
@@ -119,6 +126,7 @@ To learn more about how the Sourcegraph team operates managed SMTP internally, r
 - The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
 - Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
 - Instances currently run only on Google Cloud Platform in the `us-central1` region. Other regions and cloud providers (such as AWS or Azure) are not yet supported.
+- Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
 ## Security
 
