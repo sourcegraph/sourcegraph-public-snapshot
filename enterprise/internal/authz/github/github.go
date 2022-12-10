@@ -61,7 +61,7 @@ type ProviderOptions struct {
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
-	apiURL, isGitHubDotCom := github.APIRoot(opts.GitHubURL)
+	apiURL, _ := github.APIRoot(opts.GitHubURL)
 	if opts.GitHubClient == nil {
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
 			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
@@ -78,11 +78,6 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		}
 	}
 
-	var baseURL *url.URL
-	if !isGitHubDotCom {
-		baseURL = apiURL
-	}
-
 	return &Provider{
 		urn:         urn,
 		codeHost:    codeHost,
@@ -93,7 +88,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		db:             opts.DB,
 		baseHTTPClient: opts.BaseHTTPClient,
 		baseToken:      opts.BaseToken,
-		baseURL:        baseURL,
+		baseURL:        apiURL,
 	}
 }
 
@@ -467,7 +462,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		Affiliation: string(affiliation),
 		ListOptions: gh.ListOptions{
 			Page:    1,
-			PerPage: 100,
+			PerPage: userPageSize,
 		},
 	}
 	for {
@@ -528,7 +523,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		// Perform full sync
 		listOpts := gh.ListOptions{
 			Page:    1,
-			PerPage: 100,
+			PerPage: userPageSize,
 		}
 		for {
 			var members []*gh.User
