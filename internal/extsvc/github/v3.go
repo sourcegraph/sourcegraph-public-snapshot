@@ -22,17 +22,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
+	var err error
 	if cli == nil {
-		cli, _ = httpcli.ExternalClientFactory.Client()
+		cli, err = httpcli.ExternalClientFactory.Client()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if token != "" {
-		oauth2Config := oauth2.Config{}
 		cli.Transport = &oauth2.Transport{
-			Source: oauth2Config.TokenSource(ctx, &oauth2.Token{AccessToken: token}),
+			Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
 			Base:   cli.Transport,
 		}
 	}
@@ -45,9 +49,13 @@ func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Clien
 	return ghClient, nil
 }
 
-func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
-	if acct == nil {
-		return github.NewClient(cli), nil
+func NewGitHubClientForUserExternalAccount(ctx context.Context, acct extsvc.Account, cli *http.Client, baseURL *url.URL, cacheTokenFunc func(*oauth2.Token) error) (*github.Client, error) {
+	if cli == nil {
+		var err error
+		cli, err = httpcli.ExternalClientFactory.Client()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	_, tok, err := GetExternalAccountData(ctx, &acct.AccountData)
@@ -55,36 +63,44 @@ func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Acc
 		return nil, err
 	}
 
-	oauth2Config := oauth2.Config{}
-
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Github != nil {
-			p := authProvider.Github
-			if p.ClientID != acct.AccountSpec.ClientID {
-				continue
+	// If a refresh token is available, we need to find the
+	// oauth provider details in case the token needs to
+	// be refreshed.
+	if tok.RefreshToken != "" {
+		var provider *schema.GitHubAuthProvider
+		for _, authProvider := range conf.SiteConfig().AuthProviders {
+			if authProvider.Github != nil && authProvider.Github.ClientID == acct.AccountSpec.ClientID {
+				provider = authProvider.Github
+				break
 			}
-
-			oauth2Config.ClientID = p.ClientID
-			oauth2Config.ClientSecret = p.ClientSecret
-			oauth2Config.Endpoint = oauth2.Endpoint{
-				AuthURL:  p.Url + "/login/oauth/authorize",
-				TokenURL: p.Url + "/login/oauth/access_token",
-			}
-			break
 		}
-	}
+		if provider == nil {
+			return nil, errors.Newf("no auth provider found for external account ID %d", acct.ID)
+		}
 
-	tokenSource := auth.CacheableTokenSource{
-		TokenSource: oauth2Config.TokenSource(ctx, tok),
-	}
+		oauth2Config := oauth2.Config{
+			ClientID:     provider.ClientID,
+			ClientSecret: provider.ClientSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  provider.Url + "/login/oauth/authorize",
+				TokenURL: provider.Url + "/login/oauth/access_token",
+			},
+		}
 
-	if cli == nil {
-		cli, _ = httpcli.ExternalClientFactory.Client()
-	}
+		tokenSource := auth.CacheableTokenSource{
+			TokenSource: oauth2Config.TokenSource(ctx, tok),
+			CacheToken:  cacheTokenFunc,
+		}
 
-	cli.Transport = &oauth2.Transport{
-		Source: tokenSource,
-		Base:   cli.Transport,
+		cli.Transport = &oauth2.Transport{
+			Source: tokenSource,
+			Base:   cli.Transport,
+		}
+	} else {
+		cli.Transport = &oauth2.Transport{
+			Source: oauth2.StaticTokenSource(tok),
+			Base:   cli.Transport,
+		}
 	}
 
 	ghClient := github.NewClient(cli)

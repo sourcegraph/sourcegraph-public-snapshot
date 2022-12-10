@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2"
 
 	gh "github.com/google/go-github/v48/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -389,7 +390,18 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, account, p.baseHTTPClient, p.baseURL)
+	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, *account, p.baseHTTPClient, p.baseURL, func(tok *oauth2.Token) error {
+		if p.db != nil {
+			if err := account.AccountData.AuthData.Set(tok); err != nil {
+				return err
+			}
+			if _, err := p.db.UserExternalAccounts().LookupUserAndSave(ctx, account.AccountSpec, account.AccountData); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
