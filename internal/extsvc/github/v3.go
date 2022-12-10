@@ -3,6 +3,8 @@ package github
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,10 +51,18 @@ func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Clien
 	return ghClient, nil
 }
 
-func NewGitHubClientForUserExternalAccount(ctx context.Context, acct extsvc.Account, cli *http.Client, baseURL *url.URL, cacheTokenFunc func(*oauth2.Token) error) (*github.Client, error) {
+func NewGitHubClientForUserExternalAccount(ctx context.Context, urn string, acct extsvc.Account, cli *http.Client, baseURL *url.URL, cacheTokenFunc func(*oauth2.Token) error) (*github.Client, error) {
 	if cli == nil {
 		var err error
 		cli, err = httpcli.ExternalClientFactory.Client()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if baseURL == nil {
+		var err error
+		baseURL, err = url.Parse("https://api.github.com/")
 		if err != nil {
 			return nil, err
 		}
@@ -101,6 +111,17 @@ func NewGitHubClientForUserExternalAccount(ctx context.Context, acct extsvc.Acco
 			Source: oauth2.StaticTokenSource(tok),
 			Base:   cli.Transport,
 		}
+	}
+
+	key := sha256.Sum256([]byte(tok.AccessToken))
+	tokenHash := hex.EncodeToString(key[:])
+	rl := ratelimit.DefaultRegistry.Get(urn)
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{HeaderPrefix: "X-"})
+
+	cli.Transport = &rateLimitTransport{
+		rateLimit:        rl,
+		rateLimitMonitor: rlm,
+		baseTransport:    cli.Transport,
 	}
 
 	ghClient := github.NewClient(cli)
@@ -213,6 +234,35 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		rateLimitMonitor: rlm,
 		resource:         resource,
 	}
+}
+
+type rateLimitTransport struct {
+	rateLimit        *ratelimit.InstrumentedLimiter
+	rateLimitMonitor *ratelimit.Monitor
+	baseTransport    http.RoundTripper
+}
+
+func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+
+	err := t.rateLimit.Wait(ctx)
+	if err != nil {
+		// We don't want to return a misleading rate limit exceeded error if the error is coming
+		// from the context.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
+		return nil, errInternalRateLimitExceeded
+	}
+
+	resp, err := t.baseTransport.RoundTrip(req)
+
+	if resp.StatusCode != 401 {
+		t.rateLimitMonitor.Update(resp.Header)
+	}
+
+	return resp, nil
 }
 
 // WithAuthenticator returns a new V3Client that uses the same configuration as

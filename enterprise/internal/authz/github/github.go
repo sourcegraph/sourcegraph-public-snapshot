@@ -390,7 +390,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, *account, p.baseHTTPClient, p.baseURL, func(tok *oauth2.Token) error {
+	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, p.urn, *account, p.baseHTTPClient, p.baseURL, func(tok *oauth2.Token) error {
 		if p.db != nil {
 			if err := account.AccountData.AuthData.Set(tok); err != nil {
 				return err
