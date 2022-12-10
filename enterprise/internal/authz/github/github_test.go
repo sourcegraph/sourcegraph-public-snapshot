@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -12,13 +13,20 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
+	"github.com/stretchr/testify/require"
 
 	gh "github.com/google/go-github/v48/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 //nolint:unparam // unparam complains that `u` always has same value across call-sites, but that's OK
@@ -194,6 +202,74 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		repoIDs, err := p.FetchUserPerms(context.Background(),
 			mockAccount,
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantRepoIDs := []extsvc.RepoID{
+			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
+			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+		}
+		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("cache disabled and token expired causes refresh", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"28800","refresh_token":"%s"}`, authToken, "new-refresh-token")))
+		}))
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{
+			Github: &schema.GitHubAuthProvider{
+				ClientID: "client-id",
+				Url:      srv.URL,
+			},
+		}}}})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+
+		db := dbtest.NewDB(logtest.NoOp(t), t)
+		mockDB := database.NewMockDBFrom(database.NewDB(logtest.NoOp(t), db))
+		mockUserExternalAccounts := database.NewMockUserExternalAccountsStore()
+		mockUserExternalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, account extsvc.AccountData) (userID int32, err error) {
+			_, tok, err := github.GetExternalAccountData(ctx, &account)
+			require.Equal(t, authToken, tok.AccessToken)
+			require.Equal(t, "new-refresh-token", tok.RefreshToken)
+			require.True(t, tok.Expiry.After(time.Now()))
+			return 0, nil
+		})
+		mockDB.UserExternalAccountsFunc.SetDefaultReturn(mockUserExternalAccounts)
+
+		mockHTTPClient := mock.NewMockedHTTPClient(
+			mockListAffiliatedRepositories,
+		)
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: time.Duration(-1),
+			DB:             mockDB,
+			BaseHTTPClient: mockHTTPClient,
+		})
+		if p.groupsCache != nil {
+			t.Fatal("expected nil groupsCache")
+		}
+
+		repoIDs, err := p.FetchUserPerms(context.Background(),
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+					ClientID:    "client-id",
+				},
+				AccountData: extsvc.AccountData{
+					AuthData: extsvc.NewUnencryptedData([]byte(`{"access_token":"expired-token", "expiry":"2006-01-02T15:04:05Z", "refresh_token":"refresh-token"}`)),
+					Data:     nil,
+				},
+			},
 			authz.FetchPermsOptions{},
 		)
 		if err != nil {
