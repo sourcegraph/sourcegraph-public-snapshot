@@ -25,7 +25,16 @@
         "command": "vscode-codegen.ai-suggest",
         "key": "alt+\\"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Codebot extension settings",
+      "properties": {
+          "conf.codebot.openai.apiKey": {
+              "type": "string"
+          }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

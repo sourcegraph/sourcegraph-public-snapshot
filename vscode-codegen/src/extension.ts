@@ -11,7 +11,7 @@ import {
 import * as openai from "openai";
 import { cp } from "fs";
 import { CompletionSupplier } from "./models/model";
-import { CodeGenCompletionSupplier } from "./models/codegen";
+import { OpenAICompletionSupplier } from "./models/codegen";
 
 const log = (...args: any[]) => console.log(...args);
 const waitPhrases = [
@@ -40,9 +40,22 @@ const randomFrom = (arr: string[]): string => {
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   const codegenCompletionProvider = new CompletionProvider([
-    new CodeGenCompletionSupplier(
-      "http://localhost:5000/v1",
+    new OpenAICompletionSupplier(
+      new openai.Configuration({
+        basePath: "http://localhost:5000/v1",
+      }),
       "fastertransformer", // alt would be Python-based (consult fauxpilot docs)
+      "CodeGen",
+      log
+    ),
+    new OpenAICompletionSupplier(
+      new openai.Configuration({
+        apiKey: vscode.workspace
+          .getConfiguration()
+          .get("conf.codebot.openai.apiKey"),
+      }),
+      "code-davinci-002",
+      "Codex (code-davinci-002)",
       log
     ),
   ]);
@@ -114,8 +127,8 @@ class CompletionProvider
         const completions = await supplier.getCompletions(
           currentEditor.document,
           position,
-          256,
-          5
+          150, // 256
+          3
         );
         return {
           name: supplier.getName(),

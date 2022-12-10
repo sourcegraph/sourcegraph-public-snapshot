@@ -11,18 +11,25 @@ import {
 import * as openai from "openai";
 import { CompletionSupplier } from "./model";
 
-export class CodeGenCompletionSupplier implements CompletionSupplier {
+export class OpenAICompletionSupplier implements CompletionSupplier {
   log: (...args: any[]) => void;
-  serverUrl: string;
+  config: openai.Configuration;
   model: string;
-  constructor(serverUrl: string, model: string, log: (...args: any[]) => void) {
-    this.serverUrl = serverUrl;
+  name: string;
+  constructor(
+    config: openai.Configuration,
+    model: string,
+    name: string,
+    log: (...args: any[]) => void
+  ) {
+    this.config = config;
     this.model = model;
+    this.name = name;
     this.log = log;
   }
 
   getName(): string {
-    return "CodeGen";
+    return this.name;
   }
 
   async getCompletions(
@@ -32,33 +39,51 @@ export class CodeGenCompletionSupplier implements CompletionSupplier {
     tries: number
   ): Promise<InlineCompletionItem[]> {
     this.log("getCompletions:", document.uri, position, tries);
+    const offset = document.offsetAt(position);
+    const maxLookback = 500;
+    const startOffset = offset > maxLookback ? offset - maxLookback : 0;
+    const startPosition = document.positionAt(startOffset);
     const prompt = document.getText(
-      new vscode.Range(0, 0, position.line, position.character)
+      new vscode.Range(
+        startPosition.line,
+        startPosition.character,
+        position.line,
+        position.character
+      )
     );
-    const oa = new openai.OpenAIApi(
-      new openai.Configuration({ basePath: this.serverUrl })
-    );
-    const args = {
-      model: this.model,
-      prompt: prompt,
-      max_tokens: maxTokens,
-      stop: getStopSequences(position.line, document),
-      n: tries,
-    };
-    const response = await oa.createCompletion(args);
-    const completions =
-      response.data.choices
-        ?.map((choice) => choice.text)
-        .map(
-          (choiceText) =>
-            new vscode.InlineCompletionItem(
-              choiceText as string,
-              new vscode.Range(position, position)
-            )
-        ) || [];
+    const oa = new openai.OpenAIApi(this.config);
 
-    this.log(`got ${completions.length} completions`);
-    return completions;
+    this.log("prompt:", prompt);
+    try {
+      const response = await oa.createCompletion({
+        model: this.model,
+        prompt: prompt,
+        temperature: 0.2,
+        max_tokens: maxTokens,
+        // stop: getStopSequences(position.line, document), // OpenAI doesn't seem to like this sometimes for some reason
+        n: tries,
+      });
+      const completions =
+        response.data.choices
+          ?.map((choice) => choice.text)
+          .map(
+            (choiceText) =>
+              new vscode.InlineCompletionItem(
+                choiceText as string,
+                new vscode.Range(position, position)
+              )
+          ) || [];
+
+      this.log(
+        `Model ${this.getName()} returned ${completions.length} completions`
+      );
+      return completions;
+    } catch (e) {
+      console.error(
+        `Model ${this.getName()} failed to fetch completions: ${e}`
+      );
+      throw e;
+    }
   }
 }
 
