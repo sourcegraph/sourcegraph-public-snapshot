@@ -179,8 +179,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: time.Duration(-1),
+			BaseHTTPClient: mockHTTPClient,
 		})
-		p.baseHTTPClient = mockHTTPClient
 		if p.groupsCache != nil {
 			t.Fatal("expected nil groupsCache")
 		}
@@ -287,8 +287,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			)
 			assertClientCalledWithAuth(t, mockHTTPClient, authToken)
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), BaseHTTPClient: mockHTTPClient})
 			if p.groupsCache == nil {
 				t.Fatal("expected groupsCache")
 			}
@@ -310,7 +309,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs", func(t *testing.T) {
-			p := setupProvider(t)
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
@@ -321,7 +319,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					[]*gh.Team{},
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := setupProvider(t, mockHTTPClient)
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -345,7 +343,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs and teams", func(t *testing.T) {
-			p := setupProvider(t)
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
@@ -385,7 +382,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					}),
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := setupProvider(t, mockHTTPClient)
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -412,7 +409,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		makeStatusCodeTest := func(code int) func(t *testing.T) {
 			return func(t *testing.T) {
-				p := setupProvider(t)
 				mockHTTPClient := mock.NewMockedHTTPClient(
 					mockListAffiliatedRepositories,
 					mockListOrgDetails,
@@ -435,7 +431,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						},
 					),
 				)
-				p.baseHTTPClient = mockHTTPClient
+				p := setupProvider(t, mockHTTPClient)
 
 				repoIDs, err := p.FetchUserPerms(context.Background(),
 					mockAccount,
@@ -470,7 +466,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			callsToListOrgRepos := 0
 			callsToListTeamRepos := 0
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
@@ -490,7 +485,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					}),
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), BaseHTTPClient: mockHTTPClient})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -564,9 +559,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("cache partial update", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mockListAffiliatedRepositories,
 				mockListOrgDetails,
@@ -583,7 +575,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					},
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -694,14 +689,14 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	)
 
 	t.Run("cache disabled", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{
-			GitHubURL:      mustURL(t, "https://github.com"),
-			GroupsCacheTTL: -1,
-		})
 		mockHTTPClient := mock.NewMockedHTTPClient(
 			mockListCollaborators,
 		)
-		p.baseHTTPClient = mockHTTPClient
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: -1,
+			BaseHTTPClient: mockHTTPClient,
+		})
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(), &mockUserRepo,
 			authz.FetchPermsOptions{})
@@ -722,9 +717,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 	t.Run("cache enabled", func(t *testing.T) {
 		t.Run("repo not in org", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetOrgsByOrg,
@@ -738,7 +730,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				),
 				mockListCollaborators,
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			if p.groupsCache == nil {
 				t.Fatal("expected groupsCache")
 			}
@@ -763,9 +758,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("repo in read org", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatchPages(
 					mock.GetOrgsByOrg,
@@ -795,7 +787,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					})),
 				mockListCollaborators,
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -820,9 +815,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("internal repo in org", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatchPages(
 					mock.GetOrgsByOrg,
@@ -864,7 +856,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					}),
 				mockListCollaborators,
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 
 			// Ideally don't want a feature flag for this and want this internal repos to sync for
 			// all users inside an org. Since we're introducing a new feature this is guarded behind
@@ -928,9 +923,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatchPages(
 					mock.GetOrgsByOrg,
@@ -969,7 +961,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				),
 				mockListCollaborators,
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -997,9 +992,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("cache and invalidate", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			callsToListOrgMembers := 0
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatchPages(
@@ -1025,7 +1017,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				),
 				mockListCollaborators,
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -1091,9 +1086,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("cache partial update", func(t *testing.T) {
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
 			mockHTTPClient := mock.NewMockedHTTPClient(
 				mock.WithRequestMatch(
 					mock.GetOrgsByOrg,
@@ -1132,7 +1124,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					[]*gh.User{},
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
+			p := NewProvider("", ProviderOptions{
+				GitHubURL:      mustURL(t, "https://github.com"),
+				BaseHTTPClient: mockHTTPClient,
+			})
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
@@ -1202,7 +1197,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		})
 
 		t.Run("error getting scopes", func(t *testing.T) {
-			mockHTTPClient := mock.NewMockedHTTPClient(
+			p.baseHTTPClient = mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetUserRepos,
 					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1211,7 +1206,6 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					}),
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
 			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
@@ -1222,13 +1216,12 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		})
 
 		t.Run("missing org scope", func(t *testing.T) {
-			mockHTTPClient := mock.NewMockedHTTPClient(
+			p.baseHTTPClient = mock.NewMockedHTTPClient(
 				mock.WithRequestMatch(
 					mock.GetUserRepos,
 					[]*gh.Repository{},
 				),
 			)
-			p.baseHTTPClient = mockHTTPClient
 			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
@@ -1240,7 +1233,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 
 		t.Run("scopes ok org scope", func(t *testing.T) {
 			for _, testCase := range []string{"read:org", "write:org", "admin:org"} {
-				mockHTTPClient := mock.NewMockedHTTPClient(
+				p.baseHTTPClient = mock.NewMockedHTTPClient(
 					mock.WithRequestMatchHandler(
 						mock.GetUserRepos,
 						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1248,7 +1241,6 @@ func TestProvider_ValidateConnection(t *testing.T) {
 						}),
 					),
 				)
-				p.baseHTTPClient = mockHTTPClient
 				problems := p.ValidateConnection(context.Background())
 				if len(problems) != 0 {
 					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
@@ -1258,8 +1250,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 	})
 }
 
-func setupProvider(t *testing.T) *Provider {
-	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+func setupProvider(t *testing.T, baseHTTPClient *http.Client) *Provider {
+	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), BaseHTTPClient: baseHTTPClient})
 	p.groupsCache = memGroupsCache()
 	return p
 }

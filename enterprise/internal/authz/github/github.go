@@ -269,7 +269,7 @@ func (p *Provider) fetchUserPerms(ctx context.Context, cli *gh.Client, accountID
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
 
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+	logger := log.Scoped("fetchUserPerms", "fetches all the private repo ids that the token can access.")
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
@@ -313,10 +313,8 @@ func (p *Provider) fetchUserPerms(ctx context.Context, cli *gh.Client, accountID
 			} else {
 				repos, resp, err = cli.Teams.ListTeamReposBySlug(ctx, group.Org, group.Team, listOpts)
 			}
-			if github.IsNotFound(err) ||
-				github.HTTPErrorCode(err) == http.StatusForbidden ||
-				resp != nil && (resp.StatusCode == http.StatusForbidden ||
-					resp.StatusCode == http.StatusNotFound) {
+			if resp.StatusCode == http.StatusForbidden ||
+				resp.StatusCode == http.StatusNotFound {
 				// If we get a 403/404 here, something funky is going on and this is very
 				// unexpected. Since this is likely not transient, instead of bailing out and
 				// potentially causing unbounded retries later, we let this result proceed to
@@ -667,7 +665,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	// Check if repo belongs in an org
 	org, resp, err := cli.Organizations.Get(ctx, owner)
 	if err != nil {
-		if github.IsNotFound(err) || resp.StatusCode == 404 {
+		if resp.StatusCode == 404 {
 			// Owner is most likely not an org. User repos don't have teams or org permissions,
 			// so we are done - this is fine, so don't propagate error.
 			return groups, nil
