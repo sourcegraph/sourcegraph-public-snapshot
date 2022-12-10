@@ -108,9 +108,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
 
     const isBatchSpecLocallyCreated = batchChange.currentSpec?.source === BatchSpecSource.LOCAL
     const shouldDisplayExecutionsTab =
-        isExecutionEnabled &&
-        (!isBatchSpecLocallyCreated || batchChange.state === BatchChangeState.DRAFT) &&
-        batchChange.viewerCanAdminister
+        isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
