@@ -185,10 +185,10 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 	return scopes
 }
 
-// fetchUserPermsByToken fetches all the private repo ids that the token can access.
+// fetchUserPerms fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, cli *gh.Client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPerms(ctx context.Context, cli *gh.Client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const repoSetSize = 100
@@ -389,7 +389,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, err
 	}
 
-	return p.fetchUserPermsByToken(ctx, cli, extsvc.AccountID(account.AccountID), opts)
+	return p.fetchUserPerms(ctx, cli, extsvc.AccountID(account.AccountID), opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
