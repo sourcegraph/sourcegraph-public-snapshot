@@ -147,6 +147,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
+        // call to refresh the session
+        this.getDeviceSessionID();
+
         if (window.context?.userAgentIsBot || !pageTitle) {
             return
         }
@@ -160,6 +163,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+        // call to refresh the session
+        this.getDeviceSessionID();
+
         if (window.context?.userAgentIsBot || !eventName) {
             return
         }
@@ -179,6 +185,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        // call to refresh the session
+        this.getDeviceSessionID();
+
         for (const listener of this.listeners) {
             listener(eventLabel)
         }
@@ -304,8 +313,12 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
         if (!deviceSessionID || deviceSessionID === '') {
             deviceSessionID = uuid.v4()
-            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
         }
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+        this.deviceSessionID = deviceSessionID
         return deviceSessionID
     }
 
