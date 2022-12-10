@@ -51,7 +51,7 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
                         : classNames(styles.readmeMore, styles.readmeMoreVisible)
                 }
             >
-                <Link to={readmeURL}>More...</Link>
+                <Link to={readmeURL}>View full file</Link>
             </div>
         </>
     )
