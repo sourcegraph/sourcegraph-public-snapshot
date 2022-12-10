@@ -337,8 +337,8 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
-		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
-		// changes except those that I authored the batch spec of from this list.
+		// all, I can't see other users' drafts, so filter out unapplied (draft) batch
+		// changes except those that I created from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
 		cond := sqlf.Sprintf(`(
 	batch_changes.batch_spec_id IS NOT NULL
@@ -664,8 +664,8 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
-		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
-		// changes except those that I authored from this list.
+		// all, I can't see other users' drafts, so filter out unapplied (draft) batch
+		// changes except those that I created from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
 		cond := sqlf.Sprintf(`(
 	batch_changes.batch_spec_id IS NOT NULL
