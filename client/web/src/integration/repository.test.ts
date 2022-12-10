@@ -1070,30 +1070,6 @@ describe('Repository', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
-        async function getDecorationsByFilename(
-            pageOrSidebar: 'page' | 'sidebar',
-            filename: string
-        ): Promise<{ textContent?: string | null; percentage?: string | null } | null> {
-            return driver.page.evaluate(
-                ({ pageOrSidebar, filename }) => {
-                    const decorable = [
-                        ...document.querySelectorAll('.test-' + String(pageOrSidebar) + '-file-decorable'),
-                    ].find(decorable =>
-                        decorable?.querySelector('.test-file-decorable-name')?.textContent?.includes(filename)
-                    )
-
-                    if (!decorable) {
-                        return null
-                    }
-
-                    return {
-                        textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
-                        percentage: decorable.querySelector('.test-file-decoration-meter')?.getAttribute('value'),
-                    }
-                },
-                { pageOrSidebar, filename }
-            )
-        }
     })
 
     describe('Accessibility', () => {
