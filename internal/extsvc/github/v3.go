@@ -29,10 +29,12 @@ func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Clien
 		cli, _ = httpcli.ExternalClientFactory.Client()
 	}
 
-	oauth2Config := oauth2.Config{}
-	cli.Transport = &oauth2.Transport{
-		Source: oauth2Config.TokenSource(ctx, &oauth2.Token{AccessToken: token}),
-		Base:   cli.Transport,
+	if token != "" {
+		oauth2Config := oauth2.Config{}
+		cli.Transport = &oauth2.Transport{
+			Source: oauth2Config.TokenSource(ctx, &oauth2.Token{AccessToken: token}),
+			Base:   cli.Transport,
+		}
 	}
 
 	ghClient := github.NewClient(cli)
