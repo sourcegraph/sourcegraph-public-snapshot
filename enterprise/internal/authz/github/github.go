@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -118,19 +119,25 @@ func (p *Provider) ValidateConnection(ctx context.Context) []string {
 		return []string{}
 	}
 
-	client, err := p.client()
+	ghClient, err := github.NewGitHubClientWithToken(ctx, p.urn, p.baseToken, p.baseHTTPClient, p.baseURL)
 	if err != nil {
 		return []string{
-			fmt.Sprintf("Unable to get client: %v", err),
+			fmt.Sprintf("Unable to create client: %v", err),
 		}
 	}
 
-	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
+	// just need to make a request to get headers
+	_, resp, err := ghClient.Repositories.List(ctx, "", &gh.RepositoryListOptions{ListOptions: gh.ListOptions{PerPage: 1}})
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return []string{fmt.Sprintf("Unable to make request: %v", err)}
 		}
+		defer resp.Body.Close()
+		return []string{fmt.Sprintf("Unable to make request: %v", string(body))}
 	}
+
+	scopes := strings.Split(resp.Header.Get("X-OAuth-Scopes"), ", ")
 
 	gotScopes := make(map[string]struct{})
 	for _, gotScope := range scopes {

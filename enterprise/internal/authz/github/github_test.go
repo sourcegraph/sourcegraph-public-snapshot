@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,20 +39,6 @@ func mustURL(t *testing.T, u string) *url.URL {
 
 func memGroupsCache() *cachedGroups {
 	return &cachedGroups{cache: httpcache.NewMemoryCache()}
-}
-
-func mockClientFunc(mockClient client) func() (client, error) {
-	return func() (client, error) {
-		return mockClient, nil
-	}
-}
-
-// newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking
-// which is lost during moving the client interface to mockgen usage
-func newMockClientWithTokenMock() *MockClient {
-	mockClient := NewMockClient()
-	mockClient.WithAuthenticatorFunc.SetDefaultReturn(mockClient)
-	return mockClient
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
@@ -1217,12 +1202,16 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		})
 
 		t.Run("error getting scopes", func(t *testing.T) {
-			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
-				func(ctx context.Context) ([]string, error) {
-					return nil, errors.New("scopes error")
-				})
-			p.client = mockClientFunc(mockClient)
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetUserRepos,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnauthorized)
+						w.Write([]byte("scopes error"))
+					}),
+				),
+			)
+			p.baseHTTPClient = mockHTTPClient
 			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
@@ -1233,12 +1222,13 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		})
 
 		t.Run("missing org scope", func(t *testing.T) {
-			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
-				func(ctx context.Context) ([]string, error) {
-					return []string{}, nil
-				})
-			p.client = mockClientFunc(mockClient)
+			mockHTTPClient := mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetUserRepos,
+					[]*gh.Repository{},
+				),
+			)
+			p.baseHTTPClient = mockHTTPClient
 			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
@@ -1249,17 +1239,16 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		})
 
 		t.Run("scopes ok org scope", func(t *testing.T) {
-			for _, testCase := range [][]string{
-				{"read:org"},
-				{"write:org"},
-				{"admin:org"},
-			} {
-				mockClient := newMockClientWithTokenMock()
-				mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
-					func(ctx context.Context) ([]string, error) {
-						return testCase, nil
-					})
-				p.client = mockClientFunc(mockClient)
+			for _, testCase := range []string{"read:org", "write:org", "admin:org"} {
+				mockHTTPClient := mock.NewMockedHTTPClient(
+					mock.WithRequestMatchHandler(
+						mock.GetUserRepos,
+						http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.Header().Add("X-OAuth-Scopes", testCase)
+						}),
+					),
+				)
+				p.baseHTTPClient = mockHTTPClient
 				problems := p.ValidateConnection(context.Background())
 				if len(problems) != 0 {
 					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
