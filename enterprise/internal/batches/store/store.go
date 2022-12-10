@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
