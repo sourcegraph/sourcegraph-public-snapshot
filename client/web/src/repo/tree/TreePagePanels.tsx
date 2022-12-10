@@ -29,7 +29,7 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
         fileRef.current &&
         containerRef.current &&
         fileRef.current.clientHeight > 0 &&
-        containerRef.current.clientHeight >= fileRef.current.clientHeight
+        containerRef.current.clientHeight >= fileRef.current.clientHeight - 4
     return (
         <>
             <div className={classNames(styles.readmeContainer)} ref={containerRef}>
