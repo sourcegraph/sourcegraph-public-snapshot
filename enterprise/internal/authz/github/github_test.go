@@ -238,6 +238,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		mockUserExternalAccounts := database.NewMockUserExternalAccountsStore()
 		mockUserExternalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, account extsvc.AccountData) (userID int32, err error) {
 			_, tok, err := github.GetExternalAccountData(ctx, &account)
+			require.NoError(t, err)
 			require.Equal(t, authToken, tok.AccessToken)
 			require.Equal(t, "new-refresh-token", tok.RefreshToken)
 			require.True(t, tok.Expiry.After(time.Now()))
