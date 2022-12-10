@@ -4550,7 +4550,7 @@ type GitCommit implements Node {
         """
         after: String
         """
-        Return commits before the specified date.
+        Return commits older than the specified date.
         """
         before: String
     ): GitCommitConnection!
