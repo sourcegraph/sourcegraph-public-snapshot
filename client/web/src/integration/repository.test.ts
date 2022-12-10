@@ -1050,8 +1050,9 @@ describe('Repository', () => {
                                             return {
                                                 uri: file.uri,
                                                 after: {
-                                                    contentText: `${name.split('').filter(char => vowels.includes(char)).length
-                                                        } vowels`,
+                                                    contentText: `${
+                                                        name.split('').filter(char => vowels.includes(char)).length
+                                                    } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                                 meter: {
