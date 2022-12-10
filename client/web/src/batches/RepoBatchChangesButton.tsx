@@ -11,11 +11,13 @@ import { BatchChangesIcon } from './icons'
 
 interface RepoBatchChangesButtonProps {
     className?: string
+    textClassName?: string
     repoName: string
 }
 
 export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
     className,
+    textClassName,
     repoName,
 }) => {
     const { data } = useQuery<RepoChangesetsStatsResult, RepoChangesetsStatsVariables>(REPO_CHANGESETS_STATS, {
@@ -37,7 +39,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             outline={true}
             as={Link}
         >
-            <Icon as={BatchChangesIcon} aria-hidden={true} /> Batch Changes
+            <Icon as={BatchChangesIcon} aria-hidden={true} /> <span className={textClassName}>Batch Changes</span>
             {open > 0 && (
                 <Badge
                     tooltip={`${open} open ${pluralize('batch changeset', open)}`}

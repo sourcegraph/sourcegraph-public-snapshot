@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
-import { mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
+import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
@@ -13,7 +13,6 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -33,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
-import { BatchChangesIcon } from '../../batches/icons'
+import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -51,9 +50,7 @@ import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContrib
 import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
 import { RepositoryTagTab } from './TagTab'
-import { TreeNavigation } from './TreeNavigation'
 import { TreePageContent } from './TreePageContent'
-import { TreeTabList } from './TreeTabList'
 
 import styles from './TreePage.module.scss'
 
@@ -215,7 +212,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         location,
     }
 
-    const [selectedTab, setSelectedTab] = useState('home')
+    const [, setSelectedTab] = useState('home')
     const [showPageTitle, setShowPageTitle] = useState(true)
     const { path } = useRouteMatch()
 
@@ -251,60 +248,90 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         }
     }, [isNewRepoPageEnabled, path, treeOrError])
 
-    const RootHeaderSection = ({ tree }: { tree: TreeFields }): React.ReactElement => (
+    const RootHeaderSection = (): React.ReactElement => (
         <>
-            <div className="d-flex justify-content-between align-items-center">
-                <div>
+            <div className="d-flex flex-wrap flex-lg-nowrap justify-content-between px-0">
+                <div className={classNames('flex-fill pl-0', styles.header)}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
                             <PageHeader.Breadcrumb icon={mdiSourceRepository}>
-                                {displayRepoName(repo!.name)}
+                                {displayRepoName(repo?.name || '')}
                             </PageHeader.Breadcrumb>
                         </PageHeader.Heading>
                     </PageHeader>
                     {repo?.description && <Text>{repo.description}</Text>}
                 </div>
-                {isNewRepoPageEnabled && (
+                <div className={classNames('flex-shrink-0 pr-0', styles.menu)}>
                     <ButtonGroup>
-                        {!isSourcegraphDotCom && batchChangesEnabled && (
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/branches`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
+                            <span className={styles.text}>Branches</span>
+                        </Button>
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                        </Button>
+                        <Button
+                            className="flex-shrink-0"
+                            to={
+                                revision
+                                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
+                                          revision
+                                      )}`
+                                    : `/${encodeURIPathComponent(repoName)}/-/compare`
+                            }
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
+                            <span className={styles.text}>Compare</span>
+                        </Button>
+                        {codeIntelligenceEnabled && (
                             <Button
-                                to="/batch-changes/create"
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
-                                className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} aria-hidden={true} /> Create batch change
+                                <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
+                                <span className={styles.text}>Code graph data</span>
                             </Button>
                         )}
-
+                        {batchChangesEnabled && (
+                            <RepoBatchChangesButton
+                                className="flex-shrink-0"
+                                textClassName={styles.text}
+                                repoName={repoName}
+                            />
+                        )}
                         {repo?.viewerCanAdminister && (
                             <Button
+                                className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/settings`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
-                                className="ml-1"
                                 aria-label="Repository settings"
                             >
                                 <Icon aria-hidden={true} svgPath={mdiCog} />
                             </Button>
                         )}
                     </ButtonGroup>
-                )}
+                </div>
             </div>
-            {isNewRepoPageEnabled ? (
-                <TreeTabList tree={tree} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            ) : (
-                <TreeNavigation
-                    batchChangesEnabled={batchChangesEnabled}
-                    codeIntelligenceEnabled={codeIntelligenceEnabled}
-                    repoName={repoName}
-                    viewerCanAdminister={repo?.viewerCanAdminister}
-                    revision={revision}
-                    tree={tree}
-                />
-            )}
         </>
     )
 
@@ -328,7 +355,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     <div className={classNames(styles.header)}>
                         <header className="mb-3">
                             {treeOrError.isRoot ? (
-                                <RootHeaderSection tree={treeOrError} />
+                                <RootHeaderSection />
                             ) : (
                                 <PageHeader className="mb-3 mr-2 test-tree-page-title">
                                     <PageHeader.Heading as="h2" styleAs="h1">
