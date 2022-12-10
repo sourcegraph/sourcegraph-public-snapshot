@@ -134,7 +134,6 @@ func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		dbutil.NullTimeColumn(c.ClosedAt),
-		// TODO: Why is this in here twice
 		dbutil.NullInt64Column(c.BatchSpecID),
 		sqlf.Join(batchChangeColumns, ", "),
 	)

@@ -157,7 +157,7 @@ type CreateEmptyBatchChangeOpts struct {
 	Name string
 }
 
-// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
+// CreateEmptyBatchChange creates a new batch change without an applied spec. It enforces
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
@@ -168,7 +168,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	// The combination of name + namespace must be unique
+	// The combination of name + namespace must be unique.
 	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
 	// be considered unique?
 	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{

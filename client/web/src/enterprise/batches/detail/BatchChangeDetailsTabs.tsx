@@ -274,7 +274,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
-                    ) : (
+                    ) : batchChange.currentSpec ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -285,11 +285,13 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 <BatchSpecDownloadButton
                                     name={batchChange.name}
                                     isLightTheme={isLightTheme}
-                                    originalInput={batchChange.currentSpec!.originalInput}
+                                    originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
-                            <BatchSpecInfo spec={batchChange.currentSpec!} isLightTheme={isLightTheme} />
+                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
+                    ) : (
+                        <>No spec yet</>
                     )}
                 </TabPanel>
                 <TabPanel>
