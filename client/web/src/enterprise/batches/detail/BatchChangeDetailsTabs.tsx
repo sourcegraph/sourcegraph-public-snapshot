@@ -13,7 +13,7 @@ import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/w
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecState, BatchChangeFields, BatchSpecSource, BatchChangeState } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 import { BatchSpecInfo } from '../BatchSpecNode'
