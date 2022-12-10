@@ -27,6 +27,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func addRateLimiterToClient(urn, baseURL, resource, token string, cli *http.Client) {
+	key := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(key[:])
+	rl := ratelimit.DefaultRegistry.Get(urn)
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL, tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
+
+	cli.Transport = &rateLimitTransport{
+		rateLimit:        rl,
+		rateLimitMonitor: rlm,
+		baseTransport:    cli.Transport,
+	}
+}
+
 func NewGitHubClientWithToken(ctx context.Context, urn, token string, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
 	var err error
 	if cli == nil {
@@ -43,16 +56,7 @@ func NewGitHubClientWithToken(ctx context.Context, urn, token string, cli *http.
 		}
 	}
 
-	key := sha256.Sum256([]byte(token))
-	tokenHash := hex.EncodeToString(key[:])
-	rl := ratelimit.DefaultRegistry.Get(urn)
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{HeaderPrefix: "X-"})
-
-	cli.Transport = &rateLimitTransport{
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
-		baseTransport:    cli.Transport,
-	}
+	addRateLimiterToClient(urn, baseURL.String(), "rest", token, cli)
 
 	ghClient := github.NewClient(cli)
 	if baseURL != nil {
@@ -126,16 +130,7 @@ func NewGitHubClientForUserExternalAccount(ctx context.Context, urn string, acct
 		}
 	}
 
-	key := sha256.Sum256([]byte(tok.AccessToken))
-	tokenHash := hex.EncodeToString(key[:])
-	rl := ratelimit.DefaultRegistry.Get(urn)
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{HeaderPrefix: "X-"})
-
-	cli.Transport = &rateLimitTransport{
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
-		baseTransport:    cli.Transport,
-	}
+	addRateLimiterToClient(urn, baseURL.String(), "rest", tok.AccessToken, cli)
 
 	ghClient := github.NewClient(cli)
 	if baseURL != nil {
