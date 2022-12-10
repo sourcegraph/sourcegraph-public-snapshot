@@ -371,25 +371,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(ctx, &account.AccountData)
-	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
-	} else if tok == nil {
-		return nil, errors.New("no token found in the external account data")
-	}
-
-	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
-		RefreshToken: tok.RefreshToken,
-		Expiry:       tok.Expiry,
-	}
-
-	if p.InstallationID != nil && p.db != nil {
-		// Only used if created by newAppProvider
-		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
-		oauthToken.NeedsRefreshBuffer = 5
-	}
-
 	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, p.urn, *account, p.baseHTTPClient, p.baseURL, func(tok *oauth2.Token) error {
 		if p.db != nil {
 			if err := account.AccountData.AuthData.Set(tok); err != nil {
@@ -419,7 +400,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	cli, err := github.NewGitHubClientWithToken(ctx, p.baseToken, p.baseHTTPClient, p.baseURL)
+	cli, err := github.NewGitHubClientWithToken(ctx, p.urn, p.baseToken, p.baseHTTPClient, p.baseURL)
 	if err != nil {
 		return nil, err
 	}

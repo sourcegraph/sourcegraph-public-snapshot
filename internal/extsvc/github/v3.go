@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
+func NewGitHubClientWithToken(ctx context.Context, urn, token string, cli *http.Client, baseURL *url.URL) (*github.Client, error) {
 	var err error
 	if cli == nil {
 		cli, err = httpcli.ExternalClientFactory.Client()
@@ -41,6 +41,17 @@ func NewGitHubClientWithToken(ctx context.Context, token string, cli *http.Clien
 			Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
 			Base:   cli.Transport,
 		}
+	}
+
+	key := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(key[:])
+	rl := ratelimit.DefaultRegistry.Get(urn)
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{HeaderPrefix: "X-"})
+
+	cli.Transport = &rateLimitTransport{
+		rateLimit:        rl,
+		rateLimitMonitor: rlm,
+		baseTransport:    cli.Transport,
 	}
 
 	ghClient := github.NewClient(cli)
@@ -70,7 +81,9 @@ func NewGitHubClientForUserExternalAccount(ctx context.Context, urn string, acct
 
 	_, tok, err := GetExternalAccountData(ctx, &acct.AccountData)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return nil, errors.New("no token found in the external account data")
 	}
 
 	// If a refresh token is available, we need to find the
