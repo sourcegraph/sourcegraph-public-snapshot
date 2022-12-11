@@ -158,8 +158,8 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>
-                                    Do not include the <Code weight="bold">repo:</Code> filter as it will be added
-                                    automatically, if needed{' '}
+                                    Do not include <Code>context:</Code> <Code>repo:</Code> or <Code>rev:</Code>{' '}
+                                    filters; if needed, <Code>repo:</Code> will be added automatically.
                                 </li>
                                 <li>
                                     You can use <Code weight="bold">before:</Code> and <Code weight="bold">after:</Code>{' '}

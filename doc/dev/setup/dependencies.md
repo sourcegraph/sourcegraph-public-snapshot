@@ -1,8 +1,6 @@
 # Dependencies 
 
-The sourcegraph codebase requires a few dependencies to be installed in orde to run locally. We recommend and support a default approach that is suited for everyone, regardless of their familiarity with the topic. 
-
-It's totally possible to use alternative if you need to: `sg` checks will still perform correctly, but you're on your own for the installation process: see the [alternative instructions section](#alternative-instructions).
+The Sourcegraph codebase requires a few dependencies to be installed in order to run locally. We recommend and support a default approach that is suited for everyone, regardless of their familiarity with the topic.
 
 ## Databases
 
@@ -83,7 +81,7 @@ Instructions:
 
 #### Using `nvm` to install NodeJS
 
-It's common for frontend developpers to prefer using [`nvm`](https://github.com/nvm-sh/nvm) to manage `nodejs` versions. 
+It's common for frontend developers to prefer using [`nvm`](https://github.com/nvm-sh/nvm) to manage `nodejs` versions.
 
 1. `NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"`
 1. `curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o /tmp/install-nvm.sh`
