@@ -111,7 +111,7 @@ type ExecutorSecretsListOpts struct {
 	NamespaceOrgID int32
 }
 
-func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) (*sqlf.Query, error) {
+func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) *sqlf.Query {
 	authz := executorSecretsAuthzQueryConds(ctx)
 
 	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
@@ -133,7 +133,7 @@ func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope Executor
 		preds = append(preds, sqlf.Sprintf("key = ANY(%s)", pq.Array(opts.Keys)))
 	}
 
-	return sqlf.Join(preds, "\n AND "), nil
+	return sqlf.Join(preds, "\n AND ")
 }
 
 // limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -332,10 +332,7 @@ func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretS
 }
 
 func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
-	conds, err := opts.sqlConds(ctx, scope)
-	if err != nil {
-		return nil, 0, err
-	}
+	conds := opts.sqlConds(ctx, scope)
 
 	q := sqlf.Sprintf(
 		executorSecretsListQueryFmtstr,
@@ -372,10 +369,7 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 }
 
 func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx, scope)
-	if err != nil {
-		return 0, err
-	}
+	conds := opts.sqlConds(ctx, scope)
 
 	q := sqlf.Sprintf(
 		executorSecretsCountQueryFmtstr,
