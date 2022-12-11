@@ -58,7 +58,7 @@ func observeResolver(
 	ctx context.Context,
 	err *error,
 	operation *observation.Operation,
-	threshold time.Duration, // nolint:unparam same value everywhere but probably want to keep this
+	threshold time.Duration, //nolint:unparam // same value everywhere but probably want to keep this
 	observationArgs observation.Args,
 ) (context.Context, observation.TraceLogger, func()) {
 	start := time.Now()
