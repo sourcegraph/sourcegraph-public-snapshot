@@ -277,7 +277,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		} else if upload.ContentType == scipContentType {
 			// Note: this is writing to a different database than the block below, so we need to use a
 			// different transaction context (managed by the writeData function).
-			if err := writeSCIPData(ctx, s.lsifstore, upload, repo, isDefaultBranch, correlatedSCIPData, trace); err != nil {
+			if err := writeSCIPData(ctx, s.lsifstore, upload, isDefaultBranch, correlatedSCIPData, trace); err != nil {
 				if isUniqueConstraintViolation(err) {
 					// If this is a unique constraint violation, then we've previously processed this same
 					// upload record up to this point, but failed to perform the transaction below. We can
