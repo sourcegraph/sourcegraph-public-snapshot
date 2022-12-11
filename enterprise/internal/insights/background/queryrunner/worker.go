@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -36,7 +37,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore *workerStoreExtra, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -66,7 +67,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	}))
 
 	return dbworker.NewWorker[*Job](ctx, workerStore, &workHandler{
-		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
+		baseWorkerStore: workerStore,
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
@@ -91,8 +92,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func CreateDBWorkerStore(observationCtx *observation.Context, s *basestore.Store) dbworkerstore.Store[*Job] {
-	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*Job]{
+func CreateDBWorkerStore(observationContext *observation.Context, s *basestore.Store) *workerStoreExtra {
+	options := dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
@@ -105,7 +106,20 @@ func CreateDBWorkerStore(observationCtx *observation.Context, s *basestore.Store
 		MaxNumRetries:     10,
 		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
-	})
+	}
+	inner := dbworkerstore.New(observationContext, s.Handle(), options)
+	return &workerStoreExtra{Store: inner, options: options}
+}
+
+type workerStoreExtra struct {
+	dbworkerstore.Store[*Job]
+	options dbworkerstore.Options[*Job]
+}
+
+// WillRetry will return true if the next iteration of this job is valid (would
+// retry) or false if this is the last iteration.
+func (w *workerStoreExtra) WillRetry(job *Job) bool {
+	return int(job.NumFailures)+1 < w.options.MaxNumRetries
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {

@@ -11,10 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
-
-const ShardTimeoutSkippedReason = streamapi.ShardTimeout
 
 type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)

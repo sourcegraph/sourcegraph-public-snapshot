@@ -84,14 +84,31 @@ func (f *searchableFilter) SkipContent(hdr *tar.Header) bool {
 		return false
 	}
 
-	for _, pattern := range f.SearchLargeFiles {
-		pattern = strings.TrimSpace(pattern)
-		if m, _ := doublestar.Match(pattern, hdr.Name); m {
-			return false
+	// A pattern match will override preceding pattern matches.
+	for i := len(f.SearchLargeFiles) - 1; i >= 0; i-- {
+		pattern := strings.TrimSpace(f.SearchLargeFiles[i])
+		negated, validatedPattern := checkIsNegatePattern(pattern)
+		if m, _ := doublestar.PathMatch(validatedPattern, hdr.Name); m {
+			if negated {
+				return true // overrides any preceding inclusion patterns
+			} else {
+				return false // overrides any preceding exclusion patterns
+			}
 		}
 	}
 
 	return true
+}
+
+func checkIsNegatePattern(pattern string) (bool, string) {
+	negate := "!"
+
+	// if negated then strip prefix meta character which identifies negated filter pattern
+	if strings.HasPrefix(pattern, negate) {
+		return true, pattern[len(negate):]
+	}
+
+	return false, pattern
 }
 
 // HashKey will write the input of the filter to h.

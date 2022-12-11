@@ -13,8 +13,7 @@ const config: Meta = {
     parameters: {
         design: {
             type: 'figma',
-            url:
-                'https://www.figma.com/file/Og1zVk7BbZ7SWTXM5WsWA5/Account-Setups-OKR-explorations?node-id=188%3A17448',
+            url: 'https://www.figma.com/file/Og1zVk7BbZ7SWTXM5WsWA5/Account-Setups-OKR-explorations?node-id=188%3A17448',
         },
         chromatic: { disableSnapshot: false },
     },

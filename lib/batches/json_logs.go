@@ -71,6 +71,8 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(TaskStepMetadata)
 	case LogEventOperationCacheAfterStepResult:
 		l.Metadata = new(CacheAfterStepResultMetadata)
+	case LogEventOperationDockerWatchDog:
+		l.Metadata = new(DockerWatchDogMetadata)
 	default:
 		return errors.Newf("invalid event type %s", l.Operation)
 	}
@@ -106,6 +108,7 @@ const (
 	LogEventOperationTaskPreparingStep        LogEventOperation = "TASK_PREPARING_STEP"
 	LogEventOperationTaskStep                 LogEventOperation = "TASK_STEP"
 	LogEventOperationCacheAfterStepResult     LogEventOperation = "CACHE_AFTER_STEP_RESULT"
+	LogEventOperationDockerWatchDog           LogEventOperation = "DOCKER_WATCH_DOG"
 )
 
 type LogEventStatus string
@@ -324,4 +327,8 @@ type v1TaskStepMetadata struct {
 type CacheAfterStepResultMetadata struct {
 	Key   string                    `json:"key,omitempty"`
 	Value execution.AfterStepResult `json:"value,omitempty"`
+}
+
+type DockerWatchDogMetadata struct {
+	Error string `json:"error,omitempty"`
 }

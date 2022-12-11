@@ -97,7 +97,11 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    const { api: extensionHostAPI, mainThreadAPI, exposedToClient } = await createExtensionHostClientConnection(
+    const {
+        api: extensionHostAPI,
+        mainThreadAPI,
+        exposedToClient,
+    } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
             subscription: new Subscription(),

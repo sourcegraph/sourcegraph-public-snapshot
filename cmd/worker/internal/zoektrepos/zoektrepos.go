@@ -38,10 +38,12 @@ func (j *updater) Routines(startupCtx context.Context, observationCtx *observati
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
-			db:     db,
-			logger: observationCtx.Logger,
-		}),
+		goroutine.NewPeriodicGoroutine(context.Background(), "search.index-status-reconciler", "reconciles indexed status between zoekt and postgres",
+			1*time.Hour, &handler{
+				db:     db,
+				logger: observationCtx.Logger,
+			},
+		),
 	}, nil
 }
 

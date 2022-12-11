@@ -17,14 +17,12 @@ export const stanford: CommunitySearchContextMetadata = {
             query: 'machine learning',
         },
         {
-            title:
-                'Explore the code of specific research groups like Hazy Research, a group that investigates machine learning models and automated training set creation.',
+            title: 'Explore the code of specific research groups like Hazy Research, a group that investigates machine learning models and automated training set creation.',
             patternType: SearchPatternType.standard,
             query: 'repo:/HazyResearch/',
         },
         {
-            title:
-                'Explore the code of a specific user or organization such as Stanford University School of Medicine.',
+            title: 'Explore the code of a specific user or organization such as Stanford University School of Medicine.',
             patternType: SearchPatternType.standard,
             query: 'repo:/susom/',
         },

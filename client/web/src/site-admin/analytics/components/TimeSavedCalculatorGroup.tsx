@@ -65,9 +65,10 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
         setMemoizedItems(calculateHoursSaved(items))
     }, [items])
 
-    const totalSavedHours = useMemo(() => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0), [
-        memoizedItems,
-    ])
+    const totalSavedHours = useMemo(
+        () => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0),
+        [memoizedItems]
+    )
 
     const updateMinPerItem = (index: number, minPerItem: number): void => {
         const updatedItems = [...memoizedItems]
@@ -278,11 +279,10 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorPro
     const [minPerItemSavedSetting, setMinPerItemSaved] = useTemporarySetting(temporarySettingsKey, defaultMinPerItem)
     const minPerItemSaved = Number(minPerItemSavedSetting) || defaultMinPerItem
     const [inputChangeLogged, setInputChangeLogged] = useState(false)
-    const hoursSaved = useMemo(() => (minPerItemSaved * value * (percentage ?? 100)) / (60 * 100), [
-        value,
-        minPerItemSaved,
-        percentage,
-    ])
+    const hoursSaved = useMemo(
+        () => (minPerItemSaved * value * (percentage ?? 100)) / (60 * 100),
+        [value, minPerItemSaved, percentage]
+    )
 
     const projectedHoursSaved = useMemo(() => {
         if (dateRange === AnalyticsDateRange.LAST_WEEK) {

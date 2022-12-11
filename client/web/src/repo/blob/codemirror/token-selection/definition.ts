@@ -18,10 +18,11 @@ import { hoveredOccurrenceField } from './hover'
 import { isModifierKey, isModifierKeyHeld } from './modifier-click'
 import { selectOccurrence, selectRange } from './selections'
 
-interface DefinitionResult {
+export interface DefinitionResult {
     handler: (position: Position) => void
     url?: string
     locations: Location[]
+    atTheDefinition?: boolean
 }
 const emptyDefinitionResult: DefinitionResult = { handler: () => {}, locations: [] }
 const definitionReady = Decoration.mark({
@@ -77,7 +78,7 @@ export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
 export function goToDefinitionOnMouseEvent(
     view: EditorView,
     event: MouseEvent,
-    options?: { isLongPress?: boolean }
+    options?: { isLongClick?: boolean }
 ): void {
     const atEvent = occurrenceAtMouseEvent(view, event)
     if (!atEvent) {
@@ -86,7 +87,7 @@ export function goToDefinitionOnMouseEvent(
     if (isInteractiveOccurrence(atEvent.occurrence)) {
         selectOccurrence(view, atEvent.occurrence)
     }
-    if (!isModifierKey(event) && !options?.isLongPress) {
+    if (!isModifierKey(event) && !options?.isLongClick) {
         return
     }
     const spinner = new LoadingTooltip(view, preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY }))
@@ -157,6 +158,7 @@ async function goToDefinition(
                 const refPanelURL = locationToURL(locationFrom, 'references')
                 return {
                     url: refPanelURL,
+                    atTheDefinition: true,
                     handler: position => {
                         showTemporaryTooltip(view, 'You are at the definition', position, 2000, { arrow: true })
                         const history = view.state.facet(blobPropsFacet).history

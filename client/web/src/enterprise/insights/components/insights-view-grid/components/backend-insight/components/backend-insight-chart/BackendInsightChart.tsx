@@ -1,29 +1,16 @@
-import React, { FC, MouseEvent, useCallback, useMemo, useState } from 'react'
+import React, { FC, MouseEvent, useMemo } from 'react'
 
-import { mdiAlertCircle } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import {
-    Link,
-    Button,
-    Icon,
-    BarChart,
-    LegendItem,
-    LegendList,
-    LegendItemPoint,
-    ScrollBox,
-    Tooltip,
-    TooltipOpenEvent,
-    TooltipOpenChangeReason,
-} from '@sourcegraph/wildcard'
+import { Button, BarChart, LegendItem, LegendList, LegendItemPoint, ScrollBox } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
-import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
+import { BackendAlertOverlay, InsightSeriesIncompleteAlert } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -79,48 +66,53 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            {width && (
+            {width > 0 && (
                 <>
                     <ParentSize
                         debounceTime={0}
                         enableDebounceLeadingCall={true}
                         className={styles.responsiveContainer}
                     >
-                        {parent => (
-                            <>
-                                <BackendAlertOverlay
-                                    hasNoData={isEmptyDataset}
-                                    isFetchingHistoricalData={isFetchingHistoricalData}
-                                    className={styles.alertOverlay}
-                                />
+                        {parent =>
+                            // Render chart element only when we have real non-empty parent sizes
+                            // otherwise, the first chart render happens on a not fully rendered
+                            // element that causes the element's flickering
+                            parent.height * parent.width !== 0 && (
+                                <>
+                                    <BackendAlertOverlay
+                                        hasNoData={isEmptyDataset}
+                                        isFetchingHistoricalData={isFetchingHistoricalData}
+                                        className={styles.alertOverlay}
+                                    />
 
-                                {data.type === InsightContentType.Series ? (
-                                    <SeriesChart
-                                        type={SeriesBasedChartTypes.Line}
-                                        width={parent.width}
-                                        height={parent.height}
-                                        locked={locked}
-                                        className={styles.chart}
-                                        onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
-                                        seriesToggleState={seriesToggleState}
-                                        series={data.content.series}
-                                    />
-                                ) : (
-                                    <BarChart
-                                        aria-label="Bar chart"
-                                        width={parent.width}
-                                        height={parent.height}
-                                        {...data.content}
-                                    />
-                                )}
-                            </>
-                        )}
+                                    {data.type === InsightContentType.Series ? (
+                                        <SeriesChart
+                                            type={SeriesBasedChartTypes.Line}
+                                            width={parent.width}
+                                            height={parent.height}
+                                            locked={locked}
+                                            className={styles.chart}
+                                            onDatumClick={onDatumClick}
+                                            zeroYAxisMin={zeroYAxisMin}
+                                            seriesToggleState={seriesToggleState}
+                                            series={data.series}
+                                        />
+                                    ) : (
+                                        <BarChart
+                                            aria-label="Bar chart"
+                                            width={parent.width}
+                                            height={parent.height}
+                                            {...data.content}
+                                        />
+                                    )}
+                                </>
+                            )
+                        }
                     </ParentSize>
 
                     {isSeriesLikeInsight && (
                         <ScrollBox className={styles.legendListContainer}>
-                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                            <SeriesLegends series={data.series} seriesToggleState={seriesToggleState} />
                         </ScrollBox>
                     )}
                 </>
@@ -131,7 +123,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
 
 const isManyKeysInsight = (data: InsightContent<any>): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+        return data.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     }
 
     return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
@@ -139,7 +131,7 @@ const isManyKeysInsight = (data: InsightContent<any>): boolean => {
 
 const hasNoData = (data: InsightContent<any>): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.every(series => series.data.length === 0)
+        return data.series.every(series => series.data.length === 0)
     }
 
     // If all datum have zero matches render no data layout. We need to
@@ -165,7 +157,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <LegendItem key={item.id as string} color={item.color}>
                         <LegendItemPoint color={item.color} />
                         {item.name}
-                        {item.errored && <BackendInsightTimeoutIcon />}
+                        {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
                     </LegendItem>
                 ))}
             </LegendList>
@@ -204,64 +196,9 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    {item.errored && <BackendInsightTimeoutIcon />}
+                    {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
                 </LegendItem>
             ))}
         </LegendList>
-    )
-}
-
-interface BackendInsightTimeoutIconProps {
-    timeoutLevel?: 'series' | 'insight'
-}
-
-/**
- * Renders timeout icon and interactive tooltip with addition info about timeout
- * error. Note: It's exported because it's also used in the backend insight card.
- */
-export const BackendInsightTimeoutIcon: FC<BackendInsightTimeoutIconProps> = props => {
-    const { timeoutLevel = 'series' } = props
-    const [open, setOpen] = useState(false)
-
-    const handleIconClick = (event: MouseEvent<HTMLButtonElement>): void => {
-        // Catch event and prevent bubbling in order to prevent series toggle on/off
-        // series action.
-        event.stopPropagation()
-        setOpen(!open)
-    }
-
-    const handleOpenChange = useCallback((event: TooltipOpenEvent): void => {
-        switch (event.reason) {
-            case TooltipOpenChangeReason.Esc:
-            case TooltipOpenChangeReason.ClickOutside: {
-                setOpen(event.isOpen)
-            }
-        }
-    }, [])
-
-    return (
-        <Tooltip
-            open={open}
-            content={
-                <>
-                    {timeoutLevel === 'series'
-                        ? 'Some points of this data series exceeded the time limit. Results may be incomplete.'
-                        : 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'}{' '}
-                    <Link
-                        to="/help/code_insights/how-tos/Troubleshooting"
-                        target="_blank"
-                        rel="noopener"
-                        className={styles.troubleshootLink}
-                    >
-                        Troubleshoot
-                    </Link>
-                </>
-            }
-            onOpenChange={handleOpenChange}
-        >
-            <Button variant="icon" className={styles.timeoutIcon} onClick={handleIconClick}>
-                <Icon aria-label="Insight is timeout" svgPath={mdiAlertCircle} color="var(--icon-color)" />
-            </Button>
-        </Tooltip>
     )
 }

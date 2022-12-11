@@ -29,7 +29,7 @@ import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
 import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
-const DEFAULT_PADDING = { top: 16, right: 36, bottom: 20, left: 0 }
+const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
 
 interface Padding {
     top: number
@@ -96,15 +96,15 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
         [width, height, padding]
     )
 
-    const yScale = useMemo(() => yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale, [
-        yOriginalScale,
-        contentRectangle,
-    ])
+    const yScale = useMemo(
+        () => yOriginalScale.copy().range([contentRectangle.height, 0]) as AxisScale,
+        [yOriginalScale, contentRectangle]
+    )
 
-    const xScale = useMemo(() => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale, [
-        xOriginalScale,
-        contentRectangle,
-    ])
+    const xScale = useMemo(
+        () => xOriginalScale.copy().range([0, contentRectangle.width]) as AxisScale,
+        [xOriginalScale, contentRectangle]
+    )
 
     const context = useMemo<SVGRootLayout>(
         () => ({
@@ -257,9 +257,15 @@ interface SvgContentProps<XScale extends AxisScale | ScaleTime<any, any>, YScale
  */
 export function SvgContent<XScale extends AxisScale = AxisScale, YScale extends AxisScale = AxisScale>(
     props: SvgContentProps<XScale, YScale>
-): ReactElement {
+): ReactElement | null {
     const { children } = props
     const { content, xScale, yScale } = useContext(SVGRootContext)
+
+    // Render content only when we already have measured axis (left and bottom)
+    // sizes in order to avoid content shift.
+    if (content.left * content.bottom === 0) {
+        return null
+    }
 
     return (
         <Group top={content.top} left={content.left} width={content.width} height={content.height}>

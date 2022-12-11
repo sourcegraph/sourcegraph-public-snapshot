@@ -80,13 +80,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         )
     )
 
-    const onSubmitExample = (query: string, patternType: SearchPatternType) => (
-        event?: React.MouseEvent<HTMLButtonElement>
-    ): void => {
-        eventLogger.log('CommunitySearchContextSuggestionClicked')
-        event?.preventDefault()
-        submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
-    }
+    const onSubmitExample =
+        (query: string, patternType: SearchPatternType) =>
+        (event?: React.MouseEvent<HTMLButtonElement>): void => {
+            eventLogger.log('CommunitySearchContextSuggestionClicked')
+            event?.preventDefault()
+            submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+        }
 
     return (
         <div className={styles.communitySearchContextsPage}>

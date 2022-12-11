@@ -43,29 +43,23 @@ const TEST_PAGINATED_CONNECTION_QUERY = `
 const PAGE_SIZE = 3
 
 const TestComponent = ({ useURL }: { useURL: boolean }) => {
-    const {
-        connection,
-        loading,
-        goToNextPage,
-        goToPreviousPage,
-        goToFirstPage,
-        goToLastPage,
-    } = usePageSwitcherPagination<
-        TestPageSwitcherPaginationQueryResult,
-        TestPageSwitcherPaginationQueryVariables,
-        TestPageSwitcherPaginationQueryFields
-    >({
-        query: TEST_PAGINATED_CONNECTION_QUERY,
-        variables: {},
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
-            return data.savedSearchesByNamespace
-        },
-        options: {
-            useURL,
-            pageSize: PAGE_SIZE,
-        },
-    })
+    const { connection, loading, goToNextPage, goToPreviousPage, goToFirstPage, goToLastPage } =
+        usePageSwitcherPagination<
+            TestPageSwitcherPaginationQueryResult,
+            TestPageSwitcherPaginationQueryVariables,
+            TestPageSwitcherPaginationQueryFields
+        >({
+            query: TEST_PAGINATED_CONNECTION_QUERY,
+            variables: {},
+            getConnection: result => {
+                const data = dataOrThrowErrors(result)
+                return data.savedSearchesByNamespace
+            },
+            options: {
+                useURL,
+                pageSize: PAGE_SIZE,
+            },
+        })
 
     return (
         <>

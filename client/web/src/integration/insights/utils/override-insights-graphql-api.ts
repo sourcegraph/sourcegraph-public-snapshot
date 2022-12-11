@@ -90,6 +90,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 organizations: {
                     nodes: [
                         {
+                            __typename: 'Org',
                             name: 'test organization',
                             displayName: 'Test organization',
                             id: 'Org_test_id',

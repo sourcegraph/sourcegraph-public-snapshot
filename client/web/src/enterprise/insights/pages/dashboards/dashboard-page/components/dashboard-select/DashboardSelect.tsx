@@ -151,9 +151,10 @@ const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
     }, [dashboards, state])
 
     const filteredCustomDashboards = useMemo(() => filteredDashboards.filter(isCustomDashboard), [filteredDashboards])
-    const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(filteredCustomDashboards), [
-        filteredCustomDashboards,
-    ])
+    const organizationGroups = useMemo(
+        () => getDashboardOrganizationsGroups(filteredCustomDashboards),
+        [filteredCustomDashboards]
+    )
 
     return (
         <Combobox

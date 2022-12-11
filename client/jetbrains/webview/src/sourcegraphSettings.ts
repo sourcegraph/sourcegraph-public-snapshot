@@ -11,9 +11,7 @@ import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsCascadeOrError } from '@s
 // Throttle refreshes for one hour.
 const ONE_HOUR_MS = 60 * 60 * 1000
 
-export function initializeSourcegraphSettings(
-    requestGraphQL: PlatformContext['requestGraphQL']
-): {
+export function initializeSourcegraphSettings(requestGraphQL: PlatformContext['requestGraphQL']): {
     settings: Observable<SettingsCascadeOrError>
     refreshSettings: () => void
     subscription: { dispose: () => void }

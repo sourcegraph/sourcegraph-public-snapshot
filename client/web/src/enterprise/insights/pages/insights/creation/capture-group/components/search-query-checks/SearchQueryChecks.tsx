@@ -16,6 +16,7 @@ interface SearchQueryChecksProps {
         isNotRepo: true | false | undefined
         isNotCommitOrDiff: true | false | undefined
         isNoNewLines: true | false | undefined
+        isNotRev: true | false | undefined
     }
 }
 
@@ -43,6 +44,9 @@ export const SearchQueryChecks: FC<SearchQueryChecksProps> = ({ checks }) => (
         </CheckListItem>
         <CheckListItem errorMessage="shouldn't contain repo filter" valid={checks?.isNotRepo}>
             Does not contain <Code>repo:</Code> filter
+        </CheckListItem>
+        <CheckListItem errorMessage="shouldn't contain rev filter" valid={checks?.isNotRev}>
+            Does not contain <Code>rev:</Code> filter
         </CheckListItem>
         <CheckListItem errorMessage="shouldn't contain commit or diff search" valid={checks?.isNotCommitOrDiff}>
             Does not contain <Code>commit</Code> or <Code>diff</Code> search

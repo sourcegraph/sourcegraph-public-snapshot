@@ -205,8 +205,10 @@ export const toHover = (token: DecoratedToken): string => {
     return ''
 }
 
-const inside = (offset: number) => ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
-    range.start <= offset && range.end > offset
+const inside =
+    (offset: number) =>
+    ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
+        range.start <= offset && range.end > offset
 
 /**
  * Returns the hover result for a hovered search token in the Monaco query input.
