@@ -432,6 +432,7 @@ As soon as a new user is created on Sourcegraph, pending permissions (`repo_pend
 The [`user_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-user-pending-permissions) has a `bind_id` column which is an ID of the user of the external code host, for example a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab.
 
 User pending permission is a composite entity comprising:
+
 - `service_type` (e.g. `github`, `gitlab`, `bitbucketServer`)
 - `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`)
 - `permission` (access level, e.g. "read")
