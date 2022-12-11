@@ -60,7 +60,7 @@ type ExecutorSecretAccessLogsListOpts struct {
 	ExecutorSecretID int64
 }
 
-func (opts ExecutorSecretAccessLogsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
+func (opts ExecutorSecretAccessLogsListOpts) sqlConds() (*sqlf.Query, error) {
 	preds := []*sqlf.Query{}
 
 	if opts.ExecutorSecretID != 0 {
@@ -148,7 +148,7 @@ func (s *executorSecretAccessLogStore) GetByID(ctx context.Context, id int64) (*
 }
 
 func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
-	conds, err := opts.sqlConds(ctx)
+	conds, err := opts.sqlConds()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -187,7 +187,7 @@ func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSe
 }
 
 func (s *executorSecretAccessLogStore) Count(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx)
+	conds, err := opts.sqlConds()
 	if err != nil {
 		return 0, err
 	}
