@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"io/fs"
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,9 +32,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	gitTreeEntryContentCacheKeyPrefix = "git_tree_entry_content"
-)
+// Prefix for cached files in Redis.
+const gitTreeEntryContentCacheKeyPrefix = "git_tree_entry_content"
+
+var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FILE_CONTENT_CACHE_THRESHOLD_BYTES", "500000", "threshold of files size in bytes before we start caching to Redis"))
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -57,7 +60,7 @@ type GitTreeEntryResolver struct {
 }
 
 func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient, contentCache: rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, int(60*time.Second))}
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient, contentCache: rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, 60)}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -93,7 +96,10 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 				r.Path(),
 				authz.DefaultSubRepoPermsChecker,
 			)
-			r.contentCache.Set(cacheKey, r.content)
+			// To avoid overwhelming Redis, we only cache larger files.
+			if len(r.content) > largeFileContentCacheThresholdBytes {
+				r.contentCache.Set(cacheKey, r.content)
+			}
 		} else {
 			r.content = content
 		}
