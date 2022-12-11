@@ -325,7 +325,6 @@ func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
 	upload codeinteltypes.Upload,
-	isDefaultBranch bool,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {
