@@ -61,6 +61,10 @@ type Job struct {
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
 
+	// DockerAuthConfig can optionally set the content of the docker CLI config to be used
+	// when spawning containers. Used to authenticate to private registries. When set, this
+	// takes precedence over a potentially configured EXECUTOR_DOCKER_AUTH_CONFIG environment
+	// variable.
 	DockerAuthConfig string `json:"dockerAuthConfig"`
 }
 
