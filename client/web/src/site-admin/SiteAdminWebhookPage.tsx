@@ -183,7 +183,7 @@ const Header: FC = () => (
 )
 
 const EmptyList: FC = () => (
-    <div className="m-4 w-100 text-center">
+    <div className="m-4 w-100 text-center text-muted">
         No requests received yet. Be sure to{' '}
         <Link to="/help/admin/config/webhooks#configuring-webhooks-on-the-code-host">
             configure the webhook on the code host
