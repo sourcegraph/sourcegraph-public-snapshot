@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -160,6 +161,26 @@ func migrateUpload(
 		cacheSize = numResultChunks
 	}
 	resultChunkCache := lru.New(cacheSize)
+
+	// Warm result chunk cache if it will all fit in the cache
+	if numResultChunks <= cacheSize {
+		ids := make([]ID, 0, numResultChunks)
+		for i := 0; i < numResultChunks; i++ {
+			ids = append(ids, ID(strconv.Itoa(i)))
+		}
+
+		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+			resultChunkCache.Add(idx, resultChunk)
+			return nil
+		})
+		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
+			scipMigratorScanResultChunksQuery,
+			uploadID,
+			pq.Array(ids),
+		))); err != nil {
+			return err
+		}
+	}
 
 	for page := 0; ; page++ {
 		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
