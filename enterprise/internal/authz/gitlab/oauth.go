@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -49,7 +48,7 @@ type OAuthProviderOp struct {
 	DB database.DB
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
