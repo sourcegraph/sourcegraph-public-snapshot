@@ -225,6 +225,12 @@ func TestCache_KeyTTL(t *testing.T) {
 		_, ok = c.KeyTTL("a")
 		return !ok
 	}, 5*time.Second, 50*time.Millisecond, "rcache.ketttl did not respect expiration")
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid TTL
+	_, ok = c.KeyTTL("c")
+	if ok {
+		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
+	}
 }
 
 func TestCache_SetWithTTL(t *testing.T) {
@@ -243,14 +249,20 @@ func TestCache_SetWithTTL(t *testing.T) {
 	if !ok {
 		t.Fatal("Expect to be able to read ttl after setting")
 	}
-	if ttl != 30 {
+	if ttl > 30 {
 		t.Fatalf("ttl got %v, want %v", ttl, 30)
 	}
 
 	c.Delete("a")
 	_, ok = c.Get("a")
 	if ok {
-		t.Fatal("Get after delete should of found nothing")
+		t.Fatal("Get after delete should have found nothing")
+	}
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid operation
+	_, ok = c.Get("c")
+	if ok {
+		t.Fatal("SetWithTTL should not create a key with invalid expiry")
 	}
 }
 

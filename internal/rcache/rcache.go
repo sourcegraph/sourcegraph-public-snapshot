@@ -130,7 +130,21 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	r.SetWithTTL(key, b, r.ttlSeconds)
+	c := pool.Get()
+	defer c.Close()
+
+	if !utf8.Valid([]byte(key)) {
+		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
+	}
+
+	if r.ttlSeconds == 0 {
+		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
+		if err != nil {
+			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
+		}
+	} else {
+		r.SetWithTTL(key, b, r.ttlSeconds)
+	}
 }
 
 func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
@@ -141,16 +155,9 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
-	if ttl <= 0 {
-		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
-		if err != nil {
-			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
-		}
-	} else {
-		_, err := c.Do("SETEX", r.rkeyPrefix()+key, ttl, b)
-		if err != nil {
-			log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
-		}
+	_, err := c.Do("SETEX", r.rkeyPrefix()+key, ttl, b)
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 	}
 }
 
@@ -184,11 +191,8 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
 		return -1, false
 	}
-	if ttl == -2 {
+	if ttl < 0 {
 		return -1, false
-	}
-	if r.ttlSeconds <= 0 || ttl == -1 {
-		return -1, true
 	}
 
 	return ttl, true
