@@ -20,7 +20,7 @@ import { History } from 'history'
 import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 import { BehaviorSubject, Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilKeyChanged, startWith } from 'rxjs/operators'
+import { debounceTime, distinct, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
@@ -56,9 +56,9 @@ class SearchPanel implements Panel {
     private state: { searchQuery: SearchQuery; overrideBrowserSearch: boolean; history: History }
     private root: Root | null = null
     private input: HTMLInputElement | null = null
-    private searchQuery = new Subject<SearchQuery>()
+    private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
-    private matches: Map<number, { from: number; to: number; index: number }> = new Map()
+    private matches: Map<number, number> = new Map()
     private currentMatchIndex = new BehaviorSubject<number>(-1)
 
     constructor(private view: EditorView) {
@@ -74,9 +74,9 @@ class SearchPanel implements Panel {
         }
 
         this.subscriptions.add(
-            this.searchQuery
-                .pipe(startWith(this.state.searchQuery), debounceTime(100), distinctUntilKeyChanged('search'))
-                .subscribe(searchQuery => this.commit(searchQuery))
+            this.searchTerm
+                .pipe(startWith(this.state.searchQuery.search), debounceTime(100), distinct())
+                .subscribe(searchTerm => this.commit({ search: searchTerm }))
         )
 
         this.subscriptions.add(
@@ -155,22 +155,20 @@ class SearchPanel implements Panel {
                         placeholder="Find..."
                         autoComplete="off"
                         inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
-                        onChange={event => this.searchQuery.next(this.buildSearchQuery({ search: event.target.value }))}
+                        onChange={event => this.searchTerm.next(event.target.value)}
                         main-field="true"
                         role="search"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.caseSensitive}
-                        onToggle={() =>
-                            this.commit(this.buildSearchQuery({ caseSensitive: !searchQuery.caseSensitive }))
-                        }
+                        onToggle={() => this.commit({ caseSensitive: !searchQuery.caseSensitive })}
                         iconSvgPath={mdiFormatLetterCase}
                         title="Case sensitivity"
                         className="test-blob-view-search-case-sensitive"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
-                        onToggle={() => this.commit(this.buildSearchQuery({ regexp: !searchQuery.regexp }))}
+                        onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
                         iconSvgPath={mdiRegex}
                         title="Regular expression"
                         className="test-blob-view-search-regexp"
@@ -227,29 +225,13 @@ class SearchPanel implements Panel {
         )
     }
 
-    private buildSearchQuery = ({
-        search,
-        caseSensitive,
-        regexp,
-    }: {
-        search?: string
-        caseSensitive?: boolean
-        regexp?: boolean
-    }): SearchQuery =>
-        new SearchQuery({
-            search: search ?? this.state.searchQuery.search,
-            caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
-            regexp: regexp ?? this.state.searchQuery.regexp,
-        })
-
     private setOverrideBrowserSearch = (override: boolean): void =>
         this.view.dispatch({
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
 
     private updateSelectedSearchMatch = ({ from }: { from: number }): void => {
-        const match = this.matches.get(from)
-        this.currentMatchIndex.next(match?.index ?? -1)
+        this.currentMatchIndex.next(this.matches.get(from) ?? -1)
     }
 
     private findNext = (): void => {
@@ -291,13 +273,26 @@ class SearchPanel implements Panel {
         const matches = [...this.view.state.facet(blobPropsFacet).blobInfo.content.matchAll(regex)]
         for (const match of matches) {
             if (match.index !== undefined) {
-                this.matches.set(match.index, { from: match.index, to: match.index + match[0].length, index })
-                index++
+                this.matches.set(match.index, index++)
             }
         }
     }
 
-    private commit = (query: SearchQuery): void => {
+    private commit = ({
+        search,
+        caseSensitive,
+        regexp,
+    }: {
+        search?: string
+        caseSensitive?: boolean
+        regexp?: boolean
+    }): void => {
+        const query = new SearchQuery({
+            search: search ?? this.state.searchQuery.search,
+            caseSensitive: caseSensitive ?? this.state.searchQuery.caseSensitive,
+            regexp: regexp ?? this.state.searchQuery.regexp,
+        })
+
         if (!query.eq(this.state.searchQuery)) {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
