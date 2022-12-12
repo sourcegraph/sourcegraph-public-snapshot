@@ -38,6 +38,7 @@ type WebhookResolver interface {
 	UpdatedAt() gqlutil.DateTime
 	CreatedBy(ctx context.Context) (*UserResolver, error)
 	UpdatedBy(ctx context.Context) (*UserResolver, error)
+	WebhookLogs(ctx context.Context, args *WebhookLogsArgs) (*WebhookLogConnectionResolver, error)
 }
 
 type CreateWebhookArgs struct {

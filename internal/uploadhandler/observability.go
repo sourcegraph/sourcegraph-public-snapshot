@@ -2,9 +2,11 @@ package uploadhandler
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Operations struct {
@@ -28,6 +30,13 @@ func NewOperations(observationCtx *observation.Context, prefix string) *Operatio
 			Name:              fmt.Sprintf("%s.uploadhandler.%s", prefix, name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				var errno syscall.Errno
+				if errors.As(err, &errno) && errno == syscall.ECONNREFUSED {
+					return observation.EmitForDefault ^ observation.EmitForSentry
+				}
+				return observation.EmitForDefault
+			},
 		})
 	}
 

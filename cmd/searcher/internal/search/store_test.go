@@ -145,6 +145,15 @@ func TestSearchLargeFiles(t *testing.T) {
 			"*.foo",
 			"bar.baz",
 			"**/*.bam",
+			"qu?.foo",
+			"!qux.*",
+			"**/quu?.foo",
+			"!**/quux.foo",
+			"!quuux.foo",
+			"quuu?.foo",
+			"\\!foo.baz",
+			"!!foo.bam",
+			"\\!!baz.foo",
 		},
 	})
 	tests := []struct {
@@ -160,11 +169,21 @@ func TestSearchLargeFiles(t *testing.T) {
 		{"hello.bam", true},
 		{"sub/dir/hello.bam", true},
 		{"/sub/dir/hello.bam", true},
+
+		// Pass - with negate meta character
+		{"quuux.foo", true},
+		{"!foo.baz", true},
+		{"!!baz.foo", true},
+
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
-		{"sub/dir/bar.foo", false},
+
+		// Fail - with negate meta character
+		{"qux.foo", false},
+		{"/sub/dir/quux.foo", false},
+		{"!foo.bam", false},
 	}
 
 	for _, test := range tests {

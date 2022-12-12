@@ -71,6 +71,8 @@ import {
     WebhookLogFields,
     WebhookLogsByWebhookIDResult,
     WebhookLogsByWebhookIDVariables,
+    WebhookPageHeaderResult,
+    WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
 } from '../graphql-operations'
@@ -1002,6 +1004,34 @@ export const DELETE_WEBHOOK = gql`
     }
 `
 
+export const WEBHOOK_PAGE_HEADER = gql`
+    query WebhookPageHeader {
+        webhooks {
+            nodes {
+                webhookLogs {
+                    totalCount
+                }
+            }
+        }
+
+        errorsOnly: webhooks {
+            nodes {
+                webhookLogs(onlyErrors: true) {
+                    totalCount
+                }
+            }
+        }
+    }
+`
+
+export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number; totalNoEvents: number } => {
+    const { data, loading } = useQuery<WebhookPageHeaderResult, WebhookPageHeaderVariables>(WEBHOOK_PAGE_HEADER, {})
+    const totalNoEvents = data?.webhooks.nodes.filter(webhook => webhook.webhookLogs?.totalCount === 0).length || 0
+    const totalErrors =
+        data?.errorsOnly.nodes.reduce((sum, webhook) => sum + (webhook.webhookLogs?.totalCount || 0), 0) || 0
+    return { loading, totalErrors, totalNoEvents }
+}
+
 export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
@@ -1040,6 +1070,14 @@ export const useWebhookLogsConnection = (
 export const CREATE_WEBHOOK_QUERY = gql`
     mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
         createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`
+
+export const UPDATE_WEBHOOK_QUERY = gql`
+    mutation UpdateWebhook($id: ID!, $name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
             id
         }
     }

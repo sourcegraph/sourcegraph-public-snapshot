@@ -35,7 +35,7 @@ The following details should always be supplied.
   - frontend
   - precise-code-intel-worker
   - codeintel-db
-  - minio
+  - blobstore (or `minio` in versions of Sourcegraph before v3.4.2)
 
 If the customer is running a custom patch or an insiders version, we need the docker image tags and SHAs of the following containers:
 

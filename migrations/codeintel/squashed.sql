@@ -57,6 +57,14 @@ CREATE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert() R
     RETURN NULL;
 END $$;
 
+CREATE FUNCTION update_codeintel_scip_documents_dereference_logs_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    INSERT INTO codeintel_scip_documents_dereference_logs (document_id)
+    SELECT document_id FROM oldtab;
+    RETURN NULL;
+END $$;
+
 CREATE FUNCTION update_codeintel_scip_documents_schema_versions_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -242,6 +250,27 @@ COMMENT ON COLUMN codeintel_scip_documents.schema_version IS 'The schema version
 COMMENT ON COLUMN codeintel_scip_documents.raw_scip_payload IS 'The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payload.';
 
 COMMENT ON COLUMN codeintel_scip_documents.metadata_shard_id IS 'A randomly generated integer used to arbitrarily bucket groups of documents for things like expiration checks and data migrations.';
+
+CREATE TABLE codeintel_scip_documents_dereference_logs (
+    id bigint NOT NULL,
+    document_id bigint NOT NULL,
+    last_removal_time timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE codeintel_scip_documents_dereference_logs IS 'A list of document rows that were recently dereferenced by the deletion of an index.';
+
+COMMENT ON COLUMN codeintel_scip_documents_dereference_logs.document_id IS 'The identifier of the document that was dereferenced.';
+
+COMMENT ON COLUMN codeintel_scip_documents_dereference_logs.last_removal_time IS 'The time that the log entry was inserted.';
+
+CREATE SEQUENCE codeintel_scip_documents_dereference_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_scip_documents_dereference_logs_id_seq OWNED BY codeintel_scip_documents_dereference_logs.id;
 
 CREATE SEQUENCE codeintel_scip_documents_id_seq
     START WITH 1
@@ -586,6 +615,8 @@ ALTER TABLE ONLY codeintel_scip_document_lookup ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY codeintel_scip_documents ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_documents_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_scip_documents_dereference_logs ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_scip_metadata ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_metadata_id_seq'::regclass);
 
 ALTER TABLE ONLY rockskip_ancestry ALTER COLUMN id SET DEFAULT nextval('rockskip_ancestry_id_seq'::regclass);
@@ -605,6 +636,9 @@ ALTER TABLE ONLY codeintel_scip_document_lookup_schema_versions
 
 ALTER TABLE ONLY codeintel_scip_document_lookup
     ADD CONSTRAINT codeintel_scip_document_lookup_upload_id_document_path_key UNIQUE (upload_id, document_path);
+
+ALTER TABLE ONLY codeintel_scip_documents_dereference_logs
+    ADD CONSTRAINT codeintel_scip_documents_dereference_logs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_scip_documents
     ADD CONSTRAINT codeintel_scip_documents_payload_hash_key UNIQUE (payload_hash);
@@ -673,6 +707,8 @@ CREATE INDEX codeintel_last_reconcile_last_reconcile_at_dump_id ON codeintel_las
 
 CREATE INDEX codeintel_scip_document_lookup_document_id ON codeintel_scip_document_lookup USING hash (document_id);
 
+CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_doc ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time, document_id);
+
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
 
 CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version);
@@ -702,6 +738,8 @@ CREATE INDEX rockskip_symbols_gin ON rockskip_symbols USING gin (singleton_integ
 CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols USING btree (repo_id, path, name);
 
 CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert();
+
+CREATE TRIGGER codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete();
 
 CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
 

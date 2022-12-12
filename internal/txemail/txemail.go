@@ -98,10 +98,6 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "render")
 	}
-	raw, err := m.Bytes()
-	if err != nil {
-		return errors.Wrap(err, "get bytes")
-	}
 
 	// Disable Mandrill features, because they make the emails look sketchy.
 	if conf.EmailSmtp.Host == "smtp.mandrillapp.com" {
@@ -115,6 +111,18 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
 	}
 
+	// Apply header configuration to message
+	for _, header := range conf.EmailSmtp.AdditionalHeaders {
+		m.Headers.Add(header.Key, header.Value)
+	}
+
+	// Generate message data
+	raw, err := m.Bytes()
+	if err != nil {
+		return errors.Wrap(err, "get bytes")
+	}
+
+	// Set up client
 	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
 	if err != nil {
 		return errors.Wrap(err, "new SMTP client")
