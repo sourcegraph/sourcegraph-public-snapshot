@@ -397,7 +397,6 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 				}, nil
 			},
 		},
-		nil,
 	)
 
 	accountIDs, err := p.FetchRepoPerms(context.Background(),

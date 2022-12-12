@@ -41,31 +41,6 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 ## Webhooks
 
-> NOTE: Experimental webhook support for Bitbucket Cloud was added in Sourcegraph 3.40. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
+Using the `webhooks` property on the external service has been deprecated.
 
-To set up authentication for webhooks, set the `webhookSecret` setting, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
-
-```json
-{
-  "webhookSecret": "verylongrandomsecret"
-}
-```
-
-Using webhooks is highly recommended when using [Batch Changes](../../batch_changes/index.md) since they speed up the syncing of pull request data between Bitbucket Cloud and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the Bitbucket Cloud configuration.
-1. Add the `"webhookSecret"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhookSecret": "verylongrandomsecret"`
-1. Click **Update repositories**.
-1. Copy the webhook URL displayed below the **Update repositories** button.
-1. On Bitbucket Cloud, go to each repository, and then **Repository settings > Webhooks**.
-1. Click **Add webhook**.
-1. Fill in the webhook form:
-   * **Title**: any title.
-   * **URL**: the URL you copied above from Sourcegraph.
-   * **Triggers**: select **Build status created** and **Build status updated** under **Repository**, and every item under **Pull request**.
-1. Click **Save**.
-1. Confirm that the new webhook is listed below **Repository hooks**.
-
-Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.
