@@ -15,13 +15,13 @@ interface Props extends PlatformContextProps<'sideloadedExtensionURL' | 'setting
     sourcegraphURL: string
 }
 
-const makeExtensionLink = (
-    sourcegraphURL: string
-): React.FunctionComponent<React.PropsWithChildren<{ id: string }>> => props => {
-    const extensionURL = new URL(sourcegraphURL)
-    extensionURL.pathname = `extensions/${props.id}`
-    return <Link to={extensionURL.href}>{props.id}</Link>
-}
+const makeExtensionLink =
+    (sourcegraphURL: string): React.FunctionComponent<React.PropsWithChildren<{ id: string }>> =>
+    props => {
+        const extensionURL = new URL(sourcegraphURL)
+        extensionURL.pathname = `extensions/${props.id}`
+        return <Link to={extensionURL.href}>{props.id}</Link>
+    }
 
 /**
  * A global debug toolbar shown in the bottom right of the window.

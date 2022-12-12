@@ -40,13 +40,15 @@ export enum TabName {
 }
 
 const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number =>
-    ([
-        TabName.Changesets,
-        TabName.Chart,
-        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
-        TabName.Archived,
-        TabName.BulkOperations,
-    ] as string[]).indexOf(tabName)
+    (
+        [
+            TabName.Changesets,
+            TabName.Chart,
+            shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
+            TabName.Archived,
+            TabName.BulkOperations,
+        ] as string[]
+    ).indexOf(tabName)
 
 const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName =>
     [

@@ -209,7 +209,14 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
+// MockSchedulePermsSync mocks (*Client).SchedulePermsSync for tests.
+var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+
 func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	if MockSchedulePermsSync != nil {
+		return MockSchedulePermsSync(ctx, args)
+	}
+
 	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
 	if err != nil {
 		return err

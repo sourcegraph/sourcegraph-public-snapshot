@@ -23,10 +23,11 @@ export const esbuildDevelopmentServer = async (
     await buildMonaco(STATIC_ASSETS_PATH)
 
     // Start esbuild's server on a random local port.
-    const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
-        { host: 'localhost', servedir: STATIC_ASSETS_PATH },
-        BUILD_OPTIONS
-    )
+    const {
+        host: esbuildHost,
+        port: esbuildPort,
+        wait: esbuildStopped,
+    } = await serve({ host: 'localhost', servedir: STATIC_ASSETS_PATH }, BUILD_OPTIONS)
 
     // Start a proxy at :3080. Asset requests (underneath /.assets/) go to esbuild; all other
     // requests go to the upstream.

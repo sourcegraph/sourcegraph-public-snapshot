@@ -20,7 +20,7 @@ describe('useURLSyncedState', () => {
         const searchParameters = new URLSearchParams()
         searchParameters.set('foo', 'foo')
         const { result } = renderHook(() =>
-            useURLSyncedState({ bar: 'bar' }, searchParameters, (useMockHistory as unknown) as typeof useHistory)
+            useURLSyncedState({ bar: 'bar' }, searchParameters, useMockHistory as unknown as typeof useHistory)
         )
         const [data, setData] = result.current
 

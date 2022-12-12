@@ -39,12 +39,13 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
     )
 
     const createOnSuccess = useCallback(
-        (text: React.ReactNode, shouldReload = false) => () => {
-            setNotification({ text })
-            if (shouldReload) {
-                onEnd()
-            }
-        },
+        (text: React.ReactNode, shouldReload = false) =>
+            () => {
+                setNotification({ text })
+                if (shouldReload) {
+                    onEnd()
+                }
+            },
         [onEnd]
     )
 

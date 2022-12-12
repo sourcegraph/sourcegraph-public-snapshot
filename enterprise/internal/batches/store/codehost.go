@@ -127,7 +127,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 
 	var aggregatePreds []*sqlf.Query
 	if opts.OnlyWithoutWebhooks {
-		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0"))
+		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0 AND external_service_id NOT IN (SELECT DISTINCT(code_host_urn) FROM webhooks)"))
 	} else {
 		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("TRUE"))
 	}

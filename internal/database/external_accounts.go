@@ -68,8 +68,6 @@ type UserExternalAccountsStore interface {
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
 
-	ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error)
-
 	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
 	// association with the external account already exist).
 	//
@@ -396,7 +394,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 	}()
 
 	conds := s.listSQL(opt)
-	return s.ListBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
@@ -408,7 +406,7 @@ func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 }
 
 func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
-	results, err := s.ListBySQL(ctx, querySuffix)
+	results, err := s.listBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -418,8 +416,22 @@ func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *s
 	return results[0], nil
 }
 
-func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
-	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at, t.encryption_key_id FROM user_external_accounts t %s`, querySuffix)
+func (s *userExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
+	q := sqlf.Sprintf(`
+SELECT
+    t.id,
+    t.user_id,
+    t.service_type,
+    t.service_id,
+    t.client_id,
+    t.account_id,
+    t.auth_data,
+    t.account_data,
+    t.created_at,
+    t.updated_at,
+    t.encryption_key_id
+FROM user_external_accounts t
+%s`, querySuffix)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err

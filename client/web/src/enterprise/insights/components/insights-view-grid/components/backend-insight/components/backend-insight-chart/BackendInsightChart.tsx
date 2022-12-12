@@ -66,43 +66,48 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            {width && (
+            {width > 0 && (
                 <>
                     <ParentSize
                         debounceTime={0}
                         enableDebounceLeadingCall={true}
                         className={styles.responsiveContainer}
                     >
-                        {parent => (
-                            <>
-                                <BackendAlertOverlay
-                                    hasNoData={isEmptyDataset}
-                                    isFetchingHistoricalData={isFetchingHistoricalData}
-                                    className={styles.alertOverlay}
-                                />
+                        {parent =>
+                            // Render chart element only when we have real non-empty parent sizes
+                            // otherwise, the first chart render happens on a not fully rendered
+                            // element that causes the element's flickering
+                            parent.height * parent.width !== 0 && (
+                                <>
+                                    <BackendAlertOverlay
+                                        hasNoData={isEmptyDataset}
+                                        isFetchingHistoricalData={isFetchingHistoricalData}
+                                        className={styles.alertOverlay}
+                                    />
 
-                                {data.type === InsightContentType.Series ? (
-                                    <SeriesChart
-                                        type={SeriesBasedChartTypes.Line}
-                                        width={parent.width}
-                                        height={parent.height}
-                                        locked={locked}
-                                        className={styles.chart}
-                                        onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
-                                        seriesToggleState={seriesToggleState}
-                                        series={data.series}
-                                    />
-                                ) : (
-                                    <BarChart
-                                        aria-label="Bar chart"
-                                        width={parent.width}
-                                        height={parent.height}
-                                        {...data.content}
-                                    />
-                                )}
-                            </>
-                        )}
+                                    {data.type === InsightContentType.Series ? (
+                                        <SeriesChart
+                                            type={SeriesBasedChartTypes.Line}
+                                            width={parent.width}
+                                            height={parent.height}
+                                            locked={locked}
+                                            className={styles.chart}
+                                            onDatumClick={onDatumClick}
+                                            zeroYAxisMin={zeroYAxisMin}
+                                            seriesToggleState={seriesToggleState}
+                                            series={data.series}
+                                        />
+                                    ) : (
+                                        <BarChart
+                                            aria-label="Bar chart"
+                                            width={parent.width}
+                                            height={parent.height}
+                                            {...data.content}
+                                        />
+                                    )}
+                                </>
+                            )
+                        }
                     </ParentSize>
 
                     {isSeriesLikeInsight && (

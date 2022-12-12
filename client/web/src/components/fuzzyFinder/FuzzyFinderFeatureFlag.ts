@@ -9,13 +9,8 @@ export function getFuzzyFinderFeatureFlags(
     SettingsExperimentalFeatures,
     'fuzzyFinderAll' | 'fuzzyFinderActions' | 'fuzzyFinderRepositories' | 'fuzzyFinderSymbols' | 'fuzzyFinderNavbar'
 > {
-    let {
-        fuzzyFinderAll,
-        fuzzyFinderActions,
-        fuzzyFinderRepositories,
-        fuzzyFinderSymbols,
-        fuzzyFinderNavbar,
-    } = getExperimentalFeatures(finalSettings)
+    let { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols, fuzzyFinderNavbar } =
+        getExperimentalFeatures(finalSettings)
     // enable fuzzy finder unless it's explicitly disabled in settings
     fuzzyFinderAll = fuzzyFinderAll ?? true
     // Intentionally skip fuzzyFinderActions because we don't have enough actions implemented

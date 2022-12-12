@@ -98,11 +98,10 @@ export const MultiSelectContextProvider: React.FunctionComponent<
     )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
-    const toggleAll = useCallback(() => (selected === 'all' ? deselectAll() : selectAll()), [
-        deselectAll,
-        selectAll,
-        selected,
-    ])
+    const toggleAll = useCallback(
+        () => (selected === 'all' ? deselectAll() : selectAll()),
+        [deselectAll, selectAll, selected]
+    )
 
     // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {

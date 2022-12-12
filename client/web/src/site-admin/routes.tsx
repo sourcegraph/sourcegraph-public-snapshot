@@ -114,4 +114,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage'),
     },
+    {
+        path: '/webhooks/:id/edit',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookUpdatePage'), 'SiteAdminWebhookUpdatePage'),
+    },
 ]

@@ -6,15 +6,8 @@ import shelljs from 'shelljs'
 
 const COMMENT_HEADING = '## Bundle size report 📦'
 
-const {
-    BRANCH,
-    BUILDKITE_PULL_REQUEST_REPO,
-    BUILDKITE_PULL_REQUEST,
-    COMMIT,
-    COMPARE_REV,
-    GITHUB_TOKEN,
-    MERGE_BASE,
-} = process.env
+const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, COMPARE_REV, GITHUB_TOKEN, MERGE_BASE } =
+    process.env
 
 async function main(): Promise<void> {
     try {

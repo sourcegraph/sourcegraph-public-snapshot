@@ -60,9 +60,10 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     const [recentlySearchedRepos, setRecentlySearchedRepos] = useState<
         null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
     >(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null)
-    useEffect(() => setRecentlySearchedRepos(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
-        recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
-    ])
+    useEffect(
+        () => setRecentlySearchedRepos(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null),
+        [recentlySearchedRepositories?.recentlySearchedRepositoriesLogs]
+    )
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -85,9 +86,10 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
-    const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
-        telemetryService,
-    ])
+    const logRepoClicked = useCallback(
+        () => telemetryService.log('RepositoriesPanelRepoFilterClicked'),
+        [telemetryService]
+    )
 
     const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 

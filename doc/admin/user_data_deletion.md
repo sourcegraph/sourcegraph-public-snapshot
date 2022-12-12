@@ -1,6 +1,6 @@
 # User data deletion
 
-As a site administrator, you have the ability to delete users and their associated data on the **Admin** -> **Users** page (https://sourcegraph.example.com/site-admin/users).
+As a site administrator, you have the ability to delete users and their associated data on the **Admin** -> **Users** page (`https://sourcegraph.example.com/site-admin/users`).
 
 On this page, you are presented two options:
 
