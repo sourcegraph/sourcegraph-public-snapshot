@@ -9,8 +9,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -83,19 +86,24 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 		after = *args.After
 	}
 	return &slowRequestConnectionResolver{
-		after:   after,
-		perPage: slowRequestRedisFIFOListPerPage,
+		after:           after,
+		perPage:         slowRequestRedisFIFOListPerPage,
+		gitserverClient: r.gitserverClient,
+		db:              r.db,
 	}, nil
 }
 
 type slowRequestConnectionResolver struct {
+	reqs []*types.SlowRequest
+
 	after      string
 	perPage    int
 	totalCount int32
 
-	err  error
-	once sync.Once
-	reqs []*types.SlowRequest
+	err             error
+	once            sync.Once
+	gitserverClient gitserver.Client
+	db              database.DB
 }
 
 type slowRequestsArgs struct {
@@ -104,6 +112,9 @@ type slowRequestsArgs struct {
 
 type slowRequestResolver struct {
 	req *types.SlowRequest
+
+	db              database.DB
+	gitserverClient gitserver.Client
 }
 
 func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.SlowRequest, error) {
@@ -113,9 +124,11 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 			r.err = err
 		}
 		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisFIFOList, n, r.perPage)
-		r.totalCount, err = r.TotalCount(ctx)
+		size, err := slowRequestRedisFIFOList.Size()
 		if err != nil {
 			errors.Append(r.err, err)
+		} else {
+			r.totalCount = int32(size)
 		}
 	})
 	return r.reqs, r.err
@@ -129,7 +142,11 @@ func (r *slowRequestConnectionResolver) Nodes(ctx context.Context) ([]*slowReque
 
 	resolvers := make([]*slowRequestResolver, 0, len(reqs))
 	for _, req := range r.reqs {
-		resolvers = append(resolvers, &slowRequestResolver{req: req})
+		resolvers = append(resolvers, &slowRequestResolver{
+			req:             req,
+			db:              r.db,
+			gitserverClient: r.gitserverClient,
+		})
 	}
 	return resolvers, nil
 }
@@ -177,7 +194,7 @@ func (r *slowRequestResolver) Duration() float64 {
 
 // UserId returns the user identifier if there is one associated with the
 // slow request. Blank if none.
-func (r *slowRequestResolver) UserId() *string {
+func (r *slowRequestResolver) userId() *string {
 	if r.req.UserID != 0 {
 		n := strconv.Itoa(int(r.req.UserID))
 		return &n
@@ -185,25 +202,49 @@ func (r *slowRequestResolver) UserId() *string {
 	return nil
 }
 
+func (r *slowRequestResolver) User(ctx context.Context) (*UserResolver, error) {
+	if r.req.UserID == 0 {
+		return nil, nil
+	}
+	return UserByID(ctx, r.db, MarshalUserID(r.req.UserID))
+}
+
 // Name returns the GraqhQL request name, if any. Blank if none.
 func (r *slowRequestResolver) Name() string {
 	return r.req.Name
 }
 
-// RepoName guesses the name of the associated repository if possible.
-// Blank if none.
-func (r *slowRequestResolver) RepoName() *string {
-	if repoName, ok := r.req.Variables["repoName"]; ok {
+// repoName guesses the name of the associated repository. Returns nil if none is found.
+func guessRepoName(variables map[string]any) *string {
+	if repoName, ok := variables["repoName"]; ok {
 		if str, ok := repoName.(string); ok {
 			return &str
 		}
 	}
-	if repoName, ok := r.req.Variables["repository"]; ok {
+	if repoName, ok := variables["repository"]; ok {
 		if str, ok := repoName.(string); ok {
 			return &str
 		}
 	}
 	return nil
+}
+
+func (r *slowRequestResolver) getRepo(ctx context.Context) (*types.Repo, error) {
+	if name := guessRepoName(r.req.Variables); name != nil {
+		return r.db.Repos().GetByName(ctx, api.RepoName(*name))
+	}
+	return nil, nil
+}
+
+func (r *slowRequestResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if repo != nil {
+		return NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
+	}
+	return nil, nil
 }
 
 // Filepath guesses the name of the associated filepath if possible.

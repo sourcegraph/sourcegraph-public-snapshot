@@ -8358,7 +8358,7 @@ type SlowRequest {
     """
     The user identifier associated if that request.
     """
-    userId: String
+    user: User
     """
     The name of the GraphQL request.
     """
@@ -8368,9 +8368,9 @@ type SlowRequest {
     """
     source: String!
     """
-    The repository name referenced by the request, if applicable.
+    The repository referenced by the request, if applicable.
     """
-    repoName: String
+    repository: Repository
     """
     The variables used to build the GraphQL request.
     """

@@ -100,7 +100,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                 path={[{ text: 'Slow requests' }]}
                 headingElement="h2"
                 description={
-                    <>
+                    <div>
                         <Text>
                             This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy
                             for seeing what's happening between clients and our API.
@@ -122,7 +122,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                                 <strong>observability.captureSlowGraphQLRequestsLimit</strong>
                             </li>
                         </ul>
-                    </>
+                    </div>
                 }
                 className="mb-3"
             />
@@ -163,8 +163,8 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 <Timestamp date={node.start} noAbout={true} strict={true} />
             </div>
             <div>
-                <Tooltip content={'Repo Name: ' + node.repoName ? node.repoName : ''}>
-                    <Code>{node.repoName ? shortenRepoName(node.repoName) : ''}</Code>
+                <Tooltip content={'Repo Name: ' + node.repository?.name ? node.repository?.name : ''}>
+                    <Code>{node.repository?.name ? shortenRepoName(node.repository?.name) : ''}</Code>
                 </Tooltip>
             </div>
             <div>
@@ -201,8 +201,8 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                             {node.name}
                         </Text>
                         <Text>
-                            <strong>UserID: </strong>
-                            {node.userId}
+                            <strong>User: </strong>
+                            {node.user?.username}
                         </Text>
                         <Text>
                             <strong>Date/time started: </strong>
@@ -255,7 +255,7 @@ function matchesString(request: SlowRequest, query: string): boolean {
     const lQuery = query.toLowerCase()
     return (
         request.name.toLowerCase().includes(lQuery) ||
-        request.repoName?.toLowerCase().includes(lQuery) ||
+        request.repository?.name?.toLowerCase().includes(lQuery) ||
         request.errors.some(error => error.toLowerCase().includes(lQuery), false)
     )
 }
