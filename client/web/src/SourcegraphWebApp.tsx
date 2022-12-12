@@ -24,8 +24,8 @@ import {
     updateSearchContext,
     deleteSearchContext,
     isSearchContextSpecAvailable,
-    getAvailableSearchContextSpecOrDefault,
     SearchQueryStateStoreProvider,
+    getDefaultSearchContextSpec,
 } from '@sourcegraph/search'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -166,10 +166,11 @@ const notificationStyles: BrandedNotificationItemStyleProps = {
     },
 }
 
-const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
+
+const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
 setLinkComponent(RouterLink)
 
@@ -267,13 +268,12 @@ export class SourcegraphWebApp extends React.Component<
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
-            this.setSelectedSearchContextSpec('global')
+            this.setSelectedSearchContextSpecWithNoChecks(GLOBAL_SEARCH_CONTEXT_SPEC)
         }
         if (!parsedSearchQuery) {
-            // If no query is present (e.g. search page, settings page), select the last saved
-            // search context from localStorage as currently selected search context.
-            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
+            // If no query is present (e.g. search page, settings page),
+            // select the user's default search context.
+            this.setSelectedSearchContextSpecToDefault()
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
@@ -426,25 +426,51 @@ export class SourcegraphWebApp extends React.Component<
     private getSelectedSearchContextSpec = (): string | undefined =>
         getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
+    private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
+        this.setState({ selectedSearchContextSpec: spec })
+        this.setWorkspaceSearchContext(spec).catch(error => {
+            logger.error('Error sending search context to extensions', error)
+        })
+    }
+
     private setSelectedSearchContextSpec = (spec: string): void => {
         if (!this.props.searchContextsEnabled) {
             return
         }
 
-        // TODO: update this to use the user's actual default search context
-        const fallbackSearchContext = 'global'
-        this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({
-                spec,
-                defaultSpec: fallbackSearchContext,
-                platformContext: this.platformContext,
-            }).subscribe(availableSearchContextSpecOrDefault => {
-                this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+        // The global search context is always available.
+        if (spec === GLOBAL_SEARCH_CONTEXT_SPEC) {
+            this.setSelectedSearchContextSpecWithNoChecks(spec)
+        }
 
-                this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                    logger.error('Error sending search context to extensions', error)
-                })
+        // Check if the wanted search context is available.
+        this.subscriptions.add(
+            isSearchContextSpecAvailable({
+                spec,
+                platformContext: this.platformContext,
+            }).subscribe(isAvailable => {
+                if (isAvailable) {
+                    this.setSelectedSearchContextSpecWithNoChecks(spec)
+                } else if (!this.state.selectedSearchContextSpec) {
+                    // If the wanted search context is not available and
+                    // there is no currently selected search context,
+                    // set the current selection to the default search context.
+                    // Otherwise, keep the current selection.
+                    this.setSelectedSearchContextSpecToDefault()
+                }
+            })
+        )
+    }
+
+    private setSelectedSearchContextSpecToDefault = (): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
+        this.subscriptions.add(
+            getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
+                // Fall back to global if no default is returned.
+                this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
         )
     }

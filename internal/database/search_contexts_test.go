@@ -1008,15 +1008,6 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 	}
 }
 
-func getDefaultContext(searchContexts []*types.SearchContext) *types.SearchContext {
-	for _, c := range searchContexts {
-		if c.Default {
-			return c
-		}
-	}
-	return nil
-}
-
 func TestSearchContexts_DefaultContexts(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -1033,24 +1024,28 @@ func TestSearchContexts_DefaultContexts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
+	user2, err := u.Create(internalCtx, NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
 
-	// Use a different user to list the search contexts so that we can test that user's default search contexts
-	userCtx := actor.WithActor(internalCtx, actor.FromUser(user1.ID))
-
-	searchContexts, err := createSearchContexts(userCtx, sc, []*types.SearchContext{
+	searchContexts, err := createSearchContexts(internalCtx, sc, []*types.SearchContext{
 		{Name: "A-user-level", Public: true, NamespaceUserID: user1.ID},
 		{Name: "B-user-level", Public: false, NamespaceUserID: user1.ID},
+		{Name: "C-user-level", Public: false, NamespaceUserID: user2.ID},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// Use a different user to list the search contexts so that we can test that user's default search contexts
+	userCtx := actor.WithActor(internalCtx, actor.FromUser(user1.ID))
+
 	// Global context should be the default
-	gotSearchContexts, err := sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	defaultContext, err := sc.GetDefaultSearchContextForCurrentUser(userCtx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defaultContext := getDefaultContext(gotSearchContexts)
 	if defaultContext == nil || defaultContext.Name != "global" {
 		t.Fatalf("Expected global context to be the default, got %+v", defaultContext)
 	}
@@ -1062,11 +1057,10 @@ func TestSearchContexts_DefaultContexts(t *testing.T) {
 	}
 
 	// B-user-level context should be the default
-	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	defaultContext, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defaultContext = getDefaultContext(gotSearchContexts)
 	if defaultContext == nil || defaultContext.Name != "B-user-level" {
 		t.Fatalf("Expected B-user-level context to be the default, got %+v", defaultContext)
 	}
@@ -1078,27 +1072,51 @@ func TestSearchContexts_DefaultContexts(t *testing.T) {
 	}
 
 	// A-user-level context should be the default
-	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	defaultContext, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defaultContext = getDefaultContext(gotSearchContexts)
 	if defaultContext == nil || defaultContext.Name != "A-user-level" {
 		t.Fatalf("Expected A-user-level context to be the default, got %+v", defaultContext)
 	}
 
+	// Set user1 has a default search context of searchContexts[2], which they don't have access to
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, searchContexts[2].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// There should be no default context
+	_, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// Make the context public
+	updated := *searchContexts[2]
+	updated.Public = true
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, &updated, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Context should now be available and be the default
+	defaultContext, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
+	if err != nil || defaultContext.Name != "C-user-level" {
+		t.Fatalf("Expected C-user-level context to be the default, got %+v", defaultContext)
+	}
+
 	// Set user1 default context back to global
-	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, gotSearchContexts[0].ID)
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Global context should be the default again
-	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	defaultContext, err = sc.GetDefaultSearchContextForCurrentUser(userCtx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defaultContext = getDefaultContext(gotSearchContexts)
 	if defaultContext == nil || defaultContext.Name != "global" {
 		t.Fatalf("Expected global context to be the default, got %+v", defaultContext)
 	}

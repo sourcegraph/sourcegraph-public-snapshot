@@ -1,4 +1,5 @@
-import { map } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -12,6 +13,7 @@ import {
     updateSearchContext,
     deleteSearchContext,
     isSearchContextAvailable,
+    fetchDefaultSearchContextSpec,
 } from './backend'
 import { SearchPatternType } from './graphql-operations'
 import { SearchMode } from './searchQueryState'
@@ -70,15 +72,24 @@ export const isSearchContextSpecAvailable = memoizeObservable(
     ({ spec }) => spec
 )
 
-export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
+export const getAvailableSearchContextSpecOrFallback = memoizeObservable(
     ({
         spec,
-        defaultSpec,
+        fallbackSpec,
         platformContext,
     }: {
         spec: string
-        defaultSpec: string
+        fallbackSpec: string
         platformContext: Pick<PlatformContext, 'requestGraphQL'>
-    }) => isSearchContextAvailable(spec, platformContext).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
-    ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
+    }) => isSearchContextAvailable(spec, platformContext).pipe(map(isAvailable => (isAvailable ? spec : fallbackSpec))),
+    ({ spec, fallbackSpec }) => `${spec}:${fallbackSpec}`
+)
+
+export const getDefaultSearchContextSpec = memoizeObservable(
+    ({ platformContext }: { platformContext: Pick<PlatformContext, 'requestGraphQL'> }): Observable<string> =>
+        fetchDefaultSearchContextSpec(platformContext).pipe(
+            map(spec => spec || ''),
+            catchError(() => '')
+        ),
+    () => 'default'
 )
