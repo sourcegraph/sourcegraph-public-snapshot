@@ -20,6 +20,7 @@ func mockSiteConfigSigningKey() string {
 	signingKey := "Zm9v"
 
 	siteConfig := schema.SiteConfiguration{
+		AuthUnlockAccountLinkExpiry:     5,
 		AuthUnlockAccountLinkSigningKey: signingKey,
 	}
 
@@ -42,7 +43,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("explicit reset", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Minute)
+		s := NewLockoutStore(1, time.Minute, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -61,7 +62,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("automatically released", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, 2*time.Second, time.Minute)
+		s := NewLockoutStore(1, 2*time.Second, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -80,7 +81,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("failed attempts far apart", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(2, time.Minute, time.Second, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -97,7 +98,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("missing unlock account token signing key", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 		s.IncreaseFailedAttempt(1)
 
 		path, _, err := s.GenerateUnlockAccountURL(1)
@@ -110,7 +111,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("generates an account unlock url", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
@@ -127,7 +128,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("generates an expected jwt token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
@@ -176,7 +177,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("correctly verifies unlock account token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
@@ -199,7 +200,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("fails verification on unlock account token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
@@ -219,19 +220,14 @@ func TestLockoutStore(t *testing.T) {
 
 	t.Run("only allows 1 email to be sent for locked account", func(t *testing.T) {
 		rcache.SetupForTest(t)
-
-		s := NewLockoutStore(1, time.Minute, time.Second)
-
 		calls := 0
-		MockSendEmail = func(context.Context, string, txemail.Message) (err error) {
+
+		s := NewLockoutStore(1, time.Minute, time.Second, func(context.Context, string, txemail.Message) (err error) {
 			calls++
 			return nil
-		}
+		})
 		mockSiteConfigSigningKey()
-		defer func() {
-			MockSendEmail = nil
-			mockDefaultSiteConfig()
-		}()
+		defer mockDefaultSiteConfig()
 
 		err := s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
 		assert.Empty(t, err)

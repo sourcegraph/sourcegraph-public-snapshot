@@ -48,17 +48,23 @@ type lockoutStore struct {
 	failedAttempts  *rcache.Cache
 	unlockToken     *rcache.Cache
 	unlockEmailSent *rcache.Cache
+	sendEmail       func(context.Context, string, txemail.Message) error
 }
 
 // NewLockoutStore returns a new LockoutStore with given durations using the
 // Redis cache.
-func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.Duration) LockoutStore {
+func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.Duration, sendEmailF func(context.Context, string, txemail.Message) error) LockoutStore {
+	if sendEmailF == nil {
+		sendEmailF = txemail.Send
+	}
+
 	return &lockoutStore{
 		failedThreshold: failedThreshold,
 		lockouts:        rcache.NewWithTTL("account_lockout", int(lockoutPeriod.Seconds())),
 		failedAttempts:  rcache.NewWithTTL("account_failed_attempts", int(consecutivePeriod.Seconds())),
 		unlockToken:     rcache.NewWithTTL("account_unlock_token", int(lockoutPeriod.Seconds())),
 		unlockEmailSent: rcache.NewWithTTL("account_lockout_email_sent", int(lockoutPeriod.Seconds())),
+		sendEmail:       sendEmailF,
 	}
 }
 
@@ -162,11 +168,7 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 		return err
 	}
 
-	emailF := txemail.Send
-	if MockSendEmail != nil {
-		emailF = MockSendEmail
-	}
-	err = emailF(ctx, "account_unlock", txemail.Message{
+	err = s.sendEmail(ctx, "account_unlock", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
