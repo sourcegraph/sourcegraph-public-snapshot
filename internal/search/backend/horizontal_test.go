@@ -196,7 +196,7 @@ func TestSyncSearchers(t *testing.T) {
 	}
 }
 
-func TestIgnoreDownEndpoints(t *testing.T) {
+func TestZoektRolloutErrors(t *testing.T) {
 	var endpoints atomicMap
 	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "read-failed", "up"})
 
