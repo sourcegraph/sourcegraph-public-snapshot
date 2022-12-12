@@ -29,22 +29,22 @@ type productLicense struct {
 // ProductLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
 func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
-	return productLicenseByID(ctx, p.logger, p.DB, id)
+	return productLicenseByID(ctx, p.DB, id)
 }
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
-func productLicenseByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID) (*productLicense, error) {
+func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*productLicense, error) {
 	idInt32, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, logger, db, idInt32)
+	return productLicenseByDBID(ctx, db, idInt32)
 }
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
 // such ProductLicense exists, it returns a non-nil error.
-func productLicenseByDBID(ctx context.Context, logger log.Logger, db database.DB, id string) (*productLicense, error) {
+func productLicenseByDBID(ctx context.Context, db database.DB, id string) (*productLicense, error) {
 	v, err := dbLicenses{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, r.logger, r.DB, id)
+	return productLicenseByDBID(ctx, r.DB, id)
 }
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
