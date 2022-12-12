@@ -28,12 +28,12 @@ type productSubscription struct {
 // ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
 func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByID(ctx, p.logger, p.DB, id)
+	return productSubscriptionByID(ctx, p.DB, id)
 }
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
-func productSubscriptionByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID) (*productSubscription, error) {
+func productSubscriptionByID(ctx context.Context, db database.DB, id graphql.ID) (*productSubscription, error) {
 	idString, err := unmarshalProductSubscriptionID(id)
 	if err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx con
 		return nil, err
 	}
 
-	sub, err := productSubscriptionByID(ctx, r.logger, r.DB, args.ID)
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ID)
 	if err != nil {
 		return nil, err
 	}

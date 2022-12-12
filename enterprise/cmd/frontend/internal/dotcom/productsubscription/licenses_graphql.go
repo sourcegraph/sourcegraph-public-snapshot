@@ -120,7 +120,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
-	sub, err := productSubscriptionByID(ctx, r.logger, r.DB, args.ProductSubscriptionID)
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	var sub *productSubscription
 	if args.ProductSubscriptionID != nil {
 		var err error
-		sub, err = productSubscriptionByID(ctx, r.logger, r.DB, *args.ProductSubscriptionID)
+		sub, err = productSubscriptionByID(ctx, r.DB, *args.ProductSubscriptionID)
 		if err != nil {
 			return nil, err
 		}
