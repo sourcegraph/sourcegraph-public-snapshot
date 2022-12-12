@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"math"
 	"net/url"
 	"strconv"
 	"time"
@@ -141,7 +140,10 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 
 // take site config link expiry into account as well when setting unlock expiry
 func effectiveUnlockTTL(ttl int) int {
-	return int(math.Min(float64(ttl), float64(conf.SiteConfig().AuthUnlockAccountLinkExpiry*60)))
+	if ttl > conf.SiteConfig().AuthUnlockAccountLinkExpiry*60 {
+		return conf.SiteConfig().AuthUnlockAccountLinkExpiry * 60
+	}
+	return ttl
 }
 
 func formatExpiryTime(ttl int) string {
