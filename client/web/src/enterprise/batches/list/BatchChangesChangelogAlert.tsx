@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { value CardBody, value Card, value H3, value H4, value Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, H3, H4 } from '@sourcegraph/wildcard'
 
-import { value DismissibleAlert } from '../../../components/DismissibleAlert'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 import styles from './BatchChangesListIntro.module.scss'
 
