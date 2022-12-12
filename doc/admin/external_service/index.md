@@ -196,3 +196,14 @@ Some code hosts have higher rate limits for **paid** accounts and allow the crea
 Sourcegraph can leverage.
 
 Please contact support@sourcegraph.com if you encounter rate limits.
+
+### Temporarily disabling all git requests to codehost connections
+
+It may be the case that you'd like to temporarily disable all git requests from Sourcegraph to codehost connections. Adding the folowing json to your site configuration will this task.
+
+```json
+"disableAutoGitUpdates": true,    
+"disableAutoCodeHostSyncs": true,
+"gitMaxCodehostRequestsPerSecond": 0,
+```
+> WARNING: disabling all git requests to codehosts will also disable permissions syncs, batch changes, discovery of new repos and may other features. 
