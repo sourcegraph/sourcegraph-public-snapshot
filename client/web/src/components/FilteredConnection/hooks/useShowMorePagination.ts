@@ -148,7 +148,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         const cursor = connection?.pageInfo?.endCursor
 
         // Use cursor paging if possible, otherwise fallback to multiplying `first`.
-        let afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
+        const afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
         if (cursor) {
             if (options?.customAfterCursor) {
                 afterVariables.afterCursor = cursor

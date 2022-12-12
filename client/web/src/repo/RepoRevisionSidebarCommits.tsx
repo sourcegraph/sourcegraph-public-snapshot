@@ -4,9 +4,19 @@ import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link } from '@sourcegraph/wildcard'
+
+import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
+import {
+    ConnectionContainer,
+    ConnectionLoading,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../components/FilteredConnection/ui'
 
 import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
 import { replaceRevisionInURL } from '../util/url'
@@ -15,14 +25,7 @@ import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 import styles from './RepoRevisionSidebarCommits.module.scss'
-import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import {
-    ConnectionContainer,
-    ConnectionLoading,
-    ShowMoreButton,
-    SummaryContainer,
-} from '../components/FilteredConnection/ui'
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+
 
 interface CommitNodeProps {
     node: GitCommitFields
