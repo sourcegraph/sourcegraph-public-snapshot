@@ -110,6 +110,7 @@ const PARTIAL_BATCH_WORKSPACE_FILE_FIELDS = gql`
         name
         binary
         byteSize
+        url
     }
 `
 
