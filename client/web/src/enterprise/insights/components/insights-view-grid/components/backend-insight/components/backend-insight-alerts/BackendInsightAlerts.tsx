@@ -128,7 +128,11 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
                 </>
             )
         case 'GenericIncompleteDatapointAlert':
-            return alert.reason
+            return (
+                <>
+                    Some points of this data series encountered an error. Results may be incomplete.
+                </>
+            )
     }
 }
 
