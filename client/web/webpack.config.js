@@ -168,7 +168,7 @@ const config = {
         compilation.circularDependencyList.push(paths)
       },
       onEnd({ compilation }) {
-        // Entry is usually only "app" and "main-worker"
+        // Entry is usually only "app" and "main.worker"
         const entry = Array.from(compilation.entries.keys()).join('+')
         if (compilation.circularDependencyList.length === 0) {
           return
