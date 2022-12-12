@@ -17,7 +17,6 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
-
 import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
 import { replaceRevisionInURL } from '../util/url'
 
