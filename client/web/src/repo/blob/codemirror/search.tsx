@@ -13,7 +13,7 @@ import {
     SearchQuery,
     setSearchQuery,
 } from '@codemirror/search'
-import { Compartment, Extension } from '@codemirror/state'
+import { Compartment, Extension, StateEffect } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
@@ -342,35 +342,35 @@ class SearchPanel implements Panel {
 // Announce the current match to screen readers.
 // Taken from original the CodeMirror implementation:
 // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L694-L717
-/* eslint-disable */
 const AnnounceMargin = 30
-const Break = /[\s\.,:;?!]/
-function announceMatch(view: EditorView, { from, to }: { from: number; to: number }) {
-    let line = view.state.doc.lineAt(from),
-        lineEnd = view.state.doc.lineAt(to).to
-    let start = Math.max(line.from, from - AnnounceMargin),
-        end = Math.min(lineEnd, to + AnnounceMargin)
+const Break = /[\s!,.:;?]/
+function announceMatch(view: EditorView, { from, to }: { from: number; to: number }): StateEffect<string> {
+    const line = view.state.doc.lineAt(from)
+    const lineEnd = view.state.doc.lineAt(to).to
+    const start = Math.max(line.from, from - AnnounceMargin)
+    const end = Math.min(lineEnd, to + AnnounceMargin)
     let text = view.state.sliceDoc(start, end)
-    if (start != line.from) {
-        for (let i = 0; i < AnnounceMargin; i++)
-            if (!Break.test(text[i + 1]) && Break.test(text[i])) {
-                text = text.slice(i)
+    if (start !== line.from) {
+        for (let index = 0; index < AnnounceMargin; index++) {
+            if (!Break.test(text[index + 1]) && Break.test(text[index])) {
+                text = text.slice(index)
                 break
             }
+        }
     }
-    if (end != lineEnd) {
-        for (let i = text.length - 1; i > text.length - AnnounceMargin; i--)
-            if (!Break.test(text[i - 1]) && Break.test(text[i])) {
-                text = text.slice(0, i)
+    if (end !== lineEnd) {
+        for (let index = text.length - 1; index > text.length - AnnounceMargin; index--) {
+            if (!Break.test(text[index - 1]) && Break.test(text[index])) {
+                text = text.slice(0, index)
                 break
             }
+        }
     }
 
     return EditorView.announce.of(
         `${view.state.phrase('current match')}. ${text} ${view.state.phrase('on line')} ${line.number}.`
     )
 }
-/* eslint-enable */
 
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
