@@ -199,13 +199,8 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         location.pathname + location.search + location.hash
     )
 
-    const {
-        carouselReference,
-        canScrollNegative,
-        canScrollPositive,
-        onNegativeClicked,
-        onPositiveClicked,
-    } = useCarousel({ direction: 'topToBottom' })
+    const { carouselReference, canScrollNegative, canScrollPositive, onNegativeClicked, onPositiveClicked } =
+        useCarousel({ direction: 'topToBottom' })
 
     const haveExtensionsLoaded = useObservable(
         useMemo(

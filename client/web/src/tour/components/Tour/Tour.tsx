@@ -17,9 +17,15 @@ export type TourProps = TelemetryProps & {
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
-        const { completedStepIds = [], language, status, setLanguage, setStepCompleted, setStatus, restart } = useTour(
-            tourId
-        )
+        const {
+            completedStepIds = [],
+            language,
+            status,
+            setLanguage,
+            setStepCompleted,
+            setStatus,
+            restart,
+        } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
                 telemetryService.log(

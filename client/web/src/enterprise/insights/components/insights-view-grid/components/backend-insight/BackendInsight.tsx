@@ -14,11 +14,16 @@ import {
     GetInsightViewVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import {
+    BackendInsight,
+    BackendInsightData,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    useSaveInsightAsNewView,
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
-import { useSaveInsightAsNewView } from '../../../../core/hooks/use-save-insight-as-new-view'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
@@ -30,9 +35,9 @@ import {
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
+    InsightIncompleteAlert,
     parseSeriesLimit,
 } from './components'
-import { BackendInsightTimeoutIcon } from './components/backend-insight-chart/BackendInsightChart'
 
 import styles from './BackendInsight.module.scss'
 
@@ -170,7 +175,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             >
                 {isVisible && (
                     <>
-                        {insightData?.isAllSeriesErrored && <BackendInsightTimeoutIcon timeoutLevel="insight" />}
+                        {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}

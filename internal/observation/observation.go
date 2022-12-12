@@ -33,6 +33,7 @@ const (
 	EmitForLogs
 	EmitForTraces
 	EmitForHoney
+	EmitForSentry
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
 )
@@ -342,15 +343,17 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
 			traceErr   = op.applyErrorFilter(err, EmitForTraces)
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
+
+			emitToSentry = op.applyErrorFilter(err, EmitForSentry) != nil
 		)
 
 		// already has all the other log fields
-		op.emitErrorLogs(trLogger, logErr, finishLogFields)
-
+		op.emitErrorLogs(trLogger, logErr, finishLogFields, emitToSentry)
 		// op. and args.LogFields already added at start
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs)
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
+
 		op.finishTrace(traceErr, tr, logFields)
 	}
 }
@@ -369,11 +372,17 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
 // as well as all of the log fields attached ot the operation, the args to With, and the args
 // to the finish function.
-func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields []otlog.Field) {
+func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields []otlog.Field, emitToSentry bool) {
 	if err == nil || *err == nil {
 		return
 	}
-	fields := append(toLogFields(logFields), log.Error(*err))
+
+	errField := log.Error(*err)
+	if !emitToSentry {
+		// only fields of type ErrorType end up in sentry
+		errField = log.String("error", (*err).Error())
+	}
+	fields := append(toLogFields(logFields), errField)
 
 	trLogger.
 		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger

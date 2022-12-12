@@ -10,7 +10,6 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -46,11 +45,7 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+export interface AuthenticatedExecuteBatchSpecPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchChange: { name: string; namespace: Scalars['ID'] }
     batchSpecID: Scalars['ID']
     authenticatedUser: AuthenticatedUser
@@ -62,10 +57,11 @@ export interface AuthenticatedExecuteBatchSpecPageProps
 export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     React.PropsWithChildren<AuthenticatedExecuteBatchSpecPageProps>
 > = ({ batchChange, batchSpecID, testContextState, ...props }) => {
-    const { data: batchChangeData, error: batchChangeError, loading: batchChangeLoading } = useQuery<
-        GetBatchChangeToEditResult,
-        GetBatchChangeToEditVariables
-    >(GET_BATCH_CHANGE_TO_EDIT, {
+    const {
+        data: batchChangeData,
+        error: batchChangeError,
+        loading: batchChangeLoading,
+    } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(GET_BATCH_CHANGE_TO_EDIT, {
         variables: batchChange,
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -111,11 +107,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     )
 }
 
-interface ExecuteBatchSpecPageContentProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+interface ExecuteBatchSpecPageContentProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
@@ -138,7 +130,6 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
 > = React.memo(function MemoizedExecuteBatchSpecContent({
     isLightTheme,
     match,
-    settingsCascade,
     telemetryService,
     authenticatedUser,
     batchChange,
@@ -226,7 +217,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                             <ConfigurationForm
                                 isReadOnly={true}
                                 batchChange={batchChange}
-                                settingsCascade={settingsCascade}
+                                authenticatedUser={authenticatedUser}
                             />
                         </>
                     )}

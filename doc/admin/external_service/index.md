@@ -106,6 +106,17 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-n">✗</td> <!-- Code Insights -->
         <td class="indexer-implemented-n">✗</td> <!-- Batch Changes -->
       </tr>
+      <tr>
+        <td>Plastic SCM (Enterprise)</td>
+        <td>Tier 2</td>
+        <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
+        <td class="indexer-implemented-y">✗</td> <!-- Permissions Syncing -->
+        <td class="indexer-implemented-n">✗</td> <!-- Authentication -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Monitors -->
+        <td class="indexer-implemented-n">✓</td> <!-- Code Insights -->
+        <td class="indexer-implemented-n">✗</td> <!-- Batch Changes -->
+      </tr>
    </tbody>
 </table>
 
@@ -134,6 +145,7 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)
+  - [Plastic SCM](../repo/plasticscm.md)
   - [JVM dependencies](jvm.md)
   - [Go dependencies](go.md)
   - [npm dependencies](npm.md)

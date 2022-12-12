@@ -1618,6 +1618,10 @@ type Query {
         Only include webhook logs of given webhook ID.
         """
         webhookID: ID
+        """
+        Only include webhook logs that have no webhook ID set.
+        """
+        legacyOnly: Boolean
     ): WebhookLogConnection!
 
     """
@@ -2759,6 +2763,8 @@ type ExternalService implements Node {
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
+
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
     """
     webhookLogs(
         """
@@ -2786,11 +2792,69 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+        @deprecated(
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+        )
 
     """
     The list of recent sync jobs for this external service.
     """
     syncJobs(first: Int): ExternalServiceSyncJobConnection!
+
+    """
+    Checks the availability of the external service.
+    """
+    checkConnection: ExternalServiceAvailability!
+
+    """
+    True if this external service can perform availability check by running checkConnection.
+
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    """
+    hasConnectionCheck: Boolean!
+}
+
+"""
+Avaiability status of an external service for diagnostic purposes.
+
+This is so that the UI can surface whether the external service
+can serve requests, and if not, why is the reason for that.
+"""
+union ExternalServiceAvailability =
+      ExternalServiceAvailable
+    | ExternalServiceUnavailable
+    | ExternalServiceAvailabilityUnknown
+
+"""
+Indicator that the external service was recently found to be available.
+"""
+type ExternalServiceAvailable {
+    """
+    The timestamp of the last successful availability check that was performed.
+    """
+    lastCheckedAt: DateTime!
+}
+
+"""
+Indicator that the external service was recently not found available.
+"""
+type ExternalServiceUnavailable {
+    """
+    User-friendly textual description of supposed reason why the service is not available.
+    """
+    suspectedReason: String!
+}
+
+"""
+Availability for some external services may not be determined, or only partially
+supported. In that case unknown variant of ExternalServiceAvailability is returned.
+"""
+type ExternalServiceAvailabilityUnknown {
+    """
+    User-friendly textual description of the implementation status of availablity.
+    This is expected to be tied to specific kinds of external services.
+    """
+    implementationNote: String!
 }
 
 """
@@ -4490,6 +4554,11 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
+
+        """
+        Skip the first N commits of the repo before returning the number of commits as set in the field "first".
+        """
+        afterCursor: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
@@ -7900,7 +7969,7 @@ type TemporarySettings {
 }
 
 """
-Represents a webhook receiver from a code host.
+Represents an incoming webhook from a code host.
 """
 type Webhook implements Node {
     """
@@ -7949,6 +8018,35 @@ type Webhook implements Node {
     Null if the user was deleted.
     """
     createdBy: User
+    """
+    The logs related to this webhook.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
 }
 
 """

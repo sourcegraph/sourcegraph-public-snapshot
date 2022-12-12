@@ -46,13 +46,16 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 }
 
 func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
-	enqueueActive := goroutine.NewHandlerWithErrorMessage(
-		"code_monitors_trigger_query_enqueuer",
+	enqueueActive := goroutine.HandlerFunc(
+
 		func(ctx context.Context) error {
 			_, err := store.EnqueueQueryTriggerJobs(ctx)
 			return err
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
+	return goroutine.NewPeriodicGoroutine(
+		ctx, "code_monitors.trigger_query_enqueuer", "enqueues code monitor trigger query jobs",
+		1*time.Minute, enqueueActive,
+	)
 }
 
 func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*edb.TriggerJob] {
@@ -71,12 +74,11 @@ func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Cont
 }
 
 func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
-	deleteLogs := goroutine.NewHandlerWithErrorMessage(
-		"code_monitors_trigger_jobs_log_deleter",
+	deleteLogs := goroutine.HandlerFunc(
 		func(ctx context.Context) error {
 			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
+	return goroutine.NewPeriodicGoroutine(ctx, "code_monitors.trigger_jobs_log_deleter", "deletes code job logs from code monitor triggers", 60*time.Minute, deleteLogs)
 }
 
 func newActionRunner(ctx context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.ActionJob] {

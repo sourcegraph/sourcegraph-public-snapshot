@@ -50,10 +50,10 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
     // order of rendering matters) we have to render additional PieArcs on
     // top of other arcs to visually bring hovered arcs to the top layer.
     const [hoveredArc, setHoveredArc] = useState<PieArcDatum<Datum> | null>(null)
-    const sortedData = useMemo(() => [...data].sort((first, second) => getDatumValue(second) - getDatumValue(first)), [
-        data,
-        getDatumValue,
-    ])
+    const sortedData = useMemo(
+        () => [...data].sort((first, second) => getDatumValue(second) - getDatumValue(first)),
+        [data, getDatumValue]
+    )
 
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom

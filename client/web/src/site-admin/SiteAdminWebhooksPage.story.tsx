@@ -10,7 +10,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../components/WebStory'
 import { WebhookFields } from '../graphql-operations'
 
-import { WEBHOOKS } from './backend'
+import { WEBHOOKS, WEBHOOK_PAGE_HEADER } from './backend'
 import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -44,6 +44,24 @@ export const NoWebhooksFound: Story = () => (
                                     },
                                 },
                             },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                        {
+                            request: {
+                                query: getDocumentNode(WEBHOOK_PAGE_HEADER),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    webhooks: {
+                                        nodes: [],
+                                    },
+                                    webhookLogs: {
+                                        totalCount: 0,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
                         },
                     ])
                 }
@@ -109,6 +127,50 @@ export const FiveWebhooksFound: Story = () => (
                                     },
                                 },
                             },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                        {
+                            request: {
+                                query: getDocumentNode(WEBHOOK_PAGE_HEADER),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    webhooks: {
+                                        nodes: [
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 2,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 0,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 1,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 0,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 2,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    webhookLogs: {
+                                        totalCount: 5,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
                         },
                     ])
                 }

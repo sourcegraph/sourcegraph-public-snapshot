@@ -174,7 +174,6 @@ const config = {
       }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
-    isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({

@@ -75,8 +75,8 @@ func populateTestStore(t testing.TB) LsifStore {
 	// span multiple lines.
 	for _, statement := range strings.Split(string(withoutComments), ";\n") {
 		if strings.Contains(statement, "_schema_versions") {
-			// Statements which insert into lsif_data_*_schema_versions should not be executed, as
-			// these are already inserted during regular DB up migrations.
+			// Statements which insert into *_schema_versions should not be executed, as these are
+			// already inserted during regular DB up migrations.
 			continue
 		}
 		if _, err := tx.ExecContext(context.Background(), statement); err != nil {

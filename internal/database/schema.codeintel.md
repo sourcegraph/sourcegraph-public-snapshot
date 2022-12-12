@@ -30,6 +30,7 @@ Referenced by:
     TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
     codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
+    codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete()
 
 ```
 
@@ -93,6 +94,25 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
 **raw_scip_payload**: The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payload.
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of (future) denormalized data.
+
+# Table "public.codeintel_scip_documents_dereference_logs"
+```
+      Column       |           Type           | Collation | Nullable |                                Default                                
+-------------------+--------------------------+-----------+----------+-----------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
+ document_id       | bigint                   |           | not null | 
+ last_removal_time | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_dereference_logs_last_removal_time_doc" btree (last_removal_time, document_id)
+
+```
+
+A list of document rows that were recently dereferenced by the deletion of an index.
+
+**document_id**: The identifier of the document that was dereferenced.
+
+**last_removal_time**: The time that the log entry was inserted.
 
 # Table "public.codeintel_scip_documents_schema_versions"
 ```

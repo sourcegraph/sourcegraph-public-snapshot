@@ -32,6 +32,8 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
+		page.MaybeSendStats(stream)
+
 		descriptionMatches := make(map[api.RepoID][]result.Range)
 		if len(s.DescriptionPatterns) > 0 {
 			repoDescriptionsSet, err := s.repoDescriptions(ctx, clients.DB, page.RepoRevs)

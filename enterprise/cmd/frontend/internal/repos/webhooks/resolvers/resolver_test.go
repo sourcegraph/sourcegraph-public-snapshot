@@ -81,9 +81,51 @@ func TestListWebhooks(t *testing.T) {
 		return len(whs), err
 	})
 
+	webhookLogsStore := database.NewMockWebhookLogStore()
+	webhookLogs := []*types.WebhookLog{
+		{
+			ID:         1,
+			WebhookID:  &webhooks[0].ID,
+			StatusCode: 404,
+		},
+		{
+			ID:         2,
+			WebhookID:  &webhooks[0].ID,
+			StatusCode: 200,
+		},
+		{
+			ID:         3,
+			WebhookID:  &webhooks[1].ID,
+			StatusCode: 404,
+		},
+	}
+	webhookLogsStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, opts database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
+		if opts.WebhookID == nil {
+			return webhookLogs, 0, nil
+		}
+		filteredWebhooks := []*types.WebhookLog{}
+		for _, webhookLog := range webhookLogs {
+			if *webhookLog.WebhookID == *opts.WebhookID {
+				if opts.OnlyErrors {
+					if webhookLog.StatusCode >= 400 {
+						filteredWebhooks = append(filteredWebhooks, webhookLog)
+					}
+				} else {
+					filteredWebhooks = append(filteredWebhooks, webhookLog)
+				}
+			}
+		}
+		return filteredWebhooks, 0, nil
+	})
+	webhookLogsStore.CountFunc.SetDefaultHook(func(ctx2 context.Context, opts database.WebhookLogListOpts) (int64, error) {
+		whs, _, err := webhookLogsStore.List(ctx2, opts)
+		return int64(len(whs)), err
+	})
+
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
+	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
 	gqlSchema := createGqlSchema(t, db)
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
 		{
@@ -219,6 +261,66 @@ func TestListWebhooks(t *testing.T) {
 						{"id":"V2ViaG9vazo0"}
 					],
 					"totalCount":2,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+		},
+		{
+			Label:   "with logs",
+			Context: ctx,
+			Schema:  gqlSchema,
+			Query: `
+				{
+					webhooks {
+						nodes {
+							id
+							webhookLogs {
+								totalCount
+ 							}
+						}
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 2 } },
+						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
+						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
+					],
+					"totalCount":4,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+		},
+		{
+			Label:   "with logs only errors",
+			Context: ctx,
+			Schema:  gqlSchema,
+			Query: `
+				{
+					webhooks {
+						nodes {
+							id
+							webhookLogs(onlyErrors: true) {
+								totalCount
+							}
+						}
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
+						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
+						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
+					],
+					"totalCount":4,
 					"pageInfo":{"hasNextPage":false}
 				}}`,
 		},
@@ -780,6 +882,30 @@ func TestUpdateWebhook(t *testing.T) {
 			"name":         "new name",
 			"codeHostKind": nil,
 			"codeHostURN":  "https://example.github.com",
+			"secret":       nil,
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "BitBucket Cloud webhook successfully updated without a secret",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://sg.bitbucket.org/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": extsvc.KindBitbucketCloud,
+			"codeHostURN":  "https://sg.bitbucket.org",
 			"secret":       nil,
 		},
 	})

@@ -95,9 +95,10 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
 
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
+    const nextOverlayElement = useCallback(
+        (element: HTMLElement | null): void => hoverOverlayElements.next(element),
+        [hoverOverlayElements]
+    )
 
     /** Emits whenever the ref callback for the hover element is called */
     const repositoryCommitPageElements = useMemo(() => new Subject<HTMLElement | null>(), [])

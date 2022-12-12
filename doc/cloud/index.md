@@ -11,7 +11,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
-      <p>Sign up for a 30 day trial for your team.</p>
+      <p>Sign up for a 15 day trial for your team.</p>
     </div>
     <div class="cloud-cta-btn-container">
       <div class="visual-btn">Get free trial now</div>
@@ -21,7 +21,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 
 Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
-## Trial limitations
+### Trial limitations
 
 We currently have a limited capacity of single-tenant cloud instances and are prioritizing organizations with more than 100 developers. When you request a trial, you will receive an email indicating the status of your request.
 
@@ -29,13 +29,13 @@ If your organization has fewer than 100 developers, we recommend trying [Sourceg
 
 If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, we recommend using the [onboarding checklist](../getting-started/cloud-instance.md) to set up your instance quickly.
 
-Trials last 30 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
+Trials last 15 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
 
-# Cloud subscription
+## Cloud subscription
 
 As part of this service you will receive a number of benefits from our team, including:
 
-## Initial setup, configuration, and cost estimation
+### Initial setup, configuration, and cost estimation
 
 - Advising if managed instances are right for your organization.
 - Initial resource estimations based on your organization & code size.
@@ -46,23 +46,30 @@ As part of this service you will receive a number of benefits from our team, inc
   - [Adding repositories from all of your code hosts to Sourcegraph](../admin/external_service/index.md)
   - [Integrating your single sign-on provider with Sourcegraph](../admin/auth/index.md)
   - [Configuring Sourcegraph](../admin/config/index.md)
+  
+### Access to all Sourcegraph features
 
-## Access restrictions
+All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, such as:
+
+- [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
+- [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
+
+### Access restrictions
 
 - Granting your team application-level admin access to the instance.
 - Configuring any IP-restrictions (e.g. VPN) and/or SSO restrictions to the instance.
 
-## Monthly upgrades and maintenance
+### Monthly upgrades and maintenance
 
 - Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
-## Health monitoring, support, and SLAs
+### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
 - [Support and SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances).
 
-## Backup and restore
+### Backup and restore
 
 <span class="badge badge-note">SOC2/CI-79</span>
 
@@ -71,7 +78,7 @@ Backup and restore capability is provided via automated snapshots.
 - Frequency: Snapshots are produced daily.
 - Retention period: Snapshots are kept for 90 days.
 
-## Training, feedback, and engagement
+### Training, feedback, and engagement
 
 As with any Sourcegraph enterprise customer, you will also receive support from us with:
 
@@ -83,6 +90,23 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
   - Helping the maintainers of your internal engineer onboarding add a session on Sourcegraph
   - Holding ongoing brown bag lunches to introduce new feature releases
   - Advice and templates on how to introduce Sourcegraph to your engineering organization
+
+### Managed SMTP
+
+> NOTE: This feature is currently undergoing a staged rollout.
+
+All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
+
+- [Code Monitoring](../code_monitoring/index.md) notifications
+- Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
+- Important updates to user accounts (for example, creation of API keys)
+- For [`builtin` authentication](../admin/auth/index.md#builtin-password-authentication), password resets and email verification
+
+By default, emails will be sent from an `@cloud.sourcegraph.com` email address. To test email delivery, refer to [sending a test email](../admin/config/email.md#sending-a-test-email).
+
+To opt out of managed SMTP, please let your Sourcegraph Account team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md). If you have specific requests for managed SMTP, please [reach out regarding special requirements](#accommodating-special-requirements).
+
+To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
 ## Requirements
 
@@ -97,17 +121,25 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 - A dedicated technical point of contact for the installation process.
 - [Tokens with read access to your code hosts](../admin/external_service/index.md) (we will direct you on how to enter them).
 - [Keys, access tokens, or any other setup required to integrate your SSO (single sign-on) provider with Sourcegraph](../admin/auth/index.md), as well as support from a member of your team with administrator access to your SSO provider to help set up and test the integration.
-- If you desire VPN/IP-restricted access, we will need to know the IP/CIDR source ranges of your enterprise VPN to allow access to the instance.
+
+### Limitation
+
+> NOTE: We may be able to [support special requests](#accommodating-special-requirements), please reach out to your account team.
+
+- The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
+- Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
+- Instances currently run only on Google Cloud Platform in the `us-central1` region. Other regions and cloud providers (such as AWS or Azure) are not yet supported.
+- Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
 ## Security
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
 
-If you would like your managed instance to be public, we will provide security capabilities from Cloudflare such as WAF and rate-limiting. We will also provide a firewall to protect your instance from malicious traffic.
+For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic.
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
-Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [network security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns.
+Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
 
 ## Accommodating special requirements
 

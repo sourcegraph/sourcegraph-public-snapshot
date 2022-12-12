@@ -1,7 +1,6 @@
 import path from 'path'
 
 import * as esbuild from 'esbuild'
-import ElmPlugin from 'esbuild-plugin-elm'
 
 import {
     MONACO_LANGUAGES_AND_FEATURES,
@@ -50,10 +49,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
         experimentalNoticePlugin,
-        ElmPlugin({
-            cwd: path.join(ROOT_PATH, 'client/web/src/search/results/components/compute'),
-            pathToElm: path.join(ROOT_PATH, 'node_modules/.bin/elm'),
-        }),
     ],
     define: {
         ...Object.fromEntries(

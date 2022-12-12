@@ -6,6 +6,7 @@ import {
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
@@ -28,12 +29,30 @@ const config: Meta = {
 
 export default config
 
+const MOCK_ORGANIZATION = {
+    __typename: 'Org',
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
+}
+
+const mockAuthenticatedUser = {
+    __typename: 'User',
+    username: 'alice',
+    displayName: 'alice',
+    id: 'b',
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
+
 export const ExperimentalExecutionDisabled: Story = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: { experimentalFeatures: { batchChangesExecution: false } },
@@ -67,6 +86,7 @@ export const ExperimentalExecutionEnabled: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     subjects: [
@@ -87,7 +107,8 @@ export const ExperimentalExecutionEnabledFromOrgNamespace: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
-                initialNamespaceID="a"
+                initialNamespaceID={MOCK_ORGANIZATION.id}
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: {
@@ -111,7 +132,8 @@ export const ExperimentalExecutionEnabledFromUserNamespace: Story = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
-                initialNamespaceID="b"
+                initialNamespaceID={mockAuthenticatedUser.id}
+                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: {

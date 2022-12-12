@@ -10,8 +10,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -98,11 +99,35 @@ index 9bd8209..d2acfa9 100644
 
 	wantBaseRef := "refs/heads/master"
 	wantHeadRevision := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
-	mockBackendCommits(t, api.CommitID(wantBaseRef), wantHeadRevision)
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
+	t.Run("EmptyCommit", func(t *testing.T) {
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
+		_, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
+		if err == nil {
+			t.Fatal("unexpected empty err")
+		}
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			t.Fatalf("incorrect err returned %T", err)
+		}
+	})
+
 	gitserverClient := gitserver.NewMockClient()
+
+	byRev := map[api.CommitID]struct{}{
+		api.CommitID(wantBaseRef): {},
+		wantHeadRevision:          {},
+	}
+
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if _, ok := byRev[api.CommitID(rev)]; !ok {
+			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
+		}
+		return api.CommitID(rev), nil
+	})
+
 	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
@@ -544,21 +569,4 @@ index 373ae20..89ad131 100644
 			}
 		})
 	}
-}
-
-func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
-	t.Helper()
-
-	byRev := map[api.CommitID]struct{}{}
-	for _, r := range revs {
-		byRev[r] = struct{}{}
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if _, ok := byRev[api.CommitID(rev)]; !ok {
-			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
-		}
-		return api.CommitID(rev), nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 }

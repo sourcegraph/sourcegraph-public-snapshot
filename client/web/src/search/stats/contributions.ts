@@ -36,8 +36,7 @@ export function registerSearchStatsContributions({
                             [ContributableMenu.SearchResultsToolbar]: [
                                 {
                                     action: ACTION_ID,
-                                    when:
-                                        'config.experimentalFeatures && get(config.experimentalFeatures, "searchStats")',
+                                    when: 'config.experimentalFeatures && get(config.experimentalFeatures, "searchStats")',
                                 },
                             ],
                         },

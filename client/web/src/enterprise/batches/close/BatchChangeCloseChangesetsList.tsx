@@ -96,9 +96,10 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
     const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
+    const nextOverlayElement = useCallback(
+        (element: HTMLElement | null): void => hoverOverlayElements.next(element),
+        [hoverOverlayElements]
+    )
 
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 

@@ -184,9 +184,10 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
     const productVersion = useObservable(
-        useMemo(() => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))), [
-            fetchSiteUpdateCheck,
-        ])
+        useMemo(
+            () => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))),
+            [fetchSiteUpdateCheck]
+        )
     )
     if (!productVersion) {
         return <></>
