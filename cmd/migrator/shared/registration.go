@@ -22,7 +22,7 @@ func composeRegisterMigratorsFuncs(fnsFromConfAndStoreFactory ...registerMigrato
 		return func(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 			conf, err := newStaticConf(ctx, db)
 			if err != nil {
-				return err
+				// return err
 			}
 
 			fns := make([]oobmigration.RegisterMigratorsFunc, 0, len(fnsFromConfAndStoreFactory))

@@ -330,22 +330,37 @@ CREATE SEQUENCE codeintel_scip_metadata_id_seq
 
 ALTER SEQUENCE codeintel_scip_metadata_id_seq OWNED BY codeintel_scip_metadata.id;
 
+CREATE TABLE codeintel_scip_symbol_names (
+    id integer NOT NULL,
+    upload_id integer NOT NULL,
+    name_segment text NOT NULL,
+    prefix_id integer
+);
+
+COMMENT ON TABLE codeintel_scip_symbol_names IS 'Stores a prefix tree of symbol names within a particular upload.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.id IS 'An identifier unique within the index for this symbol name segment.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.upload_id IS 'The identifier of the upload that provided this SCIP index.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.name_segment IS 'The portion of the symbol name that is unique to this symbol and its children.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.prefix_id IS 'The identifier of the segment that forms the prefix of this symbol, if any.';
+
 CREATE TABLE codeintel_scip_symbols (
     upload_id integer NOT NULL,
-    symbol_name text NOT NULL,
     document_lookup_id bigint NOT NULL,
     schema_version integer NOT NULL,
     definition_ranges bytea,
     reference_ranges bytea,
     implementation_ranges bytea,
-    type_definition_ranges bytea
+    type_definition_ranges bytea,
+    symbol_id integer DEFAULT 0 NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_symbols IS 'A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.';
 
 COMMENT ON COLUMN codeintel_scip_symbols.upload_id IS 'The identifier of the upload that provided this SCIP index.';
-
-COMMENT ON COLUMN codeintel_scip_symbols.symbol_name IS 'The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard).';
 
 COMMENT ON COLUMN codeintel_scip_symbols.document_lookup_id IS 'A reference to the `id` column of [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup). Joining on this table yields the document path relative to the index root.';
 
@@ -652,8 +667,11 @@ ALTER TABLE ONLY codeintel_scip_documents_schema_versions
 ALTER TABLE ONLY codeintel_scip_metadata
     ADD CONSTRAINT codeintel_scip_metadata_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_scip_symbol_names
+    ADD CONSTRAINT codeintel_scip_symbol_names_pkey PRIMARY KEY (upload_id, id);
+
 ALTER TABLE ONLY codeintel_scip_symbols
-    ADD CONSTRAINT codeintel_scip_symbols_pkey PRIMARY KEY (upload_id, symbol_name, document_lookup_id);
+    ADD CONSTRAINT codeintel_scip_symbols_pkey PRIMARY KEY (upload_id, symbol_id, document_lookup_id);
 
 ALTER TABLE ONLY codeintel_scip_symbols_schema_versions
     ADD CONSTRAINT codeintel_scip_symbols_schema_versions_pkey PRIMARY KEY (upload_id);

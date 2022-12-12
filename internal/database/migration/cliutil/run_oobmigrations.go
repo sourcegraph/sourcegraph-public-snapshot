@@ -186,7 +186,7 @@ func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animat
 ) {
 	if !animateProgress || shouldDisableProgressAnimation() {
 		update = func(i int, m oobmigration.Migration) {
-			out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
+			// out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
 		}
 		return update, func() {}
 	}

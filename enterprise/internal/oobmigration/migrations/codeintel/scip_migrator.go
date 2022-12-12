@@ -1,14 +1,20 @@
 package codeintel
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"io"
+	"sort"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
@@ -16,8 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type scipMigrator struct {
@@ -34,7 +42,7 @@ func NewSCIPMigrator(store, codeintelStore *basestore.Store) *scipMigrator {
 	}
 }
 
-func (m *scipMigrator) ID() int                 { return 18 }
+func (m *scipMigrator) ID() int                 { return 19 }
 func (m *scipMigrator) Interval() time.Duration { return time.Second }
 
 // Progress returns the ratio between the number of SCIP upload records to SCIP+LSIF upload.
@@ -64,9 +72,10 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 
 var (
 	// NOTE: modified in tests
-	scipMigratorUploadBatchSize             = 64
-	scipMigratorDocumentBatchSize           = 128
-	scipMigratorResultChunkDefaultCacheSize = 1024
+	// scipMigratorUploadConcurrency           = 4
+	scipMigratorUploadBatchSize             = 1
+	scipMigratorDocumentBatchSize           = 32
+	scipMigratorResultChunkDefaultCacheSize = 8192
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
@@ -96,6 +105,10 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 		return nil
 	}
 
+	current.uploadID = uploadID
+	current.start = time.Now()
+	current.last = current.start
+
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
 		return err
@@ -121,6 +134,12 @@ FOR UPDATE SKIP LOCKED
 LIMIT 1
 `
 
+var current = struct {
+	uploadID int
+	start    time.Time
+	last     time.Time
+}{}
+
 func (m *scipMigrator) Down(ctx context.Context) error {
 	// We shouldn't return > 0% on apply reverse, should not be called.
 	return nil
@@ -135,7 +154,7 @@ func migrateUpload(
 	serializer *serializer,
 	scipWriter *scipWriter,
 	uploadID int,
-) error {
+) (err error) {
 	indexerName, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(
 		scipMigratorIndexerQuery,
 		uploadID,
@@ -160,6 +179,26 @@ func migrateUpload(
 		cacheSize = numResultChunks
 	}
 	resultChunkCache := lru.New(cacheSize)
+
+	// Warm result chunk cache if it will all fit in the cache
+	if numResultChunks <= cacheSize {
+		var ids []ID
+		for i := 0; i < numResultChunks; i++ {
+			ids = append(ids, ID(fmt.Sprintf("%d", i)))
+		}
+
+		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+			resultChunkCache.Add(idx, resultChunk)
+			return nil
+		})
+		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
+			scipMigratorScanResultChunksQuery,
+			uploadID,
+			pq.Array(ids),
+		))); err != nil {
+			return err
+		}
+	}
 
 	for page := 0; ; page++ {
 		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
@@ -235,6 +274,12 @@ INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_nam
 VALUES (%s, '', '', '', '{}', 1)
 `
 
+var writers = sync.Pool{
+	New: func() any {
+		return gzip.NewWriter(nil)
+	},
+}
+
 // processDocument converts the given LSIF document into a SCIP document and persists it to the
 // codeintel-db in the given transaction.
 func processDocument(
@@ -248,7 +293,12 @@ func processDocument(
 	indexerName,
 	path string,
 	document DocumentData,
-) error {
+) (err error) {
+	tr, ctx := trace.New(ctx, "ERICK.HAX.processDocument", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
@@ -294,18 +344,11 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	payload, err := proto.Marshal(scipDocument)
-	if err != nil {
-		return err
-	}
-
 	if err := scipWriter.Write(
 		ctx,
 		uploadID,
 		path,
-		payload,
-		hashPayload(payload),
-		types.ExtractSymbolIndexes(scipDocument),
+		scipDocument,
 	); err != nil {
 		return err
 	}
@@ -323,7 +366,13 @@ func fetchResultChunks(
 	uploadID int,
 	numResultChunks int,
 	ids []ID,
-) (map[int]ResultChunkData, error) {
+) (_ map[int]ResultChunkData, err error) {
+	tr, ctx := trace.New(ctx, "ERICK.HAX.fetchResultChunks", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	resultChunks := map[int]ResultChunkData{}
 	indexMap := map[int]struct{}{}
 
@@ -384,26 +433,34 @@ WHERE
 `
 
 type scipWriter struct {
-	tx       *basestore.Store
-	inserter *batch.Inserter
-	uploadID int
+	tx              *basestore.Store
+	inserter        *batch.Inserter
+	uploadID        int
+	nextID          int
+	batchPayloadSum int
+	batch           []bufferedDocument
+}
+
+type bufferedDocument struct {
+	path         string
+	scipDocument *ogscip.Document
+	payload      []byte
+	payloadHash  []byte
 }
 
 // makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
 // should be written to Postgres by calling Write. The Flush method should be called after
 // each document has been processed.
 func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*scipWriter, error) {
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporaryTableQuery)); err != nil {
-		return nil, err
-	}
-
 	inserter := batch.NewInserter(
 		ctx,
 		tx.Handle(),
-		"t_codeintel_scip_symbols",
+		"codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
+		"upload_id",
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
+		"schema_version",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
@@ -416,65 +473,59 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 	}, nil
 }
 
-const makeSCIPWriterTemporaryTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
-	document_lookup_id integer NOT NULL,
-	definition_ranges bytea,
-	reference_ranges bytea,
-	implementation_ranges bytea
-) ON COMMIT DROP
-`
-
 // Write inserts a new document and document lookup row, and pushes all of the given
 // symbols into the batch inserter.
 func (s *scipWriter) Write(
 	ctx context.Context,
 	uploadID int,
 	path string,
-	payload []byte,
-	payloadHash []byte,
-	symbols []types.InvertedRangeIndex,
-) error {
+	scipDocument *ogscip.Document,
+) (err error) {
+	tr, ctx := trace.New(ctx, "ERICK.HAX.scipWriter.Write", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	payload, err := proto.Marshal(scipDocument)
+	if err != nil {
+		return err
+	}
+
+	gzipWriter := writers.Get().(*gzip.Writer)
+	defer writers.Put(gzipWriter)
+	compressBuf := new(bytes.Buffer)
+	gzipWriter.Reset(compressBuf)
+
+	if _, err := io.Copy(gzipWriter, bytes.NewReader(payload)); err != nil {
+		return err
+	}
+	if err := gzipWriter.Close(); err != nil {
+		return err
+	}
+
 	uniquePrefix := []byte(fmt.Sprintf(
 		"lsif-%d:%d:",
 		uploadID,
 		time.Now().UnixNano()/int64(time.Millisecond)),
 	)
 
-	documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
-		scipWriterWriteDocumentQuery,
-		append(uniquePrefix, payloadHash...),
-		payload,
-		uploadID,
-		path,
-	)))
-	if err != nil {
-		return err
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
 	}
 
-	for _, symbol := range symbols {
-		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
-		if err != nil {
-			return err
-		}
-		referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
-		if err != nil {
-			return err
-		}
-		implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
-		if err != nil {
-			return err
-		}
+	s.batch = append(s.batch, bufferedDocument{
+		path:         path,
+		scipDocument: scipDocument,
+		payload:      compressBuf.Bytes(),
+		payloadHash:  append(uniquePrefix, hashPayload(payload)...),
+	})
+	s.batchPayloadSum += len(payload)
 
-		if err := s.inserter.Insert(
-			ctx,
-			documentLookupID,
-			symbol.SymbolName,
-			definitionRanges,
-			referenceRanges,
-			implementationRanges,
-		); err != nil {
+	if len(s.batch) >= DocumentsBatchSize {
+		if err := s.flush(ctx); err != nil {
 			return err
 		}
 	}
@@ -482,53 +533,208 @@ func (s *scipWriter) Write(
 	return nil
 }
 
-const scipWriterWriteDocumentQuery = `
-WITH
-new_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (1, %s, %s)
-	RETURNING id
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM new_document
-RETURNING id
-`
+// TODO - document
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
+
+func (s *scipWriter) flush(ctx context.Context) (err error) {
+	tr, ctx := trace.New(ctx, "ERICK.HAX.scipWriter.flush", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	documents := s.batch
+	s.batch = nil
+	s.batchPayloadSum = 0
+
+	documentIDs, err := batchInsertForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_documents",
+		[]string{
+			"schema_version",
+			"payload_hash",
+			"raw_scip_payload",
+		},
+		func(inserter *batch.Inserter) error {
+			for _, document := range documents {
+				if err := inserter.Insert(ctx, 2, document.payloadHash, document.payload); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentIDs) != len(documents) {
+		panic("OH NO WTF")
+	}
+
+	documentLookupIDs, err := batchInsertForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_document_lookup",
+		[]string{
+			"upload_id",
+			"document_path",
+			"document_id",
+		},
+		func(inserter *batch.Inserter) error {
+			for i, document := range documents {
+				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentLookupIDs) != len(documents) {
+		panic("OH NO WTF")
+	}
+
+	symbolCount := 0
+	elapsed := time.Duration(0)
+	elapsed2 := time.Duration(0)
+	elapsed3 := time.Duration(0)
+
+	s1 := time.Now()
+	var invertedRangeIndexForDocuments [][]types.InvertedRangeIndex
+	for _, document := range documents {
+		invertedRangeIndexForDocuments = append(invertedRangeIndexForDocuments, types.ExtractSymbolIndexes(document.scipDocument))
+	}
+
+	symbolNameMap := map[string]struct{}{}
+	for _, invertedRanges := range invertedRangeIndexForDocuments {
+		for _, invertedRange := range invertedRanges {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
+	elapsed += time.Since(s1)
+
+	s3 := time.Now()
+	var trie frozenTrieNode
+	trie, s.nextID = constructTrie(symbolNames, s.nextID)
+	elapsed2 += time.Since(s3)
+
+	symbolNameByIDs := map[int]string{}
+	idsBySymbolName := map[string]int{}
+
+	if err := batch.WithInserter(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_symbol_names",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"id",
+			"upload_id",
+			"name_segment",
+			"prefix_id",
+		},
+		func(inserter *batch.Inserter) error {
+			s3 := time.Now()
+
+			if err := traverseTrie(trie, func(id int, parentID *int, prefix string) error {
+				name := prefix
+				if parentID != nil {
+					parentPrefix, ok := symbolNameByIDs[*parentID]
+					if !ok {
+						return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+					}
+
+					name = parentPrefix + prefix
+				}
+				symbolNameByIDs[id] = name
+				idsBySymbolName[name] = id
+
+				// Do not count sql time against elapsed2
+				s4 := time.Now()
+				defer func() { elapsed2 -= time.Since(s4) }()
+
+				return inserter.Insert(ctx, id, s.uploadID, prefix, parentID)
+			}); err != nil {
+				return err
+			}
+
+			elapsed2 += time.Since(s3)
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+
+	for i, ss := range invertedRangeIndexForDocuments {
+		documentLookupID := documentLookupIDs[i]
+
+		for _, symbol := range ss {
+			symbolCount++
+
+			s2 := time.Now()
+			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+			if err != nil {
+				return err
+			}
+			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			if err != nil {
+				return err
+			}
+			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			if err != nil {
+				return err
+			}
+			elapsed += time.Since(s2)
+
+			s3 := time.Now()
+			symbolID, ok := idsBySymbolName[symbol.SymbolName]
+			if !ok {
+				fmt.Printf("NO SUCH GUY FELLA!\n: %q %v\n", symbol.SymbolName, idsBySymbolName)
+				return errors.Newf("failed to construct trie, unknown symbol %q", symbol.SymbolName)
+			}
+			elapsed3 += time.Since(s3)
+
+			if err := s.inserter.Insert(
+				ctx,
+				s.uploadID,
+				documentLookupID,
+				symbolID,
+				1,
+				definitionRanges,
+				referenceRanges,
+				implementationRanges,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
 
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
-func (s *scipWriter) Flush(ctx context.Context) error {
+func (s *scipWriter) Flush(ctx context.Context) (err error) {
+	if err := s.flush(ctx); err != nil {
+		return err
+	}
+
 	if err := s.inserter.Flush(ctx); err != nil {
 		return err
 	}
 
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushQuery, s.uploadID)); err != nil {
-		return err
-	}
-
 	return nil
 }
-
-const scipWriterFlushQuery = `
-INSERT INTO codeintel_scip_symbols (
-	upload_id,
-	symbol_name,
-	document_lookup_id,
-	schema_version,
-	definition_ranges,
-	reference_ranges,
-	implementation_ranges
-)
-SELECT
-	%s,
-	source.symbol_name,
-	source.document_lookup_id,
-	1,
-	source.definition_ranges,
-	source.reference_ranges,
-	source.implementation_ranges
-FROM t_codeintel_scip_symbols source
-ON CONFLICT DO NOTHING
-`
 
 var lsifTableNames = []string{
 	"lsif_data_metadata",
@@ -539,7 +745,7 @@ var lsifTableNames = []string{
 	"lsif_data_implementations",
 }
 
-func deleteLSIFData(ctx context.Context, tx *basestore.Store, uploadID int) error {
+func deleteLSIFData(ctx context.Context, tx *basestore.Store, uploadID int) (err error) {
 	for _, tableName := range lsifTableNames {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			deleteLSIFDataQuery,
@@ -613,4 +819,37 @@ func hashPayload(payload []byte) []byte {
 	hash := sha256.New()
 	_, _ = hash.Write(payload)
 	return hash.Sum(nil)
+}
+
+// TODO - document
+func batchInsertForIdentifiers(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	columnNames []string,
+	f func(inserter *batch.Inserter) error,
+) (ids []int, err error) {
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		db,
+		tableName,
+		batch.MaxNumPostgresParameters,
+		columnNames,
+		"",
+		[]string{"id"},
+		func(rows dbutil.Scanner) error {
+			id, err := basestore.ScanInt(rows)
+			if err != nil {
+				return err
+			}
+
+			ids = append(ids, id)
+			return nil
+		},
+		f,
+	); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }

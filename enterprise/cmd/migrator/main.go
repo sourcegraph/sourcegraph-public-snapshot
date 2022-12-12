@@ -21,6 +21,11 @@ func main() {
 	})
 	defer liblog.Sync()
 
+	// ch := make(chan struct{})
+	// close(ch)
+	// br := debugserver.NewServerRoutine(ch)
+	// go br.Start()
+
 	logger := log.Scoped("migrator", "migrator enterprise edition")
 
 	if err := shared.Start(logger, migrations.RegisterEnterpriseMigratorsUsingConfAndStoreFactory); err != nil {
