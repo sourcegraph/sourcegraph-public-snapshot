@@ -56,22 +56,22 @@
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/webhooks",
-    "prefix": "WebhooksIntegration",
+    "prefix": "TestWebhooksIntegration",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "ChangesetApplyPreviewResolverWithPublicationStates",
+    "prefix": "TestChangesetApplyPreviewResolverWithPublicationStates",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "ChangesetCountsOverTimeIntegration",
+    "prefix": "TestChangesetCountsOverTimeIntegration",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "RepositoryPermissions",
+    "prefix": "TestRepositoryPermissions",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   }
 ]
