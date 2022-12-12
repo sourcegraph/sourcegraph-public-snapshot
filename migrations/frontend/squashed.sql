@@ -3127,6 +3127,22 @@ CREATE SEQUENCE out_of_band_migrations_id_seq
 
 ALTER SEQUENCE out_of_band_migrations_id_seq OWNED BY out_of_band_migrations.id;
 
+CREATE TABLE own_artifacts (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    absolute_path text
+);
+
+CREATE SEQUENCE own_artifacts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_artifacts_id_seq OWNED BY own_artifacts.id;
+
 CREATE TABLE own_blame_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -3174,6 +3190,26 @@ CREATE VIEW own_blame_jobs_with_repository_name AS
     r.name
    FROM (own_blame_jobs j
      JOIN repo r ON ((r.id = j.repository_id)));
+
+CREATE TABLE own_signals (
+    id integer NOT NULL,
+    artifact_id integer NOT NULL,
+    who text NOT NULL,
+    method text NOT NULL,
+    importance_indicator integer NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE own_signals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signals_id_seq OWNED BY own_signals.id;
 
 CREATE TABLE permissions (
     id integer NOT NULL,
@@ -3980,7 +4016,11 @@ ALTER TABLE ONLY out_of_band_migrations ALTER COLUMN id SET DEFAULT nextval('out
 
 ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_errors_id_seq'::regclass);
 
+ALTER TABLE ONLY own_artifacts ALTER COLUMN id SET DEFAULT nextval('own_artifacts_id_seq'::regclass);
+
 ALTER TABLE ONLY own_blame_jobs ALTER COLUMN id SET DEFAULT nextval('own_blame_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY own_signals ALTER COLUMN id SET DEFAULT nextval('own_signals_id_seq'::regclass);
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
 
@@ -4288,8 +4328,14 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 ALTER TABLE ONLY out_of_band_migrations
     ADD CONSTRAINT out_of_band_migrations_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY own_artifacts
+    ADD CONSTRAINT own_artifacts_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY own_blame_jobs
     ADD CONSTRAINT own_blame_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signals
+    ADD CONSTRAINT own_signals_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permissions
     ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
@@ -4692,6 +4738,8 @@ CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHER
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX own_artifacts_index_repo_path ON own_artifacts USING btree (repo_id, absolute_path);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
@@ -5145,6 +5193,12 @@ ALTER TABLE ONLY org_stats
 
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY own_artifacts
+    ADD CONSTRAINT own_artifacts_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY own_signals
+    ADD CONSTRAINT own_signals_artifact_id_fkey FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);

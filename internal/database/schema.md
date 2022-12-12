@@ -2497,6 +2497,23 @@ Stores errors that occurred while performing an out-of-band migration.
 
 **migration_id**: The identifier of the migration.
 
+# Table "public.own_artifacts"
+```
+    Column     |  Type   | Collation | Nullable |                  Default                  
+---------------+---------+-----------+----------+-------------------------------------------
+ id            | integer |           | not null | nextval('own_artifacts_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ absolute_path | text    |           |          | 
+Indexes:
+    "own_artifacts_pkey" PRIMARY KEY, btree (id)
+    "own_artifacts_index_repo_path" UNIQUE, btree (repo_id, absolute_path)
+Foreign-key constraints:
+    "own_artifacts_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "own_signals" CONSTRAINT "own_signals_artifact_id_fkey" FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.own_blame_jobs"
 ```
        Column       |           Type           | Collation | Nullable |                  Default                   
@@ -2518,6 +2535,24 @@ Stores errors that occurred while performing an out-of-band migration.
  absolute_file_path | text                     |           | not null | 
 Indexes:
     "own_blame_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.own_signals"
+```
+        Column        |           Type           | Collation | Nullable |                 Default                 
+----------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                   | integer                  |           | not null | nextval('own_signals_id_seq'::regclass)
+ artifact_id          | integer                  |           | not null | 
+ who                  | text                     |           | not null | 
+ method               | text                     |           | not null | 
+ importance_indicator | integer                  |           | not null | 
+ updated_at           | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+Indexes:
+    "own_signals_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "own_signals_artifact_id_fkey" FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2715,6 +2750,7 @@ Referenced by:
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "own_artifacts" CONSTRAINT "own_artifacts_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
