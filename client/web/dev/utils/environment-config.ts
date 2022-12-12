@@ -41,7 +41,8 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
     // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
     WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
-
+    // Check for circular dependencies
+    WEBPACK_CHECK_CIRCULAR_DEPENDENCIES: getEnvironmentBoolean('WEBPACK_CHECK_CIRCULAR_DEPENDENCIES'),
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
     // The current Docker image version, use to associate builds with Sentry's source maps.

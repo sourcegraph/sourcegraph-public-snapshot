@@ -4,8 +4,8 @@ const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const SentryWebpackPlugin = require('@sentry/webpack-plugin')
-const CompressionPlugin = require('compression-webpack-plugin')
 const CircularDependencyPlugin = require('circular-dependency-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -49,6 +49,7 @@ const {
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
   WEBPACK_DEVELOPMENT_DEVTOOL,
+  WEBPACK_CHECK_CIRCULAR_DEPENDENCIES,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
   VERSION,
@@ -154,7 +155,7 @@ const config = {
   },
   devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
-    IS_CI &&
+    WEBPACK_CHECK_CIRCULAR_DEPENDENCIES &&
       new CircularDependencyPlugin({
         failOnError: false,
         // allow import cycles that include an asyncronous import,
@@ -180,7 +181,6 @@ const config = {
           const markdown =
             `# ${count} Circular dependencies in ${entry} \n\nCircular dependencies were detected in web client packages.\n\n` +
             circularDependencyBlocks
-          console.log('Writing')
           fs.writeFile(`../../annotations/circular-dependencies-${entry}.md`, markdown).catch(err => {
             console.error('Error while writing circular depdenency annotation file')
             console.error(err)
