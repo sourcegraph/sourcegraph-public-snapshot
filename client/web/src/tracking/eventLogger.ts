@@ -252,7 +252,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             // only send the hostname instead of the whole URL to avoid
             // leaking private repository names and files into our data.
             const url = new URL(originalReferrer)
-            if (url.hostname === 'sourcegraph.com') {
+            const regexp = new RegExp('.sourcegraph.com')
+            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
                 this.originalReferrer = ''
                 cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
                 return this.originalReferrer
@@ -269,12 +270,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
+        const regexp = new RegExp('.sourcegraph.com')
         try {
             // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
             // only send the hostname instead of the whole URL to avoid
             // leaking private repository names and files into our data.
             const url = new URL(sessionReferrer)
-            if (url.hostname === 'sourcegraph.com') {
+            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
                 this.sessionReferrer = ''
                 cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
                 return this.sessionReferrer
