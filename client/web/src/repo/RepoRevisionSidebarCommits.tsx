@@ -72,7 +72,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
         query: FETCH_COMMITS,
         variables: {
             afterCursor: null,
-            first: props.defaultPageSize || 5,
+            first: props.defaultPageSize || 100,
             query: '',
             repo: props.repoID,
             revision: props.revision || '',
