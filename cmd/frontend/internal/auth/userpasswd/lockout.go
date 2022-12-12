@@ -18,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var MockSendEmail func(context.Context, string, txemail.Message) (err error)
-
 // LockoutStore provides semantics for account lockout management.
 type LockoutStore interface {
 	// IsLockedOut returns true if the given user has been locked along with the
