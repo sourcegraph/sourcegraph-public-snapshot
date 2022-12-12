@@ -208,7 +208,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
-                                                    <th>Last updated</th>
+                                                    <th>Last indexed at</th>
                                                     <td>
                                                         <Timestamp date={this.state.textSearchIndex.status.updatedAt} />
                                                     </td>
