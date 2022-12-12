@@ -250,6 +250,26 @@ func TestNewPlanJob(t *testing.T) {
             )
           NoopJob)))))`),
 	}, {
+		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeLucky,
+		want: autogold.Want("repo: and rev:", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . lucky)
+  (FEELINGLUCKYSEARCH
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*)
+            (repoNamePatterns . [(?i)sourcegraph/sourcegraph])))))))`),
+	}, {
 		query:      `foo @bar`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeRegex,
