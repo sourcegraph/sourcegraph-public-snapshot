@@ -71,7 +71,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
     >({
         query: FETCH_COMMITS,
         variables: {
-            afterCursor: '',
+            afterCursor: null,
             first: props.defaultPageSize || 5,
             query: '',
             repo: props.repoID,
@@ -94,8 +94,11 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             return node.commit.ancestors
         },
         options: {
-            // HACKY(FIXME): This is not good
-            customAfterCursor: 'afterCursor',
+            // Currently "after" is used as a commit filtering option to return
+            // commits after a specific date. Currently the pagination is
+            // implemented by using afterCursor instead and setting this boolean
+            // will ensure that the pagination works correctly.
+            customAfterCursor: true,
             fetchPolicy: 'cache-first',
         },
     })

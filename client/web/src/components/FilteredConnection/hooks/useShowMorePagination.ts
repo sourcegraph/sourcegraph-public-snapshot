@@ -42,8 +42,11 @@ interface UseShowMorePaginationConfig<TResult> {
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
 
-    /* HACKY(FIXME): Use this field instead of `after` when sending subsequent requests to fetch more data. */
-    customAfterCursor?: string
+    // customAfterCursor is used to indicate that a custom field instead of the
+    // standard "after" field is used to for pagination. This is typically a
+    // workaround for existing APIs where after may already be in use for
+    // another field.
+    customAfterCursor?: boolean
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -143,13 +146,12 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
-        console.log('cursor', cursor)
 
-        // HACKY(FIXME)
-        let afterVariables: { after?: string; first?: number; [key: string]: any } = {}
+        // Use cursor paging if possible, otherwise fallback to multiplying `first`.
+        let afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
         if (cursor) {
             if (options?.customAfterCursor) {
-                afterVariables[options?.customAfterCursor] = cursor
+                afterVariables.afterCursor = cursor
             } else {
                 afterVariables.after = cursor
             }
@@ -159,7 +161,6 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         await fetchMore({
             variables: {
                 ...variables,
-                // Use cursor paging if possible, otherwise fallback to multiplying `first`
                 ...afterVariables,
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
