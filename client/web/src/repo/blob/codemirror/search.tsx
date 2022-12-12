@@ -20,7 +20,7 @@ import { History } from 'history'
 import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 import { BehaviorSubject, Subject, Subscription } from 'rxjs'
-import { debounceTime, distinct, startWith } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
@@ -75,7 +75,7 @@ class SearchPanel implements Panel {
 
         this.subscriptions.add(
             this.searchTerm
-                .pipe(startWith(this.state.searchQuery.search), debounceTime(100), distinct())
+                .pipe(startWith(this.state.searchQuery.search), debounceTime(100), distinctUntilChanged())
                 .subscribe(searchTerm => this.commit({ search: searchTerm }))
         )
 
