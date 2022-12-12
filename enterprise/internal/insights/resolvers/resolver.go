@@ -159,6 +159,9 @@ func newAggregationsOperations(observationCtx *observation.Context) *aggregation
 			Name:              fmt.Sprintf("insights_aggregations.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redM,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForTraces | observation.EmitForMetrics // silence logging for these errors
+			},
 		})
 	}
 
