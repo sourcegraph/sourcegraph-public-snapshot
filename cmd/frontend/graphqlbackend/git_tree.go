@@ -80,11 +80,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryAr
 		}
 	}
 
-	// TODO(philipp-spiess): We have to use a stable sorting here so that we can
-	// get the same order on subsequent calls. Is gitserverClient.ReadDir stable?
-	//
-	// We only need to change this for entries connection
-	sort.Stable(byDirectory(entries))
+	sort.Sort(byDirectory(entries))
 
 	if args.First != nil && len(entries) > int(*args.First) {
 		entries = entries[:int(*args.First)]
@@ -94,9 +90,6 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryAr
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			// TODO: We only need to create resolvers when we do the recursive
-			// call for the entries connection. This could otherwise still be
-			// the plain entry. This way we could also add the index properly
 			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, r.commit, entry))
 		}
 	}
