@@ -211,26 +211,31 @@ func (g *GithubCodeHost) Err() error {
 }
 
 func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) {
-	if strings.HasPrefix(g.def.Path, "@") {
-		u, resp, err := g.c.Users.Get(ctx, strings.Replace(g.def.Path, "@", "", 1))
-		if err != nil {
-			return 0, err
-		}
-		if resp.StatusCode >= 300 {
-			return 0, errors.Newf("failed to get user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
-		}
+	// not supplied in the config, so get whatever GitHub tells us is present (but might be incorrect)
+	if g.def.TotalRepos == 0 {
+		if strings.HasPrefix(g.def.Path, "@") {
+			u, resp, err := g.c.Users.Get(ctx, strings.Replace(g.def.Path, "@", "", 1))
+			if err != nil {
+				return 0, err
+			}
+			if resp.StatusCode >= 300 {
+				return 0, errors.Newf("failed to get user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
+			}
 
-		return u.GetOwnedPrivateRepos(), nil
+			return u.GetOwnedPrivateRepos(), nil
+		} else {
+			o, resp, err := g.c.Organizations.Get(ctx, g.def.Path)
+			if err != nil {
+				return 0, err
+			}
+			if resp.StatusCode >= 300 {
+				return 0, errors.Newf("failed to get org %s. Got status %d code", g.def.Path, resp.StatusCode)
+			}
+
+			return o.GetOwnedPrivateRepos(), nil
+		}
 	} else {
-		o, resp, err := g.c.Organizations.Get(ctx, g.def.Path)
-		if err != nil {
-			return 0, err
-		}
-		if resp.StatusCode >= 300 {
-			return 0, errors.Newf("failed to get org %s. Got status %d code", g.def.Path, resp.StatusCode)
-		}
-
-		return o.GetOwnedPrivateRepos(), nil
+		return g.def.TotalRepos, nil
 	}
 }
 
