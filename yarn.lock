@@ -11688,6 +11688,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"circular-dependency-plugin@npm:^5.2.2":
+  version: 5.2.2
+  resolution: "circular-dependency-plugin@npm:5.2.2"
+  peerDependencies:
+    webpack: ">=4.0.1"
+  checksum: d1a51e7f86e72d9e7a08c47234511cc7a5c3050781c2d6dcc77c0b22214f94f272702488c952e59b2af589c67944160ad1c9c0b7b3e0d4f89222f2a27ebf085e
+  languageName: node
+  linkType: hard
+
 "cjs-module-lexer@npm:^1.0.0":
   version: 1.2.2
   resolution: "cjs-module-lexer@npm:1.2.2"
@@ -27823,6 +27832,7 @@ pvutils@latest:
     chokidar-cli: ^2.1.0
     chromatic: ^6.11.4
     chrome-webstore-upload-cli: ^1.2.0
+    circular-dependency-plugin: ^5.2.2
     classnames: ^2.2.6
     comlink: ^4.3.0
     command-exists: ^1.2.9

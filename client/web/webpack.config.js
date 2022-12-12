@@ -5,6 +5,7 @@ const path = require('path')
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
+const CircularDependencyPlugin = require('circular-dependency-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -31,6 +32,7 @@ const {
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
+const { fs } = require('mz')
 
 const {
   NODE_ENV,
@@ -152,6 +154,39 @@ const config = {
   },
   devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
+    /*IS_CI && */
+    new CircularDependencyPlugin({
+      failOnError: false,
+      // allow import cycles that include an asyncronous import,
+      // e.g. via import(/* webpackMode: "weak" */ './file.js')
+      allowAsyncCycles: false,
+      cwd: path.join(process.cwd(), '../..'),
+      onStart({ compilation }) {
+        compilation.circularDependencyList = []
+      },
+      onDetected({ module: webpackModuleRecord, paths, compilation }) {
+        compilation.circularDependencyList.push(paths)
+      },
+      onEnd({ compilation }) {
+        // Entry is usually only "app" and "main-worker"
+        const entry = Array.from(compilation.entries.keys()).join('+')
+        if (compilation.circularDependencyList.length === 0) {
+          return
+        }
+        const circularDependencyBlocks = compilation.circularDependencyList
+          .map((cycle, i) => `**Cycle ${i + 1}**\n\n` + cycle.map(path => `- ${path}\n`).join('') + '\n')
+          .join('')
+        const count = compilation.circularDependencyList.length
+        const markdown =
+          `# ${count} Circular dependencies in ${entry} \n\nCircular dependencies were detected in web client packages.\n\n` +
+          circularDependencyBlocks
+        console.log('Writing')
+        fs.writeFile(`../../annotations/circular-dependencies-${entry}.md`, markdown).catch(err => {
+          console.error('Error while writing circular depdenency annotation file')
+          console.error(err)
+        })
+      },
+    }),
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
