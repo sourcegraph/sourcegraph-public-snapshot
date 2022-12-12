@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
@@ -49,6 +50,11 @@ func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt
 				r.entry = entry
 				latest = t
 			}
+		}
+
+		// If we failed to find an entry, make sure it isn't due to rollouts.
+		if r.entry == nil && repoList.Crashes > 0 {
+			r.err = errors.New("no index found during zoekt rollout")
 		}
 	})
 	return r.entry, r.err
