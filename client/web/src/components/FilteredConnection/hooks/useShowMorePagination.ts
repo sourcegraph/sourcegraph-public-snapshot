@@ -42,11 +42,11 @@ interface UseShowMorePaginationConfig<TResult> {
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
 
-    // customAfterCursor is used to indicate that a custom field instead of the
+    // useAlternateAfterCursor is used to indicate that a custom field instead of the
     // standard "after" field is used to for pagination. This is typically a
     // workaround for existing APIs where after may already be in use for
     // another field.
-    customAfterCursor?: boolean
+    useAlternateAfterCursor?: boolean
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -150,7 +150,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         // Use cursor paging if possible, otherwise fallback to multiplying `first`.
         const afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
         if (cursor) {
-            if (options?.customAfterCursor) {
+            if (options?.useAlternateAfterCursor) {
                 afterVariables.afterCursor = cursor
             } else {
                 afterVariables.after = cursor

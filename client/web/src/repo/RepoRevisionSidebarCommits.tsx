@@ -98,7 +98,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             // commits after a specific date. Currently the pagination is
             // implemented by using afterCursor instead and setting this boolean
             // will ensure that the pagination works correctly.
-            customAfterCursor: true,
+            useAlternateAfterCursor: true,
             fetchPolicy: 'cache-first',
         },
     })
