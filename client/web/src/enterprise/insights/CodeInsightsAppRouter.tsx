@@ -12,7 +12,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
-import { GetFirstAvailableDashboardResult } from '../../graphql-operations'
+import { GetFirstAvailableDashboardResult, GetFirstAvailableDashboardVariables } from '../../graphql-operations'
 
 import { CodeInsightsBackendContext } from './core'
 import { useApi } from './hooks'
@@ -134,9 +134,17 @@ function useDashboardExistence(): DashboardExistence {
         null
     )
 
-    const [fetchFirstAvailableDashboard] = useLazyQuery<GetFirstAvailableDashboardResult>(gql`
-        query GetFirstAvailableDashboard {
-            insightsDashboards(first: 1) {
+    const [fetchFirstAvailableDashboard] = useLazyQuery<
+        GetFirstAvailableDashboardResult,
+        GetFirstAvailableDashboardVariables
+    >(gql`
+        query GetFirstAvailableDashboard($lastVisitedDashboardId: ID) {
+            lastVisitedDashboard: insightsDashboards(id: $lastVisitedDashboardId) {
+                nodes {
+                    id
+                }
+            }
+            firstAvailableDashboard: insightsDashboards(first: 1) {
                 nodes {
                     id
                 }
@@ -150,21 +158,33 @@ function useDashboardExistence(): DashboardExistence {
             return
         }
 
-        // Skip dashboard async check if three is last visited dashboard id in the history
-        // return users to the recently viewed dashboard
-        if (lastVisitedDashboardId) {
-            return setState({ status: 'lastVisitedDashboard', dashboardId: lastVisitedDashboardId })
-        }
+        const normalizedLastVisitedDashboardId = lastVisitedDashboardId ?? null
 
         // Check asynchronously about dashboard existence on the backend
-        fetchFirstAvailableDashboard()
+        fetchFirstAvailableDashboard({ variables: { lastVisitedDashboardId: normalizedLastVisitedDashboardId } })
             .then(result => {
-                const { data = { insightsDashboards: { nodes: [] } } } = result
-                const isThereAnyDashboards = data.insightsDashboards.nodes.length > 0
+                const {
+                    data = {
+                        lastVisitedDashboard: { nodes: [] },
+                        firstAvailableDashboard: { nodes: [] },
+                    },
+                } = result
 
-                if (isThereAnyDashboards) {
+                const [lastVisitedDashboard] = data.lastVisitedDashboard.nodes
+                const [firstAvailableDashboard] = data.firstAvailableDashboard.nodes
+
+                // We resolved dashboard by lastVisitedDashboardId in the temporal settings
+                if (lastVisitedDashboard) {
+                    setState({ status: 'lastVisitedDashboard', dashboardId: lastVisitedDashboard.id })
+                    return
+                }
+
+                // If it's just another dashboard and not undefined (this mean we have at least one dashboard
+                // on the backend redirect to the dashboard page without id
+                if (firstAvailableDashboard) {
                     setState({ status: 'availableDashboard' })
                 } else {
+                    // Otherwise, redirect to the standard no dashboard view (which is getting started tab)
                     setState({ status: 'noDashboards' })
                 }
             })
