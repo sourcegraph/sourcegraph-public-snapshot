@@ -112,6 +112,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             {connection &&
                 connection.nodes.map(node => (
                     <CommitNode
+                        key={node.id}
                         node={node}
                         location={props.location}
                         preferAbsoluteTimestamps={props.preferAbsoluteTimestamps}
