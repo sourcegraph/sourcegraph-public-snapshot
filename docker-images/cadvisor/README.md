@@ -15,7 +15,7 @@ The base images for cAdvisor are hosted on [gcr.io/cadvisor/cadvisor](https://gc
 
 You can also verify this manually:
 
-1. Exec in the container with `docker run -it --entrypoint /bin/sh --platform linux/x86_64 <image name>`  (note that `--platform linux/x86_64` is required on Arm-based Macs to ensure it pulls the correct image)
+1. Exec in the container with `docker run -it --entrypoint /bin/sh --platform linux/x86_64 <image name>` (note that `--platform linux/x86_64` is required on Arm-based Macs to ensure it pulls the correct image)
 2. Run `uname -a` in the container
 3. Ensure it's `x86_64` architecture.
 
