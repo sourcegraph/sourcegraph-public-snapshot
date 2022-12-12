@@ -7,18 +7,18 @@ import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apoll
 import { FuzzyWrapper, FUZZY_FILES_MOCK } from './FuzzyFinder.mocks'
 
 describe('FuzzyModal', () => {
-    it('displays all, repos, symbols and files tabs with default experimentalFeatures', async () => {
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        const originalScrollIntoView = Element.prototype.scrollIntoView
-        beforeAll(() => {
-            // scrollIntoView is not supported in JSDOM, so we mock it for this one test
-            // https://github.com/jsdom/jsdom/issues/1695
-            Element.prototype.scrollIntoView = spy()
-        })
-        afterAll(() => {
-            Element.prototype.scrollIntoView = originalScrollIntoView
-        })
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const originalScrollIntoView = Element.prototype.scrollIntoView
+    beforeAll(() => {
+        // scrollIntoView is not supported in JSDOM, so we mock it for this one test
+        // https://github.com/jsdom/jsdom/issues/1695
+        Element.prototype.scrollIntoView = spy()
+    })
+    afterAll(() => {
+        Element.prototype.scrollIntoView = originalScrollIntoView
+    })
 
+    it('displays all, repos, symbols and files tabs with default experimentalFeatures', async () => {
         const result: RenderResult = render(
             <MockedProvider mocks={[FUZZY_FILES_MOCK]}>
                 <FuzzyWrapper
