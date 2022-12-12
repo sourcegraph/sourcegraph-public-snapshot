@@ -43,7 +43,7 @@ If a user ever loses access to their default search context (eg. the search cont
 
 The default search context is always selected when loading the Sourcegraph webapp. The one exception is when opening a link to a search query that does not contain a `context:` filter, in which case the `global` context will be used.
 
-### Starrred contexts
+### Starred contexts
 
 Any authenticated user can star a search context. To star a context, click on the star icon in the search context management page. This will cause the context to appear near the top of their search contexts list. The `global` context cannot be starred.
 

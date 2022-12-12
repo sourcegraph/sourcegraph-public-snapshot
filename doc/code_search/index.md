@@ -74,6 +74,11 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 - [Switch from Oracle OpenGrok to Sourcegraph](how-to/opengrok.md)
 - [Create a saved search](how-to/saved_searches.md)
 - [Create a custom search snippet](how-to/snippets.md)
+- [Using and creating search contexts](how-to/search_contexts.md)
+- [Exhaustive search](how-to/exhaustive.md)
+- [How to create a search context with the GraphQL API](how-to/create_search_context_graphql.md)
+- [How to convert repository groups to search contexts](how-to/convert_repository_groups_to_search_contexts.md)
+
 
 ## [Tutorials](tutorials/index.md)
 

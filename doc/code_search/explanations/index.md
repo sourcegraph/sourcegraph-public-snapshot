@@ -1,6 +1,6 @@
 # Explanations
 
-- [Search features](explanations/features.md)
+- [Search features](features.md)
   - Use regular expressions and exact queries to perform full-text searches.
   - Perform [language-aware structural search](features.md#language-aware-structural-code-search) on code structure.
   - Search any branch and commit, with no indexing required.
