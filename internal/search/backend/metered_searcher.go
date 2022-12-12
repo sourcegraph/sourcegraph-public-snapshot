@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -213,9 +212,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr.LogFields(fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		// 2022-12-12 (keegan) we are getting error strings of just "{}" in
-		// honeycomb. To help track this down, lets include the error type.
-		event.AddField("error", fmt.Sprintf("%T %v", err, err))
+		event.AddField("error", err.Error())
 	}
 	event.AddLogFields(fields)
 	event.Send()
