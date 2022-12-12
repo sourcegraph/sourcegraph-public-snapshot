@@ -79,19 +79,19 @@ const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookM
 
 interface BlobPageProps
     extends RepoFile,
-    ModeSpec,
-    RepoHeaderContributionsLifecycleProps,
-    SettingsCascadeProps,
-    PlatformContextProps,
-    TelemetryProps,
-    ExtensionsControllerProps,
-    ThemeProps,
-    HoverThresholdProps,
-    BreadcrumbSetters,
-    SearchStreamingProps,
-    Pick<SearchContextProps, 'searchContextsEnabled'>,
-    Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-    Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'> {
+        ModeSpec,
+        RepoHeaderContributionsLifecycleProps,
+        SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        HoverThresholdProps,
+        BreadcrumbSetters,
+        SearchStreamingProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -116,7 +116,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
-    const { repoID, repoName, revision, commitID, afterCursor, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
@@ -312,7 +312,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
         ? // Fallback to formatted blob whilst we do not have the highlighted blob
-        highlightedBlobInfoOrError || formattedBlobInfoOrError
+          highlightedBlobInfoOrError || formattedBlobInfoOrError
         : highlightedBlobInfoOrError
 
     const onExtendTimeoutClick = useCallback(
@@ -341,9 +341,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
-        !isErrorLike(blobInfoOrError) &&
-        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-        showSearchNotebook
+            !isErrorLike(blobInfoOrError) &&
+            blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
+            showSearchNotebook
     )
 
     const onCopyNotebook = useCallback(
