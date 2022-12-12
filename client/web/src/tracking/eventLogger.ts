@@ -79,7 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
-    private deviceSessionID = ''
+    private deviceSessionID?: string
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
