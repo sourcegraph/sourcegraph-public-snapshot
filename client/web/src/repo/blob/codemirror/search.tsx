@@ -342,6 +342,7 @@ class SearchPanel implements Panel {
 // Announce the current match to screen readers.
 // Taken from original the CodeMirror implementation:
 // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L694-L717
+/* eslint-disable */
 const AnnounceMargin = 30
 const Break = /[\s\.,:;?!]/
 function announceMatch(view: EditorView, { from, to }: { from: number; to: number }) {
@@ -369,6 +370,7 @@ function announceMatch(view: EditorView, { from, to }: { from: number; to: numbe
         `${view.state.phrase('current match')}. ${text} ${view.state.phrase('on line')} ${line.number}.`
     )
 }
+/* eslint-enable */
 
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
