@@ -10,9 +10,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -148,7 +150,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *BlameJo
 	return nil
 }
 
-func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob]) *workerutil.Worker[*BlameJob] {
+type Nav interface {
+	GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []types.UploadLocation, _ shared.ReferencesCursor, err error)
+}
+
+func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob], nav Nav) *workerutil.Worker[*BlameJob] {
 	handler := &handler{}
 
 	return dbworker.NewWorker[*BlameJob](ctx, workerStore, handler, workerutil.WorkerOptions{
@@ -195,8 +201,13 @@ func (j *ownBlameJob) Routines(_ context.Context, observationCtx *observation.Co
 	rootContext := actor.WithInternalActor(context.Background())
 	resetterMetrics := dbworker.NewMetrics(observationCtx, "own_blame")
 
+	services, err := codeintel.InitServices(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
 	return []goroutine.BackgroundRoutine{
-		makeWorker(rootContext, store),
+		makeWorker(rootContext, store, services.CodenavService),
 		makeResetter(observationCtx.Logger.Scoped("OwnBlameJob.Resetter", ""), store, *resetterMetrics),
 	}, nil
 }
