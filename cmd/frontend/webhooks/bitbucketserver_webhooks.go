@@ -28,11 +28,13 @@ func (wr *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.
 	// Route the request based on the event type.
 	err = wr.Dispatch(ctx, eventType, extsvc.KindBitbucketServer, codeHostURN, e)
 	if err != nil {
-		logger.Error("Error handling bitbucket server webhook event", log.Error(err))
+		const errorMessage = "Error handling bitbucket server webhook event"
 		if errcode.IsNotFound(err) {
+			logger.Warn(errorMessage, log.Error(err))
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		logger.Error(errorMessage, log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

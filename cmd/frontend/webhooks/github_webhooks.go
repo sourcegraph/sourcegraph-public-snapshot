@@ -92,11 +92,13 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
-		logger.Error("Error handling github webhook event", log.Error(err))
+		const errorMessage = "Error handling github webhook event"
 		if errcode.IsNotFound(err) {
+			logger.Warn(errorMessage, log.Error(err))
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		logger.Error(errorMessage, log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
