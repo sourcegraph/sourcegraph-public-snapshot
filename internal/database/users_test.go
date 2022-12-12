@@ -4,10 +4,13 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -359,6 +362,82 @@ func TestUsers_ListCount(t *testing.T) {
 	)
 	require.NoError(t, err)
 	assert.Len(t, users, 0)
+}
+
+func TestUsers_List_Query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	users := map[string]int32{}
+	for _, u := range []string{
+		"foo",
+		"bar",
+		"baz",
+	} {
+		user, err := db.Users().Create(ctx, NewUser{
+			Email:                 u + "@a.com",
+			Username:              u,
+			Password:              "p",
+			EmailVerificationCode: "c",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		users[u] = user.ID
+	}
+
+	cases := []struct {
+		Name  string
+		Query string
+		Want  string
+	}{{
+		Name:  "all",
+		Query: "",
+		Want:  "foo bar baz",
+	}, {
+		Name:  "none",
+		Query: "sdfsdf",
+		Want:  "",
+	}, {
+		Name:  "some",
+		Query: "a",
+		Want:  "bar baz",
+	}, {
+		Name:  "id",
+		Query: strconv.Itoa(int(users["foo"])),
+		Want:  "foo",
+	}, {
+		Name:  "graphqlid",
+		Query: string(relay.MarshalID("User", users["foo"])),
+		Want:  "foo",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			us, err := db.Users().List(ctx, &UsersListOptions{
+				Query: tc.Query,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.Fields(tc.Want)
+			got := []string{}
+			for _, u := range us {
+				got = append(got, u.Username)
+			}
+
+			sort.Strings(want)
+			sort.Strings(got)
+
+			assert.Equal(t, want, got)
+		})
+	}
 }
 
 func TestUsers_Update(t *testing.T) {

@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"time"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -30,6 +31,7 @@ type LsifStore interface {
 
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
+	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error)
 
 	// Stream
 	ScanDocuments(ctx context.Context, id int, f func(path string, ranges map[precise.ID]precise.RangeData) error) (err error)
@@ -48,15 +50,15 @@ type store struct {
 	operations *operations
 }
 
-func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
-	return newStore(db, observationContext)
+func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
+	return newStore(observationCtx, db)
 }
 
-func newStore(db codeintelshared.CodeIntelDB, observationContext *observation.Context) *store {
+func newStore(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

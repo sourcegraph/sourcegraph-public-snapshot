@@ -252,14 +252,15 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         }, [isTabbedReferencesPanelEnabled, extensionsController])
     )
 
-    const panelViews = useMemo(() => [...(builtinTabbedPanels || []), ...(extensionPanels || [])], [
-        builtinTabbedPanels,
-        extensionPanels,
-    ])
+    const panelViews = useMemo(
+        () => [...(builtinTabbedPanels || []), ...(extensionPanels || [])],
+        [builtinTabbedPanels, extensionPanels]
+    )
 
-    const trackTabClick = useCallback((label: string) => props.telemetryService.log(`ReferencePanelClicked${label}`), [
-        props.telemetryService,
-    ])
+    const trackTabClick = useCallback(
+        (label: string) => props.telemetryService.log(`ReferencePanelClicked${label}`),
+        [props.telemetryService]
+    )
 
     const items = useMemo(
         () =>

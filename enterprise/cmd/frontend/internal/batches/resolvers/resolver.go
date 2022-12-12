@@ -1662,7 +1662,8 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 	svc := service.New(r.store)
 	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
 		BatchSpecRandID: batchSpecRandID,
-		// TODO: args not yet implemented: NoCache, AutoApply
+		// TODO: args not yet implemented: AutoApply
+		NoCache: args.NoCache,
 	})
 	if err != nil {
 		return nil, err

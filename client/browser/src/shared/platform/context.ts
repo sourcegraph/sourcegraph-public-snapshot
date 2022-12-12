@@ -143,10 +143,11 @@ export function createPlatformContext(
                     // with a CSP that allowlists https://* in script-src (see
                     // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
                     // add-ons have an even stricter restriction.)
-                    return Promise.allSettled(
-                        bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))
-                    ).then(results =>
-                        results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
+                    return Promise.allSettled(bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))).then(
+                        results =>
+                            results.map(result =>
+                                result.status === 'rejected' ? asError(result.reason) : result.value
+                            )
                     )
                 })
         },

@@ -29,22 +29,18 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	// TODO(blobstore): default to blobstore here
-	c.Backend = strings.ToLower(c.Get("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "MinIO", "The target file service for code intelligence uploads. S3, GCS, Minio, and Blobstore are supported."))
+	c.Backend = strings.ToLower(c.Get("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore", "The target file service for code intelligence uploads. S3, GCS, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("PRECISE_CODE_INTEL_UPLOAD_BUCKET", "lsif-uploads", "The name of the bucket to store LSIF uploads in.")
 	c.TTL = c.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TTL", "168h", "The maximum age of an upload before deletion.")
 
-	// TODO(blobstore): remove minio support
-	if c.Backend != "minio" && c.Backend != "blobstore" && c.Backend != "s3" && c.Backend != "gcs" {
-		c.AddError(errors.Errorf("invalid backend %q for PRECISE_CODE_INTEL_UPLOAD_BACKEND: must be S3, GCS, Minio, or Blobstore", c.Backend))
+	if c.Backend != "blobstore" && c.Backend != "s3" && c.Backend != "gcs" {
+		c.AddError(errors.Errorf("invalid backend %q for PRECISE_CODE_INTEL_UPLOAD_BACKEND: must be S3, GCS, or Blobstore", c.Backend))
 	}
 
-	// TODO(blobstore): remove minio support
-	if c.Backend == "minio" || c.Backend == "blobstore" || c.Backend == "s3" {
+	if c.Backend == "blobstore" || c.Backend == "s3" {
 		c.S3Region = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_REGION", "us-east-1", "The target AWS region.")
-		// TODO(blobstore): remove minio support
-		c.S3Endpoint = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://minio:9000", "The target AWS endpoint.")
+		c.S3Endpoint = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://blobstore:9000", "The target AWS endpoint.")
 		c.S3UsePathStyle = c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_PATH_STYLE", "false", "Whether to use path calling (vs subdomain calling).")
 		ec2RoleCredentials := c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS", "false", "Whether to use the EC2 metadata API, or use the provided static credentials.")
 

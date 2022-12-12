@@ -893,6 +893,11 @@ extend type Mutation {
     Delete an insight view given the graphql ID.
     """
     deleteInsightView(id: ID!): EmptyResponse!
+
+    """
+    Create a new insight view from an existing view.
+    """
+    saveInsightAsNewView(input: SaveInsightAsNewViewInput!): InsightViewPayload!
 }
 
 """
@@ -1197,4 +1202,29 @@ type SearchInsightLivePreviewSeries {
     The label for the data series.
     """
     label: String!
+}
+
+"""
+Input for saving a new view on an insight.
+"""
+input SaveInsightAsNewViewInput {
+    """
+    The insight view ID we are creating a new view from.
+    """
+    insightViewId: ID!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard ID to associate this insight with once created.
+    """
+    dashboard: ID
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }

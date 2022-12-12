@@ -20,10 +20,10 @@ func execPost(ctx context.Context, stepIdx int, executionInput batcheslib.Worksp
 	step := executionInput.Steps[stepIdx]
 
 	// Generate the diff.
-	if _, err := runGitCmd(context.Background(), "git", "add", "--all"); err != nil {
+	if _, err := runGitCmd(ctx, "git", "add", "--all"); err != nil {
 		return errors.Wrap(err, "git add --all failed")
 	}
-	diff, err := runGitCmd(context.Background(), "git", "diff", "--cached", "--no-prefix", "--binary")
+	diff, err := runGitCmd(ctx, "git", "diff", "--cached", "--no-prefix", "--binary")
 	if err != nil {
 		return errors.Wrap(err, "git diff --cached --no-prefix --binary failed")
 	}

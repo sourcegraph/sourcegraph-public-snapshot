@@ -2,12 +2,13 @@ package gitdomain
 
 import (
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/grafana/regexp"
 	"k8s.io/utils/strings/slices"
+
+	"github.com/sourcegraph/log"
 )
 
 var (

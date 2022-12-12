@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -97,4 +99,58 @@ func TestCreateWebhook(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateUpdateDeleteWebhook(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	newUser := database.NewUser{Username: "testUser"}
+	createdUser, err := db.Users().Create(ctx, newUser)
+	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, createdUser.ID, true))
+
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: createdUser.ID})
+
+	ws := NewWebhookService(db, keyring.Default())
+
+	// Create webhook
+	secret := "12345"
+	webhook, err := ws.CreateWebhook(ctx, "github", extsvc.KindGitHub, "https://github.com", &secret)
+	require.NoError(t, err)
+	assert.Equal(t, "github", webhook.Name)
+	assert.Equal(t, extsvc.KindGitHub, webhook.CodeHostKind)
+	assert.Equal(t, "https://github.com/", webhook.CodeHostURN.String())
+	whSecret, err := webhook.Secret.Decrypt(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, secret, whSecret)
+
+	// Update webhook
+	newSecret := "54321"
+	newName := "new name"
+	newCodeHostKind := extsvc.KindGitLab
+	newCodeHostURL := "https://gitlab.com/"
+	newWebhook, err := ws.UpdateWebhook(ctx, webhook.ID, newName, newCodeHostKind, newCodeHostURL, &newSecret)
+	require.NoError(t, err)
+	// assert that it's still the same webhook
+	assert.Equal(t, webhook.ID, newWebhook.ID)
+	assert.Equal(t, webhook.UUID, newWebhook.UUID)
+	// assert values updated correctly
+	assert.Equal(t, newName, newWebhook.Name)
+	assert.Equal(t, newCodeHostKind, newWebhook.CodeHostKind)
+	assert.Equal(t, newCodeHostURL, newWebhook.CodeHostURN.String())
+	newWHSecret, err := newWebhook.Secret.Decrypt(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, newSecret, newWHSecret)
+
+	// Delete webhook
+	err = ws.DeleteWebhook(ctx, webhook.ID)
+	require.NoError(t, err)
+	// assert webhook no longer exists
+	deletedWH, err := db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, webhook.ID)
+	assert.Nil(t, deletedWH)
+	assert.Error(t, err)
 }

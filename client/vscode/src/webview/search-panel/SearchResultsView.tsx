@@ -4,13 +4,7 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import {
-    SearchPatternType,
-    fetchAutoDefinedSearchContexts,
-    getUserSearchContextNamespaces,
-    QueryState,
-    SearchMode,
-} from '@sourcegraph/search'
+import { SearchPatternType, getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/search'
 import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -346,11 +340,9 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     searchContextsEnabled={true}
                     showSearchContext={true}
                     showSearchContextManagement={false}
-                    defaultSearchContextSpec="global"
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     selectedSearchContextSpec={context.selectedSearchContextSpec}
                     fetchSearchContexts={fetchSearchContexts}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}

@@ -10,15 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewRepositoryMatcher(store store.Store, observationContext *observation.Context, interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+func NewRepositoryMatcher(store store.Store, observationCtx *observation.Context, interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
 	repoMatcher := &repoMatcher{
 		store: store,
 	}
-	metrics := newMetrics(observationContext)
+	metrics := newMetrics(observationCtx)
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return repoMatcher.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize, metrics)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.policies-matcher", "match repositories to autoindexing+retention policies",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return repoMatcher.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize, metrics)
+		}),
+	)
 }
 
 type repoMatcher struct {

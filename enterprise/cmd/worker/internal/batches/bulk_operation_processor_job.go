@@ -3,11 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -16,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type bulkOperationProcessorJob struct{}
@@ -33,12 +27,8 @@ func (j *bulkOperationProcessorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *bulkOperationProcessorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "bulk operation processor job routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func (j *bulkOperationProcessorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "bulk operation processor job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -53,12 +43,12 @@ func (j *bulkOperationProcessorJob) Routines(_ context.Context, logger log.Logge
 
 	bulkProcessorWorker := workers.NewBulkOperationWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		resStore,
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
-			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),
-		observationContext,
 	)
 
 	routines := []goroutine.BackgroundRoutine{

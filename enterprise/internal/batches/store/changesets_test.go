@@ -336,7 +336,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			if have, want := count, len(changesets); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
-
 		})
 
 		t.Run("BatchChangeID", func(t *testing.T) {

@@ -31,6 +31,7 @@ export const SelectedDefaultItem: Story = () => (
                     query=""
                     selected={true}
                     isDefault={true}
+                    starred={false}
                 />
             </Combobox>
         )}
@@ -39,7 +40,7 @@ export const SelectedDefaultItem: Story = () => (
 
 SelectedDefaultItem.storyName = 'selected default item'
 
-export const HighlightedItem: Story = () => (
+export const StarredItem: Story = () => (
     <BrandedStory>
         {() => (
             <Combobox>
@@ -49,10 +50,11 @@ export const HighlightedItem: Story = () => (
                     query=""
                     selected={false}
                     isDefault={false}
+                    starred={true}
                 />
             </Combobox>
         )}
     </BrandedStory>
 )
 
-HighlightedItem.storyName = 'highlighted item'
+StarredItem.storyName = 'starred item'

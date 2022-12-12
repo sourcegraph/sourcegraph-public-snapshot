@@ -51,22 +51,20 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const createGitCommitPreview = (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> => ({
-    repoId,
-    pattern,
-    typeText,
-}) => {
-    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
+const createGitCommitPreview =
+    (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> =>
+    ({ repoId, pattern, typeText }) => {
+        const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
 
-    return (
-        <GitObjectPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
+        return (
+            <GitObjectPreview
+                typeText={typeText}
+                preview={previewResult}
+                previewLoading={isLoadingPreview}
+                previewError={previewError}
+            />
+        )
+    }
 
 const GitTagPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
     GitObjectType.GIT_TAG

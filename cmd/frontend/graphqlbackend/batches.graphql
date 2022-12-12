@@ -1421,8 +1421,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1482,8 +1480,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
     ): BatchSpec!
@@ -1524,8 +1520,6 @@ extend type Mutation {
 
         """
         Don't use cache entries.
-
-        TODO: Not implemented yet.
         """
         noCache: Boolean = false
 
@@ -1565,11 +1559,10 @@ extend type Mutation {
         """
         batchSpec: ID!
         """
-        Don't use cache entries.
-
-        TODO: Not implemented yet.
+        Don't use cache entries. If set, will overwrite the current batchSpec.NoCache
+        state.
         """
-        noCache: Boolean = false
+        noCache: Boolean
         """
         Right away set the autoApplyEnabled flag on the batch spec.
 
@@ -3178,6 +3171,13 @@ type BatchSpec implements Node {
     Null, if not created through createBatchSpecFromRaw.
     """
     allowUnsupported: Boolean
+
+    """
+    If true, workspaces will not run with cached results.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    noCache: Boolean
 
     """
     If true, viewer can retry the batch spec execution by calling

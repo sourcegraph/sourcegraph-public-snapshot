@@ -97,6 +97,14 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddLogFields(fields)
 	}
 
+	// We wrap our queries in GobCache, this gives us a convenient way to find
+	// out the marshalled size of the query.
+	if gobCache, ok := q.(*query.GobCache); ok {
+		b, _ := gobCache.GobEncode()
+		tr.LogFields(log.Int("query.size", len(b)))
+		event.AddField("query.size", len(b))
+	}
+
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
@@ -204,7 +212,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr.LogFields(fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.AddLogFields(fields)
 	event.Send()
@@ -267,9 +275,10 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	if zsl != nil {
 		event.AddField("repos", len(zsl.Repos))
 		event.AddField("minimal_repos", len(zsl.Minimal))
+		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.Send()
 

@@ -20,6 +20,7 @@ import (
 )
 
 func NewService(
+	observationCtx *observation.Context,
 	db database.DB,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
@@ -49,21 +50,21 @@ func NewService(
 	}()
 
 	return newService(
-		store.New(db, scopedContext("store")),
+		scopedContext("service", observationCtx),
+		store.New(scopedContext("store", observationCtx), db),
 		uploadSvc,
 		gitserverClient,
 		symbols.DefaultClient,
 		conf.DefaultClient(),
 		resultsBucket,
-		scopedContext("service"),
 	)
 }
 
 type serviceDependencies struct {
-	db                 database.DB
-	uploadsService     *uploads.Service
-	gitserverClient    GitserverClient
-	observationContext *observation.Context
+	db              database.DB
+	uploadsService  *uploads.Service
+	gitserverClient GitserverClient
+	observationCtx  *observation.Context
 }
 
 var (
@@ -79,25 +80,26 @@ var (
 	mergeBatchSize = env.MustGetInt("CODEINTEL_RANKING_MERGE_BATCH_SIZE", 5000, "")
 )
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "ranking", component)
+func scopedContext(component string, observationCtx *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "ranking", component, observationCtx)
 }
 
-func NewIndexer(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewIndexer(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewRepositoryIndexer(
+			observationCtx,
 			service.store,
 			service.gitserverClient,
 			service.symbolsClient,
 			IndexerConfigInst.Interval,
-			observationContext,
 		),
 	}
 }
 
-func NewPageRankLoader(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewPageRankLoader(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewRankLoader(
+			observationCtx,
 			service.store,
 			service.resultsBucket,
 			background.RankLoaderConfig{
@@ -105,9 +107,9 @@ func NewPageRankLoader(service *Service, observationContext *observation.Context
 				ResultsObjectKeyPrefix: resultsObjectKeyPrefix,
 			},
 			LoaderConfigInst.LoadInterval,
-			observationContext,
 		),
 		background.NewRankMerger(
+			observationCtx,
 			service.store,
 			service.resultsBucket,
 			background.RankMergerConfig{
@@ -117,7 +119,6 @@ func NewPageRankLoader(service *Service, observationContext *observation.Context
 				DevelopmentExportRepositories: developmentExportRepositories,
 			},
 			LoaderConfigInst.MergeInterval,
-			observationContext,
 		),
 	}
 }

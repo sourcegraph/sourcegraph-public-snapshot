@@ -108,7 +108,7 @@ type JobMonitorConfig struct {
 	InsightStore    store.Interface
 	RepoStore       database.RepoStore
 	BackfillRunner  pipeline.Backfiller
-	ObsContext      *observation.Context
+	ObservationCtx  *observation.Context
 	AllRepoIterator *discovery.AllReposIterator
 	CostAnalyzer    *priority.QueryAnalyzer
 }

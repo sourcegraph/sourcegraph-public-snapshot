@@ -217,8 +217,13 @@ func TestSyncerRun(t *testing.T) {
 		// ensure the deleted namespace error is logged as a debug
 		captured := export()
 		assert.Greater(t, len(captured), 0)
-		assert.Equal(t, log.LevelDebug, captured[2].Level)
-		assert.Equal(t, "SyncChangeset skipping changeset: namespace deleted", captured[2].Message)
+		var found bool
+		for _, c := range captured {
+			if c.Level == log.LevelDebug && c.Message == "SyncChangeset skipping changeset: namespace deleted" {
+				found = true
+			}
+		}
+		assert.True(t, found, "namespace deleted log was not captured")
 	})
 }
 
@@ -244,7 +249,7 @@ func TestSyncRegistry_SyncCodeHosts(t *testing.T) {
 		return codeHosts, nil
 	})
 
-	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
 
 	assertSyncerCount := func(t *testing.T, want int) {
 		t.Helper()
@@ -307,7 +312,7 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	}
 	go syncer.Run(syncerCtx)
 
-	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
 	reg.syncers[codeHostURL] = syncer
 
 	// Start handler in background, will be canceled when ctx is canceled

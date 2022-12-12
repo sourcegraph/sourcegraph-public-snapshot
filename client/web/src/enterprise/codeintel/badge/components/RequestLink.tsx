@@ -26,7 +26,11 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
 }) => {
     const language = indexerName.startsWith('lsif-') ? indexerName.slice('lsif-'.length) : indexerName
 
-    const { data, loading: loadingSupport, error } = useRequestedLanguageSupportQuery({
+    const {
+        data,
+        loading: loadingSupport,
+        error,
+    } = useRequestedLanguageSupportQuery({
         variables: {},
     })
 

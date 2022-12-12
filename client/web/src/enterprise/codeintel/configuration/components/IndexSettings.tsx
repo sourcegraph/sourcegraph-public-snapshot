@@ -29,9 +29,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
     setPolicy,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
 }) => {
-    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(
-        updates: { [P in K]: CodeIntelligenceConfigurationPolicyFields[P] }
-    ): void => {
+    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
+        [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
+    }): void => {
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 

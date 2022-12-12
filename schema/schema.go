@@ -644,7 +644,7 @@ type ExperimentalFeatures struct {
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// InsightsBackfillerV2 description: Use v2 of the insights backfiller which backfills a series at a time.
-	InsightsBackfillerV2 bool `json:"insightsBackfillerV2,omitempty"`
+	InsightsBackfillerV2 *bool `json:"insightsBackfillerV2,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -1051,6 +1051,11 @@ type HTTPHeaderAuthProvider struct {
 	Type                      string `json:"type"`
 	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
+}
+type Header struct {
+	Key       string `json:"key"`
+	Sensitive bool   `json:"sensitive,omitempty"`
+	Value     string `json:"value"`
 }
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
@@ -1681,6 +1686,8 @@ type SAMLAuthProvider struct {
 // SMTPServerConfig description: The SMTP server used to send transactional emails.
 // Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
+	// AdditionalHeaders description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
+	AdditionalHeaders []*Header `json:"additionalHeaders,omitempty"`
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
@@ -1957,7 +1964,7 @@ type SettingsExperimentalFeatures struct {
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
-	// ShowComputeComponent description: Enables display of compute components (currently Notebook blocks)
+	// ShowComputeComponent description: REMOVED.
 	ShowComputeComponent *bool `json:"showComputeComponent,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
@@ -1971,10 +1978,12 @@ type SettingsExperimentalFeatures struct {
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// ShowSearchContext description: Enables the search context dropdown.
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
-	// ShowSearchContextManagement description: Enables search context management.
+	// ShowSearchContextManagement description: REMOVED.
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
+	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
+	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
@@ -2234,12 +2243,16 @@ type SiteConfiguration struct {
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
 	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
+	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
+	// SearchIndexEnabled description: REMOVED.
+	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.

@@ -15,6 +15,7 @@ type UploadMetadata struct {
 	Indexer           string
 	IndexerVersion    string
 	AssociatedIndexID int
+	ContentType       string
 }
 
 type uploadHandlerShim struct {
@@ -53,6 +54,7 @@ func (s *uploadHandlerShim) InsertUpload(ctx context.Context, upload uploadhandl
 		Indexer:           upload.Metadata.Indexer,
 		IndexerVersion:    upload.Metadata.IndexerVersion,
 		AssociatedIndexID: associatedIndexID,
+		ContentType:       upload.Metadata.ContentType,
 	})
 }
 

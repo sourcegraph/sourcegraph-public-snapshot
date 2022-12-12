@@ -1,10 +1,13 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog, mdiPlus } from '@mdi/js'
+import { mdiCog } from '@mdi/js'
+import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ButtonLink, Container, H2, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, H2, H5, Link, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -17,9 +20,9 @@ import {
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
-import { WebhookFields } from '../graphql-operations'
+import { DeleteWebhookResult, DeleteWebhookVariables, WebhookFields } from '../graphql-operations'
 
-import { useWebhookLogsConnection, useWebhookQuery } from './backend'
+import { DELETE_WEBHOOK, useWebhookLogsConnection, useWebhookQuery } from './backend'
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
 import { WebhookInformation } from './WebhookInformation'
 import { WebhookLogNode } from './webhooks/WebhookLogNode'
@@ -34,6 +37,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             params: { id },
         },
         telemetryService,
+        history,
     } = props
 
     const [onlyErrors, setOnlyErrors] = useState(false)
@@ -43,6 +47,11 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
     }, [telemetryService])
+
+    const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
+        DeleteWebhookResult,
+        DeleteWebhookVariables
+    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => history.push('/site-admin/webhooks') })
 
     return (
         <Container>
@@ -63,29 +72,59 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                             updatedBy={webhookData.node.updatedBy}
                         />
                     }
-                    className="test-batch-change-close-page mb-3"
+                    className="mb-3"
                     headingElement="h2"
                     actions={
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
-                                <ButtonLink
-                                    className="test-create-webhook"
-                                    size="sm"
-                                    variant="primary"
-                                    display="inline"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create
-                                </ButtonLink>
+                                <Tooltip content="Edit webhook">
+                                    <ButtonLink
+                                        to={`/site-admin/webhooks/${id}/edit`}
+                                        className="test-edit-webhook"
+                                        size="sm"
+                                        variant="primary"
+                                        display="inline"
+                                    >
+                                        Edit
+                                    </ButtonLink>
+                                </Tooltip>
                             </div>
                             <div className="mr-1">
-                                <ButtonLink
-                                    className="test-edit-webhook"
-                                    size="sm"
-                                    variant="secondary"
-                                    display="inline"
-                                >
-                                    Edit
-                                </ButtonLink>
+                                <Tooltip content="Delete webhook">
+                                    <Button
+                                        aria-label="Delete"
+                                        className="test-delete-webhook"
+                                        variant="danger"
+                                        size="sm"
+                                        disabled={isDeleting}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            if (
+                                                !window.confirm(
+                                                    'Delete this webhook? Any external webhooks configured to point at this webhook will no longer be received.'
+                                                )
+                                            ) {
+                                                return
+                                            }
+                                            deleteWebhook().catch(
+                                                // noop here is used because creation error is handled directly when useMutation is called
+                                                noop
+                                            )
+                                        }}
+                                    >
+                                        <>
+                                            {isDeleting && <LoadingSpinner />}
+                                            Delete
+                                        </>
+                                    </Button>
+                                </Tooltip>
+                                {deleteError && (
+                                    <ErrorAlert
+                                        className="mt-2"
+                                        prefix="Error during webhook deletion"
+                                        error={deleteError}
+                                    />
+                                )}
                             </div>
                         </div>
                     }
@@ -107,7 +146,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
                     <Header />
                     {connection?.nodes?.map(node => (
-                        <WebhookLogNode key={node.id} node={node} />
+                        <WebhookLogNode doNotShowExternalService={true} key={node.id} node={node} />
                     ))}
                 </ConnectionList>
 
@@ -137,9 +176,18 @@ const Header: FC = () => (
         {/* element in the header row*/}
         <span className="d-md-block" />
         <H5 className="text-uppercase text-center text-nowrap">Status code</H5>
-        <H5 className="text-uppercase text-nowrap">External service</H5>
+        {/* Another empty element to fill in the empty middle of the grid */}
+        <span className="d-md-block" />
         <H5 className="text-uppercase text-nowrap">Received at</H5>
     </>
 )
 
-const EmptyList: FC = () => <div className="m-4 w-100 text-center">No webhook logs found</div>
+const EmptyList: FC = () => (
+    <div className="m-4 w-100 text-center text-muted">
+        No requests received yet. Be sure to{' '}
+        <Link to="/help/admin/config/webhooks#configuring-webhooks-on-the-code-host">
+            configure the webhook on the code host
+        </Link>
+        .
+    </div>
+)

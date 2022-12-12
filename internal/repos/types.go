@@ -2,8 +2,6 @@ package repos
 
 import (
 	"context"
-	"encoding/hex"
-	"hash/fnv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -120,14 +118,4 @@ func (r *RateLimitSyncer) SyncServices(ctx context.Context, services []*types.Ex
 		l.SetLimit(limit)
 	}
 	return nil
-}
-
-func hashToken(token string) (string, error) {
-	h := fnv.New32()
-	_, err := h.Write([]byte(token))
-	if err != nil {
-		return "", errors.Wrap(err, "hashing token")
-	}
-	b := h.Sum(nil)
-	return hex.EncodeToString(b), nil
 }

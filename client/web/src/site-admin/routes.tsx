@@ -105,6 +105,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),
     },
     {
+        path: '/webhooks/create',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookCreatePage'), 'SiteAdminWebhookCreatePage'),
+    },
+    {
         path: '/webhooks/:id',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage'),
@@ -113,5 +118,10 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/slow-requests',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminSlowRequestsPage'), 'SiteAdminSlowRequestsPage'),
+    },
+    {
+        path: '/webhooks/:id/edit',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookUpdatePage'), 'SiteAdminWebhookUpdatePage'),
     },
 ]

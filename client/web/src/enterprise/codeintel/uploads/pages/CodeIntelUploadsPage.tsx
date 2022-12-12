@@ -120,11 +120,10 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
     )
 
     const commitGraphMetadata = useObservable(
-        useMemo(() => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)), [
-            repo,
-            queryCommitGraphMetadata,
-            apolloClient,
-        ])
+        useMemo(
+            () => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)),
+            [repo, queryCommitGraphMetadata, apolloClient]
+        )
     )
 
     const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })

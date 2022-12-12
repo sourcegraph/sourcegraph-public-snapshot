@@ -71,6 +71,8 @@ import {
     WebhookLogFields,
     WebhookLogsByWebhookIDResult,
     WebhookLogsByWebhookIDVariables,
+    WebhookPageHeaderResult,
+    WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
 } from '../graphql-operations'
@@ -571,23 +573,22 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<
-                Record<ExternalServiceKind, ExternalServiceConfig[]>
-            > = data.externalServices.nodes
-                .filter(svc => svc.config)
-                .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
-                .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
-                    (externalServicesByKind, [kind, config]) => {
-                        let services = externalServicesByKind[kind]
-                        if (!services) {
-                            services = []
-                            externalServicesByKind[kind] = services
-                        }
-                        services.push(config)
-                        return externalServicesByKind
-                    },
-                    {}
-                )
+            const externalServices: Partial<Record<ExternalServiceKind, ExternalServiceConfig[]>> =
+                data.externalServices.nodes
+                    .filter(svc => svc.config)
+                    .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
+                    .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                        (externalServicesByKind, [kind, config]) => {
+                            let services = externalServicesByKind[kind]
+                            if (!services) {
+                                services = []
+                                externalServicesByKind[kind] = services
+                            }
+                            services.push(config)
+                            return externalServicesByKind
+                        },
+                        {}
+                    )
             const settingsSubjects = data.viewerSettings.subjects.map(settings => ({
                 __typename: settings.__typename,
                 settingsURL: settings.settingsURL,
@@ -1024,6 +1025,42 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
+export const DELETE_WEBHOOK = gql`
+    mutation DeleteWebhook($hookID: ID!) {
+        deleteWebhook(id: $hookID) {
+            alwaysNil
+        }
+    }
+`
+
+export const WEBHOOK_PAGE_HEADER = gql`
+    query WebhookPageHeader {
+        webhooks {
+            nodes {
+                webhookLogs {
+                    totalCount
+                }
+            }
+        }
+
+        errorsOnly: webhooks {
+            nodes {
+                webhookLogs(onlyErrors: true) {
+                    totalCount
+                }
+            }
+        }
+    }
+`
+
+export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number; totalNoEvents: number } => {
+    const { data, loading } = useQuery<WebhookPageHeaderResult, WebhookPageHeaderVariables>(WEBHOOK_PAGE_HEADER, {})
+    const totalNoEvents = data?.webhooks.nodes.filter(webhook => webhook.webhookLogs?.totalCount === 0).length || 0
+    const totalErrors =
+        data?.errorsOnly.nodes.reduce((sum, webhook) => sum + (webhook.webhookLogs?.totalCount || 0), 0) || 0
+    return { loading, totalErrors, totalNoEvents }
+}
+
 export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
@@ -1057,4 +1094,23 @@ export const useWebhookLogsConnection = (
             const { webhookLogs } = dataOrThrowErrors(result)
             return webhookLogs
         },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
     })
+
+export const CREATE_WEBHOOK_QUERY = gql`
+    mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`
+
+export const UPDATE_WEBHOOK_QUERY = gql`
+    mutation UpdateWebhook($id: ID!, $name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`

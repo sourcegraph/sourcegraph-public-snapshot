@@ -8,8 +8,11 @@ import (
 )
 
 const (
-	LSIFUpload = "lsif.upload"
-	GraphQL    = "graphql"
+	GraphQL = "graphql"
+
+	LSIFUpload       = "lsif.upload"
+	SCIPUpload       = "scip.upload"
+	SCIPUploadExists = "scip.upload.exists"
 
 	SearchStream   = "search.stream"
 	ComputeStream  = "compute.stream"
@@ -68,6 +71,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Name(BatchesFileExists)
 	base.Path("/files/batch-changes/{spec}").Methods("POST").Name(BatchesFileUpload)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
+	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Name(GitBlameStream)
@@ -107,6 +112,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/search/index-status").Methods("POST").Name(UpdateIndexStatus)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
+	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	addRegistryRoute(base)

@@ -20,10 +20,10 @@ import (
 // from the database and passes them to the bulk executor for processing.
 func NewBulkOperationWorker(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store[*btypes.ChangesetJob],
 	sourcer sources.Sourcer,
-	observationContext *observation.Context,
 ) *workerutil.Worker[*btypes.ChangesetJob] {
 	r := &bulkProcessorWorker{sourcer: sourcer, store: s}
 
@@ -32,7 +32,7 @@ func NewBulkOperationWorker(
 		NumHandlers:       5,
 		HeartbeatInterval: 15 * time.Second,
 		Interval:          5 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "batch_changes_bulk_processor"),
 	}
 
 	worker := dbworker.NewWorker[*btypes.ChangesetJob](ctx, workerStore, r.HandlerFunc(), options)

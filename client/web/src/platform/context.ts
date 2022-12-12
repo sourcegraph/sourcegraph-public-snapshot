@@ -100,10 +100,7 @@ function toPrettyWebBlobURL(
     return appendSubtreeQueryParameter(toPrettyBlobURL(context))
 }
 
-function mapViewerSettingsResult({
-    data,
-    errors,
-}: ApolloQueryResult<ViewerSettingsResult>): {
+function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): {
     subjects: (SettingsSubject & SubjectSettingsContents)[]
 } {
     if (!data?.viewerSettings) {

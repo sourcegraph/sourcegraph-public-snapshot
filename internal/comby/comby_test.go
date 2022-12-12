@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {

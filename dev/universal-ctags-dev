@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# This script is a wrapper around `universal-ctags`.
+#
+# It checks if universal-ctags has been installed through ./dev/ctags-install.sh or falls back to a dockerized version.
+#
+# To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
+# `CTAGS_COMMAND=path/to/ctags sg start`.
+
+root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+TARGET=$("$root/dev/ctags-install.sh" which)
+
+if [ ! -f "${TARGET}" ]; then 
+  exec docker run --rm -i \
+    -a stdin -a stdout -a stderr \
+    --user guest \
+    --name=universal-ctags-$$ \
+    --entrypoint /usr/local/bin/universal-ctags \
+    ctags "$@"
+else 
+  ${TARGET} "$@"
+fi

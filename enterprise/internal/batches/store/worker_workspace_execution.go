@@ -54,11 +54,11 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options[*btype
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] {
+func NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] {
 	return &batchSpecWorkspaceExecutionWorkerStore{
-		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
-		observationContext: observationContext,
-		logger:             log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
+		Store:          dbworkerstore.New(observationCtx, handle, batchSpecWorkspaceExecutionWorkerStoreOptions),
+		observationCtx: observationCtx,
+		logger:         log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
 	}
 }
 
@@ -73,13 +73,13 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 
 	logger log.Logger
 
-	observationContext *observation.Context
+	observationCtx *observation.Context
 }
 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationCtx, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
@@ -141,7 +141,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context,
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationCtx, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {

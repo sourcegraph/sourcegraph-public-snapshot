@@ -34,22 +34,27 @@ type RankLoaderConfig struct {
 }
 
 func NewRankLoader(
+	observationCtx *observation.Context,
 	store store.Store,
 	resultsBucket *storage.BucketHandle,
 	config RankLoaderConfig,
 	interval time.Duration,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	loader := &rankLoader{
 		store:         store,
 		resultsBucket: resultsBucket,
 		logger:        log.Scoped("codeintel-rank-loader", "Reads rank data from GCS into Postgres"),
-		metrics:       newLoaderMetrics(observationContext),
+		metrics:       newLoaderMetrics(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return loader.loadRanks(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"pagerank.loader", "loads page-rank data into postgres auxiliary table from object store",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return loader.loadRanks(ctx, config)
+		}),
+	)
 }
 
 const (

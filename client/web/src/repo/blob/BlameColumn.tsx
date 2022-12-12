@@ -128,7 +128,10 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         onSelect={selectRow}
                         onDeselect={deselectRow}
                     />,
-                    portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
+                    // The classname can contain a +, so we would either need to escape it (boo!),
+                    // or just use getElementsByClassName.
+                    // eslint-disable-next-line unicorn/prefer-query-selector
+                    portalRoot.getElementsByClassName(styles.wrapper)[0] as HTMLDivElement
                 )
             )}
         </>

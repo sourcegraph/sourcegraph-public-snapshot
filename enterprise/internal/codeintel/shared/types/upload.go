@@ -25,6 +25,7 @@ type Upload struct {
 	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
+	ContentType       string
 }
 
 func (u Upload) RecordID() int {

@@ -84,11 +84,13 @@ type siteConfigDiff struct {
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
 	var changes []siteConfigDiff
 
-	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) || c.ExternalURL != other.ExternalURL {
+	hasAlertReceiversDiff := !bytes.Equal(c.alertsSum[:], other.alertsSum[:])
+	if hasAlertReceiversDiff || c.ExternalURL != other.ExternalURL {
 		changes = append(changes, siteConfigDiff{Type: "alerts", change: changeReceivers})
 	}
 
-	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
+	// re-apply SMTP on top of receivers diff because we may overwrite receiver config here
+	if hasAlertReceiversDiff || !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "email", change: changeSMTP})
 	}
 

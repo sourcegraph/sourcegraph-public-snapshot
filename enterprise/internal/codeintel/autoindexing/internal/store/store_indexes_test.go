@@ -29,7 +29,7 @@ func TestInsertIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
@@ -155,7 +155,7 @@ func TestGetIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -275,7 +275,7 @@ func TestGetIndexByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// Index does not exist initially
 	if _, exists, err := store.GetIndexByID(ctx, 1); err != nil {
@@ -349,7 +349,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
@@ -411,7 +411,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 func TestGetQueuedIndexRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -462,7 +462,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -522,7 +522,7 @@ func TestGetLastIndexScanForRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	ts, err := store.GetLastIndexScanForRepository(ctx, 50)
 	if err != nil {
@@ -554,7 +554,7 @@ func TestGetLastIndexScanForRepository(t *testing.T) {
 func TestDeleteIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, types.Index{ID: 1})
 
@@ -575,7 +575,7 @@ func TestDeleteIndexByID(t *testing.T) {
 func TestDeleteIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
@@ -599,7 +599,7 @@ func TestDeleteIndexes(t *testing.T) {
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)
@@ -611,7 +611,7 @@ func TestDeleteIndexByIDMissingRow(t *testing.T) {
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	var indexes []types.Index
 	for i := 0; i < 25; i++ {
@@ -656,7 +656,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 func TestReindexIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
@@ -682,7 +682,7 @@ func TestReindexIndexes(t *testing.T) {
 func TestReindexIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
@@ -704,13 +704,15 @@ func TestReindexIndexByID(t *testing.T) {
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
 	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
 	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 	insertUploads(t, db, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
 	insertUploads(t, db, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
+	insertUploads(t, db, Upload{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 
 	testCases := []struct {
 		repositoryID int
@@ -725,6 +727,7 @@ func TestIsQueued(t *testing.T) {
 		{3, makeCommit(2), false},
 		{3, makeCommit(3), false},
 		{4, makeCommit(1), false},
+		{5, makeCommit(4), false},
 	}
 
 	for _, testCase := range testCases {
@@ -745,7 +748,7 @@ func TestIsQueued(t *testing.T) {
 func TestIsQueuedRootIndexer(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Now()
 	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
@@ -787,7 +790,7 @@ func TestGetQueuedRepoRev(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	expected := []RepoRev{
 		{1, 50, "HEAD"},
@@ -829,7 +832,7 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	expected := []RepoRev{
 		{1, 50, "HEAD"},
@@ -895,6 +898,7 @@ type Upload struct {
 	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
+	ShouldReindex     bool
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
@@ -941,8 +945,9 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 				num_parts,
 				uploaded_parts,
 				upload_size,
-				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				associated_index_id,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -962,6 +967,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.ShouldReindex,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

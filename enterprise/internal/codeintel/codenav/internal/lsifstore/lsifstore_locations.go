@@ -2,45 +2,46 @@ package lsifstore
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// GetDefinitionLocations returns the set of locations defining the symbol at the given position.
+func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
+	extractor := func(r precise.RangeData) precise.ID { return r.DefinitionResultID }
+	return s.getLocations(ctx, extractor, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitions, bundleID, path, line, character, limit, offset)
+}
 
 // GetReferenceLocations returns the set of locations referencing the symbol at the given position.
 func (s *store) GetReferenceLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	extractor := func(r precise.RangeData) precise.ID { return r.ReferenceResultID }
-
-	return s.getLocations(ctx, extractor, s.operations.getReferences, bundleID, path, line, character, limit, offset)
+	lsifExtractor := func(r precise.RangeData) precise.ID { return r.ReferenceResultID }
+	return s.getLocations(ctx, lsifExtractor, "reference_ranges", extractReferenceRanges, s.operations.getReferences, bundleID, path, line, character, limit, offset)
 }
 
 // GetImplementationLocations returns the set of locations implementing the symbol at the given position.
 func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
 	extractor := func(r precise.RangeData) precise.ID { return r.ImplementationResultID }
-
-	return s.getLocations(ctx, extractor, s.operations.getImplementations, bundleID, path, line, character, limit, offset)
-}
-
-// GetDefinitionLocations returns the set of locations defining the symbol at the given position.
-func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	extractor := func(r precise.RangeData) precise.ID { return r.DefinitionResultID }
-
-	return s.getLocations(ctx, extractor, s.operations.getDefinitions, bundleID, path, line, character, limit, offset)
+	return s.getLocations(ctx, extractor, "implementation_ranges", extractImplementationRanges, s.operations.getImplementations, bundleID, path, line, character, limit, offset)
 }
 
 func (s *store) getLocations(
 	ctx context.Context,
-	extractor func(r precise.RangeData) precise.ID,
+	lsifExtractor func(precise.RangeData) precise.ID,
+	scipFieldName string,
+	scipExtractor func(*scip.Document, *scip.Occurrence) []*scip.Range,
 	operation *observation.Operation,
 	bundleID int,
 	path string,
@@ -58,20 +59,72 @@ func (s *store) getLocations(
 		locationsDocumentQuery,
 		bundleID,
 		path,
+		bundleID,
+		path,
 	)))
 	if err != nil || !exists {
 		return nil, 0, err
 	}
 
 	if documentData.SCIPData != nil {
-		return nil, 0, errors.New("SCIP locations unimplemented")
+		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+		trace.Log(log.Int("numIntersectingOccurrences", len(occurrences)))
+
+		for _, occurrence := range occurrences {
+			var locations []shared.Location
+			if ranges := scipExtractor(documentData.SCIPData, occurrence); len(ranges) != 0 {
+				locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path)...)
+			}
+
+			if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
+				monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
+					locationsSymbolSearchQuery,
+					sqlf.Sprintf(scipFieldName),
+					bundleID,
+					pq.Array([]string{occurrence.Symbol}),
+					path,
+					sqlf.Sprintf(scipFieldName),
+				)))
+				if err != nil {
+					return nil, 0, err
+				}
+				for _, monikerLocation := range monikerLocations {
+					for _, row := range monikerLocation.Locations {
+						locations = append(locations, shared.Location{
+							DumpID: monikerLocation.DumpID,
+							Path:   row.URI,
+							Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+						})
+					}
+				}
+			}
+
+			if len(locations) > 0 {
+				totalCount := len(locations)
+
+				if offset < len(locations) {
+					locations = locations[offset:]
+				} else {
+					locations = []shared.Location{}
+				}
+
+				if len(locations) > limit {
+					locations = locations[:limit]
+				}
+
+				return locations, totalCount, nil
+			}
+		}
+
+		return nil, 0, nil
 	}
 
 	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
 	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
-	orderedResultIDs := extractResultIDs(ranges, extractor)
+	orderedResultIDs := extractResultIDs(ranges, lsifExtractor)
 	locationsMap, totalCount, err := s.locations(ctx, bundleID, orderedResultIDs, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -87,22 +140,58 @@ func (s *store) getLocations(
 }
 
 const locationsDocumentQuery = `
+(
+	SELECT
+		sd.id,
+		sid.document_path,
+		NULL AS data,
+		NULL AS ranges,
+		NULL AS hovers,
+		NULL AS monikers,
+		NULL AS packages,
+		NULL AS diagnostics,
+		sd.raw_scip_payload AS scip_document
+	FROM codeintel_scip_document_lookup sid
+	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+	WHERE
+		sid.upload_id = %s AND
+		sid.document_path = %s
+	LIMIT 1
+) UNION (
+	SELECT
+		dump_id,
+		path,
+		data,
+		ranges,
+		NULL AS hovers,
+		NULL AS monikers,
+		NULL AS packages,
+		NULL AS diagnostics,
+		NULL AS scip_document
+	FROM
+		lsif_data_documents
+	WHERE
+		dump_id = %s AND
+		path = %s
+	LIMIT 1
+)
+`
+
+const locationsSymbolSearchQuery = `
 SELECT
-	dump_id,
-	path,
-	data,
-	ranges,
-	NULL AS hovers,
-	NULL AS monikers,
-	NULL AS packages,
-	NULL AS diagnostics,
-	NULL AS scip_document
-FROM
-	lsif_data_documents
+	ss.upload_id,
+	'' AS scheme,
+	'' AS identifier,
+	NULL AS data,
+	ss.%s,
+	sid.document_path
+FROM codeintel_scip_symbols ss
+JOIN codeintel_scip_document_lookup sid ON sid.id = ss.document_lookup_id
 WHERE
-	dump_id = %s AND
-	path = %s
-LIMIT 1
+	ss.upload_id = %s AND
+	ss.symbol_name = ANY(%s) AND
+	sid.document_path != %s AND
+	ss.%s IS NOT NULL
 `
 
 // locations queries the locations associated with the given definition or reference identifiers. This
@@ -505,4 +594,109 @@ func intsToString(vs []int) string {
 	}
 
 	return strings.Join(strs, ", ")
+}
+
+type extractedOccurrenceData struct {
+	definitions     []*scip.Range
+	references      []*scip.Range
+	implementations []*scip.Range
+	hoverText       []string
+}
+
+func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	return extractOccurrenceData(document, occurrence).definitions
+}
+
+func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	return append(extractOccurrenceData(document, occurrence).definitions, extractOccurrenceData(document, occurrence).references...)
+}
+
+func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	return extractOccurrenceData(document, occurrence).implementations
+}
+
+func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
+	return extractOccurrenceData(document, occurrence).hoverText
+}
+
+func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) extractedOccurrenceData {
+	if occurrence.Symbol == "" {
+		return extractedOccurrenceData{
+			hoverText: occurrence.OverrideDocumentation,
+		}
+	}
+
+	var (
+		hoverText               []string
+		definitionSymbol        = occurrence.Symbol
+		referencesBySymbol      = map[string]struct{}{}
+		implementationsBySymbol = map[string]struct{}{}
+	)
+
+	// Extract hover text and relationship data from the symbol information that
+	// matches the given occurrence. This will give us additional symbol names that
+	// we should include in reference and implementation searches.
+
+	if symbol := types.FindSymbol(document, occurrence.Symbol); symbol != nil {
+		hoverText = symbol.Documentation
+
+		for _, rel := range symbol.Relationships {
+			if rel.IsDefinition {
+				definitionSymbol = rel.Symbol
+			}
+			if rel.IsReference {
+				referencesBySymbol[rel.Symbol] = struct{}{}
+			}
+			if rel.IsImplementation {
+				implementationsBySymbol[rel.Symbol] = struct{}{}
+			}
+		}
+	}
+
+	definitions := []*scip.Range{}
+	references := []*scip.Range{}
+	implementations := []*scip.Range{}
+
+	// Include original symbol names for reference and implementation search below
+	referencesBySymbol[occurrence.Symbol] = struct{}{}
+	implementationsBySymbol[occurrence.Symbol] = struct{}{}
+
+	// For each occurrence that references one of the definition, reference, or
+	// implementation symbol names, extract and aggregate their source positions.
+
+	for _, occ := range document.Occurrences {
+		isDefinition := scip.SymbolRole_Definition.Matches(occ)
+
+		// This occurrence defines this symbol
+		if definitionSymbol == occ.Symbol && isDefinition {
+			definitions = append(definitions, scip.NewRange(occ.Range))
+		}
+
+		// This occurrence references this symbol (or a sibling of it)
+		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
+			references = append(references, scip.NewRange(occ.Range))
+		}
+
+		// Either one of the following are true:
+		//
+		// (1) The source occurrence is a definition, and this occurrence is
+		//     an implementation of the source interface, or
+		// (2) The source occurrence is a reference, and this occurrence is a
+		//     definition of an conforming interface.
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && (isDefinition || scip.SymbolRole_Definition.Matches(occurrence)) {
+			implementations = append(implementations, scip.NewRange(occ.Range))
+		}
+	}
+
+	// Override symbol documentation with occurrence documentation, if it exists
+	if len(occurrence.OverrideDocumentation) != 0 {
+		hoverText = occurrence.OverrideDocumentation
+	}
+
+	return extractedOccurrenceData{
+		definitions:     definitions,
+		references:      references,
+		implementations: implementations,
+		hoverText:       hoverText,
+	}
 }

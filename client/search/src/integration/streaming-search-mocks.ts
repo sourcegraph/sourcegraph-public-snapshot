@@ -18,8 +18,7 @@ export const diffSearchStreamEvents: SearchEvent[] = [
                 authorDate: '2019-10-29T20:59:15Z',
                 committerName: 'Committer Slack',
                 committerDate: '2020-10-29T20:59:15Z',
-                url:
-                    '/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42',
+                url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep',
                 content:
                     '```diff\nmocha.opts mocha.opts\n@@ -0,0 +3,2 @@\n+--timeout 200\n+src/**/*.test.ts\n\\ No newline at end of file\npackage.json package.json\n@@ -50,0 +54,3 @@\n+    "exclude": [\n+      "**/*.test.ts"\n+    ],\n@@ -54,1 +64,2 @@\n-    "serve": "parcel serve --no-hmr --out-file dist/extension.js src/extension.ts",\n+    "test": "TS_NODE_COMPILER_OPTIONS=\'{\\"module\\":\\"commonjs\\"}\' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",\n+    "cover": "TS_NODE_COMPILER_OPTIONS=\'{\\"module\\":\\"commonjs\\"}\' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",\n@@ -57,2 +70,2 @@\n-    "sourcegraph:prepublish": "parcel build src/extension.ts"\n+    "sourcegraph:prepublish": "yarn typecheck && yarn test && yarn build"\n   },\nyarn.lock yarn.lock\n@@ -3736,0 +4204,3 @@ number-is-nan@^1.0.0:\n+    spawn-wrap "^1.4.2"\n+    test-exclude "^5.1.0"\n+    uuid "^3.3.2"\n@@ -5550,1 +6166,5 @@ terser@^3.7.3, terser@^3.8.1:\n \n+test-exclude@^5.1.0:\n+  version "5.1.0"\n+  resolved "https://registry.yarnpkg.com/test-exclude/-/test-exclude-5.1.0.tgz#6ba6b25179d2d38724824661323b73e03c0c1de1"\n+  integrity sha512-gwf0S2fFsANC55fSeSqpb8BYk6w3FDvwZxfNjeF6FRgvFa43r+7wRiA/Q0IxoRU37wB/LE8IQ4221BsNucTaCA==\n```',
@@ -63,8 +62,7 @@ export const commitSearchStreamEvents: SearchEvent[] = [
                 authorDate: '2019-10-29T20:59:15Z',
                 committerName: 'Committer Vanesa',
                 committerDate: '2020-10-29T20:59:15Z',
-                url:
-                    '/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
+                url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-sentry',
                 content:
                     '```COMMIT_EDITMSG\nadd more tests, use the Sourcegraph stubs api and improve repo matching. (#13)\n\n* add more tests, refactor to use extension api stubs\r\n* improve repo matching\r\nCo-Authored-By: Felix Becker <felix.b@outlook.com>\n```',
@@ -386,16 +384,14 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                 commit: 'b1812108c8c8f0d24c03d69a883060159ebe1ae3',
                 symbols: [
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L22:18-22:29',
+                        url: '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L22:18-22:29',
                         name: 'Testimonial',
                         containerName: '',
                         kind: 'INTERFACE' as SymbolKind,
                         line: 22,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L36:14-36:33',
+                        url: '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L36:14-36:33',
                         name: 'TestimonialCarousel',
                         containerName: '',
                         kind: 'VARIABLE' as SymbolKind,
@@ -418,8 +414,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         line: 43,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/characters.test.ts#L153:15-153:20',
+                        url: '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/characters.test.ts#L153:15-153:20',
                         name: 'tests',
                         containerName: '',
                         kind: 'CONSTANT' as SymbolKind,
@@ -435,8 +430,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                 commit: '03f7c3714a1eefe96fdaca48dd234ea3a19224ff',
                 symbols: [
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/positions_events.test.ts#L15:9-15:18',
+                        url: '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/positions_events.test.ts#L15:9-15:18',
                         name: 'testcases',
                         containerName: '',
                         kind: 'VARIABLE' as SymbolKind,
@@ -452,40 +446,35 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                 commit: 'f8c71486372087822b7995f0d572c6422b7ae0e5',
                 symbols: [
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L493:9-493:31',
+                        url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L493:9-493:31',
                         name: 'lastIndexedRevOrLatest',
                         containerName: 'SourcegraphGQL.IRepository',
                         kind: 'CLASS' as SymbolKind,
                         line: 493,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1046:9-1046:23',
+                        url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1046:9-1046:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IUser',
                         kind: 'FUNCTION' as SymbolKind,
                         line: 1046,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1170:9-1170:23',
+                        url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1170:9-1170:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IConfigurationSubject',
                         kind: 'ENUM' as SymbolKind,
                         line: 1170,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1317:9-1317:23',
+                        url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1317:9-1317:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IOrg',
                         kind: 'PROPERTY' as SymbolKind,
                         line: 1317,
                     },
                     {
-                        url:
-                            '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L4633:9-4633:23',
+                        url: '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L4633:9-4633:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.ISite',
                         kind: 'PROPERTY' as SymbolKind,

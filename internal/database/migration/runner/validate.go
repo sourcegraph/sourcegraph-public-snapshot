@@ -35,13 +35,10 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	)
 
 	logger.Debug("Checked current schema state",
-		log.String("schema", schemaContext.schema.Name),
 		log.Ints("appliedVersions", extractIDs(byState.applied)),
 		log.Ints("pendingVersions", extractIDs(byState.pending)),
 		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
-
-	logger.Debug("Checked current schema state")
 
 	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
 	// to take an advisory lock and poll index creation status below.
@@ -51,7 +48,6 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	}
 
 	logger.Info("Schema is not in the expected state - checking for active migrations",
-		log.String("schema", schemaContext.schema.Name),
 		log.Ints("appliedVersions", extractIDs(byState.applied)),
 		log.Ints("pendingVersions", extractIDs(byState.pending)),
 		log.Ints("failedVersions", extractIDs(byState.failed)),

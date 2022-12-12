@@ -83,7 +83,13 @@ export const queryWebhookLogs = (
         return requestGraphQL<WebhookLogsResult, WebhookLogsVariables>(
             gql`
                 query WebhookLogs($first: Int, $after: String, $onlyErrors: Boolean!, $onlyUnmatched: Boolean!) {
-                    webhookLogs(first: $first, after: $after, onlyErrors: $onlyErrors, onlyUnmatched: $onlyUnmatched) {
+                    webhookLogs(
+                        first: $first
+                        after: $after
+                        onlyErrors: $onlyErrors
+                        onlyUnmatched: $onlyUnmatched
+                        legacyOnly: true
+                    ) {
                         ...WebhookLogConnectionFields
                     }
                 }
@@ -143,7 +149,7 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
             totalCount
         }
 
-        webhookLogs(onlyErrors: true) {
+        webhookLogs(onlyErrors: true, legacyOnly: true) {
             totalCount
         }
     }
