@@ -1,4 +1,4 @@
-package codeintel
+package background
 
 import (
 	"bytes"
