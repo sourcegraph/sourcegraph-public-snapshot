@@ -7,18 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Alert,
-    Button,
-    ButtonLink,
-    Container,
-    H2,
-    H4,
-    H5,
-    LoadingSpinner,
-    PageHeader,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, H2, H5, Link, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -142,13 +131,6 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 />
             )}
 
-            {connection?.nodes?.length === 0 && (
-                <Alert className="mt-2" variant="warning">
-                    <H4>Webhook receiver created</H4>
-                    You must create a webhook on the external code host using the endpoint below to enable this
-                    functionality.
-                </Alert>
-            )}
             <H2>Information</H2>
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <WebhookInformation webhook={webhookData.node as WebhookFields} />
@@ -200,4 +182,12 @@ const Header: FC = () => (
     </>
 )
 
-const EmptyList: FC = () => <div className="m-4 w-100 text-center">No webhook logs found</div>
+const EmptyList: FC = () => (
+    <div className="m-4 w-100 text-center">
+        No requests received yet. Be sure to{' '}
+        <Link to="/help/admin/config/webhooks#configuring-webhooks-on-the-code-host">
+            configure the webhook on the code host
+        </Link>
+        .
+    </div>
+)
