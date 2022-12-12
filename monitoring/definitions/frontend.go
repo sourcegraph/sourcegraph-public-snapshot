@@ -710,26 +710,32 @@ func Frontend() *monitoring.Dashboard {
 					},
 				}, {
 					{
-						Name:        "email_deliveries_by_source",
-						Description: "emails successfully delivered every 5 minutes by source",
-						Query:       `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`,
-						Panel:       monitoring.Panel().LegendFormat("{{email_source}}"),
-						NoAlert:     true, // this is a purely informational panel
-
-						Owner:          monitoring.ObservableOwnerDevOps,
-						Interpretation: "Emails successfully delivered by source.",
-					},
-					{
 						Name:        "email_deliveries_total",
-						Description: "total emails successfully delivered every 5 minutes",
-						Query:       `sum (increase(src_email_send{success="true"}[5m]))`,
-						Panel:       monitoring.Panel().LegendFormat("count"),
+						Description: "total emails successfully delivered every 30 minutes",
+						Query:       `sum (increase(src_email_send{success="true"}[30m]))`,
+						Panel:       monitoring.Panel().LegendFormat("emails"),
 						NoAlert:     true, // this is a purely informational panel
 
 						Owner:          monitoring.ObservableOwnerDevOps,
 						Interpretation: "Total emails successfully delivered.",
 
 						// use to observe behaviour of email usage across instances
+						MultiInstance: true,
+					},
+					{
+						Name:        "email_deliveries_by_source",
+						Description: "emails successfully delivered every 30 minutes by source",
+						Query:       `sum by (email_source) (increase(src_email_send{success="true"}[30m]))`,
+						Panel: monitoring.Panel().LegendFormat("{{email_source}}").
+							With(monitoring.PanelOptions.LegendOnRight()),
+						NoAlert: true, // this is a purely informational panel
+
+						Owner:          monitoring.ObservableOwnerDevOps,
+						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
+
+						// use to observe behaviour of email usage across instances.
+						// cardinality is 2-4, but it is useful to be able to see the
+						// breakdown regardless across instances.
 						MultiInstance: true,
 					},
 				}},
