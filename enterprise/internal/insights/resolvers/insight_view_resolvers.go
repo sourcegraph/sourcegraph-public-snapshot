@@ -603,11 +603,11 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	seriesFillStrategy := makeFillSeriesStrategy(ctx, tx, backfiller, r.scheduler, r.insightEnqueuer)
 
 	if captureGroupInsight {
-		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, backfiller, seriesFillStrategy); err != nil {
+		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, seriesFillStrategy); err != nil {
 			return nil, errors.Wrap(err, "updateCaptureGroupInsight")
 		}
 	} else {
-		if err := updateSearchOrComputeInsight(ctx, args.Input, views[0].Series, view, tx, backfiller, seriesFillStrategy); err != nil {
+		if err := updateSearchOrComputeInsight(ctx, args.Input, views[0].Series, view, tx, seriesFillStrategy); err != nil {
 			return nil, errors.Wrap(err, "updateSearchOrComputeInsight")
 		}
 	}
@@ -622,7 +622,7 @@ func isCaptureGroupSeries(generatedFromCaptureGroups *bool) bool {
 	return *generatedFromCaptureGroups
 }
 
-func updateCaptureGroupInsight(ctx context.Context, input graphqlbackend.LineChartSearchInsightDataSeriesInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, backfiller *background.ScopedBackfiller, seriesFillStrategy fillSeriesStrategy) error {
+func updateCaptureGroupInsight(ctx context.Context, input graphqlbackend.LineChartSearchInsightDataSeriesInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrategy fillSeriesStrategy) error {
 	if len(existingSeries) == 0 {
 		// This should not happen, but if we somehow have no existing series for an insight, create one.
 		_, err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, input)
@@ -648,7 +648,7 @@ func updateCaptureGroupInsight(ctx context.Context, input graphqlbackend.LineCha
 	return nil
 }
 
-func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.UpdateLineChartSearchInsightInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, backfiller *background.ScopedBackfiller, seriesFillStrategy fillSeriesStrategy) error {
+func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.UpdateLineChartSearchInsightInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrategy fillSeriesStrategy) error {
 	var existingSeriesMap = make(map[string]types.InsightViewSeries)
 	for _, existing := range existingSeries {
 		if !seriesFound(existing, input.DataSeries) {
