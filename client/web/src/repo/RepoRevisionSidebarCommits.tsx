@@ -106,15 +106,14 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
     return (
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
-            {connection &&
-                connection?.nodes.map(node => (
-                    <CommitNode
-                        key={node.id}
-                        node={node}
-                        location={props.location}
-                        preferAbsoluteTimestamps={props.preferAbsoluteTimestamps}
-                    />
-                ))}
+            {connection?.nodes.map(node => (
+                <CommitNode
+                    key={node.id}
+                    node={node}
+                    location={props.location}
+                    preferAbsoluteTimestamps={props.preferAbsoluteTimestamps}
+                />
+            ))}
             {loading && <ConnectionLoading />}
             {!loading && connection && (
                 <SummaryContainer>{hasNextPage && <ShowMoreButton onClick={fetchMore} />}</SummaryContainer>
