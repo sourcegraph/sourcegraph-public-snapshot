@@ -67,11 +67,11 @@ var (
 	}, []string{"type", "id"})
 	metricsPermsConsecutiveSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_consecutive_sync_delay",
-		Help: "The duration in minutes between last and current complete premissions sync.",
+		Help: "The duration in seconds between last and current complete premissions sync.",
 	}, []string{"type", "id"})
 	metricsPermsFirstSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_first_sync_delay",
-		Help: "The duration in minutes it took for first user/repo complete perms sync after creation",
+		Help: "The duration in seconds it took for first user/repo complete perms sync after creation",
 	}, []string{"type", "id"})
 	metricsItemsSyncScheduled = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_items_sync_scheduled",

@@ -816,10 +816,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	metricsPermsFound.WithLabelValues("repo", string(p.RepoID)).Set(float64(regularCount))
 
 	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+		secondsSince := p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds()
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(secondsSince)
 	} else {
 		metricsFirstPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
+
+		secondsSince := p.SyncedAt.Sub(repo.CreatedAt).Seconds()
+		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(secondsSince)
 	}
 
 	return providerStates, nil
