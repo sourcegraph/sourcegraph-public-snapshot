@@ -447,16 +447,14 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-						repoFilterPrefix := strings.Split(repoFilter, "@")
-						if repoFilterPrefix[0] != "" {
-							// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
-							// above, regexp meta characters in literal patterns are already escaped before the
-							// pattern is added to repoOptions, so no need to check that before compiling to regex
-							if repoOptions.CaseSensitiveRepoFilters {
-								repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilterPrefix[0]))
-							} else {
-								repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilterPrefix[0]))
-							}
+						repoFilterPrefix, _ := search.ParseRepositoryRevisions(repoFilter)
+						// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
+						// above, regexp meta characters in literal patterns are already escaped before the
+						// pattern is added to repoOptions, so no need to check that before compiling to regex
+						if repoOptions.CaseSensitiveRepoFilters {
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilterPrefix))
+						} else {
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilterPrefix))
 						}
 					}
 
