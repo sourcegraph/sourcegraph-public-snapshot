@@ -81,7 +81,7 @@ Follow the same steps as above, but ensure you include the following events unde
 
 When one of these events occur, a permissions sync will trigger for the relevant user or repository.
 
-> Note: Permission changes can take a few seconds to reflect on GitHub. To prevent syncing permissions before the change reflects on GitHub, the permissions sync will only occur 10 seconds after the relevant event is received.
+> NOTE: Permission changes can take a few seconds to reflect on GitHub. To prevent syncing permissions before the change reflects on GitHub, the permissions sync will only occur 10 seconds after the relevant event is received.
 
 ### GitLab
 
