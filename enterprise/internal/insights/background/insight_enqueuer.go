@@ -44,7 +44,7 @@ func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context
 		func(ctx context.Context) error {
 			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
-			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
+			return ie.discoverAndEnqueueInsights(ctx, insightStore)
 		},
 	), operation)
 }
@@ -67,7 +67,6 @@ func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) 
 func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 	ctx context.Context,
 	insightStore store.DataSeriesStore,
-	ffs database.FeatureFlagStore,
 ) error {
 	var multi error
 
