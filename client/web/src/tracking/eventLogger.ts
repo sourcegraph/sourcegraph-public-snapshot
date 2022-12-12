@@ -364,7 +364,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
     private resetSessionCookieExpiration(): boolean {
         // Function getDeviceSessionID calls cookie.set() to refresh the expiry
-        let deviceSessionID = this.getDeviceSessionID() || this.deviceSessionID
+        const deviceSessionID = this.getDeviceSessionID()
         if (!deviceSessionID || deviceSessionID === '') {
             this.deviceSessionID = deviceSessionID
             return false
