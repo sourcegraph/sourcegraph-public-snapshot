@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -154,7 +153,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	searchClient := streaming.NewInsightsSearchClient(r.postgresDB)
 	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB)
 
-	alert, err := searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
+	_, err = searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
 			r.getLogger().Debug("aggregation search did not complete in time", log.String("mode", string(aggregationMode)), log.Bool("extendedTimeout", args.ExtendedTimeout))
@@ -168,7 +167,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		}
 	}
 
-	successful, failureReason := searchSuccessful(alert, tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred(), args.ExtendedTimeout, searchResultsAggregator.ResultLimitHit(proactiveLimit))
+	successful, failureReason := searchSuccessful(tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred(), args.ExtendedTimeout, searchResultsAggregator.ResultLimitHit(proactiveLimit))
 	if !successful {
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
@@ -233,7 +232,7 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 	return types.REPO_AGGREGATION_MODE
 }
 
-func searchSuccessful(alert *search.Alert, tabulationErrors []error, shardTimeoutOccurred, runningWithExtendedTimeout, resultLimitHit bool) (bool, notAvailableReason) {
+func searchSuccessful(tabulationErrors []error, shardTimeoutOccurred, runningWithExtendedTimeout, resultLimitHit bool) (bool, notAvailableReason) {
 	if len(tabulationErrors) > 0 {
 		return false, notAvailableReason{reason: unableToCountGroupsMsg, reasonType: types.ERROR_OCCURRED}
 	}
