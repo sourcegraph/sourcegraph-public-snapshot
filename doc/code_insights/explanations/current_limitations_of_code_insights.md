@@ -6,13 +6,13 @@ If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph
 
 _Limitations that are no longer current are [documented at the bottom](#older-versions-limitations) for the benefit of customers who have not yet upgraded._
 
-## Dashboard position and size does not persist
+## Insight chart position and size do not persist
 
 You can resize and reorder charts on the dashboard for the purpose of taking a screenshot or presenting information, but that order will revert on a page refresh.
 
 If the ordering of insights is important, you can remove and then re-add the insights in the order you'd like via the add/remove insights to dashboard flow. 
 
-If the size is important, you can use the single-insight view page to consistently view an insight at a larger size, reachable from the context three dots menu on the insight card under "Share". 
+If the size is important, you can use the single-insight view page to consistently view an insight at a larger size, reachable by clicking the insight title or from the context three dots menu on the insight card under "Get shareable link". 
 
 ## Performance speed considerations for a data series running over all repositories
 
