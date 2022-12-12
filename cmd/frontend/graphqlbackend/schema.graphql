@@ -4789,7 +4789,7 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
-    ): TreeEntriesConnection!
+    ): [TreeEntry!]! @deprecated(reason: "Use entriesConnection instead. This field has poor pagination handling.")
     """
     A paginated connection of entries in this tree.
     """
@@ -4798,8 +4798,17 @@ type GitTree implements TreeEntry {
         Returns the first n files in the tree.
         """
         first: Int
+        """
+        Returns the last n files in the tree.
+        """
         last: Int
+        """
+        Returns items after the specified cursor.
+        """
         after: String
+        """
+        Returns items before the specified cursor.
+        """
         before: String
         """
         Recurse into sub-trees. If true, implies recursiveSingleChild.
@@ -4811,7 +4820,8 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
-    ): [TreeEntry!]!
+    ): TreeEntriesConnection!
+
     """
     Symbols defined in this tree.
     """
