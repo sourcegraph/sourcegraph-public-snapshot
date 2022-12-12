@@ -279,6 +279,82 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
+		// When first:0 and commits exist.
+		// Expect no nodes, but hasNextPage: true.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 0, path: "bill-of-materials.json") {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [],
+						"pageInfo": {
+						  "endCursor": "0",
+						  "hasNextPage": true
+						}
+					  }
+					}
+				  }
+				}`,
+		},
+
+		// When first:0 and afterCursor: 5, no commits exist.
+		// Expect no nodes, but hasNextPage: false.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 0, path: "bill-of-materials.json", afterCursor: "5") {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [],
+						"pageInfo": {
+                          "endCursor": null,
+						  "hasNextPage": false
+						}
+					  }
+					}
+				  }
+				}`,
+		},
+
 		// Start at commit c1.
 		// Expect c1 and c2 in the nodes. 2 in the endCursor.
 		{
