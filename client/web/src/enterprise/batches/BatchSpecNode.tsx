@@ -225,10 +225,12 @@ const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileConte
 
 const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file }) => {
     const [loading, setIsLoading] = useState<boolean>(true)
+    const [downloadUrl, setDownloadUrl] = useState<string>('')
     const [downloadError, setDownloadError] = useState<Error | null>(null)
 
     useEffect(() => {
         generateFileDownloadLink(file.url)
+            .then(fileUrl => setDownloadUrl(fileUrl))
             .catch(error => setDownloadError(error))
             .finally(() => setIsLoading(false))
     }, [file.url])
@@ -255,7 +257,7 @@ const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileConten
                 outline={true}
                 variant="secondary"
                 size="sm"
-                to={file.url}
+                to={downloadUrl}
                 download={file.name}
                 className="mt-1"
                 as={AnchorLink}
