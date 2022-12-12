@@ -26,7 +26,6 @@ import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 import styles from './RepoRevisionSidebarCommits.module.scss'
 
-
 interface CommitNodeProps {
     node: GitCommitFields
     location: H.Location
