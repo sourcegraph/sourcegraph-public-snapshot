@@ -73,11 +73,11 @@ Follow the same steps as above, but ensure you include the `push` event under **
 #### User permissions
 
 Follow the same steps as above, but ensure you include the following events under **Let me select individual events**:
-- Collaborator add, remove, or changed
-- Memberships
-- Organizations
-- Repositories
-- Teams
+- `Collaborator add, remove, or changed`
+- `Memberships`
+- `Organizations`
+- `Repositories`
+- `Teams`
 
 When one of these events occur, a permissions sync will trigger for the relevant user or repository.
 
