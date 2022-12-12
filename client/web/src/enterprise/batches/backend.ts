@@ -190,7 +190,7 @@ export const BATCH_SPEC_WORKSPACE_FILE = gql`
 `
 
 export const generateFileDownloadLink = async (fileUrl: string): Promise<string> => {
-    const file = await fetch(fileUrl, {
+    const file = await fetch(`/.api/${fileUrl}`, {
         headers: {
             ...window.context.xhrHeaders,
         },

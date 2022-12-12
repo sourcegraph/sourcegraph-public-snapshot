@@ -172,6 +172,7 @@ const batchChangeFragment = gql`
                     name
                     binary
                     byteSize
+                    url
                 }
             }
             source
