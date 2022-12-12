@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"strings"
@@ -244,5 +245,10 @@ func (g *GithubCodeHost) GetPath() string {
 }
 
 func (g *GithubCodeHost) SetPage(total int, remainder int) {
-	g.page = (total - remainder) / g.perPage
+	// setting per page is not implemented yet so use GH default
+	perPage := 10
+	if g.perPage != 0 {
+		perPage = g.perPage
+	}
+	g.page = int(math.Ceil(float64(total-remainder) / float64(perPage)))
 }
