@@ -2763,6 +2763,8 @@ type ExternalService implements Node {
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
+
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
     """
     webhookLogs(
         """
@@ -2790,6 +2792,9 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+        @deprecated(
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+        )
 
     """
     The list of recent sync jobs for this external service.
