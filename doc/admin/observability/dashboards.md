@@ -12535,7 +12535,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m])
 
 #### repo-updater: users_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for user (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for user [1m]</p>
 
 Indicates the max delay between two consecutive permissions sync for a user during the period.
 
@@ -12556,7 +12556,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: repos_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for repo (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for repo [1m]</p>
 
 Indicates the max delay between two consecutive permissions sync for a repo during the period.
 
@@ -12577,7 +12577,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: users_first_sync_delay
 
-<p class="subtitle">Max duration between user creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between user creation and first permissions sync [1m]</p>
 
 Indicates the max delay between user creation and their permissions sync
 
@@ -12598,7 +12598,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{t
 
 #### repo-updater: repos_first_sync_delay
 
-<p class="subtitle">Max duration between repo creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between repo creation and first permissions sync [1m]</p>
 
 Indicates the max delay between repo creation and their permissions sync
 
