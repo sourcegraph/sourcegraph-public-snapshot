@@ -207,5 +207,7 @@ function executorSecretScopeContext(scope: ExecutorSecretScope): { label: string
     switch (scope) {
         case ExecutorSecretScope.BATCHES:
             return { label: 'Batch changes', description: 'Batch change execution secrets' }
+        case ExecutorSecretScope.CODEINTEL:
+            return { label: 'Code graph', description: 'Code graph execution secrets' }
     }
 }
