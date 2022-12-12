@@ -41,6 +41,11 @@ export interface RevisionSpec {
      * a revision string (like 'master' or 'my-branch' or '24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
      */
     revision: string
+
+    /**
+     * TODO: add doc string
+     * */
+    afterCursor: string
 }
 
 export interface ResolvedRevisionSpec {
@@ -139,12 +144,12 @@ export interface RenderModeSpec {
  */
 export interface ParsedRepoURI
     extends RepoSpec,
-        Partial<RevisionSpec>,
-        Partial<ResolvedRevisionSpec>,
-        Partial<FileSpec>,
-        Partial<ComparisonSpec>,
-        Partial<UIPositionSpec>,
-        Partial<UIRangeSpec> {}
+    Partial<RevisionSpec>,
+    Partial<ResolvedRevisionSpec>,
+    Partial<FileSpec>,
+    Partial<ComparisonSpec>,
+    Partial<UIPositionSpec>,
+    Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -252,12 +257,12 @@ export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, ResolvedRevisi
  */
 export interface AbsoluteRepoFilePosition
     extends RepoSpec,
-        RevisionSpec,
-        ResolvedRevisionSpec,
-        FileSpec,
-        UIPositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
+    RevisionSpec,
+    ResolvedRevisionSpec,
+    FileSpec,
+    UIPositionSpec,
+    Partial<ViewStateSpec>,
+    Partial<RenderModeSpec> {}
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.

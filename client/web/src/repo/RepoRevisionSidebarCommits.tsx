@@ -69,8 +69,8 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const queryCommits = useCallback(
         (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
-            fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '' }),
-        [props.repoID, props.revision, props.filePath]
+            fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '', afterCursor: props.afterCursor }),
+        [props.repoID, props.revision, props.filePath, props.afterCursor]
     )
 
     return (
@@ -102,16 +102,16 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
 function fetchCommits(
     repo: Scalars['ID'],
     revision: string,
-    args: { first?: number; currentPath?: string; query?: string }
+    args: { first?: number; currentPath?: string; query?: string, afterCursor?: string }
 ): Observable<CommitAncestorsConnectionFields> {
     return requestGraphQL<FetchCommitsResult, FetchCommitsVariables>(
         gql`
-            query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String) {
+            query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String, $afterCursor: String) {
                 node(id: $repo) {
                     __typename
                     ... on Repository {
                         commit(rev: $revision) {
-                            ancestors(first: $first, query: $query, path: $currentPath) {
+                            ancestors(first: $first, query: $query, path: $currentPath, afterCursor: $afterCursor) {
                                 ...CommitAncestorsConnectionFields
                             }
                         }
@@ -126,6 +126,7 @@ function fetchCommits(
                     ...GitCommitFields
                 }
                 pageInfo {
+                    endCursor
                     hasNextPage
                 }
             }
@@ -134,6 +135,7 @@ function fetchCommits(
             currentPath: args.currentPath ?? null,
             first: args.first ?? null,
             query: args.query ?? null,
+            afterCursor: args.afterCursor ?? null,
             repo,
             revision,
         }

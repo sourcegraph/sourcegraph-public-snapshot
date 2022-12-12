@@ -31,13 +31,13 @@ import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
     extends AbsoluteRepoFile,
-        ModeSpec,
-        SettingsCascadeProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        PlatformContextProps,
-        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
-        TelemetryProps {
+    ModeSpec,
+    SettingsCascadeProps,
+    ExtensionsControllerProps,
+    ThemeProps,
+    PlatformContextProps,
+    Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+    TelemetryProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -71,6 +71,7 @@ function useBlobPanelViews({
     repoName,
     commitID,
     revision,
+    afterCursor,
     mode,
     filePath,
     repoID,
@@ -189,6 +190,7 @@ function useBlobPanelViews({
                                     key="commits"
                                     repoID={repoID}
                                     revision={revision}
+                                    afterCursor={afterCursor}
                                     filePath={filePath}
                                     history={history}
                                     location={location}
