@@ -14,11 +14,13 @@ import (
 // MonitoringAlert implements GraphQL getters on top of srcprometheus.MonitoringAlert
 type MonitoringAlert srcprometheus.MonitoringAlert
 
-func (r *MonitoringAlert) Timestamp() gqlutil.DateTime { return gqlutil.DateTime{r.TimestampValue} }
-func (r *MonitoringAlert) Name() string                { return r.NameValue }
-func (r *MonitoringAlert) ServiceName() string         { return r.ServiceNameValue }
-func (r *MonitoringAlert) Owner() string               { return r.OwnerValue }
-func (r *MonitoringAlert) Average() float64            { return r.AverageValue }
+func (r *MonitoringAlert) Timestamp() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.TimestampValue}
+}
+func (r *MonitoringAlert) Name() string        { return r.NameValue }
+func (r *MonitoringAlert) ServiceName() string { return r.ServiceNameValue }
+func (r *MonitoringAlert) Owner() string       { return r.OwnerValue }
+func (r *MonitoringAlert) Average() float64    { return r.AverageValue }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
