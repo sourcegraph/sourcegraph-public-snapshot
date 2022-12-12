@@ -105,10 +105,6 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 		return nil
 	}
 
-	current.uploadID = uploadID
-	current.start = time.Now()
-	current.last = current.start
-
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
 		return err
@@ -133,12 +129,6 @@ ORDER BY dump_id
 FOR UPDATE SKIP LOCKED
 LIMIT 1
 `
-
-var current = struct {
-	uploadID int
-	start    time.Time
-	last     time.Time
-}{}
 
 func (m *scipMigrator) Down(ctx context.Context) error {
 	// We shouldn't return > 0% on apply reverse, should not be called.
