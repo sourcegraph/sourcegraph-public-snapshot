@@ -151,6 +151,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
         name: 'spec_file.yaml',
         id: spec.id,
         byteSize: spec.originalInput.length,
+        url: '',
     }
     const [selectedFile, setSelectedFile] = useState<BatchWorkspaceFile>(specFile)
 
@@ -222,17 +223,15 @@ const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileConte
     return <NonBinaryBatchWorkspaceFile id={file.id} />
 }
 
-const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file }) => {
     const [loading, setIsLoading] = useState<boolean>(true)
-    const [downloadUrl, setDownloadUrl] = useState<string>('')
     const [downloadError, setDownloadError] = useState<Error | null>(null)
 
     useEffect(() => {
-        generateFileDownloadLink(specId, file.id)
-            .then(url => setDownloadUrl(url))
+        generateFileDownloadLink(file.url)
             .catch(error => setDownloadError(error))
             .finally(() => setIsLoading(false))
-    }, [file.id, specId])
+    }, [file.url])
 
     if (loading) {
         return <LoadingSpinner />
@@ -256,7 +255,7 @@ const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileConten
                 outline={true}
                 variant="secondary"
                 size="sm"
-                to={downloadUrl}
+                to={file.url}
                 download={file.name}
                 className="mt-1"
                 as={AnchorLink}
