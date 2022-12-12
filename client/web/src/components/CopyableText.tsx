@@ -79,7 +79,13 @@ export class CopyableText extends React.PureComponent<Props, State> {
                     </div>
                     {this.props.secret && (
                         <div className="input-group-append">
-                            <Button onClick={this.onClickSecretButton} variant="secondary" aria-label="Secret">
+                            <Button
+                                onClick={this.onClickSecretButton}
+                                variant="secondary"
+                                aria-label={
+                                    this.state.secretShown ? 'Reveal secret value as text' : 'Hide secret value'
+                                }
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiEye} />
                             </Button>
                         </div>
