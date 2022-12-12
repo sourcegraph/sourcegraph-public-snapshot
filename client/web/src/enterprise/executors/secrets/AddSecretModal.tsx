@@ -15,6 +15,9 @@ export interface AddSecretModalProps {
     afterCreate: () => void
     namespaceID: Scalars['ID'] | null
     scope: ExecutorSecretScope
+
+    /** For testing only */
+    initialKey?: string
 }
 
 export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<AddSecretModalProps>> = ({
@@ -22,10 +25,11 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
     afterCreate,
     namespaceID,
     scope,
+    initialKey = '',
 }) => {
     const labelId = 'addSecret'
 
-    const [key, setKey] = useState<string>('')
+    const [key, setKey] = useState<string>(initialKey)
     const onChangeKey = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setKey(event.target.value)
     }, [])
@@ -91,7 +95,7 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                                     rel="noopener"
                                     target="_blank"
                                 >
-                                    DOCKER_AUTH_CONFIG will be used to authenticate with private registries.
+                                    DOCKER_AUTH_CONFIG will be used to authenticate with private registries
                                 </Link>
                                 .
                             </>
