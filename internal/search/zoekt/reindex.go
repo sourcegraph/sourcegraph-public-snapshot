@@ -49,13 +49,16 @@ func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusAccepted {
+	switch resp.StatusCode {
+	case http.StatusAccepted:
+		return nil
+	case http.StatusBadGateway:
+		return errors.New("Invalid response from Zoekt indexserver. The most likely cause is a broken socket connection.")
+	default:
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return errors.New(string(b))
+		return errors.Newf("%s: %q", resp.Status, string(b))
 	}
-
-	return nil
 }

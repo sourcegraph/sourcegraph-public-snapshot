@@ -92,7 +92,7 @@ manages to do a search and the underlying index changes while searching or
 Zoekt goes down. So occasional bursts can be expected, but if this graph is
 regularly above 0 it is a sign for further investigation.`,
 							Query:   `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`,
-							Panel:   monitoring.Panel(),
+							Panel:   monitoring.Panel().LegendFormat("{{reason}}"),
 							Owner:   monitoring.ObservableOwnerSearchCore,
 							NoAlert: true,
 						},
