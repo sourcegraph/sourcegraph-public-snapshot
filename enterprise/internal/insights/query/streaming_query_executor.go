@@ -40,16 +40,17 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 	}
 }
 
-func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
-	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
+func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, string, error) {
+	// Consider this to be run as if for an all repo insight (i.e. fork:yes archived:yes).
+	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(true))
 	if err != nil {
-		return nil, errors.Wrap(err, "SelectRepoQuery")
+		return nil, "", errors.Wrap(err, "SelectRepoQuery")
 	}
 
 	decoder, selectRepoResult := streaming.SelectRepoDecoder()
 	err = streaming.Search(ctx, modified.String(), nil, decoder)
 	if err != nil {
-		return nil, errors.Wrap(err, "streaming.Search")
+		return nil, "", errors.Wrap(err, "streaming.Search")
 	}
 
 	repoResult := *selectRepoResult
@@ -57,13 +58,13 @@ func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query stri
 		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
 	}
 	if len(repoResult.Errors) > 0 {
-		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
+		return nil, "", errors.Errorf("streaming search: errors: %v", repoResult.Errors)
 	}
 	if len(repoResult.Alerts) > 0 {
-		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
+		return nil, "", errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
 	}
 
-	return repoResult.Repos, nil
+	return repoResult.Repos, modified.String(), nil
 }
 
 func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {

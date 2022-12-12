@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,9 +23,13 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 	if reason, invalid := isValidScopeQuery(plan); !invalid {
 		return nil, errors.New(reason)
 	}
-	// todo make new query
-	// todo run query match number
-	return &scopedInsightQueryPreviewResolver{query: args.Input.Query}, nil
+
+	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
+	repos, selectRepoQuery, err := executor.ExecuteRepoList(ctx, args.Input.Query)
+	if err != nil {
+		return nil, err
+	}
+	return &scopedInsightQueryPreviewResolver{query: selectRepoQuery, numberOfRepositories: int32(len(repos))}, nil
 }
 
 // Possible reasons that a scope query is invalid.
@@ -32,7 +38,7 @@ const containsDisallowedFilter = "the query cannot be used for scoping because i
 
 // isValidScopeQuery takes a query plan and returns whether the query is a valid scope query, that is it only contains
 // repo filters or boolean predicates.
-func isValidScopeQuery(plan query.Plan) (string, bool) {
+func isValidScopeQuery(plan searchquery.Plan) (string, bool) {
 	for _, basic := range plan {
 		if basic.Pattern != nil {
 			return fmt.Sprintf(containsPattern, basic.PatternString()), false
@@ -40,7 +46,7 @@ func isValidScopeQuery(plan query.Plan) (string, bool) {
 		for _, parameter := range basic.Parameters {
 			field := strings.ToLower(parameter.Field)
 			// Only allowed filters are: repo, fork, archived, count.
-			if field != query.FieldRepo && field != query.FieldFork && field != query.FieldArchived && field != query.FieldCount {
+			if field != searchquery.FieldRepo && field != searchquery.FieldFork && field != searchquery.FieldArchived && field != searchquery.FieldCount {
 				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
 			}
 		}
