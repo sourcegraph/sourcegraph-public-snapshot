@@ -18,8 +18,6 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -74,7 +72,6 @@ type Client struct {
 
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
-	logger           log.Logger
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
@@ -82,7 +79,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		if len(strings.Fields(c.URL)) == 0 {
 			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
 		} else {
-			c.endpoint = endpoint.New(c.logger, c.URL)
+			c.endpoint = endpoint.New(c.URL)
 		}
 	})
 	return c.endpoint.Get(string(repo))

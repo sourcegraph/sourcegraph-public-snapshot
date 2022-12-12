@@ -116,14 +116,14 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "largefiles",
 		conf: schema.SiteConfiguration{
-			SearchLargeFiles: []string{"**/*.jar", "*.bin"},
+			SearchLargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 		},
 		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:     1,
 			Name:       "repo-01",
 			Symbols:    true,
-			LargeFiles: []string{"**/*.jar", "*.bin"},
+			LargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},

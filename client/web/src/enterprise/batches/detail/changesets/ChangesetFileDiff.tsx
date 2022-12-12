@@ -43,9 +43,10 @@ export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [isNotImplemented, setIsNotImplemented] = useState<boolean>(false)
-    const [range, setRange] = useState<
-        (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
-    >()
+    const [range, setRange] =
+        useState<
+            (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
+        >()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(

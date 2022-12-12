@@ -64,16 +64,18 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     const [searchEventLogs, setSearchEventLogs] = useState<null | RecentSearchesPanelFragment['recentSearchesLogs']>(
         recentSearches?.recentSearchesLogs ?? null
     )
-    useEffect(() => setSearchEventLogs(recentSearches?.recentSearchesLogs ?? null), [
-        recentSearches?.recentSearchesLogs,
-    ])
+    useEffect(
+        () => setSearchEventLogs(recentSearches?.recentSearchesLogs ?? null),
+        [recentSearches?.recentSearchesLogs]
+    )
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-    const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
-        searchEventLogs,
-    ])
+    const processedResults = useMemo(
+        () => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)),
+        [searchEventLogs]
+    )
     const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
 
     useEffect(() => {
@@ -87,9 +89,10 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
         }
     }, [processedResults, telemetryService, itemsToLoad])
 
-    const logSearchClicked = useCallback(() => telemetryService.log('RecentSearchesPanelSearchClicked'), [
-        telemetryService,
-    ])
+    const logSearchClicked = useCallback(
+        () => telemetryService.log('RecentSearchesPanelSearchClicked'),
+        [telemetryService]
+    )
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (

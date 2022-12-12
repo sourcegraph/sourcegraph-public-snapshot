@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react'
 
-import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction, mdiLaptop } from '@mdi/js'
+import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from '@mdi/js'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
-import { useExperimentalFeatures } from '../../stores'
 
 import { EMPTY_FILE_BLOCK_INPUT, EMPTY_SYMBOL_BLOCK_INPUT } from './useCommandPaletteOptions'
 
@@ -19,7 +18,6 @@ interface NotebookAddBlockButtonsProps {
 export const NotebookAddBlockButtons: React.FunctionComponent<
     React.PropsWithChildren<NotebookAddBlockButtonsProps>
 > = ({ index, onAddBlock }) => {
-    const showComputeComponent = useExperimentalFeatures(features => features.showComputeComponent)
     const addBlock = useCallback((blockInput: BlockInput) => onAddBlock(index, blockInput), [index, onAddBlock])
     return (
         <>
@@ -63,19 +61,6 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     <Icon aria-hidden={true} size="sm" svgPath={mdiFunction} />
                 </Button>
             </Tooltip>
-            {showComputeComponent && (
-                <Tooltip content="Add compute block">
-                    <Button
-                        className={styles.addBlockButton}
-                        onClick={() => addBlock({ type: 'compute', input: '' })}
-                        data-testid="add-compute-block"
-                        aria-label="Add compute block"
-                    >
-                        {/* // TODO: Fix icon */}
-                        <Icon aria-hidden={true} size="sm" svgPath={mdiLaptop} />
-                    </Button>
-                </Tooltip>
-            )}
         </>
     )
 }

@@ -900,11 +900,7 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			sqlf.Sprintf("display_name ILIKE %s", query),
 		}
 		// Query looks like an ID
-		if id, err := strconv.Atoi(opt.Query); err == nil {
-			items = append(items, sqlf.Sprintf("id = %d", id))
-		}
-		// Query looks like a GraphQL ID
-		if id, ok := relayUnmarshalID(opt.Query); ok {
+		if id, ok := maybeQueryIsID(opt.Query); ok {
 			items = append(items, sqlf.Sprintf("id = %d", id))
 		}
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))

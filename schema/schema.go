@@ -1052,6 +1052,11 @@ type HTTPHeaderAuthProvider struct {
 	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
 }
+type Header struct {
+	Key       string `json:"key"`
+	Sensitive bool   `json:"sensitive,omitempty"`
+	Value     string `json:"value"`
+}
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
@@ -1681,6 +1686,8 @@ type SAMLAuthProvider struct {
 // SMTPServerConfig description: The SMTP server used to send transactional emails.
 // Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
+	// AdditionalHeaders description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
+	AdditionalHeaders []*Header `json:"additionalHeaders,omitempty"`
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
@@ -1957,7 +1964,7 @@ type SettingsExperimentalFeatures struct {
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
-	// ShowComputeComponent description: Enables display of compute components (currently Notebook blocks)
+	// ShowComputeComponent description: REMOVED.
 	ShowComputeComponent *bool `json:"showComputeComponent,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
@@ -1975,6 +1982,8 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
+	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
+	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }

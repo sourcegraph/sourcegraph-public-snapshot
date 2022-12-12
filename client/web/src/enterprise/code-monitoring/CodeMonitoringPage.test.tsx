@@ -28,17 +28,19 @@ const additionalProps = {
     isLightTheme: false,
 }
 
-const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
-    const result: ListCodeMonitors = {
-        nodes: mockCodeMonitorNodes.slice(0, count),
-        pageInfo: {
-            endCursor: `foo${count}`,
-            hasNextPage: count > 10,
-        },
-        totalCount: count,
+const generateMockFetchMonitors =
+    (count: number) =>
+    ({ id, first, after }: ListUserCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
     }
-    return of(result)
-}
 
 describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {

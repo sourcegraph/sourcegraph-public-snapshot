@@ -73,11 +73,13 @@ export const LegendItemPoint: FC<LegendItemPointProps> = props => {
     const active = propActive ?? contextActive
 
     return (
-        <span
-            aria-hidden={true}
-            /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: active ? color : 'var(--icon-muted)' }}
-            className={styles.legendMark}
-        />
+        <div className={styles.legendMarkContainer}>
+            <span
+                aria-hidden={true}
+                /* eslint-disable-next-line react/forbid-dom-props */
+                style={{ backgroundColor: active ? color : 'var(--icon-muted)' }}
+                className={styles.legendMark}
+            />
+        </div>
     )
 }

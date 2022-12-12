@@ -212,7 +212,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr.LogFields(fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.AddLogFields(fields)
 	event.Send()
