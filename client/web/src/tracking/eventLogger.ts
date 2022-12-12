@@ -313,7 +313,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getDeviceSessionID(): string {
         // read from the cookie, otherwise check the global variable
         let localDeviceSessionID = this.deviceSessionID
-        let deviceSessionID = this.getDeviceSessionID() || localDeviceSessionID
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || localDeviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
             deviceSessionID = this.getAnonymousUserID()
         }
@@ -363,7 +363,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     // Grabs and sets the deviceSessionID to renew the session expiration
     // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
-    private resetSessionCookieExpiration(): boolean {
+    private SessionCookieExpiration(): boolean {
         // Function getDeviceSessionID calls cookie.set() to refresh the expiry
         let localDeviceSessionID = this.deviceSessionID
         let deviceSessionID = this.getDeviceSessionID() || localDeviceSessionID
