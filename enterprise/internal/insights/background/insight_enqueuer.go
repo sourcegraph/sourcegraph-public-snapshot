@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -22,7 +21,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"insights_enqueuer",
