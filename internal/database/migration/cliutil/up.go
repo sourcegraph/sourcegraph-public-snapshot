@@ -94,7 +94,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return flagHelp(out, "supply a schema via -db")
 		}
 
-		r, err := setupRunner(ctx, factory, schemaNames...)
+		r, err := setupRunner(factory, schemaNames...)
 		if err != nil {
 			return err
 		}

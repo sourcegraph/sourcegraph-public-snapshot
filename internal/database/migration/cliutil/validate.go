@@ -26,7 +26,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")
 		}
-		r, err := setupRunner(ctx, factory, schemaNames...)
+		r, err := setupRunner(factory, schemaNames...)
 		if err != nil {
 			return err
 		}

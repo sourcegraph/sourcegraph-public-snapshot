@@ -42,7 +42,7 @@ func flagHelp(out *output.Output, message string, args ...any) error {
 }
 
 // setupRunner initializes and returns the runner associated witht the given schema.
-func setupRunner(ctx context.Context, factory RunnerFactory, schemaNames ...string) (Runner, error) {
+func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
 	runner, err := factory(schemaNames)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func setupRunner(ctx context.Context, factory RunnerFactory, schemaNames ...stri
 
 // setupStore initializes and returns the store associated witht the given schema.
 func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (Store, error) {
-	runner, err := setupRunner(ctx, factory, schemaName)
+	runner, err := setupRunner(factory, schemaName)
 	if err != nil {
 		return nil, err
 	}
