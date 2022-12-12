@@ -963,7 +963,8 @@ func Frontend() *monitoring.Dashboard {
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							Interpretation: `p95 response time to incoming webhook requests from code hosts.
+							Interpretation: `
+							p95 response time to incoming webhook requests from code hosts.
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
