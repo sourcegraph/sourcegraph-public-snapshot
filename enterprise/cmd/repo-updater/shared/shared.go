@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,7 +35,7 @@ func EnterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers map[string]debugserver.Dumper) {
+) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID) error) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		observationCtx.Logger.Info("enterprise edition")
@@ -55,20 +56,25 @@ func EnterpriseInit(
 	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
+	permsJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger.Scoped("PermissionSyncJobsStore", ""), db)
+	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID) error {
+		if authz.PermissionSyncingDisabled() {
+			return nil
+		}
+
+		opts := ossDB.PermissionSyncJobOpts{HighPriority: true}
+		return permsJobStore.CreateRepoSyncJob(ctx, int32(repo), opts)
+	}
+
 	workerStore := authz.MakeStore(observationCtx, db.Handle())
 	worker := authz.MakeWorker(ctx, workerStore, permsSyncer)
-	resetter := authz.MakeResetter(observationCtx.Logger, workerStore)
+	resetter := authz.MakeResetter(observationCtx, workerStore)
 
 	go goroutine.MonitorBackgroundRoutines(ctx, worker, resetter)
 
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
-	if server != nil {
-		server.PermsSyncer = permsSyncer
-	}
 
-	return map[string]debugserver.Dumper{
-		"repoPerms": permsSyncer,
-	}
+	return map[string]debugserver.Dumper{"repoPerms": permsSyncer}, enqueueRepoPermsJob
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.

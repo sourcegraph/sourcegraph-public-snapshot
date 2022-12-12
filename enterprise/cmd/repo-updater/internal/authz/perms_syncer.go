@@ -34,6 +34,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
+// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisabled() bool {
+	return globals.PermissionsUserMapping().Enabled ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		conf.Get().DisableAutoCodeHostSyncs
+}
+
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
@@ -95,106 +106,6 @@ func NewPermsSyncer(
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
 		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store")),
-	}
-}
-
-// ScheduleUsers schedules new permissions syncing requests for given users.
-// By design, all schedules triggered by user actions are in high priority.
-//
-// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32) {
-	if len(userIDs) == 0 {
-		return
-	} else if s.isDisabled() {
-		s.logger.Debug("PermsSyncer.ScheduleUsers.disabled", log.Int("userIDs", len(userIDs)))
-		return
-	}
-
-	users := make([]scheduledUser, len(userIDs))
-	for i := range userIDs {
-		users[i] = scheduledUser{
-			priority: priorityHigh,
-			userID:   userIDs[i],
-			options:  opts,
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
-			// as the request is most likely triggered by a user action from OSS namespace.
-		}
-	}
-
-	s.scheduleUsers(ctx, users...)
-	metricsItemsSyncScheduled.WithLabelValues("manualUsersTrigger", "high").Set(float64(len(userIDs)))
-	s.collectQueueSize()
-}
-
-func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
-	logger := s.logger.Scoped("scheduledUsers", "routine for adding users to a queue for sync")
-	for _, u := range users {
-		select {
-		case <-ctx.Done():
-			s.logger.Debug("canceled")
-			return
-		default:
-		}
-
-		updated := s.queue.enqueue(&requestMeta{
-			Priority:   u.priority,
-			Type:       requestTypeUser,
-			ID:         u.userID,
-			Options:    u.options,
-			NextSyncAt: u.nextSyncAt,
-			NoPerms:    u.noPerms,
-		})
-		logger.Debug("queue.enqueued", log.Int32("userID", u.userID), log.Bool("updated", updated))
-	}
-}
-
-// ScheduleRepos schedules new permissions syncing requests for given repositories.
-// By design, all schedules triggered by user actions are in high priority.
-//
-// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
-	numberOfRepos := len(repoIDs)
-	if numberOfRepos == 0 {
-		return
-	} else if s.isDisabled() {
-		s.logger.Debug("ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
-		return
-	}
-
-	repos := make([]scheduledRepo, numberOfRepos)
-	for i := range repoIDs {
-		repos[i] = scheduledRepo{
-			priority: priorityHigh,
-			repoID:   repoIDs[i],
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
-			// as the request is most likely triggered by a user action from OSS namespace.
-		}
-	}
-
-	scheduleReposCounter.Add(float64(numberOfRepos))
-	s.scheduleRepos(ctx, repos...)
-	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
-	s.collectQueueSize()
-}
-
-func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
-	logger := s.logger.Scoped("scheduleRepos", "")
-	for _, r := range repos {
-		select {
-		case <-ctx.Done():
-			logger.Debug("canceled")
-			return
-		default:
-		}
-
-		updated := s.queue.enqueue(&requestMeta{
-			Priority:   r.priority,
-			Type:       requestTypeRepo,
-			ID:         int32(r.repoID),
-			NextSyncAt: r.nextSyncAt,
-			NoPerms:    r.noPerms,
-		})
-		logger.Debug("queue.enqueued", log.Int32("repoID", int32(r.repoID)), log.Bool("updated", updated))
 	}
 }
 
@@ -1085,16 +996,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	return schedule, nil
 }
 
-// isDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func (s *PermsSyncer) isDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
-}
+func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 
 // runSchedule periodically looks for least updated records and schedule syncs
 // for them.

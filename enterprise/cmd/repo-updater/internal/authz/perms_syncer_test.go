@@ -55,26 +55,6 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_ScheduleRepos(t *testing.T) {
-	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	defer authz.SetProviders(true, nil)
-
-	licensing.MockCheckFeatureError("")
-	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-	s.ScheduleRepos(context.Background(), 1)
-
-	expHeap := []*syncRequest{
-		{requestMeta: &requestMeta{
-			Priority: priorityHigh,
-			Type:     requestTypeRepo,
-			ID:       1,
-		}, acquired: false, index: 0},
-	}
-	if diff := cmp.Diff(expHeap, s.queue.heap, cmpOpts); diff != "" {
-		t.Fatalf("heap: %v", diff)
-	}
-}
-
 type mockProvider struct {
 	id          int64
 	serviceType string

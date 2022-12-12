@@ -57,7 +57,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(observationCtx *observation.Context, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) map[string]debugserver.Dumper
+type EnterpriseInit func(observationCtx *observation.Context, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -163,8 +163,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
+	var enqueueRepoPerms func(context.Context, api.RepoID) error
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
+		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -177,7 +178,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, enqueueRepoPerms, server.ChangesetSyncRegistry)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -460,17 +461,12 @@ func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.Ha
 	}
 }
 
-type permsSyncer interface {
-	// ScheduleRepos schedules new permissions syncing requests for given repositories.
-	ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
-}
-
 func watchSyncer(
 	ctx context.Context,
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	permsSyncer permsSyncer,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -484,11 +480,15 @@ func watchSyncer(
 				sched.UpdateFromDiff(diff)
 			}
 
-			// PermsSyncer is only available in enterprise mode.
-			if permsSyncer != nil {
-				// Schedule a repo permissions sync for all private repos that were added or
-				// modified.
-				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
+			// Schedule a repo permissions sync for all private repos that were added or
+			// modified.
+			if enqueueRepoPermsJob != nil {
+				for _, repo := range getPrivateAddedOrModifiedRepos(diff) {
+					err := enqueueRepoPermsJob(ctx, repo)
+					if err != nil {
+						logger.Warn("failed to create repo sync job", log.Error(err), log.Int32("repo", int32(repo)))
+					}
+				}
 			}
 
 			// Similarly, changesetSyncer is only available in enterprise mode.

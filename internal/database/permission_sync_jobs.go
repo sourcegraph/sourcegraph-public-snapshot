@@ -82,7 +82,7 @@ INSERT INTO
 		repository_id,
 		user_id,
 		high_priority,
-		invalidate_caches,
+		invalidate_caches
 	)
 	VALUES (
 		%s,

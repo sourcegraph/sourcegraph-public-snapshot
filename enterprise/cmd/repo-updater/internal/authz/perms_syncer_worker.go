@@ -2,9 +2,11 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -32,6 +34,7 @@ type permsSyncerWorker struct {
 }
 
 func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, record *database.PermissionSyncJob) error {
+	fmt.Printf("handling record: %+v\n", record)
 	prio := priorityLow
 	if record.HighPriority {
 		prio = priorityHigh
@@ -83,9 +86,37 @@ func MakeWorker(ctx context.Context, workerStore dbworkerstore.Store[*database.P
 	})
 }
 
-func MakeResetter(logger log.Logger, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
-	return dbworker.NewResetter(logger, workerStore, dbworker.ResetterOptions{
+func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
+	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "permission_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
+		Metrics:  makeResetterMetrics(observationCtx, "permission_sync_job_worker"),
 	})
+}
+
+// TODO: this function is copy pasted and should be made reusable
+func makeResetterMetrics(observationCtx *observation.Context, workerName string) dbworker.ResetterMetrics {
+	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: fmt.Sprintf("src_%s_reset_failures_total", workerName),
+		Help: "The number of reset failures.",
+	})
+	observationCtx.Registerer.MustRegister(resetFailures)
+
+	resets := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: fmt.Sprintf("src_%s_resets_total", workerName),
+		Help: "The number of records reset.",
+	})
+	observationCtx.Registerer.MustRegister(resets)
+
+	errors := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: fmt.Sprintf("src_%s_reset_errors_total", workerName),
+		Help: "The number of errors that occur when resetting records.",
+	})
+	observationCtx.Registerer.MustRegister(errors)
+
+	return dbworker.ResetterMetrics{
+		RecordResets:        resets,
+		RecordResetFailures: resetFailures,
+		Errors:              errors,
+	}
 }
