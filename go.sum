@@ -629,8 +629,6 @@ github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2/go.mod h1:SqUrOPUn
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/dimchansky/utfbom v1.1.0/go.mod h1:rO41eb7gLfo8SF1jd9F8HplJm1Fewwi4mQvIirEdv+8=
 github.com/dimchansky/utfbom v1.1.1/go.mod h1:SxdoEBH5qIqFocHMyGOXVAybYJdr71b1Q/j0mACtrfE=
-github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663 h1:fctNkSsavbXpt8geFWZb8n+noCqS8MrOXRJ/YfdZ2dQ=
-github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663/go.mod h1:Kad2hux31v/IyD4Rf4wAwIyK48995rs3qAl9IUAhc2k=
 github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b h1:ou+y/Ko923eBli6zJ/TeB2iH38PmytV2UkHJnVdaPtU=
 github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b/go.mod h1:N8Wvr/4EfOTcDc6vF1l5OFe0Mw+rdYh+WtLrS69sjTU=
 github.com/djherbis/buffer v1.1.0/go.mod h1:VwN8VdFkMY0DCALdY8o00d3IZ6Amz/UNVMWcSaJT44o=
