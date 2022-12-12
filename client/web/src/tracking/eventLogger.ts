@@ -149,7 +149,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration();
+        this.resetSessionCookieExpiration()
 
         if (window.context?.userAgentIsBot || !pageTitle) {
             return
@@ -165,7 +165,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration();
+        this.resetSessionCookieExpiration()
 
         if (window.context?.userAgentIsBot || !eventName) {
             return
@@ -187,7 +187,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration();
+        this.resetSessionCookieExpiration()
 
         for (const listener of this.listeners) {
             listener(eventLabel)
@@ -364,8 +364,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private resetSessionCookieExpiration(): boolean {
         // Function getDeviceSessionID calls cookie.set() to refresh the expiry
         let deviceSessionID = this.getDeviceSessionID()
-        if(!deviceSessionID || deviceSessionID == '')
-            return false
+        if (!deviceSessionID || deviceSessionID == '') return false
         return true
     }
 
