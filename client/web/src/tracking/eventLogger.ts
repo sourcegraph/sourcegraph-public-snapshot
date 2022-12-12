@@ -313,7 +313,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getDeviceSessionID(): string {
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
         if (!deviceSessionID || deviceSessionID === '') {
-            deviceSessionID = uuid.v4()
+            deviceSessionID = this.getAnonymousUserID()
         }
 
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
