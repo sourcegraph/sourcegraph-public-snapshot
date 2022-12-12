@@ -1194,7 +1194,7 @@ func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedB
 		if v2BackfillEnabled {
 			return v2HistoricFill(ctx, deprecateJustInTime, series, tx, scheduler)
 		}
-		return v1HistoricFill(ctx, deprecateJustInTime, series, tx, scopedBackfiller, insightEnqueuer)
+		return v1HistoricFill(ctx, deprecateJustInTime, series, tx, scopedBackfiller)
 	}
 }
 
@@ -1229,7 +1229,7 @@ func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.
 
 }
 
-func v1HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, insightEnqueuer *background.InsightEnqueuer) error {
+func v1HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller) error {
 	if !deprecateJustInTime || len(series.Repositories) == 0 {
 		return nil
 	}
