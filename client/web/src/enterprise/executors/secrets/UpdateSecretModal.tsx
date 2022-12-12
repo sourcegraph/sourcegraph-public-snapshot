@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretFields } from '../../../graphql-operations'
@@ -59,6 +59,11 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
                 Executor secrets are available to executor jobs as environment variables. They will never appear in
                 logs.
             </Text>
+            {secret.key === 'DOCKER_AUTH_CONFIG' && (
+                <Alert variant="info" className="mt-2">
+                    This secret value will be used to configure docker client authentication with private registries.
+                </Alert>
+            )}
 
             {error && <ErrorAlert error={error} />}
 

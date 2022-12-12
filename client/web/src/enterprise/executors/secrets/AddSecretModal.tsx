@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
@@ -85,11 +85,17 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                         message={
                             <>
                                 Must be uppercase characters, digits and underscores only. Must start with an uppercase
-                                character.
+                                character. DOCKER_AUTH_CONFIG will be used to authenticate with private registries.
                             </>
                         }
                         label="Key"
                     />
+                    {key === 'DOCKER_AUTH_CONFIG' && (
+                        <Alert variant="info" className="mt-2">
+                            This secret value will be used to configure docker client authentication with private
+                            registries.
+                        </Alert>
+                    )}
                 </div>
                 <div className="form-group">
                     <Input
