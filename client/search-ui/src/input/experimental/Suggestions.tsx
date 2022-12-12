@@ -1,6 +1,6 @@
-import React, { MouseEvent, useMemo, useState, useCallback, useEffect } from 'react'
+import React, { MouseEvent, useMemo, useState, useCallback } from 'react'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components'
 
@@ -17,19 +17,6 @@ function getNote(option: Option): string {
         case 'command':
             return option.note ?? ''
     }
-}
-
-function useWindowHeight(): number {
-    const [height, setHeight] = useState(window.innerHeight)
-
-    useEffect(() => {
-        const handler = (): void => setHeight(window.innerHeight)
-        window.addEventListener('resize', handler)
-
-        return () => window.removeEventListener('resize', handler)
-    }, [])
-
-    return height
 }
 
 interface SuggesionsProps {
@@ -53,6 +40,8 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
         (event: MouseEvent) => {
             const match = (event.target as HTMLElement).closest('li[role="row"]')?.id.match(/\d+x\d+/)
             if (match) {
+                // Extracts the group and row index from the elements ID to pass
+                // the right option value to the callback.
                 const [group, option] = match[0].split('x')
                 onSelect(results[+group].options[+option])
             }
@@ -60,8 +49,10 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
         [onSelect, results]
     )
 
-    const windowHeight = useWindowHeight()
+    const { height: windowHeight } = useWindowSize()
     const maxHeight = useMemo(
+        // This is using an arbitrary 20px "margin" between the suggestions box
+        // and the window border
         () => (container ? `${windowHeight - container.getBoundingClientRect().top - 20}px` : 'auto'),
         [container, windowHeight]
     )

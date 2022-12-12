@@ -6,6 +6,9 @@ import { EditorView, keymap, placeholder as placeholderExtension } from '@codemi
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { History } from 'history'
+import { useHistory } from 'react-router'
+import useResizeObserver from 'use-resize-observer'
+import * as uuid from 'uuid'
 
 import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
@@ -18,27 +21,6 @@ import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-h
 import { editorConfigFacet, Source, suggestions } from './suggestions'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
-
-// Helper function to observe the current size of an element. This is used
-// to create an appropriately sized placeholder element.
-function useResizeObserver(node: HTMLElement | null): { height: number } {
-    const [height, setHeight] = useState<number>(0)
-
-    useEffect(() => {
-        let resizeObserver: ResizeObserver | null = null
-
-        if (node) {
-            resizeObserver = new ResizeObserver(() => {
-                setHeight(node.clientHeight)
-            })
-            resizeObserver.observe(node)
-        }
-
-        return node ? () => resizeObserver?.unobserve(node) : undefined
-    }, [node])
-
-    return { height }
-}
 
 interface ExtensionConfig {
     popoverID: string
@@ -203,12 +185,12 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
     patternType,
     placeholder,
     suggestionSource,
-    history,
 }) => {
+    const history = useHistory()
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
-    const [focusContainer, setFocusContainer] = useState<HTMLDivElement | null>(null)
+    const focusContainerRef = useRef<HTMLDivElement | null>(null)
     const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
-    const popoverID = useMemo(() => `searchinput-popover-${Math.floor(Math.random() * 2e6).toString(36)}`, [])
+    const popoverID = useMemo(() => uuid.v4(), [])
 
     // Wraps the onSubmit prop because that one changes whenever the input
     // value changes causing unnecessary reconfiguration of the extensions
@@ -267,7 +249,13 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
         editorRef.current?.contentDOM.focus()
     }, [editorRef])
 
-    const { height: spacerHeight } = useResizeObserver(focusContainer)
+    const clear = useCallback(() => {
+        onChange({ query: '' })
+    }, [onChange])
+
+    const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
+        ref: focusContainerRef,
+    })
 
     const hasValue = queryState.query.length > 0
 
@@ -276,19 +264,19 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
             {/* eslint-disable-next-line react/forbid-dom-props */}
             <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
             <div className={styles.root}>
-                <div ref={setFocusContainer} className={styles.focusContainer}>
+                <div ref={spacerRef} className={styles.focusContainer}>
                     {/* eslint-disable-next-line react/forbid-dom-props */}
                     <div ref={setContainer} style={{ display: 'contents' }} />
                     <button
                         type="button"
                         className={classNames({ [styles.showWhenFocused]: hasValue })}
-                        onClick={() => onChange({ query: '' })}
+                        onClick={clear}
                     >
                         <Icon svgPath={mdiClose} aria-label="Clear" />
                     </button>
                     <button
                         type="button"
-                        className={`${styles.globalShortcut} ${styles.hideWhenFocused}`}
+                        className={classNames(styles.globalShortcut, styles.hideWhenFocused)}
                         onClick={focus}
                     >
                         /
