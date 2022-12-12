@@ -52,7 +52,7 @@ func productLicenseByDBID(ctx context.Context, logger log.Logger, db database.DB
 
 	// 🚨 SECURITY: Only site admins and the license's subscription's account's user may view a
 	// product license.
-	sub, err := productSubscriptionByDBID(ctx, logger, db, v.ProductSubscriptionID)
+	sub, err := productSubscriptionByDBID(ctx, db, v.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func unmarshalProductLicenseID(id graphql.ID) (productLicenseID string, err erro
 }
 
 func (r *productLicense) Subscription(ctx context.Context) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByDBID(ctx, r.logger, r.db, r.v.ProductSubscriptionID)
+	return productSubscriptionByDBID(ctx, r.db, r.v.ProductSubscriptionID)
 }
 
 func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
