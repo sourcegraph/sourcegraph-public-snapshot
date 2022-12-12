@@ -469,6 +469,8 @@ replace (
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
 	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
+	// Pending: https://github.com/crewjam/saml/pull/450
+	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
@@ -489,5 +491,3 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
-
-replace github.com/crewjam/saml v0.0.0-00010101000000-000000000000 => github.com/crewjam/saml v0.4.9

@@ -586,8 +586,6 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/creack/pty v1.1.11 h1:07n33Z8lZxZ2qwegKbObQohDhXDQxiMMz1NOUGYlesw=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/crewjam/httperr v0.2.0/go.mod h1:Jlz+Sg/XqBQhyMjdDiC+GNNRzZTD7x39Gu3pglZ5oH4=
-github.com/crewjam/saml v0.4.9 h1:X2jDv4dv3IvfT9t+RhADavzNFAcq3fVxzTCIH3G605U=
-github.com/crewjam/saml v0.4.9/go.mod h1:9Zh6dWPtB3MSzTRt8fIFH60Z351QQ+s7hCU3J/tTlA4=
 github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a h1:13Ix7LoUJ0Yu5F+s6Aw8Afc8x+n98RSJNGHpxEbcYus=
 github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a/go.mod h1:ToeiAGYJK2VuiGw0BJpoiZqaY3GootbPOVPaNVL+A3M=
 github.com/cyphar/filepath-securejoin v0.2.2/go.mod h1:FpkQEhXnPnOthhzymB7CGsFk2G9VLXONKD9G7QGMM+4=
@@ -1990,7 +1988,6 @@ github.com/rs/zerolog v1.15.0/go.mod h1:xYTKnLHcpfU2225ny5qZjxnj9NvkumZYjJHlAThC
 github.com/rubiojr/go-vhd v0.0.0-20160810183302-0bfd3b39853c/go.mod h1:DM5xW0nvfNNm2uytzsvhI3OnX8uzaRAg8UX/CnDqbto=
 github.com/russellhaering/gosaml2 v0.7.0 h1:gMHBQVGFOAHd7lXC0hoYXg3BcR80+4XgTxVMwTV1aLg=
 github.com/russellhaering/gosaml2 v0.7.0/go.mod h1:byViER/1YPUa0Puj9ROZblpoq2jsE7h/CJmitzX0geU=
-github.com/russellhaering/goxmldsig v1.1.1/go.mod h1:gM4MDENBQf7M+V824SGfyIUVFWydB7n0KkEubVJl+Tw=
 github.com/russellhaering/goxmldsig v1.2.0 h1:Y6GTTc9Un5hCxSzVz4UIWQ/zuVwDvzJk80guqzwx6Vg=
 github.com/russellhaering/goxmldsig v1.2.0/go.mod h1:gM4MDENBQf7M+V824SGfyIUVFWydB7n0KkEubVJl+Tw=
 github.com/russross/blackfriday v1.5.2 h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=
@@ -2107,6 +2104,8 @@ github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff h1:u/Lf5xLBDYf
 github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff/go.mod h1:DpO7NCSeqQdr23nU0yapjR3jGx2OdO/PihPRG+/PV0Y=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
 github.com/sourcegraph/run v0.9.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
+github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d h1:S9aS/W4oJ5gSUJuTv94Gurm/3vh/qJATjfkEUrrnszU=
+github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d/go.mod h1:u7YOkwRhFN4kKxzfDZmt7j30h/TasN+bgq+u470cbuw=
 github.com/sourcegraph/scip v0.2.3 h1:6nRsTlNTELn+1V7JxLrDVbBpb9H1gAbUF48N7x5B8Y4=
 github.com/sourcegraph/scip v0.2.3/go.mod h1:3D/RLCMvrrSam85RtFmC67SE/jhV9++hpCR5MTDzbA0=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
