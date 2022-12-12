@@ -130,11 +130,13 @@ function fuzzySearch(
     }
 }
 
-const Result: React.FC<{ file: HighlightedLinkProps; isSelected: boolean; onClickItem: () => void }> = ({
-    file,
-    isSelected,
-    onClickItem,
-}) => {
+interface ResultProps {
+    file: HighlightedLinkProps
+    isSelected: boolean
+    onClickItem: () => void
+}
+
+const Result: React.FC<ResultProps> = ({ file, isSelected, onClickItem }) => {
     const ref = useRef<HTMLLIElement>(null)
 
     useEffect(() => {
