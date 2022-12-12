@@ -1065,6 +1065,9 @@ export const useWebhookLogsConnection = (
             const { webhookLogs } = dataOrThrowErrors(result)
             return webhookLogs
         },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
     })
 
 export const CREATE_WEBHOOK_QUERY = gql`

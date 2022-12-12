@@ -24,7 +24,8 @@ type webhookEventHandlers map[string][]WebhookHandler
 // and routing to any registered WebhookHandlers, events are routed by their code host kind
 // and event type.
 type WebhookRouter struct {
-	DB database.DB
+	Logger log.Logger
+	DB     database.DB
 
 	mu sync.RWMutex
 	// Mapped by codeHostKind: webhookEvent: handlers
@@ -149,10 +150,13 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
-	g := errgroup.Group{}
+
 	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
-		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
+		wr.Logger.Warn("No handler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
+		return nil
 	}
+
+	g := errgroup.Group{}
 	for _, handler := range wr.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
@@ -161,17 +165,4 @@ func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHos
 		})
 	}
 	return g.Wait()
-}
-
-type eventTypeNotFoundError struct {
-	eventType    string
-	codeHostKind string
-}
-
-func (e eventTypeNotFoundError) NotFound() bool {
-	return true
-}
-
-func (e eventTypeNotFoundError) Error() string {
-	return fmt.Sprintf("event type %s not supported for code host kind %s", e.eventType, e.codeHostKind)
 }

@@ -4,7 +4,7 @@ Date: 2022-11-22
 
 ## Context
 
-Microsoft maintains a [fork og Git](https://github.com/microsoft/git#why-is-this-fork-needed) which is aiming to improve performance on large repositories, typically on _mono repos_. 
+Microsoft maintains a [fork of Git](https://github.com/microsoft/git#why-is-this-fork-needed) which is aiming to improve performance on large repositories, typically on _monorepos_. 
 The Repository Management team wanted to explore this route as a possible way to improve performance for customers with very large repositories. 
 
 The tests were performed in two separate contexts. First inside of a locally built gitserver docker container, with no other running containers, and secondly on the Scaletesting Instance, through K6. 

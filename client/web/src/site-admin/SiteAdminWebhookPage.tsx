@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Container, H2, H5, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, H2, H5, Link, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -182,4 +182,12 @@ const Header: FC = () => (
     </>
 )
 
-const EmptyList: FC = () => <div className="m-4 w-100 text-center">No webhook logs found</div>
+const EmptyList: FC = () => (
+    <div className="m-4 w-100 text-center text-muted">
+        No requests received yet. Be sure to{' '}
+        <Link to="/help/admin/config/webhooks#configuring-webhooks-on-the-code-host">
+            configure the webhook on the code host
+        </Link>
+        .
+    </div>
+)
