@@ -191,11 +191,7 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
 		return -1, false
 	}
-	if ttl < 0 {
-		return -1, false
-	}
-
-	return ttl, true
+	return ttl, ttl >= 0
 }
 
 // DeleteMulti deletes the given keys.
