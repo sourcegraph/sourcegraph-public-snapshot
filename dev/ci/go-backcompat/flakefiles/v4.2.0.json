@@ -56,17 +56,12 @@
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/webhooks",
-    "prefix": "WebhooksIntegration/WebhooksIntegration/GitHubWebhook",
-    "reason": "Test was having incomplete data, fails now that constraints are in place"
-  },
-  {
-    "path": "enterprise/cmd/frontend/internal/batches/webhooks",
-    "prefix": "WebhooksIntegration/WebhooksIntegration/BitbucketServerWebhook",
+    "prefix": "WebhooksIntegration",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "ChangesetApplyPreviewResolverWithPublicationStates/already_published_changeset",
+    "prefix": "ChangesetApplyPreviewResolverWithPublicationStates",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
@@ -76,7 +71,7 @@
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "RepositoryPermissions/BatchChange_and_changesets",
+    "prefix": "RepositoryPermissions",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
   }
 ]
