@@ -72,7 +72,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		// same as not setting the flag.
 		afterCursor, err := r.afterCursorAsInt()
 		if err != nil {
-
+			return []*gitdomain.Commit{}, errors.Wrap(err, "failed to parse afterCursor")
 		}
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{

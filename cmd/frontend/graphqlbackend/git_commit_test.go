@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -238,6 +239,46 @@ func TestGitCommitAncestors(t *testing.T) {
 	}()
 
 	RunTests(t, []*Test{
+		// Invalid value for afterCursor.
+		// Expect errors and no result.
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: "n") {
+						nodes {
+						  id
+						  oid
+						  abbreviatedOID
+						}
+						pageInfo {
+						  endCursor
+						  hasNextPage
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
+					Path:    []any{string("repository"), string("commit"), string("ancestors"), string("nodes")},
+				},
+				{
+					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
+					Path:    []any{string("repository"), string("commit"), string("ancestors"), string("pageInfo")},
+				},
+			},
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": null
+				  }
+				}`,
+		},
+
 		// Start at commit c1.
 		// Expect c1 and c2 in the nodes. 2 in the endCursor.
 		{
