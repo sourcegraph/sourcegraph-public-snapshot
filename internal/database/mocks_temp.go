@@ -6310,6 +6310,11 @@ func (m *MockDB) Orgs() OrgStore {
 	return r0
 }
 
+// TODO
+func (m *MockDB) Ownerships() OwnershipStore {
+	return nil
+}
+
 // SetDefaultHook sets function that is called when the Orgs method of the
 // parent MockDB instance is invoked and the hook queue is empty.
 func (f *DBOrgsFunc) SetDefaultHook(hook func() OrgStore) {
