@@ -49,20 +49,25 @@ const searchKeybindingTooltip = (
     </Tooltip>
 )
 
+// Match 'from' position -> 1-based serial number (index) of this match in the document.
+type SearchMatches = Map<number, number>
+
 class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
 
-    private state: { searchQuery: SearchQuery; overrideBrowserSearch: boolean; history: History }
+    private state: {
+        searchQuery: SearchQuery
+        overrideBrowserSearch: boolean
+        history: History
+        matches: SearchMatches
+        // Currently selected 1-based match index.
+        currentMatchIndex: number | null
+    }
     private root: Root | null = null
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
-
-    // Search match 'from' position -> 1-based serial number (index) of this match in the document.
-    private matches: Map<number, number> = new Map()
-    // Currently selected 1-based match index.
-    private currentMatchIndex = -1
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
@@ -74,6 +79,8 @@ class SearchPanel implements Panel {
             searchQuery: getSearchQuery(this.view.state),
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
             history: this.view.state.facet(blobPropsFacet).history,
+            matches: this.view.state.field(searchMatches),
+            currentMatchIndex: this.view.state.field(currentSearchMatchIndex),
         }
 
         this.subscriptions.add(
@@ -101,18 +108,27 @@ class SearchPanel implements Panel {
             newState = { ...newState, history }
         }
 
+        const currentMatchIndex = update.state.field(currentSearchMatchIndex)
+        if (currentMatchIndex !== this.state.currentMatchIndex) {
+            newState = { ...newState, currentMatchIndex }
+        }
+
+        const matches = update.state.field(searchMatches)
+        if (matches !== this.state.matches) {
+            newState = { ...newState, matches }
+        }
+
         if (newState !== this.state) {
             this.state = newState
             this.render({
                 ...newState,
-                currentMatchIndex: this.currentMatchIndex,
-                totalMatches: this.matches.size,
+                totalMatches: this.state.matches.size,
             })
         }
     }
 
     public mount(): void {
-        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex, totalMatches: this.matches.size })
+        this.render({ ...this.state, totalMatches: this.state.matches.size })
     }
 
     public destroy(): void {
@@ -129,7 +145,7 @@ class SearchPanel implements Panel {
         searchQuery: SearchQuery
         overrideBrowserSearch: boolean
         history: History
-        currentMatchIndex: number
+        currentMatchIndex: number | null
         totalMatches: number
     }): void {
         if (!this.root) {
@@ -200,7 +216,7 @@ class SearchPanel implements Panel {
                 {searchQuery.search ? (
                     <div>
                         <Text className="m-0">
-                            {currentMatchIndex > 0 && totalMatches > 0
+                            {currentMatchIndex !== null && totalMatches > 0
                                 ? `${currentMatchIndex} / ${totalMatches}`
                                 : '0 results'}
                         </Text>
@@ -227,10 +243,10 @@ class SearchPanel implements Panel {
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
 
-    private updateSelectedSearchMatch = ({ from }: { from: number }): void => {
-        this.currentMatchIndex = this.matches.get(from) ?? -1
-        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex, totalMatches: this.matches.size })
-    }
+    private updateSelectedSearchMatch = ({ from }: { from: number }): void =>
+        this.view.dispatch({
+            effects: setCurrentSearchMatchIndex.of(this.state.matches.get(from) ?? null),
+        })
 
     private findNext = (): void => {
         findNext(this.view)
@@ -260,22 +276,22 @@ class SearchPanel implements Panel {
     }
 
     private calculateMatches = (query: SearchQuery): void => {
-        // clear search matches data
-        this.matches.clear()
-        this.currentMatchIndex = -1
-
+        const newSearchMatches: SearchMatches = new Map()
         const regex = new RegExp(
             query.regexp ? query.search : escapeRegExp(query.search),
             `gm${query.caseSensitive ? '' : 'i'}`
         )
-        // 1-based index of the current match
-        let index = 1
         const matches = [...this.view.state.facet(blobPropsFacet).blobInfo.content.matchAll(regex)]
-        for (const match of matches) {
+        for (let idx = 0; idx < matches.length; idx++) {
+            const match = matches[idx]
             if (match.index !== undefined) {
-                this.matches.set(match.index, index++)
+                newSearchMatches.set(match.index, idx + 1)
             }
         }
+
+        this.view.dispatch({
+            effects: [setSearchMatches.of(newSearchMatches), setCurrentSearchMatchIndex.of(null)],
+        })
     }
 
     private commit = ({
@@ -378,6 +394,8 @@ interface SearchConfig {
 }
 
 const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
+const [searchMatches, , setSearchMatches] = createUpdateableField<SearchMatches>(new Map())
+const [currentSearchMatchIndex, , setCurrentSearchMatchIndex] = createUpdateableField<number | null>(null)
 
 export function search(config: SearchConfig): Extension {
     const keymapCompartment = new Compartment()
@@ -390,6 +408,8 @@ export function search(config: SearchConfig): Extension {
     }
 
     return [
+        searchMatches,
+        currentSearchMatchIndex,
         overrideBrowserFindInPageShortcut.init(() => config.overrideBrowserFindInPageShortcut),
         EditorView.updateListener.of(update => {
             const override = update.state.field(overrideBrowserFindInPageShortcut)
