@@ -20,7 +20,7 @@ import (
 const resultsPerResultChunk = 512
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleDataChans, error) {
+func groupBundleData(ctx context.Context, state *State) *precise.GroupedBundleDataChans {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData) + len(state.ImplementationData)
 	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
 
@@ -42,7 +42,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 		Implementations:   implementationRows,
 		Packages:          packages,
 		PackageReferences: packageReferences,
-	}, nil
+	}
 }
 
 func serializeBundleDocuments(ctx context.Context, state *State) chan precise.KeyedDocumentData {
