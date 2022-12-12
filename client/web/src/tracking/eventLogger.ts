@@ -79,6 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
+    private deviceSessionID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
@@ -380,16 +381,24 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Always set to renew expiry and migrate from localStorage
         cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID, this.cookieSettings)
         localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
+
         if (cohortID) {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
         let deviceID = cookies.get(DEVICE_ID_KEY)
-        if (!deviceID) {
+        if (!deviceID || deviceID === '') {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
             deviceID = anonymousUserID
-            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
+        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
+
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        if (!deviceSessionID || deviceSessionID === '') {
+            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
+            deviceID = anonymousUserID
+        }
+        cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
 
         let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
         if (!originalReferrer) {
@@ -409,6 +418,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+        this.deviceSessionID = deviceSessionID
         this.originalReferrer = originalReferrer
         this.sessionReferrer = sessionReferrer
         this.sessionFirstURL = sessionFirstURL
