@@ -49,9 +49,9 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <span key={key} className="match-highlight a11y-ignore">
+                <mark key={key} className="px-0">
                     {text}
-                </span>
+                </mark>
             )
         } else {
             spans.push(<span key={key}>{text}</span>)
@@ -89,7 +89,7 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
 
     return (
         <Link
-            className={classNames('d-flex align-items-center w-100 h-100 text-decoration-none', styles.link)}
+            className={classNames('d-inline-block w-100 h-100 text-decoration-none', styles.link)}
             to={url || `/commands/${props.text}`}
             onClick={handleClick}
         >
