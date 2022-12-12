@@ -79,7 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
-    private deviceSessionID?: string
+    private deviceSessionID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
@@ -311,7 +311,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getDeviceSessionID(): string {
-        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        // read from the cookie, otherwise check the global variable
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
             deviceSessionID = this.getAnonymousUserID()
         }
