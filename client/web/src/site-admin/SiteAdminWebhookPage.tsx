@@ -7,7 +7,18 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Container, H2, H5, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    ButtonLink,
+    Container,
+    H2,
+    H4,
+    H5,
+    LoadingSpinner,
+    PageHeader,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -131,6 +142,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 />
             )}
 
+            {connection?.nodes?.length === 0 && (
+                <Alert className="mt-2" variant="warning">
+                    <H4>Webhook receiver created</H4>
+                    You must create a webhook on the external code host using the endpoint below to enable this
+                    functionality.
+                </Alert>
+            )}
             <H2>Information</H2>
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <WebhookInformation webhook={webhookData.node as WebhookFields} />
