@@ -1,12 +1,13 @@
 .container {
     display: flex;
+    align-items: center;
     min-width: 0;
     position: relative;
     padding: 0.375rem 0.75rem !important;
     background-image: none !important;
 
     .monaco-field {
-        background-position: right 0.75rem top 0.175rem !important;
+        background-position: right 0.5rem top 0.1rem !important;
     }
 }
 
