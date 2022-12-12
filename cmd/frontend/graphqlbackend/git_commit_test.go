@@ -182,14 +182,10 @@ func TestGitCommitFileNames(t *testing.T) {
 }
 
 func TestGitCommitAncestors(t *testing.T) {
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn(nil, nil)
-
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
 	db := database.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
