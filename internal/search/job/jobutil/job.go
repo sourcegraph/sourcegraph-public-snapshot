@@ -447,7 +447,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-						repoFilterPrefix := strings.SplitN(repoFilter, "@", 2)
+						repoFilterPrefix := strings.Split(repoFilter, "@")
 						if repoFilterPrefix[0] != "" {
 							// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
 							// above, regexp meta characters in literal patterns are already escaped before the
