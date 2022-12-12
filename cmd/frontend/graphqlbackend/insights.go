@@ -22,7 +22,7 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	ValidateScopedInsightQuery(ctx context.Context, args ScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
+	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -479,11 +479,15 @@ type GenericIncompleteDatapointAlert interface {
 	Reason() string
 }
 
-type ScopedInsightQueryArgs struct {
+type ValidateScopedInsightQueryArgs struct {
+	Input ValidateScopedInsightQueryInput
+}
+
+type ValidateScopedInsightQueryInput struct {
 	Query string
 }
 
 type ScopedInsightQueryPayloadResolver interface {
-	NumberOfRepositories() int32
-	Query() string
+	NumberOfRepositories(ctx context.Context) int32
+	Query(ctx context.Context) string
 }

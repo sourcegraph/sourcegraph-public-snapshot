@@ -1233,13 +1233,13 @@ extend type Query {
     """
     Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
     """
-    validateScopedInsightQuery(input: ScopedInsightQueryInput!): ScopedInsightQueryPayload!
+    validateScopedInsightQuery(input: ValidateScopedInsightQueryInput!): ScopedInsightQueryPayload!
 }
 
 """
 Input object for a scoped insight query.
 """
-input ScopedInsightQueryInput {
+input ValidateScopedInsightQueryInput {
     """
     Query to run for finding insight scope. Currently limited to repo filters and boolean predicates only.
     """
