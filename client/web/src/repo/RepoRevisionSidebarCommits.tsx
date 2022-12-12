@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link } from '@sourcegraph/wildcard'
@@ -17,7 +16,6 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
-
 import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
 import { replaceRevisionInURL } from '../util/url'
 
@@ -109,7 +107,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
             {connection &&
-                connection.nodes.map(node => (
+                connection?.nodes.map(node => (
                     <CommitNode
                         key={node.id}
                         node={node}
