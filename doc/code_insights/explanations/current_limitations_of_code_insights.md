@@ -6,6 +6,14 @@ If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph
 
 _Limitations that are no longer current are [documented at the bottom](#older-versions-limitations) for the benefit of customers who have not yet upgraded._
 
+## Insight chart position and size do not persist
+
+You can resize and reorder charts on the dashboard for the purpose of taking a screenshot or presenting information, but that order will revert on a page refresh.
+
+If the ordering of insights is important, you can remove and then re-add the insights in the order you'd like via the add/remove insights to dashboard flow. 
+
+If the size is important, you can use the single-insight view page to consistently view an insight at a larger size, reachable by clicking the insight title or from the context three dots menu on the insight card under "Get shareable link". 
+
 ## Performance speed considerations for a data series running over all repositories
 
 To accurately return historical data for insights running over all of your repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:

@@ -109,7 +109,7 @@ export const InsightIncompleteAlert: FC<InsightIncompleteAlertProps> = props => 
 
             <PopoverContent position="bottom" className={classNames(styles.alertPopover, styles.alertPopoverSmall)}>
                 {getAlertMessage(alert)}{' '}
-                <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
+                <Link to="/help/code_insights/references/incomplete_data_points" target="_blank" rel="noopener">
                     Troubleshoot
                 </Link>
             </PopoverContent>
@@ -128,7 +128,9 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
                 </>
             )
         case 'GenericIncompleteDatapointAlert':
-            return alert.reason
+            // Since BE doesn't handle insight level alerts properly we can't use
+            // alert.reason message here but hardcoded on the client error message.
+            return 'Some points of this data series encountered an error. Results may be incomplete.'
     }
 }
 
@@ -161,7 +163,7 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
             >
                 <Text className={styles.alertDescription}>
                     Results for some points of this data series may be incomplete.{' '}
-                    <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights/references/incomplete_data_points" target="_blank" rel="noopener">
                         Troubleshoot
                     </Link>
                 </Text>

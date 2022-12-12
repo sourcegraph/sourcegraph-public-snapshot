@@ -3365,6 +3365,12 @@ COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
+CREATE TABLE role_permissions (
+    role_id integer NOT NULL,
+    permission_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE roles (
     id integer NOT NULL,
     name text NOT NULL,
@@ -3686,6 +3692,12 @@ CREATE TABLE user_public_repos (
     user_id integer NOT NULL,
     repo_uri text NOT NULL,
     repo_id integer NOT NULL
+);
+
+CREATE TABLE user_roles (
+    user_id integer NOT NULL,
+    role_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE users_id_seq
@@ -4262,6 +4274,9 @@ ALTER TABLE ONLY repo_permissions
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
+
 ALTER TABLE ONLY roles
     ADD CONSTRAINT roles_name UNIQUE (name);
 
@@ -4321,6 +4336,9 @@ ALTER TABLE ONLY user_permissions
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_user_id_repo_id_key UNIQUE (user_id, repo_id);
+
+ALTER TABLE ONLY user_roles
+    ADD CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, role_id);
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
@@ -5096,6 +5114,12 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY role_permissions
+    ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
+
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);
 
@@ -5161,6 +5185,12 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY user_roles
+    ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY user_roles
+    ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
