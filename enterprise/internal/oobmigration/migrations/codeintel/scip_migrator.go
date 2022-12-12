@@ -474,7 +474,6 @@ func (s *scipWriter) Write(
 	return nil
 }
 
-// TODO - document
 const DocumentsBatchSize = 256
 const MaxBatchPayloadSum = 1024 * 1024 * 32
 
