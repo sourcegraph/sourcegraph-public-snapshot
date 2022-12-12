@@ -71,8 +71,6 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
-const deviceSessionID = ''
-
 export class EventLogger implements TelemetryService, SharedEventLogger {
     private hasStrippedQueryParameters = false
 
@@ -81,6 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
+    private deviceSessionID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
@@ -365,7 +364,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
     private resetSessionCookieExpiration(): boolean {
         // Function getDeviceSessionID calls cookie.set() to refresh the expiry
-        let deviceSessionID = this.getDeviceSessionID()
+        let deviceSessionID = this.getDeviceSessionID() || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
             return false
         }
@@ -406,7 +405,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         }
         cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
 
-        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
             deviceSessionID = anonymousUserID
@@ -502,4 +501,26 @@ function pageViewQueryParameters(url: string): UTMMarker {
     }
 
     return utmProps
+}
+
+function createEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): Event {
+    return {
+        event,
+        userCookieID: eventLogger.getAnonymousUserID(),
+        cohortID: eventLogger.getCohortID() || null,
+        firstSourceURL: eventLogger.getFirstSourceURL(),
+        lastSourceURL: eventLogger.getLastSourceURL(),
+        referrer: eventLogger.getReferrer(),
+        originalReferrer: eventLogger.getOriginalReferrer(),
+        sessionReferrer: eventLogger.getSessionReferrer(),
+        sessionFirstURL: eventLogger.getSessionFirstURL(),
+        deviceSessionID: eventLogger.getDeviceSessionID() || this.deviceSessionID,
+        url: window.location.href,
+        source: EventSource.WEB,
+        argument: eventProperties ? JSON.stringify(eventProperties) : null,
+        publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+        deviceID: eventLogger.getDeviceID(),
+        eventID: eventLogger.getEventID(),
+        insertID: eventLogger.getInsertID(),
+    }
 }
