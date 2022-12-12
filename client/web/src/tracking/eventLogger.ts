@@ -405,7 +405,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
         if (!deviceSessionID || deviceSessionID === '') {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
-            deviceID = anonymousUserID
+            deviceSessionID = anonymousUserID
         }
         cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
 
