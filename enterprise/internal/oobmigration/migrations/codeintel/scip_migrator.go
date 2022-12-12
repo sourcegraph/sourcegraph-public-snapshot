@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -284,12 +283,6 @@ func processDocument(
 	path string,
 	document DocumentData,
 ) (err error) {
-	tr, ctx := trace.New(ctx, "ERICK.HAX.processDocument", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -357,12 +350,6 @@ func fetchResultChunks(
 	numResultChunks int,
 	ids []ID,
 ) (_ map[int]ResultChunkData, err error) {
-	tr, ctx := trace.New(ctx, "ERICK.HAX.fetchResultChunks", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
 	resultChunks := map[int]ResultChunkData{}
 	indexMap := map[int]struct{}{}
 
@@ -471,12 +458,6 @@ func (s *scipWriter) Write(
 	path string,
 	scipDocument *ogscip.Document,
 ) (err error) {
-	tr, ctx := trace.New(ctx, "ERICK.HAX.scipWriter.Write", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
 	payload, err := proto.Marshal(scipDocument)
 	if err != nil {
 		return err
@@ -528,12 +509,6 @@ const DocumentsBatchSize = 256
 const MaxBatchPayloadSum = 1024 * 1024 * 32
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
-	tr, ctx := trace.New(ctx, "ERICK.HAX.scipWriter.flush", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
 	documents := s.batch
 	s.batch = nil
 	s.batchPayloadSum = 0
