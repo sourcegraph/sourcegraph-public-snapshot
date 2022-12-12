@@ -71,6 +71,8 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
+const deviceSessionID = ''
+
 export class EventLogger implements TelemetryService, SharedEventLogger {
     private hasStrippedQueryParameters = false
 
@@ -79,7 +81,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
-    const deviceSessionID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
