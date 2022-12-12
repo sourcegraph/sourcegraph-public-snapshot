@@ -31,10 +31,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, []string{"import", "export"}, func(r Range) int { return r.ReferenceResultID })
 	implementationRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"implementation"}, func(r Range) int { return r.DefinitionResultID })
 	packages := gatherPackages(state)
-	packageReferences, err := gatherPackageReferences(state, packages)
-	if err != nil {
-		return nil, err
-	}
+	packageReferences := gatherPackageReferences(state, packages)
 
 	return &precise.GroupedBundleDataChans{
 		Meta:              meta,
@@ -395,7 +392,7 @@ func gatherPackages(state *State) []precise.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, packageDefinitions []precise.Package) ([]precise.PackageReference, error) {
+func gatherPackageReferences(state *State, packageDefinitions []precise.Package) []precise.PackageReference {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -448,5 +445,5 @@ func gatherPackageReferences(state *State, packageDefinitions []precise.Package)
 		})
 	}
 
-	return packageReferences, nil
+	return packageReferences
 }
