@@ -128,7 +128,9 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
                 </>
             )
         case 'GenericIncompleteDatapointAlert':
-            return alert.reason
+            // Since BE doesn't handle insight level alerts properly we can't use
+            // alert.reason message here but hardcoded on the client error message.
+            return 'Some points of this data series encountered an error. Results may be incomplete.'
     }
 }
 

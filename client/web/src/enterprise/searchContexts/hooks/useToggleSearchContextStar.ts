@@ -33,7 +33,7 @@ export function useToggleSearchContextStar(
         const errorPrefix = `Failed to ${starred ? 'unstar' : 'star'} search context`
 
         // Cannot star if user is not authenticated
-        if (!userId || !searchContextId) {
+        if (!userId) {
             throw new Error(`${errorPrefix}: You are not signed in. Please sign in and try again.`)
         }
 

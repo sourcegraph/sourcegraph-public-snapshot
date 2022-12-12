@@ -43,7 +43,6 @@ const defaultProps: SearchBoxProps = {
     showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
-    defaultSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},
     fetchSearchContexts: mockFetchSearchContexts,

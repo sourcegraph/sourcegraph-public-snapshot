@@ -13942,6 +13942,19 @@
           "Comment": "The path for which the index can resolve code intelligence relative to the repository root."
         },
         {
+          "Name": "should_reindex",
+          "Index": 35,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "started_at",
           "Index": 7,
           "TypeName": "timestamp with time zone",

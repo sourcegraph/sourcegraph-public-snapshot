@@ -73,6 +73,7 @@
     },
     "webhooks": {
       "description": "An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",

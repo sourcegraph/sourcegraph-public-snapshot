@@ -564,6 +564,17 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 }
 
 const isQueuedQuery = `
+-- The query has two parts, 'A' UNION 'B', where 'A' is true if there's a manual and
+-- reachable upload for a repo/commit pair. This signifies that the user has configured
+-- manual indexing on a repo and we shouldn't clobber it with autoindexing. The other
+-- query 'B' is true if there's an auto-index record already enqueued for this repo. This
+-- signifies that we've already infered jobs for this repo/commit pair so we can skip it
+-- (we should infer the same jobs).
+
+-- We added a way to say "you might infer different jobs" for part 'B' by adding the
+-- check on u.should_reindex. We're now adding a way to say "the indexer might result
+-- in a different output_ for part A, allowing auto-indexing to clobber records that
+-- have undergone some possibly lossy transformation (like LSIF -> SCIP conversion in-db).
 SELECT
 	EXISTS (
 		SELECT 1
@@ -572,7 +583,8 @@ SELECT
 			repository_id = %s AND
 			commit = %s AND
 			state NOT IN ('deleting', 'deleted') AND
-			associated_index_id IS NULL
+			associated_index_id IS NULL AND
+			NOT u.should_reindex
 	)
 
 	OR

@@ -52,6 +52,11 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	// SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir) // overridden above; here for equality with Dockerfile
 
 	// Configure blobstore service
+	blobstoreDataDir := os.Getenv("JCLOUDS_FILESYSTEM_BASEDIR")
+	if err := os.MkdirAll(blobstoreDataDir, os.ModePerm); err != nil {
+		logger.Error("failed to create blobstore data dir (JCLOUDS_FILESYSTEM_BASEDIR)", sglog.Error(err))
+	}
+
 	procline := `blobstore: /opt/s3proxy/run-docker-container.sh >> /var/opt/sourcegraph/blobstore.log 2>&1`
 	return []string{procline}
 }
