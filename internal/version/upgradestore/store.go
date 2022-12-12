@@ -2,7 +2,6 @@ package upgradestore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -59,7 +58,6 @@ SELECT version FROM versions WHERE service = %s
 // ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
 // if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) ValidateUpgrade(ctx context.Context, service, version string) error {
-	fmt.Printf("================ ValidateUpgrade %s %s ================", service, version)
 	return s.updateServiceVersion(ctx, service, version, false)
 }
 
@@ -67,7 +65,6 @@ func (s *store) ValidateUpgrade(ctx context.Context, service, version string) er
 // our documented upgrade policy and will return an error (performing no side-effects) if the upgrade is between
 // two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) UpdateServiceVersion(ctx context.Context, service, version string) error {
-	fmt.Printf("================ Updating service version %s %s ================", service, version)
 	return s.updateServiceVersion(ctx, service, version, true)
 }
 
