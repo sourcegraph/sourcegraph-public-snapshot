@@ -709,6 +709,9 @@ describe('Blob viewer', () => {
                 extensions: {
                     'test/word-finder': true,
                 },
+                experimentalFeatures: {
+                    enableCodeMirrorFileView: false,
+                },
             }
 
             testContext.overrideGraphQL({
