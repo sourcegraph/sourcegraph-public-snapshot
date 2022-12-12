@@ -19,7 +19,7 @@ import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutlin
 import { History } from 'history'
 import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
-import { BehaviorSubject, Subject, Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -58,8 +58,11 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
+
+    // Search match 'from' position -> 1-based serial number (index) of this match in the document.
     private matches: Map<number, number> = new Map()
-    private currentMatchIndex = new BehaviorSubject<number>(-1)
+    // Currently selected 1-based match index.
+    private currentMatchIndex = -1
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
@@ -77,12 +80,6 @@ class SearchPanel implements Panel {
             this.searchTerm
                 .pipe(startWith(this.state.searchQuery.search), debounceTime(100), distinctUntilChanged())
                 .subscribe(searchTerm => this.commit({ search: searchTerm }))
-        )
-
-        this.subscriptions.add(
-            this.currentMatchIndex.subscribe(currentMatchIndex =>
-                this.render({ ...this.state, currentMatchIndex, totalMatches: this.matches.size })
-            )
         )
     }
 
@@ -108,14 +105,14 @@ class SearchPanel implements Panel {
             this.state = newState
             this.render({
                 ...newState,
-                currentMatchIndex: this.currentMatchIndex.value,
+                currentMatchIndex: this.currentMatchIndex,
                 totalMatches: this.matches.size,
             })
         }
     }
 
     public mount(): void {
-        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex.value, totalMatches: this.matches.size })
+        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex, totalMatches: this.matches.size })
     }
 
     public destroy(): void {
@@ -231,7 +228,8 @@ class SearchPanel implements Panel {
         })
 
     private updateSelectedSearchMatch = ({ from }: { from: number }): void => {
-        this.currentMatchIndex.next(this.matches.get(from) ?? -1)
+        this.currentMatchIndex = this.matches.get(from) ?? -1
+        this.render({ ...this.state, currentMatchIndex: this.currentMatchIndex, totalMatches: this.matches.size })
     }
 
     private findNext = (): void => {
@@ -262,13 +260,15 @@ class SearchPanel implements Panel {
     }
 
     private calculateMatches = (query: SearchQuery): void => {
+        // clear search matches data
         this.matches.clear()
-        this.currentMatchIndex.next(-1)
+        this.currentMatchIndex = -1
 
         const regex = new RegExp(
             query.regexp ? query.search : escapeRegExp(query.search),
             `gm${query.caseSensitive ? '' : 'i'}`
         )
+        // 1-based index of the current match
         let index = 1
         const matches = [...this.view.state.facet(blobPropsFacet).blobInfo.content.matchAll(regex)]
         for (const match of matches) {
@@ -342,25 +342,25 @@ class SearchPanel implements Panel {
 // Announce the current match to screen readers.
 // Taken from original the CodeMirror implementation:
 // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L694-L717
-const AnnounceMargin = 30
-const Break = /[\s!,.:;?]/
+const announceMargin = 30
+const breakRegex = /[\s!,.:;?]/
 function announceMatch(view: EditorView, { from, to }: { from: number; to: number }): StateEffect<string> {
     const line = view.state.doc.lineAt(from)
     const lineEnd = view.state.doc.lineAt(to).to
-    const start = Math.max(line.from, from - AnnounceMargin)
-    const end = Math.min(lineEnd, to + AnnounceMargin)
+    const start = Math.max(line.from, from - announceMargin)
+    const end = Math.min(lineEnd, to + announceMargin)
     let text = view.state.sliceDoc(start, end)
     if (start !== line.from) {
-        for (let index = 0; index < AnnounceMargin; index++) {
-            if (!Break.test(text[index + 1]) && Break.test(text[index])) {
+        for (let index = 0; index < announceMargin; index++) {
+            if (!breakRegex.test(text[index + 1]) && breakRegex.test(text[index])) {
                 text = text.slice(index)
                 break
             }
         }
     }
     if (end !== lineEnd) {
-        for (let index = text.length - 1; index > text.length - AnnounceMargin; index--) {
-            if (!Break.test(text[index - 1]) && Break.test(text[index])) {
+        for (let index = text.length - 1; index > text.length - announceMargin; index--) {
+            if (!breakRegex.test(text[index - 1]) && breakRegex.test(text[index])) {
                 text = text.slice(0, index)
                 break
             }
