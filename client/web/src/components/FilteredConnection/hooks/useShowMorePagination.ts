@@ -41,6 +41,9 @@ interface UseShowMorePaginationConfig<TResult> {
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
+
+    /* HACKY(FIXME): Use this field instead of `after` when sending subsequent requests to fetch more data. */
+    customAfterCursor?: string
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -140,12 +143,24 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
+        console.log('cursor', cursor)
 
+        // HACKY(FIXME)
+        let afterVariables: { after?: string; first?: number; [key: string]: any } = {}
+        if (cursor) {
+            if (options?.customAfterCursor) {
+                afterVariables[options?.customAfterCursor] = cursor
+            } else {
+                afterVariables.after = cursor
+            }
+        } else {
+            afterVariables.first = firstReference.current.actual * 2
+        }
         await fetchMore({
             variables: {
                 ...variables,
                 // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
+                ...afterVariables,
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {

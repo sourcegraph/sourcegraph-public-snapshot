@@ -1,31 +1,28 @@
 import * as React from 'react'
-import { useCallback } from 'react'
 
 import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
-import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../backend/graphql'
-import { FilteredConnection } from '../components/FilteredConnection'
-import {
-    CommitAncestorsConnectionFields,
-    FetchCommitsResult,
-    FetchCommitsVariables,
-    GitCommitFields,
-    Scalars,
-} from '../graphql-operations'
+import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 import styles from './RepoRevisionSidebarCommits.module.scss'
+import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
+import {
+    ConnectionContainer,
+    ConnectionLoading,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../components/FilteredConnection/ui'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 
 interface CommitNodeProps {
     node: GitCommitFields
@@ -67,85 +64,91 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 }
 
 export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const queryCommits = useCallback(
-        (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
-            fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '', afterCursor: props.afterCursor }),
-        [props.repoID, props.revision, props.filePath, props.afterCursor]
-    )
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+        FetchCommitsResult,
+        FetchCommitsVariables,
+        GitCommitFields
+    >({
+        query: FETCH_COMMITS,
+        variables: {
+            afterCursor: '',
+            first: props.defaultPageSize || 5,
+            query: '',
+            repo: props.repoID,
+            revision: props.revision || '',
+            currentPath: props.filePath || '',
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
+            if (!node) {
+                return { nodes: [] }
+            }
+            if (node.__typename !== 'Repository') {
+                return { nodes: [] }
+            }
+            if (!node.commit?.ancestors?.nodes) {
+                return { nodes: [] }
+            }
+
+            return node.commit.ancestors
+        },
+        options: {
+            // HACKY(FIXME): This is not good
+            customAfterCursor: 'afterCursor',
+            fetchPolicy: 'cache-first',
+        },
+    })
 
     return (
-        <FilteredConnection<
-            GitCommitFields,
-            Pick<CommitNodeProps, 'location' | 'preferAbsoluteTimestamps'>,
-            CommitAncestorsConnectionFields
-        >
-            className="list-group list-group-flush"
-            ariaLive="polite"
-            listClassName={styles.list}
-            summaryClassName={styles.summary}
-            loaderClassName={styles.loader}
-            compact={true}
-            noun="commit"
-            pluralNoun="commits"
-            queryConnection={queryCommits}
-            nodeComponent={CommitNode}
-            nodeComponentProps={{ location: props.location, preferAbsoluteTimestamps: props.preferAbsoluteTimestamps }}
-            defaultFirst={props.defaultPageSize || 100}
-            hideSearch={true}
-            useURLQuery={false}
-            history={props.history}
-            location={props.location}
-        />
+        <ConnectionContainer>
+            {error && <ErrorAlert error={error} />}
+            {connection &&
+                connection.nodes.map(node => (
+                    <CommitNode
+                        node={node}
+                        location={props.location}
+                        preferAbsoluteTimestamps={props.preferAbsoluteTimestamps}
+                    />
+                ))}
+            {loading && <ConnectionLoading />}
+            {!loading && connection && (
+                <SummaryContainer>{hasNextPage && <ShowMoreButton onClick={fetchMore} />}</SummaryContainer>
+            )}
+        </ConnectionContainer>
     )
 }
 
-function fetchCommits(
-    repo: Scalars['ID'],
-    revision: string,
-    args: { first?: number; currentPath?: string; query?: string, afterCursor?: string }
-): Observable<CommitAncestorsConnectionFields> {
-    return requestGraphQL<FetchCommitsResult, FetchCommitsVariables>(
-        gql`
-            query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String, $afterCursor: String) {
-                node(id: $repo) {
-                    __typename
-                    ... on Repository {
-                        commit(rev: $revision) {
-                            ancestors(first: $first, query: $query, path: $currentPath, afterCursor: $afterCursor) {
-                                ...CommitAncestorsConnectionFields
-                            }
-                        }
+const FETCH_COMMITS = gql`
+    query FetchCommits(
+        $repo: ID!
+        $revision: String!
+        $first: Int
+        $currentPath: String
+        $query: String
+        $afterCursor: String
+    ) {
+        node(id: $repo) {
+            __typename
+            ... on Repository {
+                commit(rev: $revision) {
+                    ancestors(first: $first, query: $query, path: $currentPath, afterCursor: $afterCursor) {
+                        ...CommitAncestorsConnectionFields
                     }
                 }
             }
-
-            ${gitCommitFragment}
-
-            fragment CommitAncestorsConnectionFields on GitCommitConnection {
-                nodes {
-                    ...GitCommitFields
-                }
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-            }
-        `,
-        {
-            currentPath: args.currentPath ?? null,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            afterCursor: args.afterCursor ?? null,
-            repo,
-            revision,
         }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node || data.node.__typename !== 'Repository' || !data.node.commit) {
-                throw createInvalidGraphQLQueryResponseError('FetchCommits')
-            }
-            return data.node.commit.ancestors
-        })
-    )
-}
+    }
+
+    ${gitCommitFragment}
+
+    fragment CommitAncestorsConnectionFields on GitCommitConnection {
+        nodes {
+            ...GitCommitFields
+        }
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+`
