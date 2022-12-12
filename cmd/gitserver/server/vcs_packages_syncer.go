@@ -393,11 +393,7 @@ func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) bo
 	}
 
 	cleanedOutputPath := path.Join(destinationDir, filepath)
-	if !strings.HasPrefix(cleanedOutputPath, destinationDir) {
-		// For security reasons, skip file if it's not a child
-		// of the target directory. See "Zip Slip Vulnerability".
-		return true
-	}
-
-	return false
+	// For security reasons, skip file if it's not a child
+	// of the target directory. See "Zip Slip Vulnerability".
+	return !strings.HasPrefix(cleanedOutputPath, destinationDir)
 }
