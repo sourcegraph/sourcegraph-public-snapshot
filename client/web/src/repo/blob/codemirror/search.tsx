@@ -326,14 +326,48 @@ class SearchPanel implements Panel {
 
                 this.updateSelectedSearchMatch(result.value)
 
+                // Taken from the original `findPrevious` and `findNext` CodeMirror implementation:
+                // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L385-L416
                 this.view.dispatch({
                     selection: { anchor: result.value.from, head: result.value.to },
                     scrollIntoView: true,
+                    effects: announceMatch(this.view, result.value),
                     userEvent: 'select.search',
                 })
             }
         }
     }
+}
+
+// Announce the current match to screen readers.
+// Taken from original the CodeMirror implementation:
+// https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L694-L717
+const AnnounceMargin = 30
+const Break = /[\s\.,:;?!]/
+function announceMatch(view: EditorView, { from, to }: { from: number; to: number }) {
+    let line = view.state.doc.lineAt(from),
+        lineEnd = view.state.doc.lineAt(to).to
+    let start = Math.max(line.from, from - AnnounceMargin),
+        end = Math.min(lineEnd, to + AnnounceMargin)
+    let text = view.state.sliceDoc(start, end)
+    if (start != line.from) {
+        for (let i = 0; i < AnnounceMargin; i++)
+            if (!Break.test(text[i + 1]) && Break.test(text[i])) {
+                text = text.slice(i)
+                break
+            }
+    }
+    if (end != lineEnd) {
+        for (let i = text.length - 1; i > text.length - AnnounceMargin; i--)
+            if (!Break.test(text[i - 1]) && Break.test(text[i])) {
+                text = text.slice(0, i)
+                break
+            }
+    }
+
+    return EditorView.announce.of(
+        `${view.state.phrase('current match')}. ${text} ${view.state.phrase('on line')} ${line.number}.`
+    )
 }
 
 interface SearchConfig {
