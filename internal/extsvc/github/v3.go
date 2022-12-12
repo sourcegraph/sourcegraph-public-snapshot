@@ -270,7 +270,7 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		t.rateLimitMonitor.Update(resp.Header)
 	}
 
-	return resp, nil
+	return resp, err
 }
 
 // WithAuthenticator returns a new V3Client that uses the same configuration as
