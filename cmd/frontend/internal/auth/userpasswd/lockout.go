@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net/url"
 	"strconv"
 	"time"
@@ -103,7 +104,8 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 		return "", "", errors.Newf(`signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 	}
 
-	expiryTime := time.Now().Add(time.Second * time.Duration(ttl))
+	effectiveTTL := effectiveUnlockTTL(ttl)
+	expiryTime := time.Now().Add(time.Second * time.Duration(effectiveTTL))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &unlockAccountClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -124,11 +126,16 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 		return "", "", err
 	}
 
-	s.unlockToken.SetWithTTL(key, []byte(tokenString), ttl)
+	s.unlockToken.SetWithTTL(key, []byte(tokenString), effectiveTTL)
 
 	path := fmt.Sprintf("/unlock-account/%s", tokenString)
 
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
+}
+
+// take site config link expiry into account as well when setting unlock expiry
+func effectiveUnlockTTL(ttl int) int {
+	return int(math.Min(float64(ttl), float64(conf.SiteConfig().AuthUnlockAccountLinkExpiry*60)))
 }
 
 func formatExpiryTime(ttl int) string {
@@ -149,6 +156,7 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 		return nil
 	}
 
+	effectiveTTL := effectiveUnlockTTL(ttl)
 	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
 	if err != nil {
 		return err
@@ -166,14 +174,14 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 			ExpiryTime       string
 		}{
 			UnlockAccountUrl: unlockUrl,
-			ExpiryTime:       formatExpiryTime(ttl),
+			ExpiryTime:       formatExpiryTime(effectiveTTL),
 		},
 	})
 	if err != nil {
 		return err
 	}
 
-	s.unlockEmailSent.SetWithTTL(key, []byte("sent"), ttl)
+	s.unlockEmailSent.SetWithTTL(key, []byte("sent"), effectiveTTL)
 	return nil
 }
 
