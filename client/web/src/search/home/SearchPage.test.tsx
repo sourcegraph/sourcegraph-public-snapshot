@@ -103,7 +103,6 @@ describe('SearchPage', () => {
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         isLightTheme: true,
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,

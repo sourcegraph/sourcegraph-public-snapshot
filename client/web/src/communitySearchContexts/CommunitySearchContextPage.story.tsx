@@ -129,7 +129,6 @@ const commonProps = () =>
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,

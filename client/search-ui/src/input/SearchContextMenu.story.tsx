@@ -37,7 +37,6 @@ const defaultProps: SearchContextMenuProps = {
     isSourcegraphDotCom: false,
     showSearchContextManagement: false,
     fetchSearchContexts: mockFetchSearchContexts,
-    defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
     selectSearchContextSpec: () => {},
     onMenuClose: () => {},
@@ -70,3 +69,11 @@ export const WithManageLink: Story = () => (
 )
 
 WithManageLink.storyName = 'with manage link'
+
+export const WithCTALink: Story = () => (
+    <BrandedStory>
+        {() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} isSourcegraphDotCom={true} />}
+    </BrandedStory>
+)
+
+WithCTALink.storyName = 'with CTA link'
