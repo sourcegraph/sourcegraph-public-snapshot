@@ -61,10 +61,10 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
   - Search any branch and commit, with no indexing required.
   - Search [commit diffs](explanations/features.md#commit-diff-search) and [commit messages](explanations/features.md#commit-message-search) to see how code has changed.
   - Narrow your search by repository and file pattern.
-  - Define saved [search scopes](explanations/features.md#search-scopes) for easier searching.
+  - How our [Smart Search](explanations/features.md#smart-search) query assistant works.
   - Use [search contexts](explanations/features.md#search-contexts) to search across a set of repositories at specific revisions.
   - Curate [saved searches](explanations/features.md#saved-searches) for yourself or your org.
-  - Use [Code monitoring](../code_monitoring/index.md) to set up notifications for code changes that match a query.
+  - Use [code monitoring](../code_monitoring/index.md) to set up notifications for code changes that match a query.
   - View [language statistics](explanations/features.md#statistics) for search results.
 - [Search details](explanations/search_details.md)
 - [Search tips](explanations/tips.md)
