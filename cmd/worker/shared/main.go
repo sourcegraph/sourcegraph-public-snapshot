@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/own"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
@@ -44,7 +43,6 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":       webhooks.NewJanitor(),
-		"own-blame":                 own.NewBlameJob(),
 		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
 		"codeintel-crates-syncer":   codeintel.NewCratesSyncerJob(),
 		"gitserver-metrics":         gitserver.NewMetricsJob(),

@@ -1,4 +1,4 @@
-package own
+package codeintel
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -150,11 +151,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *BlameJo
 	return nil
 }
 
-type Nav interface {
-	GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []types.UploadLocation, _ shared.ReferencesCursor, err error)
-}
-
-func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob], nav Nav) *workerutil.Worker[*BlameJob] {
+func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob], nav *codenav.Service, metrics workerutil.WorkerObservability) *workerutil.Worker[*BlameJob] {
 	handler := &handler{}
 
 	return dbworker.NewWorker[*BlameJob](ctx, workerStore, handler, workerutil.WorkerOptions{
@@ -162,6 +159,7 @@ func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*BlameJob],
 		Interval:          time.Second, // Poll for a job once per second
 		NumHandlers:       1,           // Process only one job at a time (per instance)
 		HeartbeatInterval: 10 * time.Second,
+		Metrics:           metrics,
 	})
 }
 
@@ -205,9 +203,12 @@ func (j *ownBlameJob) Routines(_ context.Context, observationCtx *observation.Co
 	if err != nil {
 		return nil, err
 	}
-
+	var _ *codenav.Service = services.CodenavService
+	workerMetrics := workerutil.NewMetrics(observationCtx, "own_blame_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
+		return true
+	}))
 	return []goroutine.BackgroundRoutine{
-		makeWorker(rootContext, store, services.CodenavService),
+		makeWorker(rootContext, store, services.CodenavService, workerMetrics),
 		makeResetter(observationCtx.Logger.Scoped("OwnBlameJob.Resetter", ""), store, *resetterMetrics),
 	}, nil
 }

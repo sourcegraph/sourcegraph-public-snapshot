@@ -50,6 +50,7 @@ var AdditionalJobs = map[string]job.Job{
 	"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
+	"own-blame":                                   codeintel.NewBlameJob(),
 
 	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
