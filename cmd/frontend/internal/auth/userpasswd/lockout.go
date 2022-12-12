@@ -169,11 +169,12 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 			ExpiryTime:       formatExpiryTime(ttl),
 		},
 	})
-	if err == nil {
-		s.unlockEmailSent.SetWithTTL(key, []byte("sent"), ttl)
+	if err != nil {
+		return err
 	}
 
-	return err
+	s.unlockEmailSent.SetWithTTL(key, []byte("sent"), ttl)
+	return nil
 }
 
 func (s *lockoutStore) UnlockEmailSent(userID int32) bool {
