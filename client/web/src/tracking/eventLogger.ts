@@ -79,7 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
-    private deviceSessionID = ''
+    private deviceSessionID?: string
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
@@ -312,8 +312,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getDeviceSessionID(): string {
         // read from the cookie, otherwise check the global variable
-        let localDeviceSessionID = this.deviceSessionID
-        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || localDeviceSessionID
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
             deviceSessionID = this.getAnonymousUserID()
         }
@@ -365,9 +364,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
     private resetSessionCookieExpiration(): boolean {
         // Function getDeviceSessionID calls cookie.set() to refresh the expiry
-        let localDeviceSessionID = this.deviceSessionID
-        let deviceSessionID = this.getDeviceSessionID() || localDeviceSessionID
+        let deviceSessionID = this.getDeviceSessionID() || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
+            this.deviceSessionID = deviceSessionID
             return false
         }
         return true
@@ -386,6 +385,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
+        this.deviceSessionID = ''
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
