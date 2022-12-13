@@ -1,1 +1,1 @@
-export { StackedMeter as StackedMeter } from './StackedMeter'
+export { StackedMeter } from './StackedMeter'
