@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -151,8 +150,6 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 			return &reqContext, jobs, err
 		}
 		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
-		jonsify, _ := json.Marshal(searchPlan)
-		logger.Info("search plan", log.String("plan", string(jonsify)))
 		var ratio float64 = 1.0
 		if numberOfFrames > 0 {
 			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
@@ -233,10 +230,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		// at that point in time.)
 		repoName := string(bctx.repoName)
 		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
-			// a.statistics[bctx.seriesID].Preempted += 1
 			return err, nil, nil
-
-			// return // success - nothing else to do
 		}
 
 		revision := bctx.execution.Revision
@@ -295,8 +289,6 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
 	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-		jsonify, _ := json.Marshal(jobs)
-		logger.Info("run search jobs func", log.String("jobs", string(jsonify)))
 		series := reqContext.backfillRequest.Series
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)
