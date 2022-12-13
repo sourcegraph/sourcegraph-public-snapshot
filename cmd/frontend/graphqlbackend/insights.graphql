@@ -1233,7 +1233,7 @@ extend type Query {
     """
     Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
     """
-    validateScopedInsightQuery(input: ValidateScopedInsightQueryInput!): ScopedInsightQueryPayload!
+    validateScopedInsightQuery(input: ValidateScopedInsightQueryInput!): ScopedInsightQueryResult!
 }
 
 """
@@ -1244,6 +1244,34 @@ input ValidateScopedInsightQueryInput {
     Query to run for finding insight scope. Currently limited to repo filters and boolean predicates only.
     """
     query: String!
+}
+
+"""
+Defines whether we were able to return a preview of the insight scope.
+"""
+union ScopedInsightQueryResult = ScopedInsightQueryPayloadNotAvailable | ScopedInsightQueryPayload
+
+"""
+Indicates that fetching the query payload was not available
+"""
+type ScopedInsightQueryPayloadNotAvailable {
+    """
+    The specific reason the payload is not available
+    """
+    reason: String!
+    """
+    The general reason the payload is not available
+    """
+    reasonType: ScopedInsightQueryPayloadNotAvailableReasonType!
+}
+
+"""
+An enum to describe the reasons why a scoped insight query payload is not available
+"""
+enum ScopedInsightQueryPayloadNotAvailableReasonType {
+    INVALID_QUERY
+    UNSUPPORTED_SEARCH_FILTER
+    REPO_SEARCH_ERROR
 }
 
 """

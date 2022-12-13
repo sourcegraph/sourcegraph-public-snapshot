@@ -22,7 +22,7 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
+	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResultResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -487,7 +487,17 @@ type ValidateScopedInsightQueryInput struct {
 	Query string
 }
 
+type ScopedInsightQueryPayloadResultResolver interface {
+	ToScopedInsightQueryPayload() (ScopedInsightQueryPayloadResolver, bool)
+	ToScopedInsightQueryPayloadNotAvailable() (ScopedInsightQueryPayloadNotAvailableResolver, bool)
+}
+
 type ScopedInsightQueryPayloadResolver interface {
 	NumberOfRepositories(ctx context.Context) int32
 	Query(ctx context.Context) string
+}
+
+type ScopedInsightQueryPayloadNotAvailableResolver interface {
+	Reason() string
+	ReasonType() string //enum
 }

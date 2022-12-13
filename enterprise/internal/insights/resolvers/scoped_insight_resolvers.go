@@ -10,26 +10,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ graphqlbackend.ScopedInsightQueryPayloadResolver = &scopedInsightQueryPreviewResolver{}
+var (
+	_ graphqlbackend.ScopedInsightQueryPayloadResultResolver       = &scopedInsightQueryResultResolver{}
+	_ graphqlbackend.ScopedInsightQueryPayloadResolver             = &scopedInsightQueryPayloadResolver{}
+	_ graphqlbackend.ScopedInsightQueryPayloadNotAvailableResolver = &scopedInsightQueryPayloadNotAvailableResolver{}
+)
 
-func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResolver, error) {
+func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResultResolver, error) {
 	plan, err := querybuilder.ParseQuery(args.Input.Query, "standard")
 	if err != nil {
-		return nil, errors.Wrap(err, "the input query is invalid")
+		return &scopedInsightQueryResultResolver{
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: "the input query is invalid"},
+		}, nil
 	}
 	if reason, invalid := isValidScopeQuery(plan); !invalid {
-		return nil, errors.New(reason)
+		return &scopedInsightQueryResultResolver{
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: reason},
+		}, nil
 	}
+
+	fmt.Println("in resolver")
 
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	repos, selectRepoQuery, err := executor.ExecuteRepoList(ctx, args.Input.Query)
 	if err != nil {
-		return nil, err
+		return &scopedInsightQueryResultResolver{
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: "executing the repository search errored"},
+		}, nil
 	}
-	return &scopedInsightQueryPreviewResolver{query: selectRepoQuery, numberOfRepositories: int32(len(repos))}, nil
+	return &scopedInsightQueryResultResolver{
+		resolver: &scopedInsightQueryPayloadResolver{query: selectRepoQuery, numberOfRepositories: int32(len(repos))},
+	}, nil
 }
 
 // Possible reasons that a scope query is invalid.
@@ -54,15 +67,42 @@ func isValidScopeQuery(plan searchquery.Plan) (string, bool) {
 	return "", true
 }
 
-type scopedInsightQueryPreviewResolver struct {
+type scopedInsightQueryPayloadResolver struct {
 	numberOfRepositories int32
 	query                string
 }
 
-func (s *scopedInsightQueryPreviewResolver) NumberOfRepositories(ctx context.Context) int32 {
+func (s *scopedInsightQueryPayloadResolver) NumberOfRepositories(ctx context.Context) int32 {
 	return s.numberOfRepositories
 }
 
-func (s *scopedInsightQueryPreviewResolver) Query(ctx context.Context) string {
+func (s *scopedInsightQueryPayloadResolver) Query(ctx context.Context) string {
 	return s.query
+}
+
+type scopedInsightQueryPayloadNotAvailableResolver struct {
+	reason     string
+	reasonType string
+}
+
+func (r *scopedInsightQueryPayloadNotAvailableResolver) Reason() string {
+	return r.reason
+}
+
+func (r *scopedInsightQueryPayloadNotAvailableResolver) ReasonType() string {
+	return r.reasonType
+}
+
+type scopedInsightQueryResultResolver struct {
+	resolver any
+}
+
+func (r *scopedInsightQueryResultResolver) ToScopedInsightQueryPayload() (graphqlbackend.ScopedInsightQueryPayloadResolver, bool) {
+	res, ok := r.resolver.(*scopedInsightQueryPayloadResolver)
+	return res, ok
+}
+
+func (r *scopedInsightQueryResultResolver) ToScopedInsightQueryPayloadNotAvailable() (graphqlbackend.ScopedInsightQueryPayloadNotAvailableResolver, bool) {
+	res, ok := r.resolver.(*scopedInsightQueryPayloadNotAvailableResolver)
+	return res, ok
 }

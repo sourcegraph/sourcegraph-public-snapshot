@@ -91,6 +91,6 @@ func (r *disabledResolver) SaveInsightAsNewView(ctx context.Context, args graphq
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResolver, error) {
+func (r *disabledResolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResultResolver, error) {
 	return nil, errors.New(r.reason)
 }

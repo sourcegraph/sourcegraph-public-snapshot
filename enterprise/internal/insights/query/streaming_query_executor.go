@@ -41,8 +41,7 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 }
 
 func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, string, error) {
-	// Consider this to be run as if for an all repo insight (i.e. fork:yes archived:yes).
-	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(true))
+	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
 	if err != nil {
 		return nil, "", errors.Wrap(err, "SelectRepoQuery")
 	}
