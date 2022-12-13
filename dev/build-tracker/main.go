@@ -247,7 +247,8 @@ func NewServer(logger log.Logger, c config) (*Server, error) {
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
 	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
-	r.Path("/revert/{commit}").HandlerFunc(server.handleRevert).Methods(http.MethodPost)
+	revertRouter := r.Path("/revert/{commit}").HandlerFunc(server.handleRevert).Methods(http.MethodPost).Subrouter()
+	revertRouter.Path("/{digest}/{action}")
 
 	debug := r.PathPrefix("/-/debug").Subrouter()
 	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
