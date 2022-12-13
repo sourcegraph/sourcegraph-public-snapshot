@@ -274,7 +274,3 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
   interfaces:
     - RepoStore
-- filename: enterprise/internal/insights/compression/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
-  interfaces:
-    - CommitStore
