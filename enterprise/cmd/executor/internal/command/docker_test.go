@@ -19,6 +19,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 		},
 		"/proj/src",
 		Options{},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
@@ -50,11 +51,14 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 				Memory:  "20G",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/proj/src:/data",
@@ -89,11 +93,14 @@ func TestFormatRawOrDockerCommandDockerScriptWithoutResourceAllocation(t *testin
 				Memory:  "0",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"-v", "/proj/src:/data",
 			"-w", "/data/subdir",
 			"--entrypoint",
@@ -123,11 +130,14 @@ func TestFormatRawOrDockerCommandDockerScriptWithDockerHostMountPath(t *testing.
 				DockerHostMountPath: "/containers/rootfs/mount_fs",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
-			"docker", "run", "--rm",
+			"docker",
+			"--config", "/tmp/docker-config",
+			"run", "--rm",
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/containers/rootfs/mount_fs/workspace:/data",

@@ -257,7 +257,7 @@ steps:
 					Key:       "DOCKER_AUTH_CONFIG",
 					Scope:     database.ExecutorSecretScopeBatches,
 					CreatorID: 1,
-				}, `{"auths": { "hub.docker.com": { "auth": "hunter2" }}}`),
+				}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
 			},
 			0,
 			nil,
