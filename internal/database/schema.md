@@ -2798,6 +2798,7 @@ Foreign-key constraints:
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  deleted_at | timestamp with time zone |           |          | 
+ readonly   | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
     "roles_name" UNIQUE CONSTRAINT, btree (name)
@@ -2810,6 +2811,8 @@ Referenced by:
 ```
 
 **name**: The uniquely identifying name of the role.
+
+**readonly**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```

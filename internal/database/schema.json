@@ -17911,6 +17911,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The uniquely identifying name of the role."
+        },
+        {
+          "Name": "readonly",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to indicate whether a role is read-only or can be modified."
         }
       ],
       "Indexes": [
