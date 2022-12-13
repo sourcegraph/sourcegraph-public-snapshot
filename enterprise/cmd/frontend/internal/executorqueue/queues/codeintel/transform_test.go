@@ -396,7 +396,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 		DockerSteps: []apiclient.DockerStep{
 			{
 				Key:      "upload",
-				Image:    "sourcegraph/src-cli:4.3.0",
+				Image:    fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
 				Commands: []string{"src lsif upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
 				Env:      []string{"SRC_ENDPOINT=", "SRC_HEADER_AUTHORIZATION=token-executor hunter2"},
 			},
