@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"net/url"
 	"os"
 	"testing"
 
@@ -250,4 +251,25 @@ func TestGenerateHeader(t *testing.T) {
 			tc.want.Equal(t, got)
 		})
 	}
+}
+
+func TestRevertMessage(t *testing.T) {
+	config, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := logtest.NoOp(t)
+
+	client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+
+	prUrl, _ := url.Parse("https://foo.bar/123")
+	err = client.sendRevert(
+		&Build{
+			Build:              buildkite.Build{},
+			Pipeline:           nil,
+			Jobs:               nil,
+			ConsecutiveFailure: 0,
+		},
+		prUrl,
+	)
 }

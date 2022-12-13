@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -174,6 +175,61 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	}
 
 	return blocks, nil
+}
+
+func (c *NotificationClient) sendRevert(build *Build, prUrl *url.URL) error {
+	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+	logger.Debug("creating slack revert json")
+
+	blocks := createRevertMessageBlock(build, prUrl)
+
+	logger.Debug("sending revert message")
+	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
+	_, _, err := c.slack.PostMessage(c.channel, msgOptBlocks)
+	if err != nil {
+		logger.Error("failed to post revert message", log.Error(err))
+		return err
+	}
+
+	logger.Info("revert message posted")
+	return nil
+}
+
+func createRevertMessageBlock(build *Build, prUrl *url.URL) []slack.Block {
+	msg, _, _ := strings.Cut(build.message(), "\n")
+	msg += fmt.Sprintf("%s", build.commit()[:7])
+
+	blocks := []slack.Block{
+		slack.NewHeaderBlock(
+			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf("Reverting build %d", build.number()), true, false),
+		),
+		slack.NewSectionBlock(
+			nil,
+			[]*slack.TextBlockObject{
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("Commit %s", msg)},
+			},
+			nil,
+		),
+		slack.NewActionBlock(
+			"",
+			[]slack.BlockElement{
+				&slack.ButtonBlockElement{
+					Type:  slack.METButton,
+					Style: slack.StylePrimary,
+					URL:   prUrl.String(),
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Approve"},
+				},
+				&slack.ButtonBlockElement{
+					Type:  slack.METButton,
+					Style: slack.StyleDanger,
+					URL:   "https://replace.me",
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Reject"},
+				},
+			}...,
+		),
+	}
+
+	return blocks
 }
 
 func generateSlackHeader(build *Build) string {

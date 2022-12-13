@@ -20,7 +20,7 @@ func TestGetBuild(t *testing.T) {
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
+		server, _ := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -33,7 +33,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server, _ := NewServer(logger, config{})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -41,7 +41,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server, _ := NewServer(logger, config{})
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -93,7 +93,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
+		server, _ := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
@@ -117,7 +117,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server, _ := NewServer(logger, config{})
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
 		server.store.builds[*b.Number] = b
 
@@ -139,7 +139,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server, _ := NewServer(logger, config{})
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
 		server.store.builds[*b.Number] = b
 
