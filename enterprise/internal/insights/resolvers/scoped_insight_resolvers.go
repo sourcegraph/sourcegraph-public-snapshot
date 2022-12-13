@@ -36,7 +36,7 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 	}
 
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-	repos, selectRepoQuery, err := executor.ExecuteRepoList(ctx, args.Input.Query)
+	repos, err := executor.ExecuteRepoList(ctx, args.Input.Query)
 	if err != nil {
 		return &scopedInsightQueryResultResolver{
 			resolver: &scopedInsightQueryPayloadNotAvailableResolver{
@@ -46,7 +46,7 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 		}, nil
 	}
 	return &scopedInsightQueryResultResolver{
-		resolver: &scopedInsightQueryPayloadResolver{query: selectRepoQuery, numberOfRepositories: int32(len(repos))},
+		resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: int32(len(repos))},
 	}, nil
 }
 
