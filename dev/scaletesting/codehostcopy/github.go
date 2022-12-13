@@ -114,7 +114,7 @@ func (g *GithubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	return nil
 }
 
-func (g *GithubCodeHost) ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error) {
+func (g *GithubCodeHost) listRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error) {
 	var repos []*github.Repository
 	var resp *github.Response
 	var err error
@@ -190,7 +190,7 @@ func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {
 		return nil
 	}
 
-	results, next, err := g.ListRepos(ctx, g.page, g.perPage)
+	results, next, err := g.listRepos(ctx, g.page, g.perPage)
 	if err != nil {
 		g.err = err
 		return nil

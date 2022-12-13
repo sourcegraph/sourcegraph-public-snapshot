@@ -28,11 +28,7 @@ type SSHKeyHandler interface {
 type CodeHostSource interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
-	ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error)
 	InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error)
-	//GetPath() string
-	//getTotalPrivateRepos(ctx context.Context) (int, error)
-	//SetPage(total int, remainder int)
 	Iterator() Iterator[[]*store.Repo]
 }
 
