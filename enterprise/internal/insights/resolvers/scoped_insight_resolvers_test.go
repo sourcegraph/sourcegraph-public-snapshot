@@ -48,6 +48,16 @@ func Test_isValidScopeQuery(t *testing.T) {
 			query: "repo:souregraph fork:yes",
 			valid: true,
 		},
+		{
+			name:  "valid query with shorthand repo filter",
+			query: "r:sourcegraph",
+			valid: true,
+		},
+		{
+			name:  "valid query with repo predicate filter",
+			query: "repo:has.file(path:README)",
+			valid: true,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -45,8 +45,8 @@ func isValidScopeQuery(plan searchquery.Plan) (string, bool) {
 		}
 		for _, parameter := range basic.Parameters {
 			field := strings.ToLower(parameter.Field)
-			// Only allowed filters are: repo, fork, archived, count.
-			if field != searchquery.FieldRepo && field != searchquery.FieldFork && field != searchquery.FieldArchived && field != searchquery.FieldCount {
+			// Only allowed filter is repo (including repo:has predicates).
+			if field != searchquery.FieldRepo {
 				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
 			}
 		}
