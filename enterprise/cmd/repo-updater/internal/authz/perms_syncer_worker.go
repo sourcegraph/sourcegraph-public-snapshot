@@ -19,22 +19,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func MakePermsSyncerWorker(ctx context.Context, syncer *PermsSyncer) *permsSyncerWorker {
+func MakePermsSyncerWorker(ctx context.Context, observationCtx *observation.Context, syncer *PermsSyncer) *permsSyncerWorker {
 	syncGroups := map[requestType]group.ContextGroup{
 		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(syncUsersMaxConcurrency()),
 		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
 	}
 
-	return &permsSyncerWorker{syncer: syncer, syncGroups: syncGroups}
+	return &permsSyncerWorker{
+		logger:     observationCtx.Logger.Scoped("PermsSyncerWorker", "Permission sync worker"),
+		syncer:     syncer,
+		syncGroups: syncGroups,
+	}
 }
 
 type permsSyncerWorker struct {
+	logger     log.Logger
 	syncer     *PermsSyncer
 	syncGroups map[requestType]group.ContextGroup
 }
 
 func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, record *database.PermissionSyncJob) error {
-	fmt.Printf("handling record: %+v\n", record)
+	fmt.Println("what the fuck?")
 	prio := priorityLow
 	if record.HighPriority {
 		prio = priorityHigh
@@ -48,6 +53,13 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, recor
 	if record.UserID != 0 {
 		reqID = int32(record.UserID)
 	}
+
+	h.logger.Warn(
+		"Handling permission sync job",
+		log.String("type", reqType.String()),
+		log.Int32("id", reqID),
+		log.String("priority", prio.String()),
+	)
 
 	// actually to the perm syncing
 	h.syncer.syncPerms(ctx, h.syncGroups, &syncRequest{requestMeta: &requestMeta{
@@ -75,14 +87,15 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 	})
 }
 
-func MakeWorker(ctx context.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(ctx, permsSyncer)
+func MakeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer) *workerutil.Worker[*database.PermissionSyncJob] {
+	handler := MakePermsSyncerWorker(ctx, observationCtx, permsSyncer)
 
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
 		NumHandlers:       1,           // Process only one job at a time (per instance)
 		HeartbeatInterval: 10 * time.Second,
+		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
 	})
 }
 
