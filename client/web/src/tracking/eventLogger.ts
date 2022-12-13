@@ -149,7 +149,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration()
+        this.resetCookieExpiration()
 
         if (window.context?.userAgentIsBot || !pageTitle) {
             return
@@ -165,7 +165,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration()
+        this.resetCookieExpiration()
 
         if (window.context?.userAgentIsBot || !eventName) {
             return
@@ -187,7 +187,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         // call to refresh the session
-        this.resetSessionCookieExpiration()
+        this.resetCookieExpiration()
 
         for (const listener of this.listeners) {
             listener(eventLabel)
@@ -315,8 +315,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getDeviceSessionID(): string {
         // read from the cookie, otherwise check the global variable
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
-        if (!deviceSessionID || deviceSessionID === '') {
-            deviceSessionID = this.getAnonymousUserID()
+        if (!deviceSessionID) {
+            deviceSessionID = uuid.v4()
         }
 
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
@@ -362,16 +362,19 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         }
     }
 
-    // Grabs and sets the deviceSessionID to renew the session expiration
-    // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
-    private resetSessionCookieExpiration(): boolean {
-        // Function getDeviceSessionID calls cookie.set() to refresh the expiry
-        const deviceSessionID = this.getDeviceSessionID()
-        if (!deviceSessionID || deviceSessionID === '') {
-            this.deviceSessionID = deviceSessionID
-            return false
+    // Grabs and sets the deviceSessionID to renew the session cookie expiration
+    // Grabs and sets the deviceID to renew the cookie expiration
+    private resetCookieExpiration(): void {
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+        if (!deviceSessionID) {
+            deviceSessionID = getDeviceSessionID()
         }
-        return true
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            deviceID = getDeviceID()
+        }
+        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
     }
 
     /**
@@ -403,16 +406,15 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         }
 
         let deviceID = cookies.get(DEVICE_ID_KEY)
-        if (!deviceID || deviceID === '') {
+        if (!deviceID) {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
             deviceID = anonymousUserID
         }
         cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
 
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
-        if (!deviceSessionID || deviceSessionID === '') {
-            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
-            deviceSessionID = anonymousUserID
+        if (!deviceSessionID) {
+            deviceSessionID = uuid.v4()
         }
         cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
 
