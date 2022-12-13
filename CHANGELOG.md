@@ -25,7 +25,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Code Insights: insights that with greater than 1 year of history will correctly show 12 data points instead of 11. [#45644](https://github.com/sourcegraph/sourcegraph/pull/45644)
+- Code Insights: hourly insights will now behave correctly and will no longer truncate to midnight UTC on the calendar date the insight was created. [#45644](https://github.com/sourcegraph/sourcegraph/pull/45644)
 
 ### Removed
 
