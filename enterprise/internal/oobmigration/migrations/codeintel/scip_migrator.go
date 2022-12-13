@@ -112,6 +112,10 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 		return err
 	}
 
+	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -121,6 +125,12 @@ FROM lsif_data_metadata
 ORDER BY dump_id
 FOR UPDATE SKIP LOCKED
 LIMIT 1
+`
+
+const scipMigratorMarkUploadAsReindexableQuery = `
+UPDATE lsif_uploads
+SET should_reindex = true
+WHERE id = %s
 `
 
 func (m *scipMigrator) Down(ctx context.Context) error {
