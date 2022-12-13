@@ -217,10 +217,10 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			}),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 
-		pipeline.AddStep(":webpack::o: Circular dependencies",
+		pipeline.AddStep(":webpack::o: Circular dependencies check (client/web)",
 			withYarnCache(),
-			bk.Env("CHECK_CIRCULAR_DEPENDENCIES", "1"),
-			bk.AnnotatedCmd("yarn --cwd client/web run webpack", bk.AnnotatedCmdOpts{}))
+			bk.Env("WEBPACK_CHECK_CIRCULAR_DEPENDENCIES", "1"),
+			bk.AnnotatedCmd("dev/ci/yarn-run run webpack-web", bk.AnnotatedCmdOpts{}))
 	}
 }
 
