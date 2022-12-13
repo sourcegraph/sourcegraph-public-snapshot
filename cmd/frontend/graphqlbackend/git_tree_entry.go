@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"io/fs"
 	"net/url"
@@ -35,7 +36,7 @@ import (
 // Prefix for cached files in Redis.
 const gitTreeEntryContentCacheKeyPrefix = "git_tree_entry_content"
 
-var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FILE_CONTENT_CACHE_THRESHOLD_BYTES", "500000", "threshold of files size in bytes before we start caching to Redis"))
+var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FILE_CONTENT_CACHE_THRESHOLD_BYTES", "300000", "threshold of files size in bytes before we start caching to Redis"))
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -51,6 +52,10 @@ type GitTreeEntryResolver struct {
 	contentCache *rcache.Cache
 	contentErr   error
 
+	first            *int
+	after            *int
+	cacheHighlighted bool
+
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
@@ -59,8 +64,16 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient, contentCache: rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, 60)}
+func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo, after, first *int) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{
+		db:              db,
+		commit:          commit,
+		stat:            stat,
+		gitserverClient: gitserverClient,
+		contentCache:    rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, 60),
+		after:           after,
+		first:           first,
+	}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -72,6 +85,28 @@ func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { retur
 func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
 func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
+}
+
+func (r *GitTreeEntryResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.after == nil || r.first == nil {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	first := 0
+	if r.first != nil {
+		first = *r.first
+	}
+
+	endCursor := *r.after + first
+	if endCursor >= len(content) {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
@@ -105,7 +140,24 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		}
 	})
 
-	return string(r.content), r.contentErr
+	// TODO: double check there is no off by 1 errors
+	totalContentLength := len(r.content)
+	afterCursor := 0
+	first := totalContentLength
+	if r.after != nil {
+		afterCursor = *r.after
+	}
+	if afterCursor > totalContentLength {
+		afterCursor = totalContentLength
+	}
+	if r.first != nil {
+		first = *r.first
+	}
+	if afterCursor+first > totalContentLength {
+		first = totalContentLength - afterCursor
+	}
+
+	return string(r.content[afterCursor : afterCursor+first]), r.contentErr
 }
 
 func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {

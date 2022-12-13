@@ -4520,12 +4520,32 @@ type GitCommit implements Node {
     """
     The Git blob in this commit at the given path.
     """
-    blob(path: String!): GitBlob
+    blob(
+        path: String!
+        """
+        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        """
+        first: Int
+        """
+        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        """
+        after: Int
+    ): GitBlob
     """
     The file at the given path for this commit.
     See "File" documentation for the difference between this field and the "blob" field.
     """
-    file(path: String!): File2
+    file(
+        path: String!
+        """
+        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        """
+        first: Int
+        """
+        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        """
+        after: Int
+     ): File2
     """
     Lists the programming languages present in the tree at this commit.
     """

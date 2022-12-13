@@ -23,11 +23,16 @@ import { useExperimentalFeatures } from '../../stores'
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
+    first = -1,
+    after = 0,
     ...options
+
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
+    after,
+    first,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
@@ -42,17 +47,18 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
+    after?: number
+    first?: number
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format, after, first } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
     // to be processed with tree sitter (and is used when explicitly
     // requested via JSON_SCIP).
     const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
-
     return requestGraphQL<BlobResult, BlobVariables>(
         gql`
             query Blob(
@@ -62,10 +68,12 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
+                $after: Int
+                $first: Int
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        file(path: $filePath) {
+                        file(path: $filePath, after: $after, first: $first) {
                             ...BlobFileFields
                         }
                     }
@@ -92,7 +100,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html, after, first }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

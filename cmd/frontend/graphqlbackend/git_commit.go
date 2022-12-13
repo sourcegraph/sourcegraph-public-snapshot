@@ -217,7 +217,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+	treeEntry, err := r.path(ctx, args.Path, nil, nil, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)
 		}
@@ -236,9 +236,11 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
-	Path string
+	Path  string
+	After *int
+	First *int
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+	return r.path(ctx, args.Path, args.After, args.First, func(stat fs.FileInfo) error {
 		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 			return errors.Errorf("not a blob: %q", args.Path)
 		}
@@ -248,18 +250,22 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
-	Path string
+	Path  string
+	After *int
+	First *int
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
 func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
-	Path string
+	Path  string
+	After *int
+	First *int
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
+	return r.path(ctx, args.Path, args.After, args.First, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+func (r *GitCommitResolver) path(ctx context.Context, path string, after, first *int, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
 	defer span.Finish()
 	span.SetTag("path", path)
@@ -275,7 +281,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 		return nil, err
 	}
 
-	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r, stat), nil
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r, stat, after, first), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
