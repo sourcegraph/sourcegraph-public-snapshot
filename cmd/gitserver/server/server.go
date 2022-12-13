@@ -1774,8 +1774,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// Check stderr to see if the repo is corrupted, if it is set the corruptedAt time on the repo
 	// and emit a metric
 	if checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr) {
-		s.Logger.Warn("corrupted repo", log.String("repo", string(req.Repo)))
-		// TODO(burmudar:repo): mark the corrupted time for the repo and emit a metric
+		now := time.Now()
+		s.DB.GitserverRepos().SetCorruptedAt(ctx, req.Repo, &now)
 	}
 
 	// write trailer

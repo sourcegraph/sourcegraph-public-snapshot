@@ -529,6 +529,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
+			logger.Info("🧹 🧽 Running cleanup", log.String("name", cfn.Name))
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {

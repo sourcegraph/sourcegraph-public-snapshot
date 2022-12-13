@@ -496,17 +496,6 @@ WHERE
 	return nil
 }
 
-// GitserverFetchData is the metadata associated with a fetch operation on
-// gitserver.
-type GitserverFetchData struct {
-	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
-	LastFetched time.Time
-	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
-	LastChanged time.Time
-	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
-	ShardID string
-}
-
 func (s *gitserverRepoStore) SetCorruptedAt(ctx context.Context, name api.RepoName, ts *time.Time) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
@@ -525,6 +514,17 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 		return errors.New("repo not found")
 	}
 	return nil
+}
+
+// GitserverFetchData is the metadata associated with a fetch operation on
+// gitserver.
+type GitserverFetchData struct {
+	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
+	LastFetched time.Time
+	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
+	LastChanged time.Time
+	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
+	ShardID string
 }
 
 func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
