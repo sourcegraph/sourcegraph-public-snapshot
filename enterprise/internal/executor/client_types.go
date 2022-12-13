@@ -65,7 +65,7 @@ type Job struct {
 	// when spawning containers. Used to authenticate to private registries. When set, this
 	// takes precedence over a potentially configured EXECUTOR_DOCKER_AUTH_CONFIG environment
 	// variable.
-	DockerAuthConfig string `json:"dockerAuthConfig"`
+	DockerAuthConfig DockerAuthConfig `json:"dockerAuthConfig"`
 }
 
 func (j Job) MarshalJSON() ([]byte, error) {
@@ -185,7 +185,7 @@ type v2Job struct {
 	DockerSteps         []DockerStep                    `json:"dockerSteps"`
 	CliSteps            []CliStep                       `json:"cliSteps"`
 	RedactedValues      map[string]string               `json:"redactedValues"`
-	DockerAuthConfig    string                          `json:"dockerAuthConfig"`
+	DockerAuthConfig    DockerAuthConfig                `json:"dockerAuthConfig"`
 }
 
 type v1Job struct {
@@ -338,4 +338,20 @@ type HeartbeatResponse struct {
 type CanceledJobsRequest struct {
 	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
+}
+
+// DockerAuthConfig represents a subset of the docker cli config with the necessary
+// fields to make authentication work.
+type DockerAuthConfig struct {
+	// Auths is a map from registry URL to auth object.
+	Auths DockerAuthConfigAuths `json:"auths"`
+}
+
+// DockerAuthConfigAuths maps a registry URL to an auth object.
+type DockerAuthConfigAuths map[string]DockerAuthConfigAuth
+
+// DockerAuthConfigAuth is a single registrys auth configuration.
+type DockerAuthConfigAuth struct {
+	// Auth is the base64 encoded credential in the format user:password.
+	Auth []byte `json:"auth"`
 }

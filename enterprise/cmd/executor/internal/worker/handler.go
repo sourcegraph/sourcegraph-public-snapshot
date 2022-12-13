@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -123,10 +122,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	if job.DockerAuthConfig != "" {
-		if err := json.Unmarshal([]byte(job.DockerAuthConfig), &options.DockerOptions.DockerAuthConfig); err != nil {
-			return err
-		}
+	// If the job has docker auth config set, prioritize that over the env var.
+	if len(job.DockerAuthConfig.Auths) > 0 {
+		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
 	}
 	runner := h.runnerFactory(workspace.Path(), commandLogger, options, h.operations)
 

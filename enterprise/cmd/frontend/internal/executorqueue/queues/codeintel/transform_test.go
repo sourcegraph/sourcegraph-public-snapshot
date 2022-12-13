@@ -380,7 +380,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 			Key:       "DOCKER_AUTH_CONFIG",
 			Scope:     database.ExecutorSecretScopeCodeIntel,
 			CreatorID: 1,
-		}, "bar"),
+		}, `{"auths": { "hub.docker.com": { "auth": "hunter2" }}}`),
 	}, 0, nil)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
 
@@ -405,7 +405,13 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 			"hunter2":                "PASSWORD_REMOVED",
 			"token-executor hunter2": "token-executor REDACTED",
 		},
-		DockerAuthConfig: "bar",
+		DockerAuthConfig: apiclient.DockerAuthConfig{
+			Auths: apiclient.DockerAuthConfigAuths{
+				"hub.docker.com": apiclient.DockerAuthConfigAuth{
+					Auth: []byte("hunter2"),
+				},
+			},
+		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
 		t.Errorf("unexpected job (-want +got):\n%s", diff)

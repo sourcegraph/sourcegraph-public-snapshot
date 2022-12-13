@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,7 +60,7 @@ type Options struct {
 type DockerOptions struct {
 	// DockerAuthConfig, if set, will be used to configure the docker CLI to authenticate to
 	// registries.
-	DockerAuthConfig DockerAuthConfig
+	DockerAuthConfig executor.DockerAuthConfig
 }
 
 type FirecrackerOptions struct {
@@ -217,20 +218,4 @@ var defaultRunner = &runnerWrapper{}
 
 func (runnerWrapper) RunCommand(ctx context.Context, command command, logger Logger) error {
 	return runCommand(ctx, command, logger)
-}
-
-// DockerAuthConfig represents a subset of the docker cli config with the necessary
-// fields to make authentication work.
-type DockerAuthConfig struct {
-	// Auths is a map from registry URL to auth object.
-	Auths DockerAuthConfigAuths `json:"auths"`
-}
-
-// DockerAuthConfigAuths maps a registry URL to an auth object.
-type DockerAuthConfigAuths map[string]DockerAuthConfigAuth
-
-// DockerAuthConfigAuth is a single registrys auth configuration.
-type DockerAuthConfigAuth struct {
-	// Auth is the base64 encoded credential in the format user:password.
-	Auth []byte `json:"auth"`
 }

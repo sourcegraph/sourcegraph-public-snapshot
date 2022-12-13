@@ -15,7 +15,7 @@ const ScriptsPath = ".sourcegraph-executor"
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
-	// TODO - make this a non-special case
+	// TODO - remove this once src-cli is not required anymore for SSBC.
 	if spec.Image == "" {
 		return command{
 			Key:       spec.Key,

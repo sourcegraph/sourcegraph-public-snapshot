@@ -257,7 +257,7 @@ steps:
 					Key:       "DOCKER_AUTH_CONFIG",
 					Scope:     database.ExecutorSecretScopeBatches,
 					CreatorID: 1,
-				}, "bar"),
+				}, `{"auths": { "hub.docker.com": { "auth": "hunter2" }}}`),
 			},
 			0,
 			nil,
@@ -305,7 +305,13 @@ steps:
 			RedactedValues: map[string]string{
 				"bar": "${{ secrets.FOO }}",
 			},
-			DockerAuthConfig: "bar",
+			DockerAuthConfig: apiclient.DockerAuthConfig{
+				Auths: apiclient.DockerAuthConfigAuths{
+					"hub.docker.com": apiclient.DockerAuthConfigAuth{
+						Auth: []byte("hunter2"),
+					},
+				},
+			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)

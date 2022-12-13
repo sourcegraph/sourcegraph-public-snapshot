@@ -2,7 +2,6 @@ package run
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -129,14 +128,8 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 }
 
 func dockerOptions(c *config.Config) command.DockerOptions {
-	var a command.DockerAuthConfig
-	if c.DockerAuthConfig != "" {
-		if err := json.Unmarshal([]byte(c.DockerAuthConfig), &a); err != nil {
-			panic("invalid")
-		}
-	}
 	return command.DockerOptions{
-		DockerAuthConfig: a,
+		DockerAuthConfig: c.DockerAuthConfig,
 	}
 }
 

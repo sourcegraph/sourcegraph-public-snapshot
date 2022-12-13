@@ -334,7 +334,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		if err != nil {
 			return apiclient.Job{}, err
 		}
-		aj.DockerAuthConfig = val
+		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
+			return aj, err
+		}
 	}
 
 	return aj, nil
