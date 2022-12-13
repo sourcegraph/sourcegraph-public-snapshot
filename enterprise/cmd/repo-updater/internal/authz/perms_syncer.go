@@ -804,20 +804,26 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	pendingCount := len(p.UserIDs)
 
+	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
+
+	var delayMetricField log.Field
+	if !oldPerms.SyncedAt.IsZero() {
+		delay := p.SyncedAt.Sub(oldPerms.SyncedAt)
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("repo").Inc()
+		delay := p.SyncedAt.Sub(repo.CreatedAt)
+		metricsPermsFirstSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	}
+
 	logger.Debug("synced",
 		log.Int("regularCount", regularCount),
 		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
+		delayMetricField,
 	)
-
-	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
-
-	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
-	} else {
-		metricsFirstPermsSyncs.WithLabelValues("repo").Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("repo").Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
-	}
 
 	return providerStates, nil
 }
