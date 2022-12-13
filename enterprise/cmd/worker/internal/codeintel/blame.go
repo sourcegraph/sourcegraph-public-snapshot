@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	cigit "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -156,10 +155,10 @@ var _ workerutil.Handler[*BlameJob] = &handler{}
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *BlameJob) error {
 	fmt.Printf("INVOKED, repo=%d path=%q!\n\n", record.RepositoryID, record.AbsolutePath)
-	hunkCache, err := codenav.NewHunkCache(100)
-	if err != nil {
-		return err
-	}
+	//hunkCache, err := codenav.NewHunkCache(100)
+	// if err != nil {
+	// 	return err
+	// }
 	repos, err := h.db.Repos().GetByIDs(ctx, api.RepoID(record.RepositoryID))
 	if err != nil {
 		return err
@@ -179,7 +178,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *BlameJo
 		return err
 	}
 	maxLine := 0
-	owners := map[int]string{}
+	linesByOwner := database.Ownership{}
 	if len(hunks) == 0 {
 		fmt.Println("no hunks")
 	}
@@ -189,39 +188,44 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *BlameJo
 			maxLine = h.EndLine
 		}
 		for i := h.StartLine; i <= h.EndLine; i++ {
-			owners[i] = h.Author.Name
+			count := linesByOwner[h.Author.Name]
+			count += h.EndLine - h.StartLine + 1
+			linesByOwner[h.Author.Name] = count
 		}
 	}
-	args := shared.RequestArgs{
-		RepositoryID: record.RepositoryID,
-		Commit:       string(commit),
-		Path:         record.AbsolutePath,
-	}
-	uploads, err := h.nav.GetClosestDumpsForBlob(ctx, record.RepositoryID, string(commit), record.AbsolutePath, true, "")
-	if err != nil {
+	if err := h.db.Ownerships().UpdateOwnership(ctx, r.ID, record.AbsolutePath, "blame", linesByOwner); err != nil {
 		return err
 	}
-	ranges, err := h.nav.GetRanges(ctx, args, codenav.NewRequestState(uploads, nil, h.cigit, r, string(commit), record.AbsolutePath, 10, hunkCache), 1, maxLine)
-	if err != nil {
-		return err
-	}
-	if len(ranges) == 0 {
-		fmt.Println("NO RANGES FOR", record.AbsolutePath)
-	}
-	for _, r := range ranges {
-		def := false
-		for _, d := range r.Definitions {
-			// TODO: Need to check how bad this heuristic is.
-			if d.TargetRange.Start.Line <= r.Range.Start.Line && r.Range.End.Line <= d.TargetRange.End.Line {
-				def = true
-				break
-			}
-		}
-		if def {
-			fmt.Println("DEF")
-			fmt.Println(owners[r.Range.Start.Line])
-		}
-	}
+	// args := shared.RequestArgs{
+	// 	RepositoryID: record.RepositoryID,
+	// 	Commit:       string(commit),
+	// 	Path:         record.AbsolutePath,
+	// }
+	// uploads, err := h.nav.GetClosestDumpsForBlob(ctx, record.RepositoryID, string(commit), record.AbsolutePath, true, "")
+	// if err != nil {
+	// 	return err
+	// }
+	// ranges, err := h.nav.GetRanges(ctx, args, codenav.NewRequestState(uploads, nil, h.cigit, r, string(commit), record.AbsolutePath, 10, hunkCache), 1, maxLine)
+	// if err != nil {
+	// 	return err
+	// }
+	// if len(ranges) == 0 {
+	// 	fmt.Println("NO RANGES FOR", record.AbsolutePath)
+	// }
+	// for _, r := range ranges {
+	// 	def := false
+	// 	for _, d := range r.Definitions {
+	// 		// TODO: Need to check how bad this heuristic is.
+	// 		if d.TargetRange.Start.Line <= r.Range.Start.Line && r.Range.End.Line <= d.TargetRange.End.Line {
+	// 			def = true
+	// 			break
+	// 		}
+	// 	}
+	// 	if def {
+	// 		fmt.Println("DEF")
+	// 		fmt.Println(owners[r.Range.Start.Line])
+	// 	}
+	// }
 	return nil
 }
 

@@ -96,6 +96,7 @@ func (s *ownershipStore) FetchOwnership(ctx context.Context, repoID api.RepoID, 
 		if err := rs.Scan(&who, &i); err != nil {
 			return nil, err
 		}
+		// Think later how to extend Ownership object to allow for better aggregation or aggregate here.
 		o[who] = i
 	}
 	return o, nil
