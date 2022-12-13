@@ -1696,7 +1696,8 @@ CREATE TABLE critical_and_site_config (
     type critical_or_site NOT NULL,
     contents text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    author_user_id integer
 );
 
 CREATE SEQUENCE critical_and_site_config_id_seq

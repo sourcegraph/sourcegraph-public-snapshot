@@ -7356,6 +7356,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "author_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "contents",
           "Index": 3,
           "TypeName": "text",
