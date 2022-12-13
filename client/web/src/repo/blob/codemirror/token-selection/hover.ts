@@ -9,14 +9,14 @@ import {
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view'
+import { BehaviorSubject, from, of, Subject, Subscription } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { BehaviorSubject, from, of, Subject, Subscription } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
 
 import { blobPropsFacet } from '..'
 import { pin } from '../hovercard'
