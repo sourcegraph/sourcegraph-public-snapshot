@@ -3,6 +3,8 @@ package honey
 import (
 	"github.com/honeycombio/libhoney-go"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // Event represents a mockable/noop-able single event in Honeycomb terms, as per
@@ -102,8 +104,11 @@ func NewEventWithFields(dataset string, fields map[string]any) Event {
 // not a noop event.
 func newEvent(dataset string) (Event, bool) {
 	if !Enabled() {
+		metricNewEvent.WithLabelValues("false", dataset).Inc()
 		return noopEvent{}, false
 	}
+	metricNewEvent.WithLabelValues("true", dataset).Inc()
+
 	ev := libhoney.NewEvent()
 	ev.Dataset = dataset + suffix
 	return eventWrapper{
@@ -112,3 +117,10 @@ func newEvent(dataset string) (Event, bool) {
 	}, true
 }
 
+// metricNewEvent will help us understand traffic we send to honeycomb as well
+// as identify services wanting to log to honeycomb but missing the requisit
+// environment variables.
+var metricNewEvent = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_honey_event_total",
+	Help: "The total number of honeycomb events created (before sampling).",
+}, []string{"enabled", "dataset"})
