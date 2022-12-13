@@ -217,7 +217,7 @@ func (g *GithubCodeHost) Err() error {
 
 func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) {
 	// not supplied in the config, so get whatever GitHub tells us is present (but might be incorrect)
-	if g.def.TotalRepos == 0 {
+	if g.def.RepositoryLimit == 0 {
 		if strings.HasPrefix(g.def.Path, "@") {
 			u, resp, err := g.c.Users.Get(ctx, strings.Replace(g.def.Path, "@", "", 1))
 			if err != nil {
@@ -240,7 +240,7 @@ func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) 
 			return o.GetOwnedPrivateRepos(), nil
 		}
 	} else {
-		return g.def.TotalRepos, nil
+		return g.def.RepositoryLimit, nil
 	}
 }
 
