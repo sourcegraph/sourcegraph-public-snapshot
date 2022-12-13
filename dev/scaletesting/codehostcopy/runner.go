@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
@@ -74,10 +76,20 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
+
+	pruneKeys := func() {
 		out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Removing codehost ssh key"))
 		cleanup()
+	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		pruneKeys()
+		os.Exit(1)
 	}()
+	defer pruneKeys()
 
 	// Load existing repositories.
 	srcRepos, err := r.store.Load()
