@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -39,7 +40,6 @@ type permsSyncerWorker struct {
 }
 
 func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, record *database.PermissionSyncJob) error {
-	fmt.Println("what the fuck?")
 	prio := priorityLow
 	if record.HighPriority {
 		prio = priorityHigh
@@ -54,24 +54,29 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, recor
 		reqID = int32(record.UserID)
 	}
 
-	h.logger.Warn(
+	h.logger.Info(
 		"Handling permission sync job",
 		log.String("type", reqType.String()),
 		log.Int32("id", reqID),
 		log.String("priority", prio.String()),
 	)
 
-	// actually to the perm syncing
-	h.syncer.syncPerms(ctx, h.syncGroups, &syncRequest{requestMeta: &requestMeta{
+	// We use a background context here because right now syncPerms is an async operation.
+	//
+	// Later we can change the max concurrency on the worker though instead of using
+	// the concurrency groups
+	syncCtx := actor.WithInternalActor(context.Background())
+	h.syncer.syncPerms(syncCtx, h.syncGroups, &syncRequest{requestMeta: &requestMeta{
 		Priority: prio,
 		Type:     reqType,
 		ID:       reqID,
 		Options: authz.FetchPermsOptions{
 			InvalidateCaches: record.InvalidateCaches,
 		},
-		NextSyncAt: time.Time{},
-		NoPerms:    false,
+		// TODO: Fill this out
+		NoPerms: false,
 	}})
+
 	return nil
 }
 

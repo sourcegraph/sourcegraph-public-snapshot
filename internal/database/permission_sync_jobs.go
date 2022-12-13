@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +18,7 @@ import (
 type PermissionSyncJobOpts struct {
 	HighPriority     bool
 	InvalidateCaches bool
+	NextSyncAt       time.Time
 }
 
 type PermissionSyncJobStore interface {
@@ -61,19 +61,27 @@ func (s *permissionSyncJobStore) Done(err error) error {
 }
 
 func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
-	return s.createSyncJob(ctx, &PermissionSyncJob{
+	job := &PermissionSyncJob{
 		UserID:           int(user),
 		HighPriority:     opts.HighPriority,
 		InvalidateCaches: opts.InvalidateCaches,
-	})
+	}
+	if !opts.NextSyncAt.IsZero() {
+		job.ProcessAfter = opts.NextSyncAt
+	}
+	return s.createSyncJob(ctx, job)
 }
 
 func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error {
-	return s.createSyncJob(ctx, &PermissionSyncJob{
+	job := &PermissionSyncJob{
 		RepositoryID:     int(repo),
 		HighPriority:     opts.HighPriority,
 		InvalidateCaches: opts.InvalidateCaches,
-	})
+	}
+	if !opts.NextSyncAt.IsZero() {
+		job.ProcessAfter = opts.NextSyncAt
+	}
+	return s.createSyncJob(ctx, job)
 }
 
 const permissionSyncJobCreateQueryFmtstr = `
@@ -95,7 +103,6 @@ RETURNING %s
 `
 
 func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
-	fmt.Printf("createSyncJob. job=%+v\n", job)
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
 		job.ProcessAfter,
@@ -106,13 +113,7 @@ func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *Permiss
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 	)
 
-	row := s.QueryRow(ctx, q)
-	if err := scanPermissionSyncJob(job, row); err != nil {
-		fmt.Printf("err=%s\n", err)
-		return err
-	}
-
-	return nil
+	return scanPermissionSyncJob(job, s.QueryRow(ctx, q))
 }
 
 type PermissionSyncJob struct {

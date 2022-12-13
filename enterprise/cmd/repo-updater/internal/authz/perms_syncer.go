@@ -3,7 +3,6 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -1029,18 +1028,21 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			logger.Error("failed to compute schedule", log.Error(err))
 			continue
 		}
-		fmt.Printf("schedule. schedule.Users=%d, schedule.Repos=%d\n", len(schedule.Users), len(schedule.Repos))
+
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 		for _, u := range schedule.Users {
-			if err := store.CreateUserSyncJob(ctx, u.userID, database.PermissionSyncJobOpts{}); err != nil {
-				logger.Error("failed to create user job", log.Error(err))
+			opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
+			if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
+				logger.Error("failed to create user sync job", log.Error(err))
 				continue
 			}
 		}
 
 		for _, u := range schedule.Repos {
-			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), database.PermissionSyncJobOpts{}); err != nil {
-				logger.Error("failed to create user job", log.Error(err))
+			opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
+			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), opts); err != nil {
+				logger.Error("failed to create repo sync job", log.Error(err))
 				continue
 			}
 		}
