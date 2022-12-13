@@ -25,23 +25,26 @@ type SSHKeyHandler interface {
 	DropSSHKey(ctx context.Context, keyID int64) error
 }
 
-type CodeHostSource[T any] interface {
+type CodeHostSource interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
 	ListRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error)
 	GetPath() string
 	GetTotalPrivateRepos(ctx context.Context) (int, error)
 	SetPage(total int, remainder int)
-
-	Err() error
-	Next(ctx context.Context) T
-	Done() bool
+	Iterator() Iterator[[]*store.Repo]
 }
 
 type CodeHostDestination interface {
 	GitOpts() []GitOpt
 	SSHKeyHandler
 	CreateRepo(ctx context.Context, name string) (*url.URL, error)
+}
+
+type Iterator[T any] interface {
+	Err() error
+	Next(ctx context.Context) T
+	Done() bool
 }
 
 var app = &cli.App{

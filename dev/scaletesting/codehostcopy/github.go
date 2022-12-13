@@ -26,7 +26,7 @@ type GithubCodeHost struct {
 	err     error
 }
 
-var _ CodeHostSource[[]*store.Repo] = (*GithubCodeHost)(nil)
+var _ CodeHostSource = (*GithubCodeHost)(nil)
 var _ CodeHostDestination = (*GithubCodeHost)(nil)
 
 func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCodeHost, error) {
@@ -179,6 +179,10 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context, start int, size int) ([]
 
 func (g *GithubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (g *GithubCodeHost) Iterator() Iterator[[]*store.Repo] {
+	return g
 }
 
 func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {

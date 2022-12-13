@@ -19,7 +19,7 @@ import (
 )
 
 type Runner struct {
-	source      CodeHostSource[[]*store.Repo]
+	source      CodeHostSource
 	destination CodeHostDestination
 	store       *store.Store
 	logger      log.Logger
@@ -38,7 +38,7 @@ func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
 	}, fields...)
 }
 
-func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource[[]*store.Repo], dest CodeHostDestination) *Runner {
+func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest CodeHostDestination) *Runner {
 	return &Runner{
 		logger:      logger,
 		source:      source,
@@ -119,8 +119,9 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 
 	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
 
-	for !r.source.Done() && r.source.Err() == nil {
-		repos := r.source.Next(ctx)
+	repoIter := r.source.Iterator()
+	for !repoIter.Done() && repoIter.Err() == nil {
+		repos := repoIter.Next(ctx)
 		if err = r.store.Insert(repos); err != nil {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 		}
