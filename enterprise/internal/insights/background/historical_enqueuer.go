@@ -583,7 +583,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
 
-	execution *compression.QueryExecution
+	execution compression.QueryExecution
 
 	// The repository we're building historical data for.
 	id       api.RepoID

@@ -29,9 +29,11 @@ import (
 	"github.com/inconshreveable/log15"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -45,17 +47,17 @@ type NoopFilter struct {
 
 type DataFrameFilter interface {
 	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
+	Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan
 }
 
 type commitFetcher interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-// func NewGitserverFilter(db database.DB) DataFrameFilter {
-// 	client := gitserver.NewClient(db)
-// 	// .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
-// 	return &gitserverFilter{client: client, repos: db.Repos(), gcc: discovery.NewGitCommitClient(db)}
-// }
+func NewGitserverFilter(db database.DB) DataFrameFilter {
+	// // .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+	return &gitserverFilter{commitFetcher: discovery.NewGitCommitClient(db)}
+}
 
 type gitserverFilter struct {
 	// client gitserver.Client
@@ -63,7 +65,11 @@ type gitserverFilter struct {
 	commitFetcher commitFetcher
 }
 
-func (g *gitserverFilter) GitserverFilter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
+func (g *gitserverFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
+	panic("asdf)")
+}
+
+func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
 	var nodes []QueryExecution
 	getCommit := func(to time.Time) (*gitdomain.Commit, bool, error) {
 		commits, err := g.commitFetcher.RecentCommits(ctx, name, to)
@@ -106,31 +112,6 @@ func (g *gitserverFilter) GitserverFilter(ctx context.Context, sampleTimes []tim
 		Executions:  nodes,
 		RecordCount: len(nodes),
 	}
-
-	//
-	// prev := QueryExecution{
-	// 	Revision:         "",
-	// 	RecordingTime:    sampleTimes[0],
-	// 	SharedRecordings: nil,
-	// }
-	// nodes = append(nodes, prev)
-	// for i := 1; i < len(sampleTimes); i++ {
-	// 	currentTime := sampleTimes[i]
-	// 	commit, got := getCommit(currentTime)
-	// 	if got {
-	// 		nodes = append(nodes, prev)
-	// 		prev = QueryExecution{
-	// 			Revision:      string(commit.ID),
-	// 			RecordingTime: commit.Committer.Date,
-	// 		}
-	// 	} else {
-	// 		prev.SharedRecordings = append(prev.SharedRecordings, currentTime)
-	// 	}
-	// }
-	// return BackfillPlan{
-	// 	Executions:  nodes,
-	// 	RecordCount: len(nodes),
-	// }
 }
 
 func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsDB) DataFrameFilter {
@@ -145,6 +126,14 @@ func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsD
 
 func (n *NoopFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
 	return uncompressedPlan(frames)
+}
+
+func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
+	panic("asdf")
+}
+
+func (c *CommitFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
+	panic("asdf")
 }
 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
