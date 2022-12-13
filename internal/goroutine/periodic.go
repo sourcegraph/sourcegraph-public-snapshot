@@ -19,16 +19,20 @@ import (
 // for more information and a step-by-step guide on how to implement a
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
-	interval  time.Duration
-	handler   unifiedHandler
-	operation *observation.Operation
-	clock     glock.Clock
-	ctx       context.Context    // root context passed to the handler
-	cancel    context.CancelFunc // cancels the root context
-	finished  chan struct{}      // signals that Start has finished
+	name        string
+	description string
+	jobName     string
+	interval    time.Duration
+	handler     unifiedHandler
+	operation   *observation.Operation
+	clock       glock.Clock
+	ctx         context.Context    // root context passed to the handler
+	cancel      context.CancelFunc // cancels the root context
+	finished    chan struct{}      // signals that Start has finished
+	monitor     *Monitor
 }
 
-var _ BackgroundRoutine = &PeriodicGoroutine{}
+var _ Monitorable = &PeriodicGoroutine{}
 
 type unifiedHandler interface {
 	Handler
@@ -55,7 +59,7 @@ type Finalizer interface {
 	OnShutdown()
 }
 
-// HandlerFunc wraps a function so it can be used as a Handler.
+// HandlerFunc wraps a function, so it can be used as a Handler.
 type HandlerFunc func(ctx context.Context) error
 
 func (f HandlerFunc) Handle(ctx context.Context) error {
@@ -114,24 +118,36 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 	}
 
 	return &PeriodicGoroutine{
-		handler:   h,
-		interval:  interval,
-		operation: operation,
-		clock:     clock,
-		ctx:       ctx,
-		cancel:    cancel,
-		finished:  make(chan struct{}),
+		name:        name,
+		description: description,
+		handler:     h,
+		interval:    interval,
+		operation:   operation,
+		clock:       clock,
+		ctx:         ctx,
+		cancel:      cancel,
+		finished:    make(chan struct{}),
 	}
 }
 
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
 func (r *PeriodicGoroutine) Start() {
+	if r.monitor != nil {
+		go (*r.monitor).LogStart(r)
+	}
 	defer close(r.finished)
 
 loop:
 	for {
-		if shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation); shutdown {
+		start := time.Now()
+		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
+		duration := time.Since(start)
+		if r.monitor != nil {
+			go (*r.monitor).LogRun(r, shutdown, err, duration)
+		}
+
+		if shutdown {
 			break
 		} else if h, ok := r.handler.(ErrorHandler); ok && err != nil {
 			h.HandleError(err)
@@ -153,8 +169,31 @@ loop:
 // iteration of work, then break the loop in the Start method so that no new work
 // is accepted. This method blocks until Start has returned.
 func (r *PeriodicGoroutine) Stop() {
+	if r.monitor != nil {
+		go (*r.monitor).LogStop(r)
+	}
 	r.cancel()
 	<-r.finished
+}
+
+func (r *PeriodicGoroutine) Name() string {
+	return r.name
+}
+
+func (r *PeriodicGoroutine) Description() string {
+	return r.description
+}
+
+func (r *PeriodicGoroutine) JobName() string {
+	return r.jobName
+}
+
+func (r *PeriodicGoroutine) SetJobName(jobName string) {
+	r.jobName = jobName
+}
+
+func (r *PeriodicGoroutine) RegisterMonitor(monitor *Monitor) {
+	r.monitor = monitor
 }
 
 func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {
