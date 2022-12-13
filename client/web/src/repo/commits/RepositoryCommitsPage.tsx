@@ -135,7 +135,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     >({
         query: REPOSITORY_GIT_COMMITS_QUERY,
         variables: {
-            repo: repo?.id,
+            repo: repo.id,
             revspec: props.revision,
             filePath: filePath ?? null,
             first: REPOSITORY_GIT_COMMITS_PER_PAGE,
