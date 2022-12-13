@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
@@ -13,7 +14,6 @@ import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 
