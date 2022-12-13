@@ -45,8 +45,9 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 			},
 		}, nil
 	}
+	numberOfRepositories := int32(len(repos))
 	return &scopedInsightQueryResultResolver{
-		resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: int32(len(repos))},
+		resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: &numberOfRepositories},
 	}, nil
 }
 
@@ -73,11 +74,11 @@ func isValidScopeQuery(plan searchquery.Plan) (string, bool) {
 }
 
 type scopedInsightQueryPayloadResolver struct {
-	numberOfRepositories int32
+	numberOfRepositories *int32
 	query                string
 }
 
-func (s *scopedInsightQueryPayloadResolver) NumberOfRepositories(ctx context.Context) int32 {
+func (s *scopedInsightQueryPayloadResolver) NumberOfRepositories(ctx context.Context) *int32 {
 	return s.numberOfRepositories
 }
 

@@ -1281,7 +1281,7 @@ type ScopedInsightQueryPayload {
     """
     The number of repositories matched by query for the calling user.
     """
-    numberOfRepositories: Int!
+    numberOfRepositories: Int
     """
     Validated query that can be run for previewing repository scope.
     """

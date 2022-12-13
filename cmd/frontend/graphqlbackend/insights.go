@@ -493,7 +493,7 @@ type ScopedInsightQueryPayloadResultResolver interface {
 }
 
 type ScopedInsightQueryPayloadResolver interface {
-	NumberOfRepositories(ctx context.Context) int32
+	NumberOfRepositories(ctx context.Context) *int32
 	Query(ctx context.Context) string
 }
 
