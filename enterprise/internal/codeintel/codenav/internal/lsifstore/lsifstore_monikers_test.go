@@ -73,6 +73,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 }
 
 func TestGetBulkMonikerLocations(t *testing.T) {
+	t.Skip("skipping flakey test: https://github.com/sourcegraph/sourcegraph/issues/45609")
 	tableName := "references"
 	uploadIDs := []int{testLSIFUploadID, testSCIPUploadID}
 	monikers := []precise.MonikerData{
