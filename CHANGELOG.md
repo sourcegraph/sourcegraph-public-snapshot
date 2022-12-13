@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Added a button "Reindex now" to the index status page. Admins can now force an immediate reindex of a repository. [#45533](https://github.com/sourcegraph/sourcegraph/pull/45533)
 
 ### Changed
 
@@ -49,7 +49,6 @@ All notable changes to Sourcegraph are documented in this file.
 - [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) accepts an optional prefix `!` to negate a pattern. The order of the patterns within search.largeFiles is honored such that the last pattern matching overrides preceding patterns. For patterns that begin with a literal `!` prefix with a backslash, for example, `\!fileNameStartsWithExcl!.txt`. Previously indexed files that become excluded due to this change will remain in the index until the next reindex [#45318](https://github.com/sourcegraph/sourcegraph/pull/45318)
 - [Webhooks](https://docs.sourcegraph.com/admin/config/webhooks) have been overhauled completely and can now be found under **Site admin > Repositories > Incoming webhooks**. Webhooks that were added via code host configuration are [deprecated](https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice) and will be removed in 4.6.0.
 - Added support for receiving webhook `push` events from GitHub which will trigger Sourcegraph to fetch the latest commit rather than relying on polling.
-- Added a button "Reindex now" to the index status page. Admins can now force an immediate reindex of a repository. [#45178](https://github.com/sourcegraph/sourcegraph/pull/45178)
 
 ### Changed
 
