@@ -86,9 +86,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     )
 
     const canCreateMonitorFromQuery = useMemo(() => {
-        if (globalTypeFilter) {
-            return false
-        }
         return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
     }, [globalTypeFilter])
 
