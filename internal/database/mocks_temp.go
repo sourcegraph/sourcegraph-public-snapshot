@@ -23138,6 +23138,9 @@ type MockGitserverRepoStore struct {
 	// SetCloneStatusFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCloneStatus.
 	SetCloneStatusFunc *GitserverRepoStoreSetCloneStatusFunc
+	// SetCorruptedAtFunc is an instance of a mock function object
+	// controlling the behavior of the method SetCorruptedAt.
+	SetCorruptedAtFunc *GitserverRepoStoreSetCorruptedAtFunc
 	// SetLastErrorFunc is an instance of a mock function object controlling
 	// the behavior of the method SetLastError.
 	SetLastErrorFunc *GitserverRepoStoreSetLastErrorFunc
@@ -23214,6 +23217,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: func(context.Context, api.RepoName, types.CloneStatus, string) (r0 error) {
+				return
+			},
+		},
+		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
+			defaultHook: func(context.Context, api.RepoName, *time.Time) (r0 error) {
 				return
 			},
 		},
@@ -23310,6 +23318,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloneStatus")
 			},
 		},
+		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
+			defaultHook: func(context.Context, api.RepoName, *time.Time) error {
+				panic("unexpected invocation of MockGitserverRepoStore.SetCorruptedAt")
+			},
+		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastError")
@@ -23382,6 +23395,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: i.SetCloneStatus,
+		},
+		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
+			defaultHook: i.SetCorruptedAt,
 		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
 			defaultHook: i.SetLastError,
@@ -24505,6 +24521,117 @@ func (c GitserverRepoStoreSetCloneStatusFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreSetCloneStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreSetCorruptedAtFunc describes the behavior when the
+// SetCorruptedAt method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreSetCorruptedAtFunc struct {
+	defaultHook func(context.Context, api.RepoName, *time.Time) error
+	hooks       []func(context.Context, api.RepoName, *time.Time) error
+	history     []GitserverRepoStoreSetCorruptedAtFuncCall
+	mutex       sync.Mutex
+}
+
+// SetCorruptedAt delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) SetCorruptedAt(v0 context.Context, v1 api.RepoName, v2 *time.Time) error {
+	r0 := m.SetCorruptedAtFunc.nextHook()(v0, v1, v2)
+	m.SetCorruptedAtFunc.appendCall(GitserverRepoStoreSetCorruptedAtFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetCorruptedAt
+// method of the parent MockGitserverRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultHook(hook func(context.Context, api.RepoName, *time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetCorruptedAt method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Context, api.RepoName, *time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, *time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreSetCorruptedAtFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, *time.Time) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreSetCorruptedAtFunc) nextHook() func(context.Context, api.RepoName, *time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreSetCorruptedAtFunc) appendCall(r0 GitserverRepoStoreSetCorruptedAtFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreSetCorruptedAtFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreSetCorruptedAtFunc) History() []GitserverRepoStoreSetCorruptedAtFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreSetCorruptedAtFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreSetCorruptedAtFuncCall is an object that describes an
+// invocation of method SetCorruptedAt on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreSetCorruptedAtFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreSetCorruptedAtFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreSetCorruptedAtFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
