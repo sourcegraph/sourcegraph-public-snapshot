@@ -4,12 +4,12 @@ import { Key } from 'ts-key-enum'
 
 import { decodePointId, getDatumValue, SeriesDatum, SeriesWithData } from './utils'
 
-interface Props {
+interface Props<Datum> {
     element: SVGSVGElement | null
-    series: SeriesWithData<any>[]
+    series: SeriesWithData<Datum>[]
 }
 
-export function useKeyboardNavigation(props: Props): void {
+export function useKeyboardNavigation<Datum>(props: Props<Datum>): void {
     const { element, series } = props
 
     useEffect(() => {
@@ -28,10 +28,13 @@ export function useKeyboardNavigation(props: Props): void {
 
             // Focus the first element within the chart
             if (isFocusOnTheRootElement) {
-                if (event.key === Key.Enter || isArrowPressed(event)) {
+                if (event.key === Key.Enter) {
                     const firstElementId = findTheFirstPointId(series)
                     const firstElement = element?.querySelector<HTMLElement>(`[data-id="${firstElementId}"]`)
                     firstElement?.focus()
+
+                    event.preventDefault()
+                    event.stopImmediatePropagation()
                 }
 
                 return
@@ -68,15 +71,15 @@ export function useKeyboardNavigation(props: Props): void {
             nextElement?.focus()
         }
 
-        element.addEventListener('keydown', handleKeyPress, true)
+        element.addEventListener('keydown', handleKeyPress)
 
         return () => {
-            element.removeEventListener('keydown', handleKeyPress, true)
+            element.removeEventListener('keydown', handleKeyPress)
         }
     }, [element, series])
 }
 
-function findTheFirstPointId(series: SeriesWithData<unknown>[]): string | null {
+function findTheFirstPointId<Datum>(series: SeriesWithData<Datum>[]): string | null {
     const sortedSeries = getSortedByFirstPointSeries(series)
     const nonEmptySeries = sortedSeries.find(series => series.data.length > 0)
 
@@ -87,7 +90,11 @@ function findTheFirstPointId(series: SeriesWithData<unknown>[]): string | null {
     return nonEmptySeries.data[0].id
 }
 
-function findNextElementId(event: KeyboardEvent, currentId: string, series: SeriesWithData<any>[]): string | null {
+function findNextElementId<Datum>(
+    event: KeyboardEvent,
+    currentId: string,
+    series: SeriesWithData<Datum>[]
+): string | null {
     const [seriesId, index] = decodePointId(currentId)
 
     const sortedSeries = getSortedByFirstPointSeries(series)
@@ -137,16 +144,16 @@ function findNextElementId(event: KeyboardEvent, currentId: string, series: Seri
     }
 }
 
-function getAbovePointId(
-    currentPoint: SeriesDatum<unknown>,
+function getAbovePointId<Datum>(
+    currentPoint: SeriesDatum<Datum>,
     currentSeriesId: string | number,
-    sortedSeries: SeriesWithData<unknown>[]
+    sortedSeries: SeriesWithData<Datum>[]
 ): string | null {
     const currentYValue = getDatumValue(currentPoint)
 
     const seriesWithSameValue = sortedSeries.filter(series =>
-        (series.data as SeriesDatum<any>[]).find(
-            datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+        (series.data as SeriesDatum<Datum>[]).find(
+            datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
         )
     )
 
@@ -160,30 +167,30 @@ function getAbovePointId(
         if (currentSeriesIndex < seriesWithSameValue.length - 1) {
             const nextSeries = seriesWithSameValue[currentSeriesIndex + 1]
             return (
-                (nextSeries.data as SeriesDatum<unknown>[]).find(
-                    datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+                (nextSeries.data as SeriesDatum<Datum>[]).find(
+                    datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
                 )?.id ?? null
             )
         }
     }
 
-    const flatListOfAllPoints = sortedSeries.flatMap<SeriesDatum<unknown>>(series =>
-        (series.data as SeriesDatum<unknown>[]).filter(datum => +currentPoint.x === +datum.x)
+    const flatListOfAllPoints = sortedSeries.flatMap<SeriesDatum<Datum>>(series =>
+        (series.data as SeriesDatum<Datum>[]).filter(datum => toInt(currentPoint.x) === toInt(datum.x))
     )
 
     // Try to find element above the current point
     const elementsAboveThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) > currentYValue)
-        .sort((a, b) => getDatumValue(a) - getDatumValue(b))
+        .sort(ascendingDatumOrder)
 
     if (elementsAboveThePoint.length > 0) {
         return elementsAboveThePoint[0].id
     }
 
-    // Try to find element above the current point
+    // Try to find element below the current point
     const elementsBelowThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) < currentYValue)
-        .sort((a, b) => getDatumValue(a) - getDatumValue(b))
+        .sort(ascendingDatumOrder)
 
     if (elementsBelowThePoint.length > 0) {
         return elementsBelowThePoint[0].id
@@ -195,22 +202,22 @@ function getAbovePointId(
     // in the group
     const nextSeries = seriesWithSameValue[0]
     return (
-        (nextSeries.data as SeriesDatum<unknown>[]).find(
-            datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+        (nextSeries.data as SeriesDatum<Datum>[]).find(
+            datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
         )?.id ?? null
     )
 }
 
-function getBelowPointId(
-    currentPoint: SeriesDatum<unknown>,
+function getBelowPointId<Datum>(
+    currentPoint: SeriesDatum<Datum>,
     currentSeriesId: string | number,
-    sortedSeries: SeriesWithData<unknown>[]
+    sortedSeries: SeriesWithData<Datum>[]
 ): string | null {
     const currentYValue = getDatumValue(currentPoint)
 
     const seriesWithSameValue = sortedSeries.filter(series =>
-        (series.data as SeriesDatum<any>[]).find(
-            datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+        (series.data as SeriesDatum<Datum>[]).find(
+            datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
         )
     )
 
@@ -222,21 +229,21 @@ function getBelowPointId(
         if (currentSeriesIndex > 0) {
             const nextSeries = seriesWithSameValue[currentSeriesIndex - 1]
             return (
-                (nextSeries.data as SeriesDatum<unknown>[]).find(
-                    datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+                (nextSeries.data as SeriesDatum<Datum>[]).find(
+                    datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
                 )?.id ?? null
             )
         }
     }
 
-    const flatListOfAllPoints = sortedSeries.flatMap<SeriesDatum<any>>(series =>
-        (series.data as SeriesDatum<unknown>[]).filter(datum => +currentPoint.x === +datum.x)
+    const flatListOfAllPoints = sortedSeries.flatMap<SeriesDatum<Datum>>(series =>
+        (series.data as SeriesDatum<Datum>[]).filter(datum => toInt(currentPoint.x) === toInt(datum.x))
     )
 
     // Try to find element below the current point
     const elementsBelowThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) < currentYValue)
-        .sort((a, b) => getDatumValue(b) - getDatumValue(a))
+        .sort(descendingDatumOrder)
 
     if (elementsBelowThePoint.length > 0) {
         // Focus the last element within the group of series with the same values
@@ -247,7 +254,7 @@ function getBelowPointId(
     // Try to find element above the current point
     const elementsAboveThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) > currentYValue)
-        .sort((a, b) => getDatumValue(b) - getDatumValue(a))
+        .sort(descendingDatumOrder)
 
     if (elementsAboveThePoint.length > 0) {
         // Focus the last element within the group of series with the same values
@@ -257,8 +264,8 @@ function getBelowPointId(
 
     const nextSeries = seriesWithSameValue[seriesWithSameValue.length - 1]
     return (
-        (nextSeries.data as SeriesDatum<unknown>[]).find(
-            datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
+        (nextSeries.data as SeriesDatum<Datum>[]).find(
+            datum => getDatumValue(datum) === currentYValue && toInt(currentPoint.x) === toInt(datum.x)
         )?.id ?? null
     )
 }
@@ -266,7 +273,7 @@ function getBelowPointId(
 /**
  * Returns sorted series list by the first datum value in each series dataset.
  */
-export function getSortedByFirstPointSeries(series: SeriesWithData<any>[]): SeriesWithData<any>[] {
+export function getSortedByFirstPointSeries<Datum>(series: SeriesWithData<Datum>[]): SeriesWithData<Datum>[] {
     return [...series].sort((a, b) => getDatumValue(a.data[0]) - getDatumValue(b.data[0]))
 }
 
@@ -298,4 +305,16 @@ function isArrowPressed(event: KeyboardEvent): boolean {
         event.key === Key.ArrowDown ||
         event.key === Key.ArrowLeft
     )
+}
+
+function ascendingDatumOrder<Datum>(a: SeriesDatum<Datum>, b: SeriesDatum<Datum>): number {
+    return getDatumValue(a) - getDatumValue(b)
+}
+
+function descendingDatumOrder<Datum>(a: SeriesDatum<Datum>, b: SeriesDatum<Datum>): number {
+    return getDatumValue(b) - getDatumValue(a)
+}
+
+function toInt(date: Date): number {
+    return +date
 }
