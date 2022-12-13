@@ -112,7 +112,7 @@ class SuggestionView {
         // We need to delay the initial render otherwise React complains that
         // wer are rendering a component while already rendering another one
         // (the query input component)
-        Promise.resolve().then(() => {
+        setTimeout(() => {
             this.root.render(
                 React.createElement(Suggestions, {
                     id,
@@ -122,7 +122,7 @@ class SuggestionView {
                     onSelect: this.onSelect,
                 })
             )
-        })
+        }, 0)
     }
 
     public update(update: ViewUpdate): void {
@@ -150,9 +150,9 @@ class SuggestionView {
 
         // We need to delay unmounting the root otherwise React complains about
         // synchronsouly unmounting multiple components.
-        Promise.resolve().then(() => {
+        setTimeout(() => {
             this.root.unmount()
-        })
+        }, 0)
     }
 }
 
