@@ -52,27 +52,23 @@ var (
 	metricsSuccessPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_perms_syncer_success_syncs",
 		Help: "Total number of successful permissions syncs",
-	}, []string{"type", "id"})
+	}, []string{"type"})
 	metricsFailedPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_perms_syncer_failed_syncs",
 		Help: "Total number of failed permissions syncs",
-	}, []string{"type", "id"})
+	}, []string{"type"})
 	metricsFirstPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_perms_syncer_initial_syncs",
 		Help: "Total number of new user/repo permissions syncs",
-	}, []string{"type", "id"})
-	metricsPermsFound = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_perms_found",
-		Help: "The number of perms found for user/repo after sync",
-	}, []string{"type", "id"})
+	}, []string{"type"})
 	metricsPermsConsecutiveSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_consecutive_sync_delay",
-		Help: "The duration in minutes between last and current complete premissions sync.",
-	}, []string{"type", "id"})
+		Help: "The duration in seconds between last and current complete premissions sync.",
+	}, []string{"type"})
 	metricsPermsFirstSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_first_sync_delay",
-		Help: "The duration in minutes it took for first user/repo complete perms sync after creation",
-	}, []string{"type", "id"})
+		Help: "The duration in seconds it took for first user/repo complete perms sync after creation",
+	}, []string{"type"})
 	metricsItemsSyncScheduled = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_items_sync_scheduled",
 		Help: "The number of users/repos scheduled for sync",

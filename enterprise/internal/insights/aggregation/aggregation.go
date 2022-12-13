@@ -52,7 +52,7 @@ func countRepo(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countLang(r result.Match) (map[MatchKey]int, error) {
+func countLang(r result.Match) map[MatchKey]int {
 	var lang string
 	switch match := r.(type) {
 	case *result.FileMatch:
@@ -64,9 +64,9 @@ func countLang(r result.Match) (map[MatchKey]int, error) {
 			RepoID: int32(r.RepoName().ID),
 			Repo:   string(r.RepoName().Name),
 			Group:  lang,
-		}: r.ResultCount()}, nil
+		}: r.ResultCount()}
 	}
-	return nil, nil
+	return nil
 }
 
 func countPath(r result.Match) (map[MatchKey]int, error) {
@@ -119,7 +119,7 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 			matches := map[MatchKey]int{}
 			for _, contentPiece := range content {
 				for _, submatches := range regexp.FindAllStringSubmatchIndex(contentPiece, -1) {
-					contentMatches := fromRegexpMatches(submatches, regexp.SubexpNames(), contentPiece)
+					contentMatches := fromRegexpMatches(submatches, contentPiece)
 					for value, count := range contentMatches {
 						key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
 						if len(key.Group) > 100 {

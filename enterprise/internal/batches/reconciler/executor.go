@@ -187,10 +187,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
-	if err != nil {
-		return err
-	}
+	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
@@ -614,12 +611,12 @@ func handleArchivedRepo(
 	return nil
 }
 
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
+func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
 	patch := append([]byte{}, spec.Diff...)
 	patch = append(patch, []byte("\n")...)
-	opts = protocol.CreateCommitFromPatchRequest{
+	opts := protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
 		BaseCommit: api.CommitID(spec.BaseRev),
 		Patch:      patch,
@@ -644,7 +641,7 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		Push:         pushOpts,
 	}
 
-	return opts, nil
+	return opts
 }
 
 type getBatchChanger interface {

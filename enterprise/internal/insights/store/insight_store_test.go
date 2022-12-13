@@ -42,10 +42,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null,'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, 'repo:*');`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +69,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -92,6 +93,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -156,6 +158,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -179,6 +182,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -218,6 +222,7 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               1,
@@ -241,6 +246,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               1,
@@ -304,9 +310,9 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
-		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo')`, now)
+		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null)`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +354,7 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               5,
@@ -371,6 +377,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               5,
@@ -416,6 +423,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -461,6 +469,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -473,7 +482,7 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               5,
@@ -496,6 +505,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               5,
@@ -531,7 +541,7 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -554,6 +564,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -589,7 +600,7 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -612,6 +623,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               2,
@@ -657,6 +669,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -681,10 +694,10 @@ func TestGetAllOnDashboard(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, null);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -720,7 +733,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -768,6 +781,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
 				ViewID:               4,
@@ -815,6 +829,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -827,7 +842,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               2,
@@ -875,6 +890,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -887,7 +903,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
 				ViewID:               4,
@@ -935,6 +951,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -957,6 +974,7 @@ func TestCreateSeries(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("test create series", func(t *testing.T) {
+		repoCriteria := "repo:a"
 		series := types.InsightSeries{
 			SeriesID:           "unique-1",
 			Query:              "query-1",
@@ -969,6 +987,7 @@ func TestCreateSeries(t *testing.T) {
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
 			GroupBy:            &groupByRepo,
+			RepositoryCriteria: &repoCriteria,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -991,6 +1010,7 @@ func TestCreateSeries(t *testing.T) {
 			GenerationMethod:     types.Search,
 			GroupBy:              &groupByRepo,
 			SupportsAugmentation: true,
+			RepositoryCriteria:   &repoCriteria,
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -1000,6 +1020,7 @@ func TestCreateSeries(t *testing.T) {
 	t.Run("test create and get capture groups series", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		sampleIntervalUnit := "MONTH"
+		repoCriteria := "repo:a"
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   "capture-group-1",
 			Query:                      "well hello there",
@@ -1014,6 +1035,7 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:                  now,
 			GeneratedFromCaptureGroups: true,
 			GenerationMethod:           types.Search,
+			RepositoryCriteria:         &repoCriteria,
 		})
 		if err != nil {
 			return

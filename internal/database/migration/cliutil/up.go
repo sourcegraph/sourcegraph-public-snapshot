@@ -89,15 +89,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		schemaNames, err := sanitizeSchemaNames(schemaNamesFlag.Get(cmd))
-		if err != nil {
-			return err
-		}
+		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd))
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")
 		}
 
-		r, err := setupRunner(ctx, factory, schemaNames...)
+		r, err := setupRunner(factory, schemaNames...)
 		if err != nil {
 			return err
 		}
