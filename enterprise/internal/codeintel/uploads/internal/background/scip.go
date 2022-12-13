@@ -1,6 +1,7 @@
 package background
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"io"
@@ -237,10 +238,18 @@ func processDocument(document *scip.Document, externalSymbolsByName map[string]*
 		}
 	}
 
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return lsifstore.ProcessedSCIPDocument{
+			DocumentPath: path,
+			Err:          err,
+		}
+	}
+
 	return lsifstore.ProcessedSCIPDocument{
 		DocumentPath:   path,
 		Hash:           hashPayload(payload),
-		RawSCIPPayload: payload,
+		RawSCIPPayload: compressedPayload,
 		Symbols:        types.ExtractSymbolIndexes(document),
 	}
 }

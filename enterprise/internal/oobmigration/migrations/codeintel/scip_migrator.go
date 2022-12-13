@@ -1,6 +1,7 @@
 package codeintel
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -270,7 +271,6 @@ func processDocument(
 	path string,
 	document DocumentData,
 ) error {
-
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -320,11 +320,16 @@ func processDocument(
 		return err
 	}
 
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
 	if err := scipWriter.Write(
 		ctx,
 		uploadID,
 		path,
-		payload,
+		compressedPayload,
 		hashPayload(payload),
 		types.ExtractSymbolIndexes(scipDocument),
 	); err != nil {
