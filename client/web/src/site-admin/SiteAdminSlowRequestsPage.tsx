@@ -100,32 +100,33 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                 path={[{ text: 'Slow requests' }]}
                 headingElement="h2"
                 description={
-                    <div>
-                        <Text>
-                            This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy
-                            for seeing what's happening between clients and our API.
-                        </Text>
-                        <Text>
-                            The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the
-                            GraphQL request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set
-                            in your environment or to replace it in the copied command.
-                        </Text>
-                        Slow requests capture is configured through{' '}
-                        <Link to="/site-admin/configuration">site config</Link>:
-                        <ul>
-                            <li>
-                                Minimum duration for a GraphQL request to be considered slow{' '}
-                                <strong>observability.logSlowGraphQLRequests</strong>
-                            </li>
-                            <li>
-                                Maximum count of captured requests to keep{' '}
-                                <strong>observability.captureSlowGraphQLRequestsLimit</strong>
-                            </li>
-                        </ul>
-                    </div>
+                    <>
+                        This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for
+                        seeing what's happening between clients and our API.
+                    </>
                 }
                 className="mb-3"
             />
+
+            <Text>
+                The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the GraphQL
+                request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set in your environment
+                or to replace it in the copied command.
+            </Text>
+
+            <Text>
+                Slow requests capture is configured through <Link to="/site-admin/configuration">site config</Link>:
+            </Text>
+            <ul>
+                <li>
+                    Minimum duration for a GraphQL request to be considered slow{' '}
+                    <strong>observability.logSlowGraphQLRequests</strong>
+                </li>
+                <li>
+                    Maximum count of captured requests to keep{' '}
+                    <strong>observability.captureSlowGraphQLRequestsLimit</strong>
+                </li>
+            </ul>
 
             <Container className="mb-3">
                 <FilteredConnection<SlowRequest>
@@ -163,7 +164,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 <Timestamp date={node.start} noAbout={true} strict={true} />
             </div>
             <div>
-                <Tooltip content={'Repo Name: ' + node.repository?.name ? node.repository?.name : ''}>
+                <Tooltip content={'Repo Name: ' + node.repository?.name || ''}>
                     <Code>{node.repository?.name ? shortenRepoName(node.repository?.name) : ''}</Code>
                 </Tooltip>
             </div>
@@ -180,7 +181,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 </Tooltip>
             </div>
             <div>
-                <Tooltip content={'Filepath: ' + node.filepath}>
+                <Tooltip content={'Filepath: ' + node?.filepath || ''}>
                     <Code>{node.filepath ? ellipsis(node.filepath, 30) : ''}</Code>
                 </Tooltip>
             </div>
