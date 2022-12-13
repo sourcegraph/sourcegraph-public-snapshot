@@ -314,7 +314,7 @@ func hookWithID(
 	err = doSearch(&argsCopy)
 	if err != nil {
 		if errors.IsContextError(err) {
-			logger.Error(
+			logger.Warn(
 				"commit search timed out, some commits may have been skipped",
 				log.Error(err),
 				log.String("repo", string(args.Repo)),
