@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestOwnershipUpdate(t *testing.T) {
+func TestOwnershipUpdateAndRead(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -25,10 +27,26 @@ func TestOwnershipUpdate(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 	repo := makeRepo(ctx, t, db)
-	err := db.Ownerships().UpdateOwnership(ctx, repo.ID, "foo/bar/baz", "blame", map[string]int{"cbart": -1})
-	if err != nil {
-		t.Fatal(err)
+	want := Ownership{"cbart": -1}
+	err := db.Ownerships().UpdateOwnership(ctx, repo.ID, "foo/bar/baz", "blame", want)
+	require.NoError(t, err)
+	got, err := db.Ownerships().FetchOwnership(ctx, repo.ID, "foo/bar/baz")
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func TestEmptyOwnership(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+	repo := makeRepo(ctx, t, db)
+	o, err := db.Ownerships().FetchOwnership(ctx, repo.ID, "foo/bar/baz")
+	require.NoError(t, err)
+	assert.Empty(t, o)
 }
 
 func makeRepo(ctx context.Context, t *testing.T, db DB) *types.Repo {
