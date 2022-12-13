@@ -1,6 +1,7 @@
 package lsifstore
 
 import (
+	"bytes"
 	"database/sql"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -37,7 +38,7 @@ func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 	var uploadID int
 	var path string
 	var encoded MarshalledDocumentData
-	var scipPayload []byte
+	var compressedSCIPPayload []byte
 
 	if err := rows.Scan(
 		&uploadID,
@@ -48,7 +49,7 @@ func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 		&encoded.Monikers,
 		&encoded.PackageInformation,
 		&encoded.Diagnostics,
-		&scipPayload,
+		&compressedSCIPPayload,
 	); err != nil {
 		return QualifiedDocumentData{}, err
 	}
@@ -58,7 +59,12 @@ func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 		Path:     path,
 	}
 
-	if len(scipPayload) != 0 {
+	if len(compressedSCIPPayload) != 0 {
+		scipPayload, err := decompressor.decompress(bytes.NewReader(compressedSCIPPayload))
+		if err != nil {
+			return QualifiedDocumentData{}, err
+		}
+
 		var data scip.Document
 		if err := proto.Unmarshal(scipPayload, &data); err != nil {
 			return QualifiedDocumentData{}, err

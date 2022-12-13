@@ -15,17 +15,16 @@ func (s *store) ProcessStaleSourcedCommits(
 	ctx context.Context,
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
+	_ time.Duration,
 	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
 ) (int, error) {
-	return s.processStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, commitResolverMaximumCommitLag, shouldDelete, time.Now())
+	return s.processStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, shouldDelete, time.Now())
 }
 
 func (s *store) processStaleSourcedCommits(
 	ctx context.Context,
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
 	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
 	now time.Time,
 ) (totalDeleted int, err error) {

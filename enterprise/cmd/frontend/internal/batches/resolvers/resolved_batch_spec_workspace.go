@@ -32,12 +32,12 @@ func (r *resolvedBatchSpecWorkspaceResolver) Unsupported() bool {
 	return r.workspace.Unsupported
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Repository(ctx context.Context) *graphqlbackend.RepositoryResolver {
-	return r.computeRepoResolver(ctx)
+func (r *resolvedBatchSpecWorkspaceResolver) Repository() *graphqlbackend.RepositoryResolver {
+	return r.computeRepoResolver()
 }
 
 func (r *resolvedBatchSpecWorkspaceResolver) Branch(ctx context.Context) *graphqlbackend.GitRefResolver {
-	return graphqlbackend.NewGitRefResolver(r.computeRepoResolver(ctx), r.workspace.Branch, graphqlbackend.GitObjectID(r.workspace.Commit))
+	return graphqlbackend.NewGitRefResolver(r.computeRepoResolver(), r.workspace.Branch, graphqlbackend.GitObjectID(r.workspace.Commit))
 }
 
 func (r *resolvedBatchSpecWorkspaceResolver) Path() string {
@@ -48,7 +48,7 @@ func (r *resolvedBatchSpecWorkspaceResolver) SearchResultPaths() []string {
 	return r.workspace.FileMatches
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) computeRepoResolver(ctx context.Context) *graphqlbackend.RepositoryResolver {
+func (r *resolvedBatchSpecWorkspaceResolver) computeRepoResolver() *graphqlbackend.RepositoryResolver {
 	r.repoResolverOnce.Do(func() {
 		db := r.store.DatabaseDB()
 		r.repoResolver = graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(db), r.workspace.Repo)

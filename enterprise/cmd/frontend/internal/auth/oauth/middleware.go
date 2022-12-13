@@ -34,7 +34,7 @@ import (
 )
 
 func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(serviceType))
 	traceFamily := fmt.Sprintf("oauth.%s", serviceType)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 	})
 }
 
-func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
+func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")

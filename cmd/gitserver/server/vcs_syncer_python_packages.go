@@ -116,7 +116,7 @@ func unpackPythonPackage(pkg io.Reader, packageURL, workDir string) error {
 				return false
 			}
 
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
 			return !malicious
 		},
 	}
