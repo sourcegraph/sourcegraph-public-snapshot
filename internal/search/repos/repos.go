@@ -89,45 +89,6 @@ type Resolver struct {
 	searcher  *endpoint.Map
 }
 
-func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if opts.Limit == 0 {
-		opts.Limit = 4096
-	}
-
-	var errs error
-
-	for {
-		page, err := r.Resolve(ctx, opts)
-		if err != nil {
-			errs = errors.Append(errs, err)
-			// For missing repo revs, just collect the error and keep paging
-			if !errors.Is(err, &MissingRepoRevsError{}) {
-				break
-			}
-		}
-		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
-
-		if err = handle(&page); err != nil {
-			errs = errors.Append(errs, err)
-			break
-		}
-
-		if page.Next == nil {
-			break
-		}
-
-		opts.Cursors = page.Next
-	}
-
-	return errs
-}
-
 func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[*Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
