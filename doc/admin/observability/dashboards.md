@@ -4131,11 +4131,11 @@ Query: `sum(increase(src_email_send{success="false"}[30m]))`
 
 <br />
 
-#### frontend: email_deliveries_by_source
+#### frontend: email_deliveries_total
 
-<p class="subtitle">Emails successfully delivered every 5 minutes by source</p>
+<p class="subtitle">Total emails successfully delivered every 30 minutes</p>
 
-Emails successfully delivered by source.
+Total emails successfully delivered.
 
 This panel has no related alerts.
 
@@ -4146,17 +4146,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`
+Query: `sum (increase(src_email_send{success="true"}[30m]))`
 
 </details>
 
 <br />
 
-#### frontend: email_deliveries_total
+#### frontend: email_deliveries_by_source
 
-<p class="subtitle">Total emails successfully delivered every 5 minutes</p>
+<p class="subtitle">Emails successfully delivered every 30 minutes by source</p>
 
-Total emails successfully delivered.
+Emails successfully delivered by source, i.e. product feature.
 
 This panel has no related alerts.
 
@@ -4167,7 +4167,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (increase(src_email_send{success="true"}[5m]))`
+Query: `sum by (email_source) (increase(src_email_send{success="true"}[30m]))`
 
 </details>
 
@@ -4448,6 +4448,33 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 <br />
 
+### Frontend: Incoming webhooks
+
+#### frontend: p95_time_to_handle_incoming_webhooks
+
+<p class="subtitle">P95 time to handle incoming webhooks</p>
+
+							p95 response time to incoming webhook requests from code hosts.
+
+							Increases in response time can point to too much load on the database to keep up with the incoming requests.
+
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks"}[5m])) by (le, route))`
+
+</details>
+
+<br />
+
 ### Frontend: Search aggregations: proactive and expanded search aggregations
 
 #### frontend: insights_aggregations_total
@@ -4456,7 +4483,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4475,7 +4502,7 @@ Query: `sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4494,7 +4521,7 @@ Query: `sum  by (le)(rate(src_insights_aggregations_duration_seconds_bucket{job=
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4513,7 +4540,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4532,7 +4559,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4551,7 +4578,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4570,7 +4597,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op,extended_mode)(rate(src_insights
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103312` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103412` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4589,7 +4616,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_tota
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103313` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103413` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -12445,7 +12472,7 @@ Query: `sum(src_repoupdater_perms_syncer_success_syncs{type="repo"})`
 
 #### repo-updater: repo_success_syncs
 
-<p class="subtitle">Number of repo permissions syncs [5m]</p>
+<p class="subtitle">Number of repo permissions syncs over 5m</p>
 
 Indicates the number of repos permissions syncs completed.
 
@@ -12466,7 +12493,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]
 
 #### repo-updater: repo_initial_syncs
 
-<p class="subtitle">Number of first repo permissions syncs [5m]</p>
+<p class="subtitle">Number of first repo permissions syncs over 5m</p>
 
 Indicates the number of permissions syncs done for the first time for the repo.
 
@@ -12487,7 +12514,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]
 
 #### repo-updater: repo_failed_syncs
 
-<p class="subtitle">Number of repo permissions failed syncs [5m]</p>
+<p class="subtitle">Number of repo permissions failed syncs over 5m</p>
 
 Indicates the number of repos permissions syncs failed in last 5 minute.
 
@@ -12508,7 +12535,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m])
 
 #### repo-updater: users_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for user (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for user</p>
 
 Indicates the max delay between two consecutive permissions sync for a user during the period.
 
@@ -12521,7 +12548,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]) / 60.0)`
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]))`
 
 </details>
 
@@ -12529,7 +12556,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: repos_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for repo (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for repo</p>
 
 Indicates the max delay between two consecutive permissions sync for a repo during the period.
 
@@ -12542,7 +12569,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]) / 60.0)`
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]))`
 
 </details>
 
@@ -12550,7 +12577,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: users_first_sync_delay
 
-<p class="subtitle">Max duration between user creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between user creation and first permissions sync</p>
 
 Indicates the max delay between user creation and their permissions sync
 
@@ -12563,7 +12590,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [1m]) / 60.0)`
+Query: `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"}[1m]))`
 
 </details>
 
@@ -12571,7 +12598,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{t
 
 #### repo-updater: repos_first_sync_delay
 
-<p class="subtitle">Max duration between repo creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between repo creation and first permissions sync over 1m</p>
 
 Indicates the max delay between repo creation and their permissions sync
 
@@ -12584,7 +12611,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [1m]) / 60.0)`
+Query: `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"}[1m]))`
 
 </details>
 

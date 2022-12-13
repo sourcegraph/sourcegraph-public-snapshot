@@ -1046,6 +1046,19 @@
           "Comment": ""
         },
         {
+          "Name": "repository_criteria",
+          "Index": 23,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The search criteria used to determine the repositories that are included in this series."
+        },
+        {
           "Name": "sample_interval_unit",
           "Index": 13,
           "TypeName": "time_unit",

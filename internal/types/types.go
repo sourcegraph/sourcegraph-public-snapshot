@@ -1601,7 +1601,6 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
-	NotebookAddedComputeBlocksCount  *int32
 }
 
 // Secret represents the secrets table
@@ -1654,7 +1653,7 @@ type SearchContext struct {
 	Query string
 
 	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
-	Autodefined bool
+	AutoDefined bool
 
 	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
 	Default bool

@@ -73,9 +73,10 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
         }
     }, [savedSearches, telemetryService, showAllSearches])
 
-    const logEvent = useCallback((event: string, props?: any) => (): void => telemetryService.log(event, props), [
-        telemetryService,
-    ])
+    const logEvent = useCallback(
+        (event: string, props?: any) => (): void => telemetryService.log(event, props),
+        [telemetryService]
+    )
 
     const emptyDisplay = (
         <EmptyPanelContainer className="text-muted">

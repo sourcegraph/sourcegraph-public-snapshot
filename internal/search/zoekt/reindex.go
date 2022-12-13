@@ -35,8 +35,7 @@ func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
 	form := url.Values{}
 	form.Add("repo", strconv.Itoa(int(id)))
 
-	// http://<host:port>/indexerver/?headless
-	u = u.ResolveReference(&url.URL{Path: "/indexserver/", RawQuery: "headless"})
+	u = u.ResolveReference(&url.URL{Path: "/indexserver/debug/reindex"})
 
 	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), strings.NewReader(form.Encode()))
 	if err != nil {
@@ -50,13 +49,16 @@ func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusAccepted:
+		return nil
+	case http.StatusBadGateway:
+		return errors.New("Invalid response from Zoekt indexserver. The most likely cause is a broken socket connection.")
+	default:
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return errors.New(string(b))
+		return errors.Newf("%s: %q", resp.Status, string(b))
 	}
-
-	return nil
 }

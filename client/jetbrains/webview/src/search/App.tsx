@@ -226,9 +226,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 onPreviewChange={onPreviewChange}
                 onPreviewClear={onPreviewClear}
                 onOpen={onOpen}
+                settingsCascade={settingsCascade}
             />
         ),
-        [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear]
+        [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear, settingsCascade]
     )
 
     return (
@@ -259,7 +260,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             searchContextsEnabled={true}
                             showSearchContext={true}
                             showSearchContextManagement={false}
-                            defaultSearchContextSpec="global"
                             setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
                             selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
                             fetchSearchContexts={fetchSearchContexts}

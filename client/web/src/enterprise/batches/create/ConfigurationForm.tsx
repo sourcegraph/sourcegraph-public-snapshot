@@ -8,14 +8,10 @@ import { useHistory, useLocation } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
@@ -35,7 +31,11 @@ import styles from './ConfigurationForm.module.scss'
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
 
-type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
+type ConfigurationFormProps = {
+    /**
+     * The currently signed-in user.
+     */
+    authenticatedUser: AuthenticatedUser | null
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -48,35 +48,35 @@ type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
      */
     initialNamespaceID?: Scalars['ID']
 } & (
-        | // Either the form is editable and we may not have a batch change yet, or the form is
-        // read-only and we definitely already have a batch change.
-        {
-              /**
-               * Whether or not to display the configuration form in read-only mode, i.e. to view
-               * for an existing batch change.
-               */
-              isReadOnly?: false
-              /** The existing batch change to use to pre-populate the form. */
-              batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
-          }
-        | {
-              /**
-               * Whether or not to display the configuration form in read-only mode, i.e. to view
-               * for an existing batch change.
-               */
-              isReadOnly: true
-              /** The existing batch change to use to pre-populate the form. */
-              batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
-          }
-    )
+    | // Either the form is editable and we may not have a batch change yet, or the form is
+    // read-only and we definitely already have a batch change.
+    {
+          /**
+           * Whether or not to display the configuration form in read-only mode, i.e. to view
+           * for an existing batch change.
+           */
+          isReadOnly?: false
+          /** The existing batch change to use to pre-populate the form. */
+          batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
+      }
+    | {
+          /**
+           * Whether or not to display the configuration form in read-only mode, i.e. to view
+           * for an existing batch change.
+           */
+          isReadOnly: true
+          /** The existing batch change to use to pre-populate the form. */
+          batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
+      }
+)
 
 export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<ConfigurationFormProps>> = ({
-    settingsCascade,
     isReadOnly,
     batchChange,
     renderTemplate,
     insightTitle,
     initialNamespaceID,
+    authenticatedUser,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -87,13 +87,15 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         CreateBatchSpecFromRawVariables
     >(CREATE_BATCH_SPEC_FROM_RAW)
 
-    const loading = batchChangeLoading || batchSpecLoading
-    const error = batchChangeError || batchSpecError
-
     const { namespaces, defaultSelectedNamespace } = useNamespaces(
-        settingsCascade,
+        authenticatedUser,
         batchChange?.namespace.id || initialNamespaceID
     )
+
+    // When creating a batch change we want to disable the `Create` button, to avoid user's clicking
+    // on it again.
+    const isButtonDisabled = batchChangeLoading || batchSpecLoading
+    const error = batchChangeError || batchSpecError
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
@@ -241,7 +243,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         type="submit"
                         onClick={handleCreate}
                         aria-label={isNameValid ? undefined : 'Batch change name is invalid'}
-                        disabled={loading || nameInput === '' || !isNameValid}
+                        disabled={isButtonDisabled || nameInput === '' || !isNameValid}
                     >
                         Create
                     </Button>

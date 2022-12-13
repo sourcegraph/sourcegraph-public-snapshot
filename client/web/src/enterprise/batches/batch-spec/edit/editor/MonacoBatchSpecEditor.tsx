@@ -203,10 +203,10 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string, a
     if (availableSecrets !== undefined) {
         // Rewrite the JSON schema so that the env field has proper auto completion and
         // warns if any secrets referenced don't exist.
-        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
-            .oneOf[0] as JSONSchemaType<'string'>).examples = availableSecrets
-        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
-            .oneOf[0] as JSONSchemaType<'string'>).enum = availableSecrets
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf[0] as JSONSchemaType<'string'>).examples =
+            availableSecrets
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf[0] as JSONSchemaType<'string'>).enum =
+            availableSecrets
     }
 
     // Enforce the exact name match. The user must use the settings UI to change the name.

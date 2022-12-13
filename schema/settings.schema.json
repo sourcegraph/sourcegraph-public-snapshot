@@ -134,7 +134,7 @@
           }
         },
         "showSearchContextManagement": {
-          "description": "Enables search context management.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -166,7 +166,7 @@
           }
         },
         "showComputeComponent": {
-          "description": "Enables display of compute components (currently Notebook blocks)",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -457,6 +457,20 @@
           "description": "Preload definitions for available tokens in the visible viewport.",
           "type": "boolean",
           "default": false
+        },
+        "symbolKindTags": {
+          "description": "Show the initial letter of the symbol kind instead of icons.",
+          "type": "boolean",
+          "default": false
+        },
+        "searchQueryInput": {
+          "description": "Specify which version of the search query input to use",
+          "type": "string",
+          "default": "v1",
+          "enum": ["v1", "experimental"],
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"

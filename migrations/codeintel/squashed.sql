@@ -57,18 +57,26 @@ CREATE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert() R
     RETURN NULL;
 END $$;
 
+CREATE FUNCTION update_codeintel_scip_documents_dereference_logs_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    INSERT INTO codeintel_scip_documents_dereference_logs (document_id)
+    SELECT document_id FROM oldtab;
+    RETURN NULL;
+END $$;
+
 CREATE FUNCTION update_codeintel_scip_documents_schema_versions_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
     INSERT INTO codeintel_scip_documents_schema_versions
     SELECT
-        newtab.metadata_shard_id,
+        newtab.upload_id,
         MIN(codeintel_scip_documents.schema_version) as min_schema_version,
         MAX(codeintel_scip_documents.schema_version) as max_schema_version
     FROM newtab
-    JOIN codeintel_scip_documents ON codeintel_scip_documents.metadata_shard_id = newtab.metadata_shard_id
-    GROUP BY newtab.metadata_shard_id
-    ON CONFLICT (metadata_shard_id) DO UPDATE SET
+    JOIN codeintel_scip_documents ON codeintel_scip_documents.id = newtab.document_id
+    GROUP BY newtab.upload_id
+    ON CONFLICT (upload_id) DO UPDATE SET
         -- Update with min(old_min, new_min) and max(old_max, new_max)
         min_schema_version = LEAST(codeintel_scip_documents_schema_versions.min_schema_version, EXCLUDED.min_schema_version),
         max_schema_version = GREATEST(codeintel_scip_documents_schema_versions.max_schema_version, EXCLUDED.max_schema_version);
@@ -227,8 +235,7 @@ CREATE TABLE codeintel_scip_documents (
     id bigint NOT NULL,
     payload_hash bytea NOT NULL,
     schema_version integer NOT NULL,
-    raw_scip_payload bytea NOT NULL,
-    metadata_shard_id integer DEFAULT (floor(((random() * (128)::double precision) + (1)::double precision)))::integer NOT NULL
+    raw_scip_payload bytea NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_documents IS 'A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payloads by their hash.';
@@ -241,7 +248,26 @@ COMMENT ON COLUMN codeintel_scip_documents.schema_version IS 'The schema version
 
 COMMENT ON COLUMN codeintel_scip_documents.raw_scip_payload IS 'The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payload.';
 
-COMMENT ON COLUMN codeintel_scip_documents.metadata_shard_id IS 'A randomly generated integer used to arbitrarily bucket groups of documents for things like expiration checks and data migrations.';
+CREATE TABLE codeintel_scip_documents_dereference_logs (
+    id bigint NOT NULL,
+    document_id bigint NOT NULL,
+    last_removal_time timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE codeintel_scip_documents_dereference_logs IS 'A list of document rows that were recently dereferenced by the deletion of an index.';
+
+COMMENT ON COLUMN codeintel_scip_documents_dereference_logs.document_id IS 'The identifier of the document that was dereferenced.';
+
+COMMENT ON COLUMN codeintel_scip_documents_dereference_logs.last_removal_time IS 'The time that the log entry was inserted.';
+
+CREATE SEQUENCE codeintel_scip_documents_dereference_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_scip_documents_dereference_logs_id_seq OWNED BY codeintel_scip_documents_dereference_logs.id;
 
 CREATE SEQUENCE codeintel_scip_documents_id_seq
     START WITH 1
@@ -253,18 +279,18 @@ CREATE SEQUENCE codeintel_scip_documents_id_seq
 ALTER SEQUENCE codeintel_scip_documents_id_seq OWNED BY codeintel_scip_documents.id;
 
 CREATE TABLE codeintel_scip_documents_schema_versions (
-    metadata_shard_id integer NOT NULL,
+    upload_id integer NOT NULL,
     min_schema_version integer,
     max_schema_version integer
 );
 
-COMMENT ON TABLE codeintel_scip_documents_schema_versions IS 'Tracks the range of `schema_versions` values associated with each document metadata shard in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.';
+COMMENT ON TABLE codeintel_scip_documents_schema_versions IS 'Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.metadata_shard_id IS 'The identifier of the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.upload_id IS 'The identifier of the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
 CREATE TABLE codeintel_scip_metadata (
     id bigint NOT NULL,
@@ -586,6 +612,8 @@ ALTER TABLE ONLY codeintel_scip_document_lookup ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY codeintel_scip_documents ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_documents_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_scip_documents_dereference_logs ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_scip_metadata ALTER COLUMN id SET DEFAULT nextval('codeintel_scip_metadata_id_seq'::regclass);
 
 ALTER TABLE ONLY rockskip_ancestry ALTER COLUMN id SET DEFAULT nextval('rockskip_ancestry_id_seq'::regclass);
@@ -606,6 +634,9 @@ ALTER TABLE ONLY codeintel_scip_document_lookup_schema_versions
 ALTER TABLE ONLY codeintel_scip_document_lookup
     ADD CONSTRAINT codeintel_scip_document_lookup_upload_id_document_path_key UNIQUE (upload_id, document_path);
 
+ALTER TABLE ONLY codeintel_scip_documents_dereference_logs
+    ADD CONSTRAINT codeintel_scip_documents_dereference_logs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY codeintel_scip_documents
     ADD CONSTRAINT codeintel_scip_documents_payload_hash_key UNIQUE (payload_hash);
 
@@ -613,7 +644,7 @@ ALTER TABLE ONLY codeintel_scip_documents
     ADD CONSTRAINT codeintel_scip_documents_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_scip_documents_schema_versions
-    ADD CONSTRAINT codeintel_scip_documents_schema_versions_pkey PRIMARY KEY (metadata_shard_id);
+    ADD CONSTRAINT codeintel_scip_documents_schema_versions_pkey PRIMARY KEY (upload_id);
 
 ALTER TABLE ONLY codeintel_scip_metadata
     ADD CONSTRAINT codeintel_scip_metadata_pkey PRIMARY KEY (id);
@@ -673,6 +704,8 @@ CREATE INDEX codeintel_last_reconcile_last_reconcile_at_dump_id ON codeintel_las
 
 CREATE INDEX codeintel_scip_document_lookup_document_id ON codeintel_scip_document_lookup USING hash (document_id);
 
+CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_doc ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time, document_id);
+
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
 
 CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version);
@@ -703,7 +736,9 @@ CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols USING btree 
 
 CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert();
 
-CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
+CREATE TRIGGER codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete();
+
+CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
 
 CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert();
 

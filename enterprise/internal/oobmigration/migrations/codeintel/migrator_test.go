@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
@@ -126,7 +127,7 @@ type testMigrationDriver struct{}
 func (m *testMigrationDriver) ID() int                 { return 10 }
 func (m *testMigrationDriver) Interval() time.Duration { return time.Second }
 
-func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
@@ -135,7 +136,7 @@ func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	return []any{a, b + c}, nil
 }
 
-func (m *testMigrationDriver) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err

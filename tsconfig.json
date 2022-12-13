@@ -17,15 +17,14 @@
     "resolveJsonModule": true,
     "composite": true,
     "outDir": "out",
-    "rootDir": ".",
+    "rootDir": "."
   },
-
   "watchOptions": {
     "watchFile": "useFsEvents",
     "watchDirectory": "useFsEvents",
-    "fallbackPolling": "dynamicPriority",
+    "fallbackPolling": "dynamicPriority"
   },
 
   "include": [],
-  "exclude": ["out", "node_modules"],
+  "exclude": ["out", "node_modules"]
 }

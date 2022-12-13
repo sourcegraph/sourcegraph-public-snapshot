@@ -35,6 +35,8 @@ type LockoutStore interface {
 	// SendUnlockAccountEmail sends an email to the locked account email providing a
 	// temporary unlock link.
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
+	// Returns true if the unlock account email has already been sent
+	UnlockEmailSent(userID int32) bool
 }
 
 type lockoutStore struct {
@@ -42,28 +44,40 @@ type lockoutStore struct {
 	lockouts        *rcache.Cache
 	failedAttempts  *rcache.Cache
 	unlockToken     *rcache.Cache
+	unlockEmailSent *rcache.Cache
+	sendEmail       func(context.Context, string, txemail.Message) error
 }
 
 // NewLockoutStore returns a new LockoutStore with given durations using the
 // Redis cache.
-func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.Duration) LockoutStore {
+func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.Duration, sendEmailF func(context.Context, string, txemail.Message) error) LockoutStore {
+	if sendEmailF == nil {
+		sendEmailF = txemail.Send
+	}
+
 	return &lockoutStore{
 		failedThreshold: failedThreshold,
 		lockouts:        rcache.NewWithTTL("account_lockout", int(lockoutPeriod.Seconds())),
 		failedAttempts:  rcache.NewWithTTL("account_failed_attempts", int(consecutivePeriod.Seconds())),
 		unlockToken:     rcache.NewWithTTL("account_unlock_token", int(lockoutPeriod.Seconds())),
+		unlockEmailSent: rcache.NewWithTTL("account_lockout_email_sent", int(lockoutPeriod.Seconds())),
+		sendEmail:       sendEmailF,
 	}
 }
 
+func key(userID int32) string {
+	return strconv.Itoa(int(userID))
+}
+
 func (s *lockoutStore) IsLockedOut(userID int32) (reason string, locked bool) {
-	v, locked := s.lockouts.Get(strconv.Itoa(int(userID)))
+	v, locked := s.lockouts.Get(key(userID))
 	return string(v), locked
 }
 
 func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
 	metricsAccountFailedSignInAttempts.Inc()
 
-	key := strconv.Itoa(int(userID))
+	key := key(userID)
 	s.failedAttempts.Increase(key)
 
 	// Get right after Increase should make the key always exist
@@ -81,16 +95,20 @@ type unlockAccountClaims struct {
 }
 
 func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
+	key := key(userID)
+	ttl, exists := s.lockouts.KeyTTL(key)
+
+	if !exists {
+		return "", "", errors.Newf("user with id %d is not locked out, cannot generate unlock url")
+	}
+
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 	if signingKey == "" {
 		return "", "", errors.Newf(`signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 	}
 
-	defaultExpiryMinutes := 30
-	if conf.SiteConfig().AuthUnlockAccountLinkExpiry > 0 {
-		defaultExpiryMinutes = conf.SiteConfig().AuthUnlockAccountLinkExpiry
-	}
-	expiryTime := time.Now().Add(time.Minute * time.Duration(defaultExpiryMinutes))
+	effectiveTTL := effectiveUnlockTTL(ttl)
+	expiryTime := time.Now().Add(time.Second * time.Duration(effectiveTTL))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &unlockAccountClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -111,33 +129,67 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 		return "", "", err
 	}
 
-	key := strconv.Itoa(int(userID))
-
-	s.unlockToken.Set(key, []byte(tokenString))
+	s.unlockToken.SetWithTTL(key, []byte(tokenString), effectiveTTL)
 
 	path := fmt.Sprintf("/unlock-account/%s", tokenString)
 
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
 }
 
-func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
-	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
+// take site config link expiry into account as well when setting unlock expiry
+func effectiveUnlockTTL(ttl int) int {
+	if ttl > conf.SiteConfig().AuthUnlockAccountLinkExpiry*60 {
+		return conf.SiteConfig().AuthUnlockAccountLinkExpiry * 60
+	}
+	return ttl
+}
 
+func formatExpiryTime(ttl int) string {
+	minutes := ttl / 60
+	seconds := ttl
+
+	if minutes < 1 {
+		return fmt.Sprintf("%d seconds", seconds)
+	}
+	return fmt.Sprintf("%d minutes", minutes)
+}
+
+func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
+	key := key(userID)
+	ttl, exists := s.lockouts.KeyTTL(key)
+
+	if !exists || s.UnlockEmailSent(userID) {
+		return nil
+	}
+
+	effectiveTTL := effectiveUnlockTTL(ttl)
+	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
 	if err != nil {
 		return err
 	}
 
-	return txemail.Send(ctx, "account_unlock", txemail.Message{
+	err = s.sendEmail(ctx, "account_unlock", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
 			UnlockAccountUrl string
-			ExpiryMinutes    int
+			ExpiryTime       string
 		}{
 			UnlockAccountUrl: unlockUrl,
-			ExpiryMinutes:    conf.SiteConfig().AuthUnlockAccountLinkExpiry,
+			ExpiryTime:       formatExpiryTime(effectiveTTL),
 		},
 	})
+	if err != nil {
+		return err
+	}
+
+	s.unlockEmailSent.SetWithTTL(key, []byte("sent"), effectiveTTL)
+	return nil
+}
+
+func (s *lockoutStore) UnlockEmailSent(userID int32) bool {
+	_, locked := s.unlockEmailSent.Get(key(userID))
+	return locked
 }
 
 func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error) {
@@ -156,7 +208,7 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 	}
 
 	if claims, ok := token.Claims.(*unlockAccountClaims); ok && token.Valid {
-		userIdKey := strconv.Itoa(int(claims.UserID))
+		userIdKey := key(claims.UserID)
 		storedToken, found := s.unlockToken.Get(userIdKey)
 
 		if !found || string(storedToken) != urlToken {
@@ -171,10 +223,11 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 }
 
 func (s *lockoutStore) Reset(userID int32) {
-	key := strconv.Itoa(int(userID))
+	key := key(userID)
 	s.lockouts.Delete(key)
 	s.failedAttempts.Delete(key)
 	s.unlockToken.Delete(key)
+	s.unlockEmailSent.Delete(key)
 }
 
 var emailTemplates = txemail.MustValidate(txtypes.Templates{
@@ -184,7 +237,7 @@ You are receiving this email because your Sourcegraph account got locked after t
 
 Please, visit this link in your browser to unlock the account and try to sign in again: {{.UnlockAccountUrl}}
 
-This link will expire in {{.ExpiryMinutes}} minutes.
+This link will expire in {{.ExpiryTime}}.
 
 To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
 To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
@@ -221,7 +274,7 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
   <p class="smaller">Or visit this link in your browser: <a href="{{.UnlockAccountUrl}}">{{.UnlockAccountUrl}}</a></p>
   <small>
   <p class="mtl">
-    This link will expire in {{.ExpiryMinutes}} minutes.
+    This link will expire in {{.ExpiryTime}}.
   </p>
   <p class="mtl">
     <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;

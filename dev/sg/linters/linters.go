@@ -50,8 +50,9 @@ var Targets = []Target{
 	{
 		Name:        "docs",
 		Description: "Documentation checks",
-		Checks: []*linter{
-			runScript("Docsite lint", "dev/docsite.sh check"),
+		Checks:      []*linter{
+			// Flaky https://buildkite.com/sourcegraph/sourcegraph/builds/189124
+			// runScript("Docsite lint", "dev/docsite.sh check"),
 		},
 	},
 	{

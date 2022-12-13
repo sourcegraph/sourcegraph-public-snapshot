@@ -14,13 +14,13 @@
     "captainSlackUsername": "dax",
     "captainGitHubUsername": "daxmc99",
     // Release versions
-    "previousRelease": "4.2.0",
+    "previousRelease": "4.2.1",
     "upcomingRelease": "4.3.0",
     "oneWorkingWeekBeforeRelease": "8 December 2022 10:00 PST",
     "threeWorkingDaysBeforeRelease": "12 December 2022 10:00 PST",
     "releaseDate": "15 December 2022 10:00 PST",
     "oneWorkingDayAfterRelease": "16 December 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "19 December 2022 10:00 PST",
+    "oneWorkingWeekAfterRelease": "22 December 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

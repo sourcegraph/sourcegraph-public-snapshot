@@ -30,6 +30,8 @@ Referenced by:
     TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
     codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
+    codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete()
+    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
 
 ```
 
@@ -65,20 +67,17 @@ Tracks the range of `schema_versions` values associated with each SCIP index in 
 
 # Table "public.codeintel_scip_documents"
 ```
-      Column       |  Type   | Collation | Nullable |                                     Default                                      
--------------------+---------+-----------+----------+----------------------------------------------------------------------------------
- id                | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
- payload_hash      | bytea   |           | not null | 
- schema_version    | integer |           | not null | 
- raw_scip_payload  | bytea   |           | not null | 
- metadata_shard_id | integer |           | not null | (floor(((random() * (128)::double precision) + (1)::double precision)))::integer
+      Column      |  Type   | Collation | Nullable |                       Default                        
+------------------+---------+-----------+----------+------------------------------------------------------
+ id               | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
+ payload_hash     | bytea   |           | not null | 
+ schema_version   | integer |           | not null | 
+ raw_scip_payload | bytea   |           | not null | 
 Indexes:
     "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
 Referenced by:
     TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
-Triggers:
-    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
 
 ```
 
@@ -86,33 +85,50 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
 
 **id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full payload hash value.
 
-**metadata_shard_id**: A randomly generated integer used to arbitrarily bucket groups of documents for things like expiration checks and data migrations.
-
 **payload_hash**: A deterministic hash of the raw SCIP payload. We use this as a unique value to enforce deduplication between indexes with the same document data.
 
 **raw_scip_payload**: The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payload.
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of (future) denormalized data.
 
+# Table "public.codeintel_scip_documents_dereference_logs"
+```
+      Column       |           Type           | Collation | Nullable |                                Default                                
+-------------------+--------------------------+-----------+----------+-----------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
+ document_id       | bigint                   |           | not null | 
+ last_removal_time | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_documents_dereference_logs_last_removal_time_doc" btree (last_removal_time, document_id)
+
+```
+
+A list of document rows that were recently dereferenced by the deletion of an index.
+
+**document_id**: The identifier of the document that was dereferenced.
+
+**last_removal_time**: The time that the log entry was inserted.
+
 # Table "public.codeintel_scip_documents_schema_versions"
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- metadata_shard_id  | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (metadata_shard_id)
+    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of `schema_versions` values associated with each document metadata shard in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.
+Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
 
-**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.
+**max_schema_version**: An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**metadata_shard_id**: The identifier of the associated document metadata shard.
+**min_schema_version**: A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.
+**upload_id**: The identifier of the associated SCIP index.
 
 # Table "public.codeintel_scip_metadata"
 ```

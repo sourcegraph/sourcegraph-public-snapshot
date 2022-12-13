@@ -53,7 +53,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
 
 	store := db.ExternalServices()
-	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
+	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
 		versions, err := loadVersions(ctx, observationCtx.Logger, store, sourcer)
 		if err != nil {
 			return err
@@ -63,7 +63,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 
 	return []goroutine.BackgroundRoutine{
 		// Pass a fresh context, see docs for shared.Job
-		goroutine.NewPeriodicGoroutine(context.Background(), syncInterval, handler),
+		goroutine.NewPeriodicGoroutine(context.Background(), "repomgmt.version-syncer", "sync versions of external services", syncInterval, handler),
 	}, nil
 }
 

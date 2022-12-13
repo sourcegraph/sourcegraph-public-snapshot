@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -194,9 +196,9 @@ func TestSyncSearchers(t *testing.T) {
 	}
 }
 
-func TestIgnoreDownEndpoints(t *testing.T) {
+func TestZoektRolloutErrors(t *testing.T) {
 	var endpoints atomicMap
-	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "up"})
+	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "read-failed", "up"})
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
@@ -237,6 +239,20 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 					SearchError: err,
 					ListError:   err,
 				}
+			case "read-failed":
+				err := &net.OpError{
+					Op:   "read",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.42.39:6070"),
+					Err: &os.SyscallError{
+						Syscall: "read",
+						Err:     syscall.EINTR,
+					},
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
 			case "up":
 				var rle zoekt.RepoListEntry
 				rle.Repository.Name = "repo"
@@ -261,6 +277,8 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 	defer searcher.Close()
 
+	want := 4
+
 	sr, err := searcher.Search(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -268,8 +286,8 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	if len(sr.Files) == 0 {
 		t.Fatal("Search: expected results")
 	}
-	if sr.Crashes != 3 {
-		t.Fatalf("Search: expected 3 crashes to be recorded, got %d", sr.Crashes)
+	if sr.Crashes != want {
+		t.Fatalf("Search: expected %d crashes to be recorded, got %d", want, sr.Crashes)
 	}
 
 	rle, err := searcher.List(context.Background(), nil, nil)
@@ -279,8 +297,8 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	if len(rle.Repos) == 0 {
 		t.Fatal("List: expected results")
 	}
-	if rle.Crashes != 3 {
-		t.Fatalf("List: expected 3 crashes to be recorded, got %d", rle.Crashes)
+	if rle.Crashes != want {
+		t.Fatalf("List: expected %d crashes to be recorded, got %d", want, rle.Crashes)
 	}
 
 	// now test we do return errors if they occur

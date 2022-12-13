@@ -1,11 +1,17 @@
+import { MockedResponse } from '@apollo/client/testing/core'
 import { Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
-import { SeriesSortDirection, SeriesSortMode } from '../../../../graphql-operations'
-import { SeriesChartContent, InsightExecutionType, InsightType, SearchBasedInsight } from '../../core'
+import {
+    GetInsightViewResult,
+    GetInsightViewVariables,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../graphql-operations'
+import { InsightExecutionType, InsightType, BackendInsight } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
@@ -23,7 +29,7 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const filters = {
+const DEFAULT_FILTERS = {
     excludeRepoRegexp: '',
     includeRepoRegexp: '',
     context: '',
@@ -36,16 +42,16 @@ const filters = {
     },
 }
 
-const insightsWithManyLines: SearchBasedInsight[] = [
+const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #1',
-        series: [{ id: '', query: '', stroke: '', name: '' }],
+        series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -57,9 +63,12 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [],
+        series: [
+            { id: '001', query: 'test_query_1', stroke: 'blue', name: 'series A' },
+            { id: '002', query: 'test_query_2', stroke: 'orange', name: 'series B' },
+        ],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -72,15 +81,12 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #3',
         series: [
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
+            { id: '001', query: 'test_query_1', stroke: 'blue', name: 'Series A' },
+            { id: '002', query: 'test_query_2', stroke: 'green', name: 'Series B' },
+            { id: '003', query: 'test_query_3', stroke: 'orange', name: 'Series C' },
         ],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -92,9 +98,9 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #4',
-        series: [{ id: '', query: '', stroke: '', name: '' }],
+        series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -104,32 +110,11 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         id: 'searchInsights.insight.Backend_5',
         executionType: InsightExecutionType.Backend,
         repositories: [],
-        type: InsightType.SearchBased,
+        type: InsightType.CaptureGroup,
         title: 'Backend insight #5',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-            { id: '', query: '', stroke: '', name: '' },
-        ],
+        query: '',
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -141,9 +126,9 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #6',
-        series: [{ id: '', query: '', stroke: '', name: '' }],
+        series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -155,9 +140,9 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #7',
-        series: [{ id: '', query: '', stroke: '', name: '' }],
+        series: [{ id: '001', query: 'test_query', stroke: 'red', name: 'series A' }],
         step: { days: 1 },
-        filters,
+        filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -165,582 +150,962 @@ const insightsWithManyLines: SearchBasedInsight[] = [
     },
 ]
 
-interface SeriesDatum {
-    x: number
-    value: number
-}
-
-const getXValue = (datum: SeriesDatum): Date => new Date(datum.x)
-const getYValue = (datum: SeriesDatum): number => datum.value
-
-const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: SeriesChartContent<SeriesDatum> = {
-    series: [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800 },
-                { x: 1588965700286, value: 12300 },
-            ],
-            name: 'React functional components',
-            color: 'var(--green)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_002',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 17000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000 },
-                { x: 1588965700286, value: 17000 },
-            ],
-            name: 'Class components',
-            color: 'var(--orange)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_003',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 12000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 14000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286, value: 8000 },
-            ],
-            name: 'useTheme adoption',
-            color: 'var(--blue)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_004',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286, value: 8500 },
-            ],
-            name: 'Class without CSS modules',
-            color: 'var(--purple)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_005',
-            name: '1.11',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 11000 },
-            ],
-            color: 'var(--oc-grape-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_006',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 23000 },
-                { x: 1588965700286, value: 16000 },
-            ],
-            name: 'Functional components without CSS modules',
-            color: 'var(--oc-red-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_007',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286, value: 9000 },
-            ],
-            name: '1.12',
-            color: 'var(--pink)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_008',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 6000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 6000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 7000 },
-                { x: 1588965700286, value: 8000 },
-            ],
-            name: '1.13',
-            color: 'var(--oc-violet-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_009',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 5500 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 7000 },
-                { x: 1588965700286, value: 12000 },
-            ],
-            name: '1.14',
-            color: 'var(--indigo)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_010',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 3000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 6000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 6500 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 7000 },
-                { x: 1588965700286, value: 10000 },
-            ],
-            name: '1.15',
-            color: 'var(--cyan)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_011',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 6500 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 8500 },
-                { x: 1588965700286, value: 15000 },
-            ],
-            name: '1.16',
-            color: 'var(--teal)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_012',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 2000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 18000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19500 },
-                { x: 1588965700286, value: 19750 },
-            ],
-            name: '1.17',
-            color: 'var(--oc-lime-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_013',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 2000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 18000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19500 },
-                { x: 1588965700286, value: 19750 },
-            ],
-            name: '1.18',
-            color: 'var(--yellow)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_014',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 12000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 6000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286, value: 3000 },
-            ],
-            name: '1.19',
-            color: 'var(--oc-lime-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_015',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 22000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 10000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286, value: 11000 },
-            ],
-            name: '1.20',
-            color: 'var(--oc-pink-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_016',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 14500 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 14500 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 14500 },
-                { x: 1588965700286, value: 17000 },
-            ],
-            name: '1.21',
-            color: 'var(--oc-red-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_017',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 12000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 13500 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 15500 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 11500 },
-                { x: 1588965700286, value: 12000 },
-            ],
-            name: '1.22',
-            color: 'var(--oc-blue-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_018',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 1000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 2000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 3000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 3500 },
-                { x: 1588965700286, value: 4000 },
-            ],
-            name: '1.23',
-            color: 'var(--oc-grape-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_019',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 10000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 7000 },
-                { x: 1588965700286, value: 4000 },
-            ],
-            name: '1.24',
-            color: 'var(--oc-green-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_020',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 1000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 800 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 7000 },
-                { x: 1588965700286, value: 700 },
-            ],
-            name: '1.25',
-            color: 'var(--oc-cyan-7)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-    ],
-}
-
-const LINE_CHART_WITH_MANY_LINES: SeriesChartContent<SeriesDatum> = {
-    series: [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800 },
-                { x: 1588965700286, value: 12300 },
-            ],
-            name: 'React functional components',
-            color: 'var(--warning)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_002',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000 },
-                { x: 1588965700286, value: 17000 },
-            ],
-            name: 'Class components',
-            color: 'var(--warning)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_003',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 12000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 14000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286, value: 8000 },
-            ],
-            name: 'useTheme adoption',
-            color: 'var(--blue)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_004',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 8000 },
-                { x: 1588965700286, value: 8500 },
-            ],
-            name: 'Class without CSS modules',
-            color: 'var(--purple)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_005',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 63000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 13000 },
-                { x: 1588965700286, value: 16000 },
-            ],
-            name: 'Functional components without CSS modules',
-            color: 'var(--green)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-    ],
-}
-
-const LINE_CHART_TESTS_CASES_EXAMPLE: SeriesChartContent<SeriesDatum> = {
-    series: [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800 },
-                { x: 1588965700286, value: 12300 },
-            ],
-            name: 'React Test renderer',
-            color: 'var(--blue)',
-            errored: true,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_002',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000 },
-                { x: 1588965700286, value: 17000 },
-            ],
-            name: 'Enzyme',
-            color: 'var(--pink)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-        {
-            id: 'series_003',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 12000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 14000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 15000 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9000 },
-                { x: 1588965700286, value: 8000 },
-            ],
-            name: 'React Testing Library',
-            color: 'var(--red)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-    ],
-}
-
-const LINE_CHART_TESTS_CASES_SINGLE_EXAMPLE: SeriesChartContent<SeriesDatum> = {
-    series: [
-        {
-            id: 'series_001',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800 },
-                { x: 1588965700286, value: 12300 },
-            ],
-            name: 'React Test renderer',
-            color: 'var(--blue)',
-            errored: false,
-            getXValue,
-            getYValue,
-        },
-    ],
-}
-
-function generateSeries(insight: SearchBasedInsight) {
-    const seriesData = getTestCases(insight.series.length)
-
-    return seriesData.series.map(series => ({
-        seriesId: series.id,
-        label: series.name,
-        points: series.data.map(point => ({
-            dateTime: new Date(point.x).toUTCString(),
-            value: point.value,
-            __typename: 'InsightDataPoint',
-        })),
-        status: {
-            backfillQueuedAt: '2021-06-06T15:48:11Z',
-            completedJobs: 0,
-            pendingJobs: 0,
-            failedJobs: 0,
-            incompleteDatapoints: series.errored
-                ? [{ __typename: 'TimeoutDatapointAlert', time: '2022-04-21T01:13:43Z' }]
-                : [],
-            __typename: 'InsightSeriesStatus',
-        },
-        __typename: 'InsightsSeries',
-    }))
-}
-
-function generateMocks(insights: SearchBasedInsight[]) {
-    return insights.map(insight => ({
+const INSIGHT_DATA_MOCKS: MockedResponse<GetInsightViewResult>[] = [
+    {
         request: {
             query: GET_INSIGHT_VIEW_GQL,
-            variables: {
-                id: insight.id,
-                filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
-                seriesDisplayOptions: {
-                    limit: 20,
-                    sortOptions: { direction: 'DESC', mode: 'RESULT_COUNT' },
-                },
-            },
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_1'),
         },
         result: {
             data: {
                 insightViews: {
+                    __typename: 'InsightViewConnection',
                     nodes: [
                         {
-                            id: insight.id,
-                            appliedSeriesDisplayOptions: {
-                                limit: 20,
-                                sortOptions: {
-                                    mode: 'RESULT_COUNT',
-                                    direction: 'DESC',
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            defaultSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    mode: null,
-                                    direction: null,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            dataSeries: generateSeries(insight),
                             __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_1',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8000,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 16000,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Tue May 05 2020 16:22:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Wed May 06 2020 16:22:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Tue May 05 2020 16:23:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Wed May 06 2020 16:23:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Tue May 05 2020 16:20:40 GMT-0300 (-03)',
+                                                reason: 'Unable to process the current point',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Wed May 06 2020 16:20:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:19:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Wed May 06 2020 16:19:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:18:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Wed May 06 2020 16:18:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2021 16:21:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Wed May 06 2021 16:21:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2021 16:22:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Wed May 06 2021 16:22:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
                         },
                     ],
-                    __typename: 'InsightViewConnection',
                 },
             },
         },
-    }))
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_2'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_2',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 12300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '002',
+                                    label: 'Series B',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 14300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_3'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_3',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 12300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '002',
+                                    label: 'Series B',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 14300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                            {
+                                                __typename: 'GenericIncompleteDatapointAlert',
+                                                time: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                                reason: 'Exceeds error limit, please rerun insight series',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '003',
+                                    label: 'Series C',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 7500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 11800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 15300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_4'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_4',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_5'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_5',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 12300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '002',
+                                    label: 'Series B',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 5000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 14300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '003',
+                                    label: 'Series C',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 6000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 7500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 11800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 15300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '004',
+                                    label: 'Series D',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 7000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 7000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 12800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 16300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '005',
+                                    label: 'Series F',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 13800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 17300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '006',
+                                    label: 'Series G',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 8000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 13800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 17300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '007',
+                                    label: 'Series K',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 9000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 14800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 18300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '008',
+                                    label: 'Series L',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 10000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 11500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 15800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 19300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '009',
+                                    label: 'Series M',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 11000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 11000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 12500,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 16800,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 20300,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [
+                                            {
+                                                __typename: 'TimeoutDatapointAlert',
+                                                time: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_6'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_6',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    {
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: generateDefaultRequestVariables('searchInsights.insight.Backend_7'),
+        },
+        result: {
+            data: {
+                insightViews: {
+                    __typename: 'InsightViewConnection',
+                    nodes: [
+                        {
+                            __typename: 'InsightView',
+                            id: 'searchInsights.insight.Backend_7',
+                            dataSeries: [
+                                {
+                                    __typename: 'InsightsSeries',
+                                    seriesId: '001',
+                                    label: 'Series A',
+                                    points: [
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Mon May 04 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Tue May 05 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Wed May 06 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Thu May 07 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                        {
+                                            __typename: 'InsightDataPoint',
+                                            value: 4000,
+                                            dateTime: 'Fri May 08 2020 16:21:40 GMT-0300 (-03)',
+                                        },
+                                    ],
+                                    status: {
+                                        __typename: 'InsightSeriesStatus',
+                                        isLoadingData: false,
+                                        incompleteDatapoints: [],
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    },
+]
+
+function generateDefaultRequestVariables(insightId: string): GetInsightViewVariables {
+    return {
+        id: insightId,
+        filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+        seriesDisplayOptions: {
+            limit: 20,
+            sortOptions: { direction: SeriesSortDirection.DESC, mode: SeriesSortMode.RESULT_COUNT },
+        },
+    }
 }
 
-function getTestCases(numberOfSeries: number): SeriesChartContent<SeriesDatum> {
-    if (numberOfSeries === 1) {
-        return LINE_CHART_TESTS_CASES_SINGLE_EXAMPLE
-    }
-
-    if (numberOfSeries >= 15) {
-        return LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
-    }
-
-    if (numberOfSeries >= 6) {
-        return LINE_CHART_WITH_MANY_LINES
-    }
-
-    if (numberOfSeries < 6) {
-        return LINE_CHART_TESTS_CASES_EXAMPLE
-    }
-
-    return LINE_CHART_TESTS_CASES_EXAMPLE
-}
-
-function prepInsightSeries(insights: SearchBasedInsight[]): SearchBasedInsight[] {
-    return insights.map(insight => {
-        const seriesData = getTestCases(insight.series.length)
-
-        const series = seriesData.series.map(data => ({
-            id: data.id.toString(),
-            query: '',
-            stroke: data.color,
-            name: data.name,
-        }))
-        insight.series = series
-
-        return insight
-    })
-}
-
-export const SmartInsightsViewGridExample = (): JSX.Element => {
-    const insights = prepInsightSeries(insightsWithManyLines)
-    const mocks = generateMocks(insights)
-
-    return (
-        <MockedTestProvider mocks={mocks} addTypename={true}>
-            <SmartInsightsViewGrid insights={insights} telemetryService={NOOP_TELEMETRY_SERVICE} />
-        </MockedTestProvider>
-    )
-}
+export const SmartInsightsViewGridExample = (): JSX.Element => (
+    <MockedTestProvider mocks={INSIGHT_DATA_MOCKS} addTypename={true}>
+        <SmartInsightsViewGrid insights={INSIGHT_CONFIGURATIONS} telemetryService={NOOP_TELEMETRY_SERVICE} />
+    </MockedTestProvider>
+)

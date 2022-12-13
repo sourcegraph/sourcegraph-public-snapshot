@@ -145,6 +145,8 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			background.JanitorConfig{
 				UploadTimeout:                  ConfigJanitorInst.UploadTimeout,
 				AuditLogMaxAge:                 ConfigJanitorInst.AuditLogMaxAge,
+				UnreferencedDocumentBatchSize:  ConfigJanitorInst.UnreferencedDocumentBatchSize,
+				UnreferencedDocumentMaxAge:     ConfigJanitorInst.UnreferencedDocumentMaxAge,
 				MinimumTimeSinceLastCheck:      ConfigJanitorInst.MinimumTimeSinceLastCheck,
 				CommitResolverBatchSize:        ConfigJanitorInst.CommitResolverBatchSize,
 				CommitResolverMaximumCommitLag: ConfigJanitorInst.CommitResolverMaximumCommitLag,

@@ -1,6 +1,7 @@
 import React, {
     useState,
     useEffect,
+    useRef,
     useMemo,
     KeyboardEvent,
     useLayoutEffect,
@@ -41,7 +42,7 @@ import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
 import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './FuzzyTabs'
-import { HighlightedLink, linkStyle } from './HighlightedLink'
+import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
 
@@ -54,6 +55,7 @@ export interface FuzzyModalProps extends FuzzyState {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -128,6 +130,40 @@ function fuzzySearch(
     }
 }
 
+interface ResultProps {
+    fileIndex: number
+    file: HighlightedLinkProps
+    isSelected: boolean
+    onClickItem: () => void
+}
+
+const Result: React.FC<ResultProps> = ({ fileIndex, file, isSelected, onClickItem }) => {
+    const ref = useRef<HTMLLIElement>(null)
+
+    useEffect(() => {
+        if (isSelected && ref.current) {
+            ref.current.scrollIntoView({ block: 'nearest' })
+        }
+    }, [isSelected])
+
+    return (
+        <li
+            // This ID is required to make the `Enter` shortcut work.
+            id={fuzzyResultId(fileIndex)}
+            ref={ref}
+            role="option"
+            aria-selected={isSelected}
+            className={classNames(
+                'd-flex align-items-center py-1 px-3 rounded-0',
+                styles.resultItem,
+                isSelected && styles.focused
+            )}
+        >
+            <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
+        </li>
+    )
+}
+
 function renderFuzzyResults(
     props: RenderProps,
     focusIndex: number,
@@ -156,19 +192,13 @@ function renderFuzzyResults(
     const element = (
         <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results" className="py-1 px-0 mb-0">
             {linksToRender.map((file, fileIndex) => (
-                <li
-                    id={fuzzyResultId(fileIndex)}
+                <Result
+                    fileIndex={fileIndex}
                     key={file.url || file.text}
-                    role="option"
-                    aria-selected={fileIndex === focusIndex}
-                    className={classNames(
-                        'd-flex align-items-center py-1 px-3 rounded-0',
-                        styles.resultItem,
-                        fileIndex === focusIndex && styles.focused
-                    )}
-                >
-                    <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
-                </li>
+                    file={file}
+                    isSelected={focusIndex === fileIndex}
+                    onClickItem={onClickItem}
+                />
             ))}
         </ul>
     )
@@ -236,6 +266,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
+    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -247,7 +278,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             maxResults,
             initialMaxResults,
             setMaxResults,
-            onClickItem
+            handleResultClick
         )
     }, [
         activeTab,
@@ -257,7 +288,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         maxResults,
         initialMaxResults,
         setMaxResults,
-        onClickItem,
+        handleResultClick,
         tabs,
     ])
 
@@ -270,7 +301,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             const index = newNumber % queryResult.resultCount
             const nextIndex = index < 0 ? queryResult.resultCount + index : index
             setFocusIndex(nextIndex)
-            document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView({ block: 'center' })
         },
         [focusIndex, setFocusIndex, queryResult]
     )
@@ -336,6 +366,11 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
           }
         : {}
 
+    const handleGoToResultsPageClick = useCallback(
+        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
+        [onClickItem]
+    )
+
     return (
         <Modal
             position="center"
@@ -357,7 +392,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     {showTabs ? (
                         <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
-                                <Tab key={key} className={styles.tab}>
+                                <Tab key={key} className={styles.tab} data-testid={key}>
                                     {tab.title}
                                     <span className={styles.shortcut}>
                                         {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
@@ -427,7 +462,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 )}
                 <hr className="my-0 w-100" />
                 <div className="d-flex align-items-center w-100 p-3">
-                    <SearchQueryLink {...props} />
+                    <SearchQueryLink {...props} onClickItem={handleGoToResultsPageClick} />
                     <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>
@@ -502,7 +537,7 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
     </Select>
 )
 
-const SearchQueryLink: React.FunctionComponent<FuzzyState> = props => {
+const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () => void }> = props => {
     const { onClickItem, scope } = props
     const searchQueryLink = useCallback(
         (query: string): JSX.Element => {

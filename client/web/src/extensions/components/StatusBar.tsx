@@ -129,13 +129,8 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
         return () => subscription.unsubscribe()
     }, [extensionsController, isBlobPage, mergedReferences])
 
-    const {
-        carouselReference,
-        canScrollNegative,
-        canScrollPositive,
-        onNegativeClicked,
-        onPositiveClicked,
-    } = useCarousel({ direction: 'leftToRight' })
+    const { carouselReference, canScrollNegative, canScrollPositive, onNegativeClicked, onPositiveClicked } =
+        useCarousel({ direction: 'leftToRight' })
 
     if (!hasEnoughTimePassed && hideWhileInitializing) {
         return null

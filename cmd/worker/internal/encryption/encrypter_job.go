@@ -37,16 +37,20 @@ func (j *recordEncrypterJob) Routines(startupCtx context.Context, observationCtx
 	store := database.NewRecordEncrypter(db)
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.EncryptionInterval, &recordEncrypter{
-			store:   store,
-			decrypt: ConfigInst.Decrypt,
-			metrics: metrics,
-			logger:  observationCtx.Logger,
-		}),
-		goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.MetricsInterval, &recordCounter{
-			store:   store,
-			metrics: metrics,
-			logger:  observationCtx.Logger,
-		}),
+		goroutine.NewPeriodicGoroutine(context.Background(), "encryption.record-encrypter", "encrypts/decrypts existing data when a key is provided/removed",
+			ConfigInst.EncryptionInterval, &recordEncrypter{
+				store:   store,
+				decrypt: ConfigInst.Decrypt,
+				metrics: metrics,
+				logger:  observationCtx.Logger,
+			},
+		),
+		goroutine.NewPeriodicGoroutine(context.Background(), "encryption.operation-metrics", "tracks number of encrypted vs unencrypted records",
+			ConfigInst.MetricsInterval, &recordCounter{
+				store:   store,
+				metrics: metrics,
+				logger:  observationCtx.Logger,
+			},
+		),
 	}, nil
 }

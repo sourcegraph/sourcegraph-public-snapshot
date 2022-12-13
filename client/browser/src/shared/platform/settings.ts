@@ -132,9 +132,7 @@ const configurationCascadeFragment = gql`
  *
  * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
-export function fetchViewerSettings(
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<{
+export function fetchViewerSettings(requestGraphQL: PlatformContext['requestGraphQL']): Observable<{
     final: string
     subjects: (SettingsSubject & SubjectSettingsContents)[]
 }> {

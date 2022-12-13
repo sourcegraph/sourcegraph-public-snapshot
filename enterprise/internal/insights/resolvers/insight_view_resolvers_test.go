@@ -284,7 +284,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 
 	global := true
-	globalGrants := []store.DashboardGrant{{nil, nil, &global}}
+	globalGrants := []store.DashboardGrant{{UserID: nil, OrgID: nil, Global: &global}}
 	dashboard1 := types.Dashboard{ID: 1, Title: "dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
@@ -297,7 +297,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 
 	userId := 1
-	privateCurrentUserGrants := []store.DashboardGrant{{&userId, nil, nil}}
+	privateCurrentUserGrants := []store.DashboardGrant{{UserID: &userId, OrgID: nil, Global: nil}}
 	dashboard2 := types.Dashboard{ID: 2, Title: "users private dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
@@ -308,7 +308,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	notUsersId := 2
-	privateDifferentUserGrants := []store.DashboardGrant{{&notUsersId, nil, nil}}
+	privateDifferentUserGrants := []store.DashboardGrant{{UserID: &notUsersId, OrgID: nil, Global: nil}}
 	dashboard3 := types.Dashboard{ID: 3, Title: "different users private dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{

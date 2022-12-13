@@ -263,6 +263,9 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var code int
 	var header http.Header

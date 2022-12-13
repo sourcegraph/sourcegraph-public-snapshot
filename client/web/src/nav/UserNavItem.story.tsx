@@ -50,6 +50,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     organizations: {
         nodes: [
             {
+                __typename: 'Org',
                 id: '0',
                 name: 'acme',
                 displayName: 'Acme Corp',
@@ -57,6 +58,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
                 settingsURL: '/organizations/acme/settings',
             },
             {
+                __typename: 'Org',
                 id: '1',
                 name: 'beta',
                 displayName: 'Beta Inc',

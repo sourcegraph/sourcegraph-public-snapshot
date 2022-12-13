@@ -121,8 +121,7 @@ describe('GitHub DOM functions', () => {
                     },
                     {
                         view: 'commit',
-                        url:
-                            'https://github.com/sourcegraph/sourcegraph/commit/2c74f329fd03008fa0b446cd5e53234715dae3dc',
+                        url: 'https://github.com/sourcegraph/sourcegraph/commit/2c74f329fd03008fa0b446cd5e53234715dae3dc',
                     },
                     {
                         view: 'pull-request-discussion',

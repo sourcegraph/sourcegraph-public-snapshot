@@ -117,6 +117,10 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/.api/scip/upload") {
+		return true
+	}
+
 	// This is just a redirect to a public download
 	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
 		return true

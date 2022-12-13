@@ -564,10 +564,10 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 	// NOTE: We have two args per row, so rows*2 should be less than maximum
 	// Postgres allows.
 	const batchSize = batch.MaxNumPostgresParameters / 2
-	return s.updateRepoSizesWithBatchSize(ctx, shardID, repos, batchSize)
+	return s.updateRepoSizesWithBatchSize(ctx, repos, batchSize)
 }
 
-func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, shardID string, repos map[api.RepoID]int64, batchSize int) (updated int, err error) {
+func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[api.RepoID]int64, batchSize int) (updated int, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return 0, err

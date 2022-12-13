@@ -32,7 +32,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 
 	outputFactory := func() *output.Output { return out }
 
-	newRunnerWithSchemas := func(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 		if err != nil {
 			return nil, err
@@ -47,8 +47,8 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 
 		return cliutil.NewShim(r), nil
 	}
-	newRunner := func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
-		return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
+	newRunner := func(schemaNames []string) (cliutil.Runner, error) {
+		return newRunnerWithSchemas(schemaNames, schemas.Schemas)
 	}
 
 	registerMigrators := composeRegisterMigratorsFuncs(

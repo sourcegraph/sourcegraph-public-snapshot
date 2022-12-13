@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type diagnosticsCountMigrator struct {
@@ -36,7 +37,7 @@ func (m *diagnosticsCountMigrator) Interval() time.Duration { return time.Second
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *diagnosticsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 
@@ -53,7 +54,7 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) 
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *diagnosticsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 

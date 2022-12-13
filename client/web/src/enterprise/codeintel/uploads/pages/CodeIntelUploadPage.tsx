@@ -94,11 +94,10 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
     }, [deleteError])
 
     const uploadOrError = useObservable(
-        useMemo(() => queryLisfUploadFields(id, apolloClient).pipe(takeWhile(shouldReload, true)), [
-            id,
-            queryLisfUploadFields,
-            apolloClient,
-        ])
+        useMemo(
+            () => queryLisfUploadFields(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            [id, queryLisfUploadFields, apolloClient]
+        )
     )
 
     const deleteUpload = useCallback(async (): Promise<void> => {

@@ -22,17 +22,22 @@ import {
     DrillDownFiltersStep,
     BackendInsightChart,
     BackendInsightErrorAlert,
-    BackendInsightTimeoutIcon,
+    InsightIncompleteAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
-import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
+import {
+    BackendInsightData,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    useSaveInsightAsNewView,
+} from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
-import { useSaveInsightAsNewView } from '../../../../../core/hooks/use-save-insight-as-new-view'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
@@ -162,7 +167,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 onMouseLeave={trackMouseLeave}
             >
                 <InsightCardHeader title={insight.title}>
-                    {insightData?.isAllSeriesErrored && <BackendInsightTimeoutIcon timeoutLevel="insight" />}
+                    {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                     <StandaloneInsightContextMenu
                         insight={insight}
                         zeroYAxisMin={zeroYAxisMin}
@@ -174,8 +179,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <BackendInsightErrorAlert error={error} />
                 ) : loading || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : error ? (
-                    <BackendInsightErrorAlert error={error} />
                 ) : (
                     <BackendInsightChart
                         {...insightData}

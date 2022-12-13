@@ -1,8 +1,10 @@
-import React, { PropsWithChildren, useCallback, useMemo } from 'react'
+import React, { PropsWithChildren, useCallback, useMemo, useState } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     SearchContextProps,
     ListSearchContextsResult,
@@ -14,11 +16,13 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { AuthenticatedUser } from '../../auth'
 import {
+    Connection,
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '../../components/FilteredConnection'
 
+import { useDefaultContext } from './hooks/useDefaultContext'
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 
 import styles from './SearchContextsList.module.scss'
@@ -27,6 +31,7 @@ export interface SearchContextsListProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
+    setAlert: (message: string) => void
 }
 
 export const SearchContextsList: React.FunctionComponent<SearchContextsListProps> = ({
@@ -34,6 +39,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     getUserSearchContextNamespaces,
     fetchSearchContexts,
     platformContext,
+    setAlert,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
@@ -152,6 +158,34 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     const history = useHistory()
     const location = useLocation()
 
+    const [contextsOrError, setContextsOrError] = useState<
+        Connection<SearchContextMinimalFields> | ErrorLike | undefined
+    >()
+    const onUpdateContexts = useCallback((contexts: Connection<SearchContextMinimalFields> | ErrorLike | undefined) => {
+        setContextsOrError(contexts)
+    }, [])
+
+    const initialDefaultContext = useMemo(() => {
+        if (!contextsOrError || isErrorLike(contextsOrError)) {
+            return undefined
+        }
+        return contextsOrError.nodes.find(context => context.viewerHasAsDefault)
+    }, [contextsOrError])
+
+    const { defaultContext, setAsDefault } = useDefaultContext(initialDefaultContext?.id)
+    const setAsDefaultWithErrorHandling = useCallback(
+        (contextId: string, userId: string | undefined) => {
+            // Clear previous error
+            setAlert('')
+            return setAsDefault(contextId, userId).catch(error => {
+                if (isErrorLike(error)) {
+                    setAlert(error.message)
+                }
+            })
+        },
+        [setAlert, setAsDefault]
+    )
+
     return (
         <FilteredConnection<
             SearchContextMinimalFields,
@@ -171,8 +205,10 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             showSearchFirst={true}
             nodeComponent={SearchContextNode}
             nodeComponentProps={{
-                location,
-                history,
+                authenticatedUser,
+                setAlert,
+                defaultContext,
+                setAsDefault: setAsDefaultWithErrorHandling,
             }}
             noun="search context"
             pluralNoun="search contexts"
@@ -181,6 +217,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             inputPlaceholder="Find a context"
             inputAriaLabel="Find a context"
             formClassName={styles.filtersForm}
+            onUpdate={onUpdateContexts}
         />
     )
 }
@@ -193,17 +230,17 @@ const SearchContextsTableHeader: React.FunctionComponent = () => (
     <thead>
         <tr>
             <th>
-                <span className="sr-only">Starred</span>
+                <VisuallyHidden>Starred</VisuallyHidden>
             </th>
             <th>Name</th>
             <th>Description</th>
             <th>Contents</th>
             <th>Last updated</th>
             <th>
-                <span className="sr-only">Tags</span>
+                <VisuallyHidden>Tags</VisuallyHidden>
             </th>
             <th>
-                <span className="sr-only">Actions</span>
+                <VisuallyHidden>Actions</VisuallyHidden>
             </th>
         </tr>
     </thead>

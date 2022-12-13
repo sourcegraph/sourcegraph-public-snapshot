@@ -20,6 +20,8 @@ import (
 type JanitorConfig struct {
 	UploadTimeout                  time.Duration
 	AuditLogMaxAge                 time.Duration
+	UnreferencedDocumentBatchSize  int
+	UnreferencedDocumentMaxAge     time.Duration
 	MinimumTimeSinceLastCheck      time.Duration
 	CommitResolverBatchSize        int
 	CommitResolverMaximumCommitLag time.Duration
@@ -52,9 +54,14 @@ func NewJanitor(
 		clock:           clock,
 		gitserverClient: gitserverClient,
 	}
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return j.handleCleanup(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.upload-janitor", "cleans up various code intel upload and metadata",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return j.handleCleanup(ctx, config)
+		}),
+	)
 }
 
 func (b janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {
@@ -77,6 +84,11 @@ func (b janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs 
 		errs = errors.Append(errs, err)
 	}
 	if err := b.handleAuditLog(ctx, cfg); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	// SCIP data
+	if err := b.handleSCIPDocuments(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
@@ -147,7 +159,7 @@ func (b janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) 
 
 func (b janitorJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg JanitorConfig) error {
 	for _, commit := range sc.Commits {
-		if err := b.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
+		if err := b.handleCommit(ctx, sc.RepositoryID, commit, cfg); err != nil {
 			return err
 		}
 	}
@@ -155,7 +167,7 @@ func (b janitorJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedC
 	return nil
 }
 
-func (b janitorJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg JanitorConfig) error {
+func (b janitorJob) handleCommit(ctx context.Context, repositoryID int, commit string, cfg JanitorConfig) error {
 	var shouldDelete bool
 	_, err := b.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
 	if err == nil {
@@ -290,6 +302,16 @@ func (b janitorJob) handleAuditLog(ctx context.Context, cfg JanitorConfig) (err 
 	}
 
 	b.metrics.numAuditLogRecordsExpired.Add(float64(count))
+	return nil
+}
+
+func (b janitorJob) handleSCIPDocuments(ctx context.Context, cfg JanitorConfig) (err error) {
+	count, err := b.lsifStore.DeleteUnreferencedDocuments(ctx, cfg.UnreferencedDocumentBatchSize, cfg.UnreferencedDocumentMaxAge, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "uploadSvc.DeleteUnreferencedDocuments")
+	}
+
+	b.metrics.numSCIPDocumentRecordsRemoved.Add(float64(count))
 	return nil
 }
 
