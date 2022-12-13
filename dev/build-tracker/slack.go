@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -177,11 +176,11 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	return blocks, nil
 }
 
-func (c *NotificationClient) sendRevert(build *Build, prUrl *url.URL) error {
-	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+func (c *NotificationClient) sendRevert(revert *Revert) error {
+	logger := c.logger.With(log.Int("buildNumber", revert.build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack revert json")
 
-	blocks := createRevertMessageBlock(build, prUrl)
+	blocks := createRevertMessageBlock(revert)
 
 	logger.Debug("sending revert message")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
@@ -195,18 +194,18 @@ func (c *NotificationClient) sendRevert(build *Build, prUrl *url.URL) error {
 	return nil
 }
 
-func createRevertMessageBlock(build *Build, prUrl *url.URL) []slack.Block {
-	msg, _, _ := strings.Cut(build.message(), "\n")
-	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
+func createRevertMessageBlock(revert *Revert) []slack.Block {
+	msg, _, _ := strings.Cut(revert.build.message(), "\n")
+	msg += fmt.Sprintf(" (%s)", revert.build.commit()[:7])
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf("Reverting build %d", build.number()), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf("Reverting build %d", revert.build.number()), true, false),
 		),
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("Commit <%s|%s>", prUrl.String(), msg)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("Commit <%s|%s>", revert.prUrl.String(), msg)},
 			},
 			nil,
 		),
@@ -216,13 +215,13 @@ func createRevertMessageBlock(build *Build, prUrl *url.URL) []slack.Block {
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StylePrimary,
-					URL:   prUrl.String(),
+					URL:   revert.approveUrl.String(),
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Approve"},
 				},
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
-					URL:   "https://replace.me",
+					URL:   revert.rejectUrl.String(),
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Reject"},
 				},
 			}...,

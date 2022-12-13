@@ -174,6 +174,40 @@ func (s *Server) handleRevert(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(gpr.GetURL())
 	// send a notifcation of PR
 
+	buildNumber, ok := vars["buildNumber"]
+	number, err := strconv.Atoi(buildNumber)
+	if err != nil {
+		s.logger.Error("failed to parse build number", log.String("buildNumber", buildNumber))
+	}
+
+	build := s.store.GetByBuildNumber(number)
+	digest := "i+love+a+digestive"
+	rawApproveUrl := fmt.Sprintf("/revert/%s/%s/approve", *build.Commit, digest)
+	approveUrl, err := url.Parse(rawApproveUrl)
+	if err != nil {
+		s.logger.Error("failed to parse approve URL", log.String("approveUrl", rawApproveUrl))
+	}
+
+	rawRejectUrl := fmt.Sprintf("/revert/%s/%s/reject", *build.Commit, digest)
+	rejectUrl, err := url.Parse(rawRejectUrl)
+	if err != nil {
+		s.logger.Error("failed to parse reject URL", log.String("rejectUrl", rawRejectUrl))
+	}
+
+	prUrl, err := url.Parse(gpr.GetURL())
+	if err != nil {
+		s.logger.Error("failed to parse pr URL", log.String("prtUrl", gpr.GetURL()))
+	}
+
+	revert := Revert{
+		build:      build,
+		approveUrl: approveUrl,
+		rejectUrl:  rejectUrl,
+		prUrl:      prUrl,
+	}
+
+	s.notifyClient.sendRevert(&revert)
+
 	w.WriteHeader(http.StatusOK)
 }
 

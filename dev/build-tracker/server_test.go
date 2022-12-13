@@ -161,3 +161,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	})
 
 }
+
+func TestRevertBuild(t *testing.T) {
+	// todo
+}
