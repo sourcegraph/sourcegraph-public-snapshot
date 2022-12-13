@@ -1771,7 +1771,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
+	// Check stderr to see if the repo is corrupted, if it is set the corruptedAt time on the repo
+	// and emit a metric
+	if checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr) {
+		s.Logger.Warn("corrupted repo", log.String("repo", string(req.Repo)))
+		// TODO(burmudar:repo): mark the corrupted time for the repo and emit a metric
+	}
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
