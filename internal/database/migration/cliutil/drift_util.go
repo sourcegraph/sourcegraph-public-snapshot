@@ -143,10 +143,10 @@ func compareTables(out *preambledOutput, schemaName, version string, actual, exp
 
 		outOfSync := false
 		outOfSync = compareColumns(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareConstraints(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareIndexes(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTriggers(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareTableComments(out, schemaName, version, *table, expectedTable) || outOfSync
+		outOfSync = compareConstraints(out, *table, expectedTable) || outOfSync
+		outOfSync = compareIndexes(out, *table, expectedTable) || outOfSync
+		outOfSync = compareTriggers(out, *table, expectedTable) || outOfSync
+		outOfSync = compareTableComments(out, *table, expectedTable) || outOfSync
 		return outOfSync
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
@@ -212,7 +212,7 @@ func compareColumns(out *preambledOutput, schemaName, version string, actualTabl
 	})
 }
 
-func compareConstraints(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareConstraints(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) bool {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
@@ -238,7 +238,7 @@ func compareConstraints(out *preambledOutput, schemaName, version string, actual
 	})
 }
 
-func compareIndexes(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareIndexes(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
 		var createIndexStmt string
 		switch expectedIndex.ConstraintType {
@@ -272,7 +272,7 @@ func compareIndexes(out *preambledOutput, schemaName, version string, actualTabl
 	})
 }
 
-func compareTriggers(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTriggers(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) bool {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
@@ -299,7 +299,7 @@ func compareTriggers(out *preambledOutput, schemaName, version string, actualTab
 	})
 }
 
-func compareTableComments(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTableComments(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
 	if actualTable.Comment != expectedTable.Comment {
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
 		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)

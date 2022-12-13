@@ -212,7 +212,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr.LogFields(fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.AddLogFields(fields)
 	event.Send()
@@ -275,9 +275,10 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	if zsl != nil {
 		event.AddField("repos", len(zsl.Repos))
 		event.AddField("minimal_repos", len(zsl.Minimal))
+		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
-		event.AddField("error", err)
+		event.AddField("error", err.Error())
 	}
 	event.Send()
 

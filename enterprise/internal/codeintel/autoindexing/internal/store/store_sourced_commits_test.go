@@ -47,9 +47,8 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	)
 
 	const (
-		minimumTimeSinceLastCheck      = time.Minute
-		commitResolverBatchSize        = 5
-		commitResolverMaximumCommitLag = time.Hour
+		minimumTimeSinceLastCheck = time.Minute
+		commitResolverBatchSize   = 5
 	)
 
 	// First update
@@ -60,7 +59,6 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
-		commitResolverMaximumCommitLag,
 		deleteCommit3,
 		now,
 	); err != nil {
@@ -91,7 +89,6 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
-		commitResolverMaximumCommitLag,
 		deleteCommit2,
 		now.Add(minimumTimeSinceLastCheck/2),
 	); err != nil {
@@ -113,7 +110,6 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 		ctx,
 		minimumTimeSinceLastCheck,
 		commitResolverBatchSize,
-		commitResolverMaximumCommitLag,
 		deleteCommit2,
 		now.Add(minimumTimeSinceLastCheck/2*3),
 	); err != nil {

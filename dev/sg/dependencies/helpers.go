@@ -284,7 +284,7 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
+func getPackageManagerConstraint(tool string) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to determine repository root location")
@@ -350,7 +350,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return err
 	}
 
-	constraint, err := getPackageManagerConstraint(ctx, "yarn")
+	constraint, err := getPackageManagerConstraint("yarn")
 	if err != nil {
 		return err
 	}

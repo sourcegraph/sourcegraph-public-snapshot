@@ -58,10 +58,7 @@ func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]Migratio
 	// Finally, we reconstruct the return value, which pairs each of our chosen versions with the
 	// set of migrations that need to finish prior to continuing the downgrade process.
 
-	interrupts, err := makeCoveringSet(intervals, points)
-	if err != nil {
-		return nil, err
-	}
+	interrupts := makeCoveringSet(intervals, points)
 
 	// Sort descending
 	sort.Slice(interrupts, func(i, j int) bool {

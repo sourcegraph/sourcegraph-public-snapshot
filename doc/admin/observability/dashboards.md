@@ -4131,11 +4131,11 @@ Query: `sum(increase(src_email_send{success="false"}[30m]))`
 
 <br />
 
-#### frontend: email_deliveries_by_source
+#### frontend: email_deliveries_total
 
-<p class="subtitle">Emails successfully delivered every 5 minutes by source</p>
+<p class="subtitle">Total emails successfully delivered every 30 minutes</p>
 
-Emails successfully delivered by source.
+Total emails successfully delivered.
 
 This panel has no related alerts.
 
@@ -4146,17 +4146,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`
+Query: `sum (increase(src_email_send{success="true"}[30m]))`
 
 </details>
 
 <br />
 
-#### frontend: email_deliveries_total
+#### frontend: email_deliveries_by_source
 
-<p class="subtitle">Total emails successfully delivered every 5 minutes</p>
+<p class="subtitle">Emails successfully delivered every 30 minutes by source</p>
 
-Total emails successfully delivered.
+Emails successfully delivered by source, i.e. product feature.
 
 This panel has no related alerts.
 
@@ -4167,7 +4167,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (increase(src_email_send{success="true"}[5m]))`
+Query: `sum by (email_source) (increase(src_email_send{success="true"}[30m]))`
 
 </details>
 
@@ -4448,6 +4448,33 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 <br />
 
+### Frontend: Incoming webhooks
+
+#### frontend: p95_time_to_handle_incoming_webhooks
+
+<p class="subtitle">P95 time to handle incoming webhooks</p>
+
+							p95 response time to incoming webhook requests from code hosts.
+
+							Increases in response time can point to too much load on the database to keep up with the incoming requests.
+
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks"}[5m])) by (le, route))`
+
+</details>
+
+<br />
+
 ### Frontend: Search aggregations: proactive and expanded search aggregations
 
 #### frontend: insights_aggregations_total
@@ -4456,7 +4483,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4475,7 +4502,7 @@ Query: `sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4494,7 +4521,7 @@ Query: `sum  by (le)(rate(src_insights_aggregations_duration_seconds_bucket{job=
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4513,7 +4540,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4532,7 +4559,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4551,7 +4578,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4570,7 +4597,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op,extended_mode)(rate(src_insights
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103312` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103412` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4589,7 +4616,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_tota
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103313` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103413` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 

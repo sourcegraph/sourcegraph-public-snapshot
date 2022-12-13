@@ -179,4 +179,10 @@ export const commonWebGraphQlResults: Partial<
             },
         },
     }),
+    DefaultSearchContextSpec: () => ({
+        defaultSearchContext: {
+            __typename: 'SearchContext',
+            spec: 'global',
+        },
+    }),
 }

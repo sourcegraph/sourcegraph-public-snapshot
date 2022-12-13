@@ -42,7 +42,7 @@ func Init(
 	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(observationCtx, db, accessToken))
 	queueOptions := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
-	queueHandler, err := newExecutorQueueHandler(
+	queueHandler := newExecutorQueueHandler(
 		logger,
 		db,
 		queueOptions,
@@ -51,9 +51,6 @@ func Init(
 		batchesWorkspaceFileGetHandler,
 		batchesWorkspaceFileExistsHandler,
 	)
-	if err != nil {
-		return err
-	}
 
 	enterpriseServices.NewExecutorProxyHandler = queueHandler
 	return nil
