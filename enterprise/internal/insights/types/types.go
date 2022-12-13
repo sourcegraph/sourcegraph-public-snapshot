@@ -41,6 +41,7 @@ type InsightViewSeries struct {
 	GroupBy                       *string
 	BackfillAttempts              int32
 	SupportsAugmentation          bool
+	RepositoryCriteria            *string
 }
 
 type Insight struct {
@@ -107,6 +108,7 @@ type InsightSeries struct {
 	GroupBy                    *string
 	BackfillAttempts           int32
 	SupportsAugmentation       bool
+	RepositoryCriteria         *string
 }
 
 type IntervalUnit string
