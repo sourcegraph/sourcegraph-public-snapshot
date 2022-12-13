@@ -1,9 +1,6 @@
-import { FC, useState } from 'react'
+import { FC } from 'react'
 
-import { mdiEye } from '@mdi/js'
 import classNames from 'classnames'
-
-import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../components/CopyableText'
 import { WebhookFields } from '../graphql-operations'
@@ -16,7 +13,6 @@ export interface WebhookInformationProps {
 
 export const WebhookInformation: FC<WebhookInformationProps> = props => {
     const { webhook } = props
-    const [secretShown, setSecretShown] = useState(false)
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -38,17 +34,7 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
                 <tr>
                     <th className={styles.tableHeader}>Secret</th>
                     <td className={styles.contentCell}>
-                        <Input
-                            name="secret"
-                            type={secretShown ? 'text' : 'password'}
-                            value={secretShown ? webhook.secret ?? '' : 'verysecretvalue'}
-                            className={classNames(styles.input)}
-                            inputClassName={classNames(styles.input)}
-                            readOnly={true}
-                        />
-                        <Button onClick={() => setSecretShown(!secretShown)}>
-                            <Icon svgPath={mdiEye} inline={true} aria-label="ToggleSecret" />
-                        </Button>
+                        <CopyableText text={webhook.secret ?? ''} secret={true} />
                     </td>
                 </tr>
             </tbody>
