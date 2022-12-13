@@ -60,7 +60,7 @@ type Options struct {
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions
 
-	// DockerOptions configures the behavior of Firecracker virtual machine creation.
+	// DockerOptions configures the behavior of docker container creation.
 	DockerOptions command.DockerOptions
 
 	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
