@@ -82,27 +82,33 @@ func (w eventWrapper) Send() error {
 // NewEvent returns a noop event. NewEvent.Send will only work if
 // Enabled() returns true.
 func NewEvent(dataset string) Event {
+	ev, _ := newEvent(dataset)
+	return ev
+}
+
+// NewEventWithFields creates an event for logging to the given dataset. The given
+// fields are assigned to the event.
+func NewEventWithFields(dataset string, fields map[string]any) Event {
+	ev, enabled := newEvent(dataset)
+	if enabled {
+		for key, value := range fields {
+			ev.AddField(key, value)
+		}
+	}
+	return ev
+}
+
+// newEvent is a helper used by NewEvent* which returns true if the event is
+// not a noop event.
+func newEvent(dataset string) (Event, bool) {
 	if !Enabled() {
-		return noopEvent{}
+		return noopEvent{}, false
 	}
 	ev := libhoney.NewEvent()
 	ev.Dataset = dataset + suffix
 	return eventWrapper{
 		event:        ev,
 		sliceWrapped: map[string]bool{},
-	}
+	}, true
 }
 
-// NewEventWithFields creates an event for logging to the given dataset. The given
-// fields are assigned to the event.
-func NewEventWithFields(dataset string, fields map[string]any) Event {
-	if !Enabled() {
-		return noopEvent{}
-	}
-	ev := NewEvent(dataset)
-	for key, value := range fields {
-		ev.AddField(key, value)
-	}
-
-	return ev
-}
