@@ -27,14 +27,14 @@ func compressTrieInternal(n runeTrieNode, prefix string) map[string]stringTrieNo
 		return nil
 	}
 
-	if len(n.children) == 1 {
+	if len(n.children) == 1 && !n.terminatesMatch {
 		for childPrefix, child := range n.children {
 			// Collapse linear runs of the tree into a single node
 			return compressTrieInternal(child, prefix+string(childPrefix))
 		}
 	}
 
-	if len(prefix) < minimumSegmentLength {
+	if len(prefix) < minimumSegmentLength && !n.terminatesMatch {
 		// The prefix is smaller than the threshold, so we append it to each child
 		return mapNontrivialRuneNodeToStringNode(n, prefix, "")
 	}
