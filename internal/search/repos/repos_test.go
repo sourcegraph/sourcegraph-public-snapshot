@@ -299,6 +299,9 @@ func TestResolverPaginate(t *testing.T) {
 
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec == "bad_commit" {
+			return "", &gitdomain.BadCommitError{}
+		}
 		// All repos have the revision except foo/bar5
 		if name == "github.com/foo/bar5" {
 			return "", &gitdomain.RevisionNotFoundError{}
@@ -347,6 +350,15 @@ func TestResolverPaginate(t *testing.T) {
 					MissingRepoRevs: []RepoRevSpecs{},
 				},
 			},
+		},
+		{
+			name: "with limit 3 and fatal error",
+			opts: search.RepoOptions{
+				Limit:       3,
+				RepoFilters: []string{"foo/bar[0-5]@bad_commit"},
+			},
+			err:   &gitdomain.BadCommitError{},
+			pages: nil,
 		},
 		{
 			name: "with limit 3 and missing repo revs",
