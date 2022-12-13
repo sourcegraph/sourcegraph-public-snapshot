@@ -484,7 +484,8 @@ type ValidateScopedInsightQueryArgs struct {
 }
 
 type ValidateScopedInsightQueryInput struct {
-	Query string
+	Query                     string
+	FetchNumberOfRepositories bool
 }
 
 type ScopedInsightQueryPayloadResultResolver interface {

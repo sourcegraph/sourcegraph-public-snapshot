@@ -1244,6 +1244,10 @@ input ValidateScopedInsightQueryInput {
     Query to run for finding insight scope. Currently limited to repo filters and boolean predicates only.
     """
     query: String!
+    """
+    Whether to fetch the number of repositories the query matches.
+    """
+    fetchNumberOfRepositories: Boolean!
 }
 
 """

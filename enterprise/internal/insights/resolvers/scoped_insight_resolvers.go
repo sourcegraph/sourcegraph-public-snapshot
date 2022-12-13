@@ -35,19 +35,24 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 		}, nil
 	}
 
-	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-	repos, err := executor.ExecuteRepoList(ctx, args.Input.Query)
-	if err != nil {
-		return &scopedInsightQueryResultResolver{
-			resolver: &scopedInsightQueryPayloadNotAvailableResolver{
-				reason:     fmt.Sprintf("executing the repository search errored: %v", err),
-				reasonType: types.SCOPE_SEARCH_ERROR,
-			},
-		}, nil
+	var numberOfRepositories *int32
+	if args.Input.FetchNumberOfRepositories {
+		executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
+		repos, err := executor.ExecuteRepoList(ctx, args.Input.Query)
+		if err != nil {
+			return &scopedInsightQueryResultResolver{
+				resolver: &scopedInsightQueryPayloadNotAvailableResolver{
+					reason:     fmt.Sprintf("executing the repository search errored: %v", err),
+					reasonType: types.SCOPE_SEARCH_ERROR,
+				},
+			}, nil
+		}
+		number := int32(len(repos))
+		numberOfRepositories = &number
 	}
-	numberOfRepositories := int32(len(repos))
+
 	return &scopedInsightQueryResultResolver{
-		resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: &numberOfRepositories},
+		resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: numberOfRepositories},
 	}, nil
 }
 
