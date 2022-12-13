@@ -9,16 +9,24 @@ import { map, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    reindexResult,
+    reindexVariables,
+    RepositoryTextSearchIndexRepository,
+    Scalars,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
+
+import { BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsIndexPage.module.scss'
 
@@ -77,6 +85,77 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
             }
             return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex
         })
+    )
+}
+
+const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID'] }>> = ({ id }) => {
+    const [error, setError] = React.useState<Error | null>(null)
+    const [success, setSuccess] = React.useState<boolean>(false)
+    const [loading, setLoading] = React.useState<boolean>(false)
+
+    const useForceReindex = (id: Scalars['ID']): (() => void) => {
+        const [submitForceReindex] = useMutation<reindexResult, reindexVariables>(
+            gql`
+                mutation reindex($id: ID!) {
+                    reindexRepository(repository: $id) {
+                        alwaysNil
+                    }
+                }
+            `
+        )
+        const forceReindex = React.useCallback(() => {
+            submitForceReindex({
+                variables: { id },
+            }).then(
+                () => {
+                    setLoading(false)
+                    setSuccess(true)
+                },
+                error => {
+                    setLoading(false)
+                    setError(error)
+                }
+            )
+        }, [submitForceReindex, id])
+        return forceReindex
+    }
+
+    const forceReindex = useForceReindex(id)
+
+    return (
+        <BaseActionContainer
+            title="Trigger Reindex"
+            description={<span>Send a request to Zoekt indexserver and force an immediate reindex.</span>}
+            action={
+                <Button
+                    variant="primary"
+                    onClick={() => {
+                        setLoading(true)
+                        setError(null)
+                        setSuccess(false)
+                        forceReindex()
+                    }}
+                >
+                    Reindex now
+                </Button>
+            }
+            details={
+                <>
+                    {error && <ErrorAlert className="mt-4 mb-0" error={error} icon={false} />}
+                    {loading && (
+                        <Alert className="mt-4 mb-0" variant="primary">
+                            <LoadingSpinner /> Triggering reindex ...
+                        </Alert>
+                    )}
+                    {success && (
+                        <Alert className="mt-4 mb-0" variant="success">
+                            Reindex triggered
+                        </Alert>
+                    )}
+                </>
+            }
+            className="mt-0 mb-3"
+        />
     )
 }
 
@@ -191,6 +270,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         !this.state.loading &&
                         (this.state.textSearchIndex ? (
                             <>
+                                <Reindex id={this.props.repo.id} />
                                 {this.state.textSearchIndex.refs && (
                                     <ul className={styles.refs}>
                                         {this.state.textSearchIndex.refs.map((reference, index) => (
@@ -208,7 +288,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
-                                                    <th>Last updated</th>
+                                                    <th>Last indexed at</th>
                                                     <td>
                                                         <Timestamp date={this.state.textSearchIndex.status.updatedAt} />
                                                     </td>

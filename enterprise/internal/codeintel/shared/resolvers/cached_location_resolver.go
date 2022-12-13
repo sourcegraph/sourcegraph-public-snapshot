@@ -234,7 +234,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	return repositoryResolver.commitFromID(ctx, &resolverstubs.RepositoryCommitArgs{Rev: commit}, commitID)
+	return repositoryResolver.commitFromID(&resolverstubs.RepositoryCommitArgs{Rev: commit}, commitID)
 }
 
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
-import { Badge, Icon, Link, Menu, MenuButton, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Icon, Link, Menu, MenuButton, MenuItem, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -19,12 +19,16 @@ export interface SearchContextNodeProps {
     node: SearchContextMinimalFields
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     setAlert: (message: string) => void
+    defaultContext: string | undefined
+    setAsDefault: (searchContextId: string, userId?: string) => Promise<void>
 }
 
 export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
     authenticatedUser,
     setAlert,
+    defaultContext,
+    setAsDefault,
 }: SearchContextNodeProps) => {
     const { starred, toggleStar } = useToggleSearchContextStar(node.viewerHasStarred, node.id, authenticatedUser?.id)
     const toggleStarWithErrorHandling = useCallback(() => {
@@ -73,6 +77,8 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
         </>
     )
 
+    const isDefault = defaultContext === node.id
+
     return (
         <tr className={styles.row}>
             <td className={styles.star}>
@@ -100,8 +106,8 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
                 {timestamp}
             </td>
             <td className={styles.tags}>
-                {node.viewerHasAsDefault ? (
-                    <Badge variant="secondary" className="text-uppercase">
+                {isDefault ? (
+                    <Badge variant="secondary" className="text-uppercase" data-testid="search-context-default-badge">
                         Default
                     </Badge>
                 ) : null}
@@ -113,6 +119,22 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
                         <Icon svgPath={mdiDotsHorizontal} aria-label="Actions" />
                     </MenuButton>
                     <MenuList>
+                        <Tooltip
+                            content={
+                                isDefault
+                                    ? 'This is already your default context.'
+                                    : !authenticatedUser
+                                    ? 'You must be signed in to use a context as default.'
+                                    : undefined
+                            }
+                        >
+                            <MenuItem
+                                disabled={isDefault || !authenticatedUser}
+                                onSelect={() => setAsDefault(node.id, authenticatedUser?.id)}
+                            >
+                                Use as default
+                            </MenuItem>
+                        </Tooltip>
                         <Tooltip
                             content={
                                 node.autoDefined

@@ -72,11 +72,16 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         await driver.page.waitForSelector('[aria-label="Chart series"]')
 
-        for (let lineIndex = 0; lineIndex < dataSeries.length; lineIndex++) {
+        // Focus the chart container (SVG root element)
+        await driver.page.keyboard.press(Key.Tab)
+
+        // Enter the arrow keys keyboard navigation mode
+        await driver.page.keyboard.press(Key.Enter)
+
+        for (let lineIndex = 0; lineIndex <= dataSeries.length - 1; lineIndex++) {
             const series = dataSeries[lineIndex]
 
             for (let pointIndex = 0; pointIndex < series.points.length; pointIndex++) {
-                await driver.page.keyboard.press(Key.Tab)
                 assert.strictEqual(
                     await hasFocus(
                         driver,
@@ -87,6 +92,8 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
                     true,
                     'Insight data point should be focused'
                 )
+
+                await driver.page.keyboard.press(Key.ArrowRight)
             }
         }
     })

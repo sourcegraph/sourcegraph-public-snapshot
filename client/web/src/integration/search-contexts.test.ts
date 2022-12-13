@@ -56,8 +56,6 @@ describe('Search contexts', () => {
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
-    const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
-
     test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
@@ -73,19 +71,27 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
     })
 
-    test('Missing context filter should default to global context', async () => {
-        // Initialize localStorage to a valid context, that should not be used
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
+    test('Missing context filter should default to global context, even if another default is set', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            DefaultSearchContextSpec: () => ({
+                defaultSearchContext: {
+                    __typename: 'SearchContext',
+                    spec: 'ctx-1',
+                },
+            }),
+        })
+
         // Visit the search page with a query without a context filter
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
+            waitUntil: 'networkidle0',
+        })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
-        await clearLocalStorage()
     })
 
     withSearchQueryInput(editorName => {
-        test(`Unavailable search context should remain in the query and disable the search context dropdown (${editorName})`, async () => {
+        test(`Unavailable search context should remain in the query and disable the search context dropdown with default context (${editorName})`, async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
                 ...createViewerSettingsGraphQLOverride({
@@ -94,6 +100,12 @@ describe('Search contexts', () => {
                             showSearchContext: true,
                             ...enableEditor(editorName).experimentalFeatures,
                         },
+                    },
+                }),
+                DefaultSearchContextSpec: () => ({
+                    defaultSearchContext: {
+                        __typename: 'SearchContext',
+                        spec: 'ctx-1',
                     },
                 }),
             })
@@ -106,20 +118,22 @@ describe('Search contexts', () => {
             const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
             expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:ctx-1')
         })
     })
 
-    test('Reset unavailable search context from localStorage if query is not present', async () => {
-        // First initialize localStorage on the page
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
-        // Visit the page again with localStorage initialized
+    test('Reset unavailable search context from default if query is not present', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            DefaultSearchContextSpec: () => ({
+                defaultSearchContext: null,
+            }),
+        })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
-        await clearLocalStorage()
     })
 
     test('Create static search context', async () => {

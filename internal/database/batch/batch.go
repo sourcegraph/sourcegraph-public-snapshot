@@ -99,6 +99,38 @@ func WithInserterWithReturn(
 	return with(ctx, inserter, f)
 }
 
+// WithInserterForIdentifiers creates a new batch inserter using the given database handle, table name,
+// column names, and calls the given function with the new inserter as a parameter. The single returning
+// column name will be scanned as an integer and collected. The sequence of collected identifiers are
+// returned from this function. The inserter will be flushed regardless of the error condition of the given
+// function. Any error returned from the given function will be decorated with the inserter's flush error,
+// if one occurs.
+func WithInserterForIdentifiers(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	maxNumParameters int,
+	columnNames []string,
+	onConflictClause string,
+	returningColumnName string,
+	f func(inserter *Inserter) error,
+) (ids []int, err error) {
+	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, []string{returningColumnName}, func(s dbutil.Scanner) error {
+		id, err := basestore.ScanInt(s)
+		if err != nil {
+			return err
+		}
+
+		ids = append(ids, id)
+		return nil
+	})
+	if err := with(ctx, inserter, f); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {

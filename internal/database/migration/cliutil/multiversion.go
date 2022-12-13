@@ -128,7 +128,7 @@ func runMigration(
 		})
 	}
 
-	r, err := runnerFactory(ctx, schemas.SchemaNames, runnerSchemas)
+	r, err := runnerFactory(schemas.SchemaNames, runnerSchemas)
 	if err != nil {
 		return err
 	}

@@ -13969,6 +13969,19 @@
           "Comment": "The path for which the index can resolve code intelligence relative to the repository root."
         },
         {
+          "Name": "should_reindex",
+          "Index": 35,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "started_at",
           "Index": 7,
           "TypeName": "timestamp with time zone",
@@ -18336,6 +18349,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The uniquely identifying name of the role."
+        },
+        {
+          "Name": "readonly",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to indicate whether a role is read-only or can be modified."
         }
       ],
       "Indexes": [

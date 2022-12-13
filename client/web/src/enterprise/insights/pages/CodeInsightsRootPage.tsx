@@ -82,10 +82,10 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
                 <TabPanels className={styles.tabPanels}>
-                    <TabPanel>
+                    <TabPanel tabIndex={-1}>
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={dashboardId} />
                     </TabPanel>
-                    <TabPanel>
+                    <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
                             <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                         </Suspense>
