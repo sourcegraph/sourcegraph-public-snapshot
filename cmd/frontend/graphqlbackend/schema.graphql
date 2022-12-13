@@ -8493,7 +8493,7 @@ type SlowRequest {
     """
     duration: Float!
     """
-    The user identifier associated if that request.
+    The user associated with that request, if any.
     """
     user: User
     """
@@ -8505,7 +8505,7 @@ type SlowRequest {
     """
     source: String!
     """
-    The repository referenced by the request, if applicable.
+    The repository referenced by the request, if any.
     """
     repository: Repository
     """
@@ -8521,7 +8521,7 @@ type SlowRequest {
     """
     query: String!
     """
-    The file path referenced by the request, if applicable.
+    The file path referenced by the request, if any.
     """
     filepath: String
 }
