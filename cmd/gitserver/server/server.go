@@ -2002,6 +2002,11 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
+// setCorruptedAt sets the corrupted at time of the repo
+func (s *Server) setCorruptedAt(ctx context.Context, name api.RepoName, ts *time.Time) error {
+	return s.DB.GitserverRepos().SetCorruptedAt(ctx, name, ts)
+}
+
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
