@@ -17,7 +17,6 @@ import { Compartment, Extension, StateEffect } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
-import { escapeRegExp } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
@@ -277,18 +276,12 @@ class SearchPanel implements Panel {
 
     private calculateMatches = (query: SearchQuery): void => {
         const newSearchMatches: SearchMatches = new Map()
-        const regex = new RegExp(
-            query.regexp ? query.search : escapeRegExp(query.search),
-            `gm${query.caseSensitive ? '' : 'i'}`
-        )
-        const matches = [...this.view.state.facet(blobPropsFacet).blobInfo.content.matchAll(regex)]
-        for (let idx = 0; idx < matches.length; idx++) {
-            const match = matches[idx]
-            if (match.index !== undefined) {
-                newSearchMatches.set(match.index, idx + 1)
-            }
+        let index = 1
+        let result = query.getCursor(this.view.state.doc).next()
+        while (!result.done) {
+            newSearchMatches.set(result.value.from, index++)
+            result = query.getCursor(this.view.state.doc, result.value.to).next()
         }
-
         this.view.dispatch({
             effects: [setSearchMatches.of(newSearchMatches), setCurrentSearchMatchIndex.of(null)],
         })
