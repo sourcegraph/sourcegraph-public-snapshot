@@ -764,7 +764,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default
-					app = "blobstore"
+					folder = "blobstore"
 				}
 				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
