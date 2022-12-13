@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // ExecutorSecretAccessLog represents a row in the `executor_secret_access_logs` table.
@@ -244,7 +243,9 @@ INSERT INTO
 
 // scanExecutorSecretAccessLog scans an ExecutorSecretAccessLog from the given scanner
 // into the given ExecutorSecretAccessLog.
-func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s dbutil.Scanner) error {
+func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s interface {
+	Scan(...any) error
+}) error {
 	return s.Scan(
 		&log.ID,
 		&log.ExecutorSecretID,

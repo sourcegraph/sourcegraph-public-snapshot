@@ -1,6 +1,7 @@
 package codeintel
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -11,11 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestTransformRecord(t *testing.T) {
+	db := database.NewMockDB()
+
 	for _, testCase := range []struct {
 		name             string
 		resourceMetadata handler.ResourceMetadata
@@ -75,7 +79,7 @@ func TestTransformRecord(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(index, testCase.resourceMetadata, "hunter2")
+			job, err := transformRecord(context.Background(), index, db, testCase.resourceMetadata, "hunter2")
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -142,6 +146,8 @@ func TestTransformRecord(t *testing.T) {
 }
 
 func TestTransformRecordWithoutIndexer(t *testing.T) {
+	db := database.NewMockDB()
+
 	index := types.Index{
 		ID:             42,
 		Commit:         "deadbeef",
@@ -168,7 +174,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		conf.Mock(nil)
 	})
 
-	job, err := transformRecord(index, handler.ResourceMetadata{}, "hunter2")
+	job, err := transformRecord(context.Background(), index, db, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}

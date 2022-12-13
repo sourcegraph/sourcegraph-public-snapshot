@@ -25,6 +25,8 @@ const (
 	schemeExecutorToken = "token-executor"
 )
 
+// accessLogTransformer sets the approriate fields on the executor secret access log entry
+// for auto-indexing access
 type accessLogTransformer struct {
 	database.ExecutorSecretAccessLogCreator
 }
@@ -53,11 +55,11 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 	// And build the env vars from the secrets.
 	secretEnvVars := make([]string, len(secrets))
 	redactedEnvVars := make(map[string]string, len(secrets))
-	esalStore := &accessLogTransformer{db.ExecutorSecretAccessLogs()}
+	secretStore := &accessLogTransformer{db.ExecutorSecretAccessLogs()}
 	for i, secret := range secrets {
 		// Get the secret value. This also creates an access log entry in the
 		// name of the user.
-		val, err := secret.Value(ctx, esalStore)
+		val, err := secret.Value(ctx, secretStore)
 		if err != nil {
 			return apiclient.Job{}, err
 		}
@@ -105,11 +107,8 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 		outfile = defaultOutfile
 	}
 
-	fetchTags := false
 	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	if strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go") {
-		fetchTags = true
-	}
+	fetchTags := strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go")
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",
@@ -146,6 +145,7 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 		// are absent from the command's stdout or stderr streams.
 		accessToken: "PASSWORD_REMOVED",
 	}
+	// 🚨 SECURITY: Catch uses of executor secrets from the executor secret store
 	maps.Copy(allRedactedValues, redactedEnvVars)
 
 	return apiclient.Job{

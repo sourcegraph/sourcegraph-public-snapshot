@@ -486,7 +486,9 @@ RETURNING %s
 
 // scanExecutorSecret scans a secret from the given scanner into the given
 // ExecutorSecret.
-func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s dbutil.Scanner) error {
+func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
+	Scan(...any) error
+}) error {
 	var (
 		value []byte
 		keyID string
