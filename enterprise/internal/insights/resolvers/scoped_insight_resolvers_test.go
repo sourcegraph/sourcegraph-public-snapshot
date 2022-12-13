@@ -44,11 +44,6 @@ func Test_isValidScopeQuery(t *testing.T) {
 			valid: true,
 		},
 		{
-			name:  "valid query with non-repo filters",
-			query: "repo:souregraph fork:yes",
-			valid: true,
-		},
-		{
 			name:  "valid query with shorthand repo filter",
 			query: "r:sourcegraph",
 			valid: true,
