@@ -37,6 +37,11 @@ import (
 
 const addr = ":3189"
 
+type backgroundRoutineWithJobName struct {
+	Routine goroutine.BackgroundRoutine
+	JobName string
+}
+
 // Start runs the worker.
 func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
@@ -52,11 +57,11 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	}
 
 	jobs := map[string]job.Job{}
-	for name, job := range builtins {
-		jobs[name] = job
+	for name, j := range builtins {
+		jobs[name] = j
 	}
-	for name, job := range additionalJobs {
-		jobs[name] = job
+	for name, j := range additionalJobs {
+		jobs[name] = j
 	}
 
 	// Setup environment variables
@@ -89,7 +94,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines, err := createBackgroundRoutines(observationCtx, jobs)
+	allRoutinesWithJobNames, err := createBackgroundRoutines(observationCtx, jobs)
 	if err != nil {
 		return err
 	}
@@ -100,7 +105,17 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		WriteTimeout: 10 * time.Minute,
 		Handler:      httpserver.NewHandler(nil),
 	})
-	allRoutines = append(allRoutines, server)
+	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: server, JobName: "health-server"}
+	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
+
+	// Register monitor in all routines that support it
+	monitor := goroutine.NewRedisMonitor()
+	for _, r := range allRoutinesWithJobNames {
+		if mr, ok := r.Routine.(goroutine.Monitorable); ok {
+			mr.SetJobName(r.JobName)
+			monitor.Register(mr)
+		}
+	}
 
 	// We're all set up now
 	// Respond positively to ready checks
@@ -108,7 +123,12 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 
 	// This method blocks while the app is live - the following return is only to appease
 	// the type checker.
-	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
+	routines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
+	for _, r := range allRoutinesWithJobNames {
+		routines = append(routines, r.Routine)
+	}
+
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
 
@@ -141,12 +161,12 @@ func validateConfigs(jobs map[string]job.Job) error {
 		// If the worker config is valid, validate the children configs. We guard this
 		// in the case of worker config errors because we don't want to spew validation
 		// errors for things that should be disabled.
-		for name, job := range jobs {
+		for name, j := range jobs {
 			if !shouldRunJob(name) {
 				continue
 			}
 
-			for _, c := range job.Config() {
+			for _, c := range j.Config() {
 				if err := c.Validate(); err != nil {
 					validationErrors[name] = append(validationErrors[name], err)
 				}
@@ -193,15 +213,15 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 // createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]goroutine.BackgroundRoutine, error) {
+func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]backgroundRoutineWithJobName, error) {
 	var (
-		allRoutines  []goroutine.BackgroundRoutine
-		descriptions []string
+		allRoutinesWithJobNames []backgroundRoutineWithJobName
+		descriptions            []string
 	)
 
 	for result := range runRoutinesConcurrently(observationCtx, jobs) {
 		if result.err == nil {
-			allRoutines = append(allRoutines, result.routines...)
+			allRoutinesWithJobNames = append(allRoutinesWithJobNames, result.routinesWithJobNames...)
 		} else {
 			descriptions = append(descriptions, fmt.Sprintf("  - %s: %s", result.name, result.err))
 		}
@@ -212,13 +232,13 @@ func createBackgroundRoutines(observationCtx *observation.Context, jobs map[stri
 		return nil, errors.Newf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
 
-	return allRoutines, nil
+	return allRoutinesWithJobNames, nil
 }
 
 type routinesResult struct {
-	name     string
-	routines []goroutine.BackgroundRoutine
-	err      error
+	name                 string
+	routinesWithJobNames []backgroundRoutineWithJobName
+	err                  error
 }
 
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
@@ -248,7 +268,14 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
-			results <- routinesResult{name, routines, err}
+			routinesWithJobNames := make([]backgroundRoutineWithJobName, 0, len(routines))
+			for _, r := range routines {
+				routinesWithJobNames = append(routinesWithJobNames, backgroundRoutineWithJobName{
+					Routine: r,
+					JobName: name,
+				})
+			}
+			results <- routinesResult{name, routinesWithJobNames, err}
 
 			if err == nil {
 				jobLogger.Debug("Finished initializing job")
