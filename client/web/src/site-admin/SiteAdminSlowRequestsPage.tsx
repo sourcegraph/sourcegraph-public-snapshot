@@ -164,7 +164,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 <Timestamp date={node.start} noAbout={true} strict={true} />
             </div>
             <div>
-                <Tooltip content={'Repo Name: ' + node.repository?.name || ''}>
+                <Tooltip content={'Repo Name: ' + (node.repository?.name || '')}>
                     <Code>{node.repository?.name ? shortenRepoName(node.repository?.name) : ''}</Code>
                 </Tooltip>
             </div>
@@ -181,7 +181,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 </Tooltip>
             </div>
             <div>
-                <Tooltip content={'Filepath: ' + node?.filepath || ''}>
+                <Tooltip content={'Filepath: ' + (node?.filepath || '')}>
                     <Code>{node.filepath ? ellipsis(node.filepath, 30) : ''}</Code>
                 </Tooltip>
             </div>
