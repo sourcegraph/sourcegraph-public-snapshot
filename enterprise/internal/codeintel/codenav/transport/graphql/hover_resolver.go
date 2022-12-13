@@ -18,5 +18,7 @@ func NewHoverResolver(text string, lspRange lsp.Range) resolverstubs.HoverResolv
 	}
 }
 
-func (r *hoverResolver) Markdown() resolverstubs.Markdown   { return resolverstubs.Markdown(r.text) }
+func (r *hoverResolver) Markdown() resolverstubs.Markdown {
+	return resolverstubs.Markdown(r.text)
+}
 func (r *hoverResolver) Range() resolverstubs.RangeResolver { return NewRangeResolver(r.lspRange) }

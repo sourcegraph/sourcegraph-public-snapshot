@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,6 +34,7 @@ type gitBlobLSIFDataResolver struct {
 	requestState     codenav.RequestState
 	locationResolver *sharedresolvers.CachedLocationResolver
 	errTracer        *observation.ErrCollector
+	db               database.DB
 
 	operations *operations
 }
@@ -58,6 +61,7 @@ func NewGitBlobLSIFDataResolver(
 		locationResolver: sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:        errTracer,
 		operations:       operations,
+		db:               db,
 	}
 }
 
@@ -265,6 +269,37 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 		return nil, err
 	}
 
+	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)
+	if err != nil {
+		return nil, errors.Wrap(err, "codeNavSvc.GetDefinitions")
+	}
+
+	own := database.Ownership{}
+	if len(def) == 0 {
+		fmt.Println("No definitions found.")
+	}
+	for _, d := range def {
+		fmt.Println("GOT DEFINITION at", d.Path)
+	
+		o, err := r.db.Ownerships().FetchOwnership(ctx, api.RepoID(r.requestState.RepositoryID), d.Path)
+		if err != nil {
+			fmt.Println("CANNOT FETCH OWNERSHIPS")
+			log.Error(err)
+			continue
+		}
+		fmt.Printf("OWNERSHIP #%d for %s\n", len(o), d.Path)
+		for k, v := range o {
+			own[k] = v // Just dumb overwrite here for now
+		}
+	}
+	if len(own) >= 1 {
+		for owner := range own {
+			text = "**Owner: " + owner + "**\n" + text
+			break
+		}
+	} else {
+		text = "**No ownership data**\n" + text
+	}
 	return NewHoverResolver(text, sharedRangeTolspRange(rx)), nil
 }
 
