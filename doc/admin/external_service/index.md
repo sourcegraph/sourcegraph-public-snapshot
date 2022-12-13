@@ -197,7 +197,7 @@ Sourcegraph can leverage.
 
 Please contact support@sourcegraph.com if you encounter rate limits.
 
-### Temporarily disabling all git requests to codehost connections
+### Temporarily disabling requests to code hosts
 
 It may be the case that you'd like to temporarily disable all `git` requests from Sourcegraph to a code host. Adding the following to your site configuration will stop Sourcegraph from sending requests to the configured code host connections:
 
