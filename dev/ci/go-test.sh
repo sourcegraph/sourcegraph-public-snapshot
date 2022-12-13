@@ -37,7 +37,7 @@ function go_test() {
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
-    -race
+    -race \
     $test_packages | tee "$tmpfile"
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
