@@ -92,8 +92,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
-	// TODO: remove NoOp
-	observationCtx := observation.NewContext(log.NoOp())
+	observationCtx := observation.NewContext(logger)
 
 	// Signals health of startup
 	ready := make(chan struct{})
