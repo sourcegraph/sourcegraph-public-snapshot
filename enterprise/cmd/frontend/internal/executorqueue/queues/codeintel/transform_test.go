@@ -79,7 +79,7 @@ func TestTransformRecord(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), index, db, testCase.resourceMetadata, "hunter2")
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -174,7 +174,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		conf.Mock(nil)
 	})
 
-	job, err := transformRecord(context.Background(), index, db, handler.ResourceMetadata{}, "hunter2")
+	job, err := transformRecord(context.Background(), db, index, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -300,7 +300,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), index, db, testCase.resourceMetadata, "hunter2")
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -368,5 +368,46 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				t.Errorf("unexpected job (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestTransformRecordDockerAuthConfig(t *testing.T) {
+	db := database.NewMockDB()
+	secstore := database.NewMockExecutorSecretStore()
+	db.ExecutorSecretsFunc.SetDefaultReturn(secstore)
+	secstore.ListFunc.PushReturn([]*database.ExecutorSecret{
+		database.NewMockExecutorSecret(&database.ExecutorSecret{
+			Key:       "DOCKER_AUTH_CONFIG",
+			Scope:     database.ExecutorSecretScopeCodeIntel,
+			CreatorID: 1,
+		}, "bar"),
+	}, 0, nil)
+	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
+
+	job, err := transformRecord(context.Background(), db, types.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := apiclient.Job{
+		ID:                  42,
+		ShallowClone:        true,
+		FetchTags:           false,
+		VirtualMachineFiles: nil,
+		DockerSteps: []apiclient.DockerStep{
+			{
+				Key:      "upload",
+				Image:    "sourcegraph/src-cli:4.3.0",
+				Commands: []string{"src lsif upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
+				Env:      []string{"SRC_ENDPOINT=", "SRC_HEADER_AUTHORIZATION=token-executor hunter2"},
+			},
+		},
+		RedactedValues: map[string]string{
+			"hunter2":                "PASSWORD_REMOVED",
+			"token-executor hunter2": "token-executor REDACTED",
+		},
+		DockerAuthConfig: "bar",
+	}
+	if diff := cmp.Diff(expected, job); diff != "" {
+		t.Errorf("unexpected job (-want +got):\n%s", diff)
 	}
 }
