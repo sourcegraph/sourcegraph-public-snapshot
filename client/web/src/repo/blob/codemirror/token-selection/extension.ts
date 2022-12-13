@@ -1,12 +1,12 @@
 import { Extension } from '@codemirror/state'
-import { EditorView, hoverTooltip, keymap } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 
 import { isInteractiveOccurrence, occurrenceAtMouseEvent } from '../occurrence-utils'
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
 import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
-import { getHoverTooltip, hoverCache, hoveredOccurrenceField, hoverField, setHoveredOccurrenceEffect } from './hover'
+import { hoveredOccurrenceField, hoverExtension, setHoveredOccurrenceEffect } from './hover'
 import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
 import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, warmupOccurrence } from './selections'
@@ -53,10 +53,7 @@ export function tokenSelectionExtension(): Extension {
         selectedOccurrence.of(null),
         definitionCache,
         underlinedDefinitionFacet.of(null),
-        hoveredOccurrenceField,
-        hoverCache,
-        hoverTooltip((view, position) => getHoverTooltip(view, position), { hoverTime: 200, hideOnChange: true }),
-        hoverField,
+        hoverExtension(),
         keymap.of(tokenSelectionKeyBindings),
         syncSelectionWithURL,
         EditorView.domEventHandlers({
