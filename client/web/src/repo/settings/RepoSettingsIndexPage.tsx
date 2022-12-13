@@ -149,8 +149,7 @@ const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID
                     )}
                     {success && (
                         <Alert className="mt-4 mb-0" variant="success">
-                            {' '}
-                            Reindex triggered{' '}
+                            Reindex triggered
                         </Alert>
                     )}
                 </>
