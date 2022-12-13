@@ -26,12 +26,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -46,7 +42,6 @@ type NoopFilter struct {
 }
 
 type DataFrameFilter interface {
-	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
 	Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan
 }
 
@@ -63,10 +58,6 @@ type gitserverFilter struct {
 	// client gitserver.Client
 	// gcc *discovery.GitCommitClient
 	commitFetcher commitFetcher
-}
-
-func (g *gitserverFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
-	panic("asdf)")
 }
 
 func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
@@ -113,113 +104,22 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 		RecordCount: len(nodes),
 	}
 }
-
-func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsDB) DataFrameFilter {
-	if enabled {
-		return &CommitFilter{
-			store:         NewCommitStore(db),
-			maxHistorical: maxHistorical,
-		}
-	}
-	return &NoopFilter{}
-}
-
-func (n *NoopFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
-	return uncompressedPlan(frames)
-}
-
 func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
-	panic("asdf")
-}
-
-func (c *CommitFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
-	panic("asdf")
+	return uncompressedPlan(sampleTimes)
 }
 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
 // This is primarily useful when there are scenarios in which compression cannot be used.
-func uncompressedPlan(frames []types.Frame) BackfillPlan {
+func uncompressedPlan(frames []time.Time) BackfillPlan {
 	executions := make([]QueryExecution, 0, len(frames))
 	for _, frame := range frames {
-		executions = append(executions, QueryExecution{RecordingTime: frame.From})
+		executions = append(executions, QueryExecution{RecordingTime: frame})
 	}
 
 	return BackfillPlan{
 		Executions:  executions,
 		RecordCount: len(executions),
 	}
-}
-
-// FilterFrames will remove any data frames that can be safely skipped from a given frame set and for a given repository.
-func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
-	include := make([]QueryExecution, 0)
-	// we will maintain a pointer to the most recent QueryExecution that we can update it's dependents
-	var prev QueryExecution
-	var count int
-
-	addToPlan := func(frame types.Frame, revhash string) {
-		q := QueryExecution{RecordingTime: frame.From, Revision: revhash}
-		include = append(include, q)
-		prev = q
-		count++
-	}
-
-	if len(frames) <= 1 {
-		return uncompressedPlan(frames)
-	}
-	metadata, err := c.store.GetMetadata(ctx, id)
-	if err != nil {
-		// the commit index is considered optional so we can always fall back to every frame in this case
-		log15.Error("unable to retrieve commit index metadata", "repo_id", id, "error", err)
-		return uncompressedPlan(frames)
-	}
-	if metadata.OldestIndexedAt == nil {
-		// The index has no commits for this repository. Therefore, we cannot apply any compression, and will need to
-		// query for each data point.
-		log15.Debug("skipping insights compression due to empty index", "repo_id", id)
-		return uncompressedPlan(frames)
-	}
-
-	// The first frame will always be included to establish a baseline measurement. This is important because
-	// it is possible that the commit index will report zero commits because they may have happened beyond the
-	// horizon of the indexer
-	addToPlan(frames[0], "")
-	for i := 1; i < len(frames); i++ {
-		previous := frames[i-1]
-		frame := frames[i]
-		if metadata.LastIndexedAt.Before(frame.To) || metadata.OldestIndexedAt.After(frame.From) {
-			// The commit indexer is not up to date enough to understand if this frame can be dropped,
-			// or the index doesn't contain enough history to be able to compress this frame
-			log15.Debug("cannot compress frame - missing history", "from", frame.From, "to", frame.To, "repo_id", id)
-			addToPlan(frame, "")
-			continue
-		}
-
-		// We have to diff the commits in the previous frame to determine if we should query at the start of this frame
-		commits, err := c.store.Get(ctx, id, previous.From, previous.To)
-		if err != nil {
-			log15.Error("insights: compression.go/FilterFrames unable to retrieve commits\n", "repo_id", id, "from", frame.From, "to", frame.To)
-			addToPlan(frame, "")
-			continue
-		}
-		if len(commits) == 0 {
-			// We have established that
-			// 1. the commit index is sufficiently up to date
-			// 2. this time range [from, to) doesn't have any commits
-			// so we can skip this frame for this repo
-			log15.Debug("insights: skipping query based on no commits", "for_time", frame.From, "repo_id", id)
-			prev.SharedRecordings = append(prev.SharedRecordings, frame.From)
-			count++
-			continue
-		} else {
-			rev := commits[0]
-			log15.Debug("insights: generating query with commit index revision", "rev", rev, "for_time", frame.From, "repo_id", id)
-			// as a small optimization we are collecting this revhash here since we already know this is
-			// the revision for which we need to query against
-			addToPlan(frame, string(rev.Commit))
-		}
-	}
-	return BackfillPlan{Executions: include, RecordCount: count}
 }
 
 // RecordCount returns the total count of data points that will be generated by this execution.

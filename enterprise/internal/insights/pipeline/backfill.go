@@ -29,9 +29,9 @@ import (
 )
 
 type BackfillRequest struct {
-	Series *types.InsightSeries
-	Repo   *itypes.MinimalRepo
-	Frames []types.Frame
+	Series      *types.InsightSeries
+	Repo        *itypes.MinimalRepo
+	SampleTimes []time.Time
 }
 
 type requestContext struct {
@@ -129,7 +129,7 @@ var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOfFrames := len(reqContext.backfillRequest.Frames)
+		numberOfFrames := len(reqContext.backfillRequest.SampleTimes)
 		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
 		if reqContext.backfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
@@ -150,12 +150,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
-		// searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
-		var times []time.Time
-		for _, frame := range req.Frames {
-			times = append(times, frame.From)
-		}
-		searchPlan := compressionPlan.Filter(ctx, times, req.Repo.Name)
+		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
 		jonsify, _ := json.Marshal(searchPlan)
 		logger.Info("search plan", log.String("plan", string(jonsify)))
 		var ratio float64 = 1.0
