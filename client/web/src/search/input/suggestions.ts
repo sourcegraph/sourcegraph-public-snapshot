@@ -7,6 +7,8 @@ import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-ope
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/search-ui'
+// This module implements suggestions for the experimental search input
+// eslint-disable-next-line  no-restricted-imports
 import {
     Group,
     Option,

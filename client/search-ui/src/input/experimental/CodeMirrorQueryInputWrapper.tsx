@@ -265,8 +265,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
             <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
             <div className={styles.root}>
                 <div ref={spacerRef} className={styles.focusContainer}>
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div ref={setContainer} style={{ display: 'contents' }} />
+                    <div ref={setContainer} className="d-contents" />
                     <button
                         type="button"
                         className={classNames({ [styles.showWhenFocused]: hasValue })}

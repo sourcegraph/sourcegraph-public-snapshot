@@ -38,7 +38,6 @@ export const filterHighlight = [
     EditorView.baseTheme({
         '.sg-filter': {
             backgroundColor: 'var(--oc-blue-0)',
-            // border: '1px solid var(--oc-blue-1)',
             borderRadius: '3px',
             padding: '0px',
         },

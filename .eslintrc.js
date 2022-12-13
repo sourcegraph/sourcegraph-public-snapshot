@@ -75,6 +75,11 @@ const config = {
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
           {
+            group: ['@sourcegraph/search-ui/src/experimental'],
+            message:
+              'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',
+          },
+          {
             group: [
               '@sourcegraph/*/src/*',
               '!@sourcegraph/branded/src/*',
