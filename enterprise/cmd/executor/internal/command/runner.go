@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -117,7 +116,12 @@ type ResourceOptions struct {
 // NewRunner creates a new runner with the given options.
 func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
-		return &dockerRunner{dir: dir, cmdLogger: logger, options: options}
+		return &dockerRunner{
+			dir:       dir,
+			logger:    log.Scoped("docker-runner", ""),
+			cmdLogger: logger,
+			options:   options,
+		}
 	}
 
 	return &firecrackerRunner{
@@ -134,7 +138,7 @@ type dockerRunner struct {
 	logger    log.Logger
 	cmdLogger Logger
 	options   Options
-	// tmpDir is used to store temporary files used for firecracker execution.
+	// tmpDir is used to store temporary files used for docker execution.
 	tmpDir           string
 	dockerConfigPath string
 }
@@ -158,7 +162,6 @@ func (r *dockerRunner) Setup(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("docker auth config: %s\n", string(d))
 		if err := os.WriteFile(filepath.Join(r.dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
 			return err
 		}
@@ -169,7 +172,7 @@ func (r *dockerRunner) Setup(ctx context.Context) error {
 
 func (r *dockerRunner) Teardown(ctx context.Context) error {
 	if err := os.RemoveAll(r.tmpDir); err != nil {
-		r.logger.Error("Failed to remove firecracker state tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
+		r.logger.Error("Failed to remove docker state tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
 	}
 
 	return nil
