@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
@@ -100,17 +99,21 @@ type migrationDriver interface {
 	// migrator's fields option. Implementations must return the same number of values as the set
 	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
 	// option.
-	MigrateRowUp(scanner dbutil.Scanner) ([]any, error)
+	MigrateRowUp(scanner scanner) ([]any, error)
 
 	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
 	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
 	// fields option. Implementations must return the same number of values as the set  of primary
 	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
-	MigrateRowDown(scanner dbutil.Scanner) ([]any, error)
+	MigrateRowDown(scanner scanner) ([]any, error)
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner dbutil.Scanner) ([]any, error)
+type driverFunc func(scanner scanner) ([]any, error)
+
+type scanner interface {
+	Scan(dest ...any) error
+}
 
 func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) *migrator {
 	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
@@ -393,10 +396,8 @@ const processRowsQuery = `
 SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
-var (
-	temporaryTableName       = "t_migration_payload"
-	temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
-)
+var temporaryTableName = "t_migration_payload"
+var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
 
 // updateBatch creates a temporary table symmetric to the target table but without any of the read-only
 // fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in

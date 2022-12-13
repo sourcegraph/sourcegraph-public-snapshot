@@ -1715,7 +1715,7 @@ enum ExecutorSecretScope {
     BATCHES
 
     """
-    asdf
+    The secret is meant to be used with Auto-indexing.
     """
     CODEINTEL
 }

@@ -34,7 +34,7 @@ func TestExecutorSecretAccessLogs_Create(t *testing.T) {
 	t.Run("Create", func(t *testing.T) {
 		log := &ExecutorSecretAccessLog{
 			ExecutorSecretID: secret.ID,
-			UserID:           user.ID,
+			UserID:           &user.ID,
 		}
 		if err := store.Create(ctx, log); err != nil {
 			t.Fatal(err)
@@ -50,7 +50,7 @@ func TestExecutorSecretAccessLogs_Create(t *testing.T) {
 			if err := store.Create(actor.WithActor(ctx, actor.FromUser(user.ID)), log); err != nil {
 				t.Fatal(err)
 			}
-			if log.UserID != user.ID {
+			if *log.UserID != user.ID {
 				t.Fatal("wrong user_id set on access log record")
 			}
 		})
@@ -85,7 +85,7 @@ func TestExecutorSecretAccessLogs_GetListCount(t *testing.T) {
 	createLog := func(secret *ExecutorSecret) *ExecutorSecretAccessLog {
 		log := &ExecutorSecretAccessLog{
 			ExecutorSecretID: secret.ID,
-			UserID:           user.ID,
+			UserID:           &user.ID,
 		}
 		if err := store.Create(ctx, log); err != nil {
 			t.Fatal(err)
