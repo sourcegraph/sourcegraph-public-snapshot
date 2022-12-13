@@ -49,6 +49,7 @@ func TestUserEventLogResolver_URL(t *testing.T) {
 				},
 			}).URL()
 			assert.Equal(t, test.want, got)
+			assert.Equal(t, 10, 20)
 		})
 	}
 }
