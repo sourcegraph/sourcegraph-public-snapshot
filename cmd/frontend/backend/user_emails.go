@@ -200,7 +200,6 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
-	// Avoid unnecessary calls if the email is set to unverified.
 	if !verified {
 		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
 			return errors.Wrap(err, "removing stale perforce external account")
