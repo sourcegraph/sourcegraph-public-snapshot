@@ -410,9 +410,18 @@ WHERE
 `
 
 type scipWriter struct {
-	tx       *basestore.Store
-	inserter *batch.Inserter
-	uploadID int
+	tx              *basestore.Store
+	inserter        *batch.Inserter
+	uploadID        int
+	batchPayloadSum int
+	batch           []bufferedDocument
+}
+
+type bufferedDocument struct {
+	path        string
+	payload     []byte
+	payloadHash []byte
+	symbols     []types.InvertedRangeIndex
 }
 
 // makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
@@ -468,40 +477,73 @@ func (s *scipWriter) Write(
 		time.Now().UnixNano()/int64(time.Millisecond)),
 	)
 
-	documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
-		scipWriterWriteDocumentQuery,
-		append(uniquePrefix, payloadHash...),
-		payload,
-		uploadID,
-		path,
-	)))
-	if err != nil {
-		return err
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
 	}
 
-	for _, symbol := range symbols {
-		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
-		if err != nil {
+	s.batch = append(s.batch, bufferedDocument{
+		path:        path,
+		payload:     payload,
+		payloadHash: append(uniquePrefix, hashPayload(payload)...),
+		symbols:     symbols,
+	})
+	s.batchPayloadSum += len(payload)
+
+	if len(s.batch) >= DocumentsBatchSize {
+		if err := s.flush(ctx); err != nil {
 			return err
 		}
-		referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
-		if err != nil {
-			return err
-		}
-		implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+	}
+
+	return nil
+}
+
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
+
+func (s *scipWriter) flush(ctx context.Context) (err error) {
+	documents := s.batch
+	s.batch = nil
+	s.batchPayloadSum = 0
+
+	for _, document := range documents {
+		documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
+			scipWriterWriteDocumentQuery,
+			document.payloadHash,
+			document.payload,
+			s.uploadID,
+			document.path,
+		)))
 		if err != nil {
 			return err
 		}
 
-		if err := s.inserter.Insert(
-			ctx,
-			documentLookupID,
-			symbol.SymbolName,
-			definitionRanges,
-			referenceRanges,
-			implementationRanges,
-		); err != nil {
-			return err
+		for _, symbol := range document.symbols {
+			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+			if err != nil {
+				return err
+			}
+			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			if err != nil {
+				return err
+			}
+			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			if err != nil {
+				return err
+			}
+
+			if err := s.inserter.Insert(
+				ctx,
+				documentLookupID,
+				symbol.SymbolName,
+				definitionRanges,
+				referenceRanges,
+				implementationRanges,
+			); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -523,6 +565,10 @@ RETURNING id
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
 func (s *scipWriter) Flush(ctx context.Context) error {
+	if err := s.flush(ctx); err != nil {
+		return err
+	}
+
 	if err := s.inserter.Flush(ctx); err != nil {
 		return err
 	}
