@@ -138,7 +138,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -155,6 +155,6 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err = hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 }
