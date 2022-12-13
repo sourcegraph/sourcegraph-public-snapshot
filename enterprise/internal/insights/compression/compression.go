@@ -22,18 +22,17 @@ package compression
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type CommitFilter struct {
@@ -48,52 +47,90 @@ type DataFrameFilter interface {
 	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
 }
 
-func NewGitserverFilter(db database.DB) DataFrameFilter {
-	client := gitserver.NewClient(db)
-	// .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
-	return &gitserverFilter{client: client, repos: db.Repos(), gcc: discovery.NewGitCommitClient(db)}
+type commitFetcher interface {
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
+
+// func NewGitserverFilter(db database.DB) DataFrameFilter {
+// 	client := gitserver.NewClient(db)
+// 	// .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+// 	return &gitserverFilter{client: client, repos: db.Repos(), gcc: discovery.NewGitCommitClient(db)}
+// }
 
 type gitserverFilter struct {
-	client gitserver.Client
-	repos  database.RepoStore
-	gcc    *discovery.GitCommitClient
+	// client gitserver.Client
+	// gcc *discovery.GitCommitClient
+	commitFetcher commitFetcher
 }
 
-func (g *gitserverFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
-	// fix this later to pass name directly
-	repo, err := g.repos.Get(ctx, id)
-	if err != nil {
-		return uncompressedPlan(frames)
-	}
-	name := repo.Name
-	// g.client.Commits(ctx, name, gitserver.CommitsOptions{})
-
-	hasCommits := func(from, to time.Time) bool {
-		commits, err := g.gcc.RecentCommits(ctx, name, to)
+func (g *gitserverFilter) GitserverFilter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
+	var nodes []QueryExecution
+	getCommit := func(to time.Time) (*gitdomain.Commit, bool, error) {
+		commits, err := g.commitFetcher.RecentCommits(ctx, name, to)
 		if err != nil {
-			return false // always default to uncompressed
+			return nil, false, err
+		} else if len(commits) == 0 {
+			return nil, false, nil
 		}
-		if commits[0].Committer.Date.After(from) {
-			return true
-		}
-		return false
+
+		return commits[0], true, nil
 	}
 
-	prev := frames[0].From
-	for i := 1; i < len(frames); i++ {
-		if !hasCommits(prev, frames[i].From) {
-			// compress it
+	executions := make(map[api.CommitID]*QueryExecution)
+
+	for _, sampleTime := range sampleTimes {
+		commit, got, err := getCommit(sampleTime)
+		if err != nil || !got {
+			nodes = append(nodes, QueryExecution{RecordingTime: sampleTime})
 		} else {
-			// don't compress it
+			qe, ok := executions[commit.ID]
+			if ok {
+				qe.SharedRecordings = append(qe.SharedRecordings, sampleTime)
+			} else {
+				executions[commit.ID] = &QueryExecution{
+					Revision:      string(commit.ID),
+					RecordingTime: sampleTime,
+				}
+			}
 		}
 	}
 
-	// for each element after the first
-	// if there are commits prior
-	//      | ------------------ |
-	//    prev ---------------- current
-	// after prev before current
+	for _, execution := range executions {
+		nodes = append(nodes, *execution)
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].RecordingTime.Before(nodes[j].RecordingTime)
+	})
+
+	return BackfillPlan{
+		Executions:  nodes,
+		RecordCount: len(nodes),
+	}
+
+	//
+	// prev := QueryExecution{
+	// 	Revision:         "",
+	// 	RecordingTime:    sampleTimes[0],
+	// 	SharedRecordings: nil,
+	// }
+	// nodes = append(nodes, prev)
+	// for i := 1; i < len(sampleTimes); i++ {
+	// 	currentTime := sampleTimes[i]
+	// 	commit, got := getCommit(currentTime)
+	// 	if got {
+	// 		nodes = append(nodes, prev)
+	// 		prev = QueryExecution{
+	// 			Revision:      string(commit.ID),
+	// 			RecordingTime: commit.Committer.Date,
+	// 		}
+	// 	} else {
+	// 		prev.SharedRecordings = append(prev.SharedRecordings, currentTime)
+	// 	}
+	// }
+	// return BackfillPlan{
+	// 	Executions:  nodes,
+	// 	RecordCount: len(nodes),
+	// }
 }
 
 func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db edb.InsightsDB) DataFrameFilter {
@@ -113,9 +150,9 @@ func (n *NoopFilter) FilterFrames(ctx context.Context, frames []types.Frame, id 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
 // This is primarily useful when there are scenarios in which compression cannot be used.
 func uncompressedPlan(frames []types.Frame) BackfillPlan {
-	executions := make([]*QueryExecution, 0, len(frames))
+	executions := make([]QueryExecution, 0, len(frames))
 	for _, frame := range frames {
-		executions = append(executions, &QueryExecution{RecordingTime: frame.From})
+		executions = append(executions, QueryExecution{RecordingTime: frame.From})
 	}
 
 	return BackfillPlan{
@@ -126,15 +163,15 @@ func uncompressedPlan(frames []types.Frame) BackfillPlan {
 
 // FilterFrames will remove any data frames that can be safely skipped from a given frame set and for a given repository.
 func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
-	include := make([]*QueryExecution, 0)
+	include := make([]QueryExecution, 0)
 	// we will maintain a pointer to the most recent QueryExecution that we can update it's dependents
-	var prev *QueryExecution
+	var prev QueryExecution
 	var count int
 
 	addToPlan := func(frame types.Frame, revhash string) {
 		q := QueryExecution{RecordingTime: frame.From, Revision: revhash}
-		include = append(include, &q)
-		prev = &q
+		include = append(include, q)
+		prev = q
 		count++
 	}
 
@@ -227,14 +264,14 @@ func (q *QueryExecution) ToRecording(seriesID string, repoName string, repoID ap
 // BackfillPlan is a rudimentary query plan. It provides a simple mechanism to store executable nodes
 // to backfill an insight series.
 type BackfillPlan struct {
-	Executions  []*QueryExecution
+	Executions  []QueryExecution
 	RecordCount int
 }
 
 func (b BackfillPlan) String() string {
 	var strs []string
 	for i := range b.Executions {
-		current := *b.Executions[i]
+		current := b.Executions[i]
 		strs = append(strs, fmt.Sprintf("%v", current))
 	}
 	return fmt.Sprintf("[%v]", strings.Join(strs, ","))
