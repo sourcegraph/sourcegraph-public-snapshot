@@ -319,7 +319,6 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 			oldest = possibleOldest
 		}
 	}
-	log.Scoped("isr", "isr").Info("series_points_resolver", log.String("oldest", oldest.String()), log.String("series_id", definition.SeriesID), log.Int("id", definition.InsightSeriesID))
 	opts.From = &oldest
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
