@@ -59,6 +59,6 @@ func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observatio
 
 func newWebhookBuildWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
 	workerMetrics := workerutil.NewMetrics(observationCtx, fmt.Sprintf("%s_processor", workerName))
-	resetterMetrics := dbworker.NewMetrics(observationCtx, workerName)
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }

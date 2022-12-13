@@ -152,6 +152,6 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
 		return true
 	}))
-	resetterMetrics := dbworker.NewMetrics(observationCtx, workerName)
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }
