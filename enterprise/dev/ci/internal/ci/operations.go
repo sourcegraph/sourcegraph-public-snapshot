@@ -758,6 +758,14 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 					// Hack owners: @jhchabran, @varsanojidan
 					folder = "gitserver"
 				}
+				if app == "blobstore2" {
+					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// under the same name.
+					// https://github.com/sourcegraph/sourcegraph/issues/45594
+					// TODO(blobstore): remove this when making Go blobstore the default
+					folder = "blobstore"
+				}
 				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
 					return "cmd/" + folder
