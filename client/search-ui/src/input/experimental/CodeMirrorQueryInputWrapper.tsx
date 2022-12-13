@@ -18,7 +18,7 @@ import { singleLine } from '../codemirror'
 import { parseInputAsQuery } from '../codemirror/parsedQuery'
 import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 
-import { editorConfigFacet, Source, suggestions } from './suggestions'
+import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
