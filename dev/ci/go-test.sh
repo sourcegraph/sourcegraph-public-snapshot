@@ -33,7 +33,7 @@ function go_test() {
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
   # shellcheck disable=SC2086
-  gotestsum test \
+  gotestsum \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
