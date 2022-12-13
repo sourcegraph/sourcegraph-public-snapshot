@@ -428,6 +428,7 @@ func (p *PersistentRepoIterator) resetRetry(config IterationConfig) {
 	for repo, val := range p.errors {
 		if config.MaxFailures > 0 && val.FailureCount >= config.MaxFailures {
 			p.terminalErrors[repo] = val
+			delete(p.errors, repo)
 			continue
 		}
 		retry = append(retry, repo)

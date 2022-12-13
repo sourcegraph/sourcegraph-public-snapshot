@@ -71,9 +71,9 @@ describe('LineChart', () => {
 
             // Spot checking multiple points
             // related issue https://github.com/sourcegraph/sourcegraph/issues/38304
-            expect(point00).toHaveAttribute('href', 'https://google.com/search')
-            expect(point01).toHaveAttribute('href', 'https://google.com/search')
-            expect(point02).toHaveAttribute('href', 'https://google.com/search')
+            expect(point00).toHaveAttribute('href', 'https://yandex.com/search')
+            expect(point01).toHaveAttribute('href', 'https://yandex.com/search')
+            expect(point02).toHaveAttribute('href', 'https://yandex.com/search')
         })
     })
 })

@@ -94,7 +94,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool) ([]*Change
 		return nil, err
 	}
 
-	newSpec := func(branch string, diff []byte) (*ChangesetSpec, error) {
+	newSpec := func(branch string, diff []byte) *ChangesetSpec {
 		var published any = nil
 		if input.Template.Published != nil {
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
@@ -124,7 +124,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool) ([]*Change
 				},
 			},
 			Published: PublishedValue{Val: published},
-		}, nil
+		}
 	}
 
 	var specs []*ChangesetSpec
@@ -143,17 +143,11 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool) ([]*Change
 		}
 
 		for branch, diff := range diffsByBranch {
-			spec, err := newSpec(branch, diff)
-			if err != nil {
-				return nil, err
-			}
+			spec := newSpec(branch, diff)
 			specs = append(specs, spec)
 		}
 	} else {
-		spec, err := newSpec(defaultBranch, input.Result.Diff)
-		if err != nil {
-			return nil, err
-		}
+		spec := newSpec(defaultBranch, input.Result.Diff)
 		specs = append(specs, spec)
 	}
 

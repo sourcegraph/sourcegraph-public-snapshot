@@ -42,17 +42,17 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
+    seriesToggleState: UseSeriesToggleReturn
     className?: string
     onDatumClick: () => void
-    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { data, isFetchingHistoricalData, locked, zeroYAxisMin, seriesToggleState, className, onDatumClick } = props
+
     const { ref, width = 0 } = useResizeObserver()
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
-
     const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace

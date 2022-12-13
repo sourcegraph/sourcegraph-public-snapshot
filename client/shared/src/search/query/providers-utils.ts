@@ -103,7 +103,7 @@ export function createCancelableFetchSuggestions(
                     // cancelled in the meantime.
                     // This prevents us from needlessly running multiple suggestion
                     // queries.
-                    delay(20),
+                    delay(150),
                     switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
                     takeUntil(abort)
                 )

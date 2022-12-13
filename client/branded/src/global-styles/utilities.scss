@@ -38,7 +38,7 @@
 }
 
 // Displays
-$displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex;
+$displays: none, inline, inline-block, block, table, table-row, table-cell, flex, inline-flex, contents;
 
 @each $breakpoint in map-keys($grid-breakpoints) {
     @include media-breakpoint-up($breakpoint) {

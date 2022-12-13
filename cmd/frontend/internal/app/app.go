@@ -59,6 +59,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 		lockoutOptions.FailedAttemptThreshold,
 		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
 		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
+		nil,
 	)
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))

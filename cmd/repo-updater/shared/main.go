@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -71,6 +72,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
 
+	logging.Init()
+
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -89,8 +92,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
-	// TODO: remove NoOp
-	observationCtx := observation.NewContext(log.NoOp())
+	observationCtx := observation.NewContext(logger)
 
 	// Signals health of startup
 	ready := make(chan struct{})

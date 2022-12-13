@@ -60,11 +60,13 @@ describe('getSeriesData', () => {
                 name: 'Series a',
                 data: [
                     {
+                        id: '0.series_001',
                         y: 1,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 1 },
                     },
                     {
+                        id: '1.series_001',
                         y: 2,
                         x: new Date(2022, 2, 6),
                         datum: { x: new Date(2022, 2, 6), value: 2 },
@@ -79,16 +81,19 @@ describe('getSeriesData', () => {
                 name: 'Series b',
                 data: [
                     {
+                        id: '0.series_002',
                         y: 2,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 2 },
                     },
                     {
+                        id: '1.series_002',
                         y: 2,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 2 },
                     },
                     {
+                        id: '2.series_002',
                         y: 2,
                         x: new Date(2022, 2, 6),
                         datum: { x: new Date(2022, 2, 6), value: 2 },
@@ -103,16 +108,19 @@ describe('getSeriesData', () => {
                 name: 'Series c',
                 data: [
                     {
+                        id: '0.series_003',
                         y: 3,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 3 },
                     },
                     {
+                        id: '1.series_003',
                         y: 3,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 3 },
                     },
                     {
+                        id: '2.series_003',
                         y: 3,
                         x: new Date(2022, 2, 5),
                         datum: { x: new Date(2022, 2, 5), value: 3 },
@@ -139,12 +147,14 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
+                        id: '0.series_001',
                         y0: 0,
                         y1: 1,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 1 },
                     },
                     {
+                        id: '1.series_001',
                         y0: 0,
                         y1: 2,
                         x: new Date(2022, 2, 6),
@@ -160,18 +170,21 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
+                        id: '0.series_002',
                         y0: 0,
                         y1: 2,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 2 },
                     },
                     {
+                        id: '1.series_002',
                         y0: 1,
                         y1: 3,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 2 },
                     },
                     {
+                        id: '2.series_002',
                         y0: 2,
                         y1: 4,
                         x: new Date(2022, 2, 6),
@@ -187,18 +200,21 @@ describe('getSeriesData', () => {
                 getYValue,
                 data: [
                     {
+                        id: '0.series_003',
                         y0: 2,
                         y1: 5,
                         x: new Date(2022, 2, 3),
                         datum: { x: new Date(2022, 2, 3), value: 3 },
                     },
                     {
+                        id: '1.series_003',
                         y0: 3,
                         y1: 6,
                         x: new Date(2022, 2, 4),
                         datum: { x: new Date(2022, 2, 4), value: 3 },
                     },
                     {
+                        id: '2.series_003',
                         y0: 3.5,
                         y1: 6.5,
                         x: new Date(2022, 2, 5),

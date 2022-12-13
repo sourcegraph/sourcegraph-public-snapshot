@@ -159,7 +159,7 @@ func (b janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) 
 
 func (b janitorJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg JanitorConfig) error {
 	for _, commit := range sc.Commits {
-		if err := b.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
+		if err := b.handleCommit(ctx, sc.RepositoryID, commit, cfg); err != nil {
 			return err
 		}
 	}
@@ -167,7 +167,7 @@ func (b janitorJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedC
 	return nil
 }
 
-func (b janitorJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg JanitorConfig) error {
+func (b janitorJob) handleCommit(ctx context.Context, repositoryID int, commit string, cfg JanitorConfig) error {
 	var shouldDelete bool
 	_, err := b.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
 	if err == nil {

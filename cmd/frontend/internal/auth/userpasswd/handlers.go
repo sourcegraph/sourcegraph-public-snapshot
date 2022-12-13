@@ -290,7 +290,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 
 		if reason, locked := store.IsLockedOut(user.ID); locked {
 			func() {
-				if !conf.CanSendEmail() {
+				if !conf.CanSendEmail() || store.UnlockEmailSent(user.ID) {
 					return
 				}
 
