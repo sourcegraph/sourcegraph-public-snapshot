@@ -52,6 +52,5 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		accts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: 1})
 		require.NoError(t, err)
 		require.Equal(t, 0, len(accts))
-		require.Equal(t, 1, len(accts))
 	})
 }
