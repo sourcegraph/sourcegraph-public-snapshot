@@ -1,5 +1,6 @@
 // @ts-check
 
+const fs = require('fs/promises')
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
@@ -32,7 +33,6 @@ const {
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
-const { fs } = require('mz')
 
 const {
   NODE_ENV,
@@ -83,6 +83,16 @@ const extensionHostWorker = /main\.worker\.ts$/
 const initialChunkNames = {
   react: 'react',
   opentelemetry: 'opentelemetry',
+}
+
+/** @type {Map<string, string[][]>} */
+const circularDependencyList = new Map()
+
+/**
+ * @param {webpack.Compilation} compilation
+ */
+function getEntryNameFromCompilation(compilation) {
+  return Array.from(compilation.entries.keys()).join('-')
 }
 
 /** @type {import('webpack').Configuration} */
@@ -163,27 +173,42 @@ const config = {
         allowAsyncCycles: false,
         cwd: path.join(process.cwd(), '../..'),
         onStart({ compilation }) {
-          compilation.circularDependencyList = []
+          const entryName = getEntryNameFromCompilation(compilation)
+          circularDependencyList.set(entryName, [])
         },
-        onDetected({ module: webpackModuleRecord, paths, compilation }) {
-          compilation.circularDependencyList.push(paths)
+        onDetected({ paths, compilation }) {
+          const entryName = getEntryNameFromCompilation(compilation)
+          const circularDependenciesForEntry = circularDependencyList.get(entryName)
+          circularDependenciesForEntry?.push(paths)
         },
         onEnd({ compilation }) {
-          // Entry is usually only "app" and "main.worker"
-          const entry = Array.from(compilation.entries.keys()).join('+')
-          if (compilation.circularDependencyList.length === 0) {
+          const entryName = getEntryNameFromCompilation(compilation)
+          let circularDependenciesForEntry = circularDependencyList.get(entryName)
+          if (!circularDependenciesForEntry) {
             return
           }
-          const circularDependencyBlocks = compilation.circularDependencyList
-            .map((cycle, i) => `**Cycle ${i + 1}**\n\n` + cycle.map(path => `- ${path}\n`).join('') + '\n')
+
+          // Remove cycles that are in node_modules
+          circularDependenciesForEntry = circularDependenciesForEntry.filter(
+            paths => !paths.every(path => path.startsWith('node_modules/'))
+          )
+
+          const count = circularDependenciesForEntry.length
+
+          if (!count) {
+            return
+          }
+
+          const circularDependencyBlocks = circularDependenciesForEntry
+            .map((cycle, index) => `**Cycle ${index + 1}**\n\n` + cycle.map(path => `- ${path}\n`).join('') + '\n')
             .join('')
-          const count = compilation.circularDependencyList.length
           const markdown =
-            `# Circular dependency check in ${entry} \n\n${count} circular dependencies were detected in web client packages in the "${entry}" entry point.\n\n` +
-            circularDependencyBlocks
-          fs.writeFile(`../../annotations/circular-dependencies-${entry}-annotation.md`, markdown).catch(err => {
-            console.error('Error while writing circular depdenency annotation file')
-            console.error(err)
+            `# Circular dependency check in ${entryName}\n\n` +
+            `${count} circular dependencies were detected in web client packages in the "${entryName}" entry point.\n\n` +
+            `<details>\n\n${circularDependencyBlocks}\n\n</details>\n`
+          fs.writeFile(`../../annotations/circular-dependencies-${entryName}-annotation.md`, markdown).catch(error => {
+            // eslint-disable-next-line no-console
+            console.error(error)
           })
         },
       }),

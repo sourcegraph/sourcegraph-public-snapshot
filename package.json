@@ -162,6 +162,7 @@
     "@types/bloomfilter": "0.0.0",
     "@types/case-sensitive-paths-webpack-plugin": "2.1.6",
     "@types/chrome": "0.0.127",
+    "@types/circular-dependency-plugin": "^5.0.5",
     "@types/classnames": "2.2.10",
     "@types/command-exists": "1.2.0",
     "@types/compression": "1.7.2",

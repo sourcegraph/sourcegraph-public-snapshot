@@ -7076,6 +7076,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/circular-dependency-plugin@npm:^5.0.5":
+  version: 5.0.5
+  resolution: "@types/circular-dependency-plugin@npm:5.0.5"
+  dependencies:
+    "@types/node": "*"
+    webpack: ^5.1.0
+  checksum: 6c3153fdc6715efc2e14cbcaa2aa64850fb75b075be58f5ca77af462eb7a18ecf3ea524c3e990c9f83033bd5987996e2dca1ce7866d28787960469d0a3c14e48
+  languageName: node
+  linkType: hard
+
 "@types/classnames@npm:2.2.10":
   version: 2.2.10
   resolution: "@types/classnames@npm:2.2.10"
@@ -27737,6 +27747,7 @@ pvutils@latest:
     "@types/bloomfilter": 0.0.0
     "@types/case-sensitive-paths-webpack-plugin": 2.1.6
     "@types/chrome": 0.0.127
+    "@types/circular-dependency-plugin": ^5.0.5
     "@types/classnames": 2.2.10
     "@types/command-exists": 1.2.0
     "@types/compression": 1.7.2
