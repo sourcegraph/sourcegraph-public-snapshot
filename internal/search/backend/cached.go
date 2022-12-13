@@ -21,7 +21,7 @@ type cachedSearcher struct {
 	cache map[listCacheKey]*listCacheValue
 }
 
-func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) *cachedSearcher {
+func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) zoekt.Streamer {
 	return &cachedSearcher{
 		Streamer: z,
 		ttl:      ttl,

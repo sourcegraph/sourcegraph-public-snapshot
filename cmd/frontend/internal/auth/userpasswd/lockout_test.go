@@ -1,6 +1,7 @@
 package userpasswd
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -41,7 +43,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("explicit reset", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, time.Minute, time.Minute)
+		s := NewLockoutStore(1, time.Minute, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -60,7 +62,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("automatically released", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(1, 2*time.Second, time.Minute)
+		s := NewLockoutStore(1, 2*time.Second, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -79,7 +81,7 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("failed attempts far apart", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(2, time.Minute, time.Second, nil)
 
 		_, locked := s.IsLockedOut(1)
 		assert.False(t, locked)
@@ -96,7 +98,8 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("missing unlock account token signing key", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
+		s.IncreaseFailedAttempt(1)
 
 		path, _, err := s.GenerateUnlockAccountURL(1)
 
@@ -108,11 +111,12 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("generates an account unlock url", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
+		s.IncreaseFailedAttempt(1)
 		path, _, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
@@ -124,11 +128,12 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("generates an expected jwt token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
+		s.IncreaseFailedAttempt(1)
 		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
@@ -162,9 +167,9 @@ func TestLockoutStore(t *testing.T) {
 		// (jwt.TimePrecision) to the next line, our want will be different
 		// than the claims ExpiresAt. Additionally CI can be busy, so lets add
 		// a decent amount of fudge to this (10s).
-		want := time.Now().Add(5 * time.Minute).Truncate(jwt.TimePrecision)
+		want := time.Now().Add(60 * time.Second).Truncate(jwt.TimePrecision)
 		got := claims.ExpiresAt.Time
-		if durationAbs(want.Sub(got)) > 10*time.Second {
+		if want.Sub(got).Abs() > 10*time.Second {
 			t.Fatalf("unexpected ExpiresAt time:\ngot:  %s\nwant: %s", got, want)
 		}
 	})
@@ -172,11 +177,12 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("correctly verifies unlock account token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
+		s.IncreaseFailedAttempt(1)
 		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
@@ -194,11 +200,12 @@ func TestLockoutStore(t *testing.T) {
 	t.Run("fails verification on unlock account token", func(t *testing.T) {
 		rcache.SetupForTest(t)
 
-		s := NewLockoutStore(2, time.Minute, time.Second)
+		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
+		s.IncreaseFailedAttempt(1)
 		_, token, err := s.GenerateUnlockAccountURL(1)
 
 		assert.Empty(t, err)
@@ -210,19 +217,29 @@ func TestLockoutStore(t *testing.T) {
 		assert.EqualError(t, error, "No previously generated token exists for the specified user")
 		assert.False(t, valid)
 	})
-}
 
-// durationAbs returns the absolute value of d.
-//
-// Copy-pasta from Duration.Abs in the stdlib, but only available in go1.19.
-// Can remove this helper once we require go1.19 as a minimum.
-func durationAbs(d time.Duration) time.Duration {
-	switch {
-	case d >= 0:
-		return d
-	case d == -1<<63:
-		return 1<<63 - 1
-	default:
-		return -d
-	}
+	t.Run("only allows 1 email to be sent for locked account", func(t *testing.T) {
+		rcache.SetupForTest(t)
+		calls := 0
+
+		s := NewLockoutStore(1, time.Minute, time.Second, func(context.Context, string, txemail.Message) (err error) {
+			calls++
+			return nil
+		})
+		mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
+
+		err := s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
+		assert.Empty(t, err)
+		assert.Equal(t, 0, calls, "email should not have been sent yet, as account is not locked")
+
+		s.IncreaseFailedAttempt(1)
+		err = s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
+		assert.Empty(t, err)
+		assert.Equal(t, 1, calls, "should have sent 1 email")
+
+		err = s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
+		assert.Empty(t, err)
+		assert.Equal(t, 1, calls, "should have sent only 1 email")
+	})
 }

@@ -222,6 +222,9 @@ func PartitionRepos(
 		return nil, repos, ctx.Err()
 	}
 
+	// Note: We do not need to handle list.Crashes since we will fallback to
+	// unindexed search for any repository unavailable due to rollout.
+
 	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
