@@ -162,7 +162,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(definition.SampleIntervalUnit),
 			Value: definition.SampleIntervalValue,
-		}, definition.CreatedAt.Truncate(time.Hour*24))
+		}, definition.CreatedAt.Truncate(time.Minute))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: definition.ID,
 			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
@@ -479,7 +479,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
-		}, series.CreatedAt.Truncate(time.Hour*24))
+		}, series.CreatedAt.Truncate(time.Minute))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: series.ID,
 			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
@@ -537,7 +537,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
-		}, series.CreatedAt.Truncate(time.Hour*24))
+		}, series.CreatedAt.Truncate(time.Minute))
 
 		log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
 		plan := a.frameFilter.Filter(ctx, frames, api.RepoName(repoName))

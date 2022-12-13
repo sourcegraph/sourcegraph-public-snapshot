@@ -311,7 +311,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
-	}, time.Now())
+	}, definition.CreatedAt.Truncate(time.Minute))
 	oldest := time.Now().AddDate(-1, 0, 0)
 	if len(frames) != 0 {
 		possibleOldest := frames[0]
@@ -319,6 +319,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 			oldest = possibleOldest
 		}
 	}
+	log.Scoped("isr", "isr").Info("series_points_resolver", log.String("oldest", oldest.String()), log.String("series_id", definition.SeriesID), log.Int("id", definition.InsightSeriesID))
 	opts.From = &oldest
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)

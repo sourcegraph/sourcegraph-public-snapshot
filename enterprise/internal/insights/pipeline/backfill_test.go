@@ -141,15 +141,15 @@ func TestMakeSearchJobs(t *testing.T) {
 		SampleIntervalValue: 1,
 	}
 	// All the series in this test reuse the same time data, so we will reuse these frames across all request objects.
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
 
 	backfillReq := &BackfillRequest{
-		Series: series,
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Series:      series,
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqInvalidQuery := &BackfillRequest{
@@ -161,8 +161,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqRepoQuery := &BackfillRequest{
@@ -174,8 +174,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)

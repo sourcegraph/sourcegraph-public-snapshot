@@ -295,6 +295,8 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
 	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
+		jsonify, _ := json.Marshal(jobs)
+		logger.Info("run search jobs func", log.String("jobs", string(jsonify)))
 		series := reqContext.backfillRequest.Series
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)

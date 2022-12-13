@@ -311,7 +311,7 @@ func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfil
 	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
 
 	return &backfillExecution{
 		series:      series,

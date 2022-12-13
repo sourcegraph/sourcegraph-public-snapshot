@@ -136,7 +136,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
