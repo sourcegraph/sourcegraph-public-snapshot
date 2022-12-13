@@ -129,7 +129,7 @@ func TestMakeSearchJobs(t *testing.T) {
 	threeWeeks := 24 * 21 * time.Hour
 	createdDate := time.Date(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
 	firstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}}
-	recentFirstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}, Author: gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}}
+	recentFirstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}, Author: gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}}
 	recentCommits := []*gitdomain.Commit{{ID: "1", Committer: &gitdomain.Signature{}}, {ID: "2", Committer: &gitdomain.Signature{}}}
 
 	series := &types.InsightSeries{
