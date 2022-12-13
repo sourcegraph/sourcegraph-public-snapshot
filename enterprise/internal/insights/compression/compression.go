@@ -33,11 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-type CommitFilter struct {
-	store         CommitStore
-	maxHistorical time.Time
-}
-
 type NoopFilter struct {
 }
 
