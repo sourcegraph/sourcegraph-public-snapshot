@@ -42,8 +42,6 @@ import (
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
-	MissingRepoRevs []RepoRevSpecs
-
 	// BackendsMissing is the number of search backends that failed to be
 	// searched. This is due to it being unreachable. The most common reason
 	// for this is during zoekt rollout.
@@ -67,7 +65,7 @@ func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), len(r.MissingRepoRevs), r.BackendsMissing)
+	return fmt.Sprintf("Resolved{RepoRevs=%d, BackendsMissing=%d}", len(r.RepoRevs), r.BackendsMissing)
 }
 
 func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
@@ -103,13 +101,17 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 
 	for {
 		page, err := r.Resolve(ctx, opts)
+		missing := 0
 		if err != nil {
 			errs = errors.Append(errs, err)
-			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
+			var missingErr MissingRepoRevsError
+			if errors.As(err, &missingErr) { // Non-fatal errors
+				missing += len(missingErr.Missing)
+			} else {
 				break
 			}
 		}
-		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
+		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), missing, page.BackendsMissing)
 
 		if err = handle(&page); err != nil {
 			errs = errors.Append(errs, err)
@@ -285,7 +287,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
-		MissingRepoRevs: missingRepoRevs,
 		BackendsMissing: backendsMissing,
 		Next:            next,
 	}, err

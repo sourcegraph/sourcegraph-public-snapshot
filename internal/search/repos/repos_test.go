@@ -79,7 +79,6 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar", "^revBas"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@*refs/heads/*:*!refs/heads/revBas"},
@@ -87,7 +86,6 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
@@ -95,31 +93,29 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{{
-					RevSpec: "^revQux",
+			wantErr: &MissingRepoRevsError{
+				Missing: []RepoRevSpecs{{
+					Repo: types.MinimalRepo{Name: "repoFoo"},
+					Revs: []search.RevisionSpecifier{{
+						RevSpec: "^revQux",
+					}},
 				}},
-			}},
-			wantErr: &MissingRepoRevsError{},
+			},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  &gitdomain.BadCommitError{},
+			repoFilters:  []string{"repoFoo@revBar:bad_commit"},
+			wantRepoRevs: nil,
+			wantErr:      &gitdomain.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  &gitdomain.BadCommitError{},
+			repoFilters:  []string{"repoFoo@revBar:^bad_commit"},
+			wantRepoRevs: nil,
+			wantErr:      &gitdomain.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  context.DeadlineExceeded,
+			repoFilters:  []string{"repoFoo@revBar:deadline_exceeded"},
+			wantRepoRevs: nil,
+			wantErr:      context.DeadlineExceeded,
 		},
 		{
 			repoFilters: []string{"repoFoo"},
@@ -127,8 +123,7 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{""},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
-			wantErr:                  nil,
+			wantErr: nil,
 		},
 	}
 
@@ -143,14 +138,11 @@ func TestRevisionValidation(t *testing.T) {
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
-			}
 
-			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
+			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
 				t.Error(diff)
 			}
-			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
+			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
 			}
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
@@ -320,16 +312,14 @@ func TestResolverPaginate(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs:        all.RepoRevs[:3],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[:3],
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 					},
 				},
 				{
-					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[3:],
 				},
 			},
 		},
@@ -344,8 +334,7 @@ func TestResolverPaginate(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[3:],
 				},
 			},
 		},
