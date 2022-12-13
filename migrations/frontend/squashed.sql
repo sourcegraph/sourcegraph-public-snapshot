@@ -2491,6 +2491,7 @@ CREATE TABLE lsif_uploads (
     last_traversal_scan_at timestamp with time zone,
     last_reconcile_at timestamp with time zone,
     content_type text DEFAULT 'application/x-ndjson+lsif'::text NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 

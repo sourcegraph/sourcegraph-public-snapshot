@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -51,11 +52,21 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`.
+// ListAllIndexed lists all indexed repositories with `Minimal: true`. If any
+// crashes occur an error is returned instead of returning partial results.
 func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Minimal: true}
-	return Indexed().List(ctx, q, opts)
+	rl, err := Indexed().List(ctx, q, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if rl.Crashes > 0 {
+		return nil, errors.New("zoekt.List call occurred while not all Zoekt replicas are available")
+	}
+
+	return rl, nil
 }
 
 func Indexers() *backend.Indexers {

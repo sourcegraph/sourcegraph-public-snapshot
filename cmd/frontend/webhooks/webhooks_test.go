@@ -88,9 +88,7 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	wr := WebhookRouter{
-		DB: db,
-	}
+	wr := WebhookRouter{Logger: logger, DB: db}
 	gwh := GitHubWebhook{WebhookRouter: &wr}
 
 	webhookMiddleware := NewLogMiddleware(
@@ -220,7 +218,7 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, expectedEvent, wh.eventReceived)
 	})
 
-	t.Run("not found handler returns 404", func(t *testing.T) {
+	t.Run("not found handler returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("githubsecret"))
@@ -239,7 +237,7 @@ func TestWebhooksHandler(t *testing.T) {
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {

@@ -2069,6 +2069,7 @@ Stores the retention policy of code intellience data for a repository.
  last_traversal_scan_at  | timestamp with time zone |           |          | 
  last_reconcile_at       | timestamp with time zone |           |          | 
  content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
+ should_reindex          | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text

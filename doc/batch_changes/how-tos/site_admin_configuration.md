@@ -8,13 +8,7 @@
 
 1. [Configure credentials](configuring_credentials.md).
 
-1. Setup webhooks to make sure changesets sync fast. See [Batch Changes effect on codehost rate limits](../references/requirements.md#batch-changes-effect-on-code-host-rate-limits).
-    * [GitHub](../../admin/external_service/github.md#webhooks)
-    * [Bitbucket Server / Bitbucket Data Center](../../admin/external_service/bitbucket_server.md#webhooks)
-    * [Bitbucket Cloud](../../admin/external_service/bitbucket_cloud.md#webhooks)
-    * [GitLab](../../admin/external_service/gitlab.md#webhook-setup)
-
-    > NOTE: Incoming webhooks can be viewed in **Site Admin > Batch Changes > Incoming webhooks**. Webhook logging can be configured through the [incoming webhooks site configuration](../../admin/config/batch_changes.md#incoming-webhooks).
+1. [Setup webhooks](../../admin/config/webhooks.md) to make sure changesets sync fast. See [Batch Changes effect on codehost rate limits](../references/requirements.md#batch-changes-effect-on-code-host-rate-limits).
 
 1. Configure any desired optional features, such as:
     * [Rollout windows]("../../../admin/config/batch_changes#rollout-windows"), which control the rate at which Batch Changes will publish changesets on code hosts.
