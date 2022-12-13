@@ -197,7 +197,7 @@ func (c *NotificationClient) sendRevert(build *Build, prUrl *url.URL) error {
 
 func createRevertMessageBlock(build *Build, prUrl *url.URL) []slack.Block {
 	msg, _, _ := strings.Cut(build.message(), "\n")
-	msg += fmt.Sprintf("%s", build.commit()[:7])
+	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
@@ -206,7 +206,7 @@ func createRevertMessageBlock(build *Build, prUrl *url.URL) []slack.Block {
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("Commit %s", msg)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("Commit <%s|%s>", prUrl.String(), msg)},
 			},
 			nil,
 		),
