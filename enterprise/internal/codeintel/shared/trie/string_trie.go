@@ -27,7 +27,7 @@ func compressTrieInternal(n runeTrieNode, prefix string) map[string]stringTrieNo
 		return nil
 	}
 
-	if n.terminatesValues {
+	if n.terminatesValue {
 		// If we're terminating an original value at this rune node, then we can't compress it into the
 		// child nodes. Emit a node here, even if it has a single child, so that we generate a stable
 		// identifier for it when we freeze the trie later.
