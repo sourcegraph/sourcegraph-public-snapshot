@@ -181,7 +181,7 @@ const config = {
           const markdown =
             `# Circular dependency check in ${entry} \n\n${count} circular dependencies were detected in web client packages in the "${entry}" entry point.\n\n` +
             circularDependencyBlocks
-          fs.writeFile(`../../annotations/circular-dependencies-${entry}.md`, markdown).catch(err => {
+          fs.writeFile(`../../annotations/circular-dependencies-${entry}-annotation.md`, markdown).catch(err => {
             console.error('Error while writing circular depdenency annotation file')
             console.error(err)
           })
