@@ -220,7 +220,7 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 		pipeline.AddStep(":webpack::o: Circular dependencies check (client/web)",
 			withYarnCache(),
 			bk.Env("WEBPACK_CHECK_CIRCULAR_DEPENDENCIES", "1"),
-			bk.AnnotatedCmd("dev/ci/yarn-run.sh run webpack-web", bk.AnnotatedCmdOpts{}))
+			bk.AnnotatedCmd("dev/ci/yarn-run.sh webpack-web", bk.AnnotatedCmdOpts{}))
 	}
 }
 
