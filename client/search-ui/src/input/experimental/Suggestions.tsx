@@ -98,7 +98,9 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                     : option.matches
                                     ? [...option.value].map((char, index) =>
                                           option.matches!.has(index) ? (
-                                              <span className={styles.match}>{char}</span>
+                                              <span key={index} className={styles.match}>
+                                                  {char}
+                                              </span>
                                           ) : (
                                               char
                                           )
@@ -125,7 +127,13 @@ export const FilterOption: React.FunctionComponent<{ option: Option }> = ({ opti
     <span className={styles.filterOption}>
         {option.matches
             ? [...option.value].map((char, index) =>
-                  option.matches!.has(index) ? <span className={styles.match}>{char}</span> : char
+                  option.matches!.has(index) ? (
+                      <span key={index} className={styles.match}>
+                          {char}
+                      </span>
+                  ) : (
+                      char
+                  )
               )
             : option.value}
         <span className={styles.separator}>:</span>

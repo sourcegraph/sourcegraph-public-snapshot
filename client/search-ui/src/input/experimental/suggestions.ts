@@ -107,16 +107,22 @@ class SuggestionView {
         const state = view.state.field(suggestionsStateField)
         this.container = document.createElement('div')
         this.root = createRoot(this.container)
-        this.root.render(
-            React.createElement(Suggestions, {
-                id,
-                results: state.result.groups,
-                activeRowIndex: state.selectedOption,
-                open: state.open,
-                onSelect: this.onSelect,
-            })
-        )
         parent.append(this.container)
+
+        // We need to delay the initial render otherwise React complains that
+        // wer are rendering a component while already rendering another one
+        // (the query input component)
+        Promise.resolve().then(() => {
+            this.root.render(
+                React.createElement(Suggestions, {
+                    id,
+                    results: state.result.groups,
+                    activeRowIndex: state.selectedOption,
+                    open: state.open,
+                    onSelect: this.onSelect,
+                })
+            )
+        })
     }
 
     public update(update: ViewUpdate): void {
@@ -140,8 +146,13 @@ class SuggestionView {
     }
 
     public destroy(): void {
-        this.root.unmount()
         this.container.remove()
+
+        // We need to delay unmounting the root otherwise React complains about
+        // synchronsouly unmounting multiple components.
+        Promise.resolve().then(() => {
+            this.root.unmount()
+        })
     }
 }
 
