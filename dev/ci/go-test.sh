@@ -33,12 +33,11 @@ function go_test() {
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
   # shellcheck disable=SC2086
-  gotestsum \
+  gotestsum -- \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
-    -race \
-    -v \
+    -race
     $test_packages | tee "$tmpfile"
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
