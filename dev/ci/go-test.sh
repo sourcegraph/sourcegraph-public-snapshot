@@ -4,8 +4,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -euo pipefail
 
-REPO_ROOT="$PWD"
-
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
@@ -49,7 +47,6 @@ function go_test() {
     echo "~~~ Creating test failures anotation"
     mkdir -p ./annotations
     sed '0,/=== Failed$/d'<"$tmpfile" >>./annotations/go-test
-    rm -rf $RICHGO_CONFIG
     set +x
   fi
 
