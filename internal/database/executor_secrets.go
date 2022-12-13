@@ -178,8 +178,10 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
-var ErrEmptyExecutorSecretKey = errors.New("empty executor secret key is not allowed")
-var ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
+var (
+	ErrEmptyExecutorSecretKey   = errors.New("empty executor secret key is not allowed")
+	ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
+)
 
 var ErrDuplicateExecutorSecret = errors.New("duplicate executor secret")
 
@@ -479,9 +481,7 @@ RETURNING %s
 
 // scanExecutorSecret scans a secret from the given scanner into the given
 // ExecutorSecret.
-func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
-	Scan(...any) error
-}) error {
+func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s dbutil.Scanner) error {
 	var (
 		value []byte
 		keyID string

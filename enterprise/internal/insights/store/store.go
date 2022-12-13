@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -154,7 +155,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
@@ -240,7 +241,7 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
 	;`
 	fullQ := seriesPointsQuery(q, opts)
-	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
+	err = s.query(ctx, fullQ, func(sc dbutil.Scanner) (err error) {
 		var row loadStruct
 		err = sc.Scan(
 			&row.Time,
@@ -662,7 +663,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
 	recordingTimes := []types.RecordingTime{}
-	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
+	err = s.query(ctx, timesQuery, func(sc dbutil.Scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
 			&recordingTime,
@@ -775,14 +776,9 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	return scanAll(rows, sc)
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...any) error
-}
-
 // a scanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -806,7 +802,7 @@ func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID
 	if err != nil {
 		return nil, err
 	}
-	return results, scanAll(rows, func(s scanner) (err error) {
+	return results, scanAll(rows, func(s dbutil.Scanner) (err error) {
 		var tmp IncompleteDatapoint
 		if err = rows.Scan(
 			&tmp.Reason,
