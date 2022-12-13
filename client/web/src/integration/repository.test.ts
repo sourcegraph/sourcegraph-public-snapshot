@@ -788,6 +788,7 @@ describe('Repository', () => {
                                 pageInfo: {
                                     __typename: 'PageInfo',
                                     hasNextPage: true,
+                                    endCursor: 'abc',
                                 },
                             },
                         },
