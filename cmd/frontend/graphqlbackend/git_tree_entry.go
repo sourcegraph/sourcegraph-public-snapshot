@@ -168,11 +168,12 @@ func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
-	content, err := r.Content(ctx)
+	// We only care about the full content length here, so we just need r.fullContent to be set.
+	_, err := r.Content(ctx)
 	if err != nil {
 		return false, err
 	}
-	return highlight.IsBinary([]byte(content)), nil
+	return highlight.IsBinary(r.fullContent), nil
 }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
@@ -396,11 +397,12 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 }
 
 func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
-	content, err := r.Content(ctx)
+	// We only care about the full content length here, so we just need r.fullContent to be set.
+	_, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return parseLFSPointer(content), nil
+	return parseLFSPointer(string(r.fullContent)), nil
 }
 
 type symbolInfoArgs struct {
