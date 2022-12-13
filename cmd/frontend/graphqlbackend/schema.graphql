@@ -5223,6 +5223,10 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo
 }
 
 """

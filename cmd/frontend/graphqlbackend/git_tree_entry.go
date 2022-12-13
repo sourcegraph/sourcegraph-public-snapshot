@@ -43,28 +43,24 @@ var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FIL
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db              database.DB
-	gitserverClient gitserver.Client
-	commit          *GitCommitResolver
-
-	contentOnce  sync.Once
-	content      []byte
-	contentCache *rcache.Cache
-	contentErr   error
-
-	first            *int
-	after            *int
+	db               database.DB
+	gitserverClient  gitserver.Client
+	commit           *GitCommitResolver
+	contentOnce      sync.Once
+	fullContent      []byte
+	contentCache     *rcache.Cache
+	contentErr       error
+	first            *int32
+	after            *int32
 	cacheHighlighted bool
-
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat fs.FileInfo
-
+	stat          fs.FileInfo
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo, after, first *int) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo, after, first *int32) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		db:              db,
 		commit:          commit,
@@ -88,33 +84,33 @@ func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileRes
 }
 
 func (r *GitTreeEntryResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	content, err := r.Content(ctx)
+	// We only care about the full content length here, so we just need r.fullContent to be set.
+	_, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.after == nil || r.first == nil {
+	if r.after == nil || r.first == nil || *r.first < 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	first := 0
-	if r.first != nil {
-		first = *r.first
-	}
+	first := int(*r.first)
+	endCursor := int(*r.after) + first
 
-	endCursor := *r.after + first
-	if endCursor >= len(content) {
+	if endCursor >= len(r.fullContent) {
 		return graphqlutil.HasNextPage(false), nil
 	}
+
 	return graphqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
-	content, err := r.Content(ctx)
+	// We only care about the full content length here, so we just need r.fullContent to be set.
+	_, err := r.Content(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len([]byte(content))), nil
+	return int32(len(r.fullContent)), nil
 }
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
@@ -124,7 +120,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		cacheKey := r.Path() + ":" + string(r.commit.OID())
 		content, ok := r.contentCache.Get(cacheKey)
 		if !ok {
-			r.content, r.contentErr = r.gitserverClient.ReadFile(
+			r.fullContent, r.contentErr = r.gitserverClient.ReadFile(
 				ctx,
 				r.commit.repoResolver.RepoName(),
 				api.CommitID(r.commit.OID()),
@@ -132,32 +128,35 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 				authz.DefaultSubRepoPermsChecker,
 			)
 			// To avoid overwhelming Redis, we only cache larger files.
-			if len(r.content) > largeFileContentCacheThresholdBytes {
-				r.contentCache.Set(cacheKey, r.content)
+			if len(r.fullContent) > largeFileContentCacheThresholdBytes {
+				r.contentCache.Set(cacheKey, r.fullContent)
 			}
 		} else {
-			r.content = content
+			r.fullContent = content
 		}
 	})
 
+	return pageContent(r.fullContent, r.after, r.first), r.contentErr
+}
+
+func pageContent(content []byte, after, first *int32) string {
 	// TODO: double check there is no off by 1 errors
-	totalContentLength := len(r.content)
+	totalContentLength := len(content)
 	afterCursor := 0
-	first := totalContentLength
-	if r.after != nil {
-		afterCursor = *r.after
+	firstCursor := totalContentLength
+	if after != nil {
+		afterCursor = int(*after)
 	}
 	if afterCursor > totalContentLength {
 		afterCursor = totalContentLength
 	}
-	if r.first != nil {
-		first = *r.first
+	if first != nil && *first >= 0 {
+		firstCursor = int(*first)
 	}
-	if afterCursor+first > totalContentLength {
-		first = totalContentLength - afterCursor
+	if afterCursor+firstCursor > totalContentLength {
+		firstCursor = totalContentLength - afterCursor
 	}
-
-	return string(r.content[afterCursor : afterCursor+first]), r.contentErr
+	return string(content[afterCursor : afterCursor+firstCursor])
 }
 
 func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {

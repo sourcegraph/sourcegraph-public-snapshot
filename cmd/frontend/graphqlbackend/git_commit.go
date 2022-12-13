@@ -237,8 +237,8 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path  string
-	After *int
-	First *int
+	After *int32
+	First *int32
 }) (*GitTreeEntryResolver, error) {
 	return r.path(ctx, args.Path, args.After, args.First, func(stat fs.FileInfo) error {
 		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
@@ -251,21 +251,21 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path  string
-	After *int
-	First *int
+	After *int32
+	First *int32
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
 func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 	Path  string
-	After *int
-	First *int
+	After *int32
+	First *int32
 }) (*GitTreeEntryResolver, error) {
 	return r.path(ctx, args.Path, args.After, args.First, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, after, first *int, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+func (r *GitCommitResolver) path(ctx context.Context, path string, after, first *int32, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
 	defer span.Finish()
 	span.SetTag("path", path)
