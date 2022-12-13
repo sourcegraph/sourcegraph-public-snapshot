@@ -77,7 +77,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	frames := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Minute))
 	points := timeCounts{}
 	timeDataPoints := []TimeDataPoint{}
 
