@@ -104,6 +104,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             first: TREE_COMMITS_PER_PAGE,
             filePath,
             after,
+            afterCursor: null,
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
