@@ -105,7 +105,8 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
+			// For missing repo revs, just collect the error and keep paging
+			if !errors.Is(err, &MissingRepoRevsError{}) {
 				break
 			}
 		}

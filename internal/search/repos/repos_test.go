@@ -297,7 +297,25 @@ func TestResolverPaginate(t *testing.T) {
 		}
 	}
 
-	all, err := NewResolver(logtest.Scoped(t), db, nil, nil, nil).Resolve(ctx, search.RepoOptions{})
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec == "bad_commit" {
+			return "", &gitdomain.BadCommitError{}
+		}
+		// All repos have the revision except foo/bar5
+		if name == "github.com/foo/bar5" {
+			return "", &gitdomain.RevisionNotFoundError{}
+		}
+		return "", nil
+	})
+
+	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	all, err := resolver.Resolve(ctx, search.RepoOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: []string{"foo/bar[0-4]@rev"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,6 +352,46 @@ func TestResolverPaginate(t *testing.T) {
 			},
 		},
 		{
+			name: "with limit 3 and fatal error",
+			opts: search.RepoOptions{
+				Limit:       3,
+				RepoFilters: []string{"foo/bar[0-5]@bad_commit"},
+			},
+			err:   &gitdomain.BadCommitError{},
+			pages: nil,
+		},
+		{
+			name: "with limit 3 and missing repo revs",
+			opts: search.RepoOptions{
+				Limit:       3,
+				RepoFilters: []string{"foo/bar[0-5]@rev"},
+			},
+			err: &MissingRepoRevsError{},
+			pages: []Resolved{
+				{
+					RepoRevs: allAtRev.RepoRevs[:2],
+					MissingRepoRevs: []RepoRevSpecs{
+						{
+							Repo: all.RepoRevs[0].Repo, // corresponds to foo/bar5
+							Revs: []search.RevisionSpecifier{
+								{
+									RevSpec: "rev",
+								},
+							},
+						},
+					},
+					Next: types.MultiCursor{
+						{Column: "stars", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.Stars)},
+						{Column: "id", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.ID)},
+					},
+				},
+				{
+					RepoRevs:        allAtRev.RepoRevs[2:],
+					MissingRepoRevs: []RepoRevSpecs{},
+				},
+			},
+		},
+		{
 			name: "with limit 3 and cursor",
 			opts: search.RepoOptions{
 				Limit: 3,
@@ -351,16 +409,13 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
+			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
 
 			var pages []Resolved
 			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
 				pages = append(pages, *page)
 				return nil
 			})
-			if err != nil {
-				t.Error(err)
-			}
 
 			if !errors.Is(err, tc.err) {
 				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))
