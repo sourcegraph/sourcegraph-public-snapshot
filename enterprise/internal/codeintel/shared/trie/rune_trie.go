@@ -4,8 +4,8 @@ import "unicode/utf8"
 
 // runeTrieNode encodes a prefix trie of values where each transition value is a single character.
 type runeTrieNode struct {
-	terminatesMatch bool
-	children        map[rune]runeTrieNode
+	terminatesValues bool
+	children         map[rune]runeTrieNode
 }
 
 // constructRuneTrie constructs a rune trie from the given values.
@@ -24,7 +24,7 @@ func constructRuneTrie(values []string) runeTrieNode {
 // new, child node.
 func runeTrieInsert(n runeTrieNode, value string) runeTrieNode {
 	if len(value) == 0 {
-		n.terminatesMatch = true
+		n.terminatesValues = true
 		return n
 	}
 
