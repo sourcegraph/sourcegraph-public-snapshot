@@ -15,10 +15,9 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
-# Set up richgo for better output
-function richgo() {
-  # This fork gives us the `anyStyle` configuration required to hide log lines
-  go run github.com/jhchabran/richgo@installable "$@"
+# Set up gotestsum for better output
+function gotestsum() {
+  go run gotest.tools/gotestsum@v1.8.2 "$@"
 }
 
 function go_test() {
@@ -34,7 +33,7 @@ function go_test() {
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
   # shellcheck disable=SC2086
-  go test \
+  gotestsum() test \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
@@ -49,10 +48,8 @@ function go_test() {
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
     echo "~~~ Creating test failures anotation"
-    RICHGO_CONFIG="./.richstyle.yml"
-    cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
-    richgo testfilter <"$tmpfile" >>./annotations/go-test
+    sed '0,/=== Failed$/d'<"$tmpfile" >>./annotations/go-test
     rm -rf $RICHGO_CONFIG
     set +x
   fi
