@@ -512,22 +512,17 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	// Validation
 
-	v2BackfillEnabled := conf.ExperimentalFeatures().InsightsBackfillerV2
+	v2BackfillEnabled := v2BackfillEnabled()
 	// Needs at least 1 series
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to create an insight view")
 	}
 
-	// Each Series if repo criteria is specified not repo list is allowed
-	// Only backfillerv2 supports repo criteria so fail now if it's tried
+	// Ensure Repo Scope is valid for each scope
 	for i := 0; i < len(args.Input.DataSeries); i++ {
-		repoCriteriaSpecified := args.Input.DataSeries[i].RepositoryScope.RepositoryCriteria != nil
-		repoListSpecified := len(args.Input.DataSeries[i].RepositoryScope.Repositories) > 0
-		if repoListSpecified && repoCriteriaSpecified {
-			return nil, errors.New("A series can not specify both a repository list and repository critieria")
-		}
-		if repoCriteriaSpecified && !v2BackfillEnabled {
-			return nil, errors.New("Insights using repository critieria require the InsightsBackfillerV2 feature to be enabled.")
+		err := isValidRepositoryScope(args.Input.DataSeries[i], v2BackfillEnabled)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -605,6 +600,14 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")
+	}
+	v2BackfillEnabled := v2BackfillEnabled()
+	// Ensure Repo Scope is valid for each scope
+	for i := 0; i < len(args.Input.DataSeries); i++ {
+		err := isValidRepositoryScope(args.Input.DataSeries[i], v2BackfillEnabled)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -781,6 +784,9 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 		if new.RepositoryScope.Repositories[i] != existing.Repositories[i] {
 			return true
 		}
+	}
+	if new.RepositoryScope.RepositoryCriteria != existing.RepositoryCriteria {
+		return true
 	}
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
@@ -1246,12 +1252,7 @@ type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 	flags := featureflag.FromContext(ctx)
 	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
-	v2BackfillEnabled := true
-	if v2BackfillSetting != nil {
-		v2BackfillEnabled = *v2BackfillSetting
-	}
-
+	v2BackfillEnabled := v2BackfillEnabled()
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
@@ -1614,4 +1615,28 @@ func lowercaseGroupBy(groupBy *string) *string {
 		return &temp
 	}
 	return groupBy
+}
+
+func v2BackfillEnabled() bool {
+	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
+	v2BackfillEnabled := true
+	if v2BackfillSetting != nil {
+		v2BackfillEnabled = *v2BackfillSetting
+	}
+	return v2BackfillEnabled
+}
+
+func isValidRepositoryScope(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput, v2BackfillEnabled bool) error {
+	repoCriteriaSpecified := seriesInput.RepositoryScope.RepositoryCriteria != nil
+	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
+	if repoListSpecified && repoCriteriaSpecified {
+		return errors.New("series can not specify both a repository list and repository critieria")
+	}
+	if repoCriteriaSpecified && !v2BackfillEnabled {
+		return errors.New("series using repository critieria require the InsightsBackfillerV2 setting to be enabled")
+	}
+	if !repoListSpecified && seriesInput.GroupBy != nil {
+		return errors.New("group by series require a list of repositories to be specified.")
+	}
+	return nil
 }
