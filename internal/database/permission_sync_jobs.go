@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -76,30 +77,28 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo int
 }
 
 const permissionSyncJobCreateQueryFmtstr = `
-INSERT INTO
-	permission_sync_jobs (
-		process_after,
-		repository_id,
-		user_id,
-		high_priority,
-		invalidate_caches
-	)
-	VALUES (
-		%s,
-		%s,
-		%s,
-		%s,
-		%s
-	)
-	RETURNING %s
+INSERT INTO permission_sync_jobs (
+	process_after,
+	repository_id,
+	user_id,
+	high_priority,
+	invalidate_caches
+)
+VALUES (
+	%s,
+	%s,
+	%s,
+	%s,
+	%s
+)
+RETURNING %s
 `
 
 func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
+	fmt.Printf("createSyncJob. job=%+v\n", job)
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
 		job.ProcessAfter,
-		job.RepositoryID,
-		job.UserID,
 		dbutil.NewNullInt(int(job.RepositoryID)),
 		dbutil.NewNullInt(int(job.UserID)),
 		job.HighPriority,
@@ -109,6 +108,7 @@ func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *Permiss
 
 	row := s.QueryRow(ctx, q)
 	if err := scanPermissionSyncJob(job, row); err != nil {
+		fmt.Printf("err=%s\n", err)
 		return err
 	}
 
@@ -120,9 +120,9 @@ type PermissionSyncJob struct {
 	State           string
 	FailureMessage  *string
 	QueuedAt        time.Time
-	StartedAt       *time.Time
-	FinishedAt      *time.Time
-	ProcessAfter    *time.Time
+	StartedAt       time.Time
+	FinishedAt      time.Time
+	ProcessAfter    time.Time
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
@@ -177,17 +177,19 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.State,
 		&job.FailureMessage,
 		&job.QueuedAt,
-		&job.StartedAt,
-		&job.FinishedAt,
-		&job.ProcessAfter,
+		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.FinishedAt},
+		&dbutil.NullTime{Time: &job.ProcessAfter},
 		&job.NumResets,
 		&job.NumFailures,
-		&job.LastHeartbeatAt,
+		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
-		&job.RepositoryID,
-		&job.UserID,
+
+		&dbutil.NullInt{N: &job.RepositoryID},
+		&dbutil.NullInt{N: &job.UserID},
+
 		&job.HighPriority,
 		&job.InvalidateCaches,
 	); err != nil {

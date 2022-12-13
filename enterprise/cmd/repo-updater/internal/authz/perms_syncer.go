@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -1028,8 +1029,9 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			logger.Error("failed to compute schedule", log.Error(err))
 			continue
 		}
-		for _, u := range schedule.Users {
+		fmt.Printf("schedule. schedule.Users=%d, schedule.Repos=%d\n", len(schedule.Users), len(schedule.Repos))
 
+		for _, u := range schedule.Users {
 			if err := store.CreateUserSyncJob(ctx, u.userID, database.PermissionSyncJobOpts{}); err != nil {
 				logger.Error("failed to create user job", log.Error(err))
 				continue
