@@ -2,6 +2,7 @@ package authz
 
 import (
 	"container/heap"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -18,6 +19,17 @@ const (
 	priorityLow priority = iota
 	priorityHigh
 )
+
+func (p priority) String() string {
+	switch p {
+	case priorityLow:
+		return "Low"
+	case priorityHigh:
+		return "High"
+	default:
+		return "Unknown"
+	}
+}
 
 // requestType is the type of the permissions syncing request. It defines the
 // permissions syncing is either repository-centric or user-centric.
@@ -63,6 +75,10 @@ type syncRequest struct {
 
 	acquired bool // Whether the request has been acquired
 	index    int  // The index in the heap
+}
+
+func (req *syncRequest) String() string {
+	return fmt.Sprintf("type: %s, id: %d, priority: %s, options: %+v", req.Type.String(), req.ID, req.Priority.String(), req.Options)
 }
 
 // requestQueueKey is the key type for index in a requestQueue.

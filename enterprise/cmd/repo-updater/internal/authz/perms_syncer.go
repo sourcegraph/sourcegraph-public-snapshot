@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -959,12 +960,13 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 				notify(s.queue.notifyEnqueue)
 			})
 
-			logger.Debug("waitForNextSync", log.Duration("duration", wait))
+			logger.Warn("waitForNextSync", log.Duration("duration", wait))
 			continue
 		}
 
 		notify(notifyDequeued)
 
+		fmt.Printf("[%s] syncPerms. request: %+v\n", time.Now().Truncate(time.Second), request)
 		s.syncPerms(ctx, syncGroups, request)
 	}
 }
@@ -987,6 +989,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 			noPerms: true,
 		}
 	}
+	fmt.Printf("scheduleUsersWithNoPerms. users=%d\n", len(users))
 	return users, nil
 }
 
@@ -1008,6 +1011,7 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 			noPerms: true,
 		}
 	}
+	fmt.Printf("scheduleReposWithNoPerms. repos=%d\n", len(repos))
 	return repos, nil
 }
 
@@ -1027,6 +1031,7 @@ func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit in
 			nextSyncAt: t,
 		})
 	}
+	fmt.Printf("scheduleUserswithOldestPerms. users=%d\n", len(users))
 	return users, nil
 }
 
@@ -1046,6 +1051,7 @@ func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit in
 			nextSyncAt: t,
 		})
 	}
+	fmt.Printf("scheduleReposwithOldestPerms. repos=%d\n", len(repos))
 	return repos, nil
 }
 
@@ -1171,6 +1177,8 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			logger.Error("failed to compute schedule", log.Error(err))
 			continue
 		}
+		fmt.Printf("runSchedule. scheduleUsers: len(schedule.Users)=%d\n", len(schedule.Users))
+		fmt.Printf("runSchedule. scheduleRepos: len(schedule.Repos)=%d\n", len(schedule.Repos))
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 		s.collectMetrics(ctx)
