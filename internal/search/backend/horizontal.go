@@ -747,7 +747,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
 func isZoektRolloutError(ctx context.Context, err error) bool {
-	reason := canIgnoreErrorReason(err)
+	reason := zoektRolloutReason(err)
 	if reason == "" {
 		return false
 	}
@@ -755,18 +755,16 @@ func isZoektRolloutError(ctx context.Context, err error) bool {
 	metricIgnoredError.WithLabelValues(reason).Inc()
 	if span := trace.TraceFromContext(ctx); span != nil {
 		span.LogFields(
-			otlog.String("ignored.reason", reason),
-			otlog.String("ignored.error", err.Error()))
+			otlog.String("rollout.reason", reason),
+			otlog.String("rollout.error", err.Error()))
 	}
 
 	return true
 }
 
-func canIgnoreErrorReason(err error) string {
+func zoektRolloutReason(err error) string {
 	// Please only add very specific error checks here. An error can be added
 	// here if we see it correlated with rollouts on sourcegraph.com.
-	// Additionally you should be able to justify why it is related to races
-	// between service discovery and us trying to dial.
 
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
@@ -774,7 +772,11 @@ func canIgnoreErrorReason(err error) string {
 	}
 
 	var opErr *net.OpError
-	if errors.As(err, &opErr) && opErr.Op == "dial" {
+	if !errors.As(err, &opErr) {
+		return ""
+	}
+
+	if opErr.Op == "dial" {
 		if opErr.Timeout() {
 			return "dial-timeout"
 		}
@@ -785,6 +787,14 @@ func canIgnoreErrorReason(err error) string {
 		if strings.Contains(opErr.Err.Error(), "connection refused") {
 			return "dial-refused"
 		}
+	}
+
+	// Zoekt does not have a proper graceful shutdown for net/rpc since those
+	// connections are multi-plexed over a single HTTP connection. This means
+	// we often run into this during rollout for List calls (Search calls use
+	// streaming RPC).
+	if opErr.Op == "read" {
+		return "read-failed"
 	}
 
 	return ""

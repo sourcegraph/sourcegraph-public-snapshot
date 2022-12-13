@@ -105,8 +105,10 @@ func (r *outOfBandMigrationResolver) Deprecated() *string {
 	return strptr(r.m.Deprecated.String())
 }
 
-func (r *outOfBandMigrationResolver) Progress() float64         { return r.m.Progress }
-func (r *outOfBandMigrationResolver) Created() gqlutil.DateTime { return gqlutil.DateTime{r.m.Created} }
+func (r *outOfBandMigrationResolver) Progress() float64 { return r.m.Progress }
+func (r *outOfBandMigrationResolver) Created() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.m.Created}
+}
 func (r *outOfBandMigrationResolver) LastUpdated() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.m.LastUpdated)
 }
@@ -129,5 +131,5 @@ type outOfBandMigrationErrorResolver struct {
 
 func (r *outOfBandMigrationErrorResolver) Message() string { return r.e.Message }
 func (r *outOfBandMigrationErrorResolver) Created() gqlutil.DateTime {
-	return gqlutil.DateTime{r.e.Created}
+	return gqlutil.DateTime{Time: r.e.Created}
 }

@@ -35,7 +35,6 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
     searchContextsEnabled: false,
     batchChangesEnabled: false,

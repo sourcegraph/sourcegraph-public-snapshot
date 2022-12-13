@@ -21,7 +21,6 @@ describe('SearchContextDropdown', () => {
         showSearchContextManagement: false,
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         authenticatedUser: null,

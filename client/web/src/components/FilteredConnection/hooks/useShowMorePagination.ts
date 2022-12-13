@@ -41,6 +41,12 @@ interface UseShowMorePaginationConfig<TResult> {
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
+
+    // useAlternateAfterCursor is used to indicate that a custom field instead of the
+    // standard "after" field is used to for pagination. This is typically a
+    // workaround for existing APIs where after may already be in use for
+    // another field.
+    useAlternateAfterCursor?: boolean
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -141,11 +147,21 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
 
+        // Use cursor paging if possible, otherwise fallback to multiplying `first`.
+        const afterVariables: { after?: string; first?: number; afterCursor?: string } = {}
+        if (cursor) {
+            if (options?.useAlternateAfterCursor) {
+                afterVariables.afterCursor = cursor
+            } else {
+                afterVariables.after = cursor
+            }
+        } else {
+            afterVariables.first = firstReference.current.actual * 2
+        }
         await fetchMore({
             variables: {
                 ...variables,
-                // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
+                ...afterVariables,
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {

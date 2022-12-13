@@ -211,7 +211,7 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 		return 0, err
 	}
 
-	q := &zoektquery.And{[]zoektquery.Q{
+	q := &zoektquery.And{Children: []zoektquery.Q{
 		&zoektquery.Regexp{Regexp: expr, Content: true, CaseSensitive: true},
 		zoektquery.NewSingleBranchesRepos(r.branch, uint32(r.repo.IDInt32())),
 	}}

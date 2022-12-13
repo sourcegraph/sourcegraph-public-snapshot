@@ -6,8 +6,7 @@ import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 
 import { Point } from '../types'
-import { getDatumValue, isDatumWithValidNumber, SeriesDatum } from '../utils'
-import { getPointId } from '../utils/generate-points-field'
+import { getDatumValue, encodePointId, isDatumWithValidNumber, SeriesDatum } from '../utils'
 
 import { PointGlyph } from './PointGlyph'
 
@@ -22,6 +21,7 @@ const formatXLabel = timeFormat('%d %B %A')
 
 interface LineDataSeriesProps<D> extends SVGProps<SVGGElement> {
     id: string
+    seriesIndex: number
     xScale: ScaleTime<number, number>
     yScale: ScaleLinear<number, number>
     dataset: SeriesDatum<D>[]
@@ -35,6 +35,7 @@ interface LineDataSeriesProps<D> extends SVGProps<SVGGElement> {
 export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
     const {
         id,
+        seriesIndex,
         xScale,
         yScale,
         dataset,
@@ -66,18 +67,21 @@ export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
                 {dataset.map((datum, index) => {
                     const datumValue = getDatumValue(datum)
                     const link = getLinkURL(datum.datum, index)
-                    const pointId = getPointId(id, index)
+                    const pointId = encodePointId(id, index)
                     const formattedDate = formatXLabel(datum.x)
                     const datumInfo = { id: pointId, seriesId: id, xValue: datum.x, yValue: datumValue, linkUrl: link }
                     const ariaLabel = link
                         ? `Link point, Y value: ${datumValue}, X value: ${formattedDate}, click to view data point detail`
                         : `Data point, Y value: ${datumValue}, X value: ${formattedDate}`
 
+                    // Make focusable only the first point of the first series as a started navigation point
+                    const isPointFocusable = seriesIndex === 0 && index === 0
+
                     return (
                         <PointGlyph
                             key={pointId}
                             id={pointId}
-                            tabIndex={tabIndex}
+                            tabIndex={isPointFocusable ? 0 : -1}
                             top={yScale(datumValue)}
                             left={xScale(datum.x)}
                             active={activePointId === pointId}

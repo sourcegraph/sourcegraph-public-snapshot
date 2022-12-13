@@ -99,7 +99,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
-                            defaultSearchContextSpec={props.defaultSearchContextSpec}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             fetchSearchContexts={props.fetchSearchContexts}

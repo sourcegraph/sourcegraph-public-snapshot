@@ -89,7 +89,6 @@ describe('SearchContextMenu', () => {
         authenticatedUser: null,
         isSourcegraphDotCom: false,
         showSearchContextManagement: false,
-        defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
         fetchSearchContexts: mockFetchSearchContexts,

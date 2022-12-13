@@ -13,7 +13,14 @@ import { H2, Text, Code } from '../../../../Typography'
 import { Series } from '../../../types'
 import { LineChart, LegendList, LegendItem, getLineColor } from '../index'
 
-import { FLAT_SERIES, STANDARD_SERIES, SERIES_WITH_HUGE_DATA, UNALIGNED_SERIES, StandardDatum } from './mocks'
+import {
+    FLAT_SERIES,
+    STANDARD_SERIES,
+    SERIES_WITH_HUGE_DATA,
+    UNALIGNED_SERIES,
+    StandardDatum,
+    FLAT_XY_SERIES,
+} from './mocks'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
@@ -40,6 +47,7 @@ export const LineChartsDemo: Story = () => (
         }}
     >
         <PlainChartExample />
+        <FlatChartExample />
         <PlainStackedChartExample />
         <ResponsiveChartExample />
         <WithLegendExample />
@@ -69,6 +77,19 @@ const PlainChartExample = () => {
         </section>
     )
 }
+
+const FlatChartExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Flat chart</H2>
+
+        <Text>
+            A standard example of the line chart but with fully flat datasets, try to navigate with arrows keyboard
+            navigation.
+        </Text>
+
+        <LineChart width={400} height={400} series={FLAT_XY_SERIES} />
+    </section>
+)
 
 const PlainStackedChartExample = () => {
     const [active, setActive] = useState(false)
