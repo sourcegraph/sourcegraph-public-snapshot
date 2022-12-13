@@ -14,7 +14,6 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -326,8 +325,6 @@ func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
 	upload codeinteltypes.Upload,
-	repo *sgtypes.Repo,
-	isDefaultBranch bool,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {
