@@ -4,7 +4,7 @@ import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components'
 
-import { Group, Option } from './suggestions'
+import { Group, Option } from './suggestionsExtension'
 
 import styles from './Suggestions.module.scss'
 
