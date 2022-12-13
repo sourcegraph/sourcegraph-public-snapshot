@@ -3,9 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
-
-RUN apk --no-cache add pcre sqlite-libs libev
+FROM sourcegraph/searcher-base
 
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
 # here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine

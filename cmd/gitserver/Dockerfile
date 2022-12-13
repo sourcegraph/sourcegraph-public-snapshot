@@ -25,7 +25,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     chmod +x /usr/local/bin/coursier
 
 
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
+FROM sourcegraph/gitserver-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -35,20 +35,6 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-RUN apk add --no-cache \
-    # We require git 2.38+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
-    'git>=2.38.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \
-    git-lfs \
-    git-p4 \
-    && apk add --no-cache  \
-    openssh-client \
-    # We require libstdc++ for p4-fusion
-    libstdc++ \
-    python2 \
-    python3 \
-    bash
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 

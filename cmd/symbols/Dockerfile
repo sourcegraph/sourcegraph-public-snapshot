@@ -28,17 +28,17 @@ ARG PKG
 ENV PKG=$PKG
 
 RUN \
-  --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/root/go/pkg/mod \
-  go build \
-  -trimpath \
-  -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
-  -buildmode exe \
-  -tags dist \
-  -o /symbols \
-  $PKG
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/go/pkg/mod \
+    go build \
+    -trimpath \
+    -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
+    -buildmode exe \
+    -tags dist \
+    -o /symbols \
+    $PKG
 
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS symbols
+FROM sourcegraph/symbols-base:latest AS symbols
 
 # TODO(security): This container should not run as root!
 #
@@ -54,10 +54,6 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-# ctags is dynamically linked against jansson
-# libstdc++ and libgcc are for tree-sitter
-RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++ libgcc
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
