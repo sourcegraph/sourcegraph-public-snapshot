@@ -215,7 +215,7 @@ func (g *GithubCodeHost) Err() error {
 	return g.err
 }
 
-func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) {
+func (g *GithubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) {
 	// not supplied in the config, so get whatever GitHub tells us is present (but might be incorrect)
 	if g.def.RepositoryLimit == 0 {
 		if strings.HasPrefix(g.def.Path, "@") {
@@ -244,15 +244,26 @@ func (g *GithubCodeHost) GetTotalPrivateRepos(ctx context.Context) (int, error) 
 	}
 }
 
-func (g *GithubCodeHost) GetPath() string {
-	return g.def.Path
-}
-
-func (g *GithubCodeHost) SetPage(total int, remainder int) {
+func (g *GithubCodeHost) setPage(total int, remainder int) {
 	// setting per page is not implemented yet so use GH default
 	perPage := 10
 	if g.perPage != 0 {
 		perPage = g.perPage
 	}
 	g.page = int(math.Ceil(float64(total-remainder) / float64(perPage)))
+}
+
+func (g *GithubCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+	t, err := g.getTotalPrivateRepos(ctx)
+	if err != nil {
+		return 0, 0, errors.Wrapf(err, "failed to get total private repos size for source %s", g.def.Path)
+	}
+	remainder := t - len(stateRepos)
+
+	// Process started but not finished, set page to continue
+	if len(stateRepos) != 0 && remainder != 0 {
+		g.setPage(t, remainder)
+	}
+
+	return t, remainder, nil
 }

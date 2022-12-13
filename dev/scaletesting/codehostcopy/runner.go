@@ -98,17 +98,12 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 		return err
 	}
 
-	t, err := r.source.GetTotalPrivateRepos(ctx)
+	t, remainder, err := r.source.InitializeFromState(ctx, srcRepos)
 	if err != nil {
-		r.logger.Fatal("failed to get total private repos size for source", log.String("source", r.source.GetPath()), log.Error(err))
+		r.logger.Fatal(err.Error())
 	}
-	remainder := t - len(srcRepos)
-	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
 
-	// Process started but not finished, set page to continue
-	if len(srcRepos) != 0 && remainder != 0 {
-		r.source.SetPage(t, remainder)
-	}
+	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
 
 	bars := []output.ProgressBar{
 		{Label: "Copying repos", Max: float64(t)},
