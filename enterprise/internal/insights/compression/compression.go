@@ -45,16 +45,14 @@ type commitFetcher interface {
 }
 
 func NewGitserverFilter(db database.DB) DataFrameFilter {
-	// // .Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 	return &gitserverFilter{commitFetcher: discovery.NewGitCommitClient(db)}
 }
 
 type gitserverFilter struct {
-	// client gitserver.Client
-	// gcc *discovery.GitCommitClient
 	commitFetcher commitFetcher
 }
 
+// Filter will return a backfill plan that has filtered sample times for periods of time that do not change for a given repository.
 func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
 	var nodes []QueryExecution
 	getCommit := func(to time.Time) (*gitdomain.Commit, bool, error) {
@@ -69,7 +67,6 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 	}
 
 	executions := make(map[api.CommitID]*QueryExecution)
-
 	for _, sampleTime := range sampleTimes {
 		commit, got, err := getCommit(sampleTime)
 		if err != nil || !got {
