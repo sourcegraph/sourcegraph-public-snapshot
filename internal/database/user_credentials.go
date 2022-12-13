@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -463,9 +464,7 @@ RETURNING %s
 //
 // s is inspired by the BatchChange scanner type, but also matches sql.Row, which
 // is generally used directly in this module.
-func scanUserCredential(cred *UserCredential, key encryption.Key, s interface {
-	Scan(...any) error
-}) error {
+func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scanner) error {
 	var (
 		credential []byte
 		keyID      string
