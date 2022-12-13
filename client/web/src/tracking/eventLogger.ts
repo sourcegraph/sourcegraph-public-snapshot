@@ -365,13 +365,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     // Grabs and sets the deviceSessionID to renew the session cookie expiration
     // Grabs and sets the deviceID to renew the cookie expiration
     private resetCookieExpiration(): void {
-        let deviceSessionID:string = cookies.get(DEVICE_SESSION_ID_KEY)!
+        let deviceSessionID: string = cookies.get(DEVICE_SESSION_ID_KEY)!
         if (!deviceSessionID) {
             deviceSessionID = this.getDeviceSessionID()
         }
         cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
 
-        let deviceID:string = cookies.get(DEVICE_ID_KEY)!
+        let deviceID: string = cookies.get(DEVICE_ID_KEY)!
         if (!deviceID) {
             deviceID = this.getDeviceID()
         }
