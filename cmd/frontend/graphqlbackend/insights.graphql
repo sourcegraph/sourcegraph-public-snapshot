@@ -1269,9 +1269,9 @@ type ScopedInsightQueryPayloadNotAvailable {
 An enum to describe the reasons why a scoped insight query payload is not available
 """
 enum ScopedInsightQueryPayloadNotAvailableReasonType {
-    INVALID_QUERY
-    UNSUPPORTED_SEARCH_FILTER
-    REPO_SEARCH_ERROR
+    INVALID_SCOPE_QUERY
+    UNSUPPORTED_SEARCH_ARGUMENT
+    SCOPE_SEARCH_ERROR
 }
 
 """

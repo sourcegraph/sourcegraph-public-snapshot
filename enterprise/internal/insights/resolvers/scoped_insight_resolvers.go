@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -19,25 +20,29 @@ var (
 )
 
 func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResultResolver, error) {
-	plan, err := querybuilder.ParseQuery(args.Input.Query, "standard")
+	plan, err := querybuilder.ParseQuery(args.Input.Query, "literal")
 	if err != nil {
 		return &scopedInsightQueryResultResolver{
-			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: "the input query is invalid"},
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{
+				reason:     fmt.Sprintf("the input query is invalid: %v", err),
+				reasonType: types.INVALID_SCOPE_QUERY,
+			},
 		}, nil
 	}
 	if reason, invalid := isValidScopeQuery(plan); !invalid {
 		return &scopedInsightQueryResultResolver{
-			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: reason},
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: reason, reasonType: types.UNSUPPORTED_SEARCH_ARGUMENT},
 		}, nil
 	}
-
-	fmt.Println("in resolver")
 
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	repos, selectRepoQuery, err := executor.ExecuteRepoList(ctx, args.Input.Query)
 	if err != nil {
 		return &scopedInsightQueryResultResolver{
-			resolver: &scopedInsightQueryPayloadNotAvailableResolver{reason: "executing the repository search errored"},
+			resolver: &scopedInsightQueryPayloadNotAvailableResolver{
+				reason:     fmt.Sprintf("executing the repository search errored: %v", err),
+				reasonType: types.SCOPE_SEARCH_ERROR,
+			},
 		}, nil
 	}
 	return &scopedInsightQueryResultResolver{
@@ -82,7 +87,7 @@ func (s *scopedInsightQueryPayloadResolver) Query(ctx context.Context) string {
 
 type scopedInsightQueryPayloadNotAvailableResolver struct {
 	reason     string
-	reasonType string
+	reasonType types.ScopedInsightQueryPayloadNotAvailableReasonType
 }
 
 func (r *scopedInsightQueryPayloadNotAvailableResolver) Reason() string {
@@ -90,7 +95,7 @@ func (r *scopedInsightQueryPayloadNotAvailableResolver) Reason() string {
 }
 
 func (r *scopedInsightQueryPayloadNotAvailableResolver) ReasonType() string {
-	return r.reasonType
+	return string(r.reasonType)
 }
 
 type scopedInsightQueryResultResolver struct {

@@ -227,3 +227,11 @@ const (
 	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
 	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
 )
+
+type ScopedInsightQueryPayloadNotAvailableReasonType string
+
+const (
+	INVALID_SCOPE_QUERY         ScopedInsightQueryPayloadNotAvailableReasonType = "INVALID_QUERY"
+	UNSUPPORTED_SEARCH_ARGUMENT ScopedInsightQueryPayloadNotAvailableReasonType = "UNSUPPORTED_SEARCH_ARGUMENT"
+	SCOPE_SEARCH_ERROR          ScopedInsightQueryPayloadNotAvailableReasonType = "REPO_SEARCH_ERROR"
+)
