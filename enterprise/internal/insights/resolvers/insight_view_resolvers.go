@@ -240,6 +240,39 @@ func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbacke
 	}
 }
 
+func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
+	}
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no repository definitions available")
+	}
+
+	return &insightRepositoryDefinitionResolver{
+		series: i.view.Series[0],
+	}, nil
+}
+
+func (i *insightViewResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
+	}
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no time scope available")
+	}
+
+	return &insightTimeScopeUnionResolver{
+		resolver: &insightIntervalTimeScopeResolver{
+			unit:  i.view.Series[0].SampleIntervalUnit,
+			value: int32(i.view.Series[0].SampleIntervalValue),
+		},
+	}, nil
+}
+
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]any)
 
@@ -448,17 +481,12 @@ func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (graphq
 	return nil, false
 }
 
-func (r *insightRepositoryDefinitionResolver) ToAllRepositoriesScope() (graphqlbackend.AllRepositoriesScopeResolver, bool) {
-	if len(r.series.Repositories) == 0 && r.series.RepositoryCriteria == nil {
-		return &allReposScope{}, true
-	}
-	return nil, false
-}
-
 func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphqlbackend.RepositorySearchScopeResolver, bool) {
-	if r.series.RepositoryCriteria != nil {
+	if r.series.RepositoryCriteria != nil || len(r.series.Repositories) == 0 {
+		allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
 		return &reposSearchScope{
-			search: *r.series.RepositoryCriteria,
+			search:   emptyIfNil(r.series.RepositoryCriteria),
+			allRepos: allRepos,
 		}, true
 	}
 	return nil, false
@@ -470,10 +498,12 @@ type allReposScope struct {
 func (a *allReposScope) AllRepos() bool { return true }
 
 type reposSearchScope struct {
-	search string
+	search   string
+	allRepos bool
 }
 
-func (r *reposSearchScope) Search() string { return r.search }
+func (r *reposSearchScope) Search() string        { return r.search }
+func (r *reposSearchScope) AllRepositories() bool { return r.allRepos }
 
 type lineChartInsightViewPresentation struct {
 	view *types.Insight
@@ -518,9 +548,15 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("At least one data series is required to create an insight view")
 	}
 
-	// Ensure Repo Scope is valid for each scope
+	// Use view level Repo & Time scope if provided and ensure input is valid
 	for i := 0; i < len(args.Input.DataSeries); i++ {
-		err := isValidRepositoryScope(args.Input.DataSeries[i], v2BackfillEnabled)
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
 		if err != nil {
 			return nil, err
 		}
@@ -604,7 +640,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	v2BackfillEnabled := v2BackfillEnabled()
 	// Ensure Repo Scope is valid for each scope
 	for i := 0; i < len(args.Input.DataSeries); i++ {
-		err := isValidRepositoryScope(args.Input.DataSeries[i], v2BackfillEnabled)
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
 		if err != nil {
 			return nil, err
 		}
@@ -1626,7 +1668,13 @@ func v2BackfillEnabled() bool {
 	return v2BackfillEnabled
 }
 
-func isValidRepositoryScope(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput, v2BackfillEnabled bool) error {
+func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput, v2BackfillEnabled bool) error {
+	if seriesInput.RepositoryScope == nil {
+		return errors.New("a repository scope is required")
+	}
+	if seriesInput.TimeScope == nil {
+		return errors.New("a time scope is required")
+	}
 	repoCriteriaSpecified := seriesInput.RepositoryScope.RepositoryCriteria != nil
 	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
 	if repoListSpecified && repoCriteriaSpecified {
