@@ -286,7 +286,7 @@ WITH RECURSIVE
 		(scheme, identifier) IN (%s)
 	ORDER BY
 		(dump_id, scheme, identifier)
-) UNION (
+) UNION ALL (
 	SELECT
 		ss.upload_id,
 		'scip',
