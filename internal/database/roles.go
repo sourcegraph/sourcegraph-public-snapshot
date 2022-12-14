@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const defaultRoleLimit = 20
-
 var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.id"),
 	sqlf.Sprintf("roles.name"),
@@ -55,8 +53,6 @@ type (
 
 type RolesListOptions struct {
 	*LimitOffset
-	Cursor         *types.Cursor
-	IncludeDeleted bool
 }
 
 type RoleNotFoundErr struct {
@@ -125,15 +121,10 @@ SELECT
 	%s
 FROM roles
 WHERE %s
-%s
-ORDER BY id ASC;
 `
 
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
-	if opts.Limit == 0 {
-		opts.Limit = defaultRoleLimit
-	}
-	roles := make([]*types.Role, 0, opts.Limit)
+	roles := make([]*types.Role, 0, 20)
 
 	scanFunc := func(rows *sql.Rows) error {
 		role, err := scanRole(rows)
@@ -149,14 +140,13 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 }
 
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var whereClause *sqlf.Query
-	if opts.IncludeDeleted {
-		whereClause = sqlf.Sprintf("deleted_at IS NOT NULL")
-	} else {
-		whereClause = sqlf.Sprintf("deleted_at IS NULL")
-	}
+	var whereClause = sqlf.Sprintf("deleted_at IS NULL")
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, whereClause, opts.SQL())
+	q := sqlf.Sprintf(roleListQueryFmtstr, selects, whereClause)
+
+	if opts.LimitOffset != nil {
+		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
+	}
 
 	rows, err := r.Query(ctx, q)
 	if err != nil {
