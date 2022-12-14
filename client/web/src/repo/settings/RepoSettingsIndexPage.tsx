@@ -285,7 +285,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         ))}
                                     </ul>
                                 )}
-                                {this.state.textSearchIndex.status && this.state.textSearchIndex.host && (
+                                {this.state.textSearchIndex.status && (
                                     <>
                                         <H3>Statistics</H3>
                                         <table className={classNames('table mb-3', styles.stats)}>
@@ -331,6 +331,10 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </>
+                                )}
+                                {this.state.textSearchIndex.host && (
+                                    <>
                                         <H3>Indexserver</H3>
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
