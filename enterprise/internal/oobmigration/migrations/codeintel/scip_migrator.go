@@ -482,8 +482,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 ) ON COMMIT DROP
 `
 
-// Write inserts a new document and document lookup row, and pushes all of the given
-// symbols into the batch inserter.
+// Write batches a new document, document lookup row, and all of its symbols for insertion.
 func (s *scipWriter) Write(
 	ctx context.Context,
 	path string,
