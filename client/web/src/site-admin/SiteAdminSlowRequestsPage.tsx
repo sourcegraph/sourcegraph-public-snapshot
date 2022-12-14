@@ -188,7 +188,7 @@ const SlowRequestNode: React.FunctionComponent<{ node: React.PropsWithChildren<S
             <div className={classNames('d-flex flex-row')}>
                 <div>
                     <Tooltip
-                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to set $ACCESS_TOKEN)'}
+                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to set $SRC_ACCESS_TOKEN)'}
                     >
                         <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
                             <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} />
@@ -273,7 +273,7 @@ function shortenRepoName(repoName: string): string {
 }
 
 function buildCurlCommand(request: SlowRequest): string {
-    const headers = "-H 'Authorization: token'$ACCESS_TOKEN"
+    const headers = "-H 'Authorization: token $SRC_ACCESS_TOKEN'"
     const body = `{"query": "${request.query}", "variables": ${request.variables}}`.replaceAll('\n', '')
     return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
 }
