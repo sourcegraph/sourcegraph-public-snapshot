@@ -23,6 +23,11 @@ export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false):
         }
     )
 
+    // We want to `client.get(flagName)` on every render and update the state only
+    // on the value change so it's safe to omit dependencies in this `useEffect`.
+    // We won't be sending an API request on every render because evaluated feature flags
+    // are cached in memory for a short period of time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         let isMounted = true
 
