@@ -1311,6 +1311,8 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 			return err
 		}
 
+		// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
+		// --name-status is not zero cost, so we don't do it on every search.
 		hasDiffModifiesFile := false
 		search.Visit(mt, func(mt search.MatchTree) {
 			switch mt.(type) {
