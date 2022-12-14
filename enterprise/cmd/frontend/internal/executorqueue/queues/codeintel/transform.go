@@ -45,6 +45,7 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 	if len(index.RequestedEnvVars) > 0 {
 		secretsStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 		secrets, _, err = secretsStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
+			// Note: No namespace set, codeintel secrets are only available in the global namespace for now.
 			Keys: index.RequestedEnvVars,
 		})
 		if err != nil {
