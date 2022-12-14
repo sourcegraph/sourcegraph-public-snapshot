@@ -16,7 +16,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { InsightDashboard } from '../../../../../core'
+import { CustomInsightDashboard } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
 import styles from './DashboardMenu.module.scss'
@@ -29,7 +29,7 @@ export enum DashboardMenuAction {
 }
 
 export interface DashboardMenuProps {
-    dashboard?: InsightDashboard
+    dashboard?: CustomInsightDashboard
     tooltipText?: string
     className?: string
     onSelect?: (action: DashboardMenuAction) => void

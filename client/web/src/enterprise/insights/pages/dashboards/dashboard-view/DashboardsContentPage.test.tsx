@@ -28,7 +28,7 @@ import {
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
 
 import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
-import { DashboardsContentPage } from './DashboardsContentPage'
+import { DashboardsView } from './DashboardsView'
 
 type UserEvent = typeof userEvent
 
@@ -161,7 +161,7 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsContentPage dashboardID={dashboardID} telemetryService={mockTelemetryService} />
+                <DashboardsView dashboardId={dashboardID} telemetryService={mockTelemetryService} />
             </Wrapper>
         </MockedTestProvider>
     ),

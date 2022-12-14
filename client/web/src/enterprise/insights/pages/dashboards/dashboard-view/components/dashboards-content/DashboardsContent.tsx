@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import { useHistory } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core'
+import { CustomInsightDashboard } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
 import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -19,50 +20,37 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps extends TelemetryProps {
-    /**
-     * Possible dashboard id. All insights on the page will be get from
-     * dashboard's info from the user or org settings by the dashboard id.
-     * In case if id is undefined we get insights from the final
-     * version of merged settings (all insights)
-     */
-    currentDashboard?: InsightDashboard
-    dashboards: InsightDashboard[]
+    currentDashboard: CustomInsightDashboard | undefined
+    dashboards: CustomInsightDashboard[]
 }
 
-export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
+export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const { currentDashboard, dashboards, telemetryService } = props
 
     const history = useHistory()
+    const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
-    // State to open/close add/remove insights modal UI
+    const [copyURL, isCopied] = useCopyURLHandler()
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const [copyURL, isCopied] = useCopyURLHandler()
+    useEffect(() => telemetryService.logViewEvent('Insights'), [telemetryService])
+    useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
 
-    useEffect(() => {
-        telemetryService.logViewEvent('Insights')
-    }, [telemetryService])
-
-    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+    const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
         history.push(`/insights/dashboards/${dashboard.id}`)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (currentDashboard && !isVirtualDashboard(currentDashboard)) {
+                if (currentDashboard) {
                     history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
-                return
-            }
-            case DashboardMenuAction.AddRemoveInsights: {
-                setAddInsightsState(true)
                 return
             }
             case DashboardMenuAction.Delete: {
@@ -76,15 +64,11 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
         }
     }
 
-    const handleAddInsightRequest = (): void => {
-        setAddInsightsState(true)
-    }
-
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        <div className="pb-4">
-            <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
+        <div className={styles.root}>
+            <DashboardHeader className={styles.header}>
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
@@ -97,7 +81,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <DashboardMenu
                     dashboard={currentDashboard}
                     tooltipText={isCopied ? 'Copied!' : undefined}
-                    className="mr-auto"
+                    className={styles.dashboardMenu}
                     onSelect={handleSelect}
                 />
 
@@ -106,7 +90,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                         outline={true}
                         variant="secondary"
                         disabled={addRemovePermissions.disabled}
-                        onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                        onClick={() => setAddInsightsState(true)}
                     >
                         Add or remove insights
                     </Button>
@@ -116,33 +100,54 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             {!licensed && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
-                    message={
-                        currentDashboard?.id === ALL_INSIGHTS_DASHBOARD.id
-                            ? 'Create up to 2 global insights'
-                            : 'Unlock Code Insights for full access to custom dashboards'
-                    }
+                    message="Unlock Code Insights for full access to custom dashboards"
                 />
             )}
 
             {currentDashboard ? (
                 <DashboardInsights
                     currentDashboard={currentDashboard}
-                    dashboards={dashboards}
                     telemetryService={telemetryService}
                     className={styles.insights}
-                    onAddInsightRequest={handleAddInsightRequest}
+                    onAddInsightRequest={() => setAddInsightsState(true)}
                 />
             ) : (
-                <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
+                <DashboardEmptyContent dashboards={dashboards} />
             )}
 
-            {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
+            {isAddInsightOpen && currentDashboard && (
                 <AddInsightModal dashboard={currentDashboard} onClose={() => setAddInsightsState(false)} />
             )}
 
-            {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
+            {isDeleteDashboardActive && currentDashboard && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
         </div>
     )
+}
+
+interface DashboardEmptyContentProps {
+    dashboards: CustomInsightDashboard[]
+}
+
+const DashboardEmptyContent: FC<DashboardEmptyContentProps> = props => {
+    const { dashboards } = props
+
+    if (dashboards.length === 0) {
+        return (
+            <HeroPage
+                lessPadding={true}
+                icon={ViewDashboardOutlineIcon}
+                title="Your dashboard will appear here"
+                subtitle="Your instance does not have any dashboards or you may not have permissions to view them."
+                body={
+                    <Button as={Link} to="/insights/add-dashboard" variant="primary" className="mt-4">
+                        Create your first dashboard
+                    </Button>
+                }
+            />
+        )
+    }
+
+    return <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
 }

@@ -66,7 +66,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
             <ConfirmDeleteModal
                 insight={insight}
                 showModal={showDeleteConfirm}
-                onConfirm={() => history.push('/insights/dashboards/all')}
+                onConfirm={() => history.push('/insights/all')}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </div>

@@ -15,6 +15,7 @@ import {
     useForm,
     FORM_ERROR,
 } from '../../../../../../../components'
+import { encodeDashboardIdQueryParam } from '../../../../../../../routers.constant'
 
 import styles from './AddInsightModalContent.module.scss'
 
@@ -62,7 +63,9 @@ export const AddInsightModalContent: React.FunctionComponent<
                 message={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
-                        <Link to={`/insights/create?dashboardId=${dashboardID}`}>create a new insight</Link>
+                        <Link to={encodeDashboardIdQueryParam('/insights/create', dashboardID)}>
+                            create a new insight
+                        </Link>
                     </span>
                 }
                 placeholder="Search insights..."

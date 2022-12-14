@@ -27,13 +27,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../components'
-import {
-    InsightDashboard,
-    isCustomDashboard,
-    isGlobalDashboard,
-    isPersonalDashboard,
-    isVirtualDashboard,
-} from '../../../../../core'
+import { CustomInsightDashboard, isGlobalDashboard, isPersonalDashboard, isVirtualDashboard } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
 import { getDashboardOwnerName, getDashboardOrganizationsGroups } from './helpers'
@@ -43,9 +37,9 @@ import styles from './DashboardSelect.module.scss'
 const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
 
 export interface DashboardSelectProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onSelect'> {
-    dashboard: InsightDashboard | undefined
-    dashboards: InsightDashboard[]
-    onSelect: (dashboard: InsightDashboard) => void
+    dashboard: CustomInsightDashboard | undefined
+    dashboards: CustomInsightDashboard[]
+    onSelect: (dashboard: CustomInsightDashboard) => void
 }
 
 export const DashboardSelect: FC<DashboardSelectProps> = props => {
@@ -57,18 +51,22 @@ export const DashboardSelect: FC<DashboardSelectProps> = props => {
         setOpen(event.isOpen)
     }
 
-    const handleSelect = (dashboard: InsightDashboard): void => {
+    const handleSelect = (dashboard: CustomInsightDashboard): void => {
         setOpen(false)
         onSelect(dashboard)
     }
+
+    const hasDashboards = dashboards.length > 0
+    const dashboardTitle = hasDashboards ? dashboard?.title : 'No dashboards to select'
 
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger
                 {...attributes}
                 as={DashboardSelectButton}
-                title={dashboard?.title}
+                title={dashboardTitle}
                 badge={getDashboardOwnerName(dashboard)}
+                disabled={!hasDashboards}
             />
 
             <PopoverContent
@@ -114,9 +112,9 @@ const DashboardSelectButton = forwardRef<HTMLButtonElement, DashboardSelectButto
 })
 
 interface DashboardSelectContentProps {
-    dashboard: InsightDashboard | undefined
-    dashboards: InsightDashboard[]
-    onSelect: (dashboard: InsightDashboard) => void
+    dashboard: CustomInsightDashboard | undefined
+    dashboards: CustomInsightDashboard[]
+    onSelect: (dashboard: CustomInsightDashboard) => void
 }
 
 const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
@@ -150,11 +148,7 @@ const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
         return dashboards
     }, [dashboards, state])
 
-    const filteredCustomDashboards = useMemo(() => filteredDashboards.filter(isCustomDashboard), [filteredDashboards])
-    const organizationGroups = useMemo(
-        () => getDashboardOrganizationsGroups(filteredCustomDashboards),
-        [filteredCustomDashboards]
-    )
+    const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(filteredDashboards), [filteredDashboards])
 
     return (
         <Combobox
@@ -175,18 +169,9 @@ const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
             />
 
             <ComboboxList persistSelection={true} className={styles.comboboxList}>
-                {filteredDashboards.filter(isVirtualDashboard).map(dashboard => (
-                    <DashboardOption
-                        key={dashboard.id}
-                        name={dashboard.title}
-                        selected={dashboard.id === currentDashboard?.id}
-                        badgeText={getDashboardOwnerName(dashboard)}
-                    />
-                ))}
-
-                {filteredCustomDashboards.some(isPersonalDashboard) && (
+                {filteredDashboards.some(isPersonalDashboard) && (
                     <ComboboxOptionGroup heading="Private" className={styles.comboboxOptionGroup}>
-                        {filteredCustomDashboards.filter(isPersonalDashboard).map(dashboard => (
+                        {filteredDashboards.filter(isPersonalDashboard).map(dashboard => (
                             <DashboardOption
                                 key={dashboard.id}
                                 name={dashboard.title}
@@ -197,9 +182,9 @@ const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
                     </ComboboxOptionGroup>
                 )}
 
-                {filteredCustomDashboards.some(isGlobalDashboard) && (
+                {filteredDashboards.some(isGlobalDashboard) && (
                     <ComboboxOptionGroup heading="Global" className={styles.comboboxOptionGroup}>
-                        {filteredCustomDashboards.filter(isGlobalDashboard).map(dashboard => (
+                        {filteredDashboards.filter(isGlobalDashboard).map(dashboard => (
                             <DashboardOption
                                 key={dashboard.id}
                                 name={dashboard.title}

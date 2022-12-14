@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -10,13 +10,12 @@ import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDa
 
 interface DashboardInsightsProps extends TelemetryProps {
     currentDashboard: InsightDashboard
-    dashboards: InsightDashboard[]
     className?: string
-    onAddInsightRequest: () => void
+    onAddInsightRequest?: () => void
 }
 
-export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<DashboardInsightsProps>> = props => {
-    const { telemetryService, currentDashboard, dashboards, className, onAddInsightRequest } = props
+export const DashboardInsights: FC<DashboardInsightsProps> = props => {
+    const { telemetryService, currentDashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
     const { codeInsightsCompute = false } = useExperimentalFeatures()
@@ -32,7 +31,7 @@ export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<
         )
     )
 
-    const insightContextValue = useMemo(() => ({ currentDashboard, dashboards }), [currentDashboard, dashboards])
+    const insightContextValue = useMemo(() => ({ currentDashboard }), [currentDashboard])
 
     if (insights === undefined) {
         return <LoadingSpinner aria-hidden={true} inline={false} />
@@ -43,7 +42,7 @@ export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<
             {insights.length > 0 ? (
                 <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
             ) : (
-                <EmptyInsightDashboard dashboard={currentDashboard} onAddInsight={onAddInsightRequest} />
+                <EmptyInsightDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
             )}
         </InsightContext.Provider>
     )
