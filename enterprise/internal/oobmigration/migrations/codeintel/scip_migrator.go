@@ -537,18 +537,17 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		documentLookupIDs = append(documentLookupIDs, documentLookupID)
 	}
 
-	invertedRangeIndexForDocuments := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		invertedRangeIndexForDocuments = append(invertedRangeIndexForDocuments, types.ExtractSymbolIndexes(document.scipDocument))
+		invertedRangeIndexes = append(invertedRangeIndexes, types.ExtractSymbolIndexes(document.scipDocument))
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	for _, symbols := range invertedRangeIndexForDocuments {
+	for _, symbols := range invertedRangeIndexes {
 		for _, invertedRange := range symbols {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
 	}
-
 	symbolNames := make([]string, 0, len(symbolNameMap))
 	for symbolName := range symbolNameMap {
 		symbolNames = append(symbolNames, symbolName)
@@ -565,25 +564,25 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		return err
 	}
 
-	for i, symbols := range invertedRangeIndexForDocuments {
-		for _, symbol := range symbols {
-			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+	for i, invertedRangeIndexes := range invertedRangeIndexes {
+		for _, index := range invertedRangeIndexes {
+			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
 			if err != nil {
 				return err
 			}
 
 			// TODO - pre-calculate map
-			symbolID, ok := symbolNameTrie.Search(symbol.SymbolName)
+			symbolID, ok := symbolNameTrie.Search(index.SymbolName)
 			if !ok {
-				return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
 			}
 
 			if err := s.inserter.Insert(
