@@ -75,8 +75,9 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 
 		documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 			hoverSymbolsQuery,
-			bundleID,
 			pq.Array(symbolNames),
+			pq.Array([]int{bundleID}),
+			bundleID,
 		)))
 		if err != nil {
 			return "", types.Range{}, false, err
@@ -155,7 +156,45 @@ const hoverDocumentQuery = `
 )
 `
 
+const symbolIDsCTEs = `
+matching_prefixes(upload_id, id, prefix, search) AS (
+	(
+		SELECT
+			ssn.upload_id,
+			ssn.id,
+			ssn.name_segment,
+			substring(t.name from length(ssn.name_segment) + 1) AS search
+		FROM codeintel_scip_symbol_names ssn
+		JOIN unnest(%s::text[]) AS t(name) ON t.name LIKE ssn.name_segment || '%%'
+		WHERE
+			ssn.upload_id = ANY(%s) AND
+			ssn.prefix_id IS NULL AND
+			t.name LIKE ssn.name_segment || '%%'
+	) UNION (
+		SELECT
+			ssn.upload_id,
+			ssn.id,
+			mp.prefix || ssn.name_segment,
+			substring(mp.search from length(ssn.name_segment) + 1) AS search
+		FROM matching_prefixes mp
+		JOIN codeintel_scip_symbol_names ssn ON
+			ssn.upload_id = mp.upload_id AND
+			ssn.prefix_id = mp.id
+		WHERE
+			mp.search != '' AND
+			mp.search LIKE ssn.name_segment || '%%'
+	)
+),
+matching_symbol_names AS (
+	SELECT id, mp.prefix AS symbol_name
+	FROM matching_prefixes mp
+	WHERE mp.search = ''
+)
+`
+
 const hoverSymbolsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
 SELECT
 	sd.id,
 	sid.document_path,
@@ -173,7 +212,7 @@ WHERE EXISTS (
 	FROM codeintel_scip_symbols ss
 	WHERE
 		ss.upload_id = %s AND
-		ss.symbol_name = ANY(%s) AND
+		ss.symbol_id IN (SELECT id FROM matching_symbol_names) AND
 		ss.document_lookup_id = sid.id AND
 		ss.definition_ranges IS NOT NULL
 )

@@ -680,6 +680,98 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_scip_symbol_names",
+      "Comment": "Stores a prefix tree of symbol names within a particular upload.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An identifier unique within the index for this symbol name segment."
+        },
+        {
+          "Name": "name_segment",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The portion of the symbol name that is unique to this symbol and its children."
+        },
+        {
+          "Name": "prefix_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the segment that forms the prefix of this symbol, if any."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the upload that provided this SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_symbol_names_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbol_names_pkey ON codeintel_scip_symbol_names USING btree (upload_id, id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (upload_id, id)"
+        },
+        {
+          "Name": "codeintel_scip_symbol_names_upload_id_roots",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbol_names USING btree (upload_id) WHERE prefix_id IS NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeisdntel_scip_symbol_names_upload_id_children",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeisdntel_scip_symbol_names_upload_id_children ON codeintel_scip_symbol_names USING btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_scip_symbols",
       "Comment": "A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol\u0026patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.",
       "Columns": [
@@ -749,9 +841,9 @@
           "Comment": "The schema version of this row - used to determine presence and encoding of denormalized data."
         },
         {
-          "Name": "symbol_name",
-          "Index": 2,
-          "TypeName": "text",
+          "Name": "symbol_id",
+          "Index": 9,
+          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -759,7 +851,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol\u0026patternType=standard)."
+          "Comment": "The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name."
         },
         {
           "Name": "type_definition_ranges",
@@ -795,9 +887,9 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_pkey ON codeintel_scip_symbols USING btree (upload_id, symbol_name, document_lookup_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_pkey ON codeintel_scip_symbols USING btree (upload_id, symbol_id, document_lookup_id)",
           "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (upload_id, symbol_name, document_lookup_id)"
+          "ConstraintDefinition": "PRIMARY KEY (upload_id, symbol_id, document_lookup_id)"
         },
         {
           "Name": "codeintel_scip_symbols_document_lookup_id",
