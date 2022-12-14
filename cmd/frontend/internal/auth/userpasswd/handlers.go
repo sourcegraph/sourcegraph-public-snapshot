@@ -46,7 +46,7 @@ type unlockAccountInfo struct {
 }
 
 type unlockUserAccountInfo struct {
-	UserID int32 `json:"userId"`
+	Username string `json:"username"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -395,12 +395,28 @@ func HandleUnlockUserAccount(logger log.Logger, db database.DB, store LockoutSto
 			return
 		}
 
-		if unlockUserAccountInfo.UserID == 0 {
-			http.Error(w, "Bad request: missing user id", http.StatusBadRequest)
+		if unlockUserAccountInfo.Username == "" {
+			http.Error(w, "Bad request: missing username", http.StatusBadRequest)
 			return
 		}
 
-		store.Reset(unlockUserAccountInfo.UserID)
+		user, err := db.Users().GetByUsername(r.Context(), unlockUserAccountInfo.Username)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("Not found: could not find user with username %q", unlockUserAccountInfo.Username),
+				http.StatusNotFound)
+			return
+		}
+
+		_, isLocked := store.IsLockedOut(user.ID)
+		if !isLocked {
+			http.Error(w,
+				fmt.Sprintf("User with username %q is not locked", unlockUserAccountInfo.Username),
+				http.StatusBadRequest)
+			return
+		}
+
+		store.Reset(user.ID)
 
 		return
 	}

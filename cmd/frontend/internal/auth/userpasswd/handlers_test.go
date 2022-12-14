@@ -274,13 +274,40 @@ func TestHandleAccount_UnlockByAdmin(t *testing.T) {
 		resp := httptest.NewRecorder()
 		h(resp, req)
 		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "Bad request: missing user id\n", resp.Body.String())
+		assert.Equal(t, "Bad request: missing username\n", resp.Body.String())
+	}
+
+	// not found if user does not exist
+	users.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+		assert.Equal(t, http.StatusNotFound, resp.Code)
+		assert.Equal(t, "Not found: could not find user with username \"sguser1\"\n", resp.Body.String())
+	}
+
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: "sguser1"}, nil)
+
+	// bad request if user is not locked
+	lockout.IsLockedOutFunc.SetDefaultReturn("", false)
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{Username: "sguser1"}, nil)
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, "User with username \"sguser1\" is not locked\n", resp.Body.String())
 	}
 
 	// ok result
+	lockout.IsLockedOutFunc.SetDefaultReturn("", true)
 	{
-		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "userId": 2 }`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()

@@ -125,27 +125,32 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
 
     const handleUnlockUser = useCallback(
         ([user]: SiteUser[]) => {
-            if (
-                confirm(
-                    'This will allow the selected user to sign in again if their account has been locked. Are you sure you want to proceed?'
-                )
-            ) {
-                fetch('unlock-user-account', {
+            if (confirm("Are you sure you want to unlock this user's account?")) {
+                fetch('/-/unlock-user-account', {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ userId: user.id }),
+                    body: JSON.stringify({ username: user.username }),
                 })
-                    .then(
-                        createOnSuccess(
-                            <Text as="span">
-                                Successfully unlocked user <strong>{user.username}</strong>{' '}
-                            </Text>,
-                            true
-                        )
-                    )
+                    .then(response => {
+                        if (response.status === 200) {
+                            createOnSuccess(
+                                <Text as="span">
+                                    Successfully unlocked user <strong>{user.username}</strong>{' '}
+                                </Text>,
+                                true
+                            )
+                        }
+
+                        response
+                            .text()
+                            .then(text => {
+                                onError(new Error('Failed to unlock user: ' + text))
+                            })
+                            .catch(onError)
+                    })
                     .catch(onError)
             }
         },
