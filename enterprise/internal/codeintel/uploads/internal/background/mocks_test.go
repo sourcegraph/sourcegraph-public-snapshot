@@ -14,6 +14,7 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	sqlf "github.com/keegancsmith/sqlf"
+	scip "github.com/sourcegraph/scip/bindings/go/scip"
 	enterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -12183,7 +12184,7 @@ func NewMockSCIPWriter() *MockSCIPWriter {
 			},
 		},
 		InsertDocumentFunc: &SCIPWriterInsertDocumentFunc{
-			defaultHook: func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) (r0 error) {
+			defaultHook: func(context.Context, string, *scip.Document) (r0 error) {
 				return
 			},
 		},
@@ -12200,7 +12201,7 @@ func NewStrictMockSCIPWriter() *MockSCIPWriter {
 			},
 		},
 		InsertDocumentFunc: &SCIPWriterInsertDocumentFunc{
-			defaultHook: func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error {
+			defaultHook: func(context.Context, string, *scip.Document) error {
 				panic("unexpected invocation of MockSCIPWriter.InsertDocument")
 			},
 		},
@@ -12327,24 +12328,24 @@ func (c SCIPWriterFlushFuncCall) Results() []interface{} {
 // SCIPWriterInsertDocumentFunc describes the behavior when the
 // InsertDocument method of the parent MockSCIPWriter instance is invoked.
 type SCIPWriterInsertDocumentFunc struct {
-	defaultHook func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error
-	hooks       []func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error
+	defaultHook func(context.Context, string, *scip.Document) error
+	hooks       []func(context.Context, string, *scip.Document) error
 	history     []SCIPWriterInsertDocumentFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDocument delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSCIPWriter) InsertDocument(v0 context.Context, v1 string, v2 []byte, v3 []byte, v4 []types.InvertedRangeIndex) error {
-	r0 := m.InsertDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.InsertDocumentFunc.appendCall(SCIPWriterInsertDocumentFuncCall{v0, v1, v2, v3, v4, r0})
+func (m *MockSCIPWriter) InsertDocument(v0 context.Context, v1 string, v2 *scip.Document) error {
+	r0 := m.InsertDocumentFunc.nextHook()(v0, v1, v2)
+	m.InsertDocumentFunc.appendCall(SCIPWriterInsertDocumentFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the InsertDocument
 // method of the parent MockSCIPWriter instance is invoked and the hook
 // queue is empty.
-func (f *SCIPWriterInsertDocumentFunc) SetDefaultHook(hook func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error) {
+func (f *SCIPWriterInsertDocumentFunc) SetDefaultHook(hook func(context.Context, string, *scip.Document) error) {
 	f.defaultHook = hook
 }
 
@@ -12352,7 +12353,7 @@ func (f *SCIPWriterInsertDocumentFunc) SetDefaultHook(hook func(context.Context,
 // InsertDocument method of the parent MockSCIPWriter instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *SCIPWriterInsertDocumentFunc) PushHook(hook func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error) {
+func (f *SCIPWriterInsertDocumentFunc) PushHook(hook func(context.Context, string, *scip.Document) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12361,19 +12362,19 @@ func (f *SCIPWriterInsertDocumentFunc) PushHook(hook func(context.Context, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *SCIPWriterInsertDocumentFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error {
+	f.SetDefaultHook(func(context.Context, string, *scip.Document) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *SCIPWriterInsertDocumentFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error {
+	f.PushHook(func(context.Context, string, *scip.Document) error {
 		return r0
 	})
 }
 
-func (f *SCIPWriterInsertDocumentFunc) nextHook() func(context.Context, string, []byte, []byte, []types.InvertedRangeIndex) error {
+func (f *SCIPWriterInsertDocumentFunc) nextHook() func(context.Context, string, *scip.Document) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12414,13 +12415,7 @@ type SCIPWriterInsertDocumentFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []byte
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []byte
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 []types.InvertedRangeIndex
+	Arg2 *scip.Document
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -12429,7 +12424,7 @@ type SCIPWriterInsertDocumentFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c SCIPWriterInsertDocumentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

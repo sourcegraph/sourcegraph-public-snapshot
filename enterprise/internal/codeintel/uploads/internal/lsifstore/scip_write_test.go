@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -49,9 +49,11 @@ func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	if err := scipWriter24.InsertDocument(
 		ctx,
 		"internal/util.go",
-		[]byte("deadbeef"),
-		[]byte("lorem ipsum dolor sit amet"),
-		nil,
+		&scip.Document{
+			Symbols: []*scip.SymbolInformation{
+				{Symbol: "lorem ipsum dolor sit amet"},
+			},
+		},
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
@@ -73,18 +75,22 @@ func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	if err := scipWriter25.InsertDocument(
 		ctx,
 		"internal/util.go",
-		[]byte("deadbeef"),
-		[]byte("lorem ipsum dolor sit amet"),
-		nil,
+		&scip.Document{
+			Symbols: []*scip.SymbolInformation{
+				{Symbol: "lorem ipsum dolor sit amet"},
+			},
+		},
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
 	if err := scipWriter25.InsertDocument(
 		ctx,
 		"internal/util_test.go",
-		[]byte("cafebabe"),
-		[]byte("consectetur adipiscing elit, sed do eiusmod"),
-		nil,
+		&scip.Document{
+			Symbols: []*scip.SymbolInformation{
+				{Symbol: "consectetur adipiscing elit, sed do eiusmod"},
+			},
+		},
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
@@ -109,48 +115,6 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
-	symbols := []types.InvertedRangeIndex{
-		{
-			SymbolName: "foo.bar.ident",
-			DefinitionRanges: []int32{
-				3, 25, 3, 30,
-			},
-			ReferenceRanges: []int32{
-				4, 25, 4, 30,
-				5, 10, 5, 15,
-				5, 25, 5, 30,
-				6, 16, 6, 21,
-			},
-		},
-		{
-			SymbolName: "bar.baz.longerName",
-			ReferenceRanges: []int32{
-				100, 10, 100, 20,
-				101, 15, 101, 25,
-				103, 16, 103, 26,
-				103, 31, 103, 41,
-				103, 55, 103, 65,
-				151, 10, 151, 20,
-				152, 15, 152, 25,
-				154, 25, 154, 35,
-				154, 50, 154, 60,
-			},
-			ImplementationRanges: []int32{
-				342, 5, 342, 15,
-				364, 5, 364, 15,
-			},
-		},
-		{
-			SymbolName: "baz.bonk.quux",
-			DefinitionRanges: []int32{
-				251, 24, 251, 30,
-			},
-			TypeDefinitionRanges: []int32{
-				151, 14, 151, 20,
-			},
-		},
-	}
-
 	tx, err := store.Transact(ctx)
 	if err != nil {
 		t.Fatalf("failed to start transaction: %s", err)
@@ -164,9 +128,40 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 	if err := scipWriter24.InsertDocument(
 		ctx,
 		"internal/util.go",
-		[]byte("deadbeef"),
-		[]byte("lorem ipsum dolor sit amet"),
-		symbols,
+		&scip.Document{
+			Symbols: []*scip.SymbolInformation{
+				{Symbol: "foo.bar.ident"},
+				{Symbol: "bar.baz.longerName"},
+				{Symbol: "baz.bonk.quux"},
+			},
+			Occurrences: []*scip.Occurrence{
+				{
+					Range:       []int32{3, 25, 3, 30},
+					Symbol:      "foo.bar.ident",
+					SymbolRoles: int32(scip.SymbolRole_Definition),
+				},
+				{
+					Range:       []int32{251, 24, 251, 30},
+					Symbol:      "baz.bonk.quux",
+					SymbolRoles: int32(scip.SymbolRole_Definition),
+				},
+				{
+					Range:       []int32{4, 25, 4, 30},
+					Symbol:      "foo.bar.ident",
+					SymbolRoles: 0,
+				},
+				{
+					Range:       []int32{100, 10, 100, 20},
+					Symbol:      "bar.baz.longerName",
+					SymbolRoles: 0,
+				},
+				{
+					Range:       []int32{151, 14, 151, 20},
+					Symbol:      "baz.bonk.quux",
+					SymbolRoles: 0,
+				},
+			},
+		},
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}

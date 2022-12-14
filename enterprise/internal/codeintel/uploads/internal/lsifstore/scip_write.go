@@ -1,13 +1,18 @@
 package lsifstore
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"sort"
 	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -34,11 +39,9 @@ type ProcessedMetadata struct {
 }
 
 type ProcessedSCIPDocument struct {
-	DocumentPath   string
-	Hash           []byte
-	RawSCIPPayload []byte
-	Symbols        []types.InvertedRangeIndex
-	Err            error
+	Path     string
+	Document *scip.Document
+	Err      error
 }
 
 func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) (err error) {
@@ -76,10 +79,10 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsTemporarySymbolNamesTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
 		return nil, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsTemporarySymbolsTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIpWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
@@ -117,7 +120,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	return scipWriter, nil
 }
 
-const writeSCIPSymbolsTemporarySymbolNamesTableQuery = `
+const newSCIPWriterTemporarySymbolNamesTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
 	id integer NOT NULL,
 	name_segment text NOT NULL,
@@ -125,7 +128,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
 ) ON COMMIT DROP
 `
 
-const writeSCIPSymbolsTemporarySymbolsTableQuery = `
+const newSCIpWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
@@ -148,27 +151,37 @@ type scipWriter struct {
 }
 
 type bufferedDocument struct {
-	path               string
-	payload            []byte
-	payloadHash        []byte
-	invertedRangeIndex []types.InvertedRangeIndex
+	path         string
+	scipDocument *scip.Document
+	payload      []byte
+	payloadHash  []byte
 }
 
 const DocumentsBatchSize = 256
 const MaxBatchPayloadSum = 1024 * 1024 * 32
 
-func (s *scipWriter) InsertDocument(ctx context.Context, path string, payloadHash []byte, payload []byte, symbols []types.InvertedRangeIndex) error {
+func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
 	}
 
+	payload, err := proto.Marshal(scipDocument)
+	if err != nil {
+		return err
+	}
+
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
 	s.batch = append(s.batch, bufferedDocument{
-		path:               path,
-		payload:            payload,
-		payloadHash:        payloadHash,
-		invertedRangeIndex: symbols,
+		path:         path,
+		scipDocument: scipDocument,
+		payload:      compressedPayload,
+		payloadHash:  hashPayload(payload),
 	})
 	s.batchPayloadSum += len(payload)
 
@@ -244,8 +257,12 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	symbolNameMap := map[string]struct{}{}
+	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		for _, invertedRange := range document.invertedRangeIndex {
+		index := types.ExtractSymbolIndexes(document.scipDocument)
+		invertedRangeIndexes = append(invertedRangeIndexes, index)
+
+		for _, invertedRange := range index {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
 	}
@@ -283,8 +300,8 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return err
 	}
 
-	for i, document := range documents {
-		for _, index := range document.invertedRangeIndex {
+	for i, invertedRangeIndexes := range invertedRangeIndexes {
+		for _, index := range invertedRangeIndexes {
 			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
@@ -341,17 +358,17 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	}
 
 	// Move all data from temp tables into target tables
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsFlushSymbolNamesQuery, s.uploadID)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
 		return 0, err
 	}
 
 	return s.count, nil
 }
 
-const writeSCIPSymbolsFlushSymbolNamesQuery = `
+const scipWriterFlushSymbolNamesQuery = `
 INSERT INTO codeintel_scip_symbol_names (
 	upload_id,
 	id,
@@ -366,7 +383,7 @@ SELECT
 FROM t_codeintel_scip_symbol_names source
 `
 
-const writeSCIPSymbolsFlushSymbolsQuery = `
+const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
 	symbol_id,
@@ -388,3 +405,10 @@ SELECT
 	source.type_definition_ranges
 FROM t_codeintel_scip_symbols source
 `
+
+// hashPayload returns a sha256 checksum of the given payload.
+func hashPayload(payload []byte) []byte {
+	hash := sha256.New()
+	_, _ = hash.Write(payload)
+	return hash.Sum(nil)
+}

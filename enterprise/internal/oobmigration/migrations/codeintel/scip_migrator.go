@@ -329,7 +329,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	if err := scipWriter.Write(ctx, path, scipDocument); err != nil {
+	if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
 		return err
 	}
 
@@ -482,8 +482,8 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 ) ON COMMIT DROP
 `
 
-// Write batches a new document, document lookup row, and all of its symbols for insertion.
-func (s *scipWriter) Write(
+// InsertDocument batches a new document, document lookup row, and all of its symbols for insertion.
+func (s *scipWriter) InsertDocument(
 	ctx context.Context,
 	path string,
 	scipDocument *ogscip.Document,

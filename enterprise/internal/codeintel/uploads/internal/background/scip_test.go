@@ -60,7 +60,7 @@ func TestCorrelateSCIP(t *testing.T) {
 	} else {
 		documentMap := map[string]lsifstore.ProcessedSCIPDocument{}
 		for _, document := range documents {
-			documentMap[document.DocumentPath] = document
+			documentMap[document.Path] = document
 		}
 
 		var paths []string

@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -39,7 +40,7 @@ type LsifStore interface {
 }
 
 type SCIPWriter interface {
-	InsertDocument(ctx context.Context, documentPath string, hash []byte, rawSCIPPayload []byte, symbols []types.InvertedRangeIndex) error
+	InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error
 	Flush(ctx context.Context) (uint32, error)
 }
 
