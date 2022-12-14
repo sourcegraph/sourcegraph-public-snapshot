@@ -175,8 +175,6 @@ func init() {
 
 	// Warn if customer is using GitLab on a version < 12.0.
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
-
-	AlertFuncs = append(AlertFuncs, gitUpdatesDisabledAlert)
 }
 
 func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
@@ -396,27 +394,6 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 				TypeValue:    AlertTypeError,
 				MessageValue: "One or more of your code hosts is running a version of GitLab below 12.0, which is not supported by Sourcegraph. Please upgrade your GitLab instance(s) to prevent disruption.",
 			}}
-		}
-	}
-
-	return nil
-}
-
-// gitUpdatedisabledAlert will put a alert banner on the UI for site admins if disableAutoGitUpdates
-// is set to true in the site config.
-//
-// This will be shown to site admin only.
-func gitUpdatesDisabledAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin {
-		return nil
-	}
-
-	if conf.Get().DisableAutoGitUpdates {
-		return []*Alert{
-			{
-				TypeValue:    AlertTypeError,
-				MessageValue: "Git updates are disabled, repos will not update or clone. Please remove disableAutoGitUpdates setting from the site configuration",
-			},
 		}
 	}
 
