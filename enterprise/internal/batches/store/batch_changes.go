@@ -66,10 +66,8 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 		return scanBatchChange(c, sc)
 	})
 	if err != nil {
-		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
-			if pgErr.ConstraintName == "batch_change_name_is_valid" {
-				return ErrInvalidBatchChangeName
-			}
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
 		}
 		return err
 	}
@@ -150,10 +148,8 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 		return scanBatchChange(c, sc)
 	})
 	if err != nil {
-		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
-			if pgErr.ConstraintName == "batch_change_name_is_valid" {
-				return ErrInvalidBatchChangeName
-			}
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
 		}
 		return err
 	}
@@ -204,10 +200,8 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
 	if err != nil {
-		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
-			if pgErr.ConstraintName == "batch_change_name_is_valid" {
-				return ErrInvalidBatchChangeName
-			}
+		if isInvalidNameErr(err) {
+			return ErrInvalidBatchChangeName
 		}
 		return err
 	}
@@ -719,4 +713,13 @@ func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 		&dbutil.NullTime{Time: &c.ClosedAt},
 		&dbutil.NullInt64{N: &c.BatchSpecID},
 	)
+}
+
+func isInvalidNameErr(err error) bool {
+	if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
+		if pgErr.ConstraintName == "batch_change_name_is_valid" {
+			return true
+		}
+	}
+	return false
 }
