@@ -1,4 +1,4 @@
-import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import { FC, forwardRef, InputHTMLAttributes, ReactNode, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -19,23 +19,30 @@ export enum InputStatus {
     valid = 'valid',
 }
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    /** text label of input. */
+export { Label }
+
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+    /**
+     * Text label of input.
+     * @deprecated Use <Label /> composition components instead
+     */
     label?: ReactNode
+
     /** Description block shown below the input. */
     message?: ReactNode
-    /** Custom class name for root label element. */
-    className?: string
+
     /** Custom class name for input element. */
     inputClassName?: string
+
     /** Input icon (symbol) which render right after the input element. */
     inputSymbol?: ReactNode
+
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
+
     /** Optional error (validation) message. Rendered as Markdown. */
     error?: string
-    /** Disable input behavior */
-    disabled?: boolean
+
     /** Determines the size of the input */
     variant?: 'regular' | 'small'
 }
@@ -53,60 +60,40 @@ export const Input = forwardRef(function Input(props, reference) {
         className,
         inputClassName,
         inputSymbol,
-        disabled,
         status = InputStatus.initial,
         error,
         autoFocus,
-        ...otherProps
+        ...attributes
     } = props
 
-    const localReference = useRef<HTMLInputElement>(null)
-    const mergedReference = useMergeRefs([localReference, reference])
-
-    useAutoFocus({ autoFocus, reference: localReference })
-
-    const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
             <LoaderInput
                 className={classNames('loader-input', styles.loaderInput, !label && className)}
                 loading={status === InputStatus.loading}
             >
-                <Component
-                    {...otherProps}
+                <InputElement
+                    as={Component}
+                    {...attributes}
+                    ref={reference}
+                    variant={variant}
+                    status={status}
                     type={type}
-                    disabled={disabled}
-                    ref={mergedReference}
                     autoFocus={autoFocus}
-                    className={classNames(
-                        inputClassName,
-                        status === InputStatus.loading && styles.inputLoading,
-                        'form-control',
-                        'with-invalid-icon',
-                        {
-                            'is-valid': status === InputStatus.valid,
-                            'is-invalid': error || status === InputStatus.error,
-                            'form-control-sm': variant === 'small',
-                        }
-                    )}
+                    className={inputClassName}
                 />
 
                 {inputSymbol}
             </LoaderInput>
 
-            {error && (
-                <small role="alert" aria-live="polite" className={classNames('text-danger', messageClassName)}>
-                    <ErrorMessage error={error} />
-                </small>
-            )}
-
-            {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}
+            {error && <InputErrorMessage message={error} className="mt-2" />}
+            {!error && message && <InputDescription message={message} className="mt-2" />}
         </>
     )
 
     if (label) {
         return (
-            <Label className={classNames('w-100', className)}>
+            <Label className={classNames(styles.label, className)}>
                 {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
                 {inputWithMessage}
             </Label>
@@ -116,4 +103,76 @@ export const Input = forwardRef(function Input(props, reference) {
     return inputWithMessage
 }) as ForwardReferenceComponent<'input', InputProps>
 
-Input.displayName = 'Input'
+interface InputElementProps {
+    variant?: 'regular' | 'small'
+    status?: InputStatus | `${InputStatus}`
+}
+
+export const InputElement = forwardRef(function InputElement(props, ref) {
+    const {
+        status = InputStatus.initial,
+        variant = 'regular',
+        as: Component = 'input',
+        autoFocus,
+        className,
+        ...attributes
+    } = props
+
+    const mergedReference = useMergeRefs([ref])
+
+    useAutoFocus({ autoFocus, reference: mergedReference })
+
+    return (
+        <Component
+            {...attributes}
+            ref={mergedReference}
+            className={classNames(
+                className,
+                status === InputStatus.loading && styles.inputLoading,
+                'form-control',
+                'with-invalid-icon',
+                {
+                    'is-valid': status === InputStatus.valid,
+                    'is-invalid': status === InputStatus.error,
+                    'form-control-sm': variant === 'small',
+                }
+            )}
+        />
+    )
+}) as ForwardReferenceComponent<'input', InputElementProps>
+
+interface InputDescriptionProps extends HTMLAttributes<HTMLElement> {
+    message?: ReactNode
+}
+
+export const InputDescription: FC<InputDescriptionProps> = props => {
+    const { message, children, className, ...attributes } = props
+
+    return (
+        <small
+            {...attributes}
+            className={classNames('text-muted form-text font-weight-normal', styles.descriptionBlock, className)}
+        >
+            {message ?? children}
+        </small>
+    )
+}
+
+interface InputErrorMessageProps extends HTMLAttributes<HTMLElement> {
+    message?: string
+}
+
+export const InputErrorMessage: FC<InputErrorMessageProps> = props => {
+    const { message, className, ...attributes } = props
+
+    return (
+        <small
+            {...attributes}
+            role="alert"
+            aria-live="polite"
+            className={classNames('text-danger form-text font-weight-normal', className)}
+        >
+            <ErrorMessage error={message} />
+        </small>
+    )
+}
