@@ -369,7 +369,8 @@ SELECT
 	gr.last_fetched,
 	gr.last_changed,
 	gr.repo_size_bytes,
-	gr.updated_at
+	gr.updated_at,
+    gr.corrupted_at
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
@@ -390,7 +391,8 @@ SELECT
 	gr.last_fetched,
 	gr.last_changed,
 	gr.repo_size_bytes,
-	gr.updated_at
+	gr.updated_at,
+    gr.corrupted_at
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
@@ -430,6 +432,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.LastChanged,
 		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		&gr.UpdatedAt,
+		&gr.CorruptedAt,
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
