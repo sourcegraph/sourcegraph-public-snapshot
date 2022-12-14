@@ -188,7 +188,9 @@ const SlowRequestNode: React.FunctionComponent<{ node: React.PropsWithChildren<S
             <div className={classNames('d-flex flex-row')}>
                 <div>
                     <Tooltip
-                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to set $SRC_ACCESS_TOKEN)'}
+                        content={
+                            copied ? 'cURL command copied' : 'Copy cURL command (remember to set $SRC_ACCESS_TOKEN)'
+                        }
                     >
                         <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
                             <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} />
