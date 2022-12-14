@@ -115,7 +115,8 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	return nil
 }
 
-// Remove removes the e-mail from the specified user.
+// Remove removes the e-mail from the specified user. Perforce external accounts
+// using the e-mail will also be removed.
 func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (err error) {
 	logger := e.logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
@@ -180,6 +181,8 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 }
 
 // SetVerified sets the supplied e-mail as the verified email for the given user.
+// If verified is false, Perforce external accounts using the e-mail will be
+// removed.
 func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) (err error) {
 	logger := e.logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
 
