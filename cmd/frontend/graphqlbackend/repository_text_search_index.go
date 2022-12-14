@@ -113,7 +113,6 @@ func (r *repositoryTextSearchIndexStatus) Host(ctx context.Context) (*repository
 	host, err := searchzoekt.GetIndexserverHost(ctx, api.RepoName(r.entry.Repository.Name))
 	if err != nil {
 		host = searchzoekt.Host{Name: "unknown"}
-
 	}
 	return &repositoryIndexserverHostResolver{
 		host,
