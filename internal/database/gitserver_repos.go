@@ -311,7 +311,7 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at,
+    gr.corrupted_at
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s

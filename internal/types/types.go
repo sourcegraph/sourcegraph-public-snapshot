@@ -68,8 +68,6 @@ type Repo struct {
 	UpdatedAt time.Time
 	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
 	DeletedAt time.Time
-	// CorruptedAt is when it was detected that this repository is corrupt
-	CorruptedAt *time.Time
 	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
