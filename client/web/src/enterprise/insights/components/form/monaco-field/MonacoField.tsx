@@ -1,11 +1,18 @@
-import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
+import {
+    createContext,
+    forwardRef,
+    InputHTMLAttributes,
+    useContext,
+    useImperativeHandle,
+    useMemo,
+} from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { QueryChangeSource } from '@sourcegraph/shared/src/search'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
@@ -43,15 +50,15 @@ export const MonacoFocusContainer = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'div'>
 
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
-    value: string
+    queryState: QueryState
     patternType?: SearchPatternType
     onBlur?: () => void
-    onChange?: (value: string) => void
+    onChange?: (value: QueryState) => void
 }
 
 export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
-        value,
+        queryState,
         className,
         onChange = noop,
         onBlur = noop,
@@ -79,11 +86,11 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     return (
         <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
-            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+            queryState={queryState}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
-            onChange={({ query }) => onChange(query)}
+            onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
             globbing={true}
