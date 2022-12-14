@@ -1347,8 +1347,8 @@ func TestCorruptedAt(t *testing.T) {
 			t.Fatalf("failed to get repo: %s", err)
 		}
 
-		if repo.CorruptedAt == nil {
-			t.Error("expected CorruptedAt to be set. Got nil")
+		if repo.CorruptedAt.IsZero() {
+			t.Errorf("expected CorruptedAt to be set. Got zero value for time %q", repo.CorruptedAt)
 		}
 	})
 	t.Run("time is set when corruption detected with corrupted pack file", func(t *testing.T) {
@@ -1402,8 +1402,8 @@ error: packfile .git/objects/pack/pack-afb4ebe8cd0cdbb7c5c7f09dce89adda4316e560.
 			t.Fatalf("failed to get repo: %s", err)
 		}
 
-		if repo.CorruptedAt == nil {
-			t.Error("expected CorruptedAt to be set. Got nil")
+		if repo.CorruptedAt.IsZero() {
+			t.Errorf("expected CorruptedAt to be set. Got zero value for time %q", repo.CorruptedAt)
 		}
 	})
 }

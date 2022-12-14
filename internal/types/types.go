@@ -558,7 +558,7 @@ type GitserverRepo struct {
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
 	// Time when corruption of repo was detected
-	CorruptedAt *time.Time
+	CorruptedAt time.Time
 	UpdatedAt   time.Time
 }
 

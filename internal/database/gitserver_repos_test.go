@@ -536,8 +536,8 @@ func TestCorruptedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
-		if fromDB == nil {
-			t.Error("Expected corruptedAt time to be set. Got nil")
+		if fromDB.CorruptedAt.IsZero() {
+			t.Errorf("Expected corruptedAt time to be set. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
@@ -554,8 +554,8 @@ func TestCorruptedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
-		if fromDB.CorruptedAt != nil {
-			t.Errorf("Expected corruptedAt to be nil. Got %s", fromDB.CorruptedAt)
+		if fromDB.CorruptedAt.IsZero() {
+			t.Errorf("Expected corruptedAt to be nil. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
@@ -572,8 +572,8 @@ func TestCorruptedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
-		if fromDB.CorruptedAt != nil {
-			t.Errorf("Expected corruptedAt to be nil. Got %s", fromDB.CorruptedAt)
+		if fromDB.CorruptedAt.IsZero() {
+			t.Errorf("Expected corruptedAt to be nil. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
 }
