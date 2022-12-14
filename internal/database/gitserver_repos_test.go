@@ -558,7 +558,7 @@ func TestCorruptedAt(t *testing.T) {
 			t.Errorf("Expected corruptedAt to be nil. Got %s", fromDB.CorruptedAt)
 		}
 	})
-	t.Run("setting close status clears corruptedAt time", func(t *testing.T) {
+	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
 			Name:          "github.com/sourcegraph/repo3",
 			RepoSizeBytes: 100,
