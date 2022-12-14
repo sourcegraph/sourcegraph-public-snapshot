@@ -15445,6 +15445,9 @@ type MockExecutorStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *ExecutorStoreGetByIDFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *ExecutorStoreHandleFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExecutorStoreListFunc
@@ -15488,6 +15491,11 @@ func NewMockExecutorStore() *MockExecutorStore {
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: func(context.Context, int) (r0 types.Executor, r1 bool, r2 error) {
+				return
+			},
+		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -15548,6 +15556,11 @@ func NewStrictMockExecutorStore() *MockExecutorStore {
 				panic("unexpected invocation of MockExecutorStore.GetByID")
 			},
 		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockExecutorStore.Handle")
+			},
+		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
 				panic("unexpected invocation of MockExecutorStore.List")
@@ -15595,6 +15608,9 @@ func NewMockExecutorStoreFrom(i ExecutorStore) *MockExecutorStore {
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: i.GetByID,
+		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: i.List,
@@ -16151,6 +16167,104 @@ func (c ExecutorStoreGetByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c ExecutorStoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ExecutorStoreHandleFunc describes the behavior when the Handle method of
+// the parent MockExecutorStore instance is invoked.
+type ExecutorStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []ExecutorStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(ExecutorStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockExecutorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreHandleFunc) appendCall(r0 ExecutorStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreHandleFunc) History() []ExecutorStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockExecutorStore.
+type ExecutorStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ExecutorStoreListFunc describes the behavior when the List method of the
@@ -39658,6 +39772,9 @@ type MockSubRepoPermsStore struct {
 	// GetByUserAndServiceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByUserAndService.
 	GetByUserAndServiceFunc *SubRepoPermsStoreGetByUserAndServiceFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *SubRepoPermsStoreHandleFunc
 	// RepoIDSupportedFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoIDSupported.
 	RepoIDSupportedFunc *SubRepoPermsStoreRepoIDSupportedFunc
@@ -39700,6 +39817,11 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 		},
 		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
 			defaultHook: func(context.Context, int32, string, string) (r0 map[api.ExternalRepoSpec]authz.SubRepoPermissions, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &SubRepoPermsStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -39761,6 +39883,11 @@ func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
 				panic("unexpected invocation of MockSubRepoPermsStore.GetByUserAndService")
 			},
 		},
+		HandleFunc: &SubRepoPermsStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockSubRepoPermsStore.Handle")
+			},
+		},
 		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: func(context.Context, api.RepoID) (bool, error) {
 				panic("unexpected invocation of MockSubRepoPermsStore.RepoIDSupported")
@@ -39810,6 +39937,9 @@ func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
 		},
 		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
 			defaultHook: i.GetByUserAndService,
+		},
+		HandleFunc: &SubRepoPermsStoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: i.RepoIDSupported,
@@ -40269,6 +40399,105 @@ func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Args() []interface{} {
 // invocation.
 func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// SubRepoPermsStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockSubRepoPermsStore instance is invoked.
+type SubRepoPermsStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []SubRepoPermsStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockSubRepoPermsStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(SubRepoPermsStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockSubRepoPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *SubRepoPermsStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockSubRepoPermsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SubRepoPermsStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SubRepoPermsStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SubRepoPermsStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *SubRepoPermsStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SubRepoPermsStoreHandleFunc) appendCall(r0 SubRepoPermsStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SubRepoPermsStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *SubRepoPermsStoreHandleFunc) History() []SubRepoPermsStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]SubRepoPermsStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SubRepoPermsStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockSubRepoPermsStore.
+type SubRepoPermsStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SubRepoPermsStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SubRepoPermsStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SubRepoPermsStoreRepoIDSupportedFunc describes the behavior when the
@@ -46848,6 +47077,9 @@ type MockUserStore struct {
 	// GetByVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByVerifiedEmail.
 	GetByVerifiedEmailFunc *UserStoreGetByVerifiedEmailFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *UserStoreHandleFunc
 	// HardDeleteFunc is an instance of a mock function object controlling
 	// the behavior of the method HardDelete.
 	HardDeleteFunc *UserStoreHardDeleteFunc
@@ -46986,6 +47218,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: func(context.Context, string) (r0 *types.User, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -47166,6 +47403,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
 			},
 		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserStore.Handle")
+			},
+		},
 		HardDeleteFunc: &UserStoreHardDeleteFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.HardDelete")
@@ -47310,6 +47552,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: i.GetByVerifiedEmail,
+		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		HardDeleteFunc: &UserStoreHardDeleteFunc{
 			defaultHook: i.HardDelete,
@@ -49086,6 +49331,104 @@ func (c UserStoreGetByVerifiedEmailFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreGetByVerifiedEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreHandleFunc describes the behavior when the Handle method of the
+// parent MockUserStore instance is invoked.
+type UserStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []UserStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(UserStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockUserStore instance is invoked and the hook queue is empty.
+func (f *UserStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockUserStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *UserStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreHandleFunc) appendCall(r0 UserStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreHandleFuncCall objects describing
+// the invocations of this function.
+func (f *UserStoreHandleFunc) History() []UserStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockUserStore.
+type UserStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UserStoreHardDeleteFunc describes the behavior when the HardDelete method
