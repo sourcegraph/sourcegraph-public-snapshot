@@ -1269,5 +1269,5 @@ type RepositoryPreviewPayload {
     """
     The number of repositories matched.
     """
-    numberOfRepositories: Int!
+    numberOfRepositories: Int
 }
