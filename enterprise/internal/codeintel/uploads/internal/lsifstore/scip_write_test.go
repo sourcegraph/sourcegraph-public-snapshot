@@ -30,40 +30,69 @@ func TestInsertMetadata(t *testing.T) {
 	}
 }
 
-func TestInsertSCIPDocument(t *testing.T) {
+func TestInsertSharedDocumentsConcurrently(t *testing.T) {
+	t.Skip()
+
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
-	if _, err := store.InsertSCIPDocument(
+	tx1, err := store.Transact(ctx)
+	if err != nil {
+		t.Fatalf("failed to start transaction: %s", err)
+	}
+	scipWriter24, err := tx1.NewSCIPWriter(ctx, 24)
+	if err != nil {
+		t.Fatalf("failed to create SCIP writer: %s", err)
+	}
+	if err := scipWriter24.InsertDocument(
 		ctx,
-		24,
 		"internal/util.go",
 		[]byte("deadbeef"),
 		[]byte("lorem ipsum dolor sit amet"),
+		nil,
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
+	if _, err := scipWriter24.Flush(ctx); err != nil {
+		t.Fatalf("failed to flush SCIP data: %s", err)
+	}
+	if err := tx1.Done(nil); err != nil {
+		t.Fatalf("failed to commit transaction: %s", err)
+	}
 
-	if _, err := store.InsertSCIPDocument(
+	tx2, err := store.Transact(ctx)
+	if err != nil {
+		t.Fatalf("failed to start transaction: %s", err)
+	}
+	scipWriter25, err := tx2.NewSCIPWriter(ctx, 25)
+	if err != nil {
+		t.Fatalf("failed to create SCIP writer: %s", err)
+	}
+	if err := scipWriter25.InsertDocument(
 		ctx,
-		25,
 		"internal/util.go",
 		[]byte("deadbeef"),
 		[]byte("lorem ipsum dolor sit amet"),
+		nil,
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
-
-	if _, err := store.InsertSCIPDocument(
+	if err := scipWriter25.InsertDocument(
 		ctx,
-		25,
 		"internal/util_test.go",
 		[]byte("cafebabe"),
 		[]byte("consectetur adipiscing elit, sed do eiusmod"),
+		nil,
 	); err != nil {
 		t.Fatalf("failed to write SCIP document: %s", err)
+	}
+	if _, err := scipWriter25.Flush(ctx); err != nil {
+		t.Fatalf("failed to flush SCIP data: %s", err)
+	}
+	if err := tx2.Done(nil); err != nil {
+		t.Fatalf("failed to commit transaction: %s", err)
 	}
 
 	count, _, err := basestore.ScanFirstInt(codeIntelDB.Handle().QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
@@ -74,24 +103,11 @@ func TestInsertSCIPDocument(t *testing.T) {
 	}
 }
 
-func TestWriteSCIPSymbols(t *testing.T) {
+func TestInsertDocumentWithSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
-
-	uploadID := 24
-
-	documentLookupID, err := store.InsertSCIPDocument(
-		ctx,
-		uploadID,
-		"internal/util.go",
-		[]byte("deadbeef"),
-		[]byte("lorem ipsum dolor sit amet"),
-	)
-	if err != nil {
-		t.Fatalf("failed to write SCIP document: %s", err)
-	}
 
 	symbols := []types.InvertedRangeIndex{
 		{
@@ -141,17 +157,27 @@ func TestWriteSCIPSymbols(t *testing.T) {
 	}
 	defer func() { _ = tx.Done(nil) }()
 
-	symbolWriter, err := tx.NewSymbolWriter(ctx, uploadID)
+	scipWriter24, err := tx.NewSCIPWriter(ctx, 24)
 	if err != nil {
 		t.Fatalf("failed to write SCIP symbols: %s", err)
 	}
-	if err := symbolWriter.WriteSCIPSymbols(ctx, documentLookupID, symbols); err != nil {
+	if err := scipWriter24.InsertDocument(
+		ctx,
+		"internal/util.go",
+		[]byte("deadbeef"),
+		[]byte("lorem ipsum dolor sit amet"),
+		symbols,
+	); err != nil {
+		t.Fatalf("failed to write SCIP document: %s", err)
+	}
+	n, err := scipWriter24.Flush(ctx)
+	if err != nil {
 		t.Fatalf("failed to write SCIP symbols: %s", err)
 	}
-
-	if n, err := symbolWriter.Flush(ctx); err != nil {
-		t.Fatalf("failed to write SCIP symbols: %s", err)
-	} else if expected := uint32(3); n != expected {
+	if err := tx.Done(nil); err != nil {
+		t.Fatalf("failed to commit transaction: %s", err)
+	}
+	if expected := uint32(3); n != expected {
 		t.Fatalf("unexpected number of symbols inserted. want=%d have=%d", expected, n)
 	}
 }

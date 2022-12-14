@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"encoding/base64"
 	"sort"
 	"sync/atomic"
 
@@ -72,50 +71,7 @@ INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_nam
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
-func (s *store) InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (_ int, err error) {
-	ctx, _, endObservation := s.operations.insertSCIPDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("uploadID", uploadID),
-		otlog.String("documentPath", documentPath),
-		otlog.String("hash", base64.StdEncoding.EncodeToString(hash)),
-		otlog.Int("rawSCIPPayloadLen", len(rawSCIPPayload)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	id, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
-		insertSCIPDocumentQuery,
-		1,
-		hash,
-		rawSCIPPayload,
-		hash,
-		uploadID,
-		documentPath,
-	)))
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
-}
-
-const insertSCIPDocumentQuery = `
-WITH
-new_shared_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (%s, %s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-),
-shared_document AS (
-	SELECT id FROM new_shared_document
-	UNION ALL
-	SELECT id FROM codeintel_scip_documents WHERE payload_hash = %s
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM shared_document LIMIT 1
-RETURNING id
-`
-
-func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter, error) {
+func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
 	if !s.db.InTransaction() {
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
 	}
@@ -150,7 +106,7 @@ func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter
 		"type_definition_ranges",
 	)
 
-	symbolWriter := &symbolWriter{
+	scipWriter := &scipWriter{
 		uploadID:           uploadID,
 		db:                 s.db,
 		symbolNameInserter: symbolNameInserter,
@@ -158,10 +114,29 @@ func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter
 		count:              0,
 	}
 
-	return symbolWriter, nil
+	return scipWriter, nil
 }
 
-type symbolWriter struct {
+const writeSCIPSymbolsTemporarySymbolNamesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+	id integer NOT NULL,
+	name_segment text NOT NULL,
+	prefix_id integer
+) ON COMMIT DROP
+`
+
+const writeSCIPSymbolsTemporarySymbolsTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
+	symbol_id integer NOT NULL,
+	document_lookup_id integer NOT NULL,
+	definition_ranges bytea,
+	reference_ranges bytea,
+	implementation_ranges bytea,
+	type_definition_ranges bytea
+) ON COMMIT DROP
+`
+
+type scipWriter struct {
 	uploadID           int
 	nextID             int
 	db                 *basestore.Store
@@ -170,7 +145,42 @@ type symbolWriter struct {
 	count              uint32
 }
 
-func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
+func (s *scipWriter) InsertDocument(ctx context.Context, documentPath string, hash []byte, rawSCIPPayload []byte, symbols []types.InvertedRangeIndex) error {
+	documentLookupID, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+		insertSCIPDocumentQuery,
+		1,
+		hash,
+		rawSCIPPayload,
+		hash,
+		s.uploadID,
+		documentPath,
+	)))
+	if err != nil {
+		return err
+	}
+
+	return s.WriteSCIPSymbols(ctx, documentLookupID, symbols)
+}
+
+const insertSCIPDocumentQuery = `
+WITH
+new_shared_document AS (
+	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
+	VALUES (%s, %s, %s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+),
+shared_document AS (
+	SELECT id FROM new_shared_document
+	UNION ALL
+	SELECT id FROM codeintel_scip_documents WHERE payload_hash = %s
+)
+INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
+SELECT %s, %s, id FROM shared_document LIMIT 1
+RETURNING id
+`
+
+func (s *scipWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
 	symbolNameMap := make(map[string]struct{}, len(symbols))
 	for _, invertedRange := range symbols {
 		symbolNameMap[invertedRange.SymbolName] = struct{}{}
@@ -250,7 +260,18 @@ func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID in
 	return nil
 }
 
-func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
+func (s *scipWriter) flush(ctx context.Context) error {
+	// TODO
+	return nil
+}
+
+func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
+	// Flush all buffered documents
+	if err := s.flush(ctx); err != nil {
+		return 0, err
+	}
+
+	// Flush all data into temp tables
 	if err := s.symbolNameInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
@@ -258,6 +279,7 @@ func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
 		return 0, err
 	}
 
+	// Move all data from temp tables into target tables
 	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsFlushSymbolNamesQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
@@ -267,14 +289,6 @@ func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
 
 	return s.count, nil
 }
-
-const writeSCIPSymbolsTemporarySymbolNamesTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
-	id integer NOT NULL,
-	name_segment text NOT NULL,
-	prefix_id integer
-) ON COMMIT DROP
-`
 
 const writeSCIPSymbolsFlushSymbolNamesQuery = `
 INSERT INTO codeintel_scip_symbol_names (
@@ -289,17 +303,6 @@ SELECT
 	source.name_segment,
 	source.prefix_id
 FROM t_codeintel_scip_symbol_names source
-`
-
-const writeSCIPSymbolsTemporarySymbolsTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_id integer NOT NULL,
-	document_lookup_id integer NOT NULL,
-	definition_ranges bytea,
-	reference_ranges bytea,
-	implementation_ranges bytea,
-	type_definition_ranges bytea
-) ON COMMIT DROP
 `
 
 const writeSCIPSymbolsFlushSymbolsQuery = `

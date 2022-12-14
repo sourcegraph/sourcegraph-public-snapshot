@@ -347,32 +347,28 @@ func writeSCIPData(
 		return err
 	}
 
-	symbolWriter, err := tx.NewSymbolWriter(ctx, upload.ID)
+	scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
 	if err != nil {
 		return err
 	}
 
 	var numDocuments uint32
 	for document := range correlatedSCIPData.Documents {
-		documentLookupID, err := tx.InsertSCIPDocument(
+		if err := scipWriter.InsertDocument(
 			ctx,
-			upload.ID,
 			document.DocumentPath,
 			document.Hash,
 			document.RawSCIPPayload,
-		)
-		if err != nil {
+			document.Symbols,
+		); err != nil {
 			return err
 		}
 
-		if err := symbolWriter.WriteSCIPSymbols(ctx, documentLookupID, document.Symbols); err != nil {
-			return err
-		}
 		numDocuments += 1
 	}
 	trace.Log(otlog.Uint32("numDocuments", numDocuments))
 
-	count, err := symbolWriter.Flush(ctx)
+	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}
