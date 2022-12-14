@@ -94,7 +94,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     )
 
     return (
-        <div className="site-admin-migrations-page">
+        <div className="site-admin-slow-requests-page">
             <PageTitle title="Slow requests - Admin" />
             <PageHeader
                 path={[{ text: 'Slow requests' }]}
@@ -136,7 +136,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                     noun="request"
                     pluralNoun="requests"
                     queryConnection={querySlowRequests}
-                    nodeComponent={MigrationNode}
+                    nodeComponent={SlowRequestNode}
                     filters={filters}
                     history={history}
                     location={history.location}
@@ -147,7 +147,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     )
 }
 
-const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<SlowRequest> }> = ({ node }) => {
+const SlowRequestNode: React.FunctionComponent<{ node: React.PropsWithChildren<SlowRequest> }> = ({ node }) => {
     const roundedSecond = Number(node.duration.toFixed(2))
     const [copied, setCopied] = useState(false)
 
