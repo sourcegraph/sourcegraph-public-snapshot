@@ -159,8 +159,9 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
-			RepoDir: dir,
-			Query:   tree,
+			RepoDir:              dir,
+			Query:                tree,
+			IncludeModifiedFiles: true,
 		}
 		var matches []*protocol.CommitMatch
 		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
@@ -369,6 +370,12 @@ index 0000000000..7e54670557
 	lc := &LazyCommit{
 		RawCommit: &RawCommit{
 			AuthorName: []byte("Camden Cheek"),
+			ModifiedFiles: [][]byte{
+				[]byte("M"),
+				[]byte("internal/compute/match.go"),
+				[]byte("M"),
+				[]byte("internal/compute/match_test.go"),
+			},
 		},
 		diff: parsedDiff,
 	}

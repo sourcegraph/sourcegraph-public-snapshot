@@ -205,25 +205,37 @@ type DiffModifiesFile struct {
 }
 
 func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	foundMatch := false
+	for _, fileName := range lc.ModifiedFiles() {
+		if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
+			foundMatch = true
+			break
+		}
+	}
+	if !foundMatch {
+		return filterResult(false), MatchedCommit{}, nil
+	}
+
+	diff, err := lc.Diff()
+	if err != nil {
+		return filterResult(false), MatchedCommit{}, err
+	}
+
 	var fileDiffHighlights map[int]MatchedFileDiff
-	var matchedFileDiffs map[int]struct{}
-	for i, fileName := range lc.RawCommit.ModifiedFiles {
-		matches := dmf.FindAllIndex(fileName, -1, &lc.LowerBuf)
-		if len(matches) == 0 {
-			continue
+	matchedFileDiffs := make(map[int]struct{})
+	for fileIdx, fileDiff := range diff {
+		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
+		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
+		if oldFileMatches != nil || newFileMatches != nil {
+			if fileDiffHighlights == nil {
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
+			}
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{
+				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
+				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
+			}
+			matchedFileDiffs[fileIdx] = struct{}{}
 		}
-
-		if fileDiffHighlights == nil {
-			fileDiffHighlights = make(map[int]MatchedFileDiff, 1)
-		}
-		if matchedFileDiffs == nil {
-			matchedFileDiffs = make(map[int]struct{}, 1)
-		}
-
-		fileDiffHighlights[i] = MatchedFileDiff{
-			NewFile: matchesToRanges(fileName, matches),
-		}
-		matchedFileDiffs[i] = struct{}{}
 	}
 
 	return CommitFilterResult{MatchedFileDiffs: matchedFileDiffs}, MatchedCommit{Diff: fileDiffHighlights}, nil

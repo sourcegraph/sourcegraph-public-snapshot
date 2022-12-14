@@ -86,14 +86,36 @@ func (l *LazyCommit) SourceRefs() []string {
 }
 
 func (l *LazyCommit) ModifiedFiles() []string {
-	files := make([]string, 0, len(l.RawCommit.ModifiedFiles))
-	for _, b := range l.RawCommit.ModifiedFiles {
-		f := strings.TrimSpace(string(b))
-		if len(b) == 0 {
-			// Filter out empty strings
-			continue
+	files := make([]string, 0, len(l.RawCommit.ModifiedFiles)/2)
+	addFile := func(raw []byte) {
+		fileName := string(bytes.TrimSpace(raw))
+		if len(fileName) == 0 {
+			return
 		}
-		files = append(files, f)
+		files = append(files, fileName)
+	}
+	i := 0
+	for i < len(l.RawCommit.ModifiedFiles) {
+		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
+			break
+		}
+		switch l.RawCommit.ModifiedFiles[i][0] {
+		case 'R':
+			// SAFETY: don't assume that we have the right number of things
+			if i+2 >= len(l.RawCommit.ModifiedFiles) {
+				return files
+			}
+			addFile(l.RawCommit.ModifiedFiles[i+1])
+			addFile(l.RawCommit.ModifiedFiles[i+2])
+			i += 3
+		default:
+			// SAFETY: don't assume that we have the right number of things
+			if i+1 >= len(l.RawCommit.ModifiedFiles) {
+				return files
+			}
+			addFile(l.RawCommit.ModifiedFiles[i+1])
+			i += 2
+		}
 	}
 	return files
 }

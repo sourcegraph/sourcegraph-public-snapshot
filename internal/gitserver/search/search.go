@@ -138,7 +138,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	revArgs := revsToGitArgs(cs.Revisions)
 	args := append(logArgs, revArgs...)
 	if cs.IncludeModifiedFiles {
-		args = append(args, "--name-only")
+		args = append(args, "--name-status")
 	}
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = cs.RepoDir
