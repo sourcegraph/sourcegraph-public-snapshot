@@ -205,7 +205,7 @@ matching_prefixes(upload_id, id, prefix, search) AS (
 -- that still have a non-empty search field, as this indicates a proper prefix and
 -- therefore a non-match. The remaining rows will all be exact matches.
 matching_symbol_names AS (
-	SELECT id, mp.prefix AS symbol_name
+	SELECT mp.upload_id, mp.id, mp.prefix AS symbol_name
 	FROM matching_prefixes mp
 	WHERE mp.search = ''
 )
