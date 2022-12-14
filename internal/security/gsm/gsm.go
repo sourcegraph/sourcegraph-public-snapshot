@@ -62,6 +62,12 @@ func Get(name, description string) string {
 			value:       value,
 		}
 
+		secrets = append(secrets, secret{
+			name:        name,
+			description: description,
+			value:       value,
+		})
+
 		return value
 	}
 
