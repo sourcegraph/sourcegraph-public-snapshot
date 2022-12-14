@@ -2,7 +2,9 @@ package blobstore_test
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,7 +30,21 @@ func TestGetNotExists(t *testing.T) {
 	store, server := initTestStore(ctx, t)
 	defer server.Close()
 
-	_ = store
+	reader, err := store.Get(ctx, "does-not-exist-key")
+	if err != nil {
+		t.Fatal("expected a reader, got an error", err)
+	}
+	defer reader.Close()
+	data, err := ioutil.ReadAll(reader)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "NotFound") {
+		t.Fatalf("expected NotFound error, got %+v", err)
+	}
+	if len(data) != 0 {
+		t.Fatal("expected no data")
+	}
 }
 
 // Tests uploading an object works.

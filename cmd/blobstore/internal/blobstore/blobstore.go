@@ -57,7 +57,9 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 	path := strings.FieldsFunc(r.URL.Path, func(r rune) bool { return r == '/' })
 	switch r.Method {
 	case "PUT":
-		if len(path) == 1 { // PUT /<bucket>
+		if len(path) == 1 {
+			// PUT /<bucket>
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html
 			if r.ContentLength != 0 {
 				return errors.Newf("expected CreateBucket request to have content length 0: %s %s", r.Method, r.URL)
 			}
@@ -67,11 +69,18 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			w.WriteHeader(http.StatusOK)
 			return nil
 		}
-		return errors.Newf("unexpected request(0): %s %s", r.Method, r.URL)
+		return errors.Newf("unexpected PUT request: %s", r.URL)
 	case "GET":
-		return errors.Newf("unexpected request(1): %s %s", r.Method, r.URL)
+		if len(path) == 2 && r.URL.Query().Get("x-id") == "GetObject" {
+			// GET /<bucket>/<key>?x-id=GetObject
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
+			// TODO(blobstore): implement me!
+			w.WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		return errors.Newf("unexpected GET request: %s", r.URL)
 	default:
-		return errors.Newf("unexpected request(2): %s %s", r.Method, r.URL)
+		return errors.Newf("unexpected request: %s %s", r.Method, r.URL)
 	}
 }
 
