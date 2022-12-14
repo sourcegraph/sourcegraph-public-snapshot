@@ -205,15 +205,21 @@ type DiffModifiesFile struct {
 }
 
 func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	foundMatch := false
-	for _, fileName := range lc.ModifiedFiles() {
-		if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
-			foundMatch = true
-			break
+	{
+		// This block pre-filters a commit based on the output of the `--name-status` output.
+		// It is significantly cheaper to get the changed file names compared to generating the full
+		// diff, so we try to short-circuit when possible.
+
+		foundMatch := false
+		for _, fileName := range lc.ModifiedFiles() {
+			if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
+				foundMatch = true
+				break
+			}
 		}
-	}
-	if !foundMatch {
-		return filterResult(false), MatchedCommit{}, nil
+		if !foundMatch {
+			return filterResult(false), MatchedCommit{}, nil
+		}
 	}
 
 	diff, err := lc.Diff()
