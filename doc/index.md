@@ -27,12 +27,12 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 ### Self-hosted
 
 <div class="grid">
-  <!-- AWS AMI-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-ami">
+  <!-- AWS One Click-->
+  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
     <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
     <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
-    <h3>AWS</h3>
-    <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
+    <h3>AWS One-Click</h3>
+    <p>Deploy onto AWS in one click</p>
   </a>
 </div>
 <div class="grid">
@@ -49,13 +49,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
     <h3>Azure</h3>
     <p>Deploy onto Microsoft Azure</p>
-  </a>
-  <!-- AWS One Click-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
-    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
-    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
-    <h3>AWS One-Click</h3>
-    <p>Deploy onto AWS in one click</p>
   </a>
   <!-- Digital Ocean -->
   <a class="btn-app btn" href="/admin/deploy/docker-compose/digitalocean">
