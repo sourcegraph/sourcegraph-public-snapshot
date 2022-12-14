@@ -2,6 +2,7 @@ package userpasswd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -253,67 +254,71 @@ func TestHandleAccount_UnlockByAdmin(t *testing.T) {
 	}
 	h := HandleUnlockUserAccount(logger, db, lockout)
 
-	// unauthorized request if not admin
-	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		require.NoError(t, err)
-
-		resp := httptest.NewRecorder()
-		h(resp, req)
-		assert.Equal(t, http.StatusUnauthorized, resp.Code)
-		assert.Equal(t, "Only site admins can unlock user accounts\n", resp.Body.String())
+	tests := []struct {
+		name       string
+		username   string
+		userExists bool
+		userLocked bool
+		isAdmin    bool
+		status     int
+		body       string
+	}{
+		{
+			name:    "unauthorized request if not admin",
+			isAdmin: false,
+			status:  http.StatusUnauthorized,
+			body:    "Only site admins can unlock user accounts\n",
+		},
+		{
+			name:    "bad request if missing username",
+			isAdmin: true,
+			status:  http.StatusBadRequest,
+			body:    "Bad request: missing username\n",
+		},
+		{
+			name:     "not found if user does not exist",
+			username: "sguser1",
+			isAdmin:  true,
+			status:   http.StatusNotFound,
+			body:     "Not found: could not find user with username \"sguser1\"\n",
+		},
+		{
+			name:       "bad request if user is not locked",
+			username:   "sguser1",
+			userExists: true,
+			isAdmin:    true,
+			status:     http.StatusBadRequest,
+			body:       "User with username \"sguser1\" is not locked\n",
+		},
+		{
+			name:       "ok result",
+			username:   "sguser1",
+			userExists: true,
+			userLocked: true,
+			isAdmin:    true,
+			status:     http.StatusOK,
+		},
 	}
 
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: test.isAdmin}, nil)
 
-	// bad request if missing user id
-	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		require.NoError(t, err)
+			if test.userExists {
+				users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: test.username}, nil)
+			} else {
+				users.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
+			}
 
-		resp := httptest.NewRecorder()
-		h(resp, req)
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "Bad request: missing username\n", resp.Body.String())
-	}
+			lockout.IsLockedOutFunc.SetDefaultReturn("", test.userLocked)
 
-	// not found if user does not exist
-	users.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
-	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
-		require.NoError(t, err)
+			req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(fmt.Sprintf(`{"username": "%s"}`, test.username)))
+			require.NoError(t, err)
 
-		resp := httptest.NewRecorder()
-		h(resp, req)
-		assert.Equal(t, http.StatusNotFound, resp.Code)
-		assert.Equal(t, "Not found: could not find user with username \"sguser1\"\n", resp.Body.String())
-	}
-
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: "sguser1"}, nil)
-
-	// bad request if user is not locked
-	lockout.IsLockedOutFunc.SetDefaultReturn("", false)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{Username: "sguser1"}, nil)
-	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
-		require.NoError(t, err)
-
-		resp := httptest.NewRecorder()
-		h(resp, req)
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "User with username \"sguser1\" is not locked\n", resp.Body.String())
-	}
-
-	// ok result
-	lockout.IsLockedOutFunc.SetDefaultReturn("", true)
-	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "username": "sguser1" }`))
-		require.NoError(t, err)
-
-		resp := httptest.NewRecorder()
-		h(resp, req)
-
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, "", resp.Body.String())
+			resp := httptest.NewRecorder()
+			h(resp, req)
+			assert.Equal(t, test.status, resp.Code)
+			assert.Equal(t, test.body, resp.Body.String())
+		})
 	}
 }

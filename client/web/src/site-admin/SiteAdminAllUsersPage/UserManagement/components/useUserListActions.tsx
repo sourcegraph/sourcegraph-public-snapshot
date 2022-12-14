@@ -141,7 +141,8 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
                                     Successfully unlocked user <strong>{user.username}</strong>{' '}
                                 </Text>,
                                 true
-                            )
+                            )()
+                            return
                         }
 
                         response
