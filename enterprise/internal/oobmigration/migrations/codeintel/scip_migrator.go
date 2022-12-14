@@ -557,8 +557,23 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	var symbolNameTrie trie.Trie
 	symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
 
-	// TODO - batch
+	symbolNameByIDs := map[int]string{}
+	idsBySymbolName := map[string]int{}
+
 	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		name := prefix
+		if parentID != nil {
+			parentPrefix, ok := symbolNameByIDs[*parentID]
+			if !ok {
+				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+			}
+
+			name = parentPrefix + prefix
+		}
+		symbolNameByIDs[id] = name
+		idsBySymbolName[name] = id
+
+		// TODO - batch
 		return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
 	}); err != nil {
 		return err
@@ -579,8 +594,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 				return err
 			}
 
-			// TODO - pre-calculate map
-			symbolID, ok := symbolNameTrie.Search(index.SymbolName)
+			symbolID, ok := idsBySymbolName[index.SymbolName]
 			if !ok {
 				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
 			}
