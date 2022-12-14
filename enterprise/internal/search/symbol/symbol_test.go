@@ -9,11 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -34,7 +35,7 @@ func TestFilterZoektResults(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	checker, err := authz.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
+	checker, err := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +53,7 @@ func TestFilterZoektResults(t *testing.T) {
 			},
 		},
 	}
-	filtered, err := filterZoektResults(ctx, checker, repoName, results)
+	filtered, err := symbol.FilterZoektResults(ctx, checker, repoName, results)
 	if err != nil {
 		t.Fatal(err)
 	}
