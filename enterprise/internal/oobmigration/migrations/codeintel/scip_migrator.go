@@ -513,20 +513,62 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	s.batch = nil
 	s.batchPayloadSum = 0
 
-	documentLookupIDs := make([]int, 0, len(documents))
-	for _, document := range documents {
-		documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
-			scipWriterWriteDocumentQuery,
-			document.payloadHash,
-			document.payload,
-			s.uploadID,
-			document.path,
-		)))
-		if err != nil {
-			return err
-		}
+	documentIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_documents",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"schema_version",
+			"payload_hash",
+			"raw_scip_payload",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for _, document := range documents {
+				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
+					return err
+				}
+			}
 
-		documentLookupIDs = append(documentLookupIDs, documentLookupID)
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentIDs) != len(documents) {
+		return errors.New("unexpected number of document records inserted")
+	}
+
+	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_document_lookup",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"upload_id",
+			"document_path",
+			"document_id",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for i, document := range documents {
+				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentLookupIDs) != len(documents) {
+		return errors.New("unexpected number of document lookup records inserted")
 	}
 
 	symbolNameMap := map[string]struct{}{}
@@ -626,18 +668,6 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 
 	return nil
 }
-
-const scipWriterWriteDocumentQuery = `
-WITH
-new_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (1, %s, %s)
-	RETURNING id
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM new_document
-RETURNING id
-`
 
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
