@@ -872,6 +872,7 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+
 const listUsersInactiveCond = `
 (NOT EXISTS (
 	SELECT 1 FROM event_logs
@@ -881,6 +882,7 @@ const listUsersInactiveCond = `
 		timestamp >= %s
 ))
 `
+
 const orgMembershipCond = `
 EXISTS (
 	SELECT 1
@@ -1153,7 +1155,6 @@ WHERE id=%s
       AND expired_at IS NULL
     )
 `, passwd, id, id))
-
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}

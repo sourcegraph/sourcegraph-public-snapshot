@@ -123,6 +123,41 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         [onError, createOnSuccess]
     )
 
+    const handleUnlockUser = useCallback(
+        ([user]: SiteUser[]) => {
+            if (confirm("Are you sure you want to unlock this user's account?")) {
+                fetch('/-/unlock-user-account', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: user.username }),
+                })
+                    .then(response => {
+                        if (response.status === 200) {
+                            createOnSuccess(
+                                <Text as="span">
+                                    Successfully unlocked user <strong>{user.username}</strong>{' '}
+                                </Text>,
+                                true
+                            )()
+                            return
+                        }
+
+                        response
+                            .text()
+                            .then(text => {
+                                onError(new Error('Failed to unlock user: ' + text))
+                            })
+                            .catch(onError)
+                    })
+                    .catch(onError)
+            }
+        },
+        [onError, createOnSuccess]
+    )
+
     const handleRevokeSiteAdmin = useCallback(
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
@@ -179,6 +214,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         handleDeleteUsers,
         handleDeleteUsersForever,
         handlePromoteToSiteAdmin,
+        handleUnlockUser,
         handleRevokeSiteAdmin,
         handleResetUserPassword,
         handleDismissNotification,
