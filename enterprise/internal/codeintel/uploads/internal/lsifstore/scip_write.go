@@ -148,16 +148,16 @@ type scipWriter struct {
 }
 
 type bufferedDocument struct {
-	documentPath   string
-	hash           []byte
-	rawSCIPPayload []byte
-	symbols        []types.InvertedRangeIndex
+	path               string
+	payload            []byte
+	payloadHash        []byte
+	invertedRangeIndex []types.InvertedRangeIndex
 }
 
 const DocumentsBatchSize = 256
 const MaxBatchPayloadSum = 1024 * 1024 * 32
 
-func (s *scipWriter) InsertDocument(ctx context.Context, documentPath string, hash []byte, rawSCIPPayload []byte, symbols []types.InvertedRangeIndex) error {
+func (s *scipWriter) InsertDocument(ctx context.Context, path string, payloadHash []byte, payload []byte, symbols []types.InvertedRangeIndex) error {
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
 		if err := s.flush(ctx); err != nil {
 			return err
@@ -165,12 +165,12 @@ func (s *scipWriter) InsertDocument(ctx context.Context, documentPath string, ha
 	}
 
 	s.batch = append(s.batch, bufferedDocument{
-		documentPath:   documentPath,
-		hash:           hash,
-		rawSCIPPayload: rawSCIPPayload,
-		symbols:        symbols,
+		path:               path,
+		payload:            payload,
+		payloadHash:        payloadHash,
+		invertedRangeIndex: symbols,
 	})
-	s.batchPayloadSum += len(rawSCIPPayload)
+	s.batchPayloadSum += len(payload)
 
 	if len(s.batch) >= DocumentsBatchSize {
 		if err := s.flush(ctx); err != nil {
@@ -199,7 +199,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		"id",
 		func(inserter *batch.Inserter) error {
 			for _, document := range documents {
-				if err := inserter.Insert(ctx, 1, document.hash, document.rawSCIPPayload); err != nil {
+				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
 					return err
 				}
 			}
@@ -228,7 +228,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		"id",
 		func(inserter *batch.Inserter) error {
 			for i, document := range documents {
-				if err := inserter.Insert(ctx, s.uploadID, document.documentPath, documentIDs[i]); err != nil {
+				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
 					return err
 				}
 			}
@@ -243,67 +243,68 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return errors.New("unexpected number of document lookup records inserted")
 	}
 
-	for i, document := range documents {
-		// TODO - hoist
-		symbolNameMap := make(map[string]struct{}, len(document.symbols))
-		for _, invertedRange := range document.symbols {
+	symbolNameMap := map[string]struct{}{}
+	for _, document := range documents {
+		for _, invertedRange := range document.invertedRangeIndex {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
-		symbolNames := make([]string, 0, len(symbolNameMap))
-		for symbolName := range symbolNameMap {
-			symbolNames = append(symbolNames, symbolName)
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
+
+	var symbolNameTrie trie.Trie
+	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+
+	symbolNameByIDs := map[int]string{}
+	idsBySymbolName := map[string]int{}
+
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		name := prefix
+		if parentID != nil {
+			parentPrefix, ok := symbolNameByIDs[*parentID]
+			if !ok {
+				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+			}
+
+			name = parentPrefix + prefix
 		}
-		sort.Strings(symbolNames)
+		symbolNameByIDs[id] = name
+		idsBySymbolName[name] = id
 
-		var symbolNameTrie trie.Trie
-		symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
-
-		symbolNameByIDs := map[int]string{}
-		idsBySymbolName := map[string]int{}
-
-		if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-			name := prefix
-			if parentID != nil {
-				parentPrefix, ok := symbolNameByIDs[*parentID]
-				if !ok {
-					return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
-				}
-
-				name = parentPrefix + prefix
-			}
-			symbolNameByIDs[id] = name
-			idsBySymbolName[name] = id
-
-			if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
-				return err
-			}
-
-			return nil
-		}); err != nil {
+		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
 			return err
 		}
 
-		for _, symbol := range document.symbols {
-			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for i, document := range documents {
+		for _, index := range document.invertedRangeIndex {
+			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
 			if err != nil {
 				return err
 			}
-			typeDefinitionRanges, err := types.EncodeRanges(symbol.TypeDefinitionRanges)
+			typeDefinitionRanges, err := types.EncodeRanges(index.TypeDefinitionRanges)
 			if err != nil {
 				return err
 			}
 
-			symbolID, ok := idsBySymbolName[symbol.SymbolName]
+			symbolID, ok := idsBySymbolName[index.SymbolName]
 			if !ok {
-				return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
 			}
 
 			if err := s.symbolInserter.Insert(
