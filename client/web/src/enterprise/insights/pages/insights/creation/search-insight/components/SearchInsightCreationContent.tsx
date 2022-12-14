@@ -36,6 +36,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
         form: { values, formAPI, handleSubmit },
         title,
         repositories,
+        repoQuery,
         series,
         step,
         stepValue,
@@ -83,6 +84,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 submitted={formAPI.submitted}
                 title={title}
                 repositories={repositories}
+                repoQuery={repoQuery}
                 allReposMode={allReposMode}
                 series={series}
                 step={step}

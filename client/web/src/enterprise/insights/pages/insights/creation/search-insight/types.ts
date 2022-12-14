@@ -1,4 +1,6 @@
-import { EditableDataSeries } from '../../../../components/creation-ui/form-series/types'
+import { QueryState } from '@sourcegraph/search'
+
+import { EditableDataSeries } from '../../../../components'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
@@ -11,6 +13,12 @@ export interface CreateInsightFormFields {
 
     /** Repositories which to be used to get the info for code insights */
     repositories: string
+
+    /**
+     * Search-powered query, this is used to gather different repositories though
+     * search API instead of having strict list of repo URLs.
+     */
+    repoQuery: QueryState
 
     /** Setting for set chart step - how often do we collect data. */
     step: InsightStep

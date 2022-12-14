@@ -1,12 +1,11 @@
 import { FC, FormEventHandler, ReactNode, FormHTMLAttributes } from 'react'
 
-import { Checkbox, Input, Link } from '@sourcegraph/wildcard'
+import { Input } from '@sourcegraph/wildcard'
 
 import {
     FormSeries,
     CodeInsightDashboardsVisibility,
     CodeInsightTimeStepPicker,
-    RepositoriesField,
     FormGroup,
     getDefaultInputProps,
     useFieldAPI,
@@ -14,6 +13,8 @@ import {
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateInsightFormFields } from '../types'
+
+import { RepoSettingSection } from './insight-repo-section/InsightRepoSection'
 
 interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     handleSubmit: FormEventHandler
@@ -26,6 +27,7 @@ interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFor
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
+    repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
 
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
@@ -54,6 +56,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         title,
         repositories,
         allReposMode,
+        repoQuery,
         series,
         stepValue,
         step,
@@ -69,47 +72,9 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
     return (
         // eslint-disable-next-line react/forbid-elements
         <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
-            <FormGroup
-                name="insight repositories"
-                title="Targeted repositories"
-                subtitle="Create a list of repositories to run your search over"
-            >
-                <Input
-                    as={RepositoriesField}
-                    autoFocus={true}
-                    required={true}
-                    label="Repositories"
-                    message="Separate repositories with commas"
-                    placeholder={
-                        allReposMode.input.value ? 'All repositories' : 'Example: github.com/sourcegraph/sourcegraph'
-                    }
-                    className="mb-0 d-flex flex-column"
-                    {...getDefaultInputProps(repositories)}
-                />
+            <RepoSettingSection allReposMode={allReposMode} repositories={repositories} repoQuery={repoQuery} />
 
-                <Checkbox
-                    {...allReposMode.input}
-                    type="checkbox"
-                    id="RunInsightsOnAllRepoCheck"
-                    wrapperClassName="mb-1 mt-3 font-weight-normal"
-                    value="all-repos-mode"
-                    checked={allReposMode.input.value}
-                    label="Run your insight over all your repositories"
-                />
-
-                <small className="w-100 mt-2 text-muted">
-                    This feature is actively in development. Read about the{' '}
-                    <Link
-                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        limitations here.
-                    </Link>
-                </small>
-
-                <hr aria-hidden={true} className="my-4 w-100" />
-            </FormGroup>
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             <FormGroup
                 name="data series group"
