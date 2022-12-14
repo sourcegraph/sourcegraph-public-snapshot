@@ -54,6 +54,9 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
                         newLinesCount
                         defaultBranchNewLinesCount
                         otherBranchesNewLinesCount
+                        host {
+                            name
+                        }
                     }
                     refs {
                         ref {
@@ -285,7 +288,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 {this.state.textSearchIndex.status && (
                                     <>
                                         <H3>Statistics</H3>
-                                        <table className={classNames('table mb-0', styles.stats)}>
+                                        <table className={classNames('table mb-3', styles.stats)}>
                                             <tbody>
                                                 <tr>
                                                     <th>Last indexed at</th>
@@ -325,6 +328,15 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                         {this.state.textSearchIndex.status.otherBranchesNewLinesCount.toLocaleString()}
                                                         )
                                                     </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <H3>Indexserver</H3>
+                                        <table className={classNames('table mb-0', styles.stats)}>
+                                            <tbody>
+                                                <tr>
+                                                    <th>Hostname</th>
+                                                    <td>{this.state.textSearchIndex.status.host?.name}</td>
                                                 </tr>
                                             </tbody>
                                         </table>

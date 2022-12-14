@@ -12,9 +12,11 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
@@ -101,6 +103,25 @@ func (r *repositoryTextSearchIndexStatus) DefaultBranchNewLinesCount() int32 {
 
 func (r *repositoryTextSearchIndexStatus) OtherBranchesNewLinesCount() int32 {
 	return int32(r.entry.Stats.OtherBranchesNewLinesCount)
+}
+
+func (r *repositoryTextSearchIndexStatus) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	host, err := searchzoekt.GetIndexserverHost(ctx, api.RepoName(r.entry.Repository.Name))
+	if err != nil {
+		host = searchzoekt.Host{Name: fmt.Sprintf("unknown: %s", err)}
+
+	}
+	return &repositoryIndexserverHostResolver{
+		host,
+	}, nil
+}
+
+type repositoryIndexserverHostResolver struct {
+	host searchzoekt.Host
+}
+
+func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
+	return r.host.Name
 }
 
 func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*repositoryTextSearchIndexedRef, error) {
