@@ -537,9 +537,12 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		documentLookupIDs = append(documentLookupIDs, documentLookupID)
 	}
 
-	for i, document := range documents {
-		symbols := types.ExtractSymbolIndexes(document.scipDocument)
+	invertedRangeIndexForDocuments := make([][]types.InvertedRangeIndex, 0, len(documents))
+	for _, document := range documents {
+		invertedRangeIndexForDocuments = append(invertedRangeIndexForDocuments, types.ExtractSymbolIndexes(document.scipDocument))
+	}
 
+	for i, symbols := range invertedRangeIndexForDocuments {
 		symbolNameMap := make(map[string]struct{}, len(symbols))
 		for _, invertedRange := range symbols {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
