@@ -91,7 +91,7 @@ func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolv
 	return u, nil
 }
 
-func (r *executorSecretAccessLogResolver) MachineUser() bool {
+func (r *executorSecretAccessLogResolver) MachineUser() string {
 	return r.log.MachineUser
 }
 
