@@ -177,8 +177,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         let iconProps
         if (
             data.statusMessages?.some(
-                ({ __typename: type }) =>
-                    type === 'ExternalServiceSyncError' || type === 'SyncError'
+                ({ __typename: type }) => type === 'ExternalServiceSyncError' || type === 'SyncError'
             )
         ) {
             codeHostMessage = 'Syncing repositories failed!'
