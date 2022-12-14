@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"io"
 	"os"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	scip "github.com/sourcegraph/scip/bindings/go/scip"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -183,7 +186,7 @@ func TestHandleSCIP(t *testing.T) {
 	scipWriter := NewMockSCIPWriter()
 	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
-	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ []byte, _ []byte, _ []codeinteltypes.InvertedRangeIndex) error {
+	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
 		return nil
 	})
 
@@ -360,15 +363,19 @@ func TestHandleSCIP(t *testing.T) {
 		for _, call := range scipWriter.InsertDocumentFunc.History() {
 			switch call.Arg1 {
 			case "template/src/util/promise.ts":
+				payload, _ := proto.Marshal(call.Arg2)
+				hash := sha256.New()
+				_, _ = hash.Write(payload)
+
 				foundDocument1 = true
 				expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
-				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(call.Arg2)); diff != "" {
+				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(hash.Sum(nil))); diff != "" {
 					t.Errorf("unexpected hash (-want +got):\n%s", diff)
 				}
 
 			case "template/src/util/graphql.ts":
 				foundDocument2 = true
-				if diff := cmp.Diff(testedInvertedRangeIndex, call.Arg4); diff != "" {
+				if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(call.Arg2)); diff != "" {
 					t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
 				}
 			}
