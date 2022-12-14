@@ -143,26 +143,71 @@ type scipWriter struct {
 	symbolNameInserter *batch.Inserter
 	symbolInserter     *batch.Inserter
 	count              uint32
+	batchPayloadSum    int
+	batch              []bufferedDocument
 }
+
+type bufferedDocument struct {
+	documentPath   string
+	hash           []byte
+	rawSCIPPayload []byte
+	symbols        []types.InvertedRangeIndex
+}
+
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
 
 func (s *scipWriter) InsertDocument(ctx context.Context, documentPath string, hash []byte, rawSCIPPayload []byte, symbols []types.InvertedRangeIndex) error {
-	documentLookupID, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
-		insertSCIPDocumentQuery,
-		1,
-		hash,
-		rawSCIPPayload,
-		hash,
-		s.uploadID,
-		documentPath,
-	)))
-	if err != nil {
-		return err
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
 	}
 
-	return s.WriteSCIPSymbols(ctx, documentLookupID, symbols)
+	s.batch = append(s.batch, bufferedDocument{
+		documentPath:   documentPath,
+		hash:           hash,
+		rawSCIPPayload: rawSCIPPayload,
+		symbols:        symbols,
+	})
+	s.batchPayloadSum += len(rawSCIPPayload)
+
+	if len(s.batch) >= DocumentsBatchSize {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-const insertSCIPDocumentQuery = `
+func (s *scipWriter) flush(ctx context.Context) error {
+	documents := s.batch
+	s.batch = nil
+	s.batchPayloadSum = 0
+
+	for _, document := range documents {
+		documentLookupID, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+			scipWriterFlushQuery,
+			1,
+			document.hash,
+			document.rawSCIPPayload,
+			document.hash,
+			s.uploadID,
+			document.documentPath,
+		)))
+		if err != nil {
+			return err
+		}
+
+		if err := s.WriteSCIPSymbols(ctx, documentLookupID, document.symbols); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const scipWriterFlushQuery = `
 WITH
 new_shared_document AS (
 	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
@@ -257,11 +302,6 @@ func (s *scipWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int,
 		atomic.AddUint32(&s.count, 1)
 	}
 
-	return nil
-}
-
-func (s *scipWriter) flush(ctx context.Context) error {
-	// TODO
 	return nil
 }
 
