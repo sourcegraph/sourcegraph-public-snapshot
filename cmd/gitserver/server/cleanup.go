@@ -553,13 +553,12 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 }
 
 func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
-	reason := ""
 	// We treat repositories missing HEAD to be corrupt. Both our cloning
 	// and fetching ensure there is a HEAD file.
 	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-		reason = "missing-head"
+		return true, "missing-head", nil
 	} else if err != nil {
-		return false, reason, err
+		return false, "", err
 	}
 
 	// We have seen repository corruption fail in such a way that the git
@@ -568,11 +567,11 @@ func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
 	// repos as corrupt. Since we often fetch with ensureRevision, this
 	// leads to most commands failing against the repository. It is safer
 	// to remove now than try a safe reclone.
-	if reason == "" && gitIsNonBareBestEffort(dir) {
-		reason = "non-bare"
+	if gitIsNonBareBestEffort(dir) {
+		return true, "non-bare", nil
 	}
 
-	return true, reason, nil
+	return false, "", nil
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos
