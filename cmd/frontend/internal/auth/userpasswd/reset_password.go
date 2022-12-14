@@ -129,10 +129,25 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 		return "", errors.Wrap(err, "make password reset URL")
 	}
 
+	// Configure the template
+	emailTemplate := defaultSetPasswordEmailTemplate
+	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
+		if customTemplates.SetPassword != nil {
+			customTemplate, err := txemail.FromSiteConfigTemplate(*customTemplates.SetPassword)
+
+			// If valid, use the custom template. If invalid, proceed with the default
+			// template and discard the error - it will also be rendered in site config
+			// problems.
+			if err == nil {
+				emailTemplate = *customTemplate
+			}
+		}
+	}
+
 	rus := globals.ExternalURL().ResolveReference(ru).String()
 	if err := txemail.Send(ctx, "password_set", txemail.Message{
 		To:       []string{e},
-		Template: setPasswordEmailTemplates,
+		Template: emailTemplate,
 		Data: struct {
 			Username string
 			URL      string
@@ -149,7 +164,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 	return rus, nil
 }
 
-var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+var defaultSetPasswordEmailTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `Set your Sourcegraph password ({{.Host}})`,
 	Text: `
 Your administrator created an account for you on Sourcegraph ({{.Host}}).
