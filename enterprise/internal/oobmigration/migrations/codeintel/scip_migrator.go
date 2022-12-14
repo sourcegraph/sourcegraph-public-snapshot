@@ -551,22 +551,43 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	symbolNameByIDs := map[int]string{}
 	idsBySymbolName := map[string]int{}
 
-	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-		name := prefix
-		if parentID != nil {
-			parentPrefix, ok := symbolNameByIDs[*parentID]
-			if !ok {
-				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+	if err := batch.WithInserter(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_symbol_names", // TODO - temp table trickery
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"id",
+			"upload_id", // TODO - share
+			"name_segment",
+			"prefix_id",
+		},
+		func(inserter *batch.Inserter) error {
+			if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+				name := prefix
+				if parentID != nil {
+					parentPrefix, ok := symbolNameByIDs[*parentID]
+					if !ok {
+						return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+					}
+
+					name = parentPrefix + prefix
+				}
+				symbolNameByIDs[id] = name
+				idsBySymbolName[name] = id
+
+				if err := inserter.Insert(ctx, id, s.uploadID, prefix, parentID); err != nil {
+					return err
+				}
+
+				return nil
+			}); err != nil {
+				return err
 			}
 
-			name = parentPrefix + prefix
-		}
-		symbolNameByIDs[id] = name
-		idsBySymbolName[name] = id
-
-		// TODO - batch
-		return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
-	}); err != nil {
+			return nil
+		},
+	); err != nil {
 		return err
 	}
 
