@@ -12,6 +12,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
@@ -328,23 +329,11 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	payload, err := proto.Marshal(scipDocument)
-	if err != nil {
-		return err
-	}
-
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-
 	if err := scipWriter.Write(
 		ctx,
 		uploadID,
 		path,
-		compressedPayload,
-		hashPayload(payload),
-		types.ExtractSymbolIndexes(scipDocument),
+		scipDocument,
 	); err != nil {
 		return err
 	}
@@ -483,15 +472,23 @@ func (s *scipWriter) Write(
 	ctx context.Context,
 	uploadID int,
 	path string,
-	payload []byte,
-	payloadHash []byte,
-	symbols []types.InvertedRangeIndex,
+	scipDocument *ogscip.Document,
 ) error {
 	uniquePrefix := []byte(fmt.Sprintf(
 		"lsif-%d:%d:",
 		uploadID,
 		time.Now().UnixNano()/int64(time.Millisecond)),
 	)
+
+	payload, err := proto.Marshal(scipDocument)
+	if err != nil {
+		return err
+	}
+
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
 
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
 		if err := s.flush(ctx); err != nil {
@@ -501,11 +498,11 @@ func (s *scipWriter) Write(
 
 	s.batch = append(s.batch, bufferedDocument{
 		path:        path,
-		payload:     payload,
+		payload:     compressedPayload,
 		payloadHash: append(uniquePrefix, hashPayload(payload)...),
-		symbols:     symbols,
+		symbols:     types.ExtractSymbolIndexes(scipDocument),
 	})
-	s.batchPayloadSum += len(payload)
+	s.batchPayloadSum += len(compressedPayload)
 
 	if len(s.batch) >= DocumentsBatchSize {
 		if err := s.flush(ctx); err != nil {
