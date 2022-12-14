@@ -3456,6 +3456,10 @@ type RepositoryTextSearchIndex {
     Git refs in the repository that are configured for text search indexing.
     """
     refs: [RepositoryTextSearchIndexedRef!]!
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
+    host: repositoryIndexserverHost
 }
 
 """
@@ -3497,11 +3501,6 @@ type RepositoryTextSearchIndexStatus {
     EXPERIMENTAL: The number of newlines in the other branches.
     """
     otherBranchesNewLinesCount: Int!
-
-    """
-    Information about the indexserver that hosts the repo's index.
-    """
-    host: repositoryIndexserverHost
 }
 
 """

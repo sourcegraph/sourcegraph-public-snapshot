@@ -12,7 +12,6 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -69,6 +68,28 @@ func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*reposi
 	return &repositoryTextSearchIndexStatus{entry: *entry}, nil
 }
 
+func (r *repositoryTextSearchIndexResolver) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	// We don't want to let the user wait for too long. If the socket
+	// connection is working, 500ms should be generous.
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Millisecond*500))
+	defer cancel()
+	host, err := searchzoekt.GetIndexserverHost(ctx, r.repo.RepoName())
+	if err != nil {
+		host = searchzoekt.Host{Name: "unknown"}
+	}
+	return &repositoryIndexserverHostResolver{
+		host,
+	}, nil
+}
+
+type repositoryIndexserverHostResolver struct {
+	host searchzoekt.Host
+}
+
+func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
+	return r.host.Name
+}
+
 type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
@@ -103,28 +124,6 @@ func (r *repositoryTextSearchIndexStatus) DefaultBranchNewLinesCount() int32 {
 
 func (r *repositoryTextSearchIndexStatus) OtherBranchesNewLinesCount() int32 {
 	return int32(r.entry.Stats.OtherBranchesNewLinesCount)
-}
-
-func (r *repositoryTextSearchIndexStatus) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
-	// We don't want to let the user wait for too long. If the socket
-	// connection is working, 500ms should be generous.
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Millisecond*500))
-	defer cancel()
-	host, err := searchzoekt.GetIndexserverHost(ctx, api.RepoName(r.entry.Repository.Name))
-	if err != nil {
-		host = searchzoekt.Host{Name: "unknown"}
-	}
-	return &repositoryIndexserverHostResolver{
-		host,
-	}, nil
-}
-
-type repositoryIndexserverHostResolver struct {
-	host searchzoekt.Host
-}
-
-func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
-	return r.host.Name
 }
 
 func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*repositoryTextSearchIndexedRef, error) {

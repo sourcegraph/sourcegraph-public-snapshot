@@ -54,9 +54,6 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
                         newLinesCount
                         defaultBranchNewLinesCount
                         otherBranchesNewLinesCount
-                        host {
-                            name
-                        }
                     }
                     refs {
                         ref {
@@ -76,6 +73,9 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
                                 url
                             }
                         }
+                    }
+                    host {
+                        name
                     }
                 }
             }
@@ -285,7 +285,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         ))}
                                     </ul>
                                 )}
-                                {this.state.textSearchIndex.status && (
+                                {this.state.textSearchIndex.status && this.state.textSearchIndex.host && (
                                     <>
                                         <H3>Statistics</H3>
                                         <table className={classNames('table mb-3', styles.stats)}>
@@ -336,7 +336,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                             <tbody>
                                                 <tr>
                                                     <th>Hostname</th>
-                                                    <td>{this.state.textSearchIndex.status.host?.name}</td>
+                                                    <td>{this.state.textSearchIndex.host.name}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
