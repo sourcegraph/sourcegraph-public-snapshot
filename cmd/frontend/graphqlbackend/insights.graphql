@@ -1233,61 +1233,41 @@ extend type Query {
     """
     Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
     """
-    validateScopedInsightQuery(input: ValidateScopedInsightQueryInput!): ScopedInsightQueryResult!
+    validateScopedInsightQuery(query: String!): ScopedInsightQueryPayload!
+    """
+    Returns the number of repositories matched given a valid query.
+    """
+    previewRepositoriesFromQuery(query: String!): RepositoryPreviewPayload!
 }
 
 """
-Input object for a scoped insight query.
-"""
-input ValidateScopedInsightQueryInput {
-    """
-    Query to run for finding insight scope. Currently limited to repo filters and boolean predicates only.
-    """
-    query: String!
-    """
-    Whether to fetch the number of repositories the query matches.
-    """
-    fetchNumberOfRepositories: Boolean!
-}
-
-"""
-Defines whether we were able to return a preview of the insight scope.
-"""
-union ScopedInsightQueryResult = ScopedInsightQueryPayloadNotAvailable | ScopedInsightQueryPayload
-
-"""
-Indicates that fetching the query payload was not available
-"""
-type ScopedInsightQueryPayloadNotAvailable {
-    """
-    The specific reason the payload is not available
-    """
-    reason: String!
-    """
-    The general reason the payload is not available
-    """
-    reasonType: ScopedInsightQueryPayloadNotAvailableReasonType!
-}
-
-"""
-An enum to describe the reasons why a scoped insight query payload is not available
-"""
-enum ScopedInsightQueryPayloadNotAvailableReasonType {
-    INVALID_SCOPE_QUERY
-    UNSUPPORTED_SEARCH_ARGUMENT
-    SCOPE_SEARCH_ERROR
-}
-
-"""
-Returns number of repositories a scoped insight will run over and a query to show which repositories it will match.
+Information about scope query validity
 """
 type ScopedInsightQueryPayload {
     """
-    The number of repositories matched by query for the calling user.
-    """
-    numberOfRepositories: Int
-    """
-    Validated query that can be run for previewing repository scope.
+    The original query.
     """
     query: String!
+    """
+    Whether the query is valid.
+    """
+    isValid: Boolean!
+    """
+    The reason why the query is invalid.
+    """
+    invalidReason: String
+}
+
+"""
+Information about the number of repositories matched from a query
+"""
+type RepositoryPreviewPayload {
+    """
+    The query used to find number of repository matches.
+    """
+    query: String!
+    """
+    The number of repositories matched.
+    """
+    numberOfRepositories: Int!
 }

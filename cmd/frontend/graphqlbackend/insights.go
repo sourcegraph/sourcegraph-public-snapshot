@@ -22,7 +22,8 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResultResolver, error)
+	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
+	PreviewRepositoriesFromQuery(ctx context.Context, args PreviewRepositoriesFromQueryArgs) (RepositoryPreviewPayloadResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -480,25 +481,20 @@ type GenericIncompleteDatapointAlert interface {
 }
 
 type ValidateScopedInsightQueryArgs struct {
-	Input ValidateScopedInsightQueryInput
-}
-
-type ValidateScopedInsightQueryInput struct {
-	Query                     string
-	FetchNumberOfRepositories bool
-}
-
-type ScopedInsightQueryPayloadResultResolver interface {
-	ToScopedInsightQueryPayload() (ScopedInsightQueryPayloadResolver, bool)
-	ToScopedInsightQueryPayloadNotAvailable() (ScopedInsightQueryPayloadNotAvailableResolver, bool)
+	Query string
 }
 
 type ScopedInsightQueryPayloadResolver interface {
-	NumberOfRepositories(ctx context.Context) *int32
 	Query(ctx context.Context) string
+	IsValid(ctx context.Context) bool
+	InvalidReason(ctx context.Context) *string
 }
 
-type ScopedInsightQueryPayloadNotAvailableResolver interface {
-	Reason() string
-	ReasonType() string //enum
+type PreviewRepositoriesFromQueryArgs struct {
+	Query string
+}
+
+type RepositoryPreviewPayloadResolver interface {
+	Query(ctx context.Context) string
+	NumberOfRepositories(ctx context.Context) *int32
 }
