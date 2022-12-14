@@ -56,7 +56,7 @@ type Resolved struct {
 }
 
 // MaybeSendStats is a convenience which will stream a stats event if r
-// contains any.
+// contains any missing backends.
 func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
 	if r.BackendsMissing > 0 {
 		stream.Send(streaming.SearchEvent{
