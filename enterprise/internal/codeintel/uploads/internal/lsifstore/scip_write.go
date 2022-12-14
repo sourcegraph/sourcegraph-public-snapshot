@@ -185,45 +185,73 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	s.batch = nil
 	s.batchPayloadSum = 0
 
-	for _, document := range documents {
-		documentLookupID, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
-			scipWriterFlushQuery,
-			1,
-			document.hash,
-			document.rawSCIPPayload,
-			document.hash,
-			s.uploadID,
-			document.documentPath,
-		)))
-		if err != nil {
-			return err
-		}
+	documentIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.db.Handle(),
+		"codeintel_scip_documents",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"schema_version",
+			"payload_hash",
+			"raw_scip_payload",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for _, document := range documents {
+				if err := inserter.Insert(ctx, 1, document.hash, document.rawSCIPPayload); err != nil {
+					return err
+				}
+			}
 
-		if err := s.WriteSCIPSymbols(ctx, documentLookupID, document.symbols); err != nil {
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentIDs) != len(documents) {
+		return errors.New("unexpected number of document records inserted")
+	}
+
+	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.db.Handle(),
+		"codeintel_scip_document_lookup",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"upload_id",
+			"document_path",
+			"document_id",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for i, document := range documents {
+				if err := inserter.Insert(ctx, s.uploadID, document.documentPath, documentIDs[i]); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentLookupIDs) != len(documents) {
+		return errors.New("unexpected number of document lookup records inserted")
+	}
+
+	for i, document := range documents {
+		// TODO - inline
+		if err := s.WriteSCIPSymbols(ctx, documentLookupIDs[i], document.symbols); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
-
-const scipWriterFlushQuery = `
-WITH
-new_shared_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (%s, %s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-),
-shared_document AS (
-	SELECT id FROM new_shared_document
-	UNION ALL
-	SELECT id FROM codeintel_scip_documents WHERE payload_hash = %s
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM shared_document LIMIT 1
-RETURNING id
-`
 
 func (s *scipWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
 	symbolNameMap := make(map[string]struct{}, len(symbols))
