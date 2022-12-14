@@ -66,7 +66,9 @@ func TestStatusMessages(t *testing.T) {
 		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
-		defer func() { repos.MockStatusMessages = nil }()
+		t.Cleanup(func() {
+			repos.MockStatusMessages = nil
+		})
 
 		RunTests(t, []*Test{
 			{
@@ -99,7 +101,7 @@ func TestStatusMessages(t *testing.T) {
 			res := []repos.StatusMessage{
 				{
 					GitUpdatesDisabled: &repos.GitUpdatesDisabled{
-						Message: "Repos will not be cloned or updated.",
+						Message: "Repositories will not be cloned or updated.",
 					},
 				},
 				{
@@ -128,10 +130,10 @@ func TestStatusMessages(t *testing.T) {
 			},
 		})
 
-		defer func() {
+		t.Cleanup(func() {
 			repos.MockStatusMessages = nil
 			conf.Mock(nil)
-		}()
+		})
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -141,7 +143,7 @@ func TestStatusMessages(t *testing.T) {
 						"statusMessages": [
 							{
 								"__typename": "GitUpdatesDisabled",
-        						"message": "Repos will not be cloned or updated."
+        						"message": "Repositories will not be cloned or updated."
 							},
 							{
 								"__typename": "CloningProgress",
