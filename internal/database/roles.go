@@ -37,9 +37,12 @@ var roleInsertColumns = []*sqlf.Query{
 type RoleStore interface {
 	basestore.ShareableStore
 
-	GetByID(context.Context, GetRoleOpts) (*types.Role, error)
-	List(context.Context, RolesListOptions) ([]*types.Role, error)
-	Create(context.Context, string, bool) (*types.Role, error)
+	Count(ctx context.Context, opts RolesListOptions) (int, error)
+	Create(ctx context.Context, name string, readonly bool) (*types.Role, error)
+	Delete(ctx context.Context, opts DeleteRoleOpts) error
+	GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
+	List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error)
+	Update(ctx context.Context, role *types.Role) (*types.Role, error)
 }
 
 type RoleOpts struct {
@@ -76,18 +79,16 @@ LIMIT 1;
 `
 
 func (r *roleStore) GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
-	var preds []*sqlf.Query
-
-	if opts.ID > 0 {
-		preds = append(preds, sqlf.Sprintf("id = %d", opts.ID))
+	if opts.ID <= 0 {
+		return nil, errors.New("missing id from sql query")
 	}
 
-	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	whereClause := sqlf.Sprintf("id = %s AND deleted_at IS NULL", opts.ID)
 
 	q := sqlf.Sprintf(
 		getRoleFmtStr,
 		sqlf.Join(roleColumns, ", "),
-		sqlf.Join(preds, "\n AND "),
+		whereClause,
 	)
 
 	role, err := scanRole(r.QueryRow(ctx, q))
@@ -191,4 +192,65 @@ func (r *roleStore) Create(ctx context.Context, name string, readonly bool) (_ *
 	}
 
 	return role, nil
+}
+
+func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
+	opts.LimitOffset = nil
+	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
+		return rows.Scan(&c)
+	})
+	return c, err
+}
+
+const roleUpdateQueryFmtstr = `
+UPDATE roles
+SET
+    name = %s
+WHERE
+	id = %s
+RETURNING
+	%s
+`
+
+func (r *roleStore) Update(ctx context.Context, role *types.Role) (*types.Role, error) {
+	q := sqlf.Sprintf(roleUpdateQueryFmtstr, role.Name, role.ID, sqlf.Join(roleColumns, ", "))
+
+	updated, err := scanRole(r.QueryRow(ctx, q))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &RoleNotFoundErr{ID: role.ID}
+		}
+		return nil, errors.Wrap(err, "scanning role")
+	}
+	return updated, nil
+}
+
+const roleDeleteQueryFmtStr = `
+UPDATE roles
+SET
+	deleted_at = NOW()
+WHERE id = %s AND readonly = false
+`
+
+func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
+	if opts.ID <= 0 {
+		return errors.New("missing id from sql query")
+	}
+
+	// We don't allow deletion of readonly roles such as DEFAULT & SITE_ADMINISTRATOR
+	q := sqlf.Sprintf(roleDeleteQueryFmtStr, opts.ID)
+	result, err := r.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "running delete query")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking deleted rows")
+	}
+
+	if rowsAffected == 0 {
+		return errors.Wrap(&RoleNotFoundErr{opts.ID}, "failed to delete role")
+	}
+	return nil
 }
