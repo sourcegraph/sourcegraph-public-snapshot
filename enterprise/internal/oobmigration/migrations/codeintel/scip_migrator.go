@@ -407,12 +407,13 @@ WHERE
 `
 
 type scipWriter struct {
-	tx              *basestore.Store
-	inserter        *batch.Inserter
-	uploadID        int
-	nextID          int
-	batchPayloadSum int
-	batch           []bufferedDocument
+	tx                 *basestore.Store
+	symbolNameInserter *batch.Inserter
+	symbolInserter     *batch.Inserter
+	uploadID           int
+	nextID             int
+	batchPayloadSum    int
+	batch              []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -426,11 +427,24 @@ type bufferedDocument struct {
 // should be written to Postgres by calling Write. The Flush method should be called after
 // each document has been processed.
 func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*scipWriter, error) {
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporaryTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
+		return nil, err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
-	inserter := batch.NewInserter(
+	symbolNameInserter := batch.NewInserter(
+		ctx,
+		tx.Handle(),
+		"t_codeintel_scip_symbol_names",
+		batch.MaxNumPostgresParameters,
+		"id",
+		"name_segment",
+		"prefix_id",
+	)
+
+	symbolInserter := batch.NewInserter(
 		ctx,
 		tx.Handle(),
 		"t_codeintel_scip_symbols",
@@ -443,13 +457,22 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 	)
 
 	return &scipWriter{
-		tx:       tx,
-		inserter: inserter,
-		uploadID: uploadID,
+		tx:                 tx,
+		symbolNameInserter: symbolNameInserter,
+		symbolInserter:     symbolInserter,
+		uploadID:           uploadID,
 	}, nil
 }
 
-const makeSCIPWriterTemporaryTableQuery = `
+const makeSCIPWriterTemporarySymbolNamesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+	id integer NOT NULL,
+	name_segment text NOT NULL,
+	prefix_id integer
+) ON COMMIT DROP
+`
+
+const makeSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
@@ -593,43 +616,25 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	symbolNameByIDs := map[int]string{}
 	idsBySymbolName := map[string]int{}
 
-	if err := batch.WithInserter(
-		ctx,
-		s.tx.Handle(),
-		"codeintel_scip_symbol_names", // TODO - temp table trickery
-		batch.MaxNumPostgresParameters,
-		[]string{
-			"id",
-			"upload_id", // TODO - share
-			"name_segment",
-			"prefix_id",
-		},
-		func(inserter *batch.Inserter) error {
-			if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-				name := prefix
-				if parentID != nil {
-					parentPrefix, ok := symbolNameByIDs[*parentID]
-					if !ok {
-						return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
-					}
-
-					name = parentPrefix + prefix
-				}
-				symbolNameByIDs[id] = name
-				idsBySymbolName[name] = id
-
-				if err := inserter.Insert(ctx, id, s.uploadID, prefix, parentID); err != nil {
-					return err
-				}
-
-				return nil
-			}); err != nil {
-				return err
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		name := prefix
+		if parentID != nil {
+			parentPrefix, ok := symbolNameByIDs[*parentID]
+			if !ok {
+				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
 			}
 
-			return nil
-		},
-	); err != nil {
+			name = parentPrefix + prefix
+		}
+		symbolNameByIDs[id] = name
+		idsBySymbolName[name] = id
+
+		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 
@@ -653,7 +658,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
 			}
 
-			if err := s.inserter.Insert(
+			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
 				symbolID,
@@ -672,22 +677,47 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
 func (s *scipWriter) Flush(ctx context.Context) error {
+	// Flush all buffered documents
 	if err := s.flush(ctx); err != nil {
 		return err
 	}
 
-	if err := s.inserter.Flush(ctx); err != nil {
+	// Flush all data into temp tables
+	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return err
 	}
 
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushQuery, s.uploadID)); err != nil {
+	// Move all data from temp tables into target tables
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+		return err
+	}
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const scipWriterFlushQuery = `
+const scipWriterFlushSymbolNamesQuery = `
+INSERT INTO codeintel_scip_symbol_names (
+	upload_id,
+	id,
+	name_segment,
+	prefix_id
+)
+SELECT
+	%s,
+	source.id,
+	source.name_segment,
+	source.prefix_id
+FROM t_codeintel_scip_symbol_names source
+ON CONFLICT DO NOTHING
+`
+
+const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
 	symbol_id,
