@@ -31,7 +31,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
-			`cd '/work/sub dir' && TEST=true CONTAINS_WHITESPACE='yes it does' ls -a`,
+			`cd '/work/sub dir' && TEST=true CONTAINS_WHITESPACE='yes it does' DOCKER_CONFIG=/tmp/docker-config ls -a`,
 		},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {

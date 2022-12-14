@@ -380,7 +380,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 			Key:       "DOCKER_AUTH_CONFIG",
 			Scope:     database.ExecutorSecretScopeCodeIntel,
 			CreatorID: 1,
-		}, `{"auths": { "hub.docker.com": { "auth": "hunter2" }}}`),
+		}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
 	}, 0, nil)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
 
@@ -408,7 +408,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 		DockerAuthConfig: apiclient.DockerAuthConfig{
 			Auths: apiclient.DockerAuthConfigAuths{
 				"hub.docker.com": apiclient.DockerAuthConfigAuth{
-					Auth: []byte("hunter2"),
+					Auth: []byte("hunter:hunter2"),
 				},
 			},
 		},

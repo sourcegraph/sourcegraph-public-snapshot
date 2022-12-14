@@ -308,7 +308,7 @@ steps:
 			DockerAuthConfig: apiclient.DockerAuthConfig{
 				Auths: apiclient.DockerAuthConfigAuths{
 					"hub.docker.com": apiclient.DockerAuthConfigAuth{
-						Auth: []byte("hunter2"),
+						Auth: []byte("hunter:hunter2"),
 					},
 				},
 			},
