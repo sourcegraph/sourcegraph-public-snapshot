@@ -1,7 +1,7 @@
 import React from 'react'
 import delay from 'delay'
 
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 
 import { FeatureFlagName } from './featureFlags'
 import { MockedFeatureFlagsProvider } from './MockedFeatureFlagsProvider'
