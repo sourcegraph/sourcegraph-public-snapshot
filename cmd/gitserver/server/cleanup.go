@@ -255,8 +255,6 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 	}
 
 	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
-		var reason string
-
 		corrupt, reason, err := checkRepoDirCorrupt(dir)
 		if !corrupt {
 			return false, err
