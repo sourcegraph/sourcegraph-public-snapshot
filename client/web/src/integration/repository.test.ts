@@ -808,6 +808,7 @@ describe('Repository', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
+            await driver.page.waitForSelector('.list-group-item', { visible: true })
             await percySnapshotWithVariants(driver.page, 'Repository commits page')
             await accessibilityAudit(driver.page)
         })
