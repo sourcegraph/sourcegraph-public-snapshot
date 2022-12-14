@@ -420,10 +420,10 @@ type scipWriter struct {
 }
 
 type bufferedDocument struct {
-	path        string
-	payload     []byte
-	payloadHash []byte
-	symbols     []types.InvertedRangeIndex
+	path         string
+	scipDocument *ogscip.Document
+	payload      []byte
+	payloadHash  []byte
 }
 
 // makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
@@ -497,10 +497,10 @@ func (s *scipWriter) Write(
 	}
 
 	s.batch = append(s.batch, bufferedDocument{
-		path:        path,
-		payload:     compressedPayload,
-		payloadHash: append(uniquePrefix, hashPayload(payload)...),
-		symbols:     types.ExtractSymbolIndexes(scipDocument),
+		path:         path,
+		scipDocument: scipDocument,
+		payload:      compressedPayload,
+		payloadHash:  append(uniquePrefix, hashPayload(payload)...),
 	})
 	s.batchPayloadSum += len(compressedPayload)
 
@@ -533,8 +533,10 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			return err
 		}
 
-		symbolNameMap := make(map[string]struct{}, len(document.symbols))
-		for _, invertedRange := range document.symbols {
+		symbols := types.ExtractSymbolIndexes(document.scipDocument)
+
+		symbolNameMap := make(map[string]struct{}, len(symbols))
+		for _, invertedRange := range symbols {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
 		symbolNames := make([]string, 0, len(symbolNameMap))
@@ -553,7 +555,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			return err
 		}
 
-		for _, symbol := range document.symbols {
+		for _, symbol := range symbols {
 			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
 			if err != nil {
 				return err
