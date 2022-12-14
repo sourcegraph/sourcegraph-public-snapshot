@@ -235,7 +235,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             <StatusMessagesNavItemEntry
                                 key={status.message}
                                 message={status.message}
-                                title="Automatic code sync disabled"
+                                title="Code syncing disabled"
                                 messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
                                 linkTo="/site-admin/configuration"
                                 linkText="View site configuration"
