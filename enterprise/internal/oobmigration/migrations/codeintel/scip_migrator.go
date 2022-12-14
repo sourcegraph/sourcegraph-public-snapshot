@@ -521,6 +521,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	s.batch = nil
 	s.batchPayloadSum = 0
 
+	documentLookupIDs := make([]int, 0, len(documents))
 	for _, document := range documents {
 		documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
 			scipWriterWriteDocumentQuery,
@@ -533,6 +534,10 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			return err
 		}
 
+		documentLookupIDs = append(documentLookupIDs, documentLookupID)
+	}
+
+	for i, document := range documents {
 		symbols := types.ExtractSymbolIndexes(document.scipDocument)
 
 		symbolNameMap := make(map[string]struct{}, len(symbols))
@@ -577,7 +582,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 
 			if err := s.inserter.Insert(
 				ctx,
-				documentLookupID,
+				documentLookupIDs[i],
 				symbolID,
 				definitionRanges,
 				referenceRanges,
