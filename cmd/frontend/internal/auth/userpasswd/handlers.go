@@ -376,8 +376,7 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 	}
 }
 
-func HandleUnlockUserAccount(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("HandleUnlockUserAccount", "unlock user account request handler for site admins")
+func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := iauth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, "Only site admins can unlock user accounts", http.StatusUnauthorized)
@@ -417,8 +416,6 @@ func HandleUnlockUserAccount(logger log.Logger, db database.DB, store LockoutSto
 		}
 
 		store.Reset(user.ID)
-
-		return
 	}
 }
 
