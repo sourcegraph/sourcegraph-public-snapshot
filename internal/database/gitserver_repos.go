@@ -353,6 +353,7 @@ func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (
 		if err == sql.ErrNoRows {
 			return nil, &errGitserverRepoNotFound{}
 		}
+		return nil, err
 	}
 	return repo, nil
 }
