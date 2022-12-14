@@ -197,6 +197,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
+                            <Button
+                                key="promote"
+                                disabled={this.state.loading}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Unlock user
+                            </Button>)}
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
                             <Button onClick={this.deleteUser} disabled={this.state.loading} variant="danger" size="sm">
                                 Delete
                             </Button>

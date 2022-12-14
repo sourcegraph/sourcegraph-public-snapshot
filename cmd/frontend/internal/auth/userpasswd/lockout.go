@@ -202,7 +202,6 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(signingKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
-
 	if err != nil {
 		return false, err
 	}

@@ -9,6 +9,7 @@ import {
     mdiClipboardMinus,
     mdiClipboardPlus,
     mdiClose,
+    mdiLockOpen,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
@@ -167,6 +168,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleForceSignOutUsers,
         handleRevokeSiteAdmin,
         handlePromoteToSiteAdmin,
+        handleUnlockUser,
         handleResetUserPassword,
         notification,
         handleDismissNotification,
@@ -284,6 +286,13 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 icon: mdiClipboardPlus,
                                 onClick: handlePromoteToSiteAdmin,
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
+                            },
+                            {
+                                key: 'unlock-user',
+                                label: 'Unlock user',
+                                icon: mdiLockOpen,
+                                onClick: handleUnlockUser,
+                                condition: ([user]) => !user?.deletedAt,
                             },
                             {
                                 key: 'delete',
@@ -508,6 +517,7 @@ export interface UseUserListActionReturnType {
     handleDeleteUsersForever: ActionHandler
     handlePromoteToSiteAdmin: ActionHandler
     handleRevokeSiteAdmin: ActionHandler
+    handleUnlockUser: ActionHandler
     notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleDismissNotification: () => void
     handleResetUserPassword: ActionHandler

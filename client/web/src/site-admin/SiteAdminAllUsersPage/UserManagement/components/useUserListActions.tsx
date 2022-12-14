@@ -123,6 +123,31 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         [onError, createOnSuccess]
     )
 
+    const handleUnlockUser = useCallback(
+        ([user]: SiteUser[]) => {
+            if (confirm('Are you sure you want to unlock the selected user?')) {
+                fetch('unlock-user-account', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: user.id }),
+                })
+                    .then(
+                        createOnSuccess(
+                            <Text as="span">
+                                Successfully unlocked user <strong>{user.username}</strong>{' '}
+                            </Text>,
+                            true
+                        )
+                    )
+                    .catch(onError)
+            }
+        },
+        [onError, createOnSuccess]
+    )
+
     const handleRevokeSiteAdmin = useCallback(
         ([user]: SiteUser[]) => {
             if (confirm('Are you sure you want to revoke the selected user from site admin?')) {
@@ -179,6 +204,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
         handleDeleteUsers,
         handleDeleteUsersForever,
         handlePromoteToSiteAdmin,
+        handleUnlockUser,
         handleRevokeSiteAdmin,
         handleResetUserPassword,
         handleDismissNotification,

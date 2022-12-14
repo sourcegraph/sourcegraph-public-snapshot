@@ -66,6 +66,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
 	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
+	r.Get(router.UnlockUserAccount).Handler(trace.Route(userpasswd.HandleUnlockUserAccount(logger, db, lockoutStore)))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(logger, db)))
 	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))

@@ -90,7 +90,8 @@ func TestCheckEmailFormat(t *testing.T) {
 	}{
 		"valid":   {email: "foo@bar.pl", err: nil},
 		"invalid": {email: "foo@", err: errors.Newf("mail: no angle-addr")},
-		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")}} {
+		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")},
+	} {
 		t.Run(name, func(t *testing.T) {
 			err := checkEmailFormat(test.email)
 			if test.err == nil {
@@ -215,6 +216,71 @@ func TestHandleAccount_Unlock(t *testing.T) {
 	{
 		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "", resp.Body.String())
+	}
+}
+
+func TestHandleAccount_UnlockByAdmin(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Builtin: &schema.BuiltinAuthProvider{
+						Type: providerType,
+					},
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	db := database.NewMockDB()
+	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	users := database.NewMockUserStore()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	lockout := NewMockLockoutStore()
+	logger := logtest.NoOp(t)
+	if testing.Verbose() {
+		logger = logtest.Scoped(t)
+	}
+	h := HandleUnlockUserAccount(logger, db, lockout)
+
+	// unauthorized request if not admin
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
+		assert.Equal(t, "Only site admins can unlock user accounts\n", resp.Body.String())
+	}
+
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	// bad request if missing user id
+	{
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		require.NoError(t, err)
+
+		resp := httptest.NewRecorder()
+		h(resp, req)
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, "Bad request: missing user id\n", resp.Body.String())
+	}
+
+	// ok result
+	{
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "userId": 2 }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
