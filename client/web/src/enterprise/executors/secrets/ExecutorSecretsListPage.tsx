@@ -154,16 +154,18 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
             )}
 
             <div className="d-flex mb-3">
-                {Object.values(ExecutorSecretScope).map(scope => (
-                    <ExecutorSecretScopeSelector
-                        key={scope}
-                        scope={scope}
-                        label={executorSecretScopeContext(scope).label}
-                        onSelect={() => setSelectedScope(scope)}
-                        selected={scope === selectedScope}
-                        description={executorSecretScopeContext(scope).description}
-                    />
-                ))}
+                {(namespaceID == null ? [ExecutorSecretScope.BATCHES] : Object.values(ExecutorSecretScope)).map(
+                    scope => (
+                        <ExecutorSecretScopeSelector
+                            key={scope}
+                            scope={scope}
+                            label={executorSecretScopeContext(scope).label}
+                            onSelect={() => setSelectedScope(scope)}
+                            selected={scope === selectedScope}
+                            description={executorSecretScopeContext(scope).description}
+                        />
+                    )
+                )}
             </div>
 
             <Container>
