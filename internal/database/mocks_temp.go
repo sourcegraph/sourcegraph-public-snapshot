@@ -23221,7 +23221,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
-			defaultHook: func(context.Context, api.RepoName, *time.Time) (r0 error) {
+			defaultHook: func(context.Context, api.RepoName, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -23319,7 +23319,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
-			defaultHook: func(context.Context, api.RepoName, *time.Time) error {
+			defaultHook: func(context.Context, api.RepoName, time.Time) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCorruptedAt")
 			},
 		},
@@ -24528,15 +24528,15 @@ func (c GitserverRepoStoreSetCloneStatusFuncCall) Results() []interface{} {
 // SetCorruptedAt method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetCorruptedAtFunc struct {
-	defaultHook func(context.Context, api.RepoName, *time.Time) error
-	hooks       []func(context.Context, api.RepoName, *time.Time) error
+	defaultHook func(context.Context, api.RepoName, time.Time) error
+	hooks       []func(context.Context, api.RepoName, time.Time) error
 	history     []GitserverRepoStoreSetCorruptedAtFuncCall
 	mutex       sync.Mutex
 }
 
 // SetCorruptedAt delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetCorruptedAt(v0 context.Context, v1 api.RepoName, v2 *time.Time) error {
+func (m *MockGitserverRepoStore) SetCorruptedAt(v0 context.Context, v1 api.RepoName, v2 time.Time) error {
 	r0 := m.SetCorruptedAtFunc.nextHook()(v0, v1, v2)
 	m.SetCorruptedAtFunc.appendCall(GitserverRepoStoreSetCorruptedAtFuncCall{v0, v1, v2, r0})
 	return r0
@@ -24545,7 +24545,7 @@ func (m *MockGitserverRepoStore) SetCorruptedAt(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the SetCorruptedAt
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultHook(hook func(context.Context, api.RepoName, *time.Time) error) {
+func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -24554,7 +24554,7 @@ func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Context, api.RepoName, *time.Time) error) {
+func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Context, api.RepoName, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -24563,19 +24563,19 @@ func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, *time.Time) error {
+	f.SetDefaultHook(func(context.Context, api.RepoName, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetCorruptedAtFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, *time.Time) error {
+	f.PushHook(func(context.Context, api.RepoName, time.Time) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetCorruptedAtFunc) nextHook() func(context.Context, api.RepoName, *time.Time) error {
+func (f *GitserverRepoStoreSetCorruptedAtFunc) nextHook() func(context.Context, api.RepoName, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -24617,7 +24617,7 @@ type GitserverRepoStoreSetCorruptedAtFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *time.Time
+	Arg2 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
