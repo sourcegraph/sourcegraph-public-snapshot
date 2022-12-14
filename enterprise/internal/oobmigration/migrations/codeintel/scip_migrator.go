@@ -474,6 +474,12 @@ func (s *scipWriter) Write(
 	path string,
 	scipDocument *ogscip.Document,
 ) error {
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
+	}
+
 	uniquePrefix := []byte(fmt.Sprintf(
 		"lsif-%d:%d:",
 		uploadID,
@@ -488,12 +494,6 @@ func (s *scipWriter) Write(
 	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
 	if err != nil {
 		return err
-	}
-
-	if s.batchPayloadSum >= MaxBatchPayloadSum {
-		if err := s.flush(ctx); err != nil {
-			return err
-		}
 	}
 
 	s.batch = append(s.batch, bufferedDocument{
