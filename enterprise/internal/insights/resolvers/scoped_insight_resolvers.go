@@ -3,9 +3,12 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -36,28 +39,26 @@ func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlb
 	}, nil
 }
 
-//var numberOfRepositories *int32
-//if args.Input.FetchNumberOfRepositories {
-//executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-//repos, err := executor.ExecuteRepoList(ctx, args.Input.Query)
-//if err != nil {
-//return &scopedInsightQueryResultResolver{
-//resolver: &scopedInsightQueryPayloadNotAvailableResolver{
-//reason:     fmt.Sprintf("executing the repository search errored: %v", err),
-//reasonType: types.SCOPE_SEARCH_ERROR,
-//},
-//}, nil
-//}
-//number := int32(len(repos))
-//numberOfRepositories = &number
-//}
-//
-//return &scopedInsightQueryResultResolver{
-//resolver: &scopedInsightQueryPayloadResolver{query: args.Input.Query, numberOfRepositories: numberOfRepositories},
-//}, nil
+func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphqlbackend.PreviewRepositoriesFromQueryArgs) (graphqlbackend.RepositoryPreviewPayloadResolver, error) {
+	plan, err := querybuilder.ParseQuery(args.Query, "literal")
+	if err != nil {
+		return nil, errors.Wrap(err, "the input query is invalid")
+	}
+	if reason, invalid := querybuilder.IsValidScopeQuery(plan); !invalid {
+		return nil, errors.Newf("the input query cannot be used for previewing repositories: %v", reason)
+	}
 
-func (r *repositorityPreviewPayloadResolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphqlbackend.PreviewRepositoriesFromQueryArgs) (graphqlbackend.RepositoryPreviewPayloadResolver, error) {
-	return nil, nil
+	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
+	repos, err := executor.ExecuteRepoList(ctx, args.Query)
+	if err != nil {
+		return nil, errors.Wrap(err, "executing the repository search errored")
+	}
+	number := int32(len(repos))
+
+	return &repositorityPreviewPayloadResolver{
+		query:                args.Query,
+		numberOfRepositories: &number,
+	}, nil
 }
 
 type scopedInsightQueryPayloadResolver struct {
