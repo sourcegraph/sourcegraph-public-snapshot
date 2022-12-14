@@ -16,13 +16,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var defaultResetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Reset your Sourcegraph password ({{.Host}})`,
+	Text: `
+Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+To reset the password for {{.Username}} on Sourcegraph, follow this link:
+
+  {{.URL}}
+`,
+	HTML: `
+<p>
+  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
+  on Sourcegraph ({{.Host}}).
+</p>
+
+<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
+`,
+})
 
 func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
 	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
-		Template: resetPasswordEmailTemplates,
+		Template: defaultResetPasswordEmailTemplates,
 		Data: struct {
 			Username string
 			URL      string
@@ -90,97 +108,6 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
 	}
 }
-
-var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Reset your Sourcegraph password ({{.Host}})`,
-	Text: `
-Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
-
-To reset the password for {{.Username}} on Sourcegraph, follow this link:
-
-  {{.URL}}
-`,
-	HTML: `
-<p>
-  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
-  on Sourcegraph ({{.Host}}).
-</p>
-
-<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
-`,
-})
-
-// HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
-func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (string, error) {
-	e, _, err := db.UserEmails().GetPrimaryEmail(ctx, id)
-	if err != nil {
-		return "", errors.Wrap(err, "get user primary email")
-	}
-
-	usr, err := db.Users().GetByID(ctx, id)
-	if err != nil {
-		return "", errors.Wrap(err, "get user by ID")
-	}
-
-	ru, err := backend.MakePasswordResetURL(ctx, db, id)
-	if err == database.ErrPasswordResetRateLimit {
-		return "", err
-	} else if err != nil {
-		return "", errors.Wrap(err, "make password reset URL")
-	}
-
-	// Configure the template
-	emailTemplate := defaultSetPasswordEmailTemplate
-	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
-		if customTemplates.SetPassword != nil {
-			customTemplate, err := txemail.FromSiteConfigTemplate(*customTemplates.SetPassword)
-
-			// If valid, use the custom template. If invalid, proceed with the default
-			// template and discard the error - it will also be rendered in site config
-			// problems.
-			if err == nil {
-				emailTemplate = *customTemplate
-			}
-		}
-	}
-
-	rus := globals.ExternalURL().ResolveReference(ru).String()
-	if err := txemail.Send(ctx, "password_set", txemail.Message{
-		To:       []string{e},
-		Template: emailTemplate,
-		Data: struct {
-			Username string
-			URL      string
-			Host     string
-		}{
-			Username: usr.Username,
-			URL:      rus,
-			Host:     globals.ExternalURL().Host,
-		},
-	}); err != nil {
-		return "", err
-	}
-
-	return rus, nil
-}
-
-var defaultSetPasswordEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Set your Sourcegraph password ({{.Host}})`,
-	Text: `
-Your administrator created an account for you on Sourcegraph ({{.Host}}).
-
-To set the password for {{.Username}} on Sourcegraph, follow this link:
-
-  {{.URL}}
-`,
-	HTML: `
-<p>
-  Your administrator created an account for you on Sourcegraph ({{.Host}}).
-</p>
-
-<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
-`,
-})
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
 func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc {
