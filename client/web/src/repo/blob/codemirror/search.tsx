@@ -162,6 +162,7 @@ class SearchPanel implements Panel {
                 <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-2">
                     <Input
                         ref={element => (this.input = element)}
+                        type="search"
                         name="search"
                         variant="small"
                         placeholder="Find..."
@@ -169,7 +170,6 @@ class SearchPanel implements Panel {
                         inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
                         onChange={event => this.searchTerm.next(event.target.value)}
                         main-field="true"
-                        role="search"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.caseSensitive}
