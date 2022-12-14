@@ -65,6 +65,8 @@ async function generateGraphQlOperations() {
         },
         errorsOnly: true,
         config: {
+          // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+          arrayInputCoercion: false,
           preResolveTypes: true,
           operationResultSuffix: 'Result',
           omitOperationSuffix: true,
