@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 )
@@ -17,11 +18,15 @@ const ScriptsPath = ".sourcegraph-executor"
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
 	if spec.Image == "" {
+		env := spec.Env
+		if dockerConfigPath != "" {
+			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", dockerConfigPath))
+		}
 		return command{
 			Key:       spec.Key,
 			Command:   spec.Command,
 			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       spec.Env,
+			Env:       env,
 			Operation: spec.Operation,
 		}
 	}

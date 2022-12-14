@@ -122,7 +122,7 @@ and then paste the result of that into a JSON string like this:
 }
 ```
 
-For Google Container Registry, [follow this guide](https://cloud.google.com/container-registry/docs/advanced-authentication) for how to obtain long-lived static credentials.
+For Google Container Registry, [follow this guide](https://cloud.google.com/container-registry/docs/advanced-authentication#json-key) for how to obtain long-lived static credentials.
 
 ### Configuring the auth config for use in executors
 
