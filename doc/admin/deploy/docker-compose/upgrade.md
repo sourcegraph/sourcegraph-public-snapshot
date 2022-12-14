@@ -1,5 +1,13 @@
 # Upgrade Sourcegraph on Docker Compose
 
+## 🚧 Still supported, but no longer recommended. 🚧
+
+If you're starting a new Sourcegraph deployment: **consider using one of our [newer & simpler deployments](../../../index.md) instead.**
+
+(This deployment type is still supported, however.)
+
+## About upgrading a Docker Compose deployment
+
 This document describes the process to update a Docker Compose Sourcegraph instance.
 
 ### Standard upgrades

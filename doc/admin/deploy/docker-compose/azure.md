@@ -1,5 +1,13 @@
 # Install Sourcegraph on Azure
 
+## 🚧 Still supported, but no longer recommended. 🚧
+
+If you're starting a new Sourcegraph deployment: **consider using one of our [newer & simpler deployments](../../../index.md) instead.**
+
+(This deployment type is still supported, however.)
+
+## About Sourcegraph on Azure
+
 This guide will take you through how to set up a Sourcegraph instance on an Azure virtual machine with [Docker Compose](https://docs.docker.com/compose/).
 
 ---

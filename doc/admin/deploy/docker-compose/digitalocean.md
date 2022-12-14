@@ -4,6 +4,14 @@ title: Install Sourcegraph on DigitalOcean
 
 # Install Sourcegraph on DigitalOcean
 
+## 🚧 Still supported, but no longer recommended. 🚧
+
+If you're starting a new Sourcegraph deployment: **consider using one of our [newer & simpler deployments](../../../index.md) instead.**
+
+(This deployment type is still supported, however.)
+
+## About Sourcegraph on DigitalOcean
+
 This guide will take you through how to deploy a Sourcegraph instance to a single DigitalOcean Droplet with [Docker Compose](https://docs.docker.com/compose/).
 
 ---

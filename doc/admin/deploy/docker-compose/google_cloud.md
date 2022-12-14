@@ -1,5 +1,13 @@
 # Install Sourcegraph on Google Cloud
 
+## 🚧 Still supported, but no longer recommended. 🚧
+
+If you're starting a new Sourcegraph deployment: **consider using one of our [newer & simpler deployments](../../../index.md) instead.**
+
+(This deployment type is still supported, however.)
+
+## About Sourcegraph on Google Cloud
+
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
 
 ---
