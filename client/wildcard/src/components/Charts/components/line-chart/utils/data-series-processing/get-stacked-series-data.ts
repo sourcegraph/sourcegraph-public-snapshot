@@ -3,6 +3,7 @@ import { scaleTime } from '@visx/scale'
 import { Series as ChartSeries } from '../../../../types'
 import { isValidNumber } from '../data-guards'
 
+import { encodePointId } from './helpers'
 import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
 
 /**
@@ -26,7 +27,7 @@ export function getStackedSeriesData<Datum>(series: ChartSeries<Datum>[]): Stack
 
     // eslint-disable-next-line ban/ban
     series.forEach(line => {
-        const { data, getXValue, getYValue } = line
+        const { data, getXValue, getYValue, id } = line
         const stackedData: StackedSeriesDatum<Datum>[] = []
 
         for (const [index, datum] of data.entries()) {
@@ -37,6 +38,7 @@ export function getStackedSeriesData<Datum>(series: ChartSeries<Datum>[]): Stack
 
                 stackedData.push({
                     datum,
+                    id: encodePointId(id, index),
                     y0: previousValue,
                     y1: previousValue + value,
                     x: getXValue(datum),
@@ -44,6 +46,7 @@ export function getStackedSeriesData<Datum>(series: ChartSeries<Datum>[]): Stack
             } else {
                 stackedData.push({
                     datum,
+                    id: `invalid-datum-${index}`,
                     y0: null,
                     y1: null,
                     x: getXValue(datum),

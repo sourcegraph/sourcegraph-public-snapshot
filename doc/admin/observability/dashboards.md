@@ -12472,7 +12472,7 @@ Query: `sum(src_repoupdater_perms_syncer_success_syncs{type="repo"})`
 
 #### repo-updater: repo_success_syncs
 
-<p class="subtitle">Number of repo permissions syncs [5m]</p>
+<p class="subtitle">Number of repo permissions syncs over 5m</p>
 
 Indicates the number of repos permissions syncs completed.
 
@@ -12493,7 +12493,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]
 
 #### repo-updater: repo_initial_syncs
 
-<p class="subtitle">Number of first repo permissions syncs [5m]</p>
+<p class="subtitle">Number of first repo permissions syncs over 5m</p>
 
 Indicates the number of permissions syncs done for the first time for the repo.
 
@@ -12514,7 +12514,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]
 
 #### repo-updater: repo_failed_syncs
 
-<p class="subtitle">Number of repo permissions failed syncs [5m]</p>
+<p class="subtitle">Number of repo permissions failed syncs over 5m</p>
 
 Indicates the number of repos permissions syncs failed in last 5 minute.
 
@@ -12535,7 +12535,7 @@ Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m])
 
 #### repo-updater: users_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for user (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for user</p>
 
 Indicates the max delay between two consecutive permissions sync for a user during the period.
 
@@ -12548,7 +12548,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]) / 60.0)`
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]))`
 
 </details>
 
@@ -12556,7 +12556,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: repos_consecutive_sync_delay
 
-<p class="subtitle">Max duration between two consecutive permissions sync for repo (minutes) [1m]</p>
+<p class="subtitle">Max duration between two consecutive permissions sync for repo</p>
 
 Indicates the max delay between two consecutive permissions sync for a repo during the period.
 
@@ -12569,7 +12569,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]) / 60.0)`
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]))`
 
 </details>
 
@@ -12577,7 +12577,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_d
 
 #### repo-updater: users_first_sync_delay
 
-<p class="subtitle">Max duration between user creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between user creation and first permissions sync</p>
 
 Indicates the max delay between user creation and their permissions sync
 
@@ -12590,7 +12590,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [1m]) / 60.0)`
+Query: `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"}[1m]))`
 
 </details>
 
@@ -12598,7 +12598,7 @@ Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{t
 
 #### repo-updater: repos_first_sync_delay
 
-<p class="subtitle">Max duration between repo creation and first permissions sync (minutes) [1m]</p>
+<p class="subtitle">Max duration between repo creation and first permissions sync over 1m</p>
 
 Indicates the max delay between repo creation and their permissions sync
 
@@ -12611,7 +12611,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [1m]) / 60.0)`
+Query: `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"}[1m]))`
 
 </details>
 

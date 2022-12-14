@@ -821,9 +821,10 @@ CREATE TABLE batch_changes (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     closed_at timestamp with time zone,
-    batch_spec_id bigint NOT NULL,
+    batch_spec_id bigint,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
+    CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
     CONSTRAINT batch_changes_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))),
     CONSTRAINT batch_changes_name_not_blank CHECK ((name <> ''::text))
 );
@@ -3377,10 +3378,13 @@ CREATE TABLE roles (
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
+    readonly boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
 
 COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
+
+COMMENT ON COLUMN roles.readonly IS 'This is used to indicate whether a role is read-only or can be modified.';
 
 CREATE SEQUENCE roles_id_seq
     AS integer

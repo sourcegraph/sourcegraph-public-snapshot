@@ -9,6 +9,8 @@ import {
     mdiClipboardMinus,
     mdiClipboardPlus,
     mdiClose,
+    mdiLock,
+    mdiLockOpen,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
@@ -30,6 +32,7 @@ import {
     Popover,
     Position,
     PopoverOpenEvent,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -167,6 +170,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         handleForceSignOutUsers,
         handleRevokeSiteAdmin,
         handlePromoteToSiteAdmin,
+        handleUnlockUser,
         handleResetUserPassword,
         notification,
         handleDismissNotification,
@@ -284,6 +288,13 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 icon: mdiClipboardPlus,
                                 onClick: handlePromoteToSiteAdmin,
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
+                            },
+                            {
+                                key: 'unlock-user',
+                                label: 'Unlock user',
+                                icon: mdiLockOpen,
+                                onClick: handleUnlockUser,
+                                condition: ([user]) => !user?.deletedAt && user?.locked,
                             },
                             {
                                 key: 'delete',
@@ -461,7 +472,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
     )
 }
 
-function RenderUsernameAndEmail({ username, email, displayName, deletedAt }: SiteUser): JSX.Element {
+function RenderUsernameAndEmail({ username, email, displayName, deletedAt, locked }: SiteUser): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
@@ -474,9 +485,16 @@ function RenderUsernameAndEmail({ username, email, displayName, deletedAt }: Sit
             })}
         >
             {!deletedAt ? (
-                <Link to={`/users/${username}`} className="text-truncate">
-                    @{username}
-                </Link>
+                <>
+                    {locked && (
+                        <Tooltip content="This user is locked and cannot sign in.">
+                            <Icon aria-label="Account locked" svgPath={mdiLock} />
+                        </Tooltip>
+                    )}{' '}
+                    <Link to={`/users/${username}`} className="text-truncate">
+                        @{username}
+                    </Link>
+                </>
             ) : (
                 <Text className="mb-0 text-truncate">@{username}</Text>
             )}
@@ -508,6 +526,7 @@ export interface UseUserListActionReturnType {
     handleDeleteUsersForever: ActionHandler
     handlePromoteToSiteAdmin: ActionHandler
     handleRevokeSiteAdmin: ActionHandler
+    handleUnlockUser: ActionHandler
     notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleDismissNotification: () => void
     handleResetUserPassword: ActionHandler

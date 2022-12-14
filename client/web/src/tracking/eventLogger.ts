@@ -79,6 +79,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private firstSourceURL?: string
     private lastSourceURL?: string
     private deviceID = ''
+    private deviceSessionID?: string
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
@@ -147,6 +148,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
+        // call to refresh the session
+        this.resetSessionCookieExpiration()
+
         if (window.context?.userAgentIsBot || !pageTitle) {
             return
         }
@@ -160,6 +164,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+        // call to refresh the session
+        this.resetSessionCookieExpiration()
+
         if (window.context?.userAgentIsBot || !eventName) {
             return
         }
@@ -179,6 +186,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        // call to refresh the session
+        this.resetSessionCookieExpiration()
+
         for (const listener of this.listeners) {
             listener(eventLabel)
         }
@@ -303,11 +313,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getDeviceSessionID(): string {
-        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        // read from the cookie, otherwise check the global variable
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
         if (!deviceSessionID || deviceSessionID === '') {
-            deviceSessionID = uuid.v4()
-            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+            deviceSessionID = this.getAnonymousUserID()
         }
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+        this.deviceSessionID = deviceSessionID
         return deviceSessionID
     }
 
@@ -347,6 +362,18 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         }
     }
 
+    // Grabs and sets the deviceSessionID to renew the session expiration
+    // Returns TRUE if successful, FALSE if deviceSessionID cannot be stored
+    private resetSessionCookieExpiration(): boolean {
+        // Function getDeviceSessionID calls cookie.set() to refresh the expiry
+        const deviceSessionID = this.getDeviceSessionID()
+        if (!deviceSessionID || deviceSessionID === '') {
+            this.deviceSessionID = deviceSessionID
+            return false
+        }
+        return true
+    }
+
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -360,6 +387,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
+        this.deviceSessionID = ''
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -369,16 +397,24 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Always set to renew expiry and migrate from localStorage
         cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID, this.cookieSettings)
         localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
+
         if (cohortID) {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
         let deviceID = cookies.get(DEVICE_ID_KEY)
-        if (!deviceID) {
+        if (!deviceID || deviceID === '') {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
             deviceID = anonymousUserID
-            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
+        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
+
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY) || this.deviceSessionID
+        if (!deviceSessionID || deviceSessionID === '') {
+            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
+            deviceSessionID = anonymousUserID
+        }
+        cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
 
         let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
         if (!originalReferrer) {
@@ -398,6 +434,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+        this.deviceSessionID = deviceSessionID
         this.originalReferrer = originalReferrer
         this.sessionReferrer = sessionReferrer
         this.sessionFirstURL = sessionFirstURL

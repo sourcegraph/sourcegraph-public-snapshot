@@ -17,7 +17,7 @@ import (
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
-func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
@@ -47,7 +47,7 @@ func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []
 		return authMiddleware(accessToken, withInternalActor(base))
 	}
 
-	return factory, nil
+	return factory
 }
 
 // authMiddleware rejects requests that do not have a Authorization header set

@@ -159,6 +159,7 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  needs_migration               | boolean                     |           |          | 
  backfill_completed_at         | timestamp without time zone |           |          | 
  supports_augmentation         | boolean                     |           | not null | true
+ repository_criteria           | text                        |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -192,6 +193,8 @@ Data series that comprise code insights.
 **oldest_historical_at**: Timestamp representing the oldest point of which this series is backfilled.
 
 **query**: Query string that generates this series
+
+**repository_criteria**: The search criteria used to determine the repositories that are included in this series.
 
 **series_id**: Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.
 

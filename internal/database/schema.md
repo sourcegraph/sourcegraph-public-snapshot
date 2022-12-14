@@ -51,7 +51,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  closed_at         | timestamp with time zone |           |          | 
- batch_spec_id     | bigint                   |           | not null | 
+ batch_spec_id     | bigint                   |           |          | 
  last_applier_id   | bigint                   |           |          | 
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
@@ -61,6 +61,7 @@ Indexes:
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
+    "batch_change_name_is_valid" CHECK (name ~ '^[\w.-]+$'::text)
     "batch_changes_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "batch_changes_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -2798,6 +2799,7 @@ Foreign-key constraints:
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  deleted_at | timestamp with time zone |           |          | 
+ readonly   | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
     "roles_name" UNIQUE CONSTRAINT, btree (name)
@@ -2810,6 +2812,8 @@ Referenced by:
 ```
 
 **name**: The uniquely identifying name of the role.
+
+**readonly**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```

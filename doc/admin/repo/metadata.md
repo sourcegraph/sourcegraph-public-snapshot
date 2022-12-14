@@ -21,7 +21,11 @@ Another way this could be used is to ingest GitHub topics as tags so repositorie
 
 ## Adding metadata
 
-Currently, the only way to add metadata to a repo is through Sourcegraph's GraphQL API. Metadata can be added with the `addRepoKeyValuePair` mutation, updated with the `updateRepoKeyValuePair` mutation, and deleted with the `deleteRepoKeyValuePair` mutation. You will need the GraphQL ID for the repository being targeted.
+Currently, there are two ways to add metadata to a repository: Sourcegraph's GraphQL API, and the [`src-cli` command line tool](https://github.com/sourcegraph/src-cli). 
+
+### GraphQL
+
+Metadata can be added with the `addRepoKeyValuePair` mutation, updated with the `updateRepoKeyValuePair` mutation, and deleted with the `deleteRepoKeyValuePair` mutation. You will need the GraphQL ID for the repository being targeted.
 
 ```graphql
 mutation AddSecurityOwner($repoID: ID!) {
@@ -29,4 +33,31 @@ mutation AddSecurityOwner($repoID: ID!) {
     alwaysNil
   }
 }
+
+mutation UpdateSecurityOwner($repoID: ID!) {
+  updateRepoKeyValuePair(repo: $repoID, key: "owning-team", value: "security++") {
+    alwaysNil
+  }
+}
+
+mutation DeleteSecurityOwner($repoID: ID!) {
+  deleteRepoKeyValuePair(repo: $repoID, key: "owning-team") {
+    alwaysNil
+  }
+}
+```
+
+### src-cli
+
+Metadata can be added using `src repos add-kvp`, updated using `src repos update-kvp`, and deleted using `src repos delete-kvp`. You will need the GraphQL ID for the repository being targeted.
+
+```text
+$ src repos add-kvp -repo=repoID -key=owning-team -value=security
+Key-value pair 'owning-team:security' created.
+
+$ src repos update-kvp -repo=repoID -key=owning-team -value=security++
+Value of key 'owning-team' updated to 'security++'
+
+$ src repos delete-kvp -repo=repoID -key=owning-team
+Key-value pair with key 'owning-team' deleted.
 ```
