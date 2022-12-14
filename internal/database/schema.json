@@ -10687,6 +10687,19 @@
           "Comment": ""
         },
         {
+          "Name": "corrupted_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Timestamp of when repo corruption was dectected"
+        },
+        {
           "Name": "last_changed",
           "Index": 7,
           "TypeName": "timestamp with time zone",
