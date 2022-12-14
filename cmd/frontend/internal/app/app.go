@@ -54,13 +54,8 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 
 	r.Get(router.UI).Handler(ui.Router())
 
-	lockoutOptions := conf.AuthLockout()
-	lockoutStore := userpasswd.NewLockoutStore(
-		lockoutOptions.FailedAttemptThreshold,
-		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
-		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
-		nil,
-	)
+	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
+
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
 	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))

@@ -62,13 +62,7 @@ func (s *siteUsersResolver) Nodes(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	lockoutOptions := conf.AuthLockout()
-	lockoutStore := userpasswd.NewLockoutStore(
-		lockoutOptions.FailedAttemptThreshold,
-		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
-		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
-		nil,
-	)
+	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
 
 	userResolvers := make([]*siteUserResolver, len(users))
 	for i, user := range users {

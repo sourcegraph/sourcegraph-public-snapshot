@@ -69,9 +69,9 @@ type UserResolver struct {
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
 	return &UserResolver{
-		db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
-			log.Object("repo",
-				log.String("user", user.Username))),
+		db:     db,
+		user:   user,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 	}
 }
 
