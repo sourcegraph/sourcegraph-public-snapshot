@@ -125,7 +125,11 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
 
     const handleUnlockUser = useCallback(
         ([user]: SiteUser[]) => {
-            if (confirm('Are you sure you want to unlock the selected user?')) {
+            if (
+                confirm(
+                    'This will allow the selected user to sign in again if their account has been locked. Are you sure you want to proceed?'
+                )
+            ) {
                 fetch('unlock-user-account', {
                     method: 'POST',
                     headers: {
