@@ -3505,7 +3505,7 @@ type RepositoryTextSearchIndexStatus {
 }
 
 """
-The host as advertised by the indexserver hosting the repo's index.
+Information about the indexserver that hosts the repo's index.
 """
 type repositoryIndexserverHost {
     """
