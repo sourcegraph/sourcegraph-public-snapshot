@@ -3498,6 +3498,9 @@ type RepositoryTextSearchIndexStatus {
     """
     otherBranchesNewLinesCount: Int!
 
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
     host: repositoryIndexserverHost
 }
 
