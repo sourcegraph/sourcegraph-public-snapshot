@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
+	inttests "github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
