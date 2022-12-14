@@ -296,7 +296,7 @@ func RepoUpdater() *monitoring.Dashboard {
 						},
 						{
 							Name:           "repo_success_syncs",
-							Description:    "number of repo permissions syncs [5m]",
+							Description:    "number of repo permissions syncs over 5m",
 							Query:          `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerIAM,
@@ -305,7 +305,7 @@ func RepoUpdater() *monitoring.Dashboard {
 						},
 						{
 							Name:           "repo_initial_syncs",
-							Description:    "number of first repo permissions syncs [5m]",
+							Description:    "number of first repo permissions syncs over 5m",
 							Query:          `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerIAM,
@@ -316,7 +316,7 @@ func RepoUpdater() *monitoring.Dashboard {
 					{
 						{
 							Name:           "repo_failed_syncs",
-							Description:    "number of repo permissions failed syncs [5m]",
+							Description:    "number of repo permissions failed syncs over 5m",
 							Query:          `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerIAM,
@@ -327,18 +327,18 @@ func RepoUpdater() *monitoring.Dashboard {
 					{
 						{
 							Name:           "users_consecutive_sync_delay",
-							Description:    "max duration between two consecutive permissions sync for user (minutes) [1m]",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]) / 60.0)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Description:    "max duration between two consecutive permissions sync for user",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]))`,
+							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the max delay between two consecutive permissions sync for a user during the period.",
 						},
 						{
 							Name:           "repos_consecutive_sync_delay",
-							Description:    "max duration between two consecutive permissions sync for repo (minutes) [1m]",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]) / 60.0)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Description:    "max duration between two consecutive permissions sync for repo",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]))`,
+							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the max delay between two consecutive permissions sync for a repo during the period.",
@@ -347,18 +347,18 @@ func RepoUpdater() *monitoring.Dashboard {
 					{
 						{
 							Name:           "users_first_sync_delay",
-							Description:    "max duration between user creation and first permissions sync (minutes) [1m]",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [1m]) / 60.0)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Description:    "max duration between user creation and first permissions sync",
+							Query:          `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"}[1m]))`,
+							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the max delay between user creation and their permissions sync",
 						},
 						{
 							Name:           "repos_first_sync_delay",
-							Description:    "max duration between repo creation and first permissions sync (minutes) [1m]",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [1m]) / 60.0)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Description:    "max duration between repo creation and first permissions sync over 1m",
+							Query:          `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"}[1m]))`,
+							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the max delay between repo creation and their permissions sync",

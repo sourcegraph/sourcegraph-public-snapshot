@@ -41,7 +41,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
         <CodeInsightsPage className={styles.root}>
             <PageTitle title={`${insight.title} - Code Insights`} />
             <PageHeader
-                path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
+                path={[{ to: '/insights/all', icon: CodeInsightsIcon }, { text: insight.title }]}
                 actions={<CodeInsightIndependentPageActions insight={insight} telemetryService={telemetryService} />}
             />
 

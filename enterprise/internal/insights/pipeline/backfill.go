@@ -65,7 +65,7 @@ type BackfillerConfig struct {
 func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	logger := log.Scoped("insightsBackfiller", "")
 	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
-	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
+	searchRunner := makeRunSearchFunc(config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
 	return newBackfiller(searchJobGenerator, searchRunner, persister, glock.NewRealClock())
 
@@ -286,7 +286,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 	}
 }
 
-func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
+func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
 	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 		series := reqContext.backfillRequest.Series

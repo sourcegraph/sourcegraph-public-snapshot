@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // ExecutorSecretAccessLog represents a row in the `executor_secret_access_logs` table.
@@ -60,7 +61,7 @@ type ExecutorSecretAccessLogsListOpts struct {
 	ExecutorSecretID int64
 }
 
-func (opts ExecutorSecretAccessLogsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
+func (opts ExecutorSecretAccessLogsListOpts) sqlConds() *sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.ExecutorSecretID != 0 {
@@ -71,7 +72,7 @@ func (opts ExecutorSecretAccessLogsListOpts) sqlConds(ctx context.Context) (*sql
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Join(preds, "\n AND "), nil
+	return sqlf.Join(preds, "\n AND ")
 }
 
 // limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -148,10 +149,7 @@ func (s *executorSecretAccessLogStore) GetByID(ctx context.Context, id int64) (*
 }
 
 func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
-	conds, err := opts.sqlConds(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
+	conds := opts.sqlConds()
 
 	q := sqlf.Sprintf(
 		executorSecretAccessLogsListQueryFmtstr,
@@ -187,10 +185,7 @@ func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSe
 }
 
 func (s *executorSecretAccessLogStore) Count(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx)
-	if err != nil {
-		return 0, err
-	}
+	conds := opts.sqlConds()
 
 	q := sqlf.Sprintf(
 		executorSecretAccessLogsCountQueryFmtstr,
@@ -245,9 +240,7 @@ INSERT INTO
 
 // scanExecutorSecretAccessLog scans an ExecutorSecretAccessLog from the given scanner
 // into the given ExecutorSecretAccessLog.
-func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s interface {
-	Scan(...any) error
-}) error {
+func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s dbutil.Scanner) error {
 	return s.Scan(
 		&log.ID,
 		&log.ExecutorSecretID,

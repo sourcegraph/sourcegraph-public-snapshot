@@ -177,7 +177,8 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         let iconProps
         if (
             data.statusMessages?.some(
-                ({ __typename: type }) => type === 'ExternalServiceSyncError' || type === 'SyncError'
+                ({ __typename: type }) =>
+                    type === 'ExternalServiceSyncError' || type === 'SyncError' || type === 'GitUpdatesDisabled'
             )
         ) {
             codeHostMessage = 'Syncing repositories failed!'
@@ -227,6 +228,20 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         return (
             <>
                 {data.statusMessages.map(status => {
+                    if (status.__typename === 'GitUpdatesDisabled') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Git updates disabled"
+                                messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
+                                linkTo="/site-admin/configuration"
+                                linkText="View site configuration"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
                     if (status.__typename === 'CloningProgress') {
                         return (
                             <StatusMessagesNavItemEntry

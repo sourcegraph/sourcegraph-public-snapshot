@@ -435,38 +435,39 @@ const (
 	Monthly PeriodType = "monthly"
 )
 
+var ErrInvalidPeriodType = errors.New("invalid period type")
+
 // calcStartDate calculates the the starting date of a number of periods given the period type.
-// from the current time supplied as `now`. Returns a second false value if the period type is
+// from the current time supplied as `now`. Returns an error if the period type is
 // illegal.
-func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
 	case Daily:
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), true
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), nil
 	case Weekly:
-		return timeutil.StartOfWeek(now, periodsAgo), true
+		return timeutil.StartOfWeek(now, periodsAgo), nil
 	case Monthly:
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), true
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
 	}
-	return time.Time{}, false
+	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
 
 // calcEndDate calculates the the ending date of a number of periods given the period type.
 // Returns a second false value if the period type is illegal.
-func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
 	case Daily:
-		return startDate.AddDate(0, 0, periodsAgo), true
+		return startDate.AddDate(0, 0, periodsAgo), nil
 	case Weekly:
-		return startDate.AddDate(0, 0, 7*periodsAgo), true
+		return startDate.AddDate(0, 0, 7*periodsAgo), nil
 	case Monthly:
-		return startDate.AddDate(0, periodsAgo, 0), true
+		return startDate.AddDate(0, periodsAgo, 0), nil
 	}
-
-	return time.Time{}, false
+	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
 
 // CommonUsageOptions provides a set of options that are common across different usage calculations.
@@ -613,12 +614,30 @@ OR NOT(
 }
 
 func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
-	startDateDays, _ := calcStartDate(now, Daily, dayPeriods)
-	endDateDays, _ := calcEndDate(startDateDays, Daily, dayPeriods)
-	startDateWeeks, _ := calcStartDate(now, Weekly, weekPeriods)
-	endDateWeeks, _ := calcEndDate(startDateWeeks, Weekly, weekPeriods)
-	startDateMonths, _ := calcStartDate(now, Monthly, monthPeriods)
-	endDateMonths, _ := calcEndDate(startDateMonths, Monthly, monthPeriods)
+	startDateDays, err := calcStartDate(now, Daily, dayPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateDays, err := calcEndDate(startDateDays, Daily, dayPeriods)
+	if err != nil {
+		return nil, err
+	}
+	startDateWeeks, err := calcStartDate(now, Weekly, weekPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateWeeks, err := calcEndDate(startDateWeeks, Weekly, weekPeriods)
+	if err != nil {
+		return nil, err
+	}
+	startDateMonths, err := calcStartDate(now, Monthly, monthPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateMonths, err := calcEndDate(startDateMonths, Monthly, monthPeriods)
+	if err != nil {
+		return nil, err
+	}
 
 	conds := buildCountUniqueUserConds(opt)
 

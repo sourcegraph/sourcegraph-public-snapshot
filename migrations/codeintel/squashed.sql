@@ -70,13 +70,13 @@ CREATE FUNCTION update_codeintel_scip_documents_schema_versions_insert() RETURNS
     AS $$ BEGIN
     INSERT INTO codeintel_scip_documents_schema_versions
     SELECT
-        newtab.metadata_shard_id,
+        newtab.upload_id,
         MIN(codeintel_scip_documents.schema_version) as min_schema_version,
         MAX(codeintel_scip_documents.schema_version) as max_schema_version
     FROM newtab
-    JOIN codeintel_scip_documents ON codeintel_scip_documents.metadata_shard_id = newtab.metadata_shard_id
-    GROUP BY newtab.metadata_shard_id
-    ON CONFLICT (metadata_shard_id) DO UPDATE SET
+    JOIN codeintel_scip_documents ON codeintel_scip_documents.id = newtab.document_id
+    GROUP BY newtab.upload_id
+    ON CONFLICT (upload_id) DO UPDATE SET
         -- Update with min(old_min, new_min) and max(old_max, new_max)
         min_schema_version = LEAST(codeintel_scip_documents_schema_versions.min_schema_version, EXCLUDED.min_schema_version),
         max_schema_version = GREATEST(codeintel_scip_documents_schema_versions.max_schema_version, EXCLUDED.max_schema_version);
@@ -235,8 +235,7 @@ CREATE TABLE codeintel_scip_documents (
     id bigint NOT NULL,
     payload_hash bytea NOT NULL,
     schema_version integer NOT NULL,
-    raw_scip_payload bytea NOT NULL,
-    metadata_shard_id integer DEFAULT (floor(((random() * (128)::double precision) + (1)::double precision)))::integer NOT NULL
+    raw_scip_payload bytea NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_documents IS 'A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payloads by their hash.';
@@ -248,8 +247,6 @@ COMMENT ON COLUMN codeintel_scip_documents.payload_hash IS 'A deterministic hash
 COMMENT ON COLUMN codeintel_scip_documents.schema_version IS 'The schema version of this row - used to determine presence and encoding of (future) denormalized data.';
 
 COMMENT ON COLUMN codeintel_scip_documents.raw_scip_payload IS 'The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&patternType=standard) payload.';
-
-COMMENT ON COLUMN codeintel_scip_documents.metadata_shard_id IS 'A randomly generated integer used to arbitrarily bucket groups of documents for things like expiration checks and data migrations.';
 
 CREATE TABLE codeintel_scip_documents_dereference_logs (
     id bigint NOT NULL,
@@ -282,18 +279,18 @@ CREATE SEQUENCE codeintel_scip_documents_id_seq
 ALTER SEQUENCE codeintel_scip_documents_id_seq OWNED BY codeintel_scip_documents.id;
 
 CREATE TABLE codeintel_scip_documents_schema_versions (
-    metadata_shard_id integer NOT NULL,
+    upload_id integer NOT NULL,
     min_schema_version integer,
     max_schema_version integer
 );
 
-COMMENT ON TABLE codeintel_scip_documents_schema_versions IS 'Tracks the range of `schema_versions` values associated with each document metadata shard in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.';
+COMMENT ON TABLE codeintel_scip_documents_schema_versions IS 'Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.metadata_shard_id IS 'The identifier of the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.upload_id IS 'The identifier of the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_documents_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.';
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
 CREATE TABLE codeintel_scip_metadata (
     id bigint NOT NULL,
@@ -330,22 +327,37 @@ CREATE SEQUENCE codeintel_scip_metadata_id_seq
 
 ALTER SEQUENCE codeintel_scip_metadata_id_seq OWNED BY codeintel_scip_metadata.id;
 
+CREATE TABLE codeintel_scip_symbol_names (
+    id integer NOT NULL,
+    upload_id integer NOT NULL,
+    name_segment text NOT NULL,
+    prefix_id integer
+);
+
+COMMENT ON TABLE codeintel_scip_symbol_names IS 'Stores a prefix tree of symbol names within a particular upload.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.id IS 'An identifier unique within the index for this symbol name segment.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.upload_id IS 'The identifier of the upload that provided this SCIP index.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.name_segment IS 'The portion of the symbol name that is unique to this symbol and its children.';
+
+COMMENT ON COLUMN codeintel_scip_symbol_names.prefix_id IS 'The identifier of the segment that forms the prefix of this symbol, if any.';
+
 CREATE TABLE codeintel_scip_symbols (
     upload_id integer NOT NULL,
-    symbol_name text NOT NULL,
     document_lookup_id bigint NOT NULL,
     schema_version integer NOT NULL,
     definition_ranges bytea,
     reference_ranges bytea,
     implementation_ranges bytea,
-    type_definition_ranges bytea
+    type_definition_ranges bytea,
+    symbol_id integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_symbols IS 'A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.';
 
 COMMENT ON COLUMN codeintel_scip_symbols.upload_id IS 'The identifier of the upload that provided this SCIP index.';
-
-COMMENT ON COLUMN codeintel_scip_symbols.symbol_name IS 'The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard).';
 
 COMMENT ON COLUMN codeintel_scip_symbols.document_lookup_id IS 'A reference to the `id` column of [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup). Joining on this table yields the document path relative to the index root.';
 
@@ -358,6 +370,8 @@ COMMENT ON COLUMN codeintel_scip_symbols.reference_ranges IS 'An encoded set of 
 COMMENT ON COLUMN codeintel_scip_symbols.implementation_ranges IS 'An encoded set of ranges within the associated document that have a **implementation** relationship to the associated symbol.';
 
 COMMENT ON COLUMN codeintel_scip_symbols.type_definition_ranges IS 'An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.';
+
+COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.';
 
 CREATE TABLE codeintel_scip_symbols_schema_versions (
     upload_id integer NOT NULL,
@@ -647,13 +661,16 @@ ALTER TABLE ONLY codeintel_scip_documents
     ADD CONSTRAINT codeintel_scip_documents_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_scip_documents_schema_versions
-    ADD CONSTRAINT codeintel_scip_documents_schema_versions_pkey PRIMARY KEY (metadata_shard_id);
+    ADD CONSTRAINT codeintel_scip_documents_schema_versions_pkey PRIMARY KEY (upload_id);
 
 ALTER TABLE ONLY codeintel_scip_metadata
     ADD CONSTRAINT codeintel_scip_metadata_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_scip_symbol_names
+    ADD CONSTRAINT codeintel_scip_symbol_names_pkey PRIMARY KEY (upload_id, id);
+
 ALTER TABLE ONLY codeintel_scip_symbols
-    ADD CONSTRAINT codeintel_scip_symbols_pkey PRIMARY KEY (upload_id, symbol_name, document_lookup_id);
+    ADD CONSTRAINT codeintel_scip_symbols_pkey PRIMARY KEY (upload_id, symbol_id, document_lookup_id);
 
 ALTER TABLE ONLY codeintel_scip_symbols_schema_versions
     ADD CONSTRAINT codeintel_scip_symbols_schema_versions_pkey PRIMARY KEY (upload_id);
@@ -709,7 +726,11 @@ CREATE INDEX codeintel_scip_document_lookup_document_id ON codeintel_scip_docume
 
 CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_doc ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time, document_id);
 
+CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbol_names USING btree (upload_id) WHERE (prefix_id IS NULL);
+
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
+
+CREATE INDEX codeisdntel_scip_symbol_names_upload_id_children ON codeintel_scip_symbol_names USING btree (upload_id, prefix_id) WHERE (prefix_id IS NOT NULL);
 
 CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version);
 
@@ -741,7 +762,7 @@ CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSER
 
 CREATE TRIGGER codeintel_scip_documents_dereference_logs_insert AFTER DELETE ON codeintel_scip_document_lookup REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_dereference_logs_delete();
 
-CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
+CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
 
 CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert();
 

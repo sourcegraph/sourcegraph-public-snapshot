@@ -11,7 +11,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
-      <p>Sign up for a 30 day trial for your team.</p>
+      <p>Sign up for a 15 day trial for your team.</p>
     </div>
     <div class="cloud-cta-btn-container">
       <div class="visual-btn">Get free trial now</div>
@@ -29,7 +29,7 @@ If your organization has fewer than 100 developers, we recommend trying [Sourceg
 
 If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, we recommend using the [onboarding checklist](../getting-started/cloud-instance.md) to set up your instance quickly.
 
-Trials last 30 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
+Trials last 15 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
 
 ## Cloud subscription
 
@@ -99,7 +99,7 @@ All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP 
 
 - [Code Monitoring](../code_monitoring/index.md) notifications
 - Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
-- Important updates to a user accounts (for example, creation of API keys)
+- Important updates to user accounts (for example, creation of API keys)
 - For [`builtin` authentication](../admin/auth/index.md#builtin-password-authentication), password resets and email verification
 
 By default, emails will be sent from an `@cloud.sourcegraph.com` email address. To test email delivery, refer to [sending a test email](../admin/config/email.md#sending-a-test-email).

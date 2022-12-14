@@ -390,7 +390,7 @@ func TestMakeRunSearch(t *testing.T) {
 				cancel()
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
-			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
+			searchFunc := makeRunSearchFunc(tc.handlers, tc.workers, unlimitedLimiter)
 
 			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs)
 

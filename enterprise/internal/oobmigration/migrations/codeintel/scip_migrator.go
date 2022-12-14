@@ -1,10 +1,13 @@
 package codeintel
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -12,12 +15,14 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type scipMigrator struct {
@@ -110,6 +115,10 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 		return err
 	}
 
+	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -119,6 +128,12 @@ FROM lsif_data_metadata
 ORDER BY dump_id
 FOR UPDATE SKIP LOCKED
 LIMIT 1
+`
+
+const scipMigratorMarkUploadAsReindexableQuery = `
+UPDATE lsif_uploads
+SET should_reindex = true
+WHERE id = %s
 `
 
 func (m *scipMigrator) Down(ctx context.Context) error {
@@ -160,6 +175,26 @@ func migrateUpload(
 		cacheSize = numResultChunks
 	}
 	resultChunkCache := lru.New(cacheSize)
+
+	// Warm result chunk cache if it will all fit in the cache
+	if numResultChunks <= cacheSize {
+		ids := make([]ID, 0, numResultChunks)
+		for i := 0; i < numResultChunks; i++ {
+			ids = append(ids, ID(strconv.Itoa(i)))
+		}
+
+		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+			resultChunkCache.Add(idx, resultChunk)
+			return nil
+		})
+		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
+			scipMigratorScanResultChunksQuery,
+			uploadID,
+			pq.Array(ids),
+		))); err != nil {
+			return err
+		}
+	}
 
 	for page := 0; ; page++ {
 		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
@@ -249,7 +284,6 @@ func processDocument(
 	path string,
 	document DocumentData,
 ) error {
-
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -299,11 +333,16 @@ func processDocument(
 		return err
 	}
 
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
 	if err := scipWriter.Write(
 		ctx,
 		uploadID,
 		path,
-		payload,
+		compressedPayload,
 		hashPayload(payload),
 		types.ExtractSymbolIndexes(scipDocument),
 	); err != nil {
@@ -384,9 +423,18 @@ WHERE
 `
 
 type scipWriter struct {
-	tx       *basestore.Store
-	inserter *batch.Inserter
-	uploadID int
+	tx              *basestore.Store
+	inserter        *batch.Inserter
+	uploadID        int
+	batchPayloadSum int
+	batch           []bufferedDocument
+}
+
+type bufferedDocument struct {
+	path        string
+	payload     []byte
+	payloadHash []byte
+	symbols     []types.InvertedRangeIndex
 }
 
 // makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
@@ -403,7 +451,7 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
@@ -418,13 +466,16 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 
 const makeSCIPWriterTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
+	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
 	implementation_ranges bytea
 ) ON COMMIT DROP
 `
+
+// TODO :/
+var nextID int
 
 // Write inserts a new document and document lookup row, and pushes all of the given
 // symbols into the batch inserter.
@@ -442,40 +493,99 @@ func (s *scipWriter) Write(
 		time.Now().UnixNano()/int64(time.Millisecond)),
 	)
 
-	documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
-		scipWriterWriteDocumentQuery,
-		append(uniquePrefix, payloadHash...),
-		payload,
-		uploadID,
-		path,
-	)))
-	if err != nil {
-		return err
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
 	}
 
-	for _, symbol := range symbols {
-		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
-		if err != nil {
+	s.batch = append(s.batch, bufferedDocument{
+		path:        path,
+		payload:     payload,
+		payloadHash: append(uniquePrefix, hashPayload(payload)...),
+		symbols:     symbols,
+	})
+	s.batchPayloadSum += len(payload)
+
+	if len(s.batch) >= DocumentsBatchSize {
+		if err := s.flush(ctx); err != nil {
 			return err
 		}
-		referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
-		if err != nil {
-			return err
-		}
-		implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+	}
+
+	return nil
+}
+
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
+
+func (s *scipWriter) flush(ctx context.Context) (err error) {
+	documents := s.batch
+	s.batch = nil
+	s.batchPayloadSum = 0
+
+	for _, document := range documents {
+		documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
+			scipWriterWriteDocumentQuery,
+			document.payloadHash,
+			document.payload,
+			s.uploadID,
+			document.path,
+		)))
 		if err != nil {
 			return err
 		}
 
-		if err := s.inserter.Insert(
-			ctx,
-			documentLookupID,
-			symbol.SymbolName,
-			definitionRanges,
-			referenceRanges,
-			implementationRanges,
-		); err != nil {
+		symbolNameMap := make(map[string]struct{}, len(document.symbols))
+		for _, invertedRange := range document.symbols {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		}
+		symbolNames := make([]string, 0, len(symbolNameMap))
+		for symbolName := range symbolNameMap {
+			symbolNames = append(symbolNames, symbolName)
+		}
+		sort.Strings(symbolNames)
+
+		var symbolNameTrie trie.Trie
+		symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
+
+		// TODO - batch
+		if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+			return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
+		}); err != nil {
 			return err
+		}
+
+		for _, symbol := range document.symbols {
+			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+			if err != nil {
+				return err
+			}
+			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			if err != nil {
+				return err
+			}
+			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			if err != nil {
+				return err
+			}
+
+			// TODO - pre-calculate map
+			symbolID, ok := symbolNameTrie.Search(symbol.SymbolName)
+			if !ok {
+				return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+			}
+
+			if err := s.inserter.Insert(
+				ctx,
+				documentLookupID,
+				symbolID,
+				definitionRanges,
+				referenceRanges,
+				implementationRanges,
+			); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -497,6 +607,10 @@ RETURNING id
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
 func (s *scipWriter) Flush(ctx context.Context) error {
+	if err := s.flush(ctx); err != nil {
+		return err
+	}
+
 	if err := s.inserter.Flush(ctx); err != nil {
 		return err
 	}
@@ -511,7 +625,7 @@ func (s *scipWriter) Flush(ctx context.Context) error {
 const scipWriterFlushQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
-	symbol_name,
+	symbol_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -520,7 +634,7 @@ INSERT INTO codeintel_scip_symbols (
 )
 SELECT
 	%s,
-	source.symbol_name,
+	source.symbol_id,
 	source.document_lookup_id,
 	1,
 	source.definition_ranges,

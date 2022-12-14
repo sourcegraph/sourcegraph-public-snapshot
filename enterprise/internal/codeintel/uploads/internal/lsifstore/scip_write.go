@@ -3,12 +3,14 @@ package lsifstore
 import (
 	"context"
 	"encoding/base64"
+	"sort"
 	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -128,7 +130,7 @@ func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
@@ -147,12 +149,33 @@ func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter
 
 type symbolWriter struct {
 	uploadID int
+	nextID   int
 	db       *basestore.Store
 	inserter *batch.Inserter
 	count    uint32
 }
 
 func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
+	symbolNameMap := make(map[string]struct{}, len(symbols))
+	for _, invertedRange := range symbols {
+		symbolNameMap[invertedRange.SymbolName] = struct{}{}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
+
+	var symbolNameTrie trie.Trie
+	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+
+	// TODO - batch
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		return s.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
+	}); err != nil {
+		return err
+	}
+
 	for _, symbol := range symbols {
 		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
 		if err != nil {
@@ -171,10 +194,16 @@ func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID in
 			return err
 		}
 
+		// TODO - pre-calculate map
+		symbolID, ok := symbolNameTrie.Search(symbol.SymbolName)
+		if !ok {
+			return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+		}
+
 		if err := s.inserter.Insert(
 			ctx,
 			documentLookupID,
-			symbol.SymbolName,
+			symbolID,
 			definitionRanges,
 			referenceRanges,
 			implementationRanges,
@@ -187,7 +216,6 @@ func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID in
 	}
 
 	return nil
-
 }
 
 func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
@@ -204,7 +232,7 @@ func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
 
 const writeSCIPSymbolsTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
+	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
@@ -216,7 +244,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 const writeSCIPSymbolsInsertQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
-	symbol_name,
+	symbol_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -226,7 +254,7 @@ INSERT INTO codeintel_scip_symbols (
 )
 SELECT
 	%s,
-	source.symbol_name,
+	source.symbol_id,
 	source.document_lookup_id,
 	%s,
 	source.definition_ranges,

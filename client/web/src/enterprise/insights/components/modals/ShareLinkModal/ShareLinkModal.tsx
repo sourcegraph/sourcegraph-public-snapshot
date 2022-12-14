@@ -1,36 +1,31 @@
-import { FunctionComponent, MouseEventHandler, useRef } from 'react'
+import { FC, MouseEventHandler, useRef } from 'react'
 
-import { useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Badge, Button, Input, LoadingSpinner, Modal, ModalProps, H3, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { GetSharableInsightInfoResult } from '../../../../../graphql-operations'
 import {
     CustomInsightDashboard,
     Insight,
-    InsightDashboard,
     isGlobalDashboard,
     isOrganizationDashboard,
     isOrganizationOwner,
-    isVirtualDashboard,
 } from '../../../core'
 import { useCopyURLHandler } from '../../../hooks'
 
-import { decodeDashboardIds, GET_SHARABLE_INSIGHT_INFO_GQL } from './get-sharable-insight-info'
+import { useDashboardThatHaveInsight } from './get-sharable-insight-info'
 
 import styles from './ShareLinkModal.module.scss'
 
 type ShareLinkModalProps = ModalProps & {
     insight: Insight
-    dashboards: InsightDashboard[]
     onDismiss: () => void
 }
 
-export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
-    const { insight, dashboards, isOpen, onDismiss, ...attributes } = props
+export const ShareLinkModal: FC<ShareLinkModalProps> = props => {
+    const { insight, isOpen, onDismiss, ...attributes } = props
 
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
     const copyButtonReference = useRef<HTMLButtonElement>(null)
@@ -51,7 +46,7 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
         <Modal className={classNames(styles.container)} {...attributes} isOpen={isOpen} onDismiss={onDismiss}>
             <H3>Get shareable link</H3>
 
-            <ShareLinkModalContent insight={insight} dashboards={dashboards} />
+            <ShareLinkModalContent insight={insight} />
 
             <Input
                 value={shareableUrl}
@@ -74,32 +69,27 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
     )
 }
 
-const ShareLinkModalContent: FunctionComponent<Pick<ShareLinkModalProps, 'insight' | 'dashboards'>> = props => {
-    const { insight, dashboards } = props
+interface ShareLinkModalContentProps {
+    insight: Insight
+}
 
-    const { data, error, loading } = useQuery<GetSharableInsightInfoResult>(GET_SHARABLE_INSIGHT_INFO_GQL, {
-        variables: { id: insight.id },
-    })
+const ShareLinkModalContent: FC<ShareLinkModalContentProps> = props => {
+    const { insight } = props
+    const { dashboards, error, loading } = useDashboardThatHaveInsight({ insightId: insight.id })
 
     if (loading) {
         return <LoadingSpinner />
     }
 
-    if (error || !data) {
+    if (error || !dashboards) {
         return <ErrorAlert error={error} />
     }
 
-    const insightDashboardIds = decodeDashboardIds(data)
-    const insightDashboards = dashboards.filter(
-        (dashboard): dashboard is CustomInsightDashboard =>
-            !isVirtualDashboard(dashboard) && insightDashboardIds.includes(dashboard.id)
-    )
-
-    const permission = getLeastRestrictivePermissions(insightDashboards)
+    const permission = getLeastRestrictivePermissions(dashboards)
 
     if (permission === ShareablePermission.Organization) {
         const organizations = new Set(
-            insightDashboards
+            dashboards
                 .filter(isOrganizationDashboard)
                 .flatMap(dashboards => dashboards.owners.filter(isOrganizationOwner).map(owner => owner.title))
         )
@@ -114,10 +104,8 @@ const ShareLinkModalContent: FunctionComponent<Pick<ShareLinkModalProps, 'insigh
     return <GlobalContent />
 }
 
-const GlobalContent: FunctionComponent = () => <>Everyone on your Sourcegraph instance can see this insight.</>
-
-const PrivateContent: FunctionComponent = () => (
-    <>
+const PrivateContent: FC = () => (
+    <span>
         <Text>
             Only you can see this insight, because it's only on private dashboards. Add this insight to public
             dashboards to share with others.
@@ -128,19 +116,21 @@ const PrivateContent: FunctionComponent = () => (
                 others.
             </em>
         </Text>
-    </>
+    </span>
 )
 
-const OrganizationContent: FunctionComponent<{ organizations: string[] }> = ({ organizations }) => (
-    <>
+const OrganizationContent: FC<{ organizations: string[] }> = ({ organizations }) => (
+    <span>
         <Text className="mb-2">Only people added to the following organizations can see this insight:</Text>
         {organizations.map(organization => (
             <Badge variant="secondary" key={organization} className="mr-2">
                 {organization}
             </Badge>
         ))}
-    </>
+    </span>
 )
+
+const GlobalContent: FC = () => <>Everyone on your Sourcegraph instance can see this insight.</>
 
 enum ShareablePermission {
     Private,

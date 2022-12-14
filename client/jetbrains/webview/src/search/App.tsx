@@ -260,7 +260,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             searchContextsEnabled={true}
                             showSearchContext={true}
                             showSearchContextManagement={false}
-                            defaultSearchContextSpec="global"
                             setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
                             selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
                             fetchSearchContexts={fetchSearchContexts}

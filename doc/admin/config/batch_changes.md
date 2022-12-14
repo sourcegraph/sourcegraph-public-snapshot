@@ -123,44 +123,7 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 > NOTE: This feature was added in Sourcegraph 3.33.
 
-Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed by going to **Site Admin > Batch Changes > Incoming webhooks**.
-
-By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
-
-### Enabling webhook logging
-
-Webhook logging is controlled by the `webhook.logging` site configuration
-option. This option is an object with the following keys:
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | `boolean` | If `true`, incoming webhooks will be stored. | `true` if no site encryption is enabled; `false` otherwise. |
-| `retention` | `string` | The length of time to retain the webhooks, expressed as a valid [Go duration](https://pkg.go.dev/time#ParseDuration). | `72h` |
-
-#### Examples
-
-To disable webhook logging:
-
-```json
-{
-  "webhook.logging": {"enabled": false}
-}
-```
-
-To retain webhook logs for one day:
-
-```json
-{
-  "webhook.logging": {
-    "enabled": false,
-    "retention": "24h"
-  }
-}
-```
-
-### Encrypting webhook logs
-
-Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
+Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks.md#webhook-logging).
 
 ## Forks
 

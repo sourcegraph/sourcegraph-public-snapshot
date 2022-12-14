@@ -137,7 +137,7 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	}
 }
 
-func getPathParts(r *http.Request) (string, string, error) {
+func getPathParts(r *http.Request) (string, string, error) { // nolint:unparam // unused return val 0 is kept for semantics
 	rawBatchSpecRandID := mux.Vars(r)["spec"]
 	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
