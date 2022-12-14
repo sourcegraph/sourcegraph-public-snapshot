@@ -27,6 +27,7 @@ func validateSiteConfigTemplates(confQuerier conftypes.SiteConfigQuerier) (probl
 		Template *schema.EmailTemplate
 	}{
 		// All templates should go here
+		{Name: "resetPassword", Template: customTemplates.ResetPassword},
 		{Name: "setPassword", Template: customTemplates.SetPassword},
 	} {
 		if tpl.Template == nil {
@@ -42,28 +43,36 @@ func validateSiteConfigTemplates(confQuerier conftypes.SiteConfigQuerier) (probl
 	return problems
 }
 
+// FromSiteConfigTemplateWithDefault returns a valid txtypes.Templates from customTemplate
+// if it is valid, otherwise it returns the given default.
+func FromSiteConfigTemplateWithDefault(customTemplate *schema.EmailTemplate, defaultTemplate txtypes.Templates) txtypes.Templates {
+	if customTemplate == nil {
+		return defaultTemplate
+	}
+
+	if custom, err := FromSiteConfigTemplate(*customTemplate); err == nil {
+		// If valid, use the custom template. If invalid, proceed with the default
+		// template and discard the error - it will also be rendered in site config
+		// problems.
+		return *custom
+	}
+
+	return defaultTemplate
+}
+
 // FromSiteConfigTemplate validates and converts an email template configured in site
 // configuration to a *txtypes.Templates.
 func FromSiteConfigTemplate(input schema.EmailTemplate) (*txtypes.Templates, error) {
 	if input.Subject == "" || input.Html == "" || input.Text == "" {
 		return nil, errors.New("fields 'subject', 'text', and 'html' are all required")
 	}
-	if _, err := ParseSiteConfigTemplate(input); err != nil {
+	tpl := txtypes.Templates{
+		Subject: input.Subject,
+		Text:    input.Text,
+		HTML:    input.Html,
+	}
+	if _, err := ParseTemplate(tpl); err != nil {
 		return nil, err
 	}
-	return &txtypes.Templates{
-		Subject: input.Subject,
-		Text:    input.Text,
-		HTML:    input.Html,
-	}, nil
-}
-
-// ParseSiteConfigTemplate calls ParseTemplate over an email template configured in site
-// configuration.
-func ParseSiteConfigTemplate(input schema.EmailTemplate) (*txtypes.ParsedTemplates, error) {
-	return ParseTemplate(txtypes.Templates{
-		Subject: input.Subject,
-		Text:    input.Text,
-		HTML:    input.Html,
-	})
+	return &tpl, nil
 }

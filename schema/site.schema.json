@@ -1213,8 +1213,12 @@
       "description": "Configurable templates for some email types sent by Sourcegraph.",
       "type": "object",
       "properties": {
-        "setPassword": {
+        "resetPassword": {
           "description": "Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        },
+        "setPassword": {
+          "description": "Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
           "$ref": "#/definitions/EmailTemplate"
         }
       },

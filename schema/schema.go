@@ -498,7 +498,9 @@ type EmailTemplate struct {
 
 // EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
 type EmailTemplates struct {
-	// SetPassword description: Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
+	// ResetPassword description: Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
+	ResetPassword *EmailTemplate `json:"resetPassword,omitempty"`
+	// SetPassword description: Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
 	SetPassword *EmailTemplate `json:"setPassword,omitempty"`
 }
 

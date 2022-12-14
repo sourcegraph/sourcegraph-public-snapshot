@@ -38,9 +38,15 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
+	// Configure the template
+	emailTemplate := defaultResetPasswordEmailTemplates
+	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
+		emailTemplate = txemail.FromSiteConfigTemplateWithDefault(customTemplates.ResetPassword, emailTemplate)
+	}
+
 	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
-		Template: defaultResetPasswordEmailTemplates,
+		Template: emailTemplate,
 		Data: struct {
 			Username string
 			URL      string

@@ -52,16 +52,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 	// Configure the template
 	emailTemplate := defaultSetPasswordEmailTemplate
 	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
-		if customTemplates.SetPassword != nil {
-			customTemplate, err := txemail.FromSiteConfigTemplate(*customTemplates.SetPassword)
-
-			// If valid, use the custom template. If invalid, proceed with the default
-			// template and discard the error - it will also be rendered in site config
-			// problems.
-			if err == nil {
-				emailTemplate = *customTemplate
-			}
-		}
+		emailTemplate = txemail.FromSiteConfigTemplateWithDefault(customTemplates.SetPassword, emailTemplate)
 	}
 
 	rus := globals.ExternalURL().ResolveReference(ru).String()
