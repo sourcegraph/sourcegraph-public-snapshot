@@ -88,10 +88,6 @@ func Lock() {
 			panic(fmt.Sprintf("%q already registered", secrets[i].name))
 		}
 	}
-
-	expvar.Publish("secrets", expvar.Func(func() any {
-		return secrets
-	}))
 }
 
 func (c *GsmConfig) Get(name, description string) string {
