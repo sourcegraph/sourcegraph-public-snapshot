@@ -1311,6 +1311,14 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 			return err
 		}
 
+		hasDiffModifiesFile := false
+		search.Visit(mt, func(mt search.MatchTree) {
+			switch mt.(type) {
+			case *search.DiffModifiesFile:
+				hasDiffModifiesFile = true
+			}
+		})
+
 		searcher := &search.CommitSearcher{
 			Logger:               s.Logger,
 			RepoName:             args.Repo,
@@ -1318,7 +1326,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 			Revisions:            args.Revisions,
 			Query:                mt,
 			IncludeDiff:          args.IncludeDiff,
-			IncludeModifiedFiles: args.IncludeModifiedFiles,
+			IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
 		}
 
 		return searcher.Search(ctx, func(match *protocol.CommitMatch) {

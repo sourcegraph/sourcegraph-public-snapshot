@@ -51,6 +51,19 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	}
 }
 
+// Visit performs a preorder traversal over the match tree, calling f on each node
+func Visit(mt MatchTree, f func(MatchTree)) {
+	switch v := mt.(type) {
+	case *Operator:
+		f(mt)
+		for _, child := range v.Operands {
+			Visit(child, f)
+		}
+	default:
+		f(mt)
+	}
+}
+
 // MatchTree is an interface representing the queries we can run against a commit.
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
@@ -192,26 +205,25 @@ type DiffModifiesFile struct {
 }
 
 func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	diff, err := lc.Diff()
-	if err != nil {
-		return filterResult(false), MatchedCommit{}, err
-	}
-
 	var fileDiffHighlights map[int]MatchedFileDiff
-	matchedFileDiffs := make(map[int]struct{})
-	for fileIdx, fileDiff := range diff {
-		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
-		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
-		if oldFileMatches != nil || newFileMatches != nil {
-			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]MatchedFileDiff)
-			}
-			fileDiffHighlights[fileIdx] = MatchedFileDiff{
-				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
-				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
-			}
-			matchedFileDiffs[fileIdx] = struct{}{}
+	var matchedFileDiffs map[int]struct{}
+	for i, fileName := range lc.RawCommit.ModifiedFiles {
+		matches := dmf.FindAllIndex(fileName, -1, &lc.LowerBuf)
+		if len(matches) == 0 {
+			continue
 		}
+
+		if fileDiffHighlights == nil {
+			fileDiffHighlights = make(map[int]MatchedFileDiff, 1)
+		}
+		if matchedFileDiffs == nil {
+			matchedFileDiffs = make(map[int]struct{}, 1)
+		}
+
+		fileDiffHighlights[i] = MatchedFileDiff{
+			NewFile: matchesToRanges(fileName, matches),
+		}
+		matchedFileDiffs[i] = struct{}{}
 	}
 
 	return CommitFilterResult{MatchedFileDiffs: matchedFileDiffs}, MatchedCommit{Diff: fileDiffHighlights}, nil
