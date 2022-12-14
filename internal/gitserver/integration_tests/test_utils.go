@@ -2,7 +2,6 @@ package inttests
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -27,22 +26,25 @@ var root string
 
 // This is a default gitserver test client currently used for RequestRepoUpdate
 // gitserver calls during invocation of MakeGitRepository function
-var testGitserverClient gitserver.Client
-var GitserverAddresses []string
+var (
+	testGitserverClient gitserver.Client
+	GitserverAddresses  []string
+)
 
 func Init() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
+	logger := sglog.Scoped("gitserver_integration_tests", "")
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		log.Fatalf("listen failed: %s", err)
+		logger.Fatal("listen failed", sglog.Error(err))
 	}
 
 	root, err = os.MkdirTemp("", "test")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 
 	db := database.NewMockDB()
@@ -66,7 +68,7 @@ func Init() {
 	}
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			log.Fatal(err)
+			logger.Fatal(err.Error())
 		}
 	}()
 
