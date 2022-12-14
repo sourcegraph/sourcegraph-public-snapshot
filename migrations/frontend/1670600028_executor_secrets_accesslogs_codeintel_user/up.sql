@@ -1,16 +1,16 @@
 ALTER TABLE executor_secret_access_logs
-ADD COLUMN machine_user BOOLEAN NOT NULL;
+ADD COLUMN IF NOT EXISTS machine_user text NOT NULL DEFAULT '';
 
 ALTER TABLE executor_secret_access_logs
 ADD CONSTRAINT user_id_or_machine_user
-CHECK (user_id IS NOT NULL OR machine_user);
+CHECK (user_id IS NOT NULL OR machine_user <> '');
 
 ALTER TABLE executor_secret_access_logs
 ALTER COLUMN user_id
 DROP NOT NULL;
 
 ALTER TABLE lsif_indexes
-ADD COLUMN requested_envvars text[];
+ADD COLUMN IF NOT EXISTS requested_envvars text[];
 
 DROP VIEW IF EXISTS lsif_indexes_with_repository_name;
 

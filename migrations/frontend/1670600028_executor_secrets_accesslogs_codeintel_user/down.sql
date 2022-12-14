@@ -1,19 +1,14 @@
--- Undo the changes made in the up migration
 ALTER TABLE executor_secret_access_logs
-DROP CONSTRAINT user_id_or_machine_user;
-
--- delete access logs where machine_user is true
+DROP CONSTRAINT IF EXISTS user_id_or_machine_user;
 
 ALTER TABLE executor_secret_access_logs
-DROP COLUMN machine_user;
+DROP COLUMN IF EXISTS machine_user;
 
+DELETE FROM executor_secret_access_logs WHERE user_id IS NULL;
 
 ALTER TABLE executor_secret_access_logs
 ALTER COLUMN user_id
 SET NOT NULL;
-
-ALTER TABLE lsif_indexes
-DROP COLUMN requested_envvars;
 
 DROP VIEW IF EXISTS lsif_indexes_with_repository_name;
 
@@ -42,3 +37,6 @@ CREATE VIEW lsif_indexes_with_repository_name AS
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
+
+ALTER TABLE lsif_indexes
+DROP COLUMN IF EXISTS requested_envvars;

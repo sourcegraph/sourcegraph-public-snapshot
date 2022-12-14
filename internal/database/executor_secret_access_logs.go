@@ -17,7 +17,7 @@ type ExecutorSecretAccessLog struct {
 	ID               int64
 	ExecutorSecretID int64
 	UserID           *int32
-	MachineUser      bool
+	MachineUser      string
 
 	CreatedAt time.Time
 }
@@ -245,7 +245,8 @@ INSERT INTO
 // into the given ExecutorSecretAccessLog.
 func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s interface {
 	Scan(...any) error
-}) error {
+},
+) error {
 	return s.Scan(
 		&log.ID,
 		&log.ExecutorSecretID,

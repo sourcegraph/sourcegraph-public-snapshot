@@ -32,7 +32,7 @@ type accessLogTransformer struct {
 }
 
 func (e *accessLogTransformer) Create(ctx context.Context, log *database.ExecutorSecretAccessLog) error {
-	log.MachineUser = true
+	log.MachineUser = "codeintel-autoindexing"
 	log.UserID = nil
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
