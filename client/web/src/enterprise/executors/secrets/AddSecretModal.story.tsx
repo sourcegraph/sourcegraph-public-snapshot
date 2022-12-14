@@ -26,7 +26,7 @@ export const GitHub: Story = () => (
         {props => (
             <AddSecretModal
                 {...props}
-                namespaceID="user-id-1"
+                namespaceID="user-id-13"
                 scope={ExecutorSecretScope.BATCHES}
                 afterCreate={noop}
                 onCancel={noop}
