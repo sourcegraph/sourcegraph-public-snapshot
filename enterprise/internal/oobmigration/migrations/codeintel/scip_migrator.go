@@ -542,27 +542,30 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		invertedRangeIndexForDocuments = append(invertedRangeIndexForDocuments, types.ExtractSymbolIndexes(document.scipDocument))
 	}
 
-	for i, symbols := range invertedRangeIndexForDocuments {
-		symbolNameMap := make(map[string]struct{}, len(symbols))
+	symbolNameMap := map[string]struct{}{}
+	for _, symbols := range invertedRangeIndexForDocuments {
 		for _, invertedRange := range symbols {
 			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
-		symbolNames := make([]string, 0, len(symbolNameMap))
-		for symbolName := range symbolNameMap {
-			symbolNames = append(symbolNames, symbolName)
-		}
-		sort.Strings(symbolNames)
+	}
 
-		var symbolNameTrie trie.Trie
-		symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
 
-		// TODO - batch
-		if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-			return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
-		}); err != nil {
-			return err
-		}
+	var symbolNameTrie trie.Trie
+	symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
 
+	// TODO - batch
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
+	}); err != nil {
+		return err
+	}
+
+	for i, symbols := range invertedRangeIndexForDocuments {
 		for _, symbol := range symbols {
 			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
 			if err != nil {
