@@ -99,7 +99,7 @@ func (l *LazyCommit) ModifiedFiles() []string {
 		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
 			break
 		}
-		switch l.RawCommit.ModifiedFiles[i][0] {
+		switch bytes.TrimSpace(l.RawCommit.ModifiedFiles[i])[0] {
 		case 'R':
 			// SAFETY: don't assume that we have the right number of things
 			if i+2 >= len(l.RawCommit.ModifiedFiles) {

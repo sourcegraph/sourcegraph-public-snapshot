@@ -66,6 +66,15 @@ func TestSearch(t *testing.T) {
 			"GIT_AUTHOR_EMAIL=camden2@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit2",
+		"mv file1 file1a",
+		"git add -A",
+		"GIT_COMMITTER_NAME=camden3 " +
+			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
+			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+			"GIT_AUTHOR_NAME=camden3 " +
+			"GIT_AUTHOR_EMAIL=camden3@ccheek.com " +
+			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+			"git commit -m commit3",
 	}
 	dir := initGitRepository(t, cmds...)
 
@@ -99,9 +108,10 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden2")
-		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, matches, 3)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden2")
+		require.Equal(t, matches[2].Author.Name, "camden1")
 	})
 
 	t.Run("and with no operands matches all", func(t *testing.T) {
@@ -117,7 +127,7 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
+		require.Len(t, matches, 3)
 	})
 
 	t.Run("match diff content", func(t *testing.T) {
@@ -133,8 +143,9 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
 	t.Run("author matches", func(t *testing.T) {
@@ -168,8 +179,9 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
 	t.Run("and match", func(t *testing.T) {
@@ -189,12 +201,13 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
-		require.Len(t, strings.Split(matches[0].Diff.Content, "\n"), 4)
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, strings.Split(matches[1].Diff.Content, "\n"), 4)
 	})
 
-	t.Run("match both, in order with modified files", func(t *testing.T) {
+	t.Run("match all, in order with modified files", func(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "c"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
@@ -208,11 +221,13 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden2")
-		require.Equal(t, matches[1].Author.Name, "camden1")
-		require.Equal(t, []string{"file2", "file3"}, matches[0].ModifiedFiles)
-		require.Equal(t, []string{"file1"}, matches[1].ModifiedFiles)
+		require.Len(t, matches, 3)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden2")
+		require.Equal(t, matches[2].Author.Name, "camden1")
+		require.Equal(t, []string{"file1", "file1a"}, matches[0].ModifiedFiles)
+		require.Equal(t, []string{"file2", "file3"}, matches[1].ModifiedFiles)
+		require.Equal(t, []string{"file1"}, matches[2].ModifiedFiles)
 	})
 }
 
