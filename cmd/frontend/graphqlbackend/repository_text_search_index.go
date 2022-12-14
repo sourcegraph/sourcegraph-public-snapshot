@@ -106,9 +106,13 @@ func (r *repositoryTextSearchIndexStatus) OtherBranchesNewLinesCount() int32 {
 }
 
 func (r *repositoryTextSearchIndexStatus) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	// We don't want to let the user wait for too long. If the socket
+	// connection is working, 500ms should be generous.
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Millisecond*500))
+	defer cancel()
 	host, err := searchzoekt.GetIndexserverHost(ctx, api.RepoName(r.entry.Repository.Name))
 	if err != nil {
-		host = searchzoekt.Host{Name: fmt.Sprintf("unknown: %s", err)}
+		host = searchzoekt.Host{Name: "unknown"}
 
 	}
 	return &repositoryIndexserverHostResolver{
