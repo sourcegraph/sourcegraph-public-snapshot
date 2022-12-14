@@ -2,7 +2,6 @@ package inttests
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -35,15 +34,16 @@ func init() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
+	logger := sglog.Scoped("tree_test", "")
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		log.Fatalf("listen failed: %s", err)
+		logger.Fatal("listen failed", sglog.Error(err))
 	}
 
 	root, err = os.MkdirTemp("", "test")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("make temp dir failed", sglog.Error(err))
 	}
 
 	db := database.NewMockDB()
@@ -67,7 +67,7 @@ func init() {
 	}
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			log.Fatal(err)
+			logger.Fatal("", sglog.Error(err))
 		}
 	}()
 
