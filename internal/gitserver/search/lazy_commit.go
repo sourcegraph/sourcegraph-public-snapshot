@@ -87,33 +87,29 @@ func (l *LazyCommit) SourceRefs() []string {
 
 func (l *LazyCommit) ModifiedFiles() []string {
 	files := make([]string, 0, len(l.RawCommit.ModifiedFiles)/2)
-	addFile := func(raw []byte) {
-		fileName := string(bytes.TrimSpace(raw))
-		if len(fileName) == 0 {
-			return
-		}
-		files = append(files, fileName)
-	}
 	i := 0
 	for i < len(l.RawCommit.ModifiedFiles) {
 		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
+			// SAFETY: don't trust input
 			break
 		}
-		switch bytes.TrimSpace(l.RawCommit.ModifiedFiles[i])[0] {
+		switch l.RawCommit.ModifiedFiles[i][0] {
 		case 'R':
 			// SAFETY: don't assume that we have the right number of things
 			if i+2 >= len(l.RawCommit.ModifiedFiles) {
 				return files
 			}
-			addFile(l.RawCommit.ModifiedFiles[i+1])
-			addFile(l.RawCommit.ModifiedFiles[i+2])
+			// A rename entry will be followed by two file names
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+2]))
 			i += 3
 		default:
 			// SAFETY: don't assume that we have the right number of things
 			if i+1 >= len(l.RawCommit.ModifiedFiles) {
 				return files
 			}
-			addFile(l.RawCommit.ModifiedFiles[i+1])
+			// Any entry that is not a rename entry will only be followed by one file name
+			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
 			i += 2
 		}
 	}
