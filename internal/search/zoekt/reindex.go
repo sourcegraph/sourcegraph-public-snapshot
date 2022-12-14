@@ -93,7 +93,7 @@ func GetIndexserverHost(ctx context.Context, name api.RepoName) (Host, error) {
 	return h, nil
 }
 
-// resolveIndexserver returns Zoekt webserver hosting the index of the repo.
+// resolveIndexserver returns the Zoekt webserver hosting the index of the repo.
 func resolveIndexserver(name api.RepoName) (*url.URL, error) {
 	ep, err := search.Indexers().Map.Get(string(name))
 	if err != nil {
