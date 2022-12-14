@@ -91,8 +91,6 @@ func lintLoggingLibraries() *linter {
 			"internal/logging/main.go",
 			// Dependencies require direct usage of zap
 			"cmd/frontend/internal/app/otlpadapter",
-			// Not worth fixing the deprecated package
-			"cmd/frontend/internal/usagestatsdeprecated",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
