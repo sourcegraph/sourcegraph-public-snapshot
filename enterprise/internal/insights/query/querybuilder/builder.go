@@ -214,7 +214,6 @@ var QueryNotSupported = errors.New("query not supported")
 // At this time only queries with a single query plan step are supported.  Queries with multiple plan steps
 // will error with `QueryNotSupported`
 func IsSingleRepoQuery(query BasicQuery) (bool, error) {
-
 	// because we are only attempting to understand if this query targets a single repo, the search type is not relevant
 	planSteps, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -329,8 +328,14 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
-func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (BasicQuery, error) {
-	insightsQuery, err := withDefaults(query, defaultParams)
+func RepositoryScopeQuery(query BasicQuery) (BasicQuery, error) {
+	parameters := append(CodeInsightsQueryDefaults(true), searchquery.Parameter{
+		Field:      searchquery.FieldCount,
+		Value:      "all",
+		Negated:    false,
+		Annotation: searchquery.Annotation{},
+	})
+	insightsQuery, err := withDefaults(query, parameters)
 	if err != nil {
 		return "", errors.Wrap(err, "withDefaults")
 	}
@@ -339,15 +344,7 @@ func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (Ba
 		return "", errors.Wrap(err, "Pipeline")
 	}
 	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
-		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
-		modified = append(modified, basic.Parameters...)
-		modified = append(modified, searchquery.Parameter{
-			Field:      searchquery.FieldSelect,
-			Value:      "repo",
-			Negated:    false,
-			Annotation: searchquery.Annotation{},
-		})
-		return basic.MapParameters(modified)
+		return basic.MapParameters(basic.Parameters)
 	})
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }

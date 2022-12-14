@@ -48,15 +48,17 @@ func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphq
 		return nil, errors.Newf("the input query cannot be used for previewing repositories: %v", reason)
 	}
 
+	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(querybuilder.BasicQuery(args.Query))
+
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-	repos, err := executor.ExecuteRepoList(ctx, args.Query)
+	repos, err := executor.ExecuteRepoList(ctx, repoScopeQuery.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "executing the repository search errored")
 	}
 	number := int32(len(repos))
 
 	return &repositorityPreviewPayloadResolver{
-		query:                args.Query,
+		query:                repoScopeQuery.String(),
 		numberOfRepositories: &number,
 	}, nil
 }
