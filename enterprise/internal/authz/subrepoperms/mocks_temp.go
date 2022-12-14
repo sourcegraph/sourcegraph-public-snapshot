@@ -11,13 +11,13 @@ import (
 	"sync"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
 // MockSubRepoPermissionsGetter is a mock implementation of the
 // SubRepoPermissionsGetter interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/authz) used for unit testing.
+// github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms)
+// used for unit testing.
 type MockSubRepoPermissionsGetter struct {
 	// GetByUserFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByUser.
