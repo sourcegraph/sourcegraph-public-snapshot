@@ -786,6 +786,21 @@ type User struct {
 	Searchable            bool
 }
 
+type Role struct {
+	ID        int32
+	Name      string
+	ReadOnly  bool
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
+type Permission struct {
+	ID        int32
+	Namespace string
+	Action    string
+	CreatedAt time.Time
+}
+
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
