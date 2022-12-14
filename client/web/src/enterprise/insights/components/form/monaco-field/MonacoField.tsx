@@ -1,11 +1,19 @@
-import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
+import {
+    createContext,
+    forwardRef,
+    InputHTMLAttributes,
+    useContext,
+    useImperativeHandle,
+    useMemo,
+    useState,
+} from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 
-import { QueryChangeSource } from '@sourcegraph/search'
-import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
+import { QueryState } from '@sourcegraph/search'
+import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS, IEditor } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
@@ -55,15 +63,15 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
-    value: string
+    queryState: QueryState
     patternType?: SearchPatternType
     onBlur?: () => void
-    onChange?: (value: string) => void
+    onChange?: (value: QueryState) => void
 }
 
 export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
-        value,
+        queryState,
         className,
         onChange = noop,
         onBlur = noop,
@@ -75,13 +83,14 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     } = props
 
     const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
+    const [editor, setEditor] = useState<IEditor>()
 
     // Monaco doesn't have any native input elements, so we mock
     // ref here to avoid React warnings in console about zero usage of
     // element ref with forward ref call.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    useImperativeHandle(reference, () => null)
+    useImperativeHandle(reference, () => ({ focus: () => editor?.focus() }))
 
     const { enhancedThemePreference } = useTheme()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
@@ -93,11 +102,11 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         <LazyMonacoQueryInput
             ariaLabelledby={ariaLabelledby}
             editorComponent={editorComponent}
-            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+            queryState={queryState}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
-            onChange={({ query }) => onChange(query)}
+            onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
             globbing={true}
@@ -108,9 +117,10 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}
             editorOptions={monacoOptions}
-            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
+            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !queryState.query })}
             autoFocus={autoFocus}
             onBlur={onBlur}
+            onEditorCreated={setEditor}
             applySuggestionsOnEnter={applySuggestionsOnEnter}
         />
     )
