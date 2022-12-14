@@ -119,7 +119,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	workspaces, err := workspaceResolver(ctx, evaluatableSpec, func(stage service.WorkspaceResolutionStage) error {
 		switch stage {
 		case service.WorkspaceResolutionStageDetermineRepositories:
-			if err := setStage(btypes.BatchSpecResolutionJobStageBuildWorkspaceCache); err != nil {
+			if err := setStage(btypes.BatchSpecResolutionJobStageResolveDetermineRepositories); err != nil {
 				return err
 			}
 		case service.WorkspaceResolutionStageFindIgnored:

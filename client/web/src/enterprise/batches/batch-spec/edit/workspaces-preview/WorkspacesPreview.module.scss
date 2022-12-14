@@ -119,3 +119,21 @@
         display: none;
     }
 }
+
+.resolution-stage-progress {
+    list-style: none;
+    margin-top: 1.5rem;
+    &-done {
+        text-decoration: line-through;
+        color: var(--text-muted);
+    }
+    &-active {
+        font-weight: bold;
+    }
+    &-icon {
+        margin-right: 1rem;
+    }
+    &-pending-icon {
+        color: var(--border-color);
+    }
+}

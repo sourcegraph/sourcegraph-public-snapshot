@@ -1,16 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiAlert, mdiMagnify } from '@mdi/js'
+import { mdiAlert, mdiCheckCircle, mdiDotsHorizontal, mdiMagnify } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
+import { Alert, Button, H4, Icon, LoadingSpinner, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
+    BatchSpecWorkspaceResolutionStage,
     BatchSpecWorkspaceResolutionState,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
@@ -296,11 +297,11 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                                 className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })}
                             />
                         </div>
-                        {isWorkspacesPreviewInProgress && resolutionStage && (
-                            <div>Current stage: {resolutionStage}</div>
-                        )}
                         {ctaInstructions}
                         {ctaButton}
+                        {isWorkspacesPreviewInProgress && resolutionStage && (
+                            <ResolutionStageProgress resolutionStage={resolutionStage} />
+                        )}
                     </div>
                 )}
                 {totalCount !== null && totalCount >= WORKSPACE_WARNING_MIN_TOTAL_COUNT && (
@@ -369,3 +370,153 @@ const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCou
         you can.
     </Alert>
 )
+
+const ResolutionStageProgress: React.FunctionComponent<
+    React.PropsWithChildren<{ resolutionStage: BatchSpecWorkspaceResolutionStage }>
+> = ({ resolutionStage }) => {
+    const a = ''
+    return (
+        <ul className={styles.resolutionStageProgress}>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                {workspaceStageOrder[resolutionStage] ===
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <LoadingSpinner inline={true} />
+                    </span>
+                )}
+                {workspaceStageOrder[resolutionStage] <
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <Icon
+                            inline={true}
+                            aria-hidden={true}
+                            svgPath={mdiDotsHorizontal}
+                            className={styles.resolutionStageProgressPendingIcon}
+                        />
+                    </span>
+                )}
+                {workspaceStageOrder[resolutionStage] >
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <Icon inline={true} aria-hidden={true} svgPath={mdiCheckCircle} />
+                    </span>
+                )}
+                Starting Workspace Resolution
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                {workspaceStageOrder[resolutionStage] ===
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <LoadingSpinner inline={true} />
+                    </span>
+                )}
+                {workspaceStageOrder[resolutionStage] <
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <Icon
+                            inline={true}
+                            aria-hidden={true}
+                            svgPath={mdiDotsHorizontal}
+                            className={styles.resolutionStageProgressPendingIcon}
+                        />
+                    </span>
+                )}
+                {workspaceStageOrder[resolutionStage] >
+                    workspaceStageOrder[BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES] && (
+                    <span className={styles.resolutionStageProgressIcon}>
+                        <Icon inline={true} aria-hidden={true} svgPath={mdiCheckCircle} />
+                    </span>
+                )}
+                Determining Repositories
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.FIND_IGNORED] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.FIND_IGNORED] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                Finding Ignored Repositories
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.FIND_WORKSPACES] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.FIND_WORKSPACES] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                Finding Workspaces
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.BUILD_WORKSPACE_CACHE] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.BUILD_WORKSPACE_CACHE] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                Building Workspace Cache
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.IMPORTING_CHANGESETS] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.IMPORTING_CHANGESETS] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                Importing Changesets
+            </li>
+            <li
+                className={classNames(
+                    workspaceStageOrder[resolutionStage] ===
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.CREATING_WORKSPACES] &&
+                        styles.resolutionStageProgressActive,
+                    workspaceStageOrder[resolutionStage] >
+                        workspaceStageOrder[BatchSpecWorkspaceResolutionStage.CREATING_WORKSPACES] &&
+                        styles.resolutionStageProgressDone
+                )}
+            >
+                Creating Workspaces
+            </li>
+        </ul>
+    )
+}
+
+const workspaceStageOrder: Record<BatchSpecWorkspaceResolutionStage, number> = {
+    [BatchSpecWorkspaceResolutionStage.RESOLVE_WORKSPACES]: 0,
+    [BatchSpecWorkspaceResolutionStage.DETERMINE_REPOSITORIES]: 1,
+    [BatchSpecWorkspaceResolutionStage.FIND_IGNORED]: 2,
+    [BatchSpecWorkspaceResolutionStage.FIND_WORKSPACES]: 3,
+    [BatchSpecWorkspaceResolutionStage.BUILD_WORKSPACE_CACHE]: 4,
+    [BatchSpecWorkspaceResolutionStage.IMPORTING_CHANGESETS]: 5,
+    [BatchSpecWorkspaceResolutionStage.CREATING_WORKSPACES]: 6,
+}
