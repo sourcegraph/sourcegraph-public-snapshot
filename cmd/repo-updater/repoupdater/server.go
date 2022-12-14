@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -124,9 +124,9 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	defer func() {
 		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
 		if resp != nil {
-			tr.LogFields(
-				otlog.Int32("resp.id", int32(resp.ID)),
-				otlog.String("resp.name", resp.Name),
+			tr.SetAttributes(
+				attribute.Int("resp.id", int(resp.ID)),
+				attribute.String("resp.name", resp.Name),
 			)
 		}
 		tr.SetError(err)
