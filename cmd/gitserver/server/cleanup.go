@@ -257,26 +257,9 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
 		var reason string
 
-		// We treat repositories missing HEAD to be corrupt. Both our cloning
-		// and fetching ensure there is a HEAD file.
-		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-			reason = "missing-head"
-		} else if err != nil {
+		corrupt, reason, err := checkRepoDirCorrupt(dir)
+		if !corrupt {
 			return false, err
-		}
-
-		// We have seen repository corruption fail in such a way that the git
-		// config is missing the bare repo option but everything else looks
-		// like it works. This leads to failing fetches, so treat non-bare
-		// repos as corrupt. Since we often fetch with ensureRevision, this
-		// leads to most commands failing against the repository. It is safer
-		// to remove now than try a safe reclone.
-		if reason == "" && gitIsNonBareBestEffort(dir) {
-			reason = "non-bare"
-		}
-
-		if reason == "" {
-			return false, nil
 		}
 
 		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
@@ -569,6 +552,29 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 	if err := s.freeUpSpace(b); err != nil {
 		logger.Error("error freeing up space", log.Error(err))
 	}
+}
+
+func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
+	reason := ""
+	// We treat repositories missing HEAD to be corrupt. Both our cloning
+	// and fetching ensure there is a HEAD file.
+	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+		reason = "missing-head"
+	} else if err != nil {
+		return false, reason, err
+	}
+
+	// We have seen repository corruption fail in such a way that the git
+	// config is missing the bare repo option but everything else looks
+	// like it works. This leads to failing fetches, so treat non-bare
+	// repos as corrupt. Since we often fetch with ensureRevision, this
+	// leads to most commands failing against the repository. It is safer
+	// to remove now than try a safe reclone.
+	if reason == "" && gitIsNonBareBestEffort(dir) {
+		reason = "non-bare"
+	}
+
+	return true, reason, nil
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos
@@ -1028,11 +1034,20 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 }
 
 func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
+	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
+
 	if !stdErrIndicatesCorruption(stderr) {
+		// Check the repo directory for other cases where Sourcegraph regards it as corrupt
+		corrupt, reason, err := checkRepoDirCorrupt(dir)
+		if err != nil {
+			logger.Error("failed to check for repo directory corruption", log.Error(err))
+		}
+		if corrupt {
+			logger.Warn("repo directory corrupt", log.String("reason", reason))
+			return true
+		}
 		return false
 	}
-
-	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
 
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
 		log.String("stderr", stderr))
