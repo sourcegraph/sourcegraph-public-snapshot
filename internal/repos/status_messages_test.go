@@ -211,10 +211,6 @@ func TestStatusMessages(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				conf.Mock(nil)
-			})
-
 			if tc.testSetup != nil {
 				tc.testSetup()
 			}
@@ -232,6 +228,8 @@ func TestStatusMessages(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
+				conf.Mock(nil)
+
 				ids := make([]api.RepoID, 0, len(stored))
 				for _, r := range stored {
 					ids = append(ids, r.ID)
