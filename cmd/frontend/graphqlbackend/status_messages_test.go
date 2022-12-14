@@ -98,7 +98,7 @@ func TestStatusMessages(t *testing.T) {
 		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
-					GitUpdatesDisabled: &repos.GitUpdatesStatus{
+					GitUpdatesDisabled: &repos.GitUpdatesDisabled{
 						Message: "Repos will not be cloned or updated.",
 					},
 				},

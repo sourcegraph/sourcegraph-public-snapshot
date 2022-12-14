@@ -75,7 +75,7 @@ func TestStatusMessages(t *testing.T) {
 			name: "disableAutoGitUpdates set to true",
 			res: []StatusMessage{
 				{
-					GitUpdatesDisabled: &GitUpdatesStatus{
+					GitUpdatesDisabled: &GitUpdatesDisabled{
 						Message: "Repos will not be cloned or updated.",
 					},
 				},

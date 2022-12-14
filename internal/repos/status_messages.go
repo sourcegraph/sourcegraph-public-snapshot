@@ -22,7 +22,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 
 	if conf.Get().DisableAutoGitUpdates {
 		messages = append(messages, StatusMessage{
-			GitUpdatesDisabled: &GitUpdatesStatus{
+			GitUpdatesDisabled: &GitUpdatesDisabled{
 				Message: "Repos will not be cloned or updated.",
 			},
 		})
@@ -107,7 +107,7 @@ func pluralize(count int, singularNoun, pluralNoun string) string {
 	return pluralNoun
 }
 
-type GitUpdatesStatus struct {
+type GitUpdatesDisabled struct {
 	Message string
 }
 
@@ -130,7 +130,7 @@ type IndexingProgress struct {
 }
 
 type StatusMessage struct {
-	GitUpdatesDisabled       *GitUpdatesStatus         `json:"git_updates_disabled"`
+	GitUpdatesDisabled       *GitUpdatesDisabled       `json:"git_updates_disabled"`
 	Cloning                  *CloningProgress          `json:"cloning"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
