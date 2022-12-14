@@ -801,6 +801,12 @@ type Permission struct {
 	CreatedAt time.Time
 }
 
+type RoleMembership struct {
+	RoleID    int32
+	UserID    int32
+	CreatedAt time.Time
+}
+
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
