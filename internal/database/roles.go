@@ -235,7 +235,11 @@ const roleDeleteQueryFmtStr = `
 UPDATE roles
 SET
 	deleted_at = NOW()
+<<<<<<< HEAD
 WHERE id = %s AND NOT readonly
+=======
+WHERE id = %s AND readonly = false
+>>>>>>> fd5ceec17b (add store func for roles)
 `
 
 func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
