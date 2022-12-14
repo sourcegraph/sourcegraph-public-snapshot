@@ -77,7 +77,7 @@ var cloudCommand = &cli.Command{
 				}
 				pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
 					"Download complete! (elapsed: %s)",
-					time.Now().Sub(start).String()))
+					time.Since(start).String()))
 
 				// Move binary to final destination
 				if err := run.Cmd(c.Context, "mv", tempExecutable, executable).
