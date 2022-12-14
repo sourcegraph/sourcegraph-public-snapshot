@@ -446,7 +446,7 @@ func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoNa
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-    corrupted_at = NULL,
+    corrupted_at = DEFAULT,
 	clone_status = %s,
 	shard_id = %s,
 	updated_at = NOW()
@@ -539,7 +539,7 @@ func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoNa
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-    corrupted_at = NULL,
+    corrupted_at = DEFAULT,
 	last_fetched = %s,
 	last_changed = %s,
 	shard_id = %s,
