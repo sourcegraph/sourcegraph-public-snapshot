@@ -1,0 +1,66 @@
+.repo-label {
+    display: flex;
+    flex-wrap: wrap;
+
+    &-text {
+        width: 100%;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    &--preview-link {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+}
+
+.repo-input {
+    flex-grow: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.chips-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem;
+    list-style: none;
+
+    margin-bottom: 0.5rem;
+}
+
+.query-chip {
+    background-color: var(--code-bg);
+    box-shadow: var(--search-input-shadow);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    max-width: 21rem;
+    text-align: left;
+
+    &:active {
+        position: relative;
+        top: 1px;
+        border: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    &:focus {
+        border: 1px solid transparent;
+        box-shadow: 0 0 0 0.125rem var(--primary-2);
+        outline: none;
+    }
+
+    &:active:focus {
+        border: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    &:hover {
+        background-color: var(--body-bg);
+    }
+}
