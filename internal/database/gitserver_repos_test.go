@@ -515,6 +515,69 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 }
 
+func TestCorruptedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	t.Run("corruptedAt gets set", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo1",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		if fromDB == nil {
+			t.Error("Expected corruptedAt time to be set. Got nil")
+		}
+	})
+	t.Run("setting close status clears corruptedAt time", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo2",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+
+		setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		if fromDB.CorruptedAt != nil {
+			t.Errorf("Expected corruptedAt to be nil. Got %s", fromDB.CorruptedAt)
+		}
+	})
+	t.Run("setting close status clears corruptedAt time", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo3",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+
+		setGitserverRepoLastChanged(t, db, repo.Name, time.Now())
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		if fromDB.CorruptedAt != nil {
+			t.Errorf("Expected corruptedAt to be nil. Got %s", fromDB.CorruptedAt)
+		}
+	})
+}
+
 func TestSetLastError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

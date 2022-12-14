@@ -119,6 +119,15 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 	}
 }
 
+func setGitserverCorruptedAt(t *testing.T, db DB, name api.RepoName, ts time.Time) {
+	t.Helper()
+
+	err := db.GitserverRepos().SetCorruptedAt(context.Background(), name, ts)
+	if err != nil {
+		t.Fatalf("failed to set corrupted at: %s", err)
+	}
+}
+
 func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 	t.Helper()
 	ctx := context.Background()
