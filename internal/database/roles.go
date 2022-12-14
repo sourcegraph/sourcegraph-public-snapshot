@@ -30,18 +30,22 @@ var permissionColumnsForRole = []*sqlf.Query{
 var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("readonly"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("deleted_at"),
 }
 
 type RoleStore interface {
 	basestore.ShareableStore
 
+	// Count counts all roles in the database.
 	Count(ctx context.Context, opts RolesListOptions) (int, error)
+	// Create inserts the given role into the database.
 	Create(ctx context.Context, name string, readonly bool) (*types.Role, error)
+	// Delete removes an existing role from the database.
 	Delete(ctx context.Context, opts DeleteRoleOpts) error
+	// GetByID returns the role matching the given ID, or RoleNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
+	// List returns all roles matching the given options.
 	List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error)
+	// Update updates an existing role in the database.
 	Update(ctx context.Context, role *types.Role) (*types.Role, error)
 }
 
@@ -64,6 +68,10 @@ type RoleNotFoundErr struct {
 
 func (e *RoleNotFoundErr) Error() string {
 	return fmt.Sprintf("role with ID %d not found", e.ID)
+}
+
+func (e *RoleNotFoundErr) NotFound() bool {
+	return true
 }
 
 type roleStore struct {
@@ -165,10 +173,7 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 
 const roleCreateQueryFmtStr = `
 INSERT INTO
-	roles (
-		name,
-		readonly
-	)
+	roles (%s)
 	VALUES (
 		%s,
 		%s
@@ -180,6 +185,7 @@ INSERT INTO
 func (r *roleStore) Create(ctx context.Context, name string, readonly bool) (_ *types.Role, err error) {
 	q := sqlf.Sprintf(
 		roleCreateQueryFmtStr,
+		sqlf.Join(roleInsertColumns, ", "),
 		name,
 		readonly,
 		// Returning
