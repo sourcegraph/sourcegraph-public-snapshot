@@ -5,7 +5,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -22,10 +25,21 @@ type Service struct {
 	DataDir        string
 	Log            log.Logger
 	ObservationCtx *observation.Context
+
+	initOnce      sync.Once
+	bucketLocksMu sync.Mutex
+	bucketLocks   map[string]*sync.RWMutex
+}
+
+func (s *Service) init() {
+	s.initOnce.Do(func() {
+		s.bucketLocks = map[string]*sync.RWMutex{}
+	})
 }
 
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.init()
 	metricRunning.Inc()
 	defer metricRunning.Dec()
 
@@ -48,7 +62,7 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 				return errors.Newf("expected CreateBucket request to have content length 0: %s %s", r.Method, r.URL)
 			}
 			if err := s.createBucket(ctx, path[0]); err != nil {
-				return err
+				return errors.Wrap(err, "createBucket")
 			}
 			w.WriteHeader(http.StatusOK)
 			return nil
@@ -62,8 +76,33 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Service) createBucket(ctx context.Context, name string) error {
-	fmt.Println("TODO(blobstore): create bucket", name)
+	_ = ctx
+	defer s.Log.Info("created bucket", sglog.String("name", name))
+
+	// Lock the bucket so nobody can read or write to the same bucket while we create it.
+	bucketLock := s.bucketLock(name)
+	bucketLock.Lock()
+	defer bucketLock.Unlock()
+
+	// Create the bucket storage directory.
+	if err := os.MkdirAll(filepath.Join(s.DataDir, "buckets", name), os.ModePerm); err != nil {
+		return errors.Wrap(err, "MkdirAll")
+	}
 	return nil
+}
+
+// returns a bucket-level lock which can be used for reading objects in a bucket, or in write-lock
+// mode can be used to create or delete a bucket with the given name.
+func (s *Service) bucketLock(name string) *sync.RWMutex {
+	s.bucketLocksMu.Lock()
+	defer s.bucketLocksMu.Unlock()
+
+	lock, ok := s.bucketLocks[name]
+	if !ok {
+		lock = &sync.RWMutex{}
+		s.bucketLocks[name] = lock
+	}
+	return lock
 }
 
 var (
