@@ -46,7 +46,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
-            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
@@ -263,7 +263,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: 'abc' },
                             },
                         },
                     },
