@@ -23,7 +23,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 	if conf.Get().DisableAutoGitUpdates {
 		messages = append(messages, StatusMessage{
 			GitUpdatesDisabled: &GitUpdatesDisabled{
-				Message: "Repos will not be cloned or updated.",
+				Message: "Repositories will not be cloned or updated.",
 			},
 		})
 	}

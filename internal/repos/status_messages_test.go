@@ -76,7 +76,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					GitUpdatesDisabled: &GitUpdatesDisabled{
-						Message: "Repos will not be cloned or updated.",
+						Message: "Repositories will not be cloned or updated.",
 					},
 				},
 			},
@@ -216,7 +216,7 @@ func TestStatusMessages(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.testCleanup != nil {
-				defer tc.testCleanup()
+				t.Cleanup(tc.testCleanup)
 			}
 
 			if tc.testSetup != nil {
