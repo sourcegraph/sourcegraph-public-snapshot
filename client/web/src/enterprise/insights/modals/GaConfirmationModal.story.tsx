@@ -20,7 +20,7 @@ import { GaConfirmationModal } from './GaConfirmationModal'
 const settingsClient = createMockClient(
     { contents: JSON.stringify({}) },
     gql`
-        query {
+        query TemporarySettings {
             temporarySettings {
                 contents
             }
