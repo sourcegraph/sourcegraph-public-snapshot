@@ -59,7 +59,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -85,7 +85,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+		client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -254,7 +254,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -317,7 +317,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
