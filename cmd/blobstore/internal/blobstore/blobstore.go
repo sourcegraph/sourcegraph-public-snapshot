@@ -34,6 +34,10 @@ type Service struct {
 func (s *Service) init() {
 	s.initOnce.Do(func() {
 		s.bucketLocks = map[string]*sync.RWMutex{}
+
+		if err := os.MkdirAll(filepath.Join(s.DataDir, "buckets"), os.ModePerm); err != nil {
+			s.Log.Fatal("cannot create buckets directory:", sglog.Error(err))
+		}
 	})
 }
 
@@ -64,6 +68,11 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 				return errors.Newf("expected CreateBucket request to have content length 0: %s %s", r.Method, r.URL)
 			}
 			if err := s.createBucket(ctx, path[0]); err != nil {
+				if err == ErrBucketAlreadyExists {
+					w.WriteHeader(http.StatusConflict)
+					fmt.Fprintf(w, "bucket already exists")
+					return nil
+				}
 				return errors.Wrap(err, "createBucket")
 			}
 			w.WriteHeader(http.StatusOK)
@@ -84,6 +93,10 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
+var (
+	ErrBucketAlreadyExists = errors.New("bucket already exists")
+)
+
 func (s *Service) createBucket(ctx context.Context, name string) error {
 	_ = ctx
 	defer s.Log.Info("created bucket", sglog.String("name", name))
@@ -94,7 +107,11 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 	defer bucketLock.Unlock()
 
 	// Create the bucket storage directory.
-	if err := os.MkdirAll(filepath.Join(s.DataDir, "buckets", name), os.ModePerm); err != nil {
+	bucketDir := filepath.Join(s.DataDir, "buckets", name)
+	if _, err := os.Stat(bucketDir); err == nil {
+		return ErrBucketAlreadyExists
+	}
+	if err := os.Mkdir(bucketDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "MkdirAll")
 	}
 	return nil
