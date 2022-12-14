@@ -55,7 +55,7 @@ func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryCon
 	if node == nil {
 		return nil, errors.New(`node is nil`)
 	}
-	position := strconv.Itoa(int(node.index))
+	position := strconv.Itoa(node.index)
 	return &position, nil
 }
 
