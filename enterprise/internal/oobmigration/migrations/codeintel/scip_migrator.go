@@ -329,12 +329,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	if err := scipWriter.Write(
-		ctx,
-		uploadID,
-		path,
-		scipDocument,
-	); err != nil {
+	if err := scipWriter.Write(ctx, path, scipDocument); err != nil {
 		return err
 	}
 
@@ -415,6 +410,7 @@ type scipWriter struct {
 	tx              *basestore.Store
 	inserter        *batch.Inserter
 	uploadID        int
+	nextID          int
 	batchPayloadSum int
 	batch           []bufferedDocument
 }
@@ -463,14 +459,10 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 ) ON COMMIT DROP
 `
 
-// TODO :/
-var nextID int
-
 // Write inserts a new document and document lookup row, and pushes all of the given
 // symbols into the batch inserter.
 func (s *scipWriter) Write(
 	ctx context.Context,
-	uploadID int,
 	path string,
 	scipDocument *ogscip.Document,
 ) error {
@@ -482,7 +474,7 @@ func (s *scipWriter) Write(
 
 	uniquePrefix := []byte(fmt.Sprintf(
 		"lsif-%d:%d:",
-		uploadID,
+		s.uploadID,
 		time.Now().UnixNano()/int64(time.Millisecond)),
 	)
 
@@ -555,7 +547,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	sort.Strings(symbolNames)
 
 	var symbolNameTrie trie.Trie
-	symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
+	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
 
 	symbolNameByIDs := map[int]string{}
 	idsBySymbolName := map[string]int{}
