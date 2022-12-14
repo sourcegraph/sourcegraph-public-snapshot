@@ -47,12 +47,10 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
     return null
 })
 
+const MINUTE = 60000
+
 const featureFlagsContextValue = {
-    /**
-     * Do not pass the refetch interval to reduce the volume of evaluateFeatureFlag API requests.
-     * We will consider enabling it again if we receive relevant customer feedback.
-     */
-    client: new FeatureFlagClient(requestGraphQL),
+    client: new FeatureFlagClient(requestGraphQL, MINUTE),
 } satisfies FeatureFlagsContextValue
 
 interface FeatureFlagsProviderProps {

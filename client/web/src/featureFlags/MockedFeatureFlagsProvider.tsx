@@ -10,7 +10,7 @@ import { FeatureFlagClient } from './lib/FeatureFlagClient'
 
 interface MockedFeatureFlagsProviderProps {
     overrides: Partial<Record<FeatureFlagName, boolean | Error>>
-    refetchInterval?: number
+    cacheTimeToLive?: number
 }
 
 /**
@@ -23,35 +23,36 @@ interface MockedFeatureFlagsProviderProps {
  */
 export const MockedFeatureFlagsProvider: React.FunctionComponent<
     React.PropsWithChildren<MockedFeatureFlagsProviderProps>
-> = ({ overrides, refetchInterval, children }) => {
+> = ({ overrides, cacheTimeToLive, children }) => {
     const mockRequestGraphQL = useMemo(
-        () => (
-            query: string,
-            variables: any
-        ): Observable<{
-            data: { evaluateFeatureFlag: boolean | null }
-        }> => {
-            const value = overrides[variables.flagName as FeatureFlagName]
-            if (value instanceof Error) {
-                return throwError(value)
-            }
+        () =>
+            (
+                query: string,
+                variables: any
+            ): Observable<{
+                data: { evaluateFeatureFlag: boolean | null }
+            }> => {
+                const value = overrides[variables.flagName as FeatureFlagName]
+                if (value instanceof Error) {
+                    return throwError(value)
+                }
 
-            return of({
-                data: { evaluateFeatureFlag: value ?? null },
-            })
-        },
+                return of({
+                    data: { evaluateFeatureFlag: value ?? null },
+                })
+            },
         [overrides]
     )
 
-    const client = useMemo(
-        () => new FeatureFlagClient(mockRequestGraphQL as typeof requestGraphQL, refetchInterval),
+    const providerValue = useMemo(
+        () => ({ client: new FeatureFlagClient(mockRequestGraphQL as typeof requestGraphQL, cacheTimeToLive) }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
     useEffect(() => {
-        client.setRequestGraphQLFunction(mockRequestGraphQL as typeof requestGraphQL)
-    }, [client, mockRequestGraphQL])
+        providerValue.client.setRequestGraphQLFunction(mockRequestGraphQL as typeof requestGraphQL)
+    }, [providerValue, mockRequestGraphQL])
 
-    return <FeatureFlagsContext.Provider value={{ client }}>{children}</FeatureFlagsContext.Provider>
+    return <FeatureFlagsContext.Provider value={providerValue}>{children}</FeatureFlagsContext.Provider>
 }

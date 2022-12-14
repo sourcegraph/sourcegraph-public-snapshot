@@ -1,3 +1,4 @@
+import delay from 'delay'
 import { combineLatest, of } from 'rxjs'
 import sinon, { SinonSpy } from 'sinon'
 
@@ -41,18 +42,13 @@ describe('FeatureFlagClient', () => {
     })
 
     it('returns [false] response from API call for feature flag evaluation', done => {
-        const client = new FeatureFlagClient(mockRequestGraphQL, 1000)
+        const client = new FeatureFlagClient(mockRequestGraphQL)
         expect.assertions(1)
 
-        client.get(DISABLED_FLAG).subscribe({
-            next: value => {
-                expect(value).toBe(false)
-                sinon.assert.calledOnce(mockRequestGraphQL)
-                done()
-            },
-            complete: () => {
-                throw new Error('Should not complete when passing refetch interval')
-            },
+        client.get(DISABLED_FLAG).subscribe(value => {
+            expect(value).toBe(false)
+            sinon.assert.calledOnce(mockRequestGraphQL)
+            done()
         })
     })
 
@@ -64,21 +60,6 @@ describe('FeatureFlagClient', () => {
             expect(value).toBeNull()
             sinon.assert.calledOnce(mockRequestGraphQL)
             done()
-        })
-    })
-
-    it('completes after single fall if no refetch interval passed', done => {
-        const client = new FeatureFlagClient(mockRequestGraphQL)
-        expect.assertions(1)
-
-        client.get(ENABLED_FLAG).subscribe({
-            next: value => {
-                expect(value).toBe(true)
-            },
-            complete: () => {
-                sinon.assert.calledOnce(mockRequestGraphQL)
-                done()
-            },
         })
     })
 
@@ -94,7 +75,28 @@ describe('FeatureFlagClient', () => {
         })
     })
 
-    it('updates on new/different value', done => {
+    it('makes only single API call per feature flag if cache is still active', async () => {
+        const cacheTimeToLive = 10
+        const client = new FeatureFlagClient(mockRequestGraphQL, cacheTimeToLive)
+        expect.assertions(3)
+
+        const value1 = await client.get(ENABLED_FLAG).toPromise()
+        expect(value1).toBe(true)
+
+        await delay(5)
+
+        const value2 = await client.get(ENABLED_FLAG).toPromise()
+        expect(value2).toBe(true)
+        sinon.assert.calledOnce(mockRequestGraphQL)
+
+        await delay(5)
+
+        const value3 = await client.get(ENABLED_FLAG).toPromise()
+        expect(value3).toBe(true)
+        sinon.assert.calledTwice(mockRequestGraphQL)
+    })
+
+    it('updates on new/different value after cache TTL', async () => {
         let index = -1
         const mockRequestGraphQL = sinon.spy((query, variables) => {
             index++
@@ -104,18 +106,17 @@ describe('FeatureFlagClient', () => {
             })
         }) as typeof requestGraphQL & SinonSpy
 
-        const client = new FeatureFlagClient(mockRequestGraphQL, 1)
+        const cacheTimeToLive = 1
+        const client = new FeatureFlagClient(mockRequestGraphQL, cacheTimeToLive)
         expect.assertions(2)
 
-        client.get(ENABLED_FLAG).subscribe(value => {
-            if (index === 0) {
-                expect(value).toBe(true)
-            } else {
-                expect(value).toBe(false)
-                sinon.assert.calledTwice(mockRequestGraphQL)
-                done()
-            }
-        })
+        const value1 = await client.get(ENABLED_FLAG).toPromise()
+        expect(value1).toBe(true)
+
+        await delay(cacheTimeToLive)
+
+        const value2 = await client.get(ENABLED_FLAG).toPromise()
+        expect(value2).toBe(false)
     })
 
     describe('local feature flag overrides', () => {

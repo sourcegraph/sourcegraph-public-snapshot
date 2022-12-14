@@ -1,5 +1,5 @@
-import { iif, Observable, timer } from 'rxjs'
-import { distinctUntilChanged, map, retry, shareReplay, switchMap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { distinctUntilChanged, map, retry, shareReplay } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
@@ -37,10 +37,10 @@ export class FeatureFlagClient {
     private flags = new Map<FeatureFlagName, Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
 
     /**
-     * @param requestGraphQLFunction function to use for making GQL API calls
-     * @param refetchInterval milliseconds to refetch each feature flag evaluation. Fetches once if undefined provided.
+     * @param requestGraphQLFunction function to use for making GQL API calls.
+     * @param cacheTimeToLive milliseconds to keep the value in the in-memory client-side cache.
      */
-    constructor(private requestGraphQLFunction: typeof requestGraphQL, private refetchInterval?: number) {}
+    constructor(private requestGraphQLFunction: typeof requestGraphQL, private cacheTimeToLive?: number) {}
 
     /**
      * For mocking/testing purposes
@@ -56,12 +56,8 @@ export class FeatureFlagClient {
      */
     public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
         if (!this.flags.has(flagName)) {
-            const flag$ = iif(
-                () => typeof this.refetchInterval === 'number' && this.refetchInterval > 0,
-                timer(0, this.refetchInterval),
-                timer(0)
-            ).pipe(
-                switchMap(() => fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(retry(3))),
+            const flag$ = fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(
+                retry(3),
                 map(value => {
                     // Use local feature flag override if exists
                     const overriddenValue = getFeatureFlagOverride(flagName)
@@ -82,6 +78,10 @@ export class FeatureFlagClient {
             )
 
             this.flags.set(flagName, flag$)
+
+            if (this.cacheTimeToLive) {
+                setTimeout(() => this.flags.delete(flagName), this.cacheTimeToLive)
+            }
         }
 
         return this.flags.get(flagName)!
