@@ -310,7 +310,8 @@ SELECT
 	gr.last_fetched,
 	gr.last_changed,
 	gr.repo_size_bytes,
-	gr.updated_at
+	gr.updated_at,
+    gr.corrupted_at,
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
@@ -340,7 +341,8 @@ SELECT
 	last_fetched,
 	last_changed,
 	repo_size_bytes,
-	updated_at
+	updated_at,
+    corrupted_at
 FROM gitserver_repos
 WHERE repo_id = %s
 `
