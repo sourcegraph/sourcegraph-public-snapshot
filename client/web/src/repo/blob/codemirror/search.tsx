@@ -162,7 +162,6 @@ class SearchPanel implements Panel {
                 <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-2">
                     <Input
                         ref={element => (this.input = element)}
-                        type="search"
                         name="search"
                         variant="small"
                         placeholder="Find..."
@@ -170,6 +169,7 @@ class SearchPanel implements Panel {
                         inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
                         onChange={event => this.searchTerm.next(event.target.value)}
                         main-field="true"
+                        role="search"
                     />
                     <QueryInputToggle
                         isActive={searchQuery.caseSensitive}
@@ -305,45 +305,45 @@ class SearchPanel implements Panel {
         if (!query.eq(this.state.searchQuery)) {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
-            // if (query.search) {
-            //     this.calculateMatches(query)
-            //
-            //     // The following code scrolls next match into view if there is no
-            //     // match in the visible viewport. This is done by searching for the
-            //     // text from the currently top visible line and determining whether
-            //     // the next match is in the current viewport
-            //
-            //     const { scrollTop } = this.view.scrollDOM
-            //
-            //     // Get top visible line. More than half of the line must be visible.
-            //     // We don't use `view.viewportLineBlocks` because that also includes
-            //     // lines that are rendered but not actually visible.
-            //     let topLineBlock = this.view.lineBlockAtHeight(scrollTop)
-            //     if (Math.abs(topLineBlock.bottom - scrollTop) <= topLineBlock.height / 2) {
-            //         topLineBlock = this.view.lineBlockAtHeight(scrollTop + topLineBlock.height)
-            //     }
-            //
-            //     let result = query.getCursor(this.view.state.doc, topLineBlock.from).next()
-            //     if (result.done) {
-            //         // No match in the remainder of the document, wrap around
-            //         result = query.getCursor(this.view.state.doc).next()
-            //         if (result.done) {
-            //             // Search term is not in the document, nothing to do
-            //             return
-            //         }
-            //     }
-            //
-            //     this.updateSelectedSearchMatch(result.value)
-            //
-            //     // Taken from the original `findPrevious` and `findNext` CodeMirror implementation:
-            //     // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L385-L416
-            //     this.view.dispatch({
-            //         selection: { anchor: result.value.from, head: result.value.to },
-            //         scrollIntoView: true,
-            //         effects: announceMatch(this.view, result.value),
-            //         userEvent: 'select.search',
-            //     })
-            // }
+            if (query.search) {
+                this.calculateMatches(query)
+
+                // The following code scrolls next match into view if there is no
+                // match in the visible viewport. This is done by searching for the
+                // text from the currently top visible line and determining whether
+                // the next match is in the current viewport
+
+                const { scrollTop } = this.view.scrollDOM
+
+                // Get top visible line. More than half of the line must be visible.
+                // We don't use `view.viewportLineBlocks` because that also includes
+                // lines that are rendered but not actually visible.
+                let topLineBlock = this.view.lineBlockAtHeight(scrollTop)
+                if (Math.abs(topLineBlock.bottom - scrollTop) <= topLineBlock.height / 2) {
+                    topLineBlock = this.view.lineBlockAtHeight(scrollTop + topLineBlock.height)
+                }
+
+                let result = query.getCursor(this.view.state.doc, topLineBlock.from).next()
+                if (result.done) {
+                    // No match in the remainder of the document, wrap around
+                    result = query.getCursor(this.view.state.doc).next()
+                    if (result.done) {
+                        // Search term is not in the document, nothing to do
+                        return
+                    }
+                }
+
+                this.updateSelectedSearchMatch(result.value)
+
+                // Taken from the original `findPrevious` and `findNext` CodeMirror implementation:
+                // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L385-L416
+                this.view.dispatch({
+                    selection: { anchor: result.value.from, head: result.value.to },
+                    scrollIntoView: true,
+                    effects: announceMatch(this.view, result.value),
+                    userEvent: 'select.search',
+                })
+            }
         }
     }
 }
