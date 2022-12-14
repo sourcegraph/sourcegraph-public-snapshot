@@ -244,90 +244,82 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	for i, document := range documents {
-		// TODO - inline
-		if err := s.WriteSCIPSymbols(ctx, documentLookupIDs[i], document.symbols); err != nil {
-			return err
+		// TODO - hoist
+		symbolNameMap := make(map[string]struct{}, len(document.symbols))
+		for _, invertedRange := range document.symbols {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
 		}
-	}
+		symbolNames := make([]string, 0, len(symbolNameMap))
+		for symbolName := range symbolNameMap {
+			symbolNames = append(symbolNames, symbolName)
+		}
+		sort.Strings(symbolNames)
 
-	return nil
-}
+		var symbolNameTrie trie.Trie
+		symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
 
-func (s *scipWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
-	symbolNameMap := make(map[string]struct{}, len(symbols))
-	for _, invertedRange := range symbols {
-		symbolNameMap[invertedRange.SymbolName] = struct{}{}
-	}
-	symbolNames := make([]string, 0, len(symbolNameMap))
-	for symbolName := range symbolNameMap {
-		symbolNames = append(symbolNames, symbolName)
-	}
-	sort.Strings(symbolNames)
+		symbolNameByIDs := map[int]string{}
+		idsBySymbolName := map[string]int{}
 
-	var symbolNameTrie trie.Trie
-	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+		if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+			name := prefix
+			if parentID != nil {
+				parentPrefix, ok := symbolNameByIDs[*parentID]
+				if !ok {
+					return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+				}
 
-	symbolNameByIDs := map[int]string{}
-	idsBySymbolName := map[string]int{}
+				name = parentPrefix + prefix
+			}
+			symbolNameByIDs[id] = name
+			idsBySymbolName[name] = id
 
-	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-		name := prefix
-		if parentID != nil {
-			parentPrefix, ok := symbolNameByIDs[*parentID]
-			if !ok {
-				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+			if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+				return err
 			}
 
-			name = parentPrefix + prefix
-		}
-		symbolNameByIDs[id] = name
-		idsBySymbolName[name] = id
-
-		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+			return nil
+		}); err != nil {
 			return err
 		}
 
-		return nil
-	}); err != nil {
-		return err
-	}
+		for _, symbol := range document.symbols {
+			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+			if err != nil {
+				return err
+			}
+			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			if err != nil {
+				return err
+			}
+			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			if err != nil {
+				return err
+			}
+			typeDefinitionRanges, err := types.EncodeRanges(symbol.TypeDefinitionRanges)
+			if err != nil {
+				return err
+			}
 
-	for _, symbol := range symbols {
-		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
-		if err != nil {
-			return err
-		}
-		referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
-		if err != nil {
-			return err
-		}
-		implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
-		if err != nil {
-			return err
-		}
-		typeDefinitionRanges, err := types.EncodeRanges(symbol.TypeDefinitionRanges)
-		if err != nil {
-			return err
-		}
+			symbolID, ok := idsBySymbolName[symbol.SymbolName]
+			if !ok {
+				return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+			}
 
-		symbolID, ok := idsBySymbolName[symbol.SymbolName]
-		if !ok {
-			return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
-		}
+			if err := s.symbolInserter.Insert(
+				ctx,
+				documentLookupIDs[i],
+				symbolID,
+				definitionRanges,
+				referenceRanges,
+				implementationRanges,
+				typeDefinitionRanges,
+			); err != nil {
+				return err
+			}
 
-		if err := s.symbolInserter.Insert(
-			ctx,
-			documentLookupID,
-			symbolID,
-			definitionRanges,
-			referenceRanges,
-			implementationRanges,
-			typeDefinitionRanges,
-		); err != nil {
-			return err
+			atomic.AddUint32(&s.count, 1)
 		}
-
-		atomic.AddUint32(&s.count, 1)
 	}
 
 	return nil
