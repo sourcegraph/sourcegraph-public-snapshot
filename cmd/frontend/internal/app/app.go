@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/sourcegraph/log"
