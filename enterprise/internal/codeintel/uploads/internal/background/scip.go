@@ -1,6 +1,7 @@
 package background
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"io"
@@ -14,7 +15,6 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -238,10 +238,18 @@ func processDocument(document *scip.Document, externalSymbolsByName map[string]*
 		}
 	}
 
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return lsifstore.ProcessedSCIPDocument{
+			DocumentPath: path,
+			Err:          err,
+		}
+	}
+
 	return lsifstore.ProcessedSCIPDocument{
 		DocumentPath:   path,
 		Hash:           hashPayload(payload),
-		RawSCIPPayload: payload,
+		RawSCIPPayload: compressedPayload,
 		Symbols:        types.ExtractSymbolIndexes(document),
 	}
 }
@@ -326,8 +334,6 @@ func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
 	upload codeinteltypes.Upload,
-	repo *sgtypes.Repo,
-	isDefaultBranch bool,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {

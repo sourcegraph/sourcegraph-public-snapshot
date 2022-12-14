@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -43,13 +44,30 @@ type Resolved struct {
 
 	MissingRepoRevs []RepoRevSpecs
 
+	// BackendsMissing is the number of search backends that failed to be
+	// searched. This is due to it being unreachable. The most common reason
+	// for this is during zoekt rollout.
+	BackendsMissing int
+
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
 	Next types.MultiCursor
 }
 
+// MaybeSendStats is a convenience which will stream a stats event if r
+// contains any.
+func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
+	if r.BackendsMissing > 0 {
+		stream.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{
+				BackendsMissing: r.BackendsMissing,
+			},
+		})
+	}
+}
+
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), len(r.MissingRepoRevs), r.BackendsMissing)
 }
 
 func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
@@ -87,11 +105,12 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
+			// For missing repo revs, just collect the error and keep paging
+			if !errors.Is(err, &MissingRepoRevsError{}) {
 				break
 			}
 		}
-		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
+		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
 
 		if err = handle(&page); err != nil {
 			errs = errors.Append(errs, err)
@@ -254,7 +273,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	tr.LazyPrintf("completed rev filtering")
 
 	tr.LazyPrintf("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
 	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "filter has file content")
@@ -268,6 +287,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
 		MissingRepoRevs: missingRepoRevs,
+		BackendsMissing: backendsMissing,
 		Next:            next,
 	}, err
 }
@@ -519,6 +539,7 @@ func (r *Resolver) filterRepoHasFileContent(
 ) (
 	_ []*search.RepositoryRevisions,
 	_ []RepoRevSpecs,
+	_ int,
 	err error,
 ) {
 	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
@@ -530,7 +551,7 @@ func (r *Resolver) filterRepoHasFileContent(
 
 	// Early return if there are no filters
 	if len(op.HasFileContent) == 0 {
-		return repoRevs, nil, nil
+		return repoRevs, nil, 0, nil
 	}
 
 	indexed, unindexed, err := searchzoekt.PartitionRepos(
@@ -543,7 +564,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		false,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
@@ -571,6 +592,15 @@ func (r *Resolver) filterRepoHasFileContent(
 			}
 			repoRev.Revs = append(repoRev.Revs, rev)
 			filtered[id] = repoRev
+		}
+		backendsMissing    = 0
+		addBackendsMissing = func(c int) {
+			if c == 0 {
+				return
+			}
+			mu.Lock()
+			backendsMissing += c
+			mu.Unlock()
 		}
 	)
 
@@ -601,6 +631,8 @@ func (r *Resolver) filterRepoHasFileContent(
 				if err != nil {
 					return err
 				}
+
+				addBackendsMissing(repos.Crashes)
 
 				foundRevs := Set[repoAndRev]{}
 				for repoID, repo := range repos.Minimal {
@@ -662,7 +694,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	// Filter the input revs to only those that matched all the contains conditions
@@ -673,8 +705,11 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
-	return matchedRepoRevs, missing, nil
+	tr.LogFields(
+		otlog.Int("filteredRevCount", len(matchedRepoRevs)),
+		otlog.Int("backendsMissing", backendsMissing),
+	)
+	return matchedRepoRevs, missing, backendsMissing, nil
 }
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {

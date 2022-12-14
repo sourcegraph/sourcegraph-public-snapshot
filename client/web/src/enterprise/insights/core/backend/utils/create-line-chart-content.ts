@@ -30,11 +30,7 @@ export function createLineChartContent(input: LineChartContentInput): BackendIns
     )
 
     return seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
-        // Encode all special symbols that may be in the original series such as
-        // " symbol that breaks element query selectors in the chart where we use this id
-        // for points and lines.
-        // See https://github.com/sourcegraph/sourcegraph/issues/45376
-        id: encodeURIComponent(line.seriesId),
+        id: line.seriesId,
         alerts: showError ? line.status.incompleteDatapoints : [],
         data: line.points.map((point, index) => ({
             dateTime: new Date(point.dateTime),

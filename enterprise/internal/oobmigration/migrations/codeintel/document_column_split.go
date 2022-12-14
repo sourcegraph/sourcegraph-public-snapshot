@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type documentColumnSplitMigrator struct {
@@ -41,7 +42,7 @@ func (m *documentColumnSplitMigrator) Interval() time.Duration { return time.Sec
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *documentColumnSplitMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData, ignored []byte
 
@@ -79,7 +80,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, erro
 
 // MigrateRowDown recombines the split payloads into a single column to undo the migration
 // up direction.
-func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *documentColumnSplitMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 	var encoded MarshalledDocumentData

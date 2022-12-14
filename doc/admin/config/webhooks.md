@@ -9,14 +9,14 @@ Webhooks are currently implemented to speed up two types of external events:
 
 See the table below for code host compatibility:
 
-Code host | [Batch changes](../../batch_changes/index.md) | Code push
---------- | :-: | :-:
-GitHub | 🟢 | 🟢 
-GitLab | 🟢 | 🔴
-Bitbucket Server / Datacenter | 🟢 | 🔴 
-Bitbucket Cloud | 🟢 | 🔴
+Code host | [Batch changes](../../batch_changes/index.md) | Code push | User permissions
+--------- | :-: | :-: | :-:
+GitHub | 🟢 | 🟢 | 🟢
+GitLab | 🟢 | 🔴 | 🔴
+Bitbucket Server / Datacenter | 🟢 | 🔴 | 🔴
+Bitbucket Cloud | 🟢 | 🔴 | 🔴
 
-To receive webhooks both the receiving and sending side need to be configured. To configure the receiving side, [add an incoming webhook](#adding-an-incoming-webhook). Set up the sending side by [configuring webhooks on your code host](#configuring-webhooks-on-the-code-host)
+To receive webhooks both Sourcegraph and the code host need to be configured. To configure Sourcegraph, [add an incoming webhook](#adding-an-incoming-webhook). Then [configure webhooks on your code host](#configuring-webhooks-on-the-code-host)
 
 ## Adding an incoming webhook
 
@@ -69,6 +69,19 @@ Done! Sourcegraph will now receive webhook events from GitHub and use them to sy
 #### Code push
 
 Follow the same steps as above, but ensure you include the `push` event under **Let me select individual events**
+
+#### User permissions
+
+Follow the same steps as above, but ensure you include the following events under **Let me select individual events**:
+- `Collaborator add, remove, or changed`
+- `Memberships`
+- `Organizations`
+- `Repositories`
+- `Teams`
+
+When one of these events occur, a permissions sync will trigger for the relevant user or repository.
+
+> NOTE: Permission changes can take a few seconds to reflect on GitHub. To prevent syncing permissions before the change reflects on GitHub, the permissions sync will only occur 10 seconds after the relevant event is received.
 
 ### GitLab
 

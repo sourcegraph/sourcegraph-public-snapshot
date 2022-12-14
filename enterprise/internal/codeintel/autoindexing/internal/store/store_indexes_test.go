@@ -709,8 +709,10 @@ func TestIsQueued(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
 	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
 	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 	insertUploads(t, db, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
 	insertUploads(t, db, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
+	insertUploads(t, db, Upload{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 
 	testCases := []struct {
 		repositoryID int
@@ -725,6 +727,7 @@ func TestIsQueued(t *testing.T) {
 		{3, makeCommit(2), false},
 		{3, makeCommit(3), false},
 		{4, makeCommit(1), false},
+		{5, makeCommit(4), false},
 	}
 
 	for _, testCase := range testCases {
@@ -895,6 +898,7 @@ type Upload struct {
 	UncompressedSize  *int64
 	Rank              *int
 	AssociatedIndexID *int
+	ShouldReindex     bool
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
@@ -941,8 +945,9 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 				num_parts,
 				uploaded_parts,
 				upload_size,
-				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				associated_index_id,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -962,6 +967,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.ShouldReindex,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

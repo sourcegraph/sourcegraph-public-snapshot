@@ -102,6 +102,10 @@ extend type Query {
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
     isSearchContextAvailable(spec: String!): Boolean!
+    """
+    Gets the default search context for the current user. This context is guaranteed to be available to the user.
+    """
+    defaultSearchContext: SearchContext
 }
 
 """

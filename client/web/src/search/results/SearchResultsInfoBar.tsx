@@ -85,19 +85,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.query]
     )
 
-    const canCreateMonitorFromQuery = useMemo(() => {
-        if (globalTypeFilter) {
-            return false
-        }
-        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
-    }, [globalTypeFilter])
+    const canCreateMonitorFromQuery = useMemo(
+        () => globalTypeFilter === 'diff' || globalTypeFilter === 'commit',
+        [globalTypeFilter]
+    )
 
-    const canCreateBatchChangeFromQuery = useMemo(() => {
-        if (!globalTypeFilter) {
-            return true
-        }
-        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
-    }, [globalTypeFilter])
+    const canCreateBatchChangeFromQuery = useMemo(
+        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
+        [globalTypeFilter]
+    )
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.

@@ -172,7 +172,8 @@ CREATE TABLE insight_series (
     backfill_attempts integer DEFAULT 0 NOT NULL,
     needs_migration boolean,
     backfill_completed_at timestamp without time zone,
-    supports_augmentation boolean DEFAULT true NOT NULL
+    supports_augmentation boolean DEFAULT true NOT NULL,
+    repository_criteria text
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
@@ -196,6 +197,8 @@ COMMENT ON COLUMN insight_series.deleted_at IS 'Timestamp of a soft-delete of th
 COMMENT ON COLUMN insight_series.generation_method IS 'Specifies the execution method for how this series is generated. This helps the system understand how to generate the time series data.';
 
 COMMENT ON COLUMN insight_series.just_in_time IS 'Specifies if the series should be resolved just in time at query time, or recorded in background processing.';
+
+COMMENT ON COLUMN insight_series.repository_criteria IS 'The search criteria used to determine the repositories that are included in this series.';
 
 CREATE TABLE insight_series_backfill (
     id integer NOT NULL,

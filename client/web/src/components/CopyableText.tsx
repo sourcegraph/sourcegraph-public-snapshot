@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiContentCopy } from '@mdi/js'
+import { mdiContentCopy, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
@@ -29,11 +29,17 @@ interface Props {
 
     /** Callback for when the content is copied  */
     onCopy?: () => void
+
+    /** Whether the text is a secret, i.e. supports being shown/concealed with a click of a button */
+    secret?: boolean
 }
 
 interface State {
     /** Whether the text was just copied. */
     copied: boolean
+
+    /** Whether the secret is shown. */
+    secretShown: boolean
 }
 
 /**
@@ -42,14 +48,17 @@ interface State {
  * labels.
  */
 export class CopyableText extends React.PureComponent<Props, State> {
-    public state: State = { copied: false }
+    public state: State = {
+        copied: false,
+        secretShown: false,
+    }
 
     public render(): JSX.Element | null {
         return (
             <div className={classNames('form-inline', this.props.className)}>
                 <div className={classNames('input-group', this.props.flex && 'flex-1')}>
                     <Input
-                        type={this.props.password ? 'password' : 'text'}
+                        type={this.resolveInputType()}
                         inputClassName={styles.input}
                         aria-label={this.props.label}
                         value={this.props.text}
@@ -64,9 +73,23 @@ export class CopyableText extends React.PureComponent<Props, State> {
                             variant="secondary"
                             aria-label="Copy"
                         >
-                            <Icon aria-hidden={true} svgPath={mdiContentCopy} /> {this.state.copied ? 'Copied' : 'Copy'}
+                            <Icon aria-hidden={true} svgPath={mdiContentCopy} />{' '}
+                            {this.props.secret ? '' : this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
+                    {this.props.secret && (
+                        <div className="input-group-append">
+                            <Button
+                                onClick={this.onClickSecretButton}
+                                variant="secondary"
+                                aria-label={
+                                    this.state.secretShown ? 'Reveal secret value as text' : 'Hide secret value'
+                                }
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiEye} />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
         )
@@ -89,5 +112,20 @@ export class CopyableText extends React.PureComponent<Props, State> {
         if (typeof this.props.onCopy === 'function') {
             this.props.onCopy()
         }
+    }
+
+    private onClickSecretButton = (): void =>
+        this.setState(state => ({
+            secretShown: !state.secretShown,
+        }))
+
+    private resolveInputType(): string {
+        if (this.props.password) {
+            return 'password'
+        }
+        if (this.props.secret) {
+            return this.state.secretShown ? 'text' : 'password'
+        }
+        return 'text'
     }
 }

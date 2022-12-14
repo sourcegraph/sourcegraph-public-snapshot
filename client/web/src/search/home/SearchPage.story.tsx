@@ -51,7 +51,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
-    defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchSearchContexts: mockFetchSearchContexts,

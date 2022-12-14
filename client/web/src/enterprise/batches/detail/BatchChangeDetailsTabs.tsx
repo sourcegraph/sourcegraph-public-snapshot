@@ -21,7 +21,6 @@ import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
@@ -73,8 +72,6 @@ export interface BatchChangeDetailsProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
-    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
-    /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
@@ -90,7 +87,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     platformContext,
     settingsCascade,
     initialTab = TabName.Changesets,
-    queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
@@ -106,7 +102,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
-    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
+    const isBatchSpecLocallyCreated = batchChange.currentSpec?.source === BatchSpecSource.LOCAL
     const shouldDisplayExecutionsTab =
         isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
@@ -255,11 +251,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     />
                 </TabPanel>
                 <TabPanel>
-                    <BatchChangeBurndownChart
-                        batchChangeID={batchChange.id}
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                        history={history}
-                    />
+                    <BatchChangeBurndownChart batchChangeID={batchChange.id} history={history} />
                 </TabPanel>
                 <TabPanel>
                     {shouldDisplayExecutionsTab ? (
@@ -268,11 +260,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 history={history}
                                 location={location}
                                 batchChangeID={batchChange.id}
-                                currentSpecID={batchChange.currentSpec.id}
+                                currentSpecID={batchChange.currentSpec?.id}
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
-                    ) : (
+                    ) : batchChange.currentSpec ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -288,6 +280,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </div>
                             <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
+                    ) : (
+                        <>No spec yet</>
                     )}
                 </TabPanel>
                 <TabPanel>

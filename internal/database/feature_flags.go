@@ -8,13 +8,12 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	clearRedisCache = ff.ClearEvaluatedFlagFromCache
-)
+var clearRedisCache = ff.ClearEvaluatedFlagFromCache
 
 type FeatureFlagStore interface {
 	basestore.ShareableStore
@@ -181,12 +180,7 @@ func (f *featureFlagStore) CreateBool(ctx context.Context, name string, value bo
 
 var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
 
-// rowScanner is an interface that can scan from either a sql.Row or sql.Rows
-type rowScanner interface {
-	Scan(...any) error
-}
-
-func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
+func scanFeatureFlag(scanner dbutil.Scanner) (*ff.FeatureFlag, error) {
 	var (
 		res      ff.FeatureFlag
 		flagType string
@@ -465,7 +459,7 @@ func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.Override, error) {
 	return res, nil
 }
 
-func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
+func scanFeatureFlagOverride(scanner dbutil.Scanner) (*ff.Override, error) {
 	var res ff.Override
 	err := scanner.Scan(
 		&res.OrgID,

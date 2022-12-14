@@ -173,7 +173,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 // For debugging
 const showTimings = false
 
-func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, _ *std.Output, _ io.Writer) (err error) {
 	var (
 		done     = 0.0
 		total    = float64(len(pkgPaths))

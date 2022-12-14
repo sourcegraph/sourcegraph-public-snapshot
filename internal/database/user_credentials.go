@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -189,10 +190,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 // Update updates a user credential in the database. If the credential cannot be found,
 // an error is returned.
 func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return err
-	}
+	authz := userCredentialsAuthzQueryConds(ctx)
 
 	credential.UpdatedAt = timeutil.Now()
 	encryptedCredential, keyID, err := credential.Credential.Encrypt(ctx, s.key)
@@ -227,10 +225,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return err
-	}
+	authz := userCredentialsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s AND %s", id, authz)
 	res, err := s.ExecResult(ctx, q)
@@ -250,10 +245,7 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, err
-	}
+	authz := userCredentialsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s AND %s",
@@ -276,10 +268,7 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, err
-	}
+	authz := userCredentialsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
@@ -326,10 +315,7 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 
 // List returns all user credentials matching the given options.
 func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
+	authz := userCredentialsAuthzQueryConds(ctx)
 
 	preds := []*sqlf.Query{authz}
 	if opts.Scope.Domain != "" {
@@ -478,9 +464,7 @@ RETURNING %s
 //
 // s is inspired by the BatchChange scanner type, but also matches sql.Row, which
 // is generally used directly in this module.
-func scanUserCredential(cred *UserCredential, key encryption.Key, s interface {
-	Scan(...any) error
-}) error {
+func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scanner) error {
 	var (
 		credential []byte
 		keyID      string
@@ -528,10 +512,10 @@ func userCredentialsAuthzScope(ctx context.Context, db DB, scope UserCredentialS
 	return nil
 }
 
-func userCredentialsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
+func userCredentialsAuthzQueryConds(ctx context.Context) *sqlf.Query {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() {
-		return sqlf.Sprintf("(TRUE)"), nil
+		return sqlf.Sprintf("(TRUE)")
 	}
 
 	return sqlf.Sprintf(
@@ -539,7 +523,7 @@ func userCredentialsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 		a.UID,
 		!conf.Get().AuthzEnforceForSiteAdmins,
 		a.UID,
-	), nil
+	)
 }
 
 const userCredentialsAuthzQueryCondsFmtstr = `
