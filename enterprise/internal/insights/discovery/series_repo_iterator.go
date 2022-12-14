@@ -22,7 +22,7 @@ func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.Insigh
 		if series.RepositoryCriteria == nil {
 			return s.allRepoIterator, nil
 		} else {
-			return nil, errors.New("search scoped repository series not implimented")
+			return nil, errors.New("search scoped repository series not implemented")
 		}
 
 	default:
