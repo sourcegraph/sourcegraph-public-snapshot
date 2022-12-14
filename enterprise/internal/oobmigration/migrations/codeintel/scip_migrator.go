@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -14,12 +15,14 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type scipMigrator struct {
@@ -448,7 +451,7 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
@@ -463,13 +466,16 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 
 const makeSCIPWriterTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
+	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
 	implementation_ranges bytea
 ) ON COMMIT DROP
 `
+
+// TODO :/
+var nextID int
 
 // Write inserts a new document and document lookup row, and pushes all of the given
 // symbols into the batch inserter.
@@ -530,6 +536,26 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			return err
 		}
 
+		symbolNameMap := make(map[string]struct{}, len(document.symbols))
+		for _, invertedRange := range document.symbols {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		}
+		symbolNames := make([]string, 0, len(symbolNameMap))
+		for symbolName := range symbolNameMap {
+			symbolNames = append(symbolNames, symbolName)
+		}
+		sort.Strings(symbolNames)
+
+		var symbolNameTrie trie.Trie
+		symbolNameTrie, nextID = trie.NewTrie(symbolNames, nextID)
+
+		// TODO - batch
+		if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+			return s.tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO codeintel_scip_symbol_names (upload_id, id, prefix_id, name_segment) VALUES (%s, %s, %s, %s)`, s.uploadID, id, parentID, prefix))
+		}); err != nil {
+			return err
+		}
+
 		for _, symbol := range document.symbols {
 			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
 			if err != nil {
@@ -544,10 +570,16 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 				return err
 			}
 
+			// TODO - pre-calculate map
+			symbolID, ok := symbolNameTrie.Search(symbol.SymbolName)
+			if !ok {
+				return errors.Newf("malformed trie - expected %q to be a member", symbol.SymbolName)
+			}
+
 			if err := s.inserter.Insert(
 				ctx,
 				documentLookupID,
-				symbol.SymbolName,
+				symbolID,
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
@@ -593,7 +625,7 @@ func (s *scipWriter) Flush(ctx context.Context) error {
 const scipWriterFlushQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
-	symbol_name,
+	symbol_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -602,7 +634,7 @@ INSERT INTO codeintel_scip_symbols (
 )
 SELECT
 	%s,
-	source.symbol_name,
+	source.symbol_id,
 	source.document_lookup_id,
 	1,
 	source.definition_ranges,
