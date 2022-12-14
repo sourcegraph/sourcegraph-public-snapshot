@@ -2,7 +2,6 @@ package jobselector
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/sourcegraph/log"
@@ -250,8 +249,6 @@ func convertInferredConfiguration(repositoryID int, commit string, indexJobs []c
 				Commands: dockerStep.Commands,
 			})
 		}
-
-		fmt.Println(indexJob.RequestedEnvVars)
 
 		indexes = append(indexes, types.Index{
 			RepositoryID:     repositoryID,

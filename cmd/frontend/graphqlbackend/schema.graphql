@@ -1832,7 +1832,8 @@ type ExecutorSecretAccessLog implements Node {
     executorSecret: ExecutorSecret!
     """
     The user in which name the secret has been used.
-    This is null when the access was not by a user account.
+    This is null when the access was not by a user account, or
+    when the user account was deleted.
     """
     user: User
     """
