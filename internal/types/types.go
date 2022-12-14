@@ -557,7 +557,9 @@ type GitserverRepo struct {
 	LastChanged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	UpdatedAt     time.Time
+	// Time when corruption of repo was detected
+	CorruptedAt *time.Time
+	UpdatedAt   time.Time
 }
 
 // ExternalService is a connection to an external service.

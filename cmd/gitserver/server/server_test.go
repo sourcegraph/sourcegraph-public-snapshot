@@ -1272,6 +1272,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
+		// wait for repo to be cloned
 		dst := s.dir("example.com/foo/bar")
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.locker.Status(dst)
@@ -1289,6 +1290,93 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatal("expected a reconstituted HEAD, but the file is empty")
 		}
 	})
+}
+
+func waitForClone(t *testing.T, s *Server, repo api.RepoName) {
+	t.Helper()
+	// wait for repo to be cloned
+	dst := s.dir(repo)
+	for i := 0; i < 1000; i++ {
+		_, cloning := s.locker.Status(dst)
+		if !cloning {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestCorruptedAt(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	t.Run("time is set when corruption detected with pack file corruption", func(t *testing.T) {
+		var (
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
+			repoName = api.RepoName("exmaple.com/foo/bar")
+			cmd      = func(name string, arg ...string) string {
+				t.Helper()
+				return runCmd(t, remote, name, arg...)
+			}
+			db = database.NewDB(logger, dbtest.NewDB(logger, t))
+		)
+
+		_ = makeSingleCommitRepo(cmd)
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			Description: "Test",
+		}
+		// Insert the repo into our database
+		if err := db.Repos().Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+
+		s := makeTestServer(ctx, t, reposDir, remote, db)
+
+		if err := corruptRepo(t, s.dir(repoName)); err != nil {
+			t.Fatalf("failed to corrupt repo: %s", repoName)
+		}
+
+		stderr := `error: packfile .git/objects/pack/pack-0be56937fffd682293eadaee88a39d911d9c4b10.pack does not match index
+error: packfile .git/objects/pack/pack-0be56937fffd682293eadaee88a39d911d9c4b10.pack does not match index
+error: refs/heads/circle-badges does not point to a valid object!
+error: packfile .git/objects/pack/pack-0be56937fffd682293eadaee88a39d911d9c4b10.pack does not match index
+error: packfile .git/objects/pack/pack-0be56937fffd682293eadaee88a39d911d9c4b10.pack does not match index`
+
+		s.markIfCorrupted(ctx, repoName, s.dir(repoName), stderr)
+
+		// Verify corrupt time was set
+		repo, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+		if err != nil {
+			t.Fatalf("failed to get repo: %s", err)
+		}
+
+		if repo.CorruptedAt == nil {
+			t.Error("expected CorruptedAt to be set. Got nil")
+		}
+	})
+}
+
+func corruptRepo(t *testing.T, repoDir GitDir) error {
+	t.Helper()
+	packDir := repoDir.Path("objects", "pack")
+	packFiles, err := filepath.Glob(packDir + "/*.pack")
+	if err != nil {
+		t.Fatal("failed to find pack files with gob pattern")
+	}
+	if len(packFiles) == 0 {
+		t.Fatal("no pack files found")
+	}
+	fd, err := os.OpenFile(packFiles[0], os.O_RDWR, 0655)
+	defer fd.Close()
+	if err != nil {
+		t.Fatalf("failed to open pack file %q: %s", packFiles[0], err)
+	}
+
+	_, err = fd.Write([]byte("corrupt"))
+	return err
+
 }
 
 func TestHostnameMatch(t *testing.T) {

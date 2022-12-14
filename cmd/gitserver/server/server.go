@@ -1772,10 +1772,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	stderr := stderrBuf.String()
 	// Check stderr to see if the repo is corrupted, if it is set the corruptedAt time on the repo
-	// and emit a metric
-	if checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr) {
-		now := time.Now()
-		s.DB.GitserverRepos().SetCorruptedAt(ctx, req.Repo, &now)
+	// and emit a metric.
+	// The corrupted at time will be cleared when the repo is updated in the DB after a re-fetch/reclone
+	if err := s.markIfCorrupted(ctx, req.Repo, dir, stderr); err != nil {
+		s.Logger.Warn("failed to mark with corrupted time", log.Error(err))
 	}
 
 	// write trailer
@@ -2002,11 +2002,6 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
-// setCorruptedAt sets the corrupted at time of the repo
-func (s *Server) setCorruptedAt(ctx context.Context, name api.RepoName, ts *time.Time) error {
-	return s.DB.GitserverRepos().SetCorruptedAt(ctx, name, ts)
-}
-
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
@@ -2025,6 +2020,14 @@ func setGitAttributes(dir GitDir) error {
 `))
 	if err != nil {
 		return errors.Wrap(err, "failed to set git attributes")
+	}
+	return nil
+}
+
+func (s *Server) markIfCorrupted(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) error {
+	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+		now := time.Now()
+		return s.DB.GitserverRepos().SetCorruptedAt(ctx, repo, now)
 	}
 	return nil
 }

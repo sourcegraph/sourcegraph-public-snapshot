@@ -33,7 +33,7 @@ type GitserverRepoStore interface {
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	SetCorruptedAt(ctx context.Context, name api.RepoName, ts *time.Time) error
+	SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
 	// If the status value hasn't changed, the row will not be updated.
@@ -440,6 +440,7 @@ func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoNa
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
+    corrupted_at = NULL,
 	clone_status = %s,
 	shard_id = %s,
 	updated_at = NOW()
@@ -496,7 +497,8 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) SetCorruptedAt(ctx context.Context, name api.RepoName, ts *time.Time) error {
+// SetCorruptedAt sets the corrupted_at timestamp for the repo
+func (s *gitserverRepoStore) SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
@@ -531,6 +533,7 @@ func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoNa
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
+    corrupted_at = NULL,
 	last_fetched = %s,
 	last_changed = %s,
 	shard_id = %s,
