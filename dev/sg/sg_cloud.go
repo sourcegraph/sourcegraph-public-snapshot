@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
@@ -58,12 +59,13 @@ var cloudCommand = &cli.Command{
 					return errors.Wrap(err, "GitHub CLI (https://cli.github.com/) is required for installation")
 				}
 
+				start := time.Now()
 				pending := std.Out.Pending(output.Styledf(output.StylePending, "Downloading %q to %q... (hang tight, this might take a while!)",
 					executable, locationDir))
 
 				// Get release
 				const tempExecutable = "mi2_tmp"
-				_ = os.Remove(tempExecutable)
+				_ = os.Remove(filepath.Join(locationDir, tempExecutable))
 				if err := run.Cmd(c.Context,
 					"gh release download -R github.com/sourcegraph/controller",
 					"--pattern", fmt.Sprintf("mi2_%s_%s", runtime.GOOS, runtime.GOARCH),
@@ -73,10 +75,12 @@ var cloudCommand = &cli.Command{
 					pending.Close()
 					return errors.Wrap(err, "download mi2")
 				}
-				pending.Complete(output.Styled(output.StyleSuccess, "Download complete!"))
+				pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+					"Download complete! (elapsed: %s)",
+					time.Now().Sub(start).String()))
 
 				// Move binary to final destination
-				if err := run.Cmd(c.Context, "mv %s %s", tempExecutable, executable).
+				if err := run.Cmd(c.Context, "mv", tempExecutable, executable).
 					Dir(locationDir).
 					Run().Wait(); err != nil {
 					return errors.Wrap(err, "move mi2 to final path")
