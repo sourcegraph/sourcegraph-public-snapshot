@@ -827,8 +827,14 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 			return true
 		}
 	}
-	if new.RepositoryScope.RepositoryCriteria != existing.RepositoryCriteria {
+	if isNilString(new.RepositoryScope.RepositoryCriteria) != isNilString(existing.RepositoryCriteria) {
 		return true
+	}
+
+	if !isNilString(new.RepositoryScope.RepositoryCriteria) && !isNilString(existing.RepositoryCriteria) {
+		if *new.RepositoryScope.RepositoryCriteria != *existing.RepositoryCriteria {
+			return true
+		}
 	}
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
@@ -1100,6 +1106,10 @@ func emptyIfNil(in *string) string {
 		return ""
 	}
 	return *in
+}
+
+func isNilString(in *string) bool {
+	return in == nil
 }
 
 // A dummy type to represent the GraphQL union InsightTimeScope
