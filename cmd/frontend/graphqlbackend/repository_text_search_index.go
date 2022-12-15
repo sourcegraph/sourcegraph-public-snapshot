@@ -71,11 +71,11 @@ func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*reposi
 func (r *repositoryTextSearchIndexResolver) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
 	// We don't want to let the user wait for too long. If the socket
 	// connection is working, 500ms should be generous.
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Millisecond*500))
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*500)
 	defer cancel()
 	host, err := searchzoekt.GetIndexserverHost(ctx, r.repo.RepoName())
 	if err != nil {
-		host = searchzoekt.Host{Name: "unknown"}
+		return nil, nil
 	}
 	return &repositoryIndexserverHostResolver{
 		host,

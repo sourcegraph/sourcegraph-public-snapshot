@@ -333,9 +333,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         </table>
                                     </>
                                 )}
-                                {this.state.textSearchIndex.host && (
-                                    <>
-                                        <H3>Indexserver</H3>
+                                <>
+                                    <H3>Indexserver</H3>
+                                    {this.state.textSearchIndex.host ? (
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
@@ -344,8 +344,14 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                 </tr>
                                             </tbody>
                                         </table>
-                                    </>
-                                )}
+                                    ) : (
+                                        <Alert className="mb-0" variant="info">
+                                            We were unable to determine the indexserver that hosts the index. However,
+                                            this does not impact indexed search. The root cause is most likely a
+                                            limitation of the runtime environment.
+                                        </Alert>
+                                    )}
+                                </>
                             </>
                         ) : (
                             <Alert className="mb-0" variant="info">
