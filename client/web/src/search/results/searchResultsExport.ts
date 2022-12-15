@@ -46,6 +46,9 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                             sourcegraphURL
                         ).toString()
                         const fileURL = new URL(getFileMatchUrl(result), sourcegraphURL).toString()
+
+                        // e.g. for query "codehost" the path match record can be
+                        // "[pkg/microservice/systemconfig/core/codehost/repository/models/codehost.go, [[35, 43], [62,70]]]"
                         const pathMatches = result.pathMatches
                             ? JSON.stringify(
                                   `[${result.path}, [${result.pathMatches
@@ -53,6 +56,11 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                                       .join(' ')}]]`
                               )
                             : ''
+
+                        // e.g. for query "codehost" the chunk match record can be
+                        // "[24, [[1, 9] [18, 26]]]; [39, [[2, 10] [22, 30]]];" representing:
+                        // - line 24 with matches starting from 1 to 9 and from 18 to 26
+                        // - line 39 with matches starting from 2 to 10 and from 22 to 30
                         const chunkMatches =
                             'chunkMatches' in result
                                 ? JSON.stringify(
@@ -89,6 +97,8 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                     .map(result => {
                         const repoURL = new URL(getRepositoryUrl(result.repository), sourcegraphURL).toString()
                         const fileURL = new URL(getFileMatchUrl(result), sourcegraphURL).toString()
+
+                        // e.g. "[FIELD, codeHost, http://localhost:3443/repo/file1.java?L27:20-27:28]; [METHOD, getCodeHost, http://localhost:3443/repo/file2.java?L74:22-74:33]"
                         const symbols = JSON.stringify(
                             result.symbols
                                 .map(
