@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -14,7 +15,11 @@ type RepoIteratorFromQuery struct {
 }
 
 func NewRepoIteratorFromQuery(ctx context.Context, query string, repoQueryExecutor *query.StreamingRepoQueryExecutor) (*RepoIteratorFromQuery, error) {
-	repos, err := repoQueryExecutor.ExecuteRepoList(ctx, query)
+	// 🚨 SECURITY: this context will ensure that this iterator runs a search that can fetch all matching repositories,
+	// not just the ones visible for a user context.
+	globalCtx := actor.WithInternalActor(ctx)
+	
+	repos, err := repoQueryExecutor.ExecuteRepoList(globalCtx, query)
 	if err != nil {
 		return nil, err
 	}
