@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,45 +42,72 @@ type DataFrameFilter interface {
 }
 
 type commitFetcher interface {
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
-func NewGitserverFilter(db database.DB) DataFrameFilter {
-	return &gitserverFilter{commitFetcher: discovery.NewGitCommitClient(db)}
+func NewGitserverFilter(db database.DB, logger log.Logger) DataFrameFilter {
+	return &gitserverFilter{commitFetcher: discovery.NewGitCommitClient(db), logger: logger}
 }
 
 type gitserverFilter struct {
 	commitFetcher commitFetcher
+	logger        log.Logger
 }
 
 // Filter will return a backfill plan that has filtered sample times for periods of time that do not change for a given repository.
 func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
 	var nodes []QueryExecution
-	getCommit := func(to time.Time) (*gitdomain.Commit, bool, error) {
-		commits, err := g.commitFetcher.RecentCommits(ctx, name, to)
+	getCommit := func(to time.Time, prev string) (*gitdomain.Commit, bool, error) {
+		start := time.Now()
+		commits, err := g.commitFetcher.RecentCommits(ctx, name, to, prev)
 		if err != nil {
 			return nil, false, err
 		} else if len(commits) == 0 {
+			// this is a scenario where there is no commit but no error
+			// generally speaking this shouldn't happen, but if it does we will return no commit
+			// and downstream processing will figure out what to do with this execution
 			return nil, false, nil
 		}
+		duration := time.Since(start)
+
+		g.logger.Debug("recentCommits",
+			log.Duration("duration", duration),
+			log.String("rev", string(commits[0].ID)),
+			log.String("sampleTime", to.String()),
+			log.String("prev", prev))
 
 		return commits[0], true, nil
 	}
 
+	sort.Slice(sampleTimes, func(i, j int) bool {
+		return sampleTimes[i].After(sampleTimes[j])
+	})
+
 	executions := make(map[api.CommitID]*QueryExecution)
+	prev := ""
 	for _, sampleTime := range sampleTimes {
-		commit, got, err := getCommit(sampleTime)
+		commit, got, err := getCommit(sampleTime, prev)
 		if err != nil || !got {
+			// if for some reason we aren't able to figure this out right now we will fall back to uncompressed points.
+			// This is somewhat a left over from a historical version where not every commit would have compression data,
+			// but in general we would still rather fail on the side of generating a valid plan instead of errors.
 			nodes = append(nodes, QueryExecution{RecordingTime: sampleTime})
 		} else {
 			qe, ok := executions[commit.ID]
 			if ok {
-				qe.SharedRecordings = append(qe.SharedRecordings, sampleTime)
+				// this path means we've already seen this hash before, which means we will be able to compress
+				// at least one sample time into a single search query.
+				// since we just sorted the sample times descending it is safe to assume that the element that exists is
+				// older than the current sample time, so we will replace it
+				temp := qe.RecordingTime
+				qe.RecordingTime = sampleTime
+				qe.SharedRecordings = append([]time.Time{temp}, qe.SharedRecordings...)
 			} else {
 				executions[commit.ID] = &QueryExecution{
 					Revision:      string(commit.ID),
 					RecordingTime: sampleTime,
 				}
+				prev = string(commit.ID)
 			}
 		}
 	}

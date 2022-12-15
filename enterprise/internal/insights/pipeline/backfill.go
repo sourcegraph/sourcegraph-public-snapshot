@@ -44,7 +44,7 @@ type Backfiller interface {
 
 type GitCommitClient interface {
 	FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
 type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
@@ -235,7 +235,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 
 		revision := bctx.execution.Revision
 		if len(bctx.execution.Revision) == 0 {
-			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime)
+			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime, "")
 			if revErr != nil {
 				if errors.HasType(revErr, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(revErr) {
 					return // no error - repo may not be cloned yet (or not even pushed to code host yet)
