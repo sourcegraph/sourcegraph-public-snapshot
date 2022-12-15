@@ -102,8 +102,6 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 		{DumpID: testLSIFUploadID, Path: "protocol/protocol.go", Range: newRange(266, 2, 266, 8)},
 
 		// SCIP results
-		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(9, 9, 9, 16)},
-		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(225, 20, 225, 27)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(10, 9, 10, 16)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(186, 43, 186, 50)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(296, 34, 296, 41)},
@@ -111,6 +109,8 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(384, 30, 384, 37)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(415, 8, 415, 15)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(420, 27, 420, 34)},
+		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(9, 9, 9, 16)},
+		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(225, 20, 225, 27)},
 	}
 	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)

@@ -1954,6 +1954,8 @@ type SettingsExperimentalFeatures struct {
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
+	// SearchQueryInput description: Specify which version of the search query input to use
+	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
 	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
@@ -2209,6 +2211,8 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
+	// ObservabilityCaptureSlowGraphQLRequestsLimit description: (debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.
+	ObservabilityCaptureSlowGraphQLRequestsLimit int `json:"observability.captureSlowGraphQLRequestsLimit,omitempty"`
 	// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
 	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.

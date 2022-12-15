@@ -7,8 +7,10 @@
   - Search [commit diffs](features.md#commit-diff-search) and [commit messages](features.md#commit-message-search) to see how code has changed.
   - Narrow your search by repository and file pattern.
   - How our [Smart Search](features.md#smart-search) query assistant works.
+  - Use [search contexts](features.md#search-contexts) to search across a set of repositories at specific revisions.
+  - Search for repositories, symbols and files using the [Fuzzy finder](features.md#fuzzy-search).
   - Curate [saved searches](features.md#saved-searches) for yourself or your org.
-  - Set up notifications for code changes that match a query.
+  - Use [code monitoring](../../code_monitoring/index.md) to set up notifications for code changes that match a query.
   - View [language statistics](features.md#statistics) for search results.
 - [Search details](search_details.md)
 - [Search tips](tips.md)

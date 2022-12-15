@@ -143,7 +143,7 @@ func decompressTgz(tgz io.Reader, destination string) error {
 				return false
 			}
 
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, destination)
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, destination)
 			return !malicious
 		},
 	})

@@ -946,7 +946,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 			repo3.ID: 789 + batchSize,
 		}
 
-		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, shardID, sizes, int(batchSize))
+		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, sizes, int(batchSize))
 		if err != nil {
 			t.Fatal(err)
 		}

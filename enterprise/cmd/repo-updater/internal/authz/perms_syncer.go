@@ -620,15 +620,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 
-	userLabel := strconv.Itoa(int(p.UserID))
-	metricsSuccessPermsSyncs.WithLabelValues("user", userLabel).Inc()
-	metricsPermsFound.WithLabelValues("user", userLabel).Set(float64(len(p.IDs)))
+	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
 	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
 	} else {
-		metricsFirstPermsSyncs.WithLabelValues("user", userLabel).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
 	}
 
 	return providerStates, nil
@@ -806,21 +804,26 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	pendingCount := len(p.UserIDs)
 
+	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
+
+	var delayMetricField log.Field
+	if !oldPerms.SyncedAt.IsZero() {
+		delay := p.SyncedAt.Sub(oldPerms.SyncedAt)
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("repo").Inc()
+		delay := p.SyncedAt.Sub(repo.CreatedAt)
+		metricsPermsFirstSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	}
+
 	logger.Debug("synced",
 		log.Int("regularCount", regularCount),
 		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
+		delayMetricField,
 	)
-
-	metricsSuccessPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
-	metricsPermsFound.WithLabelValues("repo", string(p.RepoID)).Set(float64(regularCount))
-
-	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
-	} else {
-		metricsFirstPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
-	}
 
 	return providerStates, nil
 }
@@ -891,9 +894,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 				)
 
 				if request.Type == requestTypeUser {
-					metricsFailedPermsSyncs.WithLabelValues("user", string(request.ID)).Inc()
+					metricsFailedPermsSyncs.WithLabelValues("user").Inc()
 				} else {
-					metricsFailedPermsSyncs.WithLabelValues("repo", string(request.ID)).Inc()
+					metricsFailedPermsSyncs.WithLabelValues("repo").Inc()
 				}
 			} else {
 				logger.Debug("succeeded in syncing permissions",

@@ -551,6 +551,24 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg db update-user-external-services
+
+Manually update a user's external services.
+
+Patches the table 'user_external_services' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.
+
+
+Flags:
+
+* `--extsvc.display-name="<value>"`: The display name of the GitHub instance connected to the Sourcegraph instance (as listed under Site admin > Manage code hosts)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--github.baseurl="<value>"`: The base url of the GitHub instance to connect to
+* `--github.client-id="<value>"`: The client ID of an OAuth app on the GitHub instance
+* `--github.token="<value>"`: GitHub token with a scope to read all user data
+* `--github.username="<value>"`: Username of the account on the GitHub instance (default: sourcegraph)
+* `--oauth.token="<value>"`: OAuth token to patch for the provided user
+* `--sg.username="<value>"`: Username of the user account on Sourcegraph (default: sourcegraph)
+
 ### sg db add-user
 
 Create an admin sourcegraph user.
@@ -1411,6 +1429,28 @@ Flags:
 * `--opsgenie.token="<value>"`: OpsGenie token
 * `--priority, -p="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
 * `--url="<value>"`: URL field for alert details (optional)
+
+## sg cloud
+
+Install and work with Sourcegraph Cloud tools.
+
+Learn more about Sourcegraph Cloud:
+
+- Product: https://docs.sourcegraph.com/cloud
+- Handbook: https://handbook.sourcegraph.com/departments/cloud/
+
+
+
+### sg cloud install
+
+Install or upgrade local `mi2` CLI (for Cloud V2).
+
+To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg help
 

@@ -4,8 +4,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -euo pipefail
 
-REPO_ROOT="$PWD"
-
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
@@ -15,10 +13,9 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
-# Set up richgo for better output
-function richgo() {
-  # This fork gives us the `anyStyle` configuration required to hide log lines
-  go run github.com/jhchabran/richgo@installable "$@"
+# Set up gotestsum for better output
+function gotestsum() {
+  go run gotest.tools/gotestsum@v1.8.2 "$@"
 }
 
 function go_test() {
@@ -34,12 +31,11 @@ function go_test() {
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
   # shellcheck disable=SC2086
-  go test \
+  gotestsum -- \
     -timeout 10m \
     -coverprofile=coverage.txt \
     -covermode=atomic \
     -race \
-    -v \
     $test_packages | tee "$tmpfile"
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
@@ -49,11 +45,8 @@ function go_test() {
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
     echo "~~~ Creating test failures anotation"
-    RICHGO_CONFIG="./.richstyle.yml"
-    cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
-    richgo testfilter <"$tmpfile" >>./annotations/go-test
-    rm -rf $RICHGO_CONFIG
+    sed '0,/=== Failed$/d'<"$tmpfile" >>./annotations/go-test
     set +x
   fi
 

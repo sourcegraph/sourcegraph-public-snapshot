@@ -32,28 +32,9 @@ There are four fields for configuring which repositories are mirrored:
 
 ## Webhooks
 
-The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server / Bitbucket Data Center instance to send webhooks to Sourcegraph.
+Using the `webhooks` property on the external service has been deprecated.
 
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between Bitbucket Server / Bitbucket Data Center and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
-1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the Bitbucket Server / Bitbucket Data Center configuration.
-1. Add the `"webhooks"` property to `"plugin"` (you can generate a secret with `openssl rand -hex 32`):<br /> `"plugin": {"webhooks": {"secret": "verylongrandomsecret"}}`
-1. Click **Update repositories**.
-1. Note the webhook URL displayed below the **Update repositories** button.
-1. On your Bitbucket Server / Bitbucket Data Center instance, go to **Administration > Add-ons > Sourcegraph**
-1. Fill in the **Add a webhook** form
-   * **Name**: A unique name representing your Sourcegraph instance
-   * **Scope**: `global`
-   * **Endpoint**: The URL from step 6
-   * **Events**: `pr, repo`
-   * **Secret**: The secret you configured in step 4
-1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
-
-Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.
 
 ## Repository permissions
 

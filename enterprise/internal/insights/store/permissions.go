@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,18 +24,12 @@ type InsightPermStore struct {
 // code insights in the timeseries database. This approach makes the assumption that most users have access to most
 // repos - which is highly likely given the public / private model that repos use today.
 func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
-	tr, ctx := trace.New(ctx, "GetUnauthorizedRepoIDs", "")
-	defer tr.Finish()
-
 	db := database.NewDBWith(i.logger, i.Store)
-	tr.AddEvent("NewDBWith")
 	store := db.Repos()
-	tr.AddEvent("Repos")
 	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return []api.RepoID{}, err
 	}
-	tr.AddEvent("AuthzQueryConds")
 
 	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
 
@@ -45,7 +38,6 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 		return []api.RepoID{}, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
-	tr.AddEvent("Query")
 
 	for rows.Next() {
 		var temp int
@@ -54,7 +46,6 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 		}
 		results = append(results, api.RepoID(temp))
 	}
-	tr.AddEvent("Scan")
 
 	return results, nil
 }

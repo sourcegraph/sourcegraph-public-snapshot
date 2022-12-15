@@ -1703,6 +1703,16 @@ type Query {
         """
         kind: ExternalServiceKind
     ): WebhookConnection!
+
+    """
+    List slow GraphQL requests that were recently captured (requires site-admin permissions).
+    """
+    slowRequests(
+        """
+        Opaque pagnination cursor.
+        """
+        after: String
+    ): SlowRequestConnection!
 }
 
 """
@@ -2763,6 +2773,8 @@ type ExternalService implements Node {
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
+
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
     """
     webhookLogs(
         """
@@ -2790,6 +2802,9 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+        @deprecated(
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+        )
 
     """
     The list of recent sync jobs for this external service.
@@ -4549,6 +4564,11 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
+
+        """
+        Skip the first N commits of the repo before returning the number of commits as set in the field "first".
+        """
+        afterCursor: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
@@ -7030,6 +7050,10 @@ type SiteUser {
     Total number of user's event_logs.
     """
     eventsCount: Float!
+    """
+    Whether or not the user account is locked.
+    """
+    locked: Boolean!
 }
 
 """
@@ -7747,6 +7771,17 @@ type Hover {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when disableAutoGitUpdates is
+set to true in the site configuration
+"""
+type GitUpdatesDisabled {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when repositories are being
 cloned
 """
@@ -7801,7 +7836,7 @@ type IndexingProgress {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
+union StatusMessage = GitUpdatesDisabled | CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -7959,7 +7994,7 @@ type TemporarySettings {
 }
 
 """
-Represents a webhook receiver from a code host.
+Represents an incoming webhook from a code host.
 """
 type Webhook implements Node {
     """
@@ -8434,4 +8469,74 @@ enum ExecutorCompatibility {
     Executor version is more than one version ahead of the Sourcegraph instance.
     """
     VERSION_AHEAD
+}
+
+"""
+The result for Query.slowRequests.
+"""
+type SlowRequestConnection {
+    """
+    A list of slow graphql requests logs.
+    """
+    nodes: [SlowRequest!]!
+
+    """
+    The total number of slow graphql logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A logged slow GraphQL request, captured by the backend.
+"""
+type SlowRequest {
+    """
+    The index of this request.
+    """
+    index: String!
+    """
+    The date at which this request was started.
+    """
+    start: DateTime!
+    """
+    The duration of the request.
+    """
+    duration: Float!
+    """
+    The user associated with that request, if any.
+    """
+    user: User
+    """
+    The name of the GraphQL request.
+    """
+    name: String!
+    """
+    The source from which the request originated.
+    """
+    source: String!
+    """
+    The repository referenced by the request, if any.
+    """
+    repository: Repository
+    """
+    The variables used to build the GraphQL request.
+    """
+    variables: String!
+    """
+    The errors returned if the request failed.
+    """
+    errors: [String!]!
+    """
+    The GraphQL query.
+    """
+    query: String!
+    """
+    The file path referenced by the request, if any.
+    """
+    filepath: String
 }

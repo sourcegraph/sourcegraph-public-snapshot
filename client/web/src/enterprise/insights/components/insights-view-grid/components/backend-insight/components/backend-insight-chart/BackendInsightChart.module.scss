@@ -37,7 +37,17 @@
 .responsive-container {
     grid-area: chart;
     position: relative;
+
+    // Without overflow hidden parent size container measures sizes
+    // incorrectly within the chart containers.
     overflow: hidden;
+
+    // Since this container has overflow hidden inner chart block focus ring
+    // styles is cutting off, re-add focus ring styles on this block instead
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
 
     &:hover,
     &:focus-within {

@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, isErrorGraphQLResult } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
@@ -29,6 +29,8 @@ import {
     highlightCodeVariables,
     SearchContextsOrderBy,
     SearchContextFields,
+    DefaultSearchContextSpecResult,
+    DefaultSearchContextSpecVariables,
 } from './graphql-operations'
 
 const searchContextFragment = gql`
@@ -410,4 +412,22 @@ export function fetchRecentFileViews(
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 ): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob', platformContext)
+}
+
+export function fetchDefaultSearchContextSpec(
+    platformContext: Pick<PlatformContext, 'requestGraphQL'>
+): Observable<string | null> {
+    return platformContext
+        .requestGraphQL<DefaultSearchContextSpecResult, DefaultSearchContextSpecVariables>({
+            request: gql`
+                query DefaultSearchContextSpec {
+                    defaultSearchContext {
+                        spec
+                    }
+                }
+            `,
+            variables: {},
+            mightContainPrivateInfo: true,
+        })
+        .pipe(map(result => (isErrorGraphQLResult(result) ? null : result.data?.defaultSearchContext?.spec ?? null)))
 }

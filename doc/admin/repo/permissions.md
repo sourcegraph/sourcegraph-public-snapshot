@@ -432,6 +432,7 @@ As soon as a new user is created on Sourcegraph, pending permissions (`repo_pend
 The [`user_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-user-pending-permissions) has a `bind_id` column which is an ID of the user of the external code host, for example a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab.
 
 User pending permission is a composite entity comprising:
+
 - `service_type` (e.g. `github`, `gitlab`, `bitbucketServer`)
 - `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`)
 - `permission` (access level, e.g. "read")
@@ -444,7 +445,7 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 
 #### Repo pending permissions
 
-[`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
+[`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://github.com/sourcegraph/sourcegraph/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-150f6343be1e4395dbf2188cd35b4dd793459fabfe319c1bfcceb92e05847572)).
 
 ## Explicit permissions API
 

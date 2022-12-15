@@ -13,7 +13,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
-    public hasInsights = errorMockMethod('hasInsight')
     public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
     public createInsight = errorMockMethod('createInsight')
     public updateInsight = errorMockMethod('updateInsight')
@@ -28,9 +27,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
 
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
-
-    // License check
-    public UIFeatures = { licensed: false, insightsLimit: null }
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

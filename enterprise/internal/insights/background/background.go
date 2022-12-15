@@ -49,7 +49,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, featureFlagStore),
+		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
@@ -152,6 +152,6 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
 		return true
 	}))
-	resetterMetrics := dbworker.NewMetrics(observationCtx, workerName)
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }

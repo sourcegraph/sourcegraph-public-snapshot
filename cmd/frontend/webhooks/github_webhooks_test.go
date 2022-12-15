@@ -45,12 +45,13 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
-	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+	logger := logtest.Scoped(t)
+	h := GitHubWebhook{WebhookRouter: &WebhookRouter{Logger: logger}}
 	ctx := context.Background()
 
 	eventType := "test-event-1"
 	err := h.Dispatch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil)
-	assert.Equal(t, eventTypeNotFoundError{codeHostKind: extsvc.KindGitHub, eventType: eventType}, err)
+	assert.Nil(t, err)
 }
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {

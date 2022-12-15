@@ -51,7 +51,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  closed_at         | timestamp with time zone |           |          | 
- batch_spec_id     | bigint                   |           | not null | 
+ batch_spec_id     | bigint                   |           |          | 
  last_applier_id   | bigint                   |           |          | 
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
@@ -61,6 +61,7 @@ Indexes:
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
+    "batch_change_name_is_valid" CHECK (name ~ '^[\w.-]+$'::text)
     "batch_changes_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "batch_changes_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -2069,6 +2070,7 @@ Stores the retention policy of code intellience data for a repository.
  last_traversal_scan_at  | timestamp with time zone |           |          | 
  last_reconcile_at       | timestamp with time zone |           |          | 
  content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
+ should_reindex          | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2497,6 +2499,25 @@ Stores errors that occurred while performing an out-of-band migration.
 
 **migration_id**: The identifier of the migration.
 
+# Table "public.permissions"
+```
+   Column   |           Type           | Collation | Nullable |                 Default                 
+------------+--------------------------+-----------+----------+-----------------------------------------
+ id         | integer                  |           | not null | nextval('permissions_id_seq'::regclass)
+ namespace  | text                     |           | not null | 
+ action     | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "permissions_pkey" PRIMARY KEY, btree (id)
+    "permissions_unique_namespace_action" UNIQUE, btree (namespace, action)
+Check constraints:
+    "action_not_blank" CHECK (action <> ''::text)
+    "namespace_not_blank" CHECK (namespace <> ''::text)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.phabricator_repos"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                    
@@ -2754,6 +2775,45 @@ Indexes:
 **soft_deleted**: Number of repositories that are soft-deleted and not blocked
 
 **total**: Number of repositories that are not soft-deleted and not blocked
+
+# Table "public.role_permissions"
+```
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ role_id       | integer                  |           | not null | 
+ permission_id | integer                  |           | not null | 
+ created_at    | timestamp with time zone |           | not null | now()
+Indexes:
+    "role_permissions_pkey" PRIMARY KEY, btree (permission_id, role_id)
+Foreign-key constraints:
+    "role_permissions_permission_id_fkey" FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE
+    "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.roles"
+```
+   Column   |           Type           | Collation | Nullable |              Default              
+------------+--------------------------+-----------+----------+-----------------------------------
+ id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
+ name       | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ deleted_at | timestamp with time zone |           |          | 
+ readonly   | boolean                  |           | not null | false
+Indexes:
+    "roles_pkey" PRIMARY KEY, btree (id)
+    "roles_name" UNIQUE CONSTRAINT, btree (name)
+Check constraints:
+    "name_not_blank" CHECK (name <> ''::text)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "user_roles" CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+**name**: The uniquely identifying name of the role.
+
+**readonly**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```
@@ -3110,6 +3170,21 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_roles"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ user_id    | integer                  |           | not null | 
+ role_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "user_roles_pkey" PRIMARY KEY, btree (user_id, role_id)
+Foreign-key constraints:
+    "user_roles_role_id_fkey" FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE
+    "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.users"
 ```
          Column          |           Type           | Collation | Nullable |              Default              
@@ -3200,6 +3275,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:

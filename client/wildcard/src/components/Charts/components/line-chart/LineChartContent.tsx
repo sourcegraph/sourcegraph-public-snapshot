@@ -9,6 +9,7 @@ import { Series } from '../../types'
 
 import { LineDataSeries, StackedArea, Tooltip, TooltipContent } from './components'
 import { getClosesVoronoiPoint, isNextTargetWithinCurrent } from './event-helpers'
+import { useKeyboardNavigation } from './keyboard-navigation'
 import { Point } from './types'
 import { generatePointsField, SeriesWithData } from './utils'
 
@@ -73,14 +74,15 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
         const points = generatePointsField(activeSeries)
 
         return voronoi<Point>({
-            // Taking into account content area shift in point distribution map
-            // see https://github.com/sourcegraph/sourcegraph/issues/38919
             x: point => xScale(point.xValue),
             y: point => yScale(point.yValue),
             width,
             height,
         })(Object.values(points).flat())
     }, [activeSeries, height, width, xScale, yScale])
+
+    // Experimental grid-like keyboard navigation over chart data points
+    useKeyboardNavigation({ element: svgElement, series: activeSeries })
 
     // Listen all pointer events on the SVG element level in order to make
     // all chart surface interactive.
@@ -130,10 +132,11 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
         <Group {...attributes} role="list" aria-label="Chart series">
             {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
-            {activeSeries.map(line => (
+            {activeSeries.map((line, index) => (
                 <LineDataSeries
                     key={line.id}
                     id={line.id.toString()}
+                    seriesIndex={index}
                     xScale={xScale}
                     yScale={yScale}
                     dataset={line.data}
@@ -156,6 +159,7 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
                 // solve problem with z-index for SVG elements.
                 <LineDataSeries
                     id={currentSeries.id.toString()}
+                    seriesIndex={-1}
                     xScale={xScale}
                     yScale={yScale}
                     dataset={currentSeries.data}

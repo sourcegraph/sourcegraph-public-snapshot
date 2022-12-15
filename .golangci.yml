@@ -19,7 +19,7 @@ linters:
     # https://github.com/sourcegraph/sourcegraph/issues/43753
     # https://github.com/sourcegraph/sourcegraph/issues/43755
     #- unused
-    #- unparam
+    - unparam
     - exportloopref
 
 linters-settings:

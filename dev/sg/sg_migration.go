@@ -203,16 +203,16 @@ sg migration squash
 	}
 )
 
-func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+func makeRunner(schemaNames []string) (cliutil.Runner, error) {
 	filesystemSchemas, err := getFilesystemSchemas()
 	if err != nil {
 		return nil, err
 	}
 
-	return makeRunnerWithSchemas(ctx, schemaNames, filesystemSchemas)
+	return makeRunnerWithSchemas(schemaNames, filesystemSchemas)
 }
 
-func makeRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string

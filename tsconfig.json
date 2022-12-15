@@ -19,7 +19,6 @@
     "outDir": "out",
     "rootDir": "."
   },
-
   "watchOptions": {
     "watchFile": "useFsEvents",
     "watchDirectory": "useFsEvents",

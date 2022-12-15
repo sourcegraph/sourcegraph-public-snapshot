@@ -30,6 +30,7 @@ func init() {
 }
 
 type SubRepoPermsStore interface {
+	basestore.ShareableStore
 	With(other basestore.ShareableStore) SubRepoPermsStore
 	Transact(ctx context.Context) (SubRepoPermsStore, error)
 	Done(err error) error

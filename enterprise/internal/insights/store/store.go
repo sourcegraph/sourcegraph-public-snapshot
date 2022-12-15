@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -155,7 +155,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
@@ -174,7 +174,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		captureValues[capture] = struct{}{}
 		pointsMap[point.Time.String()+capture] = &point
 		return nil
-	}, true)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
 	;`
 	fullQ := seriesPointsQuery(q, opts)
-	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
+	err = s.query(ctx, fullQ, func(sc dbutil.Scanner) (err error) {
 		var row loadStruct
 		err = sc.Scan(
 			&row.Time,
@@ -262,7 +262,7 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		sp.Time = row.Time
 
 		return nil
-	}, true)
+	})
 
 	if err != nil {
 		return nil, err
@@ -411,12 +411,18 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
 		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
 		for _, regex := range opts.ExcludeRepoRegex {
@@ -657,7 +663,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
 	recordingTimes := []types.RecordingTime{}
-	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
+	err = s.query(ctx, timesQuery, func(sc dbutil.Scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
 			&recordingTime,
@@ -701,9 +707,6 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 }
 
 func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
-	tr, ctx := trace.New(ctx, "AugmentSeriesPoints", "")
-	defer tr.Finish()
-
 	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
@@ -765,13 +768,7 @@ WHERE %s
 ORDER BY recording_time ASC;
 `
 
-func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc, shouldTrace ...any) error {
-	if len(shouldTrace) > 0 {
-		var tr *trace.Trace
-		tr, ctx = trace.New(ctx, "CodeInsightsDB.query", q.Query(sqlf.PostgresBindVar))
-		defer tr.Finish()
-	}
-
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
 		return err
@@ -779,14 +776,9 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc, shouldTra
 	return scanAll(rows, sc)
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...any) error
-}
-
 // a scanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -810,7 +802,7 @@ func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID
 	if err != nil {
 		return nil, err
 	}
-	return results, scanAll(rows, func(s scanner) (err error) {
+	return results, scanAll(rows, func(s dbutil.Scanner) (err error) {
 		var tmp IncompleteDatapoint
 		if err = rows.Scan(
 			&tmp.Reason,

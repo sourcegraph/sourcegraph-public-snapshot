@@ -9,7 +9,6 @@ import {
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
-    HasAvailableCodeInsightResult,
     RemoveInsightViewFromDashboardResult,
     RemoveInsightViewFromDashboardVariables,
 } from 'src/graphql-operations'
@@ -103,23 +102,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }),
             catchError(() => of(null))
         )
-
-    public hasInsights = (first: number): Observable<boolean> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
-                query: gql`
-                    query HasAvailableCodeInsight($first: Int!) {
-                        insightViews(first: $first) {
-                            nodes {
-                                id
-                            }
-                        }
-                    }
-                `,
-                variables: { first },
-                nextFetchPolicy: 'cache-only',
-            })
-        ).pipe(map(({ data }) => data.insightViews.nodes.length === first))
 
     public getActiveInsightsCount = (first: number): Observable<number> =>
         fromObservableQuery(

@@ -75,28 +75,26 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-**Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all) that include:
+See the [search contexts](../how-to/search_contexts.md) documentation for instructions for using and creating search contexts.
 
-- The global context, `context:global`, which includes all repositories on Sourcegraph.com.
-- Search contexts for various software communities like [CNCF](https://sourcegraph.com/search?q=context:CNCF), [crates.io](https://sourcegraph.com/search?q=context:crates.io), [JVM](https://sourcegraph.com/search?q=context:JVM), and more.  
 
-If no search context is specified, `context:global` is used.
+## Fuzzy search <span class="badge badge-primary">experimental</span>
 
-**Private Sourcegraph instances** support custom search contexts:
+> NOTE: This feature is still in active development. If you have any feedback on how we can improve this feature, please [let us know](https://github.com/sourcegraph/sourcegraph/discussions/42874).
 
-- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
-- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
-- The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
+Use the fuzzy finder to quickly navigate to a repository, symbol, or file.
 
-This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
+To open the fuzzy finder, press `Cmd+K` (macOS) or `Ctrl+K` (Linux/Windows) from any page. Use the dedicated Repos, Symbols, and Files tabs to search only for a repository, symbol, or file. Each tab has a dedicated shortcut:
 
-Your site admin can enable search contexts on your private instance in **global settings** using the following:
+- Repos: Cmd+I (macOS), Ctrl+K (Linux/Windows)
+- Symbols: Cmd+O (macOS), Cmd+Shift+O (macOS Safari), Ctrl+O (Linux/Windows)
+- Files: Cmd+P (macOS), Ctrl+P (Linux/Windows)
 
-```json
-"experimentalFeatures": {  
-  "showSearchContext": true
-}
-```
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20All.png" alt="Fuzzy search">
+
+Use the "Searching everywhere" or "Searching in this repo" filter to determine whether to search for results only in the active repository or globally.
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20Search%20Scope.png" alt="Fuzzy search">
 
 ## Multi-branch indexing <span class="badge badge-primary">experimental</span>
 

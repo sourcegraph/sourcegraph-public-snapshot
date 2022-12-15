@@ -1,7 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import * as H from 'history'
-import { WildcardMockLink } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -125,6 +125,81 @@ export const SiteAdminWebhookPageStory: Story = args => {
 
 SiteAdminWebhookPageStory.storyName = 'Incoming webhook'
 SiteAdminWebhookPageStory.args = {
+    match: {
+        params: {
+            id: '1',
+        },
+    },
+}
+
+export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
+    const buildWebhookLogsMock = new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(WEBHOOK_BY_ID),
+                variables: {
+                    id: '1',
+                },
+            },
+            result: {
+                data: {
+                    node: createWebhookMock(ExternalServiceKind.GITHUB, 'https://github.com/'),
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(WEBHOOK_LOGS_BY_ID),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: {
+                data: {
+                    webhookLogs: {
+                        nodes: [],
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(WEBHOOK_BY_ID_LOG_PAGE_HEADER),
+                variables: {
+                    webhookID: '1',
+                },
+            },
+            result: {
+                data: {
+                    webhookLogs: {
+                        totalCount: 0,
+                    },
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+
+    return (
+        <WebStory>
+            {() => (
+                <MockedTestProvider link={buildWebhookLogsMock}>
+                    <SiteAdminWebhookPage
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                        match={args.match}
+                        history={H.createMemoryHistory()}
+                        location={{} as any}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+SiteAdminWebhookPageWithoutLogsStory.storyName = 'Incoming webhook without logs'
+SiteAdminWebhookPageWithoutLogsStory.args = {
     match: {
         params: {
             id: '1',

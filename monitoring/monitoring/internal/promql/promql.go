@@ -30,7 +30,7 @@ func InjectMatchers(expression string, matchers []*labels.Matcher, vars Variable
 	}
 
 	// Undo replacements if there are any
-	revertExpr := func(e promqlparser.Expr) (string, error) {
+	revertExpr := func() (string, error) {
 		// Convert back to string, and revert injection of default values
 		injected := expr.String()
 		if vars != nil {
@@ -40,7 +40,7 @@ func InjectMatchers(expression string, matchers []*labels.Matcher, vars Variable
 	}
 
 	if len(matchers) == 0 {
-		return revertExpr(expr) // return formatted regardless, for consistency
+		return revertExpr() // return formatted regardless, for consistency
 	}
 
 	// Inject matchers into selectors
@@ -51,7 +51,7 @@ func InjectMatchers(expression string, matchers []*labels.Matcher, vars Variable
 		return nil
 	})
 
-	return revertExpr(expr)
+	return revertExpr()
 }
 
 type inspector func(promqlparser.Node, []promqlparser.Node) error
@@ -198,7 +198,7 @@ func InjectGroupings(expression string, groupings []string, vars VariableApplier
 	}
 
 	// Undo replacements if there are any
-	revertExpr := func(e promqlparser.Expr) (string, error) {
+	revertExpr := func() (string, error) {
 		// Convert back to string, and revert injection of default values
 		injected := expr.String()
 		if vars != nil {
@@ -208,7 +208,7 @@ func InjectGroupings(expression string, groupings []string, vars VariableApplier
 	}
 
 	if len(groupings) == 0 {
-		return revertExpr(expr) // return formatted regardless, for consistency
+		return revertExpr() // return formatted regardless, for consistency
 	}
 
 	// Inject aggregators into selectors
@@ -220,7 +220,7 @@ func InjectGroupings(expression string, groupings []string, vars VariableApplier
 		return nil
 	})
 
-	return revertExpr(expr)
+	return revertExpr()
 }
 
 // replaceAndParse applies vars to the expression and parses the result into a PromQL AST.
