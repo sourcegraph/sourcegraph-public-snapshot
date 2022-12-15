@@ -36,3 +36,20 @@ export const GitHub: Story = () => (
 )
 
 GitHub.storyName = 'Add secret'
+
+export const DockerAuthConfig: Story = () => (
+    <WebStory>
+        {props => (
+            <AddSecretModal
+                {...props}
+                namespaceID="user-id-1"
+                scope={ExecutorSecretScope.BATCHES}
+                afterCreate={noop}
+                onCancel={noop}
+                initialKey="DOCKER_AUTH_CONFIG"
+            />
+        )}
+    </WebStory>
+)
+
+DockerAuthConfig.storyName = 'Docker auth config'

@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -37,7 +38,7 @@ func (e *accessLogTransformer) Create(ctx context.Context, log *database.Executo
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
 
-func transformRecord(ctx context.Context, index types.Index, db database.DB, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db database.DB, index types.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	var secrets []*database.ExecutorSecret
@@ -149,7 +150,7 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 	// 🚨 SECURITY: Catch uses of executor secrets from the executor secret store
 	maps.Copy(allRedactedValues, redactedEnvVars)
 
-	return apiclient.Job{
+	aj := apiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
 		RepositoryName: index.RepositoryName,
@@ -157,7 +158,30 @@ func transformRecord(ctx context.Context, index types.Index, db database.DB, res
 		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,
 		RedactedValues: allRedactedValues,
-	}, nil
+	}
+
+	// Append docker auth config.
+	esStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
+		// Codeintel only has a global namespace for now.
+		NamespaceUserID: 0,
+		NamespaceOrgID:  0,
+		Keys:            []string{"DOCKER_AUTH_CONFIG"},
+	})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	if len(secrets) == 1 {
+		val, err := secrets[0].Value(ctx, secretStore)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
+			return aj, err
+		}
+	}
+
+	return aj, nil
 }
 
 const (

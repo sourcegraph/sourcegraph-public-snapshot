@@ -19,6 +19,7 @@ import (
 
 func TestTransformRecord(t *testing.T) {
 	db := database.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
 
 	for _, testCase := range []struct {
 		name             string
@@ -79,7 +80,7 @@ func TestTransformRecord(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), index, db, testCase.resourceMetadata, "hunter2")
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -147,6 +148,7 @@ func TestTransformRecord(t *testing.T) {
 
 func TestTransformRecordWithoutIndexer(t *testing.T) {
 	db := database.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
 
 	index := types.Index{
 		ID:             42,
@@ -174,7 +176,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		conf.Mock(nil)
 	})
 
-	job, err := transformRecord(context.Background(), index, db, handler.ResourceMetadata{}, "hunter2")
+	job, err := transformRecord(context.Background(), db, index, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -250,13 +252,18 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 	sal := database.NewMockExecutorSecretAccessLogStore()
 	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
-	secs.ListFunc.SetDefaultReturn([]*database.ExecutorSecret{
-		database.NewMockExecutorSecret(&database.ExecutorSecret{
-			Key:                    "NPM_TOKEN",
-			Scope:                  database.ExecutorSecretScopeCodeIntel,
-			OverwritesGlobalSecret: false,
-		}, "banana"),
-	}, 1, nil)
+	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
+		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
+			return nil, 0, nil
+		}
+		return []*database.ExecutorSecret{
+			database.NewMockExecutorSecret(&database.ExecutorSecret{
+				Key:                    "NPM_TOKEN",
+				Scope:                  database.ExecutorSecretScopeCodeIntel,
+				OverwritesGlobalSecret: false,
+			}, "banana"),
+		}, 1, nil
+	})
 
 	for _, testCase := range []struct {
 		name             string
@@ -300,7 +307,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), index, db, testCase.resourceMetadata, "hunter2")
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -368,5 +375,52 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				t.Errorf("unexpected job (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestTransformRecordDockerAuthConfig(t *testing.T) {
+	db := database.NewMockDB()
+	secstore := database.NewMockExecutorSecretStore()
+	db.ExecutorSecretsFunc.SetDefaultReturn(secstore)
+	secstore.ListFunc.PushReturn([]*database.ExecutorSecret{
+		database.NewMockExecutorSecret(&database.ExecutorSecret{
+			Key:       "DOCKER_AUTH_CONFIG",
+			Scope:     database.ExecutorSecretScopeCodeIntel,
+			CreatorID: 1,
+		}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
+	}, 0, nil)
+	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
+
+	job, err := transformRecord(context.Background(), db, types.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := apiclient.Job{
+		ID:                  42,
+		ShallowClone:        true,
+		FetchTags:           false,
+		VirtualMachineFiles: nil,
+		DockerSteps: []apiclient.DockerStep{
+			{
+				Key:      "upload",
+				Image:    fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
+				Commands: []string{"src lsif upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
+				Env:      []string{"SRC_ENDPOINT=", "SRC_HEADER_AUTHORIZATION=token-executor hunter2"},
+			},
+		},
+		RedactedValues: map[string]string{
+			"hunter2":                "PASSWORD_REMOVED",
+			"token-executor hunter2": "token-executor REDACTED",
+		},
+		DockerAuthConfig: apiclient.DockerAuthConfig{
+			Auths: apiclient.DockerAuthConfigAuths{
+				"hub.docker.com": apiclient.DockerAuthConfigAuth{
+					Auth: []byte("hunter:hunter2"),
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(expected, job); diff != "" {
+		t.Errorf("unexpected job (-want +got):\n%s", diff)
 	}
 }
