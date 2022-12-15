@@ -65,7 +65,6 @@ local goext_recognizer = recognizer.new_path_recognizer {
     for i = 1, #paths do
       if path.dirname(paths[i]) == "" then
         return {
-          steps = { netrc_steps },
           local_steps = { netrc_steps },
           root = "",
           indexer = indexer,

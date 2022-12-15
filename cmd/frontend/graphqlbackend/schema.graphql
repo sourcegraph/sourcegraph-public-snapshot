@@ -1849,7 +1849,7 @@ type ExecutorSecretAccessLog implements Node {
     """
     True when the secret was accessed by an internal procedure.
     """
-    machineUser: Boolean!
+    machineUser: String!
     """
     The date and time when the secret has been used.
     """
