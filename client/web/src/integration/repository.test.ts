@@ -624,7 +624,7 @@ describe('Repository', () => {
     })
 
     describe('commits page', () => {
-        it.only('loads commits of a repository', async () => {
+        it('loads commits of a repository', async () => {
             const shortRepositoryName = 'sourcegraph/sourcegraph'
             const repositoryName = `github.com/${shortRepositoryName}`
             testContext.overrideGraphQL({
