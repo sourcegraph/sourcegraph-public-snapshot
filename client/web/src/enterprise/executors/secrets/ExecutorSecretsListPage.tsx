@@ -154,7 +154,7 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
             )}
 
             <div className="d-flex mb-3">
-                {(namespaceID == null ? Object.values(ExecutorSecretScope) : [ExecutorSecretScope.BATCHES]).map(
+                {(namespaceID === null ? Object.values(ExecutorSecretScope) : [ExecutorSecretScope.BATCHES]).map(
                     scope => (
                         <ExecutorSecretScopeSelector
                             key={scope}

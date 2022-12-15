@@ -122,7 +122,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
-                View all usage statistics
+                View all usage statistics 
                 <svg
                   aria-hidden="true"
                   class="mdi-icon iconInline"
