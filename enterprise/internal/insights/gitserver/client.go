@@ -28,5 +28,4 @@ func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName
 }
 func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 	return gitserver.NewClient(g.db).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
-
 }
