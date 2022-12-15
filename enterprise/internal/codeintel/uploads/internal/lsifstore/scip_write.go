@@ -82,7 +82,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
 		return nil, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIpWriterTemporarySymbolsTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +128,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
 ) ON COMMIT DROP
 `
 
-const newSCIpWriterTemporarySymbolsTableQuery = `
+const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
