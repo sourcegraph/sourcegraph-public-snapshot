@@ -13,10 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func init() {
+	database.SubRepoPermsWith = SubRepoPermsWith
+}
 
 func TestSubRepoPermsInsert(t *testing.T) {
 	if testing.Short() {
@@ -25,7 +30,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -92,7 +97,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -133,7 +138,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -181,7 +186,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -264,7 +269,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -342,7 +347,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -353,7 +358,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms are not supported")
 }
 
-func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s database.SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {
@@ -371,7 +376,7 @@ func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepo
 	}
 }
 
-func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s database.SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -52,6 +53,8 @@ func EnterpriseInit(
 		}
 	}
 
+	database.SubRepoPermsWith = edb.SubRepoPermsWith
+
 	permsStore := edb.Perms(logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
@@ -70,13 +73,12 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 	go func() {
 		t := time.NewTicker(frontendAuthz.RefreshInterval())
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ :=
-				frontendAuthz.ProvidersFromConfig(
-					ctx,
-					conf.Get(),
-					db.ExternalServices(),
-					db,
-				)
+			allowAccessByDefault, authzProviders, _, _, _ := frontendAuthz.ProvidersFromConfig(
+				ctx,
+				conf.Get(),
+				db.ExternalServices(),
+				db,
+			)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

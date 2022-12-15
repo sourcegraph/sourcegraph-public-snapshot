@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	enterprise_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -37,6 +38,8 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to connect to frontend database", log.Error(err))
 	}
+
+	database.SubRepoPermsWith = edb.SubRepoPermsWith
 
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
 	if err != nil {
