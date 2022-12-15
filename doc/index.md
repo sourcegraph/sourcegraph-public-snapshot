@@ -60,7 +60,7 @@ Sourcegraph is a code search and intelligence platform. Devs use it to search, u
   </a>
 </div>
 
-### Enterprise options
+## Enterprise options
 
 For our largest customers, we also offer a Kubernetes multi-node cluster deployment and enterprise support.
 
@@ -72,6 +72,27 @@ For our largest customers, we also offer a Kubernetes multi-node cluster deploym
 	  <p>Deploy a multi-node cluster</p>
     <p><strong>Enterprise-only</strong></p>
   </a>
+</div>
+
+## Non-production
+
+<div class="grid">
+  <a class="btn-app btn" href="/admin/deploy/docker-single-container">
+    <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
+    <h3>Docker Container</h3>
+    <p>Spin up a local Sourcegraph instance with pure docker</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
+    <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
+    <h3>K3s</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
+    <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
+    <h3>Minikube</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <div></div>
 </div>
 
 ## Quickstart
@@ -97,10 +118,6 @@ For our largest customers, we also offer a Kubernetes multi-node cluster deploym
 
 ## Explanations
 
-- Test sourcegraph on your local machine:
-  - [Docker single-container](admin/deploy/docker-single-container.md)
-  - [k3s](/admin/deploy/single-node/k3s.md)
-  - [minikube](/admin/deploy/single-node/minikube.md)
 - [About deploying Sourcegraph, upgrades, etc.](/admin/deploy.md)
 - [How GitHub code search compares to Sourcegraph](https://docs.sourcegraph.com/getting-started/github-vs-sourcegraph)
 - [How Sourcegraph is licensed](https://docs.sourcegraph.com/getting-started/oss-enterprise)
