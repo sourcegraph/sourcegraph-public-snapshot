@@ -574,6 +574,9 @@ input RepositoryScopeInput {
     """
     repositories: [String!]!
 
+    """
+    A search query to select repositories for this scope.
+    """
     repositoryCriteria: String
 }
 
@@ -1083,6 +1086,9 @@ type SearchInsightDataSeriesDefinition {
     groupBy: GroupByField
 }
 
+"""
+Describes a scope of repositories, this type is used for both the search based scopes and all repositories
+"""
 type RepositorySearchScope {
     """
     The user provided search used to generate the list of repositories the insight runs over.
@@ -1094,6 +1100,9 @@ type RepositorySearchScope {
     allRepositories: Boolean!
 }
 
+"""
+Defines how the scope of repositories was generated
+"""
 union InsightRepositoryDefinition = RepositorySearchScope | InsightRepositoryScope
 
 """
