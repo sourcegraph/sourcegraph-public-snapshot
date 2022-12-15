@@ -95,6 +95,8 @@ RETURNING %s
 type ListBatchSpecExecutionCacheEntriesOpts struct {
 	Keys   []string
 	UserID int32
+	// If true, explicitly return all entires.
+	All bool
 }
 
 // ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
@@ -104,11 +106,11 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if opts.UserID == 0 {
+	if !opts.All && opts.UserID == 0 {
 		return nil, errors.New("cannot query cache entries without specifying UserID")
 	}
 
-	if len(opts.Keys) == 0 {
+	if !opts.All && len(opts.Keys) == 0 {
 		return nil, errors.New("cannot query cache entries without specifying Keys")
 	}
 
@@ -134,12 +136,16 @@ WHERE %s
 
 func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEntriesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)),
 		// Only consider records that are in the current cache version.
 		sqlf.Sprintf("batch_spec_execution_cache_entries.version = %s", btypes.CurrentCacheVersion),
-		sqlf.Sprintf("batch_spec_execution_cache_entries.user_id = %s", opts.UserID),
 	}
 
+	if opts.UserID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_execution_cache_entries.user_id = %s", opts.UserID))
+	}
+	if len(opts.Keys) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)))
+	}
 	return sqlf.Sprintf(
 		listBatchSpecExecutionCacheEntriesQueryFmtstr,
 		sqlf.Join(BatchSpecExecutionCacheEntryColums.ToSqlf(), ", "),
