@@ -601,3 +601,29 @@ func Test_addFileFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestRepositoryScopeQuery(t *testing.T) {
+	tests := []struct {
+		input string
+		want  autogold.Value
+	}{
+		{
+			"repo:sourcegraph",
+			autogold.Want("basic query", BasicQuery("fork:yes archived:yes count:all repo:sourcegraph")),
+		},
+		{
+			"repo:s or repo:l",
+			autogold.Want("compound query", BasicQuery("(fork:yes archived:yes count:all repo:s OR fork:yes archived:yes count:all repo:l)")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := RepositoryScopeQuery(BasicQuery(test.input))
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}

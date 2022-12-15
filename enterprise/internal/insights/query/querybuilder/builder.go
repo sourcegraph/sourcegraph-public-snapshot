@@ -40,7 +40,6 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
 func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
-
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
@@ -316,9 +315,13 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 			params = append(params, parameter)
 		}
 
+		value := "yes"
+		if !sensitive {
+			value = "no"
+		}
 		params = append(params, searchquery.Parameter{
 			Field:      searchquery.FieldCase,
-			Value:      "yes",
+			Value:      value,
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
@@ -329,22 +332,29 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 }
 
 func RepositoryScopeQuery(query BasicQuery) (BasicQuery, error) {
-	parameters := append(CodeInsightsQueryDefaults(true), searchquery.Parameter{
-		Field:      searchquery.FieldCount,
-		Value:      "all",
-		Negated:    false,
-		Annotation: searchquery.Annotation{},
-	})
-	insightsQuery, err := withDefaults(query, parameters)
+	repositoryScopeParameters := []searchquery.Parameter{
+		{
+			Field:      searchquery.FieldFork,
+			Value:      string(searchquery.Yes),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldArchived,
+			Value:      string(searchquery.Yes),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldCount,
+			Value:      "all",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+	mutatedQuery, err := withDefaults(query, repositoryScopeParameters)
 	if err != nil {
 		return "", errors.Wrap(err, "withDefaults")
 	}
-	plan, err := searchquery.Pipeline(searchquery.Init(string(insightsQuery), searchquery.SearchTypeLiteral))
-	if err != nil {
-		return "", errors.Wrap(err, "Pipeline")
-	}
-	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
-		return basic.MapParameters(basic.Parameters)
-	})
-	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
+	return mutatedQuery, nil
 }
