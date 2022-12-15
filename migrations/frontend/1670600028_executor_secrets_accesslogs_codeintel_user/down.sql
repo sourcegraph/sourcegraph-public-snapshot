@@ -1,3 +1,27 @@
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE
+            table_name = 'executor_secret_access_logs_machineuser_bak_1670600028' AND
+            table_schema = current_schema()
+    ) THEN
+        -- create and copy
+        CREATE TABLE executor_secret_access_logs_machineuser_bak_1670600028 AS
+        SELECT * FROM executor_secret_access_logs
+        -- these two should match the same rows, but just in case
+        WHERE machine_user <> '' OR user_id IS NULL;
+    ELSE
+        -- copy over any rows that may have been added since (unlikely edge-case)
+        INSERT INTO executor_secret_access_logs_machineuser_bak_1670600028
+        SELECT * FROM executor_secret_access_logs AS esal
+        LEFT JOIN executor_secret_access_logs_machineuser_bak_1670600028 AS bak
+        ON esal.id = bak.id
+        WHERE bak.id IS NULL AND machine_user <> '' OR user_id IS NULL;
+    END IF;
+END
+$$;
+
 ALTER TABLE executor_secret_access_logs
 DROP CONSTRAINT IF EXISTS user_id_or_machine_user;
 
