@@ -38,6 +38,7 @@ export interface InsightFilters {
     repositories?: string[]
     seriesDisplayOptions: {
         limit: string
+        numSamples: string
         sortOptions: {
             mode: SeriesSortMode
             direction: SeriesSortDirection
@@ -68,6 +69,7 @@ export interface BaseInsight {
 // This makes reasoning about the code simpler.
 export interface SeriesDisplayOptionsInputRequired extends SeriesDisplayOptionsInput {
     limit: number
+    numSamples: number
     sortOptions: SeriesSortOptionsInput
 }
 

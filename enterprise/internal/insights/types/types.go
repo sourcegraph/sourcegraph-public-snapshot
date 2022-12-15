@@ -186,6 +186,7 @@ const (
 type SeriesDisplayOptions struct {
 	SortOptions *SeriesSortOptions
 	Limit       *int32
+	NumSamples  int
 }
 
 type SeriesSortOptions struct {

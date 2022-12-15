@@ -10,6 +10,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -30,7 +31,7 @@ type Interface interface {
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
-	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
@@ -123,13 +124,24 @@ type SeriesPointsOpts struct {
 	ExcludeRepoRegex []string
 
 	// Time ranges to query from/to, if non-nil, in UTC.
-	From, To *time.Time
+	From, To, After *time.Time
 
 	// Whether to augment the series points data with zero values.
 	SupportsAugmentation bool
 
 	// Limit is the number of data points to query, if non-zero.
 	Limit int
+}
+
+func (s *Store) GetOffsetNTime(ctx context.Context, seriesId, n int) (time.Time, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("select recording_time from insight_series_recording_times where insight_series_id = %s and snapshot is false order by recording_time desc offset %s", seriesId, n))
+
+	temp := pq.NullTime{}
+	err := row.Scan(&temp)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return temp.Time, nil
 }
 
 // SeriesPoints queries data points over time for a specific insights' series.
@@ -402,6 +414,9 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 	if opts.To != nil {
 		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("time > %s", *opts.After))
+	}
 
 	if len(opts.Included) > 0 {
 		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
@@ -648,17 +663,20 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (series types.InsightSeriesRecordingTimes, err error) {
 	series.InsightSeriesID = id
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("insight_series_id = %s", id),
 	}
-	if from != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
+	if opts.From != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", opts.From.UTC()))
 	}
-	if to != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
+	if opts.To != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", opts.To.UTC()))
+	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time > %s", opts.After.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
@@ -710,7 +728,7 @@ func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, 
 	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}

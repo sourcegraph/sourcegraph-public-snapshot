@@ -84,9 +84,11 @@ export const parseSeriesDisplayOptions = (
 
     const limit = parseSeriesLimit(options?.limit) || MAX_NUMBER_OF_SERIES
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
+    const numSamples = 30
 
     return {
         limit,
+        numSamples,
         sortOptions: {
             mode: sortOptions.mode || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.mode,
             direction: sortOptions.direction || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.direction,
@@ -104,4 +106,16 @@ export const parseSeriesLimit = (limit: string | Maybe<number> | undefined): num
     }
 
     return Math.min(parseInt(limit, 10), MAX_NUMBER_OF_SERIES)
+}
+
+export const parseNumSamples = (numSamples: string | Maybe<number> | undefined): number | undefined => {
+    if (typeof numSamples === 'number') {
+        return Math.min(numSamples, MAX_NUMBER_OF_SERIES)
+    }
+
+    if (!numSamples || numSamples.length === 0) {
+        return
+    }
+
+    return Math.min(parseInt(numSamples, 10), 90)
 }

@@ -105,6 +105,11 @@ func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Contex
 	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
 }
 
+func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
+	v := int32(i.seriesDisplayOptions.NumSamples)
+	return &v
+}
+
 type insightViewSeriesSortOptionsResolver struct {
 	seriesSortOptions *types.SeriesSortOptions
 }
@@ -211,7 +216,7 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 		}
 
 		for _, current := range i.view.Series {
-			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
 			if err != nil {
 				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 				return
@@ -1075,9 +1080,14 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
+			numSamples := 30
+			if d.args.SeriesDisplayOptions.NumSamples != nil {
+				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
+			}
 			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
 				Limit:       d.args.SeriesDisplayOptions.Limit,
+				NumSamples:  numSamples,
 			}
 		}
 		resolvers = append(resolvers, resolver)

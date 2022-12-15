@@ -40,6 +40,7 @@ import {
 } from './components'
 
 import styles from './BackendInsight.module.scss'
+import {parseNumSamples} from "./components/drill-down-filters-panel/drill-down-filters/utils";
 
 interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
@@ -86,6 +87,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 seriesDisplayOptions: {
                     limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
+                    numSamples: parseNumSamples(debouncedFilters.seriesDisplayOptions.numSamples)
                 },
             },
             onCompleted: data => {

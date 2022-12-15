@@ -13,6 +13,7 @@ import styles from './SortFilterSeriesPanel.module.scss'
 interface SortFilterSeriesPanelProps {
     value: {
         limit: string
+        numSamples: string
         sortOptions: SeriesSortOptionsInput
     }
     onChange: (parameter: DrillDownFiltersFormValues['seriesDisplayOptions']) => void
@@ -23,7 +24,7 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
         onChange({ ...value, sortOptions })
     }
 
-    const handleChange: ChangeEventHandler<HTMLInputElement> = event => {
+    const handleMaxChange: ChangeEventHandler<HTMLInputElement> = event => {
         const inputValue = event.target.value
         let limit = inputValue
 
@@ -32,6 +33,17 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
             limit = Math.max(Math.min(parseInt(inputValue, 10), MAX_NUMBER_OF_SERIES), 1).toString()
         }
         onChange({ ...value, limit })
+    }
+
+    const handleSampleChange: ChangeEventHandler<HTMLInputElement> = event => {
+        const inputValue = event.target.value
+        let numSamples = inputValue
+
+        // If a value is provided, clamp that value between 1 and maxLimit
+        if (inputValue.length > 0) {
+            numSamples = Math.max(Math.min(parseInt(inputValue, 10), 90), 1).toString()
+        }
+        onChange({ ...value, numSamples })
     }
 
     const handleBlur: FocusEventHandler<HTMLInputElement> = event => {
@@ -118,7 +130,23 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
                     min={1}
                     max={MAX_NUMBER_OF_SERIES}
                     value={value.limit}
-                    onChange={handleChange}
+                    onChange={handleMaxChange}
+                    onBlur={handleBlur}
+                    variant="small"
+                    aria-label="Number of data series"
+                />
+            </footer>
+            <footer className={styles.footer}>
+                <span>
+                    Number of points per series <small className="text-muted">(max 90)</small>
+                </span>
+                <Input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={90}
+                    value={value.numSamples}
+                    onChange={handleSampleChange}
                     onBlur={handleBlur}
                     variant="small"
                     aria-label="Number of data series"
