@@ -68,7 +68,7 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 			// and downstream processing will figure out what to do with this execution
 			return nil, false, nil
 		}
-		duration := time.Now().Sub(start)
+		duration := time.Since(start)
 
 		g.logger.Debug("recentCommits",
 			log.Duration("duration", duration),
