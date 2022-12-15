@@ -51,7 +51,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     onSaveQueryClick,
 }) => {
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const requestExport = useCallback(
+    const downloadResults = useCallback(
         () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
         [results, sourcegraphURL, query]
     )
@@ -81,7 +81,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                <MenuItem onSelect={requestExport}>
+                                <MenuItem onSelect={downloadResults}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                                     Export results
                                 </MenuItem>
