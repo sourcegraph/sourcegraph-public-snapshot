@@ -15,17 +15,23 @@ func NewGitCommitClient(db database.DB) *GitCommitClient {
 	return &GitCommitClient{
 		cachedFirstCommit: NewCachedGitFirstEverCommit(),
 		db:                db,
+		Gitclient:         gitserver.NewClient(db),
 	}
 }
 
 type GitCommitClient struct {
 	cachedFirstCommit *CachedGitFirstEverCommit
 	db                database.DB
+	Gitclient         gitserver.Client
 }
 
 func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	return g.cachedFirstCommit.GitFirstEverCommit(ctx, g.db, repoName)
 }
-func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-	return gitserver.NewClient(g.db).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}
+	if len(revision) > 0 {
+		options.Range = revision
+	}
+	return g.Gitclient.Commits(ctx, repoName, options, authz.DefaultSubRepoPermsChecker)
 }
