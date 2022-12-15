@@ -208,24 +208,35 @@ func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string
 	}
 }
 
-func (c *Client) CreateSearchInsight(title string, series map[string]any) (SearchInsight, error) {
+func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRepoScope map[string]any, viewTimeScope map[string]any) (SearchInsight, error) {
 	const query = `
-		mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
-			createLineChartSearchInsight(input: $input) {
-				view {
-				  id
-				  presentation {
-					... on LineChartInsightViewPresentation {
-					  seriesPresentation {
-						seriesId
-						label
-						color 
-					  }
-					}
-				  }
+	mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
+		createLineChartSearchInsight(input: $input) {
+		  view {
+			id
+			presentation {
+			  ... on LineChartInsightViewPresentation {
+				seriesPresentation {
+				  seriesId
+				  label
+				  color
 				}
+			  }
 			}
+			repositoryDefinition {
+			  ... on InsightRepositoryScope {
+				repositories
+			  }
+			}
+			timeScope {
+			  ... on InsightIntervalTimeScope {
+				unit
+				value
+			  }
+			}
+		  }
 		}
+	  }
 	`
 
 	variables := map[string]any{
@@ -236,13 +247,26 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any) (Searc
 			"dataSeries": []any{
 				series,
 			},
+			"repositoryScope": viewRepoScope,
+			"timeScope":       viewTimeScope,
 		},
 	}
 	var resp struct {
 		Data struct {
 			CreateLineChartSearchInsight struct {
 				View struct {
-					Id           string `json:"id"`
+					Id                   string `json:"id"`
+					RepositoryDefinition struct {
+						InsightRepositoryScope struct {
+							Repositories []string `json:"Repositories"`
+						} `json:"InsightRepositoryScope"`
+					} `json:"RepositoryDefinition"`
+					TimeScope struct {
+						InsightIntervalTimeScope struct {
+							Unit  string `json:"unit"`
+							Value int32  `json:"value"`
+						} `json:"InsightIntervalTimeScope"`
+					} `json:"TimeScope"`
 					Presentation struct {
 						SeriesPresentation []struct {
 							SeriesId string `json:"SeriesId"`
@@ -267,6 +291,9 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any) (Searc
 		SeriesId:      singleSeries[0].SeriesId,
 		Label:         singleSeries[0].Label,
 		Color:         singleSeries[0].Color,
+		Repos:         resp.Data.CreateLineChartSearchInsight.View.RepositoryDefinition.InsightRepositoryScope.Repositories,
+		IntervalUnit:  resp.Data.CreateLineChartSearchInsight.View.TimeScope.InsightIntervalTimeScope.Unit,
+		IntervalValue: resp.Data.CreateLineChartSearchInsight.View.TimeScope.InsightIntervalTimeScope.Value,
 	}, nil
 }
 
@@ -275,6 +302,9 @@ type SearchInsight struct {
 	SeriesId      string
 	Label         string
 	Color         string
+	Repos         []string
+	IntervalUnit  string
+	IntervalValue int32
 }
 
 func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any) (SearchInsight, error) {
@@ -288,7 +318,7 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 					  seriesPresentation {
 						seriesId
 						label
-						color 
+						color
 					  }
 					}
 				  }
@@ -338,7 +368,7 @@ func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, er
 		mutation saveAsNewView($new: SaveInsightAsNewViewInput!) {
 		  saveInsightAsNewView(input:$new) {
 			view {
-			  id 
+			  id
 			  dataSeries {
 				seriesId
 			  }
