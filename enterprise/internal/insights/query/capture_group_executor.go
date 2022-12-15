@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	gitserver2 "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
+	insightsgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -71,9 +71,9 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := gitserver2.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := insightsgitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			if errors.Is(err, gitserver2.EmptyRepoErr) {
+			if errors.Is(err, insightsgitserver.EmptyRepoErr) {
 				continue
 			} else {
 				return nil, errors.Wrapf(err, "FirstEverCommit")
