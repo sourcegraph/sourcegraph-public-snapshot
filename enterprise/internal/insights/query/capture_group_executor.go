@@ -9,14 +9,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	insightsgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -71,9 +69,9 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := insightsgitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			if errors.Is(err, insightsgitserver.EmptyRepoErr) {
+			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
 			} else {
 				return nil, errors.Wrapf(err, "FirstEverCommit")
@@ -91,7 +89,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewClient(c.db).Commits(ctx, api.RepoName(repository), gitserver.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			commits, err := gitserver.NewGitCommitClient(c.db).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {
