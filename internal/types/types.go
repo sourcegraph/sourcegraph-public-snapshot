@@ -800,7 +800,6 @@ type Permission struct {
 	Action    string
 	CreatedAt time.Time
 }
-
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
