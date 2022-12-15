@@ -1,5 +1,9 @@
 # Install Sourcegraph on Amazon Web Services (AWS)
 
+> ⚠️ We recommend new users use our [AWS AMI](../machine-images/aws-oneclick) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
+---
+
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
 <span class="badge badge-note">RECOMMENDED</span> Deploy a Sourcegraph instance with an [AWS AMI](../machine-images/aws-ami.md) or [AWS One-Click](../machine-images/aws-oneclick.md).
