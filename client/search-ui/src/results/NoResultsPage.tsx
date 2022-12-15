@@ -12,9 +12,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon, Code, H2, H3, H4, Text, createLinkUrl } from '@sourcegraph/wildcard'
-
-import { ModalVideo } from '../documentation/ModalVideo'
-
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
 import searchBoxStyle from '../input/SearchBox.module.scss'
@@ -150,29 +147,6 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-const videos = [
-    {
-        title: 'Three ways to search',
-        thumbnailPrefix: 'img/vt-three-ways-to-search',
-        src: 'https://www.youtube-nocookie.com/embed/XLfE2YuRwvw',
-    },
-    {
-        title: 'Diff and commit search',
-        thumbnailPrefix: 'img/vt-diff-and-commit-search',
-        src: 'https://www.youtube-nocookie.com/embed/w-RrDz9hyGI',
-    },
-    {
-        title: 'Finding error messages',
-        thumbnailPrefix: 'img/vt-finding-error-messages',
-        src: 'https://www.youtube-nocookie.com/embed/r2CpLe1h89I',
-    },
-    {
-        title: 'Structural search',
-        thumbnailPrefix: 'img/vt-structural-search',
-        src: 'https://www.youtube-nocookie.com/embed/GnubTdnilbc',
-    },
-]
-
 interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
@@ -208,35 +182,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
         <div className={styles.root}>
             <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>
-                {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
-                    <Container
-                        sectionID={SectionID.VIDEOS}
-                        title="Video explanations"
-                        className={styles.videoContainer}
-                        onClose={onClose}
-                    >
-                        {videos.map(video => (
-                            <ModalVideo
-                                key={video.title}
-                                className={styles.video}
-                                id={`video-${video.title.toLowerCase().replace(/[^a-z]+/, '-')}`}
-                                title={video.title}
-                                src={video.src}
-                                thumbnail={{
-                                    src: `${video.thumbnailPrefix}-${isLightTheme ? 'light' : 'dark'}.png`,
-                                    alt: `${video.title} video thumbnail`,
-                                }}
-                                showCaption={true}
-                                onToggle={isOpen => {
-                                    if (isOpen) {
-                                        telemetryService.log('NoResultsVideoPlayed', { video: video.title })
-                                    }
-                                }}
-                                assetsRoot={assetsRoot}
-                            />
-                        ))}
-                    </Container>
-                )}
                 <div className="flex-1 flex-shrink-past-contents">
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
