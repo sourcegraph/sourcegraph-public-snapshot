@@ -22,7 +22,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 
 import { CreateAction } from './createActions'
-import { requestSearchResultsExport } from './useExportSearchResultsQuery'
+import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
@@ -52,7 +52,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
 }) => {
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
     const requestExport = useCallback(
-        () => (results ? requestSearchResultsExport(results, sourcegraphURL, query) : undefined),
+        () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
         [results, sourcegraphURL, query]
     )
 

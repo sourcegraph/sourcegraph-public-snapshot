@@ -153,7 +153,7 @@ const searchResultsToFileContent = (searchResults: SearchMatch[], sourcegraphURL
         .join('\n')
 }
 
-export const requestSearchResultsExport = (
+export const downloadSearchResults = (
     results: AggregateStreamingSearchResults,
     sourcegraphURL: string,
     query?: string
