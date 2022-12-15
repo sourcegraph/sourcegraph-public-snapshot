@@ -8,6 +8,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -27,9 +28,9 @@ import (
 )
 
 type BackfillRequest struct {
-	Series *types.InsightSeries
-	Repo   *itypes.MinimalRepo
-	Frames []types.Frame
+	Series      *types.InsightSeries
+	Repo        *itypes.MinimalRepo
+	SampleTimes []time.Time
 }
 
 type requestContext struct {
@@ -43,7 +44,7 @@ type Backfiller interface {
 
 type GitCommitClient interface {
 	FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
 type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
@@ -82,7 +83,7 @@ func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, r
 }
 
 type backfiller struct {
-	//dependencies
+	// dependencies
 	searchJobGenerator SearchJobGenerator
 	searchRunner       SearchRunner
 	persister          ResultsPersister
@@ -94,7 +95,7 @@ var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insig
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 
-	//setup
+	// setup
 	startingReqContext := requestContext{backfillRequest: &req}
 	start := b.clock.Now()
 
@@ -127,7 +128,7 @@ var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOfFrames := len(reqContext.backfillRequest.Frames)
+		numberOfFrames := len(reqContext.backfillRequest.SampleTimes)
 		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
 		if reqContext.backfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
@@ -148,7 +149,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
-		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
+		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
 		var ratio float64 = 1.0
 		if numberOfFrames > 0 {
 			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
@@ -195,7 +196,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
-	execution *compression.QueryExecution
+	execution compression.QueryExecution
 
 	// The repository we're building historical data for.
 	id       api.RepoID
@@ -229,34 +230,33 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		// at that point in time.)
 		repoName := string(bctx.repoName)
 		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
-			//a.statistics[bctx.seriesID].Preempted += 1
 			return err, nil, nil
-
-			// return // success - nothing else to do
 		}
 
-		var revision string
-		recentCommits, err := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime)
-		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
-				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+		revision := bctx.execution.Revision
+		if len(bctx.execution.Revision) == 0 {
+			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime, "")
+			if revErr != nil {
+				if errors.HasType(revErr, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(revErr) {
+					return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+				}
+				err = errors.Append(err, errors.Wrap(revErr, "FindNearestCommit"))
+				return
 			}
-			err = errors.Append(err, errors.Wrap(err, "FindNearestCommit"))
-			return
+			var nearestCommit *gitdomain.Commit
+			if len(recentCommits) > 0 {
+				nearestCommit = recentCommits[0]
+			}
+			if nearestCommit == nil {
+				// a.statistics[bctx.seriesID].Errored += 1
+				return // repository has no commits / is empty. Maybe not yet pushed to code host.
+			}
+			if nearestCommit.Committer == nil {
+				// a.statistics[bctx.seriesID].Errored += 1
+				return
+			}
+			revision = string(nearestCommit.ID)
 		}
-		var nearestCommit *gitdomain.Commit
-		if len(recentCommits) > 0 {
-			nearestCommit = recentCommits[0]
-		}
-		if nearestCommit == nil {
-			//a.statistics[bctx.seriesID].Errored += 1
-			return // repository has no commits / is empty. Maybe not yet pushed to code host.
-		}
-		if nearestCommit.Committer == nil {
-			//a.statistics[bctx.seriesID].Errored += 1
-			return
-		}
-		revision = string(nearestCommit.ID)
 
 		// Construct the search query that will generate data for this repository and time (revision) tuple.
 		var newQueryStr string

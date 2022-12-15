@@ -41,7 +41,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
-
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
 
@@ -54,9 +53,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
 
-	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, observationCtx, mainAppDB, insightsDB, time.Now))
-
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
@@ -65,7 +61,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
+			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
 			CommitClient:            discovery.NewGitCommitClient(mainAppDB),

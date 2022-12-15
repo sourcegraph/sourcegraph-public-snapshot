@@ -1,4 +1,4 @@
-package background
+package lsifstore
 
 import (
 	"bytes"

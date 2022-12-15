@@ -786,6 +786,21 @@ type User struct {
 	Searchable            bool
 }
 
+type Role struct {
+	ID        int32
+	Name      string
+	ReadOnly  bool
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
+type Permission struct {
+	ID        int32
+	Namespace string
+	Action    string
+	CreatedAt time.Time
+}
+
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
@@ -1726,4 +1741,17 @@ type OutboundRequestLogItem struct {
 	ErrorMessage       string              `json:"errorMessage"`
 	CreationStackFrame string              `json:"creationStackFrame"`
 	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+}
+
+type SlowRequest struct {
+	Index     string         `json:"index"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
 }
