@@ -63,7 +63,7 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 		if err != nil {
 			return nil, false, err
 		} else if len(commits) == 0 {
-			// this is a scenario where there is no commit but no no error
+			// this is a scenario where there is no commit but no error
 			// generally speaking this shouldn't happen, but if it does we will return no commit
 			// and downstream processing will figure out what to do with this execution
 			return nil, false, nil
