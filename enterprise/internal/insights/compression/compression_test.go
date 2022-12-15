@@ -9,6 +9,7 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -69,7 +70,7 @@ func Test_GitserverFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			filter := gitserverFilter{commitFetcher: test.fakeCommitFetcher}
+			filter := gitserverFilter{commitFetcher: test.fakeCommitFetcher, logger: logtest.Scoped(t)}
 			if test.times == nil {
 				test.times = test.fakeCommitFetcher.toTimes()
 			}
@@ -121,7 +122,7 @@ func (f fakeCommitFetcher) toTimes() (times []time.Time) {
 	return times
 }
 
-func (f fakeCommitFetcher) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+func (f fakeCommitFetcher) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 	got, ok := f.hashes[target]
 	if !ok {
 		return nil, f.errors[target]

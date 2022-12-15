@@ -97,7 +97,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observati
 		})
 
 	enq := globalBackfiller(observationCtx.Logger, workerBaseStore, dataSeriesStore, insightsStore)
-	enq.analyzer.frameFilter = compression.NewGitserverFilter(primaryDb)
+	enq.analyzer.frameFilter = compression.NewGitserverFilter(primaryDb, observationCtx.Logger)
 	enq.repoIterator = iterator.ForEach
 	enq.featureFlagStore = ffs
 
