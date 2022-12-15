@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -46,8 +48,9 @@ func TestStatusMessages(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		name  string
-		repos types.Repos
+		testSetup func()
+		name      string
+		repos     types.Repos
 		// maps repoName to CloneStatus
 		cloneStatus map[string]types.CloneStatus
 		// indexed is list of repo names that are indexed
@@ -57,6 +60,23 @@ func TestStatusMessages(t *testing.T) {
 		res              []StatusMessage
 		err              string
 	}{
+		{
+			testSetup: func() {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						DisableAutoGitUpdates: true,
+					},
+				})
+			},
+			name: "disableAutoGitUpdates set to true",
+			res: []StatusMessage{
+				{
+					GitUpdatesDisabled: &GitUpdatesDisabled{
+						Message: "Repositories will not be cloned or updated.",
+					},
+				},
+			},
+		},
 		{
 			name:        "site-admin: all cloned and indexed",
 			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
@@ -191,6 +211,10 @@ func TestStatusMessages(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.testSetup != nil {
+				tc.testSetup()
+			}
+
 			stored := tc.repos.Clone()
 			for _, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
@@ -204,6 +228,8 @@ func TestStatusMessages(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
+				conf.Mock(nil)
+
 				ids := make([]api.RepoID, 0, len(stored))
 				for _, r := range stored {
 					ids = append(ids, r.ID)

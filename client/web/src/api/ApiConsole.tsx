@@ -191,7 +191,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    private fetcher = async (graphQLParameters: _graphiqlModule.FetcherParams): Promise<string> => {
+    private fetcher: _graphiqlModule.Fetcher = async graphQLParameters => {
         const headers = new Headers({
             'x-requested-with': 'Sourcegraph GraphQL Explorer',
         })

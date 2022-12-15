@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
@@ -49,7 +50,7 @@ func (m *locationsCountMigrator) Interval() time.Duration { return m.interval }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *locationsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 
@@ -66,7 +67,7 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
 }
 
 // MigrateRowDown sets num_locations back to zero to undo the migration up direction.
-func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *locationsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 

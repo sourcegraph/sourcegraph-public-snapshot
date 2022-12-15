@@ -51,6 +51,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                     createdAt
                     lastActiveAt
                     deletedAt
+                    locked
                 }
             }
         }

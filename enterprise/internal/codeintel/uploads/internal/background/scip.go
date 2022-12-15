@@ -1,9 +1,7 @@
 package background
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"io"
 	"sort"
 
@@ -230,35 +228,10 @@ func processDocument(document *scip.Document, externalSymbolsByName map[string]*
 	path := document.RelativePath
 	canonicalizeDocument(document, externalSymbolsByName)
 
-	payload, err := proto.Marshal(document)
-	if err != nil {
-		return lsifstore.ProcessedSCIPDocument{
-			DocumentPath: path,
-			Err:          err,
-		}
-	}
-
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
-	if err != nil {
-		return lsifstore.ProcessedSCIPDocument{
-			DocumentPath: path,
-			Err:          err,
-		}
-	}
-
 	return lsifstore.ProcessedSCIPDocument{
-		DocumentPath:   path,
-		Hash:           hashPayload(payload),
-		RawSCIPPayload: compressedPayload,
-		Symbols:        types.ExtractSymbolIndexes(document),
+		Path:     path,
+		Document: document,
 	}
-}
-
-// hashPayload returns a sha256 checksum of the given payload.
-func hashPayload(payload []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(payload)
-	return hash.Sum(nil)
 }
 
 // canonicalizeDocument ensures that the fields of the given document are ordered in a
@@ -347,32 +320,22 @@ func writeSCIPData(
 		return err
 	}
 
-	symbolWriter, err := tx.NewSymbolWriter(ctx, upload.ID)
+	scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
 	if err != nil {
 		return err
 	}
 
 	var numDocuments uint32
 	for document := range correlatedSCIPData.Documents {
-		documentLookupID, err := tx.InsertSCIPDocument(
-			ctx,
-			upload.ID,
-			document.DocumentPath,
-			document.Hash,
-			document.RawSCIPPayload,
-		)
-		if err != nil {
+		if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
 			return err
 		}
 
-		if err := symbolWriter.WriteSCIPSymbols(ctx, documentLookupID, document.Symbols); err != nil {
-			return err
-		}
 		numDocuments += 1
 	}
 	trace.Log(otlog.Uint32("numDocuments", numDocuments))
 
-	count, err := symbolWriter.Flush(ctx)
+	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}

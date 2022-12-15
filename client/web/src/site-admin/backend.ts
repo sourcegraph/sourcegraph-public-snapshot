@@ -289,6 +289,35 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
+export const SLOW_REQUESTS = gql`
+    query SlowRequests($after: String) {
+        slowRequests(after: $after) {
+            nodes {
+                index
+                user {
+                    username
+                }
+                start
+                duration
+                name
+                source
+                repository {
+                    name
+                }
+                variables
+                errors
+                query
+                filepath
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+`
+
 export const OUTBOUND_REQUESTS = gql`
     query OutboundRequests($after: String) {
         outboundRequests(after: $after) {

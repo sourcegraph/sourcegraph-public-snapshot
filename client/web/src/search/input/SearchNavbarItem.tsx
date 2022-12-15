@@ -11,7 +11,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
@@ -49,10 +48,6 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-    // This uses the same logic as in Layout.tsx until we have a better solution
-    // or remove the search help button
-
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
@@ -108,7 +103,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                hideHelpButton={isSearchPage}
+                hideHelpButton={false}
                 showSearchHistory={true}
                 recentSearches={recentSearches}
             />
