@@ -164,7 +164,7 @@ export const downloadSearchResults = (
     results: AggregateStreamingSearchResults,
     sourcegraphURL: string,
     query?: string
-) => {
+): void => {
     const content = searchResultsToFileContent(results.results, sourcegraphURL)
     const blob = new Blob([content], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
