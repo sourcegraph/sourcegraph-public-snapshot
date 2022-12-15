@@ -5159,9 +5159,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@sourcegraph/eslint-config@npm:0.32.0":
-  version: 0.32.0
-  resolution: "@sourcegraph/eslint-config@npm:0.32.0"
+"@sourcegraph/eslint-config@npm:0.33.0":
+  version: 0.33.0
+  resolution: "@sourcegraph/eslint-config@npm:0.33.0"
   dependencies:
     "@sourcegraph/prettierrc": ^3.0.3
     "@typescript-eslint/eslint-plugin": ^5.20.0
@@ -5178,7 +5178,7 @@ __metadata:
     eslint-plugin-rxjs: ^5.0.2
     eslint-plugin-unicorn: ^42.0.0
     eslint-plugin-unused-imports: ^1.1.5
-  checksum: 09e99c766831c3ac0a0fc6f476bc67741ced162395fd9d9f84e9f3c6627b7b1566121c0d85569ff49806cc4a676416e91ee5b57115d617efffdd0524c9788111
+  checksum: f5b97434173fb0457c5c6271057efcdcd04a5ef640ca105d8c4f88a4858ebc3a443c11f2b3dc2e21d19545525d18ce56f7c4574d27951412c1cb293f1d01c83a
   languageName: node
   linkType: hard
 
@@ -27302,7 +27302,7 @@ __metadata:
     "@sentry/cli": ^1.74.4
     "@sentry/webpack-plugin": ^1.20.0
     "@slack/web-api": ^5.15.0
-    "@sourcegraph/eslint-config": 0.32.0
+    "@sourcegraph/eslint-config": 0.33.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@sourcegraph/extension-api-stubs": ^1.6.1
