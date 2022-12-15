@@ -12,93 +12,74 @@ import * as openai from "openai";
 import { cp } from "fs";
 import { CompletionSupplier } from "./models/model";
 import { OpenAICompletionSupplier } from "./models/codegen";
+import { generateTest } from "./testgen";
+import {
+  CodegenDocumentProvider,
+  completionsDisplayString,
+} from "./docprovider";
 
 const log = (...args: any[]) => console.log(...args);
-const waitPhrases = [
-  "Spelunking through latent space",
-  "Reticulating neural splines",
-  "Conferring with the robots",
-  "Rummaging through tensors",
-  "Rousting the neural nets",
-  "Munging the perceptrons",
-  "Rectifying the sigmoids",
-  "Monkeying around with bits",
-  "Bitlifying your monkey language",
-];
-const waitPhraseSuffixes = [
-  "wait a sec",
-  "just a moment",
-  "hold tight",
-  "almost ready",
-  "thank you for your patience",
-];
-const randomFrom = (arr: string[]): string => {
-  return arr[Math.floor(Math.random() * arr.length)];
-};
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  const codegenCompletionProvider = new CompletionProvider([
-    new OpenAICompletionSupplier(
-      new openai.Configuration({
-        basePath: "http://localhost:5000/v1",
-      }),
-      "fastertransformer", // alt would be Python-based (consult fauxpilot docs)
-      "CodeGen",
-      log
+  const documentProvider = new CodegenDocumentProvider();
+
+  const codegenCompletionProvider = new CompletionProvider(
+    [
+      // new OpenAICompletionSupplier(
+      //   new openai.Configuration({
+      //     basePath: "http://localhost:5000/v1",
+      //   }),
+      //   "fastertransformer", // alt would be Python-based (consult fauxpilot docs)
+      //   "CodeGen",
+      //   log
+      // ),
+      new OpenAICompletionSupplier(
+        new openai.Configuration({
+          apiKey: vscode.workspace
+            .getConfiguration()
+            .get("conf.codebot.openai.apiKey"),
+        }),
+        "code-davinci-002",
+        "Codex (code-davinci-002)",
+        log
+      ),
+    ],
+    documentProvider
+  );
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      "codegen",
+      documentProvider
     ),
-    new OpenAICompletionSupplier(
-      new openai.Configuration({
-        apiKey: vscode.workspace
-          .getConfiguration()
-          .get("conf.codebot.openai.apiKey"),
-      }),
-      "code-davinci-002",
-      "Codex (code-davinci-002)",
-      log
+    vscode.languages.registerInlineCompletionItemProvider(
+      { pattern: "**" },
+      codegenCompletionProvider
     ),
-  ]);
-  codegenCompletionProvider.register(context);
+    vscode.commands.registerCommand("vscode-codegen.ai-suggest", () =>
+      codegenCompletionProvider.executeSuggestCommand()
+    ),
+    vscode.commands.registerCommand("codebot.generate-test", () =>
+      generateTest(documentProvider)
+    )
+  );
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-class CompletionProvider
-  implements
-    vscode.InlineCompletionItemProvider,
-    vscode.TextDocumentContentProvider
-{
+class CompletionProvider implements vscode.InlineCompletionItemProvider {
   completionSuppliers: CompletionSupplier[];
-  constructor(completionSuppliers: CompletionSupplier[]) {
+  documentProvider: CodegenDocumentProvider;
+  constructor(
+    completionSuppliers: CompletionSupplier[],
+    documentProvider: CodegenDocumentProvider
+  ) {
     this.completionSuppliers = completionSuppliers;
+    this.documentProvider = documentProvider;
   }
 
-  register(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
-      vscode.languages.registerInlineCompletionItemProvider(
-        { pattern: "**" },
-        this
-      )
-    );
-    context.subscriptions.push(
-      vscode.workspace.registerTextDocumentContentProvider("codegen", this)
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand("vscode-codegen.ai-suggest", () =>
-        this.executeSuggestCommand()
-      )
-    );
-  }
-
-  pendingManualCompletions: Promise<
-    {
-      name: string;
-      completions: InlineCompletionItem[];
-    }[]
-  > | null = null;
   async executeSuggestCommand(): Promise<void> {
     const currentEditor = vscode.window.activeTextEditor;
     if (!currentEditor) {
@@ -109,20 +90,20 @@ class CompletionProvider
     }
 
     const filename = currentEditor.document.fileName;
-    const ext = filename.slice(filename.lastIndexOf(".") + 1);
+    const ext = filename.split(".").pop();
     const completionsUri = vscode.Uri.parse(`codegen:completions.${ext}`);
-    this.pendingManualCompletions = null;
-    this.onDidChangeEmitter.fire(completionsUri);
 
-    await vscode.workspace
+    const docOpener = vscode.workspace
       .openTextDocument(completionsUri)
-      .then((doc) =>
-        vscode.window.showTextDocument(doc, { preview: false, viewColumn: 2 })
-      );
+      .then((doc) => {
+        vscode.window.showTextDocument(doc, {
+          preview: false,
+          viewColumn: 2,
+        });
+      });
 
     const position = currentEditor.selection.active;
-
-    const theseCompletionsPromise = Promise.all(
+    const completionsPromise = Promise.all(
       this.completionSuppliers.map(async (supplier) => {
         const completions = await supplier.getCompletions(
           currentEditor.document,
@@ -135,43 +116,19 @@ class CompletionProvider
           completions,
         };
       })
-    );
-    this.pendingManualCompletions = theseCompletionsPromise;
-    theseCompletionsPromise.then(() => {
-      this.onDidChangeEmitter.fire(completionsUri);
-    });
+    ).then((completions) => completionsDisplayString(completions));
+
+    this.documentProvider.setDocument(completionsUri, completionsPromise);
+
+    await docOpener;
   }
 
   // Update the virtual document when new completions are available
   onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
   onDidChange = this.onDidChangeEmitter.event;
-  async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-    if (!this.pendingManualCompletions) {
-      return `// ${randomFrom(waitPhrases)}, ${randomFrom(
-        waitPhraseSuffixes
-      )}...`;
-    }
-
-    const completionsByModel = await this.pendingManualCompletions;
-    const modelSeparator =
-      "// ==============================================================";
-    const completionSeparator =
-      "// --------------------------------------------------------------";
-    return (
-      `/**\n * Suggestions:\n */\n\n` +
-      completionsByModel
-        .map(
-          ({ name: modelName, completions }) =>
-            `// Model ${modelName}\n\n` +
-            completions
-              .map((completion) => completion.insertText)
-              .join(`\n\n${completionSeparator}\n\n`)
-        )
-        .join(`\n\n${modelSeparator}\n\n`)
-    );
-  }
 
   lastAutoSuggestRequestTime: number = 0;
+
   async provideInlineCompletionItems(
     document: TextDocument,
     position: Position,

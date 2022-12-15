@@ -18,6 +18,10 @@
       {
         "command": "vscode-codegen.ai-suggest",
         "title": "View AI suggestions"
+      },
+      {
+        "command": "codebot.generate-test",
+        "title": "Generate a unit test"
       }
     ],
     "keybindings":[
