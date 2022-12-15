@@ -295,7 +295,9 @@ func validateExecutorSecret(secret *database.ExecutorSecret, value string) error
 	// confusion and broken config.
 	if secret.Key == "DOCKER_AUTH_CONFIG" {
 		var dac dockerAuthConfig
-		if err := json.Unmarshal([]byte(value), &dac); err != nil {
+		dec := json.NewDecoder(strings.NewReader(value))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&dac); err != nil {
 			return errors.Wrap(err, "failed to unmarshal docker auth config for validation")
 		}
 		if len(dac.CredHelpers) > 0 {

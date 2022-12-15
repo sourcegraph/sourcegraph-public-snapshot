@@ -808,6 +808,12 @@ func TestValidateExecutorSecret(t *testing.T) {
 			wantErr: "cannot use credential stores in docker auth config set via secrets",
 		},
 		{
+			name:    "docker auth config with additional property",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"additionalProperty": true}`,
+			wantErr: "failed to unmarshal docker auth config for validation: json: unknown field \"additionalProperty\"",
+		},
+		{
 			name:    "docker auth config with invalid auth value",
 			key:     "DOCKER_AUTH_CONFIG",
 			value:   `{"auths": { "hub.docker.com": { "auth": "bm90d2l0aGNvbG9u" }}}`, // content: base64(notwithcolon)
