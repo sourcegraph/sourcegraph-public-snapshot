@@ -89,12 +89,12 @@ func checkMaxUsers(ctx context.Context, logger log.Logger, s UsersStore, signatu
 
 	count, err := s.Count(ctx)
 	if err != nil {
-		logger.Error("licensing.checkMaxUsers: error getting user count", log.Error(err))
+		logger.Error("error getting user count", log.Error(err))
 		return err
 	}
 	err = setMaxUsers(signature, count)
 	if err != nil {
-		logger.Error("licensing.checkMaxUsers: error setting new max users", log.Error(err))
+		logger.Error("error setting new max users", log.Error(err))
 		return err
 	}
 	return nil
@@ -144,7 +144,7 @@ func StartMaxUserCount(logger log.Logger, s UsersStore) {
 	for {
 		_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 		if err != nil {
-			logger.Error("startMaxUserCount: error getting configured license info", log.Error(err))
+			logger.Error("error getting configured license info", log.Error(err))
 		} else if signature != "" {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 			_ = checkMaxUsers(ctx, logger, s, signature) // updates global state on its own, can safely ignore return value
