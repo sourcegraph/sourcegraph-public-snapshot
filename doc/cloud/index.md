@@ -53,7 +53,7 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 
 - [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
 - [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
-- [Code Monitoring](../code_monitoring/index.md) (including [email](#managed-smtp) delivery of notifications)
+- [Code Monitoring](../code_monitoring/index.md) (including [email delivery](#managed-smtp) of notifications)
 
 ### Access restrictions
 
