@@ -28,6 +28,7 @@ interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFor
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
+    repoMode: useFieldAPI<CreateInsightFormFields['repoMode']>
 
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
@@ -57,6 +58,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         repositories,
         allReposMode,
         repoQuery,
+        repoMode,
         series,
         stepValue,
         step,
@@ -72,7 +74,12 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
     return (
         // eslint-disable-next-line react/forbid-elements
         <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
-            <RepoSettingSection allReposMode={allReposMode} repositories={repositories} repoQuery={repoQuery} />
+            <RepoSettingSection
+                allReposMode={allReposMode}
+                repositories={repositories}
+                repoQuery={repoQuery}
+                repoMode={repoMode}
+            />
 
             <hr aria-hidden={true} className="my-4 w-100" />
 
