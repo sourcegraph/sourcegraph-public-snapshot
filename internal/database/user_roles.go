@@ -40,18 +40,18 @@ type UserRoleStore interface {
 
 	// Create inserts the given user and role relationship into the database.
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
+	// GetByRoleID returns all UserRole associated with the provided role ID
+	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
+	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
+	GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error)
+	// GetByUserID returns all UserRole associated with the provided user ID
+	GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
+	// Remove deletes the user and role relationship from the database.
+	Remove(ctx context.Context, opts RemoveUserRoleOpts) error
 	// Transact creates a transaction for the UserRoleStore.
 	Transact(context.Context) (UserRoleStore, error)
 	// With is used to merge the store with another to pull data via other stores.
 	With(basestore.ShareableStore) UserRoleStore
-	// Remove deletes the user and role relationship from the database.
-	Remove(ctx context.Context, opts RemoveUserRoleOpts) error
-	// GetByRoleID returns all UserRole associated with the provided role ID
-	GetByRoleID(ctx context.Context, roleID int32) ([]*types.UserRole, error)
-	// GetByUserID returns all UserRole associated with the provided user ID
-	GetByUserID(ctx context.Context, userID int32) ([]*types.UserRole, error)
-	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
-	GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error)
 }
 
 type userRoleStore struct {
@@ -82,8 +82,12 @@ INSERT INTO
 `
 
 func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error) {
-	if opts.UserID == 0 || opts.RoleID == 0 {
-		return nil, errors.New("missing user ID or role ID")
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if opts.RoleID == 0 {
+		return nil, errors.New("missing role id")
 	}
 
 	q := sqlf.Sprintf(
@@ -102,7 +106,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 }
 
 const removeUserRoleQueryFmtStr = `
-DELETE roles
+DELETE FROM user_roles
 WHERE %s;
 `
 
@@ -112,7 +116,7 @@ type UserRoleNotFoundErr struct {
 }
 
 func (e *UserRoleNotFoundErr) Error() string {
-	return fmt.Sprintf("user role with for user %d and role %d not found", e.UserID, e.RoleID)
+	return fmt.Sprintf("user role for user %d and role %d not found", e.UserID, e.RoleID)
 }
 
 func (e *UserRoleNotFoundErr) NotFound() bool {
@@ -120,8 +124,12 @@ func (e *UserRoleNotFoundErr) NotFound() bool {
 }
 
 func (r *userRoleStore) Remove(ctx context.Context, opts RemoveUserRoleOpts) error {
-	if opts.UserID == 0 || opts.RoleID == 0 {
-		return errors.New("missing user ID or role ID")
+	if opts.UserID == 0 {
+		return errors.New("missing user id")
+	}
+
+	if opts.RoleID == 0 {
+		return errors.New("missing role id")
 	}
 
 	q := sqlf.Sprintf(
@@ -146,7 +154,10 @@ func (r *userRoleStore) Remove(ctx context.Context, opts RemoveUserRoleOpts) err
 	return nil
 }
 
-func (r *userRoleStore) GetByUserID(ctx context.Context, userID int32) ([]*types.UserRole, error) {
+func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
 	urs := make([]*types.UserRole, 0, 20)
 
 	scanFunc := func(rows *sql.Rows) error {
@@ -158,13 +169,13 @@ func (r *userRoleStore) GetByUserID(ctx context.Context, userID int32) ([]*types
 		return nil
 	}
 
-	err := r.get(ctx, sqlf.Sprintf("user_id = %s", userID), scanFunc)
+	err := r.get(ctx, sqlf.Sprintf("user_id = %s", opts.UserID), scanFunc)
 	return urs, err
 }
 
-func (r *userRoleStore) GetByRoleID(ctx context.Context, roleID int32) ([]*types.UserRole, error) {
+func (r *userRoleStore) GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
 	role, err := RolesWith(r).GetByID(ctx, GetRoleOpts{
-		ID: roleID,
+		ID: opts.RoleID,
 	})
 	if err != nil {
 		return nil, err
@@ -186,8 +197,12 @@ func (r *userRoleStore) GetByRoleID(ctx context.Context, roleID int32) ([]*types
 }
 
 func (r *userRoleStore) GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error) {
-	if opts.UserID == 0 || opts.RoleID == 0 {
-		return nil, errors.New("missing user ID or role ID")
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if opts.RoleID == 0 {
+		return nil, errors.New("missing role id")
 	}
 
 	q := sqlf.Sprintf(

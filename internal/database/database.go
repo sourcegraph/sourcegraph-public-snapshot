@@ -180,7 +180,7 @@ func (d *db) RepoKVPs() RepoKVPStore {
 }
 
 func (d *db) Roles() RoleStore {
-	return &roleStore{d.Store}
+	return RolesWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
