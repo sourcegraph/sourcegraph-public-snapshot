@@ -1467,8 +1467,8 @@ Indexes:
 
 # Table "public.gitserver_repos"
 ```
-     Column      |           Type           | Collation | Nullable |      Default       
------------------+--------------------------+-----------+----------+--------------------
+     Column      |           Type           | Collation | Nullable |                      Default                       
+-----------------+--------------------------+-----------+----------+----------------------------------------------------
  repo_id         | integer                  |           | not null | 
  clone_status    | text                     |           | not null | 'not_cloned'::text
  shard_id        | text                     |           | not null | 
@@ -1477,7 +1477,7 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
- corrupted_at    | timestamp with time zone |           |          | 
+ corrupted_at    | timestamp with time zone |           | not null | '0001-01-01 00:00:00+00'::timestamp with time zone
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1497,7 +1497,7 @@ Triggers:
 
 ```
 
-**corrupted_at**: Timestamp of when repo corruption was dectected
+**corrupted_at**: Timestamp of when repo corruption was detected
 
 # Table "public.gitserver_repos_statistics"
 ```

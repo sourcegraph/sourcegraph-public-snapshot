@@ -10690,14 +10690,14 @@
           "Name": "corrupted_at",
           "Index": 10,
           "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
+          "IsNullable": false,
+          "Default": "'0001-01-01 00:00:00+00'::timestamp with time zone",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "Timestamp of when repo corruption was dectected"
+          "Comment": "Timestamp of when repo corruption was detected"
         },
         {
           "Name": "last_changed",
