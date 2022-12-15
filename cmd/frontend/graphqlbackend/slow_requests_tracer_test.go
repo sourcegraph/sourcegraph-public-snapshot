@@ -39,7 +39,7 @@ func Test_captureSlowRequest(t *testing.T) {
 			Errors:    []string{"something"},
 		}
 
-		captureSlowRequest(ctx, logger, &req)
+		captureSlowRequest(logger, &req)
 
 		raws, err := slowRequestRedisFIFOList.All(ctx)
 		if err != nil {

@@ -33,7 +33,7 @@ var slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", 
 var slowRequestConfWatchOnce sync.Once
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
-func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowRequest) {
+func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
 	slowRequestConfWatchOnce.Do(func() {
 		conf.Watch(func() {
 			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
