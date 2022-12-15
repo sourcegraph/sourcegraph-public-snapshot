@@ -8,7 +8,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -110,11 +109,6 @@ func (s *executorSecretAccessLogStore) Transact(ctx context.Context) (ExecutorSe
 }
 
 func (s *executorSecretAccessLogStore) Create(ctx context.Context, log *ExecutorSecretAccessLog) error {
-	// Set the current actor as the creator.
-	if log.UserID != nil && *log.UserID == 0 {
-		log.UserID = &actor.FromContext(ctx).UID
-	}
-
 	q := sqlf.Sprintf(
 		executorSecretAccessLogCreateQueryFmtstr,
 		log.ExecutorSecretID,

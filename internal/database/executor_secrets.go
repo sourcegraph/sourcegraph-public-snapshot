@@ -47,9 +47,13 @@ type ExecutorSecretAccessLogCreator interface {
 // multiple times will not require another decryption call, but will create an
 // additional access log entry.
 func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogCreator) (string, error) {
+	var userID *int32
+	if uid := actor.FromContext(ctx).UID; uid != 0 {
+		userID = &uid
+	}
 	if err := s.Create(ctx, &ExecutorSecretAccessLog{
-		// user is set automatically from the context actor.
 		ExecutorSecretID: e.ID,
+		UserID:           userID,
 	}); err != nil {
 		return "", errors.Wrap(err, "creating secret access log entry")
 	}
@@ -488,7 +492,8 @@ RETURNING %s
 // ExecutorSecret.
 func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
 	Scan(...any) error
-}) error {
+},
+) error {
 	var (
 		value []byte
 		keyID string

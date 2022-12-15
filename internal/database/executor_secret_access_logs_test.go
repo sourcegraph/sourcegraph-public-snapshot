@@ -42,18 +42,6 @@ func TestExecutorSecretAccessLogs_Create(t *testing.T) {
 		if log.CreatedAt.IsZero() {
 			t.Fatal("created_at time not set")
 		}
-
-		t.Run("uses actor user if user ID is not set", func(t *testing.T) {
-			log := &ExecutorSecretAccessLog{
-				ExecutorSecretID: secret.ID,
-			}
-			if err := store.Create(actor.WithActor(ctx, actor.FromUser(user.ID)), log); err != nil {
-				t.Fatal(err)
-			}
-			if *log.UserID != user.ID {
-				t.Fatal("wrong user_id set on access log record")
-			}
-		})
 	})
 }
 
