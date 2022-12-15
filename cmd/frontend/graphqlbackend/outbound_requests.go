@@ -28,7 +28,7 @@ type HttpHeaders struct {
 	values []string
 }
 
-// accessTokenConnectionResolver resolves a list of access tokens.
+// outboundRequestConnectionResolver resolves a list of access tokens.
 //
 // 🚨 SECURITY: When instantiating an outboundRequestConnectionResolver value, the caller MUST check
 // permissions.
