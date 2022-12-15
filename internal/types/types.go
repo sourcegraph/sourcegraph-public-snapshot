@@ -801,7 +801,7 @@ type Permission struct {
 	CreatedAt time.Time
 }
 
-type RoleMembership struct {
+type UserRole struct {
 	RoleID    int32
 	UserID    int32
 	CreatedAt time.Time
