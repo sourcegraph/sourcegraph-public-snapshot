@@ -35,7 +35,7 @@ func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...st
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, cloneStatus: CLONED) {
+	repositories(first: 1000, cloned: true, notCloned: false) {
 		nodes {
 			name
 		}

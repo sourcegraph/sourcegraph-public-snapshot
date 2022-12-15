@@ -287,7 +287,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			clusterQA(c.candidateImageTag()),
