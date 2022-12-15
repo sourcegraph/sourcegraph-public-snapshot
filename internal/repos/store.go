@@ -370,8 +370,10 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	)
 
 	src := r.Sources[svc.URN()]
-	if src == nil || src.CloneURL == "" {
-		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+	if src == nil {
+		return errors.New("CreateExternalServiceRepo: nil repo for external service")
+	} else if src.CloneURL == "" {
+		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
 	}
 
 	if !s.InTransaction() {
