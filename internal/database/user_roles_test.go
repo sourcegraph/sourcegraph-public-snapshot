@@ -52,7 +52,7 @@ func TestUserRoleCreate(t *testing.T) {
 	})
 }
 
-func TestUserRoleRemove(t *testing.T) {
+func TestUserRoleDelete(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -72,7 +72,7 @@ func TestUserRoleRemove(t *testing.T) {
 	}
 
 	t.Run("missing user id", func(t *testing.T) {
-		err := store.Remove(ctx, RemoveUserRoleOpts{
+		err := store.Delete(ctx, DeleteUserRoleOpts{
 			RoleID: role.ID,
 		})
 		assert.Error(t, err)
@@ -80,7 +80,7 @@ func TestUserRoleRemove(t *testing.T) {
 	})
 
 	t.Run("missing role id", func(t *testing.T) {
-		err := store.Remove(ctx, RemoveUserRoleOpts{
+		err := store.Delete(ctx, DeleteUserRoleOpts{
 			UserID: user.ID,
 		})
 		assert.Error(t, err)
@@ -88,7 +88,7 @@ func TestUserRoleRemove(t *testing.T) {
 	})
 
 	t.Run("with existing user role", func(t *testing.T) {
-		err := store.Remove(ctx, RemoveUserRoleOpts{
+		err := store.Delete(ctx, DeleteUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -110,7 +110,7 @@ func TestUserRoleRemove(t *testing.T) {
 		roleID := int32(1234)
 		userID := int32(4321)
 
-		err := store.Remove(ctx, RemoveUserRoleOpts{
+		err := store.Delete(ctx, DeleteUserRoleOpts{
 			RoleID: roleID,
 			UserID: userID,
 		})

@@ -31,7 +31,7 @@ type UserRoleOpts struct {
 
 type (
 	CreateUserRoleOpts UserRoleOpts
-	RemoveUserRoleOpts UserRoleOpts
+	DeleteUserRoleOpts UserRoleOpts
 	GetUserRoleOpts    UserRoleOpts
 )
 
@@ -46,8 +46,8 @@ type UserRoleStore interface {
 	GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error)
 	// GetByUserID returns all UserRole associated with the provided user ID
 	GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
-	// Remove deletes the user and role relationship from the database.
-	Remove(ctx context.Context, opts RemoveUserRoleOpts) error
+	// Delete deletes the user and role relationship from the database.
+	Delete(ctx context.Context, opts DeleteUserRoleOpts) error
 	// Transact creates a transaction for the UserRoleStore.
 	Transact(context.Context) (UserRoleStore, error)
 	// With is used to merge the store with another to pull data via other stores.
@@ -105,7 +105,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	return rm, nil
 }
 
-const removeUserRoleQueryFmtStr = `
+const deleteUserRoleQueryFmtStr = `
 DELETE FROM user_roles
 WHERE %s;
 `
@@ -123,7 +123,7 @@ func (e *UserRoleNotFoundErr) NotFound() bool {
 	return true
 }
 
-func (r *userRoleStore) Remove(ctx context.Context, opts RemoveUserRoleOpts) error {
+func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) error {
 	if opts.UserID == 0 {
 		return errors.New("missing user id")
 	}
@@ -133,7 +133,7 @@ func (r *userRoleStore) Remove(ctx context.Context, opts RemoveUserRoleOpts) err
 	}
 
 	q := sqlf.Sprintf(
-		removeUserRoleQueryFmtStr,
+		deleteUserRoleQueryFmtStr,
 		sqlf.Sprintf("user_id = %s AND role_id = %s", opts.UserID, opts.RoleID),
 	)
 
@@ -158,7 +158,7 @@ func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) (
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
 	}
-	urs := make([]*types.UserRole, 0, 20)
+	var urs []*types.UserRole
 
 	scanFunc := func(rows *sql.Rows) error {
 		ur, err := scanUserRole(rows)
