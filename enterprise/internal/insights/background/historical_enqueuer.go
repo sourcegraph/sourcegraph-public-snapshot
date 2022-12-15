@@ -221,7 +221,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		limiter:            limiter,
 		gitFirstEverCommit: gitserver.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-			return gitserver.NewGitCommitClient(frontend).RecentCommits(ctx, repoName, target)
+			return gitserver.NewGitCommitClient(frontend).RecentCommits(ctx, repoName, target, "")
 		},
 	}
 }
