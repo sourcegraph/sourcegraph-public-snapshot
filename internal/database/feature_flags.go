@@ -528,9 +528,9 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 				AND deleted_at IS NULL
 		), org_overrides AS (
 			SELECT
+				DISTINCT ON (flag_name)
 				flag_name,
-				-- We only want one org override to apply, so just take the last-created one
-				LAST_VALUE(flag_value) OVER (PARTITION BY flag_name ORDER BY created_at) AS flag_value
+				flag_value
 			FROM feature_flag_overrides
 			WHERE EXISTS (
 				SELECT org_id
@@ -538,6 +538,7 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 				WHERE org_members.user_id = %s
 					AND feature_flag_overrides.namespace_org_id = org_members.org_id
 			) AND deleted_at IS NULL
+			ORDER BY flag_name, created_at desc
 		)
 		SELECT
 			ff.flag_name,
