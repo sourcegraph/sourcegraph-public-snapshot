@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	gitserver2 "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -82,9 +82,9 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
-		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver2.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			if errors.Is(err, discovery.EmptyRepoErr) {
+			if errors.Is(err, gitserver2.EmptyRepoErr) {
 				continue
 			} else {
 				return nil, errors.Wrapf(err, "FirstEverCommit")
