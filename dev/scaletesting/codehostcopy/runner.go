@@ -84,7 +84,12 @@ func (r *Runner) List(ctx context.Context, limit int) error {
 		loadedFromDB = false
 		r.logger.Info("No existing state found, creating ...")
 		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
-		repos, err := r.source.ListRepos(ctx)
+
+		var repos []*store.Repo
+		repoIter := r.source.Iterator()
+		for !repoIter.Done() && repoIter.Err() == nil {
+			repos = append(repos, repoIter.Next(ctx)...)
+		}
 
 		if err != nil {
 			r.logger.Error("failed to list repositories from source", log.Error(err))
