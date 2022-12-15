@@ -10,6 +10,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -428,7 +429,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	assertSendCalled(false)
 }
 
-func TestDeleteStaleExternalAccount(t *testing.T) {
+func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -450,9 +451,10 @@ func TestDeleteStaleExternalAccount(t *testing.T) {
 
 	svc := NewUserEmailsService(db, logger)
 	ctx = actor.WithInternalActor(ctx)
-	assert.NoError(t, svc.Add(ctx, createdUser.ID, email2))
 
-	t.Run("Perforce", func(t *testing.T) {
+	setup := func() {
+		require.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypePerforce,
 			ServiceID:   "test-instance",
@@ -464,29 +466,48 @@ func TestDeleteStaleExternalAccount(t *testing.T) {
 			Email:    email2,
 		}
 		serializedData, err := json.Marshal(perforceData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		assert.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
 
 		// Confirm that the external account was added
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			UserID:      createdUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, accounts, 1)
+		require.NoError(t, err)
+		require.Len(t, accounts, 1)
+	}
+
+	t.Run("OnDelete", func(t *testing.T) {
+		setup()
 
 		// Remove the email
-		assert.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+		require.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
 
 		// Confirm that the external account is gone
-		accounts, err = db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			UserID:      createdUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, accounts, 0)
+		require.NoError(t, err)
+		require.Len(t, accounts, 0)
+	})
+
+	t.Run("OnUnverified", func(t *testing.T) {
+		setup()
+
+		// Mark the e-mail as unverified
+		require.NoError(t, svc.SetVerified(ctx, createdUser.ID, email2, false))
+
+		// Confirm that the external account is gone
+		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			UserID:      createdUser.ID,
+			ServiceType: extsvc.TypePerforce,
+		})
+		require.NoError(t, err)
+		require.Len(t, accounts, 0)
 	})
 }

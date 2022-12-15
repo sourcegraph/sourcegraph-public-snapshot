@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // LockoutStore provides semantics for account lockout management.
@@ -63,6 +64,16 @@ func NewLockoutStore(failedThreshold int, lockoutPeriod, consecutivePeriod time.
 		unlockEmailSent: rcache.NewWithTTL("account_lockout_email_sent", int(lockoutPeriod.Seconds())),
 		sendEmail:       sendEmailF,
 	}
+}
+
+// NewLockoutStoreFromConf returns a new LockoutStore with the provided options.
+func NewLockoutStoreFromConf(lockoutOptions *schema.AuthLockout) LockoutStore {
+	return NewLockoutStore(
+		lockoutOptions.FailedAttemptThreshold,
+		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
+		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
+		nil,
+	)
 }
 
 func key(userID int32) string {
@@ -202,7 +213,6 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(signingKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
-
 	if err != nil {
 		return false, err
 	}

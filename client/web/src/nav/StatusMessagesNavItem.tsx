@@ -182,6 +182,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         ) {
             codeHostMessage = 'Syncing repositories failed!'
             iconProps = { as: CloudAlertIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'GitUpdatesDisabled')) {
+            codeHostMessage = 'Syncing repositories disabled!'
+            iconProps = { as: CloudAlertIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Cloning repositories...'
             iconProps = { as: CloudSyncIconRefresh }
@@ -227,6 +230,20 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         return (
             <>
                 {data.statusMessages.map(status => {
+                    if (status.__typename === 'GitUpdatesDisabled') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Code syncing disabled"
+                                messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
+                                linkTo="/site-admin/configuration"
+                                linkText="View site configuration"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
                     if (status.__typename === 'CloningProgress') {
                         return (
                             <StatusMessagesNavItemEntry

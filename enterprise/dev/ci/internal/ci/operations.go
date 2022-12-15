@@ -622,6 +622,27 @@ func codeIntelQA(candidateTag string) operations.Operation {
 	}
 }
 
+func executorsE2E(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::packer: Executors E2E",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			// See enterprise/dev/ci/integration/executors/docker-compose.yaml
+			// This enable the executor to reach the dind container
+			// for docker commands.
+			bk.Env("DOCKER_GATEWAY_HOST", "172.17.0.1"),
+			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
+			bk.ArtifactPaths("./*.log"),
+		)
+	}
+}
+
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
@@ -757,6 +778,14 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 					// experimental, build a git-ms fork flavored version
 					// Hack owners: @jhchabran, @varsanojidan
 					folder = "gitserver"
+				}
+				if app == "blobstore2" {
+					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// under the same name.
+					// https://github.com/sourcegraph/sourcegraph/issues/45594
+					// TODO(blobstore): remove this when making Go blobstore the default
+					folder = "blobstore"
 				}
 				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {

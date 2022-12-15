@@ -13,6 +13,7 @@ import (
 )
 
 type ExecutorStore interface {
+	basestore.ShareableStore
 	Transact(context.Context) (ExecutorStore, error)
 	Done(error) error
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)

@@ -1486,6 +1486,12 @@
       "group": "Debug",
       "examples": [10000]
     },
+    "observability.captureSlowGraphQLRequestsLimit": {
+      "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [2000]
+    },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
       "type": "integer",

@@ -138,6 +138,11 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/outbound-requests',
             source: 'server',
         },
+        {
+            label: 'Slow Requests',
+            to: '/site-admin/slow-requests',
+            source: 'server',
+        },
     ],
 }
 

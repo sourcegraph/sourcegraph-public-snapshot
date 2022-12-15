@@ -53,7 +53,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const handleInsightSuccessfulCreation = (): void => {
         if (!dashboard) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/dashboards/all')
+            history.push('/insights/all')
 
             return
         }
@@ -62,7 +62,13 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     }
 
     const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+        if (!dashboard) {
+            history.push('/insights/all')
+
+            return
+        }
+
+        history.push(`/insights/dashboards/${dashboard.id}`)
     }
 
     if (mode === InsightCreationPageType.CaptureGroup) {
