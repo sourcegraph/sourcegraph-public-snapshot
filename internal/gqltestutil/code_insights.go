@@ -322,6 +322,17 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 					  }
 					}
 				  }
+				  repositoryDefinition {
+					... on InsightRepositoryScope {
+					  repositories
+					}
+				  }
+				  timeScope {
+					... on InsightIntervalTimeScope {
+					  unit
+					  value
+					}
+				  }
 				}
 			}
 		}
@@ -335,7 +346,18 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 		Data struct {
 			UpdateLineChartSearchInsight struct {
 				View struct {
-					Id           string `json:"id"`
+					Id                   string `json:"id"`
+					RepositoryDefinition struct {
+						InsightRepositoryScope struct {
+							Repositories []string `json:"Repositories"`
+						} `json:"InsightRepositoryScope"`
+					} `json:"RepositoryDefinition"`
+					TimeScope struct {
+						InsightIntervalTimeScope struct {
+							Unit  string `json:"unit"`
+							Value int32  `json:"value"`
+						} `json:"InsightIntervalTimeScope"`
+					} `json:"TimeScope"`
 					Presentation struct {
 						SeriesPresentation []struct {
 							SeriesId string `json:"SeriesId"`

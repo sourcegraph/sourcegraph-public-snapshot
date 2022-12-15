@@ -390,8 +390,9 @@ func TestUpdateInsight(t *testing.T) {
 		}()
 
 		dataSeries["seriesId"] = insight.SeriesId
-		// Change timeScope.
-
+		// remove timeScope from series
+		delete(dataSeries, "timeScope")
+		// provide new timeScope on insight
 		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
 			"dataSeries": []any{
 				dataSeries,
@@ -403,7 +404,7 @@ func TestUpdateInsight(t *testing.T) {
 				"filters":              struct{}{},
 				"seriesDisplayOptions": struct{}{},
 			},
-			"timeScope": map[string]any{"unit": "DAY", "value": 9},
+			"timeScope": map[string]any{"stepInterval": map[string]any{"unit": "DAY", "value": 99}},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -536,8 +537,8 @@ func TestUpdateInsight(t *testing.T) {
 				"filters":              struct{}{},
 				"seriesDisplayOptions": struct{}{},
 			},
-			"repositoryDefinition": repoScope,
-			"timeScope":            timeScope,
+			"repositoryScope": repoScope,
+			"timeScope":       timeScope,
 		})
 		if err != nil {
 			t.Fatal(err)
