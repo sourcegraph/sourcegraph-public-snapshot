@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -37,11 +37,11 @@ var (
 // relevant to Batch Changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
-	*Webhook
+	*webhook
 }
 
-func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, gitserverClient, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *GitHubWebhook {
+	return &GitHubWebhook{&webhook{store, gitserverClient, logger, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -81,7 +81,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.CodeHostBaseURL, theirs any) (prs []PR, ours keyer) {
-	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
+	h.logger.Debug("GitHub webhook received", sglog.String("type", fmt.Sprintf("%T", theirs)))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
 		repo := e.GetRepo()
@@ -188,14 +188,14 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.Cod
 
 		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
 		if err != nil {
-			log15.Error("Error executing GetChangesetExternalIDs", "err", err)
+			h.logger.Error("Error executing GetChangesetExternalIDs", sglog.Error(err))
 			return nil, nil
 		}
 
 		for _, id := range ids {
 			i, err := strconv.ParseInt(id, 10, 64)
 			if err != nil {
-				log15.Error("Error parsing external id", "err", err)
+				h.logger.Error("Error parsing external id", sglog.Error(err))
 				continue
 			}
 			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID})

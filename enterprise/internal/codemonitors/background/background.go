@@ -3,19 +3,18 @@ package background
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
-	logger = logger.Scoped("BackgroundJobs", "code monitors background jobs")
+func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
 
 	codeMonitorsStore := db.CodeMonitors()
 
-	triggerMetrics := newMetricsForTriggerQueries(logger)
-	actionMetrics := newActionMetrics(logger)
+	triggerMetrics := newMetricsForTriggerQueries(observationCtx)
+	actionMetrics := newActionMetrics(observationCtx)
 
 	// Create a new context. Each background routine will wrap this with
 	// a cancellable context that is canceled when Stop() is called.
@@ -23,9 +22,13 @@ func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.Backg
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, logger.Scoped("TriggerQueryRunner", ""), db, triggerMetrics),
-		newTriggerQueryResetter(ctx, logger.Scoped("TriggerQueryResetter", ""), codeMonitorsStore, triggerMetrics),
-		newActionRunner(ctx, logger.Scoped("ActionRunner", ""), codeMonitorsStore, actionMetrics),
-		newActionJobResetter(ctx, logger.Scoped("ActionJobResetter", ""), codeMonitorsStore, actionMetrics),
+		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics),
+		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observationCtx), codeMonitorsStore, triggerMetrics),
+		newActionRunner(ctx, scopedContext("ActionRunner", observationCtx), codeMonitorsStore, actionMetrics),
+		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observationCtx), codeMonitorsStore, actionMetrics),
 	}
+}
+
+func scopedContext(operation string, parent *observation.Context) *observation.Context {
+	return observation.ContextWithLogger(parent.Logger.Scoped(operation, ""), parent)
 }

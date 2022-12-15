@@ -16,6 +16,7 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -37,7 +38,8 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(args.Timeout)*time.Second)
 		defer cancel()
 		defer func() {
-			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) &&
+				!errors.Is(err, context.DeadlineExceeded) {
 				return
 			}
 
@@ -79,29 +81,53 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 	if err != nil {
 		return nil, err
 	} else if !present {
-
 		// Try to send an index request.
 		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
 		if err != nil {
 			return nil, err
 		}
 
-		// Wait for indexing to complete or the request to be canceled.
-		threadStatus.Tasklog.Start("awaiting indexing completion")
-		select {
-		case <-done:
-			threadStatus.Tasklog.Start("recheck commit presence")
-			commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
-			if err != nil {
-				return nil, err
-			}
-			if !present {
-				return nil, errors.Newf("indexing failed, check server logs")
-			}
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
+		if s.searchLastIndexedCommit {
+			found := false
+			threadStatus.Tasklog.Start("RevList")
+			err = s.git.RevList(ctx, repo, commitHash, func(commitHash string) (shouldContinue bool, err error) {
+				defer threadStatus.Tasklog.Continue("RevList")
 
+				threadStatus.Tasklog.Start("GetCommitByHash")
+				id, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return false, err
+				} else if present {
+					found = true
+					commit = id
+					args.CommitID = api.CommitID(commitHash)
+					return false, nil
+				}
+				return true, nil
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "RevList")
+			}
+			if !found {
+				return nil, context.DeadlineExceeded
+			}
+		} else {
+			// Wait for indexing to complete or the request to be canceled.
+			threadStatus.Tasklog.Start("awaiting indexing completion")
+			select {
+			case <-done:
+				threadStatus.Tasklog.Start("recheck commit presence")
+				commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
+				if err != nil {
+					return nil, err
+				}
+				if !present {
+					return nil, errors.Newf("indexing failed, check server logs")
+				}
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
 	}
 
 	// Finally search.

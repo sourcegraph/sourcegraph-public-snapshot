@@ -61,7 +61,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
         ) : null
 
     return (
-        <>
+        <li className={styles.node}>
             <span className={styles.nodeSeparator} />
             <div className={styles.nodeFullWidth}>
                 <div className="mt-1 mb-2 d-md-flex d-block align-items-baseline">
@@ -96,6 +96,6 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             ))}
             {moreChangesetsIndicator}
             <div className={styles.nodeBottomSpacer} />
-        </>
+        </li>
     )
 }

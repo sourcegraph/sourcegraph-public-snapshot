@@ -27,7 +27,7 @@ func TestDequeue(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `{"id": 42}`,
 	}
@@ -53,7 +53,7 @@ func TestDequeueNoRecord(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
 	}
@@ -75,7 +75,7 @@ func TestDequeueBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}
@@ -356,6 +356,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
+			"version": "V2",
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -368,17 +369,21 @@ func TestHeartbeat(t *testing.T) {
 			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusOK,
-		responsePayload: `[1]`,
+		responsePayload: `{"knownIDs": [1], "cancelIDs": [1]}`,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		unknownIDs, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3})
+		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 
 		if diff := cmp.Diff([]int{1}, unknownIDs); diff != "" {
 			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff([]int{1}, cancelIDs); diff != "" {
+			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -392,6 +397,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
+			"version": "V2",
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -408,7 +414,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if _, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3}); err == nil {
+		if _, _, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -448,7 +454,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client, err := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	client, err := New(&observation.TestContext, options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }))
 	require.NoError(t, err)
 	f(client)
 }

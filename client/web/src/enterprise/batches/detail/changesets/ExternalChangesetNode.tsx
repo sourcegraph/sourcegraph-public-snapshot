@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
 import { mdiChevronDown, mdiChevronRight, mdiSync } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -132,9 +133,21 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     (node.checkState || node.reviewState || node.diffStat) && 'p-2'
                 )}
             >
-                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
-                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
-                {node.diffStat && <DiffStatStack {...node.diffStat} />}
+                {node.checkState ? (
+                    <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />
+                ) : (
+                    <VisuallyHidden>No check state available</VisuallyHidden>
+                )}
+                {node.reviewState ? (
+                    <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />
+                ) : (
+                    <VisuallyHidden>No review state available</VisuallyHidden>
+                )}
+                {node.diffStat ? (
+                    <DiffStatStack {...node.diffStat} />
+                ) : (
+                    <VisuallyHidden>No diff available</VisuallyHidden>
+                )}
             </div>
             <span
                 className={classNames(
@@ -142,7 +155,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.checkState && 'p-2'
                 )}
             >
-                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
+                {node.checkState ? (
+                    <ChangesetCheckStatusCell checkState={node.checkState} />
+                ) : (
+                    <VisuallyHidden>No check state available</VisuallyHidden>
+                )}
             </span>
             <span
                 className={classNames(
@@ -150,7 +167,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.reviewState && 'p-2'
                 )}
             >
-                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
+                {node.reviewState ? (
+                    <ChangesetReviewStatusCell reviewState={node.reviewState} />
+                ) : (
+                    <VisuallyHidden>No review state available</VisuallyHidden>
+                )}
             </span>
             <div
                 className={classNames(
@@ -158,7 +179,11 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                     node.diffStat && 'p-2'
                 )}
             >
-                {node.diffStat && <DiffStatStack {...node.diffStat} />}
+                {node.diffStat ? (
+                    <DiffStatStack {...node.diffStat} />
+                ) : (
+                    <VisuallyHidden>No diff available</VisuallyHidden>
+                )}
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <Button

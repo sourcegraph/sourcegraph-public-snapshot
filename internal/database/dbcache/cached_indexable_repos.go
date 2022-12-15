@@ -57,9 +57,7 @@ type IndexableReposLister struct {
 	*reposCache
 }
 
-// List lists ALL indexable repos. These include all repos with a minimum number of stars,
-// user added repos (both public and private) as well as any repos added
-// to the user_public_repos table.
+// List lists ALL indexable repos. These include all repos with a minimum number of stars.
 //
 // The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
@@ -103,11 +101,11 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context) ([]types.Minima
 		return repos, nil
 	}
 
-	opts := database.ListIndexableReposOptions{
+	opts := database.ListSourcegraphDotComIndexableReposOptions{
 		// Zoekt can only index a repo which has been cloned.
 		CloneStatus: types.CloneStatusCloned,
 	}
-	repos, err := s.store.ListIndexableRepos(ctx, opts)
+	repos, err := s.store.ListSourcegraphDotComIndexableRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for indexable repos")
 	}

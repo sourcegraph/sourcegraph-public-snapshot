@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -30,15 +30,15 @@ var gitlabEvents = []string{
 }
 
 type GitLabWebhook struct {
-	*Webhook
+	*webhook
 
-	// failHandleEvent is here so that we can explicity force a failure in the event
+	// failHandleEvent is here so that we can explicitly force a failure in the event
 	// handler in tests
 	failHandleEvent error
 }
 
-func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *GitLabWebhook {
-	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *GitLabWebhook {
+	return &GitLabWebhook{webhook: &webhook{store, gitserverClient, logger, extsvc.TypeGitLab}}
 }
 
 func (h *GitLabWebhook) Register(router *fewebhooks.WebhookRouter) {
@@ -71,21 +71,21 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
 	config, ok := c.(*schema.GitLabConnection)
 	if !ok {
-		log15.Error("Could not decode external service config")
+		h.logger.Error("Could not decode external service config")
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
 	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
 	if err != nil {
-		log15.Error("Could not parse code host URL from config", "error", err)
+		h.logger.Error("Could not parse code host URL from config", sglog.Error(err))
 		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
 		return
 	}
@@ -122,7 +122,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// We don't want to return a non-2XX status code and have GitLab
 			// retry the webhook, so we'll log that we don't know what to do
 			// and return 204.
-			log15.Debug("unknown object kind", "err", err)
+			h.logger.Debug("unknown object kind", sglog.Error(err))
 
 			// We don't use respond() here so that we don't log an error, since
 			// this really isn't one.
@@ -176,7 +176,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
 func (h *GitLabWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
-	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
+	h.logger.Debug("GitLab webhook received", sglog.String("type", fmt.Sprintf("%T", event)))
 
 	if h.failHandleEvent != nil {
 		return h.failHandleEvent
@@ -246,7 +246,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, db database.DB, codeHos
 
 	// We don't want to return a non-2XX status code and have GitLab retry the
 	// webhook, so we'll log that we don't know what to do and return 204.
-	log15.Debug("cannot handle GitLab webhook event of unknown type", "event", event, "type", fmt.Sprintf("%T", event))
+	h.logger.Debug("cannot handle GitLab webhook event of unknown type", sglog.String("event", fmt.Sprintf("%v", event)), sglog.String("type", fmt.Sprintf("%T", event)))
 	return nil
 }
 
@@ -280,7 +280,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID extsvc.Cod
 	// merge request; if we don't, we can't do anything useful here, and we'll
 	// just have to wait for the next scheduled sync.
 	if event.MergeRequest == nil {
-		log15.Debug("ignoring pipeline event without a merge request", "payload", event)
+		h.logger.Debug("ignoring pipeline event without a merge request", sglog.String("payload", fmt.Sprintf("%v", event)))
 		return errPipelineMissingMergeRequest
 	}
 

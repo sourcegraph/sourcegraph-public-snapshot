@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
@@ -113,7 +114,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeInTheDocument()
-        expect(searchAgainButton).toBeDisabled()
+        assertAriaDisabled(searchAgainButton)
     })
 
     it('should enable Search Again button if at least one item is checked', () => {
@@ -164,7 +165,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeInTheDocument()
-        expect(searchAgainButton).toBeEnabled()
+        assertAriaEnabled(searchAgainButton)
     })
 
     it('should disable Search Again button if unchecking all items', () => {
@@ -214,10 +215,10 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
-        expect(searchAgainButton).toBeEnabled()
+        assertAriaEnabled(searchAgainButton)
 
         userEvent.click(checkboxes[1])
-        expect(searchAgainButton).toBeDisabled()
+        assertAriaDisabled(searchAgainButton)
     })
 
     it('should call onSearchAgain with selected items when button is clicked', () => {

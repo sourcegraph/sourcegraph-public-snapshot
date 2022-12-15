@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -170,6 +170,7 @@ func TestExecRequest(t *testing.T) {
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
@@ -288,6 +289,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 	s := &Server{
 		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
 		skipCloneForTests: true,
 		DB:                database.NewMockDB(),
 	}
@@ -336,7 +338,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(dir, 0700); err != nil {
+	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
 
@@ -344,7 +346,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0o600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -410,7 +412,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(dir, 0700); err != nil {
+	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
 
@@ -424,11 +426,11 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	}
 	for path, content := range files {
 		path = filepath.Join(dir, path)
-		err := os.MkdirAll(filepath.Dir(path), 0700)
+		err := os.MkdirAll(filepath.Dir(path), 0o700)
 		if err != nil {
 			b.Fatal(err)
 		}
-		err = os.WriteFile(path, []byte(content), 0600)
+		err = os.WriteFile(path, []byte(content), 0o600)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -547,6 +549,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	}
 	s := &Server{
 		Logger:           logtest.Scoped(t),
+		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -1029,7 +1032,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 
 	reposDirSource := t.TempDir()
 	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
-	os.MkdirAll(remote, 0755)
+	os.MkdirAll(remote, 0o755)
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -1152,7 +1155,7 @@ func TestRemoveBadRefs(t *testing.T) {
 		}
 
 		// Ref
-		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0o600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1339,9 +1342,10 @@ func TestHostnameMatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			s := Server{
-				Logger:   logtest.Scoped(t),
-				Hostname: tc.hostname,
-				DB:       database.NewMockDB(),
+				Logger:         logtest.Scoped(t),
+				ObservationCtx: observation.TestContextTB(t),
+				Hostname:       tc.hostname,
+				DB:             database.NewMockDB(),
 			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
@@ -1553,6 +1557,7 @@ func TestHandleBatchLog(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
+				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
 			}
@@ -1635,7 +1640,7 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 	)
 
 	assertBody := func(result *http.Response, want string) {
-		b, err := ioutil.ReadAll(result.Body)
+		b, err := io.ReadAll(result.Body)
 		if err != nil {
 			t.Fatalf("failed to read body: %v", err)
 		}
@@ -1663,7 +1668,6 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		}
 
 		assertBody(result, failureExpectation)
-
 	})
 
 	t.Run("x-requested-with invalid value", func(t *testing.T) {
@@ -1727,12 +1731,31 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
 		}
 	})
-
 }
 
 func mustEncodeJSONResponse(value any) string {
 	encoded, _ := json.Marshal(value)
 	return strings.TrimSpace(string(encoded))
+}
+
+func TestIgnorePath(t *testing.T) {
+	reposDir := "/data/repos"
+	s := Server{ReposDir: reposDir}
+
+	for _, tc := range []struct {
+		path         string
+		shouldIgnore bool
+	}{
+		{path: filepath.Join(reposDir, tempDirName), shouldIgnore: true},
+		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
+		// Double check handling of trailing space
+		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
+		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
+	} {
+		t.Run("", func(t *testing.T) {
+			assert.Equal(t, tc.shouldIgnore, s.ignorePath(tc.path))
+		})
+	}
 }
 
 func TestMain(m *testing.M) {

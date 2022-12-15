@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 )
@@ -24,13 +24,13 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	routines := NewBackgroundJobMonitor(ctx, config).Routines()
 	goroutine.MonitorBackgroundRoutines(ctx, routines...)
@@ -39,14 +39,14 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 func TestScheduler_InitialBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	monitor := NewBackgroundJobMonitor(ctx, config)
 
@@ -68,6 +68,5 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	if !found {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := dequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
+	require.Equal(t, backfill.Id, dequeue.backfillId)
 }

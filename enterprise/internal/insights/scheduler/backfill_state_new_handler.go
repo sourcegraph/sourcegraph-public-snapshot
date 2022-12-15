@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -27,21 +28,22 @@ import (
 // The new state is the initial state post creation of a series.  This handler is responsible only for determining the work
 // that needs to be completed to backfill this series.  It then requeues the backfill record into "processing" to perform the actual backfill work.
 type newBackfillHandler struct {
-	workerStore   dbworkerstore.Store
-	backfillStore *BackfillStore
-	seriesReader  SeriesReader
-	repoIterator  discovery.SeriesRepoIterator
-	costAnalyzer  priority.QueryAnalyzer
+	workerStore     dbworkerstore.Store[*BaseJob]
+	backfillStore   *BackfillStore
+	seriesReader    SeriesReader
+	repoIterator    discovery.SeriesRepoIterator
+	costAnalyzer    priority.QueryAnalyzer
+	timeseriesStore store.Interface
 }
 
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
-func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
 	insightsDB := config.InsightsDB
 	backfillStore := NewBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(insightsDB.Handle(), dbworkerstore.Options{
+	workerStore := dbworkerstore.New(config.ObservationCtx, insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_new",
@@ -52,43 +54,40 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
 		MaxNumRetries:     3,
-	}, config.ObsContext)
+	})
 
 	task := newBackfillHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
-		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
-		costAnalyzer:  *config.CostAnalyzer,
+		workerStore:     workerStore,
+		backfillStore:   backfillStore,
+		seriesReader:    store.NewInsightStore(insightsDB),
+		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
+		costAnalyzer:    *config.CostAnalyzer,
+		timeseriesStore: config.InsightStore,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
 		Name:              name,
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
+		Metrics:           workerutil.NewMetrics(config.ObservationCtx, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
+		Metrics:  *dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
 	return worker, resetter, workerStore
 }
 
-var _ workerutil.Handler = &newBackfillHandler{}
+var _ workerutil.Handler[*BaseJob] = &newBackfillHandler{}
 
-func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	logger.Info("newBackfillHandler called", log.Int("recordId", record.RecordID()))
-	job, ok := record.(*BaseJob)
-	if !ok {
-		return errors.New("invalid job received")
-	}
+func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) (err error) {
+	logger.Info("newBackfillHandler called", log.Int("recordId", job.RecordID()))
+
 	// setup transactions
-
 	tx, err := h.backfillStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -134,6 +133,20 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
+	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}, series.CreatedAt.Truncate(time.Hour*24))
+
+	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
+		{
+			InsightSeriesID: series.ID,
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+		},
+	}); err != nil {
+		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")
+	}
+
 	// update series state
 	err = backfill.setState(ctx, tx, BackfillStateProcessing)
 	if err != nil {
@@ -148,7 +161,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	// We have to manually manipulate the queue record here to ensure that the new job is written in the same tx
 	// that this job is marked complete. This is how we will ensure there is no desync if the mark complete operation
 	// fails after we've already queued up a new job.
-	_, err = h.workerStore.MarkComplete(ctx, record.RecordID(), dbworkerstore.MarkFinalOptions{})
+	_, err = h.workerStore.MarkComplete(ctx, job.RecordID(), dbworkerstore.MarkFinalOptions{})
 	if err != nil {
 		return errors.Wrap(err, "backfill.MarkComplete")
 	}
@@ -177,5 +190,4 @@ func parseQuery(series types.InsightSeries) (query.Plan, error) {
 		return nil, errors.Wrap(err, "ParseQuery")
 	}
 	return plan, nil
-
 }

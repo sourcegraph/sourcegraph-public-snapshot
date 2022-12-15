@@ -22,6 +22,7 @@ import {
     CHUNK_MATCH_RESULT,
     LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
@@ -81,14 +82,6 @@ describe('StreamingSearchResults', () => {
         siteAdmin: true,
     } as AuthenticatedUser
 
-    // Modified from https://sourcegraph.com/github.com/reach/reach-ui@26c826684729e51e45eef29aa4316df19c0e2c03/-/blob/test/utils.tsx?L105
-    // userEvent.click does not work for Reach menu items. Use this function from Reach's official test code instead.
-    function simualateMenuItemClick(element: HTMLElement) {
-        fireEvent.mouseEnter(element)
-        fireEvent.keyDown(element, { key: ' ' })
-        fireEvent.keyUp(element, { key: ' ' })
-    }
-
     beforeEach(() => {
         useNavbarQueryState.setState({
             searchCaseSensitivity: false,
@@ -117,9 +110,10 @@ describe('StreamingSearchResults', () => {
             version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
-            searchMode: SearchMode.Precise,
+            searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
+            featureOverrides: [],
         })
     })
 
@@ -138,21 +132,21 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
 
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
-        simualateMenuItemClick(await screen.findByText(/Expand all/, { selector: '[role=menuitem]' }))
+        simulateMenuItemClick(await screen.findByText(/Expand all/, { selector: '[role=menuitem]' }))
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'true'))
 
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
-        simualateMenuItemClick(await screen.findByText(/Collapse all/, { selector: '[role=menuitem]' }))
+        simulateMenuItemClick(await screen.findByText(/Collapse all/, { selector: '[role=menuitem]' }))
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
     })
 
@@ -218,7 +212,7 @@ describe('StreamingSearchResults', () => {
     it('should open and close saved search modal if events trigger', async () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
-        simualateMenuItemClick(await screen.findByText(/Save search/, { selector: '[role=menuitem]' }))
+        simulateMenuItemClick(await screen.findByText(/Save search/, { selector: '[role=menuitem]' }))
 
         fireEvent.keyDown(await screen.findByText(/Save search query to:/), {
             key: 'Escape',

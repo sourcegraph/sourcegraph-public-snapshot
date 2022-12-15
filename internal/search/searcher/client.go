@@ -64,7 +64,6 @@ func Search(
 			IncludePatterns:              p.IncludePatterns,
 			Languages:                    p.Languages,
 			CombyRule:                    p.CombyRule,
-			PathPatternsAreRegExps:       true,
 			Select:                       p.Select.Root(),
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,

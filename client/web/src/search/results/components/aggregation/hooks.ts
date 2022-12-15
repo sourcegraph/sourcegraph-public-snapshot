@@ -38,7 +38,7 @@ function useSyncedWithURLState<State, SerializedState>(
 
     const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
     const queryParameter = useMemo(
-        () => deserializer((urlSearchParameters.get(urlKey) as unknown) as SerializedState | null),
+        () => deserializer(urlSearchParameters.get(urlKey) as unknown as SerializedState | null),
         [urlSearchParameters, urlKey, deserializer]
     )
 

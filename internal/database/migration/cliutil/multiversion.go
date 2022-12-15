@@ -128,7 +128,7 @@ func runMigration(
 		})
 	}
 
-	r, err := runnerFactory(ctx, schemas.SchemaNames, runnerSchemas)
+	r, err := runnerFactory(schemas.SchemaNames, runnerSchemas)
 	if err != nil {
 		return err
 	}
@@ -321,7 +321,7 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		var buf bytes.Buffer
 		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
 
-		expectedSchema, err := fetchExpectedSchema(schemaName, version, noopOutput, expectedSchemaFactories)
+		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, noopOutput, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}

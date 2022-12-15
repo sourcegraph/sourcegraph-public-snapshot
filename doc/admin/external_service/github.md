@@ -4,12 +4,10 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 
 To connect GitHub to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitHub**.
-1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
+1. Go to **Site admin > Manage code hosts**
+2. Select **GitHub**.
+3. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Press **Add repositories**.
 
 In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
 
@@ -23,8 +21,6 @@ In this example, the kubernetes public repository on GitHub is added by selectin
   ]
 }
 ```
-
-> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -77,6 +73,10 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
+### Fine-grained personal access tokens
+
+GitHub's fine-grained personal access tokens are not yet supported.
+
 ## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
@@ -116,40 +116,9 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 
 ## Webhooks
 
-The `webhooks` setting allows specifying the organization webhook secrets necessary to authenticate incoming webhook requests to `/.api/github-webhooks`.
+Using the `webhooks` property on the external service has been deprecated.
 
-```json
-"webhooks": [
-  {"org": "your_org", "secret": "verylongrandomsecret"}
-]
-```
-
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between GitHub and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
-1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
-1. Click **Update configuration**.
-1. Copy the webhook URL displayed below the **Update configuration** button.
-1. On GitHub, go to the settings page of your organization. From there, click **Settings**, then **Webhooks**, then **Add webhook**.
-1. Fill in the webhook form:
-   * **Payload URL**: the URL you copied above from Sourcegraph.
-   * **Content type**: this must be set to `application/json`.
-   * **Secret**: the secret token you configured Sourcegraph to use above.
-   * **Which events**: select **Let me select individual events**, and then enable:
-     - Issue comments
-     - Pull requests
-     - Pull request reviews
-     - Pull request review comments
-     - Check runs
-     - Check suites
-     - Statuses
-   * **Active**: ensure this is enabled.
-1. Click **Add webhook**.
-1. Confirm that the new webhook is listed.
-
-Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.
 
 ## Configuration
 
@@ -191,22 +160,3 @@ If you would like to sync all public repositories while omitting archived repos,
     ]
 }
 ```
-### repositoryQuery returns first 1000 results only
-
-GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three pre-defined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
-
-```jsonx
-{
-  // ...
-  "repositoryQuery": [
-    "org:Microsoft fork:no created:>=2019",
-    "org:Microsoft fork:no created:2018",
-    "org:Microsoft fork:no created:2016..2017",
-    "org:Microsoft fork:no created:<2016"
-  ]
-}
-```
-
-If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
-
-See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.

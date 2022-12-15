@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,12 +34,12 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
-		OAuth2Config: func(extraScopes ...string) oauth2.Config {
+		OAuth2Config: func() oauth2.Config {
 			return oauth2.Config{
 				RedirectURL:  callbackURL,
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Scopes:       gitlab.RequestedOAuthScopes(p.ApiScope, extraScopes),
+				Scopes:       gitlab.RequestedOAuthScopes(p.ApiScope),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/authorize"}).String(),
 					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/token"}).String(),

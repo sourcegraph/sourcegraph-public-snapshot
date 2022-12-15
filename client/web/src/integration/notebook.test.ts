@@ -123,12 +123,6 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
-        case NotebookBlockType.COMPUTE:
-            return {
-                __typename: 'ComputeBlock',
-                id: block.id,
-                computeInput: block.computeInput ?? '',
-            }
     }
 }
 
@@ -145,8 +139,7 @@ const mockSymbolStreamEvents: SearchEvent[] = [
                     {
                         name: 'func',
                         containerName: 'class',
-                        url:
-                            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
+                        url: 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
                         kind: SymbolKind.FUNCTION,
                         line: 1,
                     },

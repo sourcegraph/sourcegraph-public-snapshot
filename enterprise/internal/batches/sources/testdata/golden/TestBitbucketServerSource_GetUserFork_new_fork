@@ -17,36 +17,36 @@
   "Sources": {
    "extsvc:bitbucketcloud:1": {
     "ID": "extsvc:bitbucketcloud:1",
-    "CloneURL": "https://bitbucket.sgdev.org/~aharvey/go"
+    "CloneURL": "https://bitbucket.sgdev.org/~milton/bat-vcr-fork-test-repo"
    }
   },
   "Metadata": {
-   "slug": "go",
-   "id": 10153,
-   "name": "go",
+   "slug": "bat-vcr-fork-test-repo",
+   "id": 24385,
+   "name": "BAT-vcr-fork-test-repo",
    "scmId": "git",
    "state": "AVAILABLE",
    "statusMessage": "Available",
    "forkable": true,
    "origin": {
-    "slug": "go",
-    "id": 10060,
-    "name": "go",
+    "slug": "vcr-fork-test-repo",
+    "id": 24373,
+    "name": "vcr-fork-test-repo",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
     "forkable": true,
     "origin": null,
     "project": {
-     "key": "SGDEMO",
-     "id": 26,
-     "name": "Sourcegraph Demo",
+     "key": "BAT",
+     "id": 183,
+     "name": "batch-changes-testing",
      "public": false,
      "type": "NORMAL",
      "links": {
       "self": [
        {
-        "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+        "href": "https://bitbucket.sgdev.org/projects/BAT"
        }
       ]
      }
@@ -55,31 +55,31 @@
     "links": {
      "clone": [
       {
-       "href": "https://bitbucket.sgdev.org/scm/sgdemo/go.git",
+       "href": "https://bitbucket.sgdev.org/scm/bat/vcr-fork-test-repo.git",
        "name": "http"
       },
       {
-       "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/go.git",
+       "href": "ssh://git@bitbucket.sgdev.org:7999/bat/vcr-fork-test-repo.git",
        "name": "ssh"
       }
      ],
      "self": [
       {
-       "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/go/browse"
+       "href": "https://bitbucket.sgdev.org/projects/BAT/repos/vcr-fork-test-repo/browse"
       }
      ]
     }
    },
    "project": {
-    "key": "~AHARVEY",
-    "id": 63,
-    "name": "Adam Harvey",
+    "key": "~MILTON",
+    "id": 2,
+    "name": "milton woof",
     "public": false,
     "type": "PERSONAL",
     "links": {
      "self": [
       {
-       "href": "https://bitbucket.sgdev.org/users/aharvey"
+       "href": "https://bitbucket.sgdev.org/users/milton"
       }
      ]
     }
@@ -88,17 +88,17 @@
    "links": {
     "clone": [
      {
-      "href": "ssh://git@bitbucket.sgdev.org:7999/~aharvey/go.git",
+      "href": "ssh://git@bitbucket.sgdev.org:7999/~milton/bat-vcr-fork-test-repo.git",
       "name": "ssh"
      },
      {
-      "href": "https://bitbucket.sgdev.org/scm/~aharvey/go.git",
+      "href": "https://bitbucket.sgdev.org/scm/~milton/bat-vcr-fork-test-repo.git",
       "name": "http"
      }
     ],
     "self": [
      {
-      "href": "https://bitbucket.sgdev.org/users/aharvey/repos/go/browse"
+      "href": "https://bitbucket.sgdev.org/users/milton/repos/bat-vcr-fork-test-repo/browse"
      }
     ]
    }

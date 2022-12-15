@@ -46,9 +46,7 @@ export function createExtensionAPIFactory(
     state: ExtensionHostState,
     clientAPI: Remote<ClientAPI>,
     initData: Pick<InitData, 'clientApplication' | 'sourcegraphURL'>
-): (
-    extensionID: string
-) => typeof sourcegraph & {
+): (extensionID: string) => typeof sourcegraph & {
     // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
     // noops with a log message), to avoid completely breaking extensions that use them.
     languages: {

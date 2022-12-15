@@ -1,5 +1,6 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
+import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
@@ -8,7 +9,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     overviewGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -27,12 +28,22 @@ const configurationGroup: SiteAdminSideBarGroup = {
 
 const maintenanceGroup: SiteAdminSideBarGroup = {
     ...ossMaintenanceGroup,
+}
+
+const executorsGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Executors',
+        icon: PackageVariantIcon,
+    },
+    condition: () => Boolean(window.context?.executorsEnabled),
     items: [
-        ...ossMaintenanceGroup.items,
         {
             to: '/site-admin/executors',
-            label: 'Executors',
-            condition: () => Boolean(window.context?.executorsEnabled),
+            label: 'Instances',
+        },
+        {
+            to: '/site-admin/executors/secrets',
+            label: 'Secrets',
         },
     ],
 }
@@ -119,12 +130,24 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        ...ossRepositoriesGroup.items,
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/webhooks',
+        },
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     overviewGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
     usersGroup,
+    executorsGroup,
     maintenanceGroup,
     window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,

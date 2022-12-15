@@ -563,7 +563,22 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 		return nil, errors.New("target repo is not a GitLab project")
 	}
 
-	fork, err := s.client.ForkProject(ctx, targetMeta, namespace)
+	targetNamespace, err := targetMeta.Namespace()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting namespace")
+	}
+
+	//considering the case of a nested namespace
+	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
+
+	targetName, err := targetMeta.Name()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting name")
+	}
+
+	createdFork := targetNamespace + "-" + targetName
+
+	fork, err := s.client.ForkProject(ctx, targetMeta, namespace, createdFork)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking project")
 	}

@@ -1,7 +1,7 @@
 /* eslint-disable ban/ban */
 import React from 'react'
 
-import { MockedResponse } from '@apollo/client/testing';
+import { MockedResponse } from '@apollo/client/testing'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
@@ -10,14 +10,13 @@ import { Route } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
-import { getDocumentNode } from '@sourcegraph/http-client';
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { InsightsDashboardsResult } from '../../../graphql-operations';
-import { ALL_INSIGHTS_DASHBOARD } from '../constants'
+import { InsightsDashboardsResult } from '../../../graphql-operations'
 import { CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'
-import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards';
+import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -65,17 +64,19 @@ const mockedGQL: MockedResponse[] = [
         result: {
             data: {
                 insightsDashboards: {
-                    nodes: [{
-                        __typename: 'InsightsDashboard',
-                        id: 'foo',
-                        title: 'Global Dashboard',
-                        grants: {
-                            __typename: 'InsightsPermissionGrants',
-                            users: [],
-                            organizations: [],
-                            global: true,
+                    nodes: [
+                        {
+                            __typename: 'InsightsDashboard',
+                            id: 'foo',
+                            title: 'Global Dashboard',
+                            grants: {
+                                __typename: 'InsightsPermissionGrants',
+                                users: [],
+                                organizations: [],
+                                global: true,
+                            },
                         },
-                    }]
+                    ],
                 },
                 currentUser: {
                     __typename: 'User',
@@ -83,7 +84,8 @@ const mockedGQL: MockedResponse[] = [
                     organizations: {
                         nodes: [],
                     },
-                } },
+                },
+            },
         },
     } as MockedResponse<InsightsDashboardsResult>,
 ]
@@ -122,24 +124,10 @@ describe('CodeInsightsRootPage', () => {
         window.IntersectionObserver = MockIntersectionObserver
     })
 
-    it('should redirect to "All insights" page if no dashboardId is provided', () => {
-        const { testLocation } = renderWithBrandedContext(
-            <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
-                telemetryService={mockTelemetryService}
-            />,
-            {
-                route: '/insights/dashboards/',
-            }
-        )
-
-        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD.id}`)
-    })
-
     it('should render dashboard not found page when id is not found', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {
@@ -153,11 +141,11 @@ describe('CodeInsightsRootPage', () => {
     it('should log events', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {
-                route: '/insights/dashboards/foo'
+                route: '/insights/dashboards/foo',
             }
         )
 

@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"path"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,9 +21,9 @@ import (
 
 var mockGetProviderValue *Provider
 
-// getProvider looks up the registered OpenID Connect authentication provider
-// with the given ID.
-func getProvider(id string) *Provider {
+// GetProvider looks up the registered OpenID Connect authentication provider
+// with the given ID. It returns nil if no such provider exists.
+func GetProvider(id string) *Provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
@@ -32,6 +34,7 @@ func getProvider(id string) *Provider {
 		},
 	).(*Provider)
 	if ok {
+		p.callbackUrl = path.Join(auth.AuthURLPrefix, "callback")
 		return p
 	}
 	return nil
@@ -66,7 +69,6 @@ func Init() {
 	logger := log.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
 		conf.Watch(func() {
-
 			ps := getProviders()
 			if len(ps) == 0 {
 				providers.Update(pkgName, nil)
@@ -101,7 +103,7 @@ func getProviders() []providers.Provider {
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix))
+		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
 	}
 	return ps
 }

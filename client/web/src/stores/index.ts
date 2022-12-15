@@ -17,6 +17,7 @@ export {
     setQueryStateFromSettings,
     setSearchPatternType,
     setSearchCaseSensitivity,
+    setSearchMode,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
 export {

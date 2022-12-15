@@ -78,7 +78,7 @@ type Factory struct {
 	common []Opt
 }
 
-// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
 // between caching values for a useful amount of time versus growing the cache
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
@@ -109,6 +109,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+		redisLoggerMiddleware(),
 	}
 	mw = append(mw, middleware...)
 
@@ -243,8 +244,8 @@ func HeadersMiddleware(headers ...string) Middleware {
 }
 
 // ContextErrorMiddleware wraps a Doer with context.Context error
-// handling.  It checks if the request context is done, and if so,
-// returns its error. Otherwise it returns the error from the inner
+// handling. It checks if the request context is done, and if so,
+// returns its error. Otherwise, it returns the error from the inner
 // Doer call.
 func ContextErrorMiddleware(cli Doer) Doer {
 	return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -290,6 +291,10 @@ const (
 	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
 	// a request undergoes retries via NewRetryPolicy
 	requestRetryAttemptKey requestContextKey = iota
+
+	// redisLoggingMiddlewareErrorKey is the key to any errors that occurred when logging
+	// a request to Redis via redisLoggerMiddleware
+	redisLoggingMiddlewareErrorKey
 )
 
 // NewLoggingMiddleware logs basic diagnostics about requests made through this client at
@@ -329,6 +334,10 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 					log.Int("attempts", attempt.Index),
 					log.Error(attempt.Error)))
 			}
+			if redisErr, ok := ctx.Value(redisLoggingMiddlewareErrorKey).(error); ok {
+				// Get fields from redisLoggerMiddleware
+				fields = append(fields, log.NamedError("redisLoggerErr", redisErr))
+			}
 
 			// Log results with link to trace if present
 			trace.Logger(ctx, logger).
@@ -356,7 +365,7 @@ func ExternalTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-// NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
+// NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
@@ -552,7 +561,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			return true
 		}
 
-		if status == 0 || status == 429 || (status >= 500 && status != 501) {
+		if status == 0 || status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented) {
 			return true
 		}
 
@@ -718,4 +727,35 @@ func RequestClientTransportOpt(cli *http.Client) error {
 	}
 
 	return nil
+}
+
+// IsRiskyHeader returns true if the request or response header is likely to contain private data.
+func IsRiskyHeader(name string, values []string) bool {
+	return isRiskyHeaderName(name) || containsRiskyHeaderValue(values)
+}
+
+// isRiskyHeaderName returns true if the request or response header is likely to contain private data
+// based on its name.
+func isRiskyHeaderName(name string) bool {
+	riskyHeaderKeys := []string{"auth", "cookie", "token"}
+	for _, riskyKey := range riskyHeaderKeys {
+		if strings.Contains(strings.ToLower(name), riskyKey) {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsRiskyHeaderValue returns true if the values array of a request or response header
+// looks like it's likely to contain private data.
+func containsRiskyHeaderValue(values []string) bool {
+	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
+	for _, value := range values {
+		for _, riskyValue := range riskyHeaderValues {
+			if strings.Contains(strings.ToLower(value), riskyValue) {
+				return true
+			}
+		}
+	}
+	return false
 }

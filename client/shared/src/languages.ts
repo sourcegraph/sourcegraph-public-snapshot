@@ -565,6 +565,9 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'zcml':
             return 'xml'
 
+        case 'zig':
+            return 'zig'
+
         // YAML
         case 'yml':
         case 'yaml':

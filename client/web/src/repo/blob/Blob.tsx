@@ -87,7 +87,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { BlobStencilFields } from '../../graphql-operations'
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -130,8 +130,10 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables keyboard navigation across precise code intelligence
-    tokenKeyboardNavigation?: boolean
+    // Enables experimental navigation by rendering links for all interactive tokens.
+    enableLinkDrivenCodeNavigation?: boolean
+    // Enables experimental navigation by making interactive tokens selectable on click.
+    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -139,8 +141,10 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    supportsFindImplementations?: boolean
+
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -154,6 +158,12 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     lsif?: string
 
     stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
 }
 
 const domFunctions = {
@@ -246,9 +256,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextBlobElement = useCallback((blobElement: HTMLElement | null) => blobElements.next(blobElement), [
-        blobElements,
-    ])
+    const nextBlobElement = useCallback(
+        (blobElement: HTMLElement | null) => blobElements.next(blobElement),
+        [blobElements]
+    )
 
     const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
     const nextOverlayElement = useCallback(
@@ -272,9 +283,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Emits on changes from URL search params
     const urlSearchParameters = useMemo(() => new ReplaySubject<URLSearchParams>(1), [])
-    const nextUrlSearchParameters = useCallback((value: URLSearchParams) => urlSearchParameters.next(value), [
-        urlSearchParameters,
-    ])
+    const nextUrlSearchParameters = useCallback(
+        (value: URLSearchParams) => urlSearchParameters.next(value),
+        [urlSearchParameters]
+    )
     useEffect(() => {
         nextUrlSearchParameters(new URLSearchParams(location.search))
     }, [nextUrlSearchParameters, location.search])
@@ -285,10 +297,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
-        location.search,
-        location.hash,
-    ])
+    const parsedHash = useMemo(
+        () => parseQueryAndHash(location.search, location.hash),
+        [location.search, location.hash]
+    )
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -349,9 +361,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
-        urlSearchParameters,
-    ])
+    const popoverParameter = useMemo(
+        () => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))),
+        [urlSearchParameters]
+    )
 
     const hoverifier = useMemo(
         () =>
@@ -885,6 +898,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
+                    history={props.history}
                 />
 
                 {groupedDecorations &&

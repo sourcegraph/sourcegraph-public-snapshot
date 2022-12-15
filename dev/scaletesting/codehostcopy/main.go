@@ -12,18 +12,36 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 )
 
 //go:embed config.example.cue
 var exampleConfig string
 
+// SSHKeyHandler enables one to add and remove SSH keys
+type SSHKeyHandler interface {
+	AddSSHKey(ctx context.Context) (int64, error)
+	DropSSHKey(ctx context.Context, keyID int64) error
+}
+
 type CodeHostSource interface {
-	ListRepos(ctx context.Context) ([]*store.Repo, error)
+	GitOpts() []GitOpt
+	SSHKeyHandler
+	InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error)
+	Iterator() Iterator[[]*store.Repo]
 }
 
 type CodeHostDestination interface {
+	GitOpts() []GitOpt
+	SSHKeyHandler
 	CreateRepo(ctx context.Context, name string) (*url.URL, error)
+}
+
+type Iterator[T any] interface {
+	Err() error
+	Next(ctx context.Context) T
+	Done() bool
 }
 
 var app = &cli.App{
@@ -40,6 +58,12 @@ var app = &cli.App{
 			Name:     "config",
 			Usage:    "Path to the config file defining what to copy",
 			Required: true,
+		},
+		&cli.PathFlag{
+			Name:     "ssh-key",
+			Usage:    "path to ssh key to use for cloning",
+			Value:    "",
+			Required: false,
 		},
 	},
 	Action: func(cmd *cli.Context) error {

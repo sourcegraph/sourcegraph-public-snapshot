@@ -8,12 +8,14 @@ import (
 )
 
 var schema = `#CodeHost: {
-	kind:      "github" | "gitlab" | "bitbucket"
-	token:     string
-	url:       string
-	path:      string
-	username?: string
-	password?: string
+	kind:             "github" | "gitlab" | "bitbucket"
+	token:            string
+	url:              string
+	path:             string
+	username?:        string
+	password?:        string
+    sshKey:           string
+    repositoryLimit?: number
 }
 
 #Config: {
@@ -22,12 +24,14 @@ var schema = `#CodeHost: {
 }`
 
 type CodeHostDefinition struct {
-	Kind     string
-	Token    string
-	URL      string
-	Path     string
-	Username string
-	Password string
+	Kind            string
+	Token           string
+	URL             string
+	Path            string
+	Username        string
+	Password        string
+	SSHKey          string
+	RepositoryLimit int
 }
 
 type Config struct {

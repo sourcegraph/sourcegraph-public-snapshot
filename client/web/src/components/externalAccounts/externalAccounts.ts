@@ -6,7 +6,10 @@ import GitLabIcon from 'mdi-react/GitlabIcon'
 
 import { AuthProvider } from '../../jscontext'
 
-export type ExternalAccountKind = Exclude<AuthProvider['serviceType'], 'http-header' | 'builtin'>
+export type ExternalAccountKind = Exclude<
+    AuthProvider['serviceType'],
+    'http-header' | 'builtin' | 'sourcegraph-operator'
+>
 
 export interface ExternalAccount {
     /**

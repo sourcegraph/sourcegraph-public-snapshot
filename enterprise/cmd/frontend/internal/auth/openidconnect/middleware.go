@@ -2,6 +2,7 @@
 package openidconnect
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -91,11 +93,13 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	}
 
 	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
-	// anything else anyway; there's no point in showing them a signin screen with just a single
-	// signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
-		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, getProvider)
+	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+	//
+	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
+	ps := providers.Providers()
+	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
+	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
+		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -108,8 +112,9 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	next.ServeHTTP(w, r)
 }
 
-// mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
-var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
+// MockVerifyIDToken mocks the OIDC ID Token verification step. It should only be
+// set in tests.
+var MockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 
 // authHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
@@ -119,7 +124,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), getProvider)
+			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if err != nil {
 				log15.Error("Failed to get provider.", "error", err)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -129,12 +134,32 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", getProvider)
+			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", GetProvider)
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
+				arg, _ := json.Marshal(struct {
+					SafeErrorMsg string `json:"safe_error_msg"`
+				}{
+					SafeErrorMsg: safeErrMsg,
+				})
+				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
+					Name:            database.SecurityEventOIDCLoginFailed,
+					URL:             r.URL.Path,                                   // Don't log OIDC query params
+					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
+					Source:          "BACKEND",
+					Timestamp:       time.Now(),
+					Argument:        arg,
+				})
 				return
 			}
+			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
+				Name:      database.SecurityEventOIDCLoginSucceeded,
+				URL:       r.URL.Path, // Don't log OIDC query params
+				UserID:    uint32(result.User.ID),
+				Source:    "BACKEND",
+				Timestamp: time.Now(),
+			})
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
@@ -220,7 +245,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Decode state param value
-	var state authnState
+	var state AuthnState
 	if err = state.Decode(stateParam); err != nil {
 		return nil,
 			"Authentication failed. OpenID Connect state parameter was malformed.",
@@ -237,7 +262,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(r.Context(), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -256,8 +281,8 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 
 	// Parse and verify ID Token payload, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponseValidation.
 	var idToken *oidc.IDToken
-	if mockVerifyIDToken != nil {
-		idToken = mockVerifyIDToken(rawIDToken)
+	if MockVerifyIDToken != nil {
+		idToken = MockVerifyIDToken(rawIDToken)
 	} else {
 		idToken, err = p.oidcVerifier().Verify(r.Context(), rawIDToken)
 		if err != nil {
@@ -278,7 +303,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(r.Context(), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternalClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),
@@ -323,9 +348,9 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}, "", 0, nil
 }
 
-// authnState is the state parameter passed to the authentication request and
+// AuthnState is the state parameter passed to the authentication request and
 // returned to the authentication response callback.
-type authnState struct {
+type AuthnState struct {
 	CSRFToken string `json:"csrfToken"`
 	Redirect  string `json:"redirect"`
 
@@ -334,14 +359,14 @@ type authnState struct {
 }
 
 // Encode returns the base64-encoded JSON representation of the authn state.
-func (s *authnState) Encode() string {
+func (s *AuthnState) Encode() string {
 	b, _ := json.Marshal(s)
 	return base64.StdEncoding.EncodeToString(b)
 }
 
 // Decode decodes the base64-encoded JSON representation of the authn state into
 // the receiver.
-func (s *authnState) Decode(encoded string) error {
+func (s *AuthnState) Decode(encoded string) error {
 	b, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return err
@@ -364,7 +389,7 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	state := (&authnState{
+	state := (&AuthnState{
 		CSRFToken:  csrf.Token(r),
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,

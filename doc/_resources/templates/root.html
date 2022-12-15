@@ -39,12 +39,23 @@
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
+            <script>
+                // If dark theme is requested, set it immediately to avoid flashing.
+                // The rest of theme handling happens in docsite.js.
+                const pref = localStorage.getItem('theme-preference') || 'auto'
+                if (pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.body.classList.remove('theme-light')
+                    document.body.classList.add('theme-dark')
+                }
+            </script>
+
             <!-- Google Tag Manager (noscript) -->
             <noscript>
                 <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7"
                 height="0" width="0" style="display:none;visibility:hidden"></iframe>
             </noscript>
             <!-- End Google Tag Manager (noscript) -->
+
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">

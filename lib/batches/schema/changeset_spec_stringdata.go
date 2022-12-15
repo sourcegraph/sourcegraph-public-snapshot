@@ -13,6 +13,10 @@ const ChangesetSpecJSON = `{
       "title": "ExistingChangesetSpec",
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "description": "A field for versioning the payload."
+        },
         "baseRepository": {
           "type": "string",
           "description": "The GraphQL ID of the repository that contains the existing changeset on the code host.",
@@ -31,6 +35,10 @@ const ChangesetSpecJSON = `{
       "title": "BranchChangesetSpec",
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "description": "A field for versioning the payload."
+        },
         "baseRepository": {
           "type": "string",
           "description": "The GraphQL ID of the repository that this changeset spec is proposing to change.",
@@ -72,6 +80,10 @@ const ChangesetSpecJSON = `{
             "additionalProperties": false,
             "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
+              "version": {
+                "type": "integer",
+                "description": "A field for versioning the payload."
+              },
               "message": {
                 "type": "string",
                 "description": "The Git commit message."

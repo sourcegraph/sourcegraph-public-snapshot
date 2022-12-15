@@ -309,7 +309,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as the authorized user or as an admin (must be site admin)"
+		want := "must be authenticated as the authorized user or site admin"
 		assert.Equal(t, want, got)
 		assert.Nil(t, result)
 	})
@@ -587,7 +587,7 @@ func TestUser_Organizations(t *testing.T) {
 
 	expectOrgFailure := func(t *testing.T, actorUID int32) {
 		t.Helper()
-		wantErr := "must be authenticated as the authorized user or as an admin (must be site admin)"
+		wantErr := "must be authenticated as the authorized user or site admin"
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),

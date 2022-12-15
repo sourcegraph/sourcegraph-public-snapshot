@@ -62,29 +62,33 @@ import (
 //
 
 func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) (err error) {
-		var common *Common
-		for {
-			// newCommon provides various repository handling features that we want, so
-			// we use it but discard the resulting structure. It provides:
-			//
-			// - Repo redirection
-			// - Gitserver content updating
-			// - Consistent error handling (permissions, revision not found, repo not found, etc).
-			//
-			common, err = newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
-			if err != nil {
-				return err
-			}
-			if common == nil {
-				return nil // request was handled
-			}
-			if common.Repo == nil {
-				// Repository is cloning.
-				time.Sleep(5 * time.Second)
-				continue
-			}
-			break
+	return func(w http.ResponseWriter, r *http.Request) error {
+		const (
+			textPlain       = "text/plain"
+			applicationZip  = "application/zip"
+			applicationXTar = "application/x-tar"
+		)
+
+		// newCommon provides various repository handling features that we want, so
+		// we use it but discard the resulting structure. It provides:
+		//
+		// - Repo redirection
+		// - Gitserver content updating
+		// - Consistent error handling (permissions, revision not found, repo not found, etc).
+		//
+		common, err := newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+		if common.Repo == nil {
+			// Repository is cloning.
+			w.WriteHeader(http.StatusNotFound)
+			w.Header().Set("Content-Type", textPlain)
+			fmt.Fprintf(w, "Repository unavailable while cloning.")
+			return nil
 		}
 
 		requestedPath := mux.Vars(r)["Path"]
@@ -105,12 +109,6 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 			w.WriteHeader(http.StatusOK)
 			return nil
 		}
-
-		const (
-			textPlain       = "text/plain"
-			applicationZip  = "application/zip"
-			applicationXTar = "application/x-tar"
-		)
 
 		// Negotiate the content type.
 		contentTypeOffers := []string{textPlain, applicationZip, applicationXTar}

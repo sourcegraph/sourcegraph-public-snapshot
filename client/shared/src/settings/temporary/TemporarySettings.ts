@@ -24,6 +24,7 @@ export interface TemporarySettingsSchema {
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
+    'insights.lastVisitedDashboardId': string | null
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
@@ -45,6 +46,7 @@ export interface TemporarySettingsSchema {
     }
     'search.results.collapseSmartSearch': boolean
     'search.input.recentSearches': RecentSearch[]
+    'search.input.usedInlineHistory': boolean
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean

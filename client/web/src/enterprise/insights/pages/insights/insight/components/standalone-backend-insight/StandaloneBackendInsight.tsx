@@ -3,7 +3,6 @@ import React, { useContext, useState } from 'react'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
@@ -15,14 +14,7 @@ import {
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import {
-    InsightCard,
-    InsightCardHeader,
-    InsightCardLoading,
-    FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
-} from '../../../../../components'
+import { InsightCard, InsightCardHeader, InsightCardLoading, FormChangeEvent } from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -30,12 +22,19 @@ import {
     DrillDownFiltersStep,
     BackendInsightChart,
     BackendInsightErrorAlert,
+    InsightIncompleteAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
-import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
+import {
+    BackendInsightData,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    useSaveInsightAsNewView,
+} from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
@@ -52,7 +51,8 @@ interface StandaloneBackendInsight extends TelemetryProps {
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
@@ -90,7 +90,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             pollInterval: insightPollingInterval(insight),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                const node = data.insightViews.nodes[0]
+                if (node === null) {
+                    stopPolling()
+                    return
+                }
+                const parsedData = createBackendInsightData({ ...insight, filters }, node)
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
@@ -113,39 +118,23 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     }
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
-        try {
-            await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
-            setOriginalInsightFilters(filters)
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+    const handleFilterSave = async (filters: InsightFilters): Promise<void> => {
+        await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
+        setOriginalInsightFilters(filters)
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
-        try {
-            await createInsight({
-                insight: {
-                    ...insight,
-                    title: values.insightName,
-                    filters,
-                },
-                dashboard: null,
-            }).toPromise()
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
+        await saveAsNewView({
+            insight,
+            filters,
+            title: values.insightName,
+            dashboard: null,
+        })
 
-            setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        setOriginalInsightFilters(filters)
+        history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
     return (
@@ -178,6 +167,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 onMouseLeave={trackMouseLeave}
             >
                 <InsightCardHeader title={insight.title}>
+                    {insightData?.incompleteAlert && <InsightIncompleteAlert alert={insightData.incompleteAlert} />}
                     <StandaloneInsightContextMenu
                         insight={insight}
                         zeroYAxisMin={zeroYAxisMin}
@@ -189,8 +179,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <BackendInsightErrorAlert error={error} />
                 ) : loading || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : error ? (
-                    <BackendInsightErrorAlert error={error} />
                 ) : (
                     <BackendInsightChart
                         {...insightData}

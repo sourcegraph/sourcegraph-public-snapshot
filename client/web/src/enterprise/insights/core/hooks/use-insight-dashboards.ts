@@ -1,21 +1,29 @@
-import { useQuery, gql, ApolloError } from '@apollo/client';
-import { groupBy } from 'lodash';
+import { useQuery, gql, ApolloError } from '@apollo/client'
+import { groupBy } from 'lodash'
 
-import { isDefined } from '@sourcegraph/common';
+import { isDefined } from '@sourcegraph/common'
 
 import {
     InsightsDashboardCurrentUser,
     InsightsDashboardNode,
-    InsightsDashboardsResult
-} from '../../../../graphql-operations';
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants';
-import { InsightDashboard, InsightsDashboardOwner, InsightsDashboardOwnerType, InsightsDashboardType } from '../index';
+    InsightsDashboardsResult,
+} from '../../../../graphql-operations'
+import {
+    CustomInsightDashboard,
+    InsightsDashboardOwner,
+    InsightsDashboardOwnerType,
+    InsightsDashboardType,
+} from '../index'
 
 export const GET_INSIGHT_DASHBOARDS_GQL = gql`
     query InsightsDashboards($id: ID) {
-        currentUser { ...InsightsDashboardCurrentUser }
+        currentUser {
+            ...InsightsDashboardCurrentUser
+        }
         insightsDashboards(id: $id) {
-            nodes { ...InsightsDashboardNode }
+            nodes {
+                ...InsightsDashboardNode
+            }
         }
     }
 
@@ -41,7 +49,7 @@ export const GET_INSIGHT_DASHBOARDS_GQL = gql`
 `
 
 interface useInsightDashboardsResult {
-    dashboards: InsightDashboard[] | undefined
+    dashboards: CustomInsightDashboard[] | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -52,27 +60,28 @@ interface useInsightDashboardsResult {
  * hook.
  */
 export function useInsightDashboards(): useInsightDashboardsResult {
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, { fetchPolicy: 'cache-first' })
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
+        fetchPolicy: 'cache-first',
+    })
 
     if (data) {
         const { insightsDashboards, currentUser } = data
-        const improvedDashboards = [
-            ALL_INSIGHTS_DASHBOARD,
-            ...makeDashboardTitleUnique(insightsDashboards.nodes).map(
-                (dashboard): InsightDashboard => ({
+
+        return {
+            error,
+            loading,
+            dashboards: makeDashboardTitleUnique(insightsDashboards.nodes).map(
+                (dashboard): CustomInsightDashboard => ({
                     id: dashboard.id,
                     type: InsightsDashboardType.Custom,
                     title: dashboard.title,
                     owners: deserializeDashboardsOwners(dashboard, currentUser),
                 })
             ),
-        ]
-
-        return { dashboards: improvedDashboards, error, loading }
+        }
     }
 
     return { dashboards: undefined, error, loading }
-
 }
 
 interface useInsightDashboardProps {
@@ -80,7 +89,7 @@ interface useInsightDashboardProps {
 }
 
 interface useInsightDashboardResult {
-    dashboard: InsightDashboard | null | undefined
+    dashboard: CustomInsightDashboard | null | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -91,25 +100,23 @@ interface useInsightDashboardResult {
  * all insights dashboard, because it doesn't exist in the DB)
  */
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
-    const { id = '' } = props
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(
-        GET_INSIGHT_DASHBOARDS_GQL,
-        {
-            fetchPolicy: 'cache-first',
-            variables: { id }
-        }
-    )
+    const { id } = props
+
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
+        variables: { id },
+        fetchPolicy: 'cache-first',
+    })
 
     if (data) {
         const { insightsDashboards, currentUser } = data
         const rawDashboard = insightsDashboards.nodes.find(dashboard => dashboard.id === id)
-        const insightDashboard = rawDashboard
+        const insightDashboard: CustomInsightDashboard | null = rawDashboard
             ? {
-                id: rawDashboard.id,
-                type: InsightsDashboardType.Custom,
-                title: rawDashboard.title,
-                owners: deserializeDashboardsOwners(rawDashboard, currentUser),
-            }
+                  id: rawDashboard.id,
+                  type: InsightsDashboardType.Custom,
+                  title: rawDashboard.title,
+                  owners: deserializeDashboardsOwners(rawDashboard, currentUser),
+              }
             : null
 
         return { dashboard: insightDashboard, error, loading }
@@ -133,7 +140,7 @@ function makeDashboardTitleUnique(dashboards: InsightsDashboardNode[]): Insights
     })
 }
 
-function deserializeDashboardsOwners(
+export function deserializeDashboardsOwners(
     dashboardNode: InsightsDashboardNode,
     userNode: InsightsDashboardCurrentUser | null
 ): InsightsDashboardOwner[] {

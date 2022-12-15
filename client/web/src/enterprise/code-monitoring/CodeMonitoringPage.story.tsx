@@ -24,17 +24,19 @@ const config: Meta = {
 
 export default config
 
-const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
-    const result: ListCodeMonitors = {
-        nodes: mockCodeMonitorNodes.slice(0, count),
-        pageInfo: {
-            endCursor: `foo${count}`,
-            hasNextPage: count > 10,
-        },
-        totalCount: count,
+const generateMockFetchMonitors =
+    (count: number) =>
+    ({ id, first, after }: ListUserCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
     }
-    return of(result)
-}
 
 const additionalProps = {
     authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
@@ -55,8 +57,7 @@ LessThan10Results.storyName = 'Code monitoring list page - less than 10 results'
 LessThan10Results.parameters = {
     design: {
         type: 'figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+        url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
     },
 }
 
@@ -68,8 +69,7 @@ MoreThan10Results.storyName = 'Code monitoring list page - more than 10 results'
 MoreThan10Results.parameters = {
     design: {
         type: 'figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+        url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
     },
 }
 
@@ -81,8 +81,7 @@ PageLoading.storyName = 'Code monitoring list page - loading'
 PageLoading.parameters = {
     design: {
         type: 'figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+        url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
     },
 }
 
@@ -94,8 +93,7 @@ ListPageEmptyShowGettingStarted.storyName = 'Code monitoring list page - empty, 
 ListPageEmptyShowGettingStarted.parameters = {
     design: {
         type: 'figma',
-        url:
-            'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+        url: 'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
     },
 }
 

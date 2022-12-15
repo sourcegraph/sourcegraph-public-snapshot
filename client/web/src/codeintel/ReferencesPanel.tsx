@@ -3,7 +3,7 @@ import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffe
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, uniqBy } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -20,7 +20,8 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -100,6 +101,11 @@ export interface ReferencesPanelProps
      */
     externalHistory: H.History
     externalLocation: H.Location
+
+    /**
+     * Used to overwrite the initial active URL
+     */
+    initialActiveURL?: string
 }
 
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
@@ -208,17 +214,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
+    const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
+        'codeIntel.mixPreciseAndSearchBasedReferences',
+        false
+    )
 
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <Text className="text-danger">Could not find hovered token.</Text>
+                <Text className="text-danger">Could not find token.</Text>
             </div>
         )
     }
 
     return (
         <ReferencesList
+            // Force the references list to recreate when the user settings
+            // change. This way we avoid showing stale results.
+            key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
             token={props.token}
             searchToken={tokenResult?.searchToken}
@@ -304,7 +317,7 @@ const ReferencesList: React.FunctionComponent<
     // in the browser history.
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
-        undefined
+        props.initialActiveURL
     )
     const setActiveLocation = useCallback(
         (location: Location | undefined): void => {
@@ -376,7 +389,7 @@ const ReferencesList: React.FunctionComponent<
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
     const location = useLocation()
-    const initialCollapseState = useMemo((): Record<string, boolean> => {
+    const initialCollapseState = useMemo(() => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
         const state = {
             references: viewState === 'references',
@@ -464,23 +477,21 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                    {implementations.length > 0 && (
-                        <CollapsibleLocationList
-                            {...props}
-                            name="implementations"
-                            locations={implementations}
-                            hasMore={implementationsHasNextPage}
-                            fetchMore={fetchMoreImplementations}
-                            loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={setActiveLocation}
-                            filter={debouncedFilter}
-                            isActiveLocation={isActiveLocation}
-                            activeURL={activeURL || ''}
-                            navigateToUrl={navigateToUrl}
-                            handleOpenChange={handleOpenChange}
-                            isOpen={isOpen}
-                        />
-                    )}
+                    <CollapsibleLocationList
+                        {...props}
+                        name="implementations"
+                        locations={implementations}
+                        hasMore={implementationsHasNextPage}
+                        fetchMore={fetchMoreImplementations}
+                        loadingMore={fetchMoreImplementationsLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
                 </div>
             </div>
             {sideblob && (
@@ -557,6 +568,12 @@ const CollapsibleLocationList: React.FunctionComponent<
     React.PropsWithChildren<CollapsibleLocationListProps>
 > = props => {
     const isOpen = props.isOpen(props.name) ?? true
+    const quantityLabel = useMemo(() => {
+        const repoNumber = uniqBy(props.locations, 'repo').length
+        return `(${props.locations.length} ${pluralize('item', props.locations.length)}${
+            repoNumber > 1 ? ` from ${repoNumber} repositories` : ''
+        } displayed${props.hasMore ? ', more available' : ''})`
+    }, [props.locations, props.hasMore])
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -575,7 +592,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
-                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                            {quantityLabel}
                         </span>
                     </CollapseHeader>
                 </CardHeader>
@@ -769,17 +786,16 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     activeURL,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
-    const openByDefault = repoLocationGroups.length === 1
 
     return (
         <>
-            {repoLocationGroups.map(group => (
+            {repoLocationGroups.map((group, index) => (
                 <CollapsibleRepoLocationGroup
                     key={group.repoName}
                     activeURL={activeURL}
                     searchToken={searchToken}
                     repoLocationGroup={group}
-                    openByDefault={openByDefault}
+                    openByDefault={index === 0}
                     isActiveLocation={isActiveLocation}
                     setActiveLocation={setActiveLocation}
                     filter={filter}

@@ -16,6 +16,14 @@ func TestIsAllowedGitCmd(t *testing.T) {
 		{"rev-parse", "83838383"},
 		{"rev-parse", "--glob=refs/heads/*"},
 		{"rev-parse", "--glob=refs/heads/*", "--exclude=refs/heads/cc/*"},
+
+		// Batch Changes.
+		{"init"},
+		{"reset", "-q", "ceed6a398bd66c090b6c24bd8251ac9255d90fb2"},
+		{"apply", "--cached", "-p0"},
+		{"commit", "-m", "An awesome commit message."},
+		{"push", "--force", "git@github.com:repo/name", "f22cfd066432e382c24f1eaa867444671e23a136:refs/heads/a-branch"},
+		{"update-ref", "--"},
 	}
 
 	logger := logtest.Scoped(t)

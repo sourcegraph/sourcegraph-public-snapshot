@@ -11,6 +11,7 @@ import {
     mdiArchive,
     mdiLock,
 } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Tooltip, Icon } from '@sourcegraph/wildcard'
@@ -23,40 +24,48 @@ export interface ChangesetStatusCellProps {
     className?: string
     id?: Scalars['ID']
     state: ChangesetFields['state']
+    role?: React.AriaRole
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusCellProps>> = ({
     id,
     state,
     className = 'd-flex',
+    role,
 }) => {
     switch (state) {
         case ChangesetState.FAILED:
-            return <ChangesetStatusError className={className} />
+            return <ChangesetStatusError className={className} role={role} />
         case ChangesetState.RETRYING:
-            return <ChangesetStatusRetrying className={className} />
+            return <ChangesetStatusRetrying className={className} role={role} />
         case ChangesetState.SCHEDULED:
-            return <ChangesetStatusScheduled className={className} id={id} />
+            return <ChangesetStatusScheduled className={className} role={role} id={id} />
         case ChangesetState.PROCESSING:
-            return <ChangesetStatusProcessing className={className} />
+            return <ChangesetStatusProcessing className={className} role={role} />
         case ChangesetState.UNPUBLISHED:
-            return <ChangesetStatusUnpublished className={className} />
+            return <ChangesetStatusUnpublished className={className} role={role} />
         case ChangesetState.OPEN:
-            return <ChangesetStatusOpen className={className} />
+            return <ChangesetStatusOpen className={className} role={role} />
         case ChangesetState.DRAFT:
-            return <ChangesetStatusDraft className={className} />
+            return <ChangesetStatusDraft className={className} role={role} />
         case ChangesetState.CLOSED:
-            return <ChangesetStatusClosed className={className} />
+            return <ChangesetStatusClosed className={className} role={role} />
         case ChangesetState.MERGED:
-            return <ChangesetStatusMerged className={className} />
+            return <ChangesetStatusMerged className={className} role={role} />
         case ChangesetState.READONLY:
-            return <ChangesetStatusReadOnly className={className} />
+            return <ChangesetStatusReadOnly className={className} role={role} />
         case ChangesetState.DELETED:
-            return <ChangesetStatusDeleted className={className} />
+            return <ChangesetStatusDeleted className={className} role={role} />
     }
 }
 
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
+
+const StatusLabel: React.FunctionComponent<{ status: string; className?: string }> = ({ status, className }) => (
+    <span className={className}>
+        <VisuallyHidden>Status:</VisuallyHidden> {status}
+    </span>
+)
 
 interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> {
     label?: React.ReactNode
@@ -64,7 +73,7 @@ interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Unpublished</span>,
+    label = <StatusLabel status="Unpublished" />,
     className,
     ...props
 }) => (
@@ -74,7 +83,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWith
     </div>
 )
 export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Closed</span>,
+    label = <StatusLabel status="Closed" />,
     className,
     ...props
 }) => (
@@ -84,7 +93,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChild
     </div>
 )
 export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Merged</span>,
+    label = <StatusLabel status="Merged" />,
     className,
     ...props
 }) => (
@@ -94,7 +103,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChild
     </div>
 )
 export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Open</span>,
+    label = <StatusLabel status="Open" />,
     className,
     ...props
 }) => (
@@ -104,7 +113,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildre
     </div>
 )
 export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Draft</span>,
+    label = <StatusLabel status="Draft" />,
     className,
     ...props
 }) => (
@@ -114,7 +123,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildr
     </div>
 )
 export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Deleted</span>,
+    label = <StatusLabel status="Deleted" />,
     className,
     ...props
 }) => (
@@ -124,7 +133,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChil
     </div>
 )
 export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span className="text-danger">Failed</span>,
+    label = <StatusLabel className="text-danger" status="Failed" />,
     className,
     ...props
 }) => (
@@ -134,7 +143,7 @@ export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildr
     </div>
 )
 export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Retrying</span>,
+    label = <StatusLabel status="Retrying" />,
     className,
     ...props
 }) => (
@@ -145,7 +154,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChi
 )
 
 export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Processing</span>,
+    label = <StatusLabel status="Processing" />,
     className,
     ...props
 }) => (
@@ -156,7 +165,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithC
 )
 
 export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Archived</span>,
+    label = <StatusLabel status="Archived" />,
     className,
     ...props
 }) => (
@@ -167,7 +176,7 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
 )
 
 export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Read-only</span>,
+    label = <StatusLabel status="Read-only" />,
     className,
     ...props
 }) => (

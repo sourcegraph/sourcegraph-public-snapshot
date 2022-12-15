@@ -43,7 +43,7 @@ func prepareScripts(
 		}
 		// Either write raw content that has already been provided or retrieve it from the store.
 		workspaceFilesByPath[path] = workspaceFile{
-			content:    []byte(machineFile.Content),
+			content:    machineFile.Content,
 			bucket:     machineFile.Bucket,
 			key:        machineFile.Key,
 			modifiedAt: machineFile.ModifiedAt,
@@ -127,7 +127,7 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 			handle.Finalize(1)
 		}
 
-		handle.Close()
+		_ = handle.Close()
 	}()
 
 	for path, wf := range workspaceFileContentsByPath {
@@ -153,8 +153,12 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+
 		if _, err = io.Copy(f, src); err != nil {
+			return errors.Append(err, f.Close())
+		}
+
+		if err = f.Close(); err != nil {
 			return err
 		}
 

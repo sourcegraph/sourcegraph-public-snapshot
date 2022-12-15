@@ -762,7 +762,9 @@ describe('GitHub', () => {
         })
     })
 
-    describe('Search pages', () => {
+    // TODO(#44327): Search on Sourcegraph buttons were removed from GitHub search pages.
+    // We need to reenable these tests if we decide to keep those buttons or delete them if we don't.
+    describe.skip('Search pages', () => {
         const sourcegraphSearchPage = 'https://sourcegraph.com/search'
 
         const pages = [

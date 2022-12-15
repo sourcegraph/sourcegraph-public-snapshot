@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, H5, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -38,7 +38,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
 
 export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 'queryBatchSpecs'> {
     batchChangeID: Scalars['ID']
-    currentSpecID: Scalars['ID']
+    currentSpecID?: Scalars['ID']
     queryBatchChangeBatchSpecs?: typeof _queryBatchChangeBatchSpecs
 }
 
@@ -88,7 +88,6 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
                 first: args.first ?? null,
                 after: args.after ?? null,
                 includeLocallyExecutedSpecs: false,
-                excludeEmptySpecs: true,
             }
             return queryBatchSpecs(passedArguments)
         },
@@ -106,7 +105,6 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             noun="batch spec"
             pluralNoun="batch specs"
             listClassName={classNames(styles.specsGrid, 'test-batches-executions')}
-            listComponent="div"
             withCenteredSummary={true}
             headComponent={Header}
             cursorPaging={true}
@@ -119,9 +117,15 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</H5>
-        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            State
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+            Batch spec
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="d-none d-md-block text-uppercase text-center text-nowrap">
+            Execution time
+        </H5>
     </>
 )
 

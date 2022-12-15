@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,12 +24,15 @@ import (
 // Interface is the interface describing a code insights store. See the Store struct
 // for actual API usage.
 type Interface interface {
+	WithOther(other basestore.ShareableStore) Interface
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
 
 var _ Interface = &Store{}
@@ -70,10 +74,15 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-var _ Interface = &Store{}
+// WithOther creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+}
 
 // SeriesPoint describes a single insights' series data point.
 //
@@ -146,7 +155,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
@@ -232,7 +241,7 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
 	;`
 	fullQ := seriesPointsQuery(q, opts)
-	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
+	err = s.query(ctx, fullQ, func(sc dbutil.Scanner) (err error) {
 		var row loadStruct
 		err = sc.Scan(
 			&row.Time,
@@ -402,12 +411,18 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
 		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
 		for _, regex := range opts.ExcludeRepoRegex {
@@ -648,7 +663,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
 	recordingTimes := []types.RecordingTime{}
-	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
+	err = s.query(ctx, timesQuery, func(sc dbutil.Scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
 			&recordingTime,
@@ -761,14 +776,9 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	return scanAll(rows, sc)
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...any) error
-}
-
 // a scanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -779,3 +789,53 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	}
 	return rows.Err()
 }
+
+// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
+// remove any repository granularity information from the result.
+func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+	if seriesID == 0 {
+		return nil, errors.New("invalid seriesID")
+	}
+
+	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	return results, scanAll(rows, func(s dbutil.Scanner) (err error) {
+		var tmp IncompleteDatapoint
+		if err = rows.Scan(
+			&tmp.Reason,
+			&tmp.Time); err != nil {
+			return err
+		}
+		results = append(results, tmp)
+		return nil
+	})
+}
+
+type AddIncompleteDatapointInput struct {
+	SeriesID int
+	RepoID   *int
+	Reason   IncompleteReason
+	Time     time.Time
+}
+
+func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error {
+	q := "insert into insight_series_incomplete_points (series_id, repo_id, reason, time) values (%s, %s, %s, %s) on conflict do nothing;"
+	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Reason, input.Time))
+}
+
+type IncompleteDatapoint struct {
+	Reason IncompleteReason
+	RepoId *int
+	Time   time.Time
+}
+
+type IncompleteReason string
+
+const (
+	ReasonTimeout           IncompleteReason = "timeout"
+	ReasonGeneric           IncompleteReason = "generic"
+	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
+)

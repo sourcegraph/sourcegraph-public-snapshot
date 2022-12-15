@@ -12,24 +12,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCleaner(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"webhook_build_worker_cleaner",
 		metrics.WithCountHelp("Total number of webhookbuilder cleaner executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "WebhookBuilder.Cleaner.Run",
 		Metrics: metrics,
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
-		"webhook_build_worker_cleaner",
-		func(ctx context.Context) error {
-			_, err := cleanJobs(ctx, workerBaseStore)
-			return err
-		},
-	), operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		ctx,
+		"webhook.build_worker_cleaner",
+		"deletes completed and failed sync webhooks",
+		1*time.Hour,
+		goroutine.HandlerFunc(
+			func(ctx context.Context) error {
+				_, err := cleanJobs(ctx, workerBaseStore)
+				return err
+			},
+		),
+		operation,
+	)
 }
 
 func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleaned int, err error) {

@@ -9,18 +9,9 @@ import {
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
-    FindInsightByNameInput,
-    GetBuiltInsightInput,
-    GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    CategoricalChartContent,
-    SeriesChartContent,
-    InsightContent,
-    InsightPreviewSettings,
-    BackendInsightDatum,
 } from './code-insights-backend-types'
 
 /**
@@ -29,7 +20,6 @@ import {
  * pages and components have.
  */
 export interface CodeInsightsBackend {
-
     /**
      * Returns all possible visibility options for dashboard. Dashboard can be stored
      * as private (user subject), org level (organization subject) or global (site subject)
@@ -60,10 +50,6 @@ export interface CodeInsightsBackend {
      */
     getInsightById: (id: string) => Observable<Insight | null>
 
-    findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
-
-    hasInsights: (insightsCount: number) => Observable<boolean>
-
     getActiveInsightsCount: (insightsCount: number) => Observable<number>
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
@@ -73,24 +59,6 @@ export interface CodeInsightsBackend {
     deleteInsight: (insightId: string) => Observable<unknown>
 
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
-
-    /**
-     * Returns extension like built-in insight that is fetched via frontend
-     * network utils to Sourcegraph search API.
-     */
-    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
-
-    /**
-     * Returns content for the search based insight live preview chart.
-     */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
-
-    /**
-     * Returns content for the code stats insight live preview chart.
-     */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
-
-    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
 
     /**
      * Used for the dynamic insight example on the insights landing page.

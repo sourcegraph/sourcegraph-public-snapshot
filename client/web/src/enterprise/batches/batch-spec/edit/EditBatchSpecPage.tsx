@@ -9,6 +9,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { HeroPage } from '../../../../components/HeroPage'
 import {
     CheckExecutorsAccessTokenResult,
@@ -42,6 +43,7 @@ import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+    authenticatedUser: AuthenticatedUser | null
     batchChange: { name: string; namespace: Scalars['ID'] }
 }
 
@@ -94,7 +96,9 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     )
 }
 
-interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {}
+interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {
+    authenticatedUser: AuthenticatedUser | null
+}
 
 const EditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<EditBatchSpecPageContentProps>
@@ -124,6 +128,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     batchSpec,
     editor,
     errors,
+    authenticatedUser,
 }) {
     const history = useHistory()
 
@@ -257,17 +262,18 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
             {activeTabKey === 'configuration' ? (
-                <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
+                <ConfigurationForm isReadOnly={true} batchChange={batchChange} authenticatedUser={authenticatedUser} />
             ) : (
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
-                    <div className={styles.editorContainer}>
+                    <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
                         <H4 as={H3} className={styles.header}>
                             Batch spec
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
                             autoFocus={true}
+                            batchChangeNamespace={batchChange.namespace}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

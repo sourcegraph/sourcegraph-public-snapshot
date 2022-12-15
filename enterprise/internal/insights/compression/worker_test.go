@@ -117,7 +117,6 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 				}
 			}
 		}
-
 	})
 }
 
@@ -169,7 +168,6 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 
 	t.Run("get_metadata", func(t *testing.T) {
 		metadata, err := getMetadata(ctx, 1, commitStore)
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -280,7 +278,6 @@ func TestCommitIndexer_windowing(t *testing.T) {
 	endOfApril5Window := time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC).Add(24 * 30 * time.Hour)
 
 	t.Run("multi_repository_paging", func(t *testing.T) {
-
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				InsightsCommitIndexerWindowDuration: 30,
@@ -351,15 +348,14 @@ func TestCommitIndexer_windowing(t *testing.T) {
 			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[7].Arg3)
 
 		}
-
 	})
 }
 
 func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
-	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
-	defaultError := generateEmptyRepoErrorMessage(defaultDate, nil)
+	defaultDate := time.Date(2022, 7, 1, 12, 12, 12, 10, time.UTC)
+	defaultError := errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffix)
 
 	testCases := []struct {
 		err   error
@@ -368,7 +364,7 @@ func Test_IsEmptyRepoError(t *testing.T) {
 		want  autogold.Value
 	}{
 		{
-			err:   errors.New(defaultError),
+			err:   defaultError,
 			after: defaultDate,
 			until: nil,
 			want:  autogold.Want("EmptyRepo", true),
@@ -392,10 +388,21 @@ func Test_IsEmptyRepoError(t *testing.T) {
 			want:  autogold.Want("NestedNotEmptyRepoError", false),
 		},
 		{
-			err:   errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate)),
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffix),
 			after: defaultDate,
 			until: &defaultDate,
 			want:  autogold.Want("EmptyRepoUntil", true),
+		},
+		{
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			want:  autogold.Want("EmptyRepoSubRepoPermissions", true),
+		},
+		{
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			until: &defaultDate,
+			want:  autogold.Want("EmptyRepoUntilSubRepoPermissions", true),
 		},
 		{
 			err:   errors.New("A different error"),

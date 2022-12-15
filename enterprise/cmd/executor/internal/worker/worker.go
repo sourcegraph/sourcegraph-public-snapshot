@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -70,30 +71,27 @@ type Options struct {
 	// the /metrics path.
 	NodeExporterEndpoint string
 
-	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// DockerRegistryNodeExporterEndpoint is the URL of the intermediary caching docker registry,
 	// for scraping and forwarding metrics.
 	DockerRegistryNodeExporterEndpoint string
 }
 
-// NewWorker creates a worker that polls a remote job queue API for work. The returned
-// routine contains both a worker that periodically polls for new work to perform, as well
-// as a heartbeat routine that will periodically hit the remote API with the work that is
-// currently being performed, which is necessary so the job queue API doesn't hand out jobs
-// it thinks may have been dropped.
-func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
-	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
+// NewWorker creates a worker that polls a remote job queue API for work.
+func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, options Options) (goroutine.WaitableBackgroundRoutine, error) {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
+
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)
+	queueStore, err := queue.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
 		return nil, errors.Wrap(err, "building queue store")
 	}
-	filesStore, err := files.New(options.FilesOptions, observationContext)
+	filesStore, err := files.New(observationCtx, options.FilesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "building files store")
 	}
 	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
-	if !connectToFrontend(logger, queueStore, options) {
+	if !connectToFrontend(observationCtx.Logger, queueStore, options) {
 		os.Exit(1)
 	}
 
@@ -102,13 +100,13 @@ func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, obs
 		store:         shim,
 		filesStore:    filesStore,
 		options:       options,
-		operations:    command.NewOperations(observationContext),
+		operations:    command.NewOperations(observationCtx),
 		runnerFactory: command.NewRunner,
 	}
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[executor.Job](ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
@@ -117,7 +115,7 @@ func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, obs
 // after a ping is successful and returns false if a user signal is received.
 func connectToFrontend(logger log.Logger, queueStore *queue.Client, options Options) bool {
 	start := time.Now()
-	logger.Info("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
+	logger.Debug("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -129,7 +127,7 @@ func connectToFrontend(logger log.Logger, queueStore *queue.Client, options Opti
 	for {
 		err := queueStore.Ping(context.Background(), options.QueueName, nil)
 		if err == nil {
-			logger.Info("Connected to Sourcegraph instance")
+			logger.Debug("Connected to Sourcegraph instance")
 			return true
 		}
 

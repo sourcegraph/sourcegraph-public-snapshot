@@ -57,6 +57,7 @@ const BarsBackground: FC<BarsBackgroundProps> = props => {
 
     return (
         <svg
+            role="presentation"
             {...attributes}
             className={classNames(className, styles.zeroStateBackground)}
             xmlns="http://www.w3.org/2000/svg"

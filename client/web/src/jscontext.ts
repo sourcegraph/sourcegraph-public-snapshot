@@ -7,7 +7,7 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
  */
 
 export interface AuthProvider {
-    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
+    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'sourcegraph-operator' | 'saml' | 'builtin'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
@@ -169,6 +169,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean
+
+    outboundRequestLogLimit?: number
 }
 
 export interface BrandAssets {

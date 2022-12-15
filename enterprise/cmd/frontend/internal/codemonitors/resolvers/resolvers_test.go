@@ -207,7 +207,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 		}
 
 		_, err = r.UpdateCodeMonitor(ctx, args)
-		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or as an admin (must be site admin)")
+		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or site admin")
 	})
 }
 

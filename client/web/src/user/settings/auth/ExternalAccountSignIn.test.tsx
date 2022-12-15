@@ -1,9 +1,4 @@
-import {
-    Attribute,
-    getSamlUsernameOrEmail,
-    SamlExternalData,
-    getOpenIDUsernameOrEmail,
-} from './ExternalAccountsSignIn'
+import { Attribute, getSamlUsernameOrEmail, SamlExternalData, getOpenIDUsernameOrEmail } from './ExternalAccountsSignIn'
 
 function toAttribute(value: string): Attribute {
     return {

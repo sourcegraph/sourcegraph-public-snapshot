@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"regexp/syntax"
+	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"strconv"
 	"testing"
@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -401,9 +400,8 @@ func TestPathMatches(t *testing.T) {
 	}
 
 	rg, err := compile(&protocol.PatternInfo{
-		Pattern:                "",
-		IncludePatterns:        []string{"a", "b"},
-		PathPatternsAreRegExps: true,
+		Pattern:         "",
+		IncludePatterns: []string{"a", "b"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -426,9 +424,9 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	FetchTar:           fetchTarFromGithub,
-	Path:               "/tmp/search_test/store",
-	ObservationContext: &observation.TestContext,
+	FetchTar:       fetchTarFromGithub,
+	Path:           "/tmp/search_test/store",
+	ObservationCtx: &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
@@ -442,7 +440,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
 	if err != nil {
 		t.Fatal(err)
 	}

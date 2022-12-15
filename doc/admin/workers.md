@@ -119,6 +119,10 @@ This job bulk encrypts existing data in the database when an encryption key is i
 
 This job periodically fetches the list of indexed repositories from Zoekt shards and updates the indexing status accordingly in the `zoekt_repos` table.
 
+#### `auth-sourcegraph-operator-cleaner`
+
+This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.

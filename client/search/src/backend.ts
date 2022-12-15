@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, isErrorGraphQLResult } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
@@ -11,8 +11,6 @@ import {
     EventLogsDataVariables,
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    AutoDefinedSearchContextsResult,
-    AutoDefinedSearchContextsVariables,
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
@@ -31,6 +29,8 @@ import {
     highlightCodeVariables,
     SearchContextsOrderBy,
     SearchContextFields,
+    DefaultSearchContextSpecResult,
+    DefaultSearchContextSpecVariables,
 } from './graphql-operations'
 
 const searchContextFragment = gql`
@@ -49,6 +49,8 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         query
         repositories {
             ...SearchContextRepositoryRevisionsFields
@@ -75,6 +77,8 @@ const searchContextWithSkippableFieldsFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         namespace @skip(if: $useMinimalFields) {
             __typename
             id
@@ -89,34 +93,6 @@ const searchContextWithSkippableFieldsFragment = gql`
         }
     }
 `
-
-export function fetchAutoDefinedSearchContexts({
-    platformContext,
-    useMinimalFields,
-}: {
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-    useMinimalFields?: boolean
-}): Observable<AutoDefinedSearchContextsResult['autoDefinedSearchContexts']> {
-    return platformContext
-        .requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>({
-            request: gql`
-                query AutoDefinedSearchContexts($useMinimalFields: Boolean!) {
-                    autoDefinedSearchContexts {
-                        ...SearchContextMinimalFields
-                    }
-                }
-                ${searchContextWithSkippableFieldsFragment}
-            `,
-            variables: {
-                useMinimalFields: useMinimalFields ?? false,
-            },
-            mightContainPrivateInfo: false,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts)
-        )
-}
 
 export function getUserSearchContextNamespaces(
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
@@ -413,14 +389,12 @@ function fetchEvents(
 
     return result.pipe(
         map(dataOrThrowErrors),
-        map(
-            (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node || data.node.__typename !== 'User') {
-                    throw new Error('User not found')
-                }
-                return data.node.eventLogs
+        map((data: EventLogsDataResult): EventLogResult => {
+            if (!data.node || data.node.__typename !== 'User') {
+                throw new Error('User not found')
             }
-        )
+            return data.node.eventLogs
+        })
     )
 }
 
@@ -438,4 +412,22 @@ export function fetchRecentFileViews(
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 ): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob', platformContext)
+}
+
+export function fetchDefaultSearchContextSpec(
+    platformContext: Pick<PlatformContext, 'requestGraphQL'>
+): Observable<string | null> {
+    return platformContext
+        .requestGraphQL<DefaultSearchContextSpecResult, DefaultSearchContextSpecVariables>({
+            request: gql`
+                query DefaultSearchContextSpec {
+                    defaultSearchContext {
+                        spec
+                    }
+                }
+            `,
+            variables: {},
+            mightContainPrivateInfo: true,
+        })
+        .pipe(map(result => (isErrorGraphQLResult(result) ? null : result.data?.defaultSearchContext?.spec ?? null)))
 }

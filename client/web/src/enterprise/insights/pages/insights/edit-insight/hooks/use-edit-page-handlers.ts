@@ -2,10 +2,8 @@ import { useContext } from 'react'
 
 import { useHistory } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
-
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components'
+import { SubmissionErrors } from '../../../../components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
@@ -32,22 +30,14 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
             return
         }
 
-        try {
-            await updateInsight({
-                insightId: id,
-                nextInsightData: newInsight,
-            }).toPromise()
+        await updateInsight({
+            insightId: id,
+            nextInsightData: newInsight,
+        }).toPromise()
 
-            const insightType = getTrackingTypeByInsightType(newInsight.type)
-
-            eventLogger.log('InsightEdit', { insightType }, { insightType })
-
-            history.push(redirectUrl)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        const insightType = getTrackingTypeByInsightType(newInsight.type)
+        eventLogger.log('InsightEdit', { insightType }, { insightType })
+        history.push(redirectUrl)
     }
 
     const handleCancel = (): void => {

@@ -19,10 +19,10 @@ func Validate(expression string, vars VariableApplier) error {
 	return err
 }
 
-// Inject applies vars to the expression, parses the result into a PromQL AST, walks it
-// to inject matchers, and renders it back to a string, using vars again to revert any
-// replacements that occur.
-func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
+// InjectMatchers applies vars to the expression, parses the result into a PromQL AST,
+// walks it to inject matchers, and renders it back to a string, using vars again to
+// revert any replacements that occur.
+func InjectMatchers(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
 	// Generate AST
 	expr, err := replaceAndParse(expression, vars)
 	if err != nil {
@@ -30,7 +30,7 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	}
 
 	// Undo replacements if there are any
-	revertExpr := func(e promqlparser.Expr) (string, error) {
+	revertExpr := func() (string, error) {
 		// Convert back to string, and revert injection of default values
 		injected := expr.String()
 		if vars != nil {
@@ -40,7 +40,7 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	}
 
 	if len(matchers) == 0 {
-		return revertExpr(expr) // return formatted regardless, for consistency
+		return revertExpr() // return formatted regardless, for consistency
 	}
 
 	// Inject matchers into selectors
@@ -51,7 +51,16 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 		return nil
 	})
 
-	return revertExpr(expr)
+	return revertExpr()
+}
+
+type inspector func(promqlparser.Node, []promqlparser.Node) error
+
+func (f inspector) Visit(node promqlparser.Node, path []promqlparser.Node) (promqlparser.Visitor, error) {
+	if err := f(node, path); err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 
 // InjectAsAlert does the same thing as Inject, but also converts expression into a valid
@@ -66,23 +75,30 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 
 	// Inject matchers into selectors, but also remove selectors that have variables in
 	// them.
-	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
+	err = promqlparser.Walk(inspector(func(n promqlparser.Node, path []promqlparser.Node) error {
 		if vec, ok := n.(*promqlparser.VectorSelector); ok {
 			validMatchers := make([]*labels.Matcher, 0, len(vec.LabelMatchers)+len(matchers))
 			for _, lm := range vec.LabelMatchers {
 				// vars.ApplySentinelValues does not replace vars that are used in string
 				// values, so we will find them here in the value intact
 				var hasVar bool
-				for varName := range vars {
+				for varName, sentinelValue := range vars {
 					// We use regexp here because we want to be stricter than
 					// VariableApplier - we need to catch any possible usage of this var.
 					varKey, err := newVarKeyRegexp(varName)
 					if err != nil {
 						return errors.Wrapf(err, "generating regexp for variable %q", varName)
 					}
-					if varKey.MatchString(lm.Value) || varKey.MatchString(lm.GetRegexString()) {
+					reValue := lm.GetRegexString()
+					if varKey.MatchString(lm.Value) || varKey.MatchString(reValue) {
 						hasVar = true
 						break
+					}
+					// If the regexp match value contains this variable's sentinel value,
+					// it means this variable was used in a regexp match, and should use
+					// Grafana's '${variable:regex}' instead.
+					if strings.Contains(reValue, sentinelValue) {
+						return errors.Newf("unexpected sentinel value found in value of %q - you may want to use '${variable:regex}' instead", lm.String())
 					}
 				}
 				if !hasVar {
@@ -93,7 +109,10 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 			vec.LabelMatchers = append(validMatchers, matchers...)
 		}
 		return nil
-	})
+	}), expr, nil)
+	if err != nil {
+		return expression, errors.Wrap(err, "walk promql") // return original
+	}
 
 	// Revert any remaining variables
 	rendered := expr.String()
@@ -166,6 +185,42 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 		return nil
 	})
 	return metrics, nil
+}
+
+// InjectGroupings applies vars to the expression, parses the result into a PromQL AST,
+// walks it to add the provided groupings to all aggregation expressions, and renders it
+// back to a string, using vars again to revert any replacements that occur.
+func InjectGroupings(expression string, groupings []string, vars VariableApplier) (string, error) {
+	// Generate AST
+	expr, err := replaceAndParse(expression, vars)
+	if err != nil {
+		return expression, err // return original
+	}
+
+	// Undo replacements if there are any
+	revertExpr := func() (string, error) {
+		// Convert back to string, and revert injection of default values
+		injected := expr.String()
+		if vars != nil {
+			return vars.RevertDefaults(expression, injected), nil
+		}
+		return injected, nil
+	}
+
+	if len(groupings) == 0 {
+		return revertExpr() // return formatted regardless, for consistency
+	}
+
+	// Inject aggregators into selectors
+	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
+		if agg, ok := n.(*promqlparser.AggregateExpr); ok {
+			agg.Grouping = append(agg.Grouping, groupings...)
+		}
+
+		return nil
+	})
+
+	return revertExpr()
 }
 
 // replaceAndParse applies vars to the expression and parses the result into a PromQL AST.

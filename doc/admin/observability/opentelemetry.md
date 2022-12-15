@@ -43,7 +43,7 @@ receivers:
     protocols:
       grpc:
       http:
-        
+
 exporters:
   logging:
     loglevel: warn
@@ -61,11 +61,15 @@ service:
 
 ### Sampling traces
 
-To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) as part of its default collector container image.
+To reduce the volume of traces being exported, the collector can be configured to apply sampling to the exported traces. Sourcegraph bundles the [probabilistic sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/probabilisticsamplerprocessor) and the [tail sampler](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/tailsamplingprocessor/README.md) as part of it's default collector container image.
 
 If enabled, this sampling mechanism will be applied to all traces, regardless if a request was explictly marked as to be traced.
 
-Refer to the next snippet for an example on how to update the configuration to enable sampling.
+#### Probabilistic sampler
+
+The probabilistic sampler hashes Trace IDs and determines whether a trace should be sampled based on this hash. Note that semantic convention of tags on a trace take precedence over Trace ID hashing when deciding whether a trace should be sampled or not.
+
+Refer to the next snippet for an example on how to update the configuration to enable sampling using the probabilistic sampler.
 
 ```yaml
 exporters:
@@ -81,9 +85,85 @@ service:
     # ...
     traces:
       #...
-      processors: [probabilistic_sampler] # Plug the probabilistic sampler to the traces. 
+      processors: [probabilistic_sampler] # Plug the probabilistic sampler to the traces.
 ```
 
+### Tail sampling
+
+The tail sampler samples traces according to policies and the sampling decision of whether a trace should be sampled is determined at the _tail end_ of a pipeline. For more information on the supported policies and other configuration options of the sampler see [tail sampler configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/tailsamplingprocessor/README.md).
+
+The sampler waits for a certain amount of spans before making applying the configured policy. Due to it keeping a certain amount of spans in memory the sampler incurs as slight performance cost compared to the Probabilistic sampler. For a better comparison on probabilistic vs tail sampling processors see [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/tailsamplingprocessor/README.md#probabilistic-sampling-processor-compared-to-the-tail-sampling-processor-with-the-probabilistic-policy)
+
+Refer to the next snippet for an example on how to update the configuration to enable tail sampling with a particular policy.
+
+```yaml
+receivers:
+    # ...
+exporters:
+    # ...
+
+processors:
+  tail_sampling:
+    # Wait time since the first span of a trace before making a sampling decision
+    decision_wait: 30s # default value = 30s
+    # Number of traces kept in memory
+    num_traces: 50000 # default value = 50000
+    # Expected number of new traces (helps in allocating data structures)
+    expected_new_traces_per_sec: 10 # default value = 0
+    # Recommended reading to understand how the policies are applied:
+    # https://sourcegraph.com/github.com/open-telemetry/opentelemetry-collector-contrib@71dd19d2e59cd1f8aa9844461089d5c17efaa0ca/-/blob/processor/tailsamplingprocessor/processor.go?L214
+    policies:
+      [
+          {
+            # If a span contains `sampling_retain: true`, it will always be sampled (not dropped),
+            # regardless of the probabilistic sampling.
+            name: policy-retain,
+            type: string_attribute,
+            string_attribute: {key: sampling.retain, values: ['true']},
+          },
+          {
+            # Only keep 10% of the traces.
+            name: policy-probalistic,
+            type: probabilistic,
+            probabilistic: {sampling_percentage: 10}
+          }
+        ]
+
+service:
+  pipelines:
+    traces:
+      # ...
+      processors: [tail_sampling]
+```
+
+### Filtering traces
+
+As part of the default container image Sourcegraph bundles the [filter processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md). By configuring a pipeline to have a filter processor one is able to include or exclude (depending on configuration!) on whether a trace should be allowed through the pipeline and be exported.
+
+Refer to the following snippet where a filter processor is configured to only allow traces with the service name "foobar" to continue through the pipeline. All other traces that do not have this service name will be dropped.
+
+```yaml
+exporters:
+    # ...
+
+receivers:
+    # ...
+
+processors:
+   filter/foobar: # the format is <processor type>/<name> - note a name is NOT required
+      spans:
+          include:
+             match_type: strict # regexp is also a supported type
+             services:
+             - "foobar"
+
+service:
+    pipelines:
+        traces: # pipeline accepts all traces
+        traces/foobar: # pipeline that only export foobar traces
+            # ...
+            processors: [filter/foobar]
+```
 ## Exporters
 
 Exporters send observability data from OpenTelemetry collector to desired backends.

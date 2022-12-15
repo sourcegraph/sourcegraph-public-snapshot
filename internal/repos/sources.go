@@ -48,7 +48,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindGitHub:
 		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), db, svc, cf)
+		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
@@ -91,6 +91,10 @@ type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
+	// CheckConnection returns an error if the Source service is not reachable
+	// or available to serve requests. The error is descriptive and can be displayed
+	// to the user.
+	CheckConnection(context.Context) error
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() types.ExternalServices
 }

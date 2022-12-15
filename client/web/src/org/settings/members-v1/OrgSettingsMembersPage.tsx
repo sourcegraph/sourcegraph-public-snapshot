@@ -12,12 +12,13 @@ import { gql } from '@sourcegraph/http-client'
 import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { queryGraphQL } from '../../../backend/graphql'
+import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     OrgAreaOrganizationFields,
-    OrganizationMembersResult,
+    OrganizationSettingsMembersResult,
+    OrganizationSettingsMembersVariables,
     OrganizationMemberNode,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -51,7 +52,7 @@ interface HasOneMember {
 
 type OrgAreaOrganization = OrgAreaOrganizationFields & HasOneMember
 
-type OrgNode = Extract<OrganizationMembersResult['node'], { __typename?: 'Org' }>
+type OrgNode = Extract<OrganizationSettingsMembersResult['node'], { __typename?: 'Org' }>
 
 interface UserNodeState {
     /** Undefined means in progress, null means done or not started. */
@@ -252,8 +253,6 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         queryConnection={this.fetchOrgMembers}
                         nodeComponent={UserNode}
                         nodeComponentProps={nodeProps}
-                        noShowMore={true}
-                        hideSearch={true}
                         updates={this.userUpdates}
                         history={this.props.history}
                         location={this.props.location}
@@ -273,14 +272,19 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 
-    private fetchOrgMembers = (): Observable<OrgNode['members']> =>
-        queryGraphQL(
+    private fetchOrgMembers = (args: {
+        first?: number
+        after?: string | null
+        query?: string
+    }): Observable<OrgNode['members']> =>
+        requestGraphQL<OrganizationSettingsMembersResult, OrganizationSettingsMembersVariables>(
             gql`
-                query OrganizationMembers($id: ID!) {
+                query OrganizationSettingsMembers($id: ID!, $first: Int!, $after: String, $query: String) {
                     node(id: $id) {
                         ... on Org {
+                            __typename
                             viewerCanAdminister
-                            members {
+                            members(query: $query, first: $first, after: $after) {
                                 nodes {
                                     ...OrganizationMemberNode
                                 }
@@ -297,14 +301,22 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                     avatarURL
                 }
             `,
-            { id: this.props.org.id }
+            {
+                id: this.props.org.id,
+                query: args.query ?? null,
+                first: args.first ?? 2,
+                after: args.after ?? null,
+            }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
                     this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)
                 }
-                const org = data.node as OrgNode
+                const org = data.node
+                if (org.__typename !== 'Org') {
+                    throw new Error('Unexpected node type')
+                }
                 if (!org.members) {
                     this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)

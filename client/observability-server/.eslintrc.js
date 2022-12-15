@@ -10,6 +10,7 @@ module.exports = {
   },
   rules: {
     'no-console': 'off',
+    'jsdoc/check-indentation': 'off',
   },
   overrides: baseConfig.overrides,
 }

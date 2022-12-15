@@ -1,24 +1,24 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useEffect, useState } from 'react'
 
+import { gql, useLazyQuery } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
+import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
+import { GetFirstAvailableDashboardResult, GetFirstAvailableDashboardVariables } from '../../graphql-operations'
 
 import { CodeInsightsBackendContext } from './core'
+import { useApi } from './hooks'
+import { useLicense } from './hooks/use-license'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
-import {
-    CodeInsightsRootPage,
-    CodeInsightsRootPageTab,
-    CodeInsightsRootPageURLPaths,
-} from './pages/CodeInsightsRootPage'
+import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './pages/CodeInsightsRootPage'
 import { InsightsDashboardCreationPage } from './pages/dashboards/creation/InsightsDashboardCreationPage'
 import { EditDashboardPage } from './pages/dashboards/edit-dashboard/EditDashobardPage'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -29,71 +29,48 @@ const EditInsightLazyPage = lazyComponent(
     'EditInsightPage'
 )
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
-
-const CODE_INSIGHT_STANDALONE_PAGE = true
-
-/**
- * This interface has to receive union type props derived from all child components
- * Because we need to pass all required prop from main Sourcegraph.tsx component to
- * subcomponents withing app tree.
- */
 export interface CodeInsightsAppRouter extends TelemetryProps {
-    /**
-     * Authenticated user info, Used to decide where code insight will appear
-     * in personal dashboard (private) or in organisation dashboard (public)
-     */
     authenticatedUser: AuthenticatedUser
 }
 
-/**
- * Main Insight routing component. Main entry point to code insights UI.
- */
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
-    const { telemetryService, authenticatedUser } = props
+    const { telemetryService } = props
     const match = useRouteMatch()
 
+    const fetched = useLicense()
+    const api = useApi()
+
+    if (!fetched) {
+        return null
+    }
+
     return (
-        <>
+        <CodeInsightsBackendContext.Provider value={api}>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
                 <Route path={`${match.url}/create`}>
-                    <CreationRoutes authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
+                    <CreationRoutes telemetryService={telemetryService} />
                 </Route>
 
-                {CODE_INSIGHT_STANDALONE_PAGE && (
-                    <Route
-                        path={`${match.url}/insight/:id`}
-                        render={(props: RouteComponentProps<{ id: string }>) => (
-                            <CodeInsightIndependentPage
-                                insightId={props.match.params.id}
-                                telemetryService={telemetryService}
-                            />
-                        )}
-                    />
-                )}
-
                 <Route
-                    path={`${match.url}/edit/:insightID`}
-                    render={(props: RouteComponentProps<{ insightID: string }>) => (
-                        <EditInsightLazyPage
-                            authenticatedUser={authenticatedUser}
-                            insightID={props.match.params.insightID}
+                    path={`${match.url}/insight/:id`}
+                    render={props => (
+                        <CodeInsightIndependentPage
+                            insightId={props.match.params.id}
+                            telemetryService={telemetryService}
                         />
                     )}
                 />
 
                 <Route
+                    path={`${match.url}/edit/:insightId`}
+                    render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
+                />
+
+                <Route
                     path={`${match.url}/dashboards/:dashboardId/edit`}
-                    render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
-                        <EditDashboardPage
-                            authenticatedUser={authenticatedUser}
-                            dashboardId={routeProps.match.params.dashboardId}
-                        />
-                    )}
+                    render={props => <EditDashboardPage dashboardId={props.match.params.dashboardId} />}
                 />
 
                 <Route
@@ -102,43 +79,140 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
 
                 <Route
-                    path={[
-                        `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`,
-                        `${match.url}${CodeInsightsRootPageURLPaths.GettingStarted}`,
-                    ]}
-                    render={props => (
+                    path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/all`, `${match.url}/about`]}
+                    render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
-                            activeView={
-                                props.match.path === `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`
-                                    ? CodeInsightsRootPageTab.CodeInsights
-                                    : CodeInsightsRootPageTab.GettingStarted
-                            }
+                            dashboardId={props.match.params.dashboardId}
+                            activeTab={getActiveTabByURL(match.url, props)}
                             telemetryService={telemetryService}
                         />
                     )}
                 />
 
                 <Route path={match.url} exact={true} component={CodeInsightsRedirect} />
-
-                <Route component={NotFoundPage} key="hardcoded-key" />
+                <Route render={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
-        </>
+        </CodeInsightsBackendContext.Provider>
     )
 })
 
-const CodeInsightsRedirect: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
-    const { hasInsights } = useContext(CodeInsightsBackendContext)
-
+const CodeInsightsRedirect: FC = () => {
     const match = useRouteMatch()
-    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(1), [hasInsights]))
+    const state = useDashboardExistence()
 
-    if (isThereAvailableInsights === undefined) {
-        return <LoadingSpinner />
+    if (state.status === 'loading') {
+        return null
     }
 
-    return isThereAvailableInsights ? (
-        <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
-    ) : (
-        <Redirect from={match.url} exact={true} to={`${match.url}/about`} />
+    // No dashboards status means that there are no insights either, so redirect
+    // to the getting started page in this case
+    if (state.status === 'noDashboards') {
+        return <Redirect from={match.url} exact={true} to={`${match.url}/about`} />
+    }
+
+    // There are some dashboards, but we didn't find any particular dashboard in the user
+    // temporal settings so redirect to the dashboard tab and select first private dashboard
+    if (state.status === 'availableDashboard') {
+        return <Redirect from={match.url} exact={true} to={`${match.url}/dashboards`} />
+    }
+
+    // We found a recently viewed dashboard id in the temporal settings, so redirect to this
+    // dashboard.
+    return <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/${state.dashboardId}`} />
+}
+
+type DashboardExistence =
+    | { status: 'availableDashboard' }
+    | { status: 'lastVisitedDashboard'; dashboardId: string }
+    | { status: 'noDashboards' }
+    | { status: 'loading' }
+
+function useDashboardExistence(): DashboardExistence {
+    const [state, setState] = useState<DashboardExistence>({ status: 'loading' })
+    const [lastVisitedDashboardId, , temporalSettingStatus] = useTemporarySetting(
+        'insights.lastVisitedDashboardId',
+        null
     )
+
+    const [fetchFirstAvailableDashboard] = useLazyQuery<
+        GetFirstAvailableDashboardResult,
+        GetFirstAvailableDashboardVariables
+    >(gql`
+        query GetFirstAvailableDashboard($lastVisitedDashboardId: ID) {
+            lastVisitedDashboard: insightsDashboards(id: $lastVisitedDashboardId) {
+                nodes {
+                    id
+                }
+            }
+            firstAvailableDashboard: insightsDashboards(first: 1) {
+                nodes {
+                    id
+                }
+            }
+        }
+    `)
+
+    useEffect(() => {
+        // We're still loading temporal settings
+        if (temporalSettingStatus === 'initial') {
+            return
+        }
+
+        const normalizedLastVisitedDashboardId = lastVisitedDashboardId ?? null
+
+        // Check asynchronously about dashboard existence on the backend
+        fetchFirstAvailableDashboard({ variables: { lastVisitedDashboardId: normalizedLastVisitedDashboardId } })
+            .then(result => {
+                const {
+                    data = {
+                        lastVisitedDashboard: { nodes: [] },
+                        firstAvailableDashboard: { nodes: [] },
+                    },
+                } = result
+
+                const [lastVisitedDashboard] = data.lastVisitedDashboard.nodes
+                const [firstAvailableDashboard] = data.firstAvailableDashboard.nodes
+
+                // We resolved dashboard by lastVisitedDashboardId in the temporal settings
+                if (lastVisitedDashboard) {
+                    setState({ status: 'lastVisitedDashboard', dashboardId: lastVisitedDashboard.id })
+                    return
+                }
+
+                // If it's just another dashboard and not undefined (this mean we have at least one dashboard
+                // on the backend redirect to the dashboard page without id
+                if (firstAvailableDashboard) {
+                    setState({ status: 'availableDashboard' })
+                } else {
+                    // Otherwise, redirect to the standard no dashboard view (which is getting started tab)
+                    setState({ status: 'noDashboards' })
+                }
+            })
+            .catch(() => {
+                setState({ status: 'noDashboards' })
+            })
+    }, [fetchFirstAvailableDashboard, lastVisitedDashboardId, temporalSettingStatus])
+
+    return state
+}
+
+function getActiveTabByURL(
+    matchURL: string,
+    props: RouteComponentProps<{ dashboardId?: string }>
+): CodeInsightsRootPageTab {
+    const { match } = props
+
+    switch (match.path) {
+        case `${matchURL}/dashboards/:dashboardId?`:
+            return CodeInsightsRootPageTab.Dashboards
+
+        case `${matchURL}/all`:
+            return CodeInsightsRootPageTab.AllInsights
+
+        case `${matchURL}/about`:
+            return CodeInsightsRootPageTab.GettingStarted
+
+        default:
+            return CodeInsightsRootPageTab.Dashboards
+    }
 }

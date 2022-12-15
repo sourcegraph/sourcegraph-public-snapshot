@@ -530,6 +530,68 @@ func TestLoggingMiddleware(t *testing.T) {
 		}
 		assert.NotZero(t, attemptsLogged)
 	})
+
+	t.Run("log redisLoggerMiddleware error", func(t *testing.T) {
+		const wantErrMessage = "redisLoggingError"
+		redisErrorMiddleware := func(next Doer) Doer {
+			return DoerFunc(func(req *http.Request) (*http.Response, error) {
+				// simplified version of what we do in redisLoggerMiddleware, since
+				// we just test that adding and reading the context key/value works
+				var middlewareErrors error
+				defer func() {
+					if middlewareErrors != nil {
+						*req = *req.WithContext(context.WithValue(req.Context(),
+							redisLoggingMiddlewareErrorKey, middlewareErrors))
+					}
+				}()
+
+				middlewareErrors = errors.New(wantErrMessage)
+
+				return next.Do(req)
+			})
+		}
+
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				redisErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+		).Doer()
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		t.Cleanup(srv.Close)
+
+		req, _ := http.NewRequest("GET", srv.URL, nil)
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var found bool
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for redisLoggerErr
+			errField, ok := entry.Fields["redisLoggerErr"]
+			if !ok {
+				continue
+			}
+			if assert.Contains(t, errField, wantErrMessage) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
 }
 
 type notFoundTransport struct{}
@@ -571,12 +633,18 @@ func TestExpJitterDelay(t *testing.T) {
 	}
 }
 
-//nolint:unparam // unparam complains that `code` always has same value across call-sites, but that's OK
 func newFakeClient(code int, body []byte, err error) Doer {
+	return newFakeClientWithHeaders(map[string][]string{}, code, body, err)
+}
+
+func newFakeClientWithHeaders(respHeaders map[string][]string, code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
+		for k, v := range respHeaders {
+			rr.Header()[k] = v
+		}
 		_, _ = rr.Write(body)
-		rr.WriteHeader(code)
+		rr.Code = code
 		return rr.Result(), err
 	})
 }

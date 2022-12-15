@@ -18,7 +18,7 @@ The document content can set class names and IDs on elements (for example, Markd
     --breakpoint-md: 768px;
     --breakpoint-lg: 1024px;
     --breakpoint-xl: 1280px;
-    --breakpoint-2xl: 1536px;    
+    --breakpoint-2xl: 1536px;
     --sidebar-breakpoint-width: 800px; /* hide sidebar if narrower */
     --index-breakpoint-width: 1200px; /* show index before (not to the right) if narrower */
 
@@ -320,6 +320,7 @@ body > #sidebar #theme button {
     background-color: transparent;
     font-family: var(--base-font-family);
     font-size: 1rem;
+    cursor: pointer;
 }
 body > #sidebar #theme button:not(.active) {
     color: var(--text-muted);

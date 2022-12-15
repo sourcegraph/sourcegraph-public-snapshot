@@ -34,7 +34,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >
@@ -90,7 +90,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
       </a>
     </div>
     <button
-      aria-label="Close alert"
+      aria-label="Dismiss alert"
       class="btn btnIcon closeButton"
       type="button"
     >

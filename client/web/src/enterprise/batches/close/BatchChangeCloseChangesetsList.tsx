@@ -96,9 +96,10 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
     const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
+    const nextOverlayElement = useCallback(
+        (element: HTMLElement | null): void => hoverOverlayElements.next(element),
+        [hoverOverlayElements]
+    )
 
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 
@@ -134,7 +135,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
 
     return (
         <div className="list-group position-relative" ref={nextContainerElement}>
-            <Container>
+            <Container role="region" aria-label="affected changesets">
                 <FilteredConnection<
                     ChangesetFields,
                     Omit<ChangesetCloseNodeProps, 'node'>,
@@ -159,7 +160,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
                     history={history}
                     location={location}
                     useURLQuery={true}
-                    listComponent="div"
                     listClassName={styles.batchChangeCloseChangesetsListGrid}
                     headComponent={
                         willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets

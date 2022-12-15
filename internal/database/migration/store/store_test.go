@@ -340,7 +340,8 @@ func TestWrappedUp(t *testing.T) {
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
-		}, {
+		},
+		{
 			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
@@ -712,7 +713,7 @@ func testStore(db *sql.DB) *Store {
 }
 
 func testStoreWithName(db *sql.DB, name string) *Store {
-	return NewWithDB(db, name, NewOperations(&observation.TestContext))
+	return NewWithDB(&observation.TestContext, db, name)
 }
 
 func strPtr(v string) *string {

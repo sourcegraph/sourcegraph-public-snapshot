@@ -6,17 +6,77 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
-	stats := types.CodeInsightsUsageStatistics{}
+type pingLoadFunc func(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error
 
+type pingLoader struct {
+	now        time.Time
+	operations map[string]pingLoadFunc
+}
+
+func newPingLoader(now time.Time) *pingLoader {
+	return &pingLoader{now: now, operations: make(map[string]pingLoadFunc)}
+}
+
+func (p *pingLoader) withOperation(name string, loadFunc pingLoadFunc) {
+	p.operations[name] = loadFunc
+}
+
+func (p *pingLoader) generate(ctx context.Context, db database.DB) *types.CodeInsightsUsageStatistics {
+	stats := &types.CodeInsightsUsageStatistics{}
+	logger := log.Scoped("code insights ping loader", "pings for code insights")
+
+	for name, loadFunc := range p.operations {
+		err := loadFunc(ctx, db, stats, p.now)
+		if err != nil {
+			logger.Error("insights pings loading error, skipping ping", log.String("name", name))
+		}
+	}
+	return stats
+}
+
+func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
+	loader := newPingLoader(timeNow())
+
+	loader.withOperation("weeklyUsage", weeklyUsage)
+	loader.withOperation("weeklyMetricsByInsight", weeklyMetricsByInsight)
+	loader.withOperation("weeklyFirstTimeCreators", weeklyFirstTimeCreators)
+	loader.withOperation("getCreationViewUsage", getCreationViewUsage)
+	loader.withOperation("getTimeStepCounts", getTimeStepCounts)
+	loader.withOperation("getOrgInsightCounts", getOrgInsightCounts)
+	loader.withOperation("getTotalInsightCounts", getTotalInsightCounts)
+	loader.withOperation("tabClicks", tabClicks)
+	loader.withOperation("insightsTotalOrgsWithDashboard", insightsTotalOrgsWithDashboard)
+	loader.withOperation("insightsDashboardTotalCount", insightsDashboardTotalCount)
+	loader.withOperation("getInsightsPerDashboard", getInsightsPerDashboard)
+
+	loader.withOperation("groupAggregationModeClicked", groupAggregationModeClicked)
+	loader.withOperation("groupAggregationModeDisabledHover", groupAggregationModeDisabledHover)
+	loader.withOperation("groupResultsChartBarClick", groupResultsChartBarClick)
+	loader.withOperation("groupResultsChartBarHover", groupResultsChartBarHover)
+	loader.withOperation("groupResultsExpandedViewOpen", groupResultsExpandedViewOpen)
+	loader.withOperation("groupResultsExpandedViewCollapse", groupResultsExpandedViewCollapse)
+	loader.withOperation("getBackfillTimePing", getBackfillTimePing)
+
+	loader.withOperation("getGroupResultsSearchesPings", getGroupResultsSearchesPings(
+		[]types.PingName{
+			"ProactiveLimitHit",
+			"ProactiveLimitSuccess",
+			"ExplicitLimitHit",
+			"ExplicitLimitSuccess",
+		}))
+
+	return loader.generate(ctx, db), nil
+}
+
+func weeklyUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	const platformQuery = `
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       			AS weekly_insights_page_views,
@@ -60,9 +120,12 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		&stats.WeeklyGroupResultsCollapseSection,
 		&stats.WeeklyGroupResultsInfoIconHover,
 	); err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
+func weeklyMetricsByInsight(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	const metricsByInsightQuery = `
 	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
         COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
@@ -78,17 +141,14 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	GROUP BY insight_type;
 	`
 
-	weeklyUsageStatisticsByInsight := []*types.InsightUsageStatistics{}
+	var weeklyUsageStatisticsByInsight []*types.InsightUsageStatistics
 	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
-
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		weeklyInsightUsageStatistics := types.InsightUsageStatistics{}
-
 		if err := rows.Scan(
 			&weeklyInsightUsageStatistics.InsightType,
 			&weeklyInsightUsageStatistics.Additions,
@@ -99,17 +159,15 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 			&weeklyInsightUsageStatistics.DataPointClicks,
 			&weeklyInsightUsageStatistics.FiltersChange,
 		); err != nil {
-			return nil, err
+			return err
 		}
-
 		weeklyUsageStatisticsByInsight = append(weeklyUsageStatisticsByInsight, &weeklyInsightUsageStatistics)
 	}
 	stats.WeeklyUsageStatisticsByInsight = weeklyUsageStatisticsByInsight
+	return nil
+}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
+func weeklyFirstTimeCreators(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	const weeklyFirstTimeCreatorsQuery = `
 	WITH first_times AS (
 		SELECT
@@ -126,132 +184,34 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
 	`
 
-	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, timeNow()).Scan(
+	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, now).Scan(
 		&stats.WeekStart,
 		&stats.WeeklyFirstTimeInsightCreators,
 	); err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
-	weeklyUsage, err := GetCreationViewUsage(ctx, db, timeNow)
-	if err != nil {
-		return nil, err
-	}
-	stats.WeeklyAggregatedUsage = weeklyUsage
-
-	// These two pings are slightly more fragile than the others because they deserialize json from settings. They are
-	// also less important. So, in the case of any errors here we will not fail the entire ping for code insights.
-	timeIntervals, err := GetTimeStepCounts(ctx, db)
-	if err != nil {
-		log15.Error("code-insights/GetTimeStepCounts", "error", err)
-		return nil, nil
-	}
-	stats.InsightTimeIntervals = timeIntervals
-
-	orgVisible, err := GetOrgInsightCounts(ctx, db)
-	if err != nil {
-		log15.Error("code-insights/GetOrgInsightCounts", "error", err)
-		return nil, nil
-	}
-	stats.InsightOrgVisible = orgVisible
-
-	totalCounts, err := GetTotalInsightCounts(ctx, db)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTotalInsightCounts")
-	}
-	stats.InsightTotalCounts = totalCounts
-
+func tabClicks(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	weeklyGetStartedTabClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabClickSql)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetWeeklyTabClicks")
+		return errors.Wrap(err, "GetWeeklyTabClicks")
 	}
 	stats.WeeklyGetStartedTabClickByTab = weeklyGetStartedTabClickByTab
 
 	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetWeeklyTabMoreClicks")
+		return errors.Wrap(err, "GetWeeklyTabMoreClicks")
 	}
 	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
 
-	totalOrgsWithDashboard, err := GetIntCount(ctx, db, InsightsTotalOrgsWithDashboardPingName)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTotalOrgsWithDashboard")
-	}
-	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
-
-	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTotalDashboards")
-	}
-	stats.TotalDashboardCount = &totalDashboards
-
-	insightsPerDashboard, err := GetInsightsPerDashboard(ctx, db)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetInsightsPerDashboard")
-	}
-	stats.InsightsPerDashboard = insightsPerDashboard
-
-	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeClicked")
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
-	}
-	stats.WeeklyGroupResultsAggregationModeClicked = weeklyGroupResultsAggregationModeClicked
-
-	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeDisabledHover")
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
-	}
-	stats.WeeklyGroupResultsAggregationModeDisabledHover = weeklyGroupResultsAggregationModeDisabledHover
-
-	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarClick")
-	if err != nil {
-		return nil, errors.Wrap(err, "GroupResultsChartBarClick")
-	}
-	stats.WeeklyGroupResultsChartBarClick = weeklyGroupResultsChartBarClick
-
-	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarHover")
-	if err != nil {
-		return nil, errors.Wrap(err, "GroupResultsChartBarHover")
-	}
-	stats.WeeklyGroupResultsChartBarHover = weeklyGroupResultsChartBarHover
-
-	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewOpen")
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
-	}
-	stats.WeeklyGroupResultsExpandedViewOpen = weeklyGroupResultsExpandedViewOpen
-
-	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewCollapse")
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
-	}
-	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
-
-	weeklyGroupResultsSearches, err := GetGroupResultsSearchesPings(
-		ctx,
-		db,
-		[]types.PingName{
-			"ProactiveLimitHit",
-			"ProactiveLimitSuccess",
-			"ExplicitLimitHit",
-			"ExplicitLimitSuccess",
-		},
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyGroupResultsSearches")
-	}
-	stats.WeeklyGroupResultsSearches = weeklyGroupResultsSearches
-
-	backfillTime, err := GetBackfillTimePing(ctx, db)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetBackfillTimePing")
-	}
-	stats.WeeklySeriesBackfillTime = backfillTime
-
-	return &stats, nil
+	return nil
 }
 
 func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
+	// InsightsGetStartedTabClick
+	// InsightsGetStartedTabMoreClick
 	weeklyGetStartedTabClickByTab := []types.InsightGetStartedTabClickPing{}
 	rows, err := db.QueryContext(ctx, sql, timeNow())
 
@@ -273,7 +233,7 @@ func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]type
 	return weeklyGetStartedTabClickByTab, nil
 }
 
-func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
+func getTotalInsightCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	store := db.EventLogs()
 	name := InsightsTotalCountPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -284,21 +244,22 @@ func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTo
 		EventName: &name,
 	})
 	if err != nil {
-		return types.InsightTotalCounts{}, err
+		return err
 	} else if len(all) == 0 {
-		return types.InsightTotalCounts{}, nil
+		return nil
 	}
 
 	latest := all[0]
 	var totalCounts types.InsightTotalCounts
-	err = json.Unmarshal([]byte(latest.Argument), &totalCounts)
+	err = json.Unmarshal(latest.Argument, &totalCounts)
 	if err != nil {
-		return types.InsightTotalCounts{}, errors.Wrap(err, "Unmarshal")
+		return errors.Wrap(err, "UnmarshalInsightTotalCounts")
 	}
-	return totalCounts, err
+	stats.InsightTotalCounts = totalCounts
+	return nil
 }
 
-func GetTimeStepCounts(ctx context.Context, db database.DB) ([]types.InsightTimeIntervalPing, error) {
+func getTimeStepCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	store := db.EventLogs()
 	name := InsightsIntervalCountsPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -309,21 +270,23 @@ func GetTimeStepCounts(ctx context.Context, db database.DB) ([]types.InsightTime
 		EventName: &name,
 	})
 	if err != nil {
-		return []types.InsightTimeIntervalPing{}, err
+		return err
 	} else if len(all) == 0 {
-		return []types.InsightTimeIntervalPing{}, nil
+		return nil
 	}
 
 	latest := all[0]
 	var intervalCounts []types.InsightTimeIntervalPing
-	err = json.Unmarshal([]byte(latest.Argument), &intervalCounts)
+	err = json.Unmarshal(latest.Argument, &intervalCounts)
 	if err != nil {
-		return []types.InsightTimeIntervalPing{}, errors.Wrap(err, "Unmarshal")
+		return errors.Wrap(err, "UnmarshalInsightTimeIntervalPing")
 	}
-	return intervalCounts, nil
+
+	stats.InsightTimeIntervals = intervalCounts
+	return nil
 }
 
-func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibleInsightPing, error) {
+func getOrgInsightCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	store := db.EventLogs()
 	name := InsightsOrgVisibleInsightsPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -334,18 +297,37 @@ func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibl
 		EventName: &name,
 	})
 	if err != nil {
-		return []types.OrgVisibleInsightPing{}, err
+		return err
 	} else if len(all) == 0 {
-		return []types.OrgVisibleInsightPing{}, nil
+		return nil
 	}
 
 	latest := all[0]
 	var orgVisibleInsightCounts []types.OrgVisibleInsightPing
-	err = json.Unmarshal([]byte(latest.Argument), &orgVisibleInsightCounts)
+	err = json.Unmarshal(latest.Argument, &orgVisibleInsightCounts)
 	if err != nil {
-		return []types.OrgVisibleInsightPing{}, errors.Wrap(err, "Unmarshal")
+		return errors.Wrap(err, "UnmarshalOrgVisibleInsightPing")
 	}
-	return orgVisibleInsightCounts, nil
+	stats.InsightOrgVisible = orgVisibleInsightCounts
+	return nil
+}
+
+func insightsTotalOrgsWithDashboard(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	totalOrgsWithDashboard, err := GetIntCount(ctx, db, InsightsTotalOrgsWithDashboardPingName)
+	if err != nil {
+		return errors.Wrap(err, "GetTotalOrgsWithDashboard")
+	}
+	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
+	return nil
+}
+
+func insightsDashboardTotalCount(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
+	if err != nil {
+		return errors.Wrap(err, "GetTotalDashboards")
+	}
+	stats.TotalDashboardCount = &totalDashboards
+	return nil
 }
 
 func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, error) {
@@ -363,25 +345,26 @@ func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, e
 
 	latest := all[0]
 	var count int
-	err = json.Unmarshal([]byte(latest.Argument), &count)
+	err = json.Unmarshal(latest.Argument, &count)
 	if err != nil {
-		return 0, errors.Wrap(err, "Unmarshal")
+		return 0, errors.Wrapf(err, "Unmarshal %s", pingName)
 	}
 	return int32(count), nil
 }
 
-func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
-	builder := creationPagesPingBuilder(timeSupplier)
+func getCreationViewUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	builder := creationPagesPingBuilder(now)
 
 	results, err := builder.Sample(ctx, db)
 	if err != nil {
-		return []types.AggregatedPingStats{}, err
+		return err
 	}
+	stats.WeeklyAggregatedUsage = results
 
-	return results, nil
+	return nil
 }
 
-func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.InsightsPerDashboardPing, error) {
+func getInsightsPerDashboard(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	store := db.EventLogs()
 	name := InsightsPerDashboardPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -392,18 +375,19 @@ func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.Insight
 		EventName: &name,
 	})
 	if err != nil {
-		return types.InsightsPerDashboardPing{}, err
+		return err
 	} else if len(all) == 0 {
-		return types.InsightsPerDashboardPing{}, nil
+		return nil
 	}
 
 	latest := all[0]
 	var insightsPerDashboardStats types.InsightsPerDashboardPing
-	err = json.Unmarshal([]byte(latest.Argument), &insightsPerDashboardStats)
+	err = json.Unmarshal(latest.Argument, &insightsPerDashboardStats)
 	if err != nil {
-		return types.InsightsPerDashboardPing{}, errors.Wrap(err, "Unmarshal")
+		return errors.Wrap(err, "Unmarshal")
 	}
-	return insightsPerDashboardStats, nil
+	stats.InsightsPerDashboard = insightsPerDashboardStats
+	return nil
 }
 
 func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultPing, error) {
@@ -429,6 +413,58 @@ func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) (
 		groupResultsPings = append(groupResultsPings, groupResultsPing)
 	}
 	return groupResultsPings, nil
+}
+
+func groupAggregationModeClicked(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "groupAggregationModeClicked")
+	if err != nil {
+		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
+	}
+	stats.WeeklyGroupResultsAggregationModeClicked = weeklyGroupResultsAggregationModeClicked
+	return nil
+}
+
+func groupAggregationModeDisabledHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "groupAggregationModeDisabledHover")
+	if err != nil {
+		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
+	}
+	stats.WeeklyGroupResultsAggregationModeDisabledHover = weeklyGroupResultsAggregationModeDisabledHover
+	return nil
+}
+
+func groupResultsChartBarClick(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "groupResultsChartBarClick")
+	if err != nil {
+		return errors.Wrap(err, "groupResultsChartBarClick")
+	}
+	stats.WeeklyGroupResultsChartBarClick = weeklyGroupResultsChartBarClick
+	return nil
+}
+
+func groupResultsChartBarHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "groupResultsChartBarHover")
+	if err != nil {
+		return errors.Wrap(err, "groupResultsChartBarHover")
+	}
+	stats.WeeklyGroupResultsChartBarHover = weeklyGroupResultsChartBarHover
+	return nil
+}
+func groupResultsExpandedViewOpen(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "groupResultsExpandedViewOpen")
+	if err != nil {
+		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
+	}
+	stats.WeeklyGroupResultsExpandedViewOpen = weeklyGroupResultsExpandedViewOpen
+	return nil
+}
+func groupResultsExpandedViewCollapse(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "groupResultsExpandedViewCollapse")
+	if err != nil {
+		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
+	}
+	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
+	return nil
 }
 
 func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultExpandedViewPing, error) {
@@ -457,41 +493,44 @@ func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingNa
 	return groupResultsExpandedViewPings, nil
 }
 
-func GetGroupResultsSearchesPings(ctx context.Context, db database.DB, pingNames []types.PingName) ([]types.GroupResultSearchPing, error) {
-	pings := []types.GroupResultSearchPing{}
+func getGroupResultsSearchesPings(pingNames []types.PingName) pingLoadFunc {
+	return func(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+		var pings []types.GroupResultSearchPing
 
-	for _, name := range pingNames {
-		rows, err := db.QueryContext(ctx, getGroupResultsSql, string(name), timeNow())
-		if err != nil {
-			return nil, err
-		}
-		err = func() error {
-			defer rows.Close()
-			var noop *string
-			for rows.Next() {
-				ping := types.GroupResultSearchPing{
-					Name: name,
-				}
-				if err := rows.Scan(
-					&ping.Count,
-					&ping.AggregationMode,
-					&noop,
-					&noop,
-				); err != nil {
-					return err
-				}
-				pings = append(pings, ping)
+		for _, name := range pingNames {
+			rows, err := db.QueryContext(ctx, getGroupResultsSql, string(name), timeNow())
+			if err != nil {
+				return err
 			}
-			return nil
-		}()
-		if err != nil {
-			return nil, err
+			err = func() error {
+				defer rows.Close()
+				var noop *string
+				for rows.Next() {
+					ping := types.GroupResultSearchPing{
+						Name: name,
+					}
+					if err := rows.Scan(
+						&ping.Count,
+						&ping.AggregationMode,
+						&noop,
+						&noop,
+					); err != nil {
+						return err
+					}
+					pings = append(pings, ping)
+				}
+				return nil
+			}()
+			if err != nil {
+				return err
+			}
 		}
+		stats.WeeklyGroupResultsSearches = pings
+		return nil
 	}
-	return pings, nil
 }
 
-func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {
+func getBackfillTimePing(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
 	store := db.EventLogs()
 	name := InsightsBackfillTimePingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -502,18 +541,19 @@ func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsB
 		EventName: &name,
 	})
 	if err != nil {
-		return []types.InsightsBackfillTimePing{}, err
+		return err
 	} else if len(all) == 0 {
-		return []types.InsightsBackfillTimePing{}, nil
+		return nil
 	}
 
 	latest := all[0]
 	var backfillTimePing []types.InsightsBackfillTimePing
-	err = json.Unmarshal([]byte(latest.Argument), &backfillTimePing)
+	err = json.Unmarshal(latest.Argument, &backfillTimePing)
 	if err != nil {
-		return []types.InsightsBackfillTimePing{}, errors.Wrap(err, "Unmarshal")
+		return errors.Wrap(err, "UnmarshalInsightsBackfillTimePing")
 	}
-	return backfillTimePing, nil
+	stats.WeeklySeriesBackfillTime = backfillTimePing
+	return nil
 }
 
 // WithAll adds multiple pings by name to this builder
@@ -535,7 +575,7 @@ func (b *PingQueryBuilder) Sample(ctx context.Context, db database.DB) ([]types.
 
 	query := fmt.Sprintf(templatePingQueryStr, b.timeWindow)
 
-	rows, err := db.QueryContext(ctx, query, b.getTime(), pq.Array(b.pings))
+	rows, err := db.QueryContext(ctx, query, b.now, pq.Array(b.pings))
 	if err != nil {
 		return []types.AggregatedPingStats{}, err
 	}
@@ -554,7 +594,7 @@ func (b *PingQueryBuilder) Sample(ctx context.Context, db database.DB) ([]types.
 	return results, nil
 }
 
-func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
+func creationPagesPingBuilder(now time.Time) PingQueryBuilder {
 	names := []types.PingName{
 		"ViewCodeInsightsCreationPage",
 		"ViewCodeInsightsSearchBasedCreationPage",
@@ -579,20 +619,20 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 		"InsightsGetStartedDocsClicks",
 	}
 
-	builder := NewPingBuilder(Week, timeSupplier)
+	builder := NewPingBuilder(Week, now)
 	builder.WithAll(names)
 
 	return builder
 }
 
-func NewPingBuilder(timeWindow TimeWindow, timeSupplier func() time.Time) PingQueryBuilder {
-	return PingQueryBuilder{timeWindow: timeWindow, getTime: timeSupplier}
+func NewPingBuilder(timeWindow TimeWindow, now time.Time) PingQueryBuilder {
+	return PingQueryBuilder{timeWindow: timeWindow, now: now}
 }
 
 type PingQueryBuilder struct {
 	pings      []string
 	timeWindow TimeWindow
-	getTime    func() time.Time
+	now        time.Time
 }
 
 type TimeWindow string

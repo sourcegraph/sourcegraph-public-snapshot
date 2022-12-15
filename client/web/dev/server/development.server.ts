@@ -91,9 +91,10 @@ async function startWebpackDevelopmentServer({
         proxy: [proxyConfig],
         // Disable default DevServer compression. We need more fine grained compression to support streaming search.
         compress: false,
-        onBeforeSetupMiddleware: developmentServer => {
+        setupMiddlewares: (middlewares, developmentServer) => {
             // Re-enable gzip compression using our own `compression` filter.
-            developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+            developmentServer.app!.use(compression({ filter: shouldCompressResponse }))
+            return middlewares
         },
     }
 

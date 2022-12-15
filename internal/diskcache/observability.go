@@ -13,11 +13,11 @@ type operations struct {
 	backgroundFetch *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context, component string) *operations {
+func newOperations(observationCtx *observation.Context, component string) *operations {
 	var m *metrics.REDMetrics
-	if observationContext.Registerer != nil {
+	if observationCtx.Registerer != nil {
 		m = metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"diskcache",
 			metrics.WithLabels("component", "op"),
 		)
@@ -25,10 +25,10 @@ func newOperations(observationContext *observation.Context, component string) *o
 
 	// we dont enable tracing for evict, as it doesnt take a context.Context
 	// so it cannot be part of a trace
-	evictObservationContext := &observation.Context{
-		Logger:       observationContext.Logger,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
+	evictobservationCtx := &observation.Context{
+		Logger:       observationCtx.Logger,
+		Registerer:   observationCtx.Registerer,
+		HoneyDataset: observationCtx.HoneyDataset,
 	}
 
 	op := func(name string, ctx *observation.Context) *observation.Operation {
@@ -40,8 +40,8 @@ func newOperations(observationContext *observation.Context, component string) *o
 	}
 
 	return &operations{
-		cachedFetch:     op("Cached Fetch", observationContext),
-		evict:           op("Evict", evictObservationContext),
-		backgroundFetch: op("Background Fetch", observationContext),
+		cachedFetch:     op("Cached Fetch", observationCtx),
+		evict:           op("Evict", evictobservationCtx),
+		backgroundFetch: op("Background Fetch", observationCtx),
 	}
 }

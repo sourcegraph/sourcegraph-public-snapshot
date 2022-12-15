@@ -92,6 +92,7 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    location,
     repo,
     repoName,
     commitID,
@@ -348,7 +349,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             )}
                                         />
                                         <Route
-                                            path={`${treeOrError.url}/-/commits/tab`}
+                                            path={`${treeOrError.url}/-/commits/tab/:filePath*`}
                                             render={routeComponentProps => (
                                                 <RepoCommits
                                                     repo={repo}
@@ -396,6 +397,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                         match={match}
                                                         settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
+                                                        location={location}
                                                         {...props}
                                                     />
                                                 </RepoRevisionWrapper>
@@ -411,6 +413,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 repo={repo}
                                 revision={revision}
                                 commitID={commitID}
+                                location={location}
                                 {...props}
                             />
                         )}

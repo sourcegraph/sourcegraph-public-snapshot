@@ -253,3 +253,31 @@ Use this process to create a source code zip to attach to a Firefox add-on submi
 cd client/browser
 yarn run create-source-zip
 ```
+
+## Testing the Phabricator native extension locally
+
+This is an adjusted version of @lguychard's [comment here](https://github.com/sourcegraph/sourcegraph/pull/11825#issuecomment-652040751).
+
+1. Start a Sourcegraph instance locally (`sg start`)
+2. Start Phabricator instance, running the latest version of Phabricator, using `./dev/phabricator/start.sh`
+3. Install the Sourcegraph extension into Phabricator using `./dev/install-sourcegraph.sh`
+4. Navigated to `127.0.0.1` to access the Phabricator instance, and logged in with `admin` / `sourcegraph` (as printed by `./dev/phabricator/start.sh`)
+5. Navigated to `http://127.0.0.1/config/group/sourcegraph/` (Config -> Application Settings -> Sourcegraph)
+6. Edited `corsOrigin` in site config at `https://sourcegraph.test:3443/site-admin/configuration` to include `http://127.0.0.1` (might need to be added in `dev-private` repo).
+7. Added a repository by mirroring a public GitHub repository (we have some docs for this [here](https://docs.sourcegraph.com/dev/phabricator_gitolite), but they need improving):
+   - Navigated to `http://127.0.0.1/diffusion/edit/?vcs=git`
+   - Created a repository with name `JsonRPC2`, callsign `JRPC`, short name `jrpc`
+   - Navigated to `http://127.0.0.1/source/jrpc/manage/uris/` (URIs)
+   - For all three default URIs:
+     - Edited, set I/O type "No IO", Display type "Hidden")
+   - Added a new URI, set it to `https://github.com/sourcegraph/jsonrpc2.git`
+   - Set I/O type "Observe", display type "Visible" (to mirror from GitHub)
+   - In `http://127.0.0.1/source/jrpc/manage/`, "Activate repository"
+   - Reload `http://127.0.0.1/source/jrpc/manage/` until status showed up as "Fully imported"
+8. If you are having issues with the daemons not updating the status, you can do the following:
+   - Shell into the Docker container running Phabricator: `docker exec -it phabricator /bin/bash`
+   - Switch into the main Phabricator directory: `cd /opt/bitnami/phabricator`
+   - Restart the daemons: `./bin/phd restart`
+9. Navigated to `http://127.0.0.1/source/jrpc/browse/master/async.go`
+
+Whenever you make changes to the native extension code, you need to run `yarn build` inside the `client/browser` directory before seeing the changes in effect on the Phabricator instance.

@@ -45,9 +45,13 @@ export const observeStorageKey = <A extends browser.storage.AreaName, K extends 
         fromBrowserEvent(storage.onChanged).pipe(
             filter(([, name]) => areaName === name),
             map(([changes]) => changes),
-            filter((changes): changes is {
-                [k in K]: browser.storage.StorageChange<ExtensionStorageItems[A][K]>
-            } => Object.prototype.hasOwnProperty.call(changes, key)),
+            filter(
+                (
+                    changes
+                ): changes is {
+                    [k in K]: browser.storage.StorageChange<ExtensionStorageItems[A][K]>
+                } => Object.prototype.hasOwnProperty.call(changes, key)
+            ),
             map(changes => changes[key].newValue)
         )
     )

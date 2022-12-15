@@ -2,13 +2,12 @@ package monitoring
 
 import (
 	"fmt"
-	"math/rand"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/grafana/regexp"
 	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -103,18 +102,8 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
 	}
+	board := grafana.NewBoard(uid, c.Title, []string{"builtin"})
 
-	board := sdk.NewBoard(c.Title)
-	board.Version = uint(rand.Uint32())
-	board.UID = uid
-	board.ID = 0
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.Editable = false
-	board.AddTags("builtin")
 	if !c.noAlertsDefined() {
 		alertLevelVariable := ContainerVariable{
 			Label: "Alert level",
@@ -138,7 +127,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	}
 	if !c.noAlertsDefined() {
 		// Show alerts matching the selected alert_level (see template variable above)
-		expr, err := promql.Inject(
+		expr, err := promql.InjectMatchers(
 			fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
 			injectLabelMatchers, newVariableApplier(c.Variables))
 		if err != nil {
@@ -164,7 +153,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
 		// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend
 		// in certain environments
-		expr, err := promql.Inject(
+		expr, err := promql.InjectMatchers(
 			fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
 			injectLabelMatchers,
 			newVariableApplier(c.Variables))
@@ -198,7 +187,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	board.Panels = append(board.Panels, description)
 
 	if !c.noAlertsDefined() {
-		expr, err := promql.Inject(fmt.Sprintf(`label_replace(
+		expr, err := promql.InjectMatchers(fmt.Sprintf(`label_replace(
 			sum(
 				max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})
 			) by (
@@ -247,7 +236,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 				Show:    true,
 			},
 		}
-		alertsFiringExpr, err := promql.Inject(
+		alertsFiringExpr, err := promql.InjectMatchers(
 			fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 			injectLabelMatchers,
 			newVariableApplier(c.Variables),
@@ -273,14 +262,9 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		// Non-general groups are shown as collapsible panels.
 		var rowPanel *sdk.Panel
 		if group.Title != "General" {
-			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
-			rowPanel.OfType = sdk.RowType
-			rowPanel.Type = "row"
-			rowPanel.Title = group.Title
 			offsetY++
-			setPanelPos(rowPanel, 0, offsetY)
+			rowPanel = grafana.NewRowPanel(offsetY, group.Title)
 			rowPanel.Collapsed = group.Hidden
-			rowPanel.Panels = []sdk.Panel{} // cannot be null
 			board.Panels = append(board.Panels, rowPanel)
 		}
 
@@ -288,48 +272,19 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		for rowIndex, row := range group.Rows {
 			panelWidth := 24 / len(row)
 			offsetY++
-			for i, o := range row {
-				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
-
-				var panel *sdk.Panel
-				switch o.Panel.panelType {
-				case PanelTypeGraph:
-					panel = sdk.NewGraph(panelTitle)
-				case PanelTypeHeatmap:
-					panel = sdk.NewHeatmap(panelTitle)
-				}
-
-				panel.ID = observablePanelID(groupIndex, rowIndex, i)
-
-				// Set positioning
-				setPanelSize(panel, panelWidth, 5)
-				setPanelPos(panel, i*panelWidth, offsetY)
-
-				// Add reference links
-				panel.Links = []sdk.Link{{
-					Title:       "Panel reference",
-					URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
-					TargetBlank: boolPtr(true),
-				}}
-				if !o.NoAlert {
-					panel.Links = append(panel.Links, sdk.Link{
-						Title:       "Alerts reference",
-						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
-						TargetBlank: boolPtr(true),
-					})
-				}
-
-				// Build the graph panel
-				o.Panel.build(o, panel)
-
-				// Apply injected label matchers
-				for _, target := range *panel.GetTargets() {
-					var err error
-					target.Expr, err = promql.Inject(target.Expr, injectLabelMatchers, newVariableApplier(c.Variables))
-					if err != nil {
-						return nil, errors.Wrap(err, target.Query)
-					}
-					panel.SetTarget(&target)
+			for panelIndex, o := range row {
+				panel, err := o.renderPanel(c, panelManipulationOptions{
+					injectLabelMatchers: injectLabelMatchers,
+				}, &panelRenderOptions{
+					groupIndex:  groupIndex,
+					rowIndex:    rowIndex,
+					panelIndex:  panelIndex,
+					panelWidth:  panelWidth,
+					panelHeight: 5,
+					offsetY:     offsetY,
+				})
+				if err != nil {
+					return nil, errors.Wrapf(err, "render panel for %q", o.Name)
 				}
 
 				// Attach panel to board
@@ -706,6 +661,10 @@ type Observable struct {
 	// the provided `ObservablePanel` is insufficient - see `ObservablePanelOption` for
 	// more details.
 	Panel ObservablePanel
+
+	// MultiInstance allows a panel to opt-in to a generated multi-instance overview
+	// dashboard, which is created for Sourcegraph Cloud's centralized observability.
+	MultiInstance bool
 }
 
 func (o Observable) validate(variables []ContainerVariable) error {
@@ -799,6 +758,84 @@ func (o Observable) alertsCount() (count int) {
 		count++
 	}
 	return
+}
+
+type panelRenderOptions struct {
+	groupIndex  int
+	rowIndex    int
+	panelIndex  int
+	panelWidth  int
+	panelHeight int
+
+	offsetY int
+}
+
+type panelManipulationOptions struct {
+	injectLabelMatchers []*labels.Matcher
+	injectGroupings     []string
+}
+
+func (o Observable) renderPanel(c *Dashboard, manipulations panelManipulationOptions, opts *panelRenderOptions) (*sdk.Panel, error) {
+	panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
+
+	var panel *sdk.Panel
+	switch o.Panel.panelType {
+	case PanelTypeGraph:
+		panel = sdk.NewGraph(panelTitle)
+	case PanelTypeHeatmap:
+		panel = sdk.NewHeatmap(panelTitle)
+	}
+
+	// Set attributes based on position, if available
+	if opts != nil {
+		// Generating a stable ID
+		panel.ID = observablePanelID(opts.groupIndex, opts.rowIndex, opts.panelIndex)
+
+		// Set positioning
+		setPanelSize(panel, opts.panelWidth, opts.panelHeight)
+		setPanelPos(panel, opts.panelIndex*opts.panelWidth, opts.offsetY)
+	}
+
+	// Add reference links
+	panel.Links = []sdk.Link{{
+		Title:       "Panel reference",
+		URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+		TargetBlank: boolPtr(true),
+	}}
+	if !o.NoAlert {
+		panel.Links = append(panel.Links, sdk.Link{
+			Title:       "Alerts reference",
+			URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
+			TargetBlank: boolPtr(true),
+		})
+	}
+
+	// Build the graph panel
+	o.Panel.build(o, panel)
+
+	// Apply injected label matchers
+	for _, target := range *panel.GetTargets() {
+		var err error
+		target.Expr, err = promql.InjectMatchers(target.Expr, manipulations.injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return nil, errors.Wrap(err, target.Query)
+		}
+
+		if len(manipulations.injectGroupings) > 0 {
+			target.Expr, err = promql.InjectGroupings(target.Expr, manipulations.injectGroupings, newVariableApplier(c.Variables))
+			if err != nil {
+				return nil, errors.Wrap(err, target.Query)
+			}
+
+			for _, g := range manipulations.injectGroupings {
+				target.LegendFormat = fmt.Sprintf("%s - {{%s}}", target.LegendFormat, g)
+			}
+		}
+
+		panel.SetTarget(&target)
+	}
+
+	return panel, nil
 }
 
 // Alert provides a builder for defining alerting on an Observable.

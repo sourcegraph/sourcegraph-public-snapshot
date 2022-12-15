@@ -8,6 +8,7 @@ import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
 import { Icon } from '../Icon'
 import { Link } from '../Link'
+import { H1, H2 } from '../Typography'
 
 import { PageHeader } from './PageHeader'
 
@@ -24,14 +25,31 @@ const config: Meta = {
 export default config
 
 export const BasicHeader: Story = () => (
-    <PageHeader
-        path={[{ icon: mdiPuzzleOutline, text: 'Header' }]}
-        actions={
-            <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
-            </Button>
-        }
-    />
+    <>
+        <H1>Page Header</H1>
+        <H2>Basic</H2>
+        <div className="mb-3">
+            <PageHeader
+                path={[{ icon: mdiPuzzleOutline, text: 'Header' }]}
+                actions={
+                    <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiMagnify} /> Button with icon
+                    </Button>
+                }
+            />
+        </div>
+        <H2>Overflowing</H2>
+        <div className="mb-3">
+            <PageHeader
+                path={[
+                    {
+                        icon: mdiPuzzleOutline,
+                        text: 'Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.',
+                    },
+                ]}
+            />
+        </div>
+    </>
 )
 
 BasicHeader.storyName = 'Basic header'
@@ -40,8 +58,7 @@ BasicHeader.parameters = {
     design: {
         type: 'figma',
         name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
 }
 
@@ -86,7 +103,6 @@ ComplexHeader.parameters = {
     design: {
         type: 'figma',
         name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
 }

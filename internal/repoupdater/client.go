@@ -209,7 +209,14 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
+// MockSchedulePermsSync mocks (*Client).SchedulePermsSync for tests.
+var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+
 func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	if MockSchedulePermsSync != nil {
+		return MockSchedulePermsSync(ctx, args)
+	}
+
 	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
 	if err != nil {
 		return err
@@ -250,8 +257,6 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 
 	var result protocol.ExternalServiceSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// TODO(tsenart): Use response type for unmarshalling errors too.
-		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
 		return &result, nil

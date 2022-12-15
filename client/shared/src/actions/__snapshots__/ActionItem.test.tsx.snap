@@ -195,81 +195,57 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
-  <span
-    class="tooltipWrapper"
+  <button
+    aria-disabled="true"
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    type="button"
   >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
     <div
-      class="tooltipTriggerContainer"
+      class="loader"
+      data-testid="action-item-spinner"
     >
       <div
-        class="tooltipTriggerDisabledOverlay"
-        tabindex="0"
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        role="img"
       />
-      <button
-        aria-label="d"
-        class="test-action-item actionItemLoading"
-        disabled=""
-        type="button"
-      >
-        <img
-          alt="d"
-          src="u"
-        />
-         g: t 
-        <div
-          class="loader"
-          data-testid="action-item-spinner"
-        >
-          <div
-            aria-label="Loading"
-            aria-live="polite"
-            class="mdi-icon loadingSpinner"
-            role="img"
-          />
-        </div>
-      </button>
     </div>
-  </span>
+  </button>
 </DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
-  <span
-    class="tooltipWrapper"
+  <button
+    aria-disabled="true"
+    aria-label="d"
+    class="test-action-item actionItemLoading"
+    type="button"
   >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
     <div
-      class="tooltipTriggerContainer"
+      class="loader"
+      data-testid="action-item-spinner"
     >
       <div
-        class="tooltipTriggerDisabledOverlay"
-        tabindex="0"
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        role="img"
       />
-      <button
-        aria-label="d"
-        class="test-action-item actionItemLoading"
-        disabled=""
-        type="button"
-      >
-        <img
-          alt="d"
-          src="u"
-        />
-         g: t 
-        <div
-          class="loader"
-          data-testid="action-item-spinner"
-        >
-          <div
-            aria-label="Loading"
-            aria-live="polite"
-            class="mdi-icon loadingSpinner"
-            role="img"
-          />
-        </div>
-      </button>
     </div>
-  </span>
+  </button>
 </DocumentFragment>
 `;
 

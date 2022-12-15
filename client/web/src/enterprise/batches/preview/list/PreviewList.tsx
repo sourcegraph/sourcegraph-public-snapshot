@@ -59,9 +59,8 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     expandChangesetDescriptions,
     queryPublishableChangesetSpecIDs,
 }) => {
-    const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
-        MultiSelectContext
-    )
+    const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } =
+        useContext(MultiSelectContext)
     // The user can modify the desired publication states for changesets in this preview
     // list from the UI. However, these modifications are transient and are not persisted
     // to the backend (until the user applies the batch change and the publication states
@@ -70,9 +69,8 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     // override the original publication states computed by the reconciler on the backend.
     // `BatchChangePreviewContext` is responsible for managing these publication states,
     // as well as filter arguments to the connection query, clientside.
-    const { filters, filtersChanged, setFiltersChanged, publicationStates, resolveRecalculationUpdates } = useContext(
-        BatchChangePreviewContext
-    )
+    const { filters, filtersChanged, setFiltersChanged, publicationStates, resolveRecalculationUpdates } =
+        useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -121,7 +119,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
-        <Container>
+        <Container role="region" aria-label="preview changesets">
             {showSelectRow && queryArguments ? (
                 <PreviewSelectRow
                     queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
@@ -155,7 +153,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 history={history}
                 location={location}
                 useURLQuery={true}
-                listComponent="div"
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 headComponentProps={{

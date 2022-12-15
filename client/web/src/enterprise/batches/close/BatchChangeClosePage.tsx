@@ -13,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
@@ -21,7 +22,6 @@ import {
     queryChangesets as _queryChangesets,
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
 } from '../detail/backend'
-import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
 
 import { closeBatchChange as _closeBatchChange } from './backend'
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
@@ -72,12 +72,10 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
-            fetchBatchChangeByNamespace,
-            namespaceID,
-            batchChangeName,
-            createdAfter,
-        ])
+        useMemo(
+            () => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter),
+            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
+        )
     )
 
     const [totalCount, setTotalCount] = useState<number>()
@@ -121,11 +119,11 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
                     { text: batchChange.name },
                 ]}
                 byline={
-                    <BatchChangeInfoByline
+                    <CreatedByAndUpdatedByInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                        lastApplier={batchChange.lastApplier}
+                        createdBy={batchChange.creator}
+                        updatedAt={batchChange.lastAppliedAt}
+                        updatedBy={batchChange.lastApplier}
                     />
                 }
                 className="test-batch-change-close-page mb-3"

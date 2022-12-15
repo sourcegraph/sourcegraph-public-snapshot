@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -77,12 +78,8 @@ type searchIndexerServer struct {
 		Enabled() bool
 	}
 
-	// Ranking is a subset of codeintel.ranking.Service methods we use.
-	Ranking interface {
-		LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
-		GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
-		GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
-	}
+	// Ranking is a service that provides ranking scores for various code objects.
+	Ranking enterprise.RankingService
 
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
@@ -160,7 +157,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 
 	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, indexedIDs)
 	if err != nil {
-		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no rankingx",
+		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no ranking",
 			log.Int("repos", len(indexedIDs)),
 			log.Error(err),
 		)

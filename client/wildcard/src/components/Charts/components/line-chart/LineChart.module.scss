@@ -1,7 +1,6 @@
 .root {
-    pointer-events: bounding-box;
-
-    &--with-hovered-link-point {
-        cursor: pointer;
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
     }
 }

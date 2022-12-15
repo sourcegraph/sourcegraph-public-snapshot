@@ -150,7 +150,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
 }
 
 export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: Insight[]): ReactGridLayouts => {
-    const keys = (Object.keys(nextLayouts) as unknown) as BreakpointName[]
+    const keys = Object.keys(nextLayouts) as unknown as BreakpointName[]
     const insightsMap = Object.fromEntries(insights.map(insight => [insight.id, insight]))
     const adjustedLayouts: ReactGridLayouts = {}
 

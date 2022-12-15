@@ -1,0 +1,27 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
+
+js_binary(
+    name = "generate_graphql_schema",
+    data = [
+        "//:node_modules/@gql2ts/from-schema",
+        "//:node_modules/@gql2ts/language-typescript",
+        "//:node_modules/glob",
+        "//:node_modules/graphql",
+        "//:node_modules/mz",
+        "//:node_modules/prettier",
+        "//:prettier_config_js",
+        "//cmd/frontend/graphqlbackend:graphql_schema",
+    ],
+    entry_point = "generateGraphQlSchema.js",
+    visibility = ["//client/shared:__pkg__"],
+)
+
+js_binary(
+    name = "generate_schema",
+    data = [
+        "//:node_modules/json-schema-to-typescript",
+        "//:node_modules/mz",
+    ],
+    entry_point = "generateSchema.js",
+    visibility = ["//client/shared:__pkg__"],
+)

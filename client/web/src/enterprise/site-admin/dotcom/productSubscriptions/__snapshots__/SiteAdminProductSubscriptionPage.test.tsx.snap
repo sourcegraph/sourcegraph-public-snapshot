@@ -37,6 +37,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-3"
     >
       <button
+        aria-disabled="false"
         class="btn btnDanger"
         type="button"
       >
@@ -238,6 +239,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="input-group-append"
                 >
                   <button
+                    aria-disabled="false"
                     aria-label="Copy"
                     class="btn btnSecondary"
                     type="button"

@@ -104,10 +104,15 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, fallbackAuthor *ChangesetSpe
 		return nil, err
 	}
 
-	newSpec := func(branch, diff string) (*ChangesetSpec, error) {
+	newSpec := func(branch string, diff []byte) *ChangesetSpec {
 		var published any = nil
 		if input.Template.Published != nil {
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
+		}
+
+		version := 1
+		if binaryDiffs {
+			version = 2
 		}
 
 		return &ChangesetSpec{
@@ -121,6 +126,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, fallbackAuthor *ChangesetSpe
 			Body:    body,
 			Commits: []GitCommitDescription{
 				{
+					Version:     version,
 					Message:     message,
 					AuthorName:  author.Name,
 					AuthorEmail: author.Email,
@@ -128,7 +134,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, fallbackAuthor *ChangesetSpe
 				},
 			},
 			Published: PublishedValue{Val: published},
-		}, nil
+		}
 	}
 
 	var specs []*ChangesetSpec
@@ -147,17 +153,11 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, fallbackAuthor *ChangesetSpe
 		}
 
 		for branch, diff := range diffsByBranch {
-			spec, err := newSpec(branch, diff)
-			if err != nil {
-				return nil, err
-			}
+			spec := newSpec(branch, diff)
 			specs = append(specs, spec)
 		}
 	} else {
-		spec, err := newSpec(defaultBranch, input.Result.Diff)
-		if err != nil {
-			return nil, err
-		}
+		spec := newSpec(defaultBranch, input.Result.Diff)
 		specs = append(specs, spec)
 	}
 
@@ -241,8 +241,8 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 	return nil
 }
 
-func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[string]string, error) {
-	fileDiffs, err := diff.ParseMultiFileDiff([]byte(completeDiff))
+func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (map[string][]byte, error) {
+	fileDiffs, err := diff.ParseMultiFileDiff(completeDiff)
 	if err != nil {
 		return nil, err
 	}
@@ -292,13 +292,13 @@ func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[str
 		byBranch[branch] = append(byBranch[branch], f)
 	}
 
-	finalDiffsByBranch := make(map[string]string, len(byBranch))
+	finalDiffsByBranch := make(map[string][]byte, len(byBranch))
 	for branch, diffs := range byBranch {
 		printed, err := diff.PrintMultiFileDiff(diffs)
 		if err != nil {
 			return nil, errors.Wrap(err, "printing multi file diff failed")
 		}
-		finalDiffsByBranch[branch] = string(printed)
+		finalDiffsByBranch[branch] = printed
 	}
 	return finalDiffsByBranch, nil
 }

@@ -149,11 +149,11 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     Viewing account for <strong>{user.username}</strong>
                 </SiteAdminAlert>
             )}
-            <div className="d-flex">
+            <div className="d-flex flex-column flex-sm-row">
                 <UserSettingsSidebar
                     items={sideBarItems}
                     {...context}
-                    className={classNames('flex-0 mr-3', styles.userSettingsSidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.userSettingsSidebar)}
                 />
                 <div className="flex-1">
                     <ErrorBoundary location={props.location}>

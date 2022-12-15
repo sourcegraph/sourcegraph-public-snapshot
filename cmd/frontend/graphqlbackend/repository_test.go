@@ -226,21 +226,12 @@ func TestRepository_DefaultBranch(t *testing.T) {
 	}
 }
 
-type mockFeatureFlagStore struct{}
-
-func (m *mockFeatureFlagStore) GetUserFlags(context.Context, int32) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-func (m *mockFeatureFlagStore) GetAnonymousUserFlags(context.Context, string) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-func (m *mockFeatureFlagStore) GetGlobalFeatureFlags(context.Context) (map[string]bool, error) {
-	return map[string]bool{"repository-metadata": true}, nil
-}
-
 func TestRepository_KVPs(t *testing.T) {
 	ctx := context.Background()
-	ctx = featureflag.WithFlags(ctx, &mockFeatureFlagStore{})
+
+	flags := map[string]bool{"repository-metadata": true}
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+
 	logger := logtest.Scoped(t)
 	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	users := database.NewMockUserStore()
