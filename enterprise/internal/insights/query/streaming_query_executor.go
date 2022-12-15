@@ -17,14 +17,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type StreamingQueryExecutor struct {
 	justInTimeExecutor
 
+	logger log.Logger
+}
+
+type StreamingRepoQueryExecutor struct {
 	logger log.Logger
 }
 
@@ -38,32 +41,6 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 		},
 		logger: log.Scoped("StreamingQueryExecutor", ""),
 	}
-}
-
-func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
-	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "SelectRepoQuery")
-	}
-
-	decoder, selectRepoResult := streaming.SelectRepoDecoder()
-	err = streaming.Search(ctx, modified.String(), nil, decoder)
-	if err != nil {
-		return nil, errors.Wrap(err, "streaming.Search")
-	}
-
-	repoResult := *selectRepoResult
-	if len(repoResult.SkippedReasons) > 0 {
-		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
-	}
-	if len(repoResult.Errors) > 0 {
-		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
-	}
-	if len(repoResult.Alerts) > 0 {
-		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
-	}
-
-	return repoResult.Repos, nil
 }
 
 func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
@@ -153,4 +130,36 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 		Points:   timeDataPoints,
 	}}
 	return generated, nil
+}
+
+func NewStreamingRepoExecutor(logger log.Logger) *StreamingRepoQueryExecutor {
+	return &StreamingRepoQueryExecutor{
+		logger: logger,
+	}
+}
+
+func (c *StreamingRepoQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
+	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "SelectRepoQuery")
+	}
+
+	decoder, result := streaming.RepoDecoder()
+	err = streaming.Search(ctx, modified.String(), nil, decoder)
+	if err != nil {
+		return nil, errors.Wrap(err, "streaming.Search")
+	}
+
+	repoResult := *result
+	if len(repoResult.SkippedReasons) > 0 {
+		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
+	}
+	if len(repoResult.Errors) > 0 {
+		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
+	}
+	if len(repoResult.Alerts) > 0 {
+		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
+	}
+
+	return repoResult.Repos, nil
 }
