@@ -105,20 +105,20 @@ func TestBackfillStepsConnected(t *testing.T) {
 
 type fakeCommitClient struct {
 	firstCommit   func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
+	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
 func (f *fakeCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	return f.firstCommit(ctx, repoName)
 }
-func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-	return f.recentCommits(ctx, repoName, target)
+func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+	return f.recentCommits(ctx, repoName, target, revision)
 }
 
 func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) GitCommitClient {
 	return &fakeCommitClient{
 		firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) { return first, nil },
-		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 			return recents, nil
 		},
 	}
@@ -183,11 +183,11 @@ func TestMakeSearchJobs(t *testing.T) {
 
 	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)
 	// used to simulate a single call to recent commits failing
-	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 		var called *int
 		called = new(int)
 		var mu sync.Mutex
-		return func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+		return func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if *called >= times {
