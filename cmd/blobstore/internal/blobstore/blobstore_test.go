@@ -2,7 +2,7 @@ package blobstore_test
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -35,7 +35,7 @@ func TestGetNotExists(t *testing.T) {
 		t.Fatal("expected a reader, got an error", err)
 	}
 	defer reader.Close()
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err == nil {
 		t.Fatal("expected error")
 	}
