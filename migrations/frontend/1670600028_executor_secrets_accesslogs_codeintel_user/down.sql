@@ -11,13 +11,20 @@ BEGIN
         SELECT * FROM executor_secret_access_logs
         -- these two should match the same rows, but just in case
         WHERE machine_user <> '' OR user_id IS NULL;
-    ELSE
+    ELSEIF EXISTS (
+        -- must check for double-down idempotency test
+        SELECT 1 FROM information_schema.columns
+        WHERE
+            table_name = 'executor_secret_access_logs' AND
+            table_schema = current_schema() AND
+            column_name = 'machine_user'
+    ) THEN
         -- copy over any rows that may have been added since (unlikely edge-case)
         INSERT INTO executor_secret_access_logs_machineuser_bak_1670600028
         SELECT * FROM executor_secret_access_logs AS esal
         LEFT JOIN executor_secret_access_logs_machineuser_bak_1670600028 AS bak
         ON esal.id = bak.id
-        WHERE bak.id IS NULL AND machine_user <> '' OR user_id IS NULL;
+        WHERE bak.id IS NULL AND esal.machine_user <> '' OR esal.user_id IS NULL;
     END IF;
 END
 $$;
