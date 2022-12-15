@@ -58,7 +58,7 @@ type userRoleStore struct {
 	*basestore.Store
 }
 
-func RoleMembersWith(other basestore.ShareableStore) UserRoleStore {
+func UserRolesWith(other basestore.ShareableStore) UserRoleStore {
 	return &userRoleStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -71,7 +71,7 @@ func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
 	return &userRoleStore{Store: tx}, err
 }
 
-const roleMemberCreateQueryFmtStr = `
+const userRoleCreateQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
 	VALUES (
@@ -87,7 +87,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	}
 
 	q := sqlf.Sprintf(
-		roleMemberCreateQueryFmtStr,
+		userRoleCreateQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
 		opts.UserID,
 		opts.RoleID,
