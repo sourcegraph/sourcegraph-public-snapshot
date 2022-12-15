@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -98,7 +98,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
                 </Button>
                 {!titleAtStart && titleNode}
             </div>

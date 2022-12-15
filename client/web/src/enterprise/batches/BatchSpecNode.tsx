@@ -6,7 +6,7 @@ import {
     mdiCancel,
     mdiAlertCircle,
     mdiChevronDown,
-    mdiChevronRight,
+    mdiChevronUp,
     mdiStar,
     mdiPencil,
     mdiFileDownload,
@@ -74,7 +74,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon source={node.source} state={node.state} />

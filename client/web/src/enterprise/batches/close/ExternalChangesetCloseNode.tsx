@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -67,7 +67,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {willClose ? (
                 <ChangesetCloseActionClose className={styles.externalChangesetCloseNodeAction} />
@@ -109,7 +109,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
