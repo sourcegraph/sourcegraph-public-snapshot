@@ -19,6 +19,7 @@ import (
 
 func TestTransformRecord(t *testing.T) {
 	db := database.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
 
 	for _, testCase := range []struct {
 		name             string
@@ -147,6 +148,7 @@ func TestTransformRecord(t *testing.T) {
 
 func TestTransformRecordWithoutIndexer(t *testing.T) {
 	db := database.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
 
 	index := types.Index{
 		ID:             42,
@@ -250,13 +252,18 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 	sal := database.NewMockExecutorSecretAccessLogStore()
 	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
-	secs.ListFunc.SetDefaultReturn([]*database.ExecutorSecret{
-		database.NewMockExecutorSecret(&database.ExecutorSecret{
-			Key:                    "NPM_TOKEN",
-			Scope:                  database.ExecutorSecretScopeCodeIntel,
-			OverwritesGlobalSecret: false,
-		}, "banana"),
-	}, 1, nil)
+	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
+		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
+			return nil, 0, nil
+		}
+		return []*database.ExecutorSecret{
+			database.NewMockExecutorSecret(&database.ExecutorSecret{
+				Key:                    "NPM_TOKEN",
+				Scope:                  database.ExecutorSecretScopeCodeIntel,
+				OverwritesGlobalSecret: false,
+			}, "banana"),
+		}, 1, nil
+	})
 
 	for _, testCase := range []struct {
 		name             string
