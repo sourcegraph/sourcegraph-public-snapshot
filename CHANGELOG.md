@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Made search results export use the same results list as the search results page. [#45702](https://github.com/sourcegraph/sourcegraph/pull/45702)
 
 ### Removed
 
