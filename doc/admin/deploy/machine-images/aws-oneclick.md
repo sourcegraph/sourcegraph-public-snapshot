@@ -26,6 +26,8 @@ Launch a verified and pre-configured Sourcegraph instance with the following:
 - AWS Security Group
 - The latest version of Sourcegraph
 
+<small>Prefer manually installing on AWS yourself? See our [AMI installation options](aws-ami.md) and [script installation options](../single-node/script.md).</small>
+
 ---
 
 ## Instance Size Chart
@@ -35,7 +37,7 @@ Determine the instance type required to support the number of users and reposito
 For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should go with size **M**.
 
 |                      | **XS**      | **S**       | **M**       | **L**        | **XL**       |
-|----------------------|-------------|-------------|-------------|--------------|--------------|
+| -------------------- | ----------- | ----------- | ----------- | ------------ | ------------ |
 | **Users**            | _<=_ 500    | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000  | _<=_ 20,000  |
 | **Repositories**     | _<=_ 5,000  | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000 | _<=_ 250,000 |
 | **Recommended Type** | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge |
