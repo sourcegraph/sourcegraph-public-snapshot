@@ -33,7 +33,7 @@ js_library(
     ],
     deps = [
         "//:node_modules/graphql",
-        "//:node_modules/gulplog",
+        "//:node_modules/signale",
     ],
 )
 
