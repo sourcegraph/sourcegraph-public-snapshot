@@ -1052,7 +1052,7 @@ type SearchInsightDataSeriesDefinition {
     query: String!
 
     """
-    A scope of repositories defined for this insight.
+    A scope of repositories defined for this series. Series with repository scopes defined by a search query are not identifiable via this field
     """
     repositoryScope: InsightRepositoryScope! @deprecated(reason: "use repositoryDefinition instead")
 
