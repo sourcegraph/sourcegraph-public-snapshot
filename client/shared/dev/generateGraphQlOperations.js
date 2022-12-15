@@ -167,12 +167,13 @@ module.exports = {
 
 // Bazel entry point to generate a single graphql operations file; the legacy build
 // continues to import `generateGraphQlOperations` and generate all operations files.
-async function main(args) {
-  await _generateGraphQlOperations([{ interfaceNameForOperations: args[0], outputPath: args[1] }])
+async function main(interfaceNameForOperations, outputPath) {
+  await _generateGraphQlOperations([{ interfaceNameForOperations, outputPath }])
 }
 
-;(async () => {
-  if (require.main === module) {
-    await main(process.argv.slice(2))
-  }
-})()
+if (require.main === module) {
+  main(...process.argv.slice(2)).catch(error => {
+    console.error(error)
+    process.exit(1)
+  })
+}
