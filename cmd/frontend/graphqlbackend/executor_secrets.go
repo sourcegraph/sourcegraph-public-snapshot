@@ -287,6 +287,8 @@ func checkNamespaceAccess(ctx context.Context, db database.DB, namespaceUserID, 
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, db)
 }
 
+// validateExecutorSecret validates that the secret value is non-empty and if the
+// secret key is DOCKER_AUTH_CONFIG that the value is acceptable.
 func validateExecutorSecret(secret *database.ExecutorSecret, value string) error {
 	if len(value) == 0 {
 		return errors.New("value cannot be empty string")
