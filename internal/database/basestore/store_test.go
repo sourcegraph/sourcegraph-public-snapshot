@@ -88,6 +88,34 @@ func TestConcurrentTransactions(t *testing.T) {
 		require.NoError(t, g.Wait())
 	})
 
+	t.Run("parallel QueryRow on a single transaction logs an error", func(t *testing.T) {
+		tx, err := store.Transact(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { tx.Done(err) })
+
+		capturingLogger, export := logtest.Captured(t)
+		tx.handle.(*txHandle).logger = capturingLogger
+
+		var g errgroup.Group
+		g.Go(func() (err error) {
+			return tx.QueryRow(ctx, sqlf.Sprintf(`SELECT pg_sleep(0.1), 1`)).Err()
+		})
+		g.Go(func() (err error) {
+			return tx.QueryRow(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 1) RETURNING pg_sleep(0.1)`)).Err()
+		})
+		// This should be an error, but because the row object lasts beyond method call,
+		// we'll just get random driver errors instead. This test is not focused on the
+		// error value, which may or may not be useful. Instead it focuses on the fact that
+		// we log an an error which will be reported on.
+		_ = g.Wait()
+
+		captured := export()
+		require.NotEmpty(t, captured)
+		require.Equal(t, "transaction used concurrently", captured[0].Message)
+	})
+
 	t.Run("parallel insert on a single transaction fails with an error", func(t *testing.T) {
 		tx, err := store.Transact(ctx)
 		if err != nil {
