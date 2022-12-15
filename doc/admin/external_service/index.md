@@ -204,8 +204,7 @@ It may be the case that you'd like to temporarily disable all `git` and API requ
 > WARNING: disabling all git and API requests to codehosts will also disable permissions syncs, batch changes, discovery of new repos, and updates to currently synched repos. Synching with codehosts is a core functionality of Sourcegraph and many other features may also be affected. 
 
 ```json
-"disableAutoGitUpdates": true,    
+"disableAutoGitUpdates": true,
 "disableAutoCodeHostSyncs": true,
 "gitMaxCodehostRequestsPerSecond": 0,
-"gitMaxConcurrentClones": 0
 ```
