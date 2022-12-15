@@ -53,6 +53,7 @@ var (
 //
 // For a detailed overview of the schema, see schema.md.
 type UserStore interface {
+	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)

@@ -1,0 +1,8 @@
+# Configure gazelle for client/*
+#
+# gazelle:aspect_js_srcs_file_glob src/**/*.{js,ts,tsx,jsx}
+# gazelle:aspect_js_tests_file_glob src/**/*.{spec,test,fixture}.{js,ts,tsx,jsx}
+# gazelle:map_kind ts_project ts_project //client/shared/dev:defaults.bzl
+
+# TODO: will opt-in client/* projects one at a time, remove when done
+# gazelle:aspect_js disabled

@@ -77,7 +77,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	frames := timeseries.BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Minute))
 	points := timeCounts{}
 	timeDataPoints := []TimeDataPoint{}
 
@@ -91,7 +91,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
-		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
+		plan := c.filter.Filter(ctx, frames, api.RepoName(repository))
 
 		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
 		for _, execution := range plan.Executions {
