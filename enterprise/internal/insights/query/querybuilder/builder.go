@@ -331,8 +331,10 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
-func RepositoryScopeQuery(query BasicQuery) (BasicQuery, error) {
-	repositoryScopeParameters := []searchquery.Parameter{
+// RepositoryScopeQuery adds fork:yes archived:yes count:all to a user inputted query.
+// It overwrites any input such as fork:no archived:no.
+func RepositoryScopeQuery(query string) (BasicQuery, error) {
+	repositoryScopeParameters := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldFork,
 			Value:      string(searchquery.Yes),
@@ -352,9 +354,20 @@ func RepositoryScopeQuery(query BasicQuery) (BasicQuery, error) {
 			Annotation: searchquery.Annotation{},
 		},
 	}
-	mutatedQuery, err := withDefaults(query, repositoryScopeParameters)
+	plan, err := searchquery.Pipeline(searchquery.Init(query, searchquery.SearchTypeLiteral))
 	if err != nil {
-		return "", errors.Wrap(err, "withDefaults")
+		return "", errors.Wrap(err, "Pipeline")
 	}
-	return mutatedQuery, nil
+
+	modified := make(searchquery.Plan, 0, len(plan))
+	for _, basic := range plan {
+		p := repositoryScopeParameters
+		for _, param := range basic.Parameters {
+			if !repositoryScopeParameters.Exists(param.Field) {
+				p = append(p, param)
+			}
+		}
+		modified = append(modified, basic.MapParameters(p))
+	}
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
 }

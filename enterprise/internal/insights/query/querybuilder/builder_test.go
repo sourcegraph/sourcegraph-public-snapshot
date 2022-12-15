@@ -615,10 +615,14 @@ func TestRepositoryScopeQuery(t *testing.T) {
 			"repo:s or repo:l",
 			autogold.Want("compound query", BasicQuery("(fork:yes archived:yes count:all repo:s OR fork:yes archived:yes count:all repo:l)")),
 		},
+		{
+			"repo:a fork:n",
+			autogold.Want("overwrites fork: values", BasicQuery("fork:yes archived:yes count:all repo:a")),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := RepositoryScopeQuery(BasicQuery(test.input))
+			got, err := RepositoryScopeQuery(test.input)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {

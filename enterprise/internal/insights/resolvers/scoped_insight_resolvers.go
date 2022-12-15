@@ -48,7 +48,7 @@ func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphq
 		return nil, errors.Newf("the input query cannot be used for previewing repositories: %v", reason)
 	}
 
-	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(querybuilder.BasicQuery(args.Query))
+	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(args.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not build repository scope query")
 	}
