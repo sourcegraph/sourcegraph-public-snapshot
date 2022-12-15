@@ -157,7 +157,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 		return errors.Wrap(err, "deleting reset codes")
 	}
 
-	if err := deleteStalePerforceExternalAccounts(ctx, tx, logger, userID, email); err != nil {
+	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
 		return errors.Wrap(err, "removing stale perforce external account")
 	}
 
@@ -232,7 +232,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	}
 
 	if !verified {
-		if err := deleteStalePerforceExternalAccounts(ctx, tx, logger, userID, email); err != nil {
+		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
 			return errors.Wrap(err, "removing stale perforce external account")
 		}
 		return nil
@@ -346,7 +346,7 @@ Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Usern
 
 // deleteStalePerforceExternalAccounts will remove any Perforce external accounts
 // associated with the given user and e-mail combination.
-func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, logger log.Logger, userID int32, email string) error {
+func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
 	if err := db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
 		UserID:      userID,
 		AccountID:   email,
