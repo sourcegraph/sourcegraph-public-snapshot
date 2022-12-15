@@ -5,15 +5,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoIteratorFromQuery struct {
 	scopeQuery string
-	repos      []simpleRepo
+	repos      []itypes.MinimalRepo
 }
 
 func NewRepoIteratorFromQuery(ctx context.Context, query string, repoQueryExecutor *query.StreamingRepoQueryExecutor) (*RepoIteratorFromQuery, error) {
-	repos, err := loadRepoIdsFromSearch(ctx, query, repoQueryExecutor)
+	repos, err := repoQueryExecutor.ExecuteRepoList(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -22,25 +23,10 @@ func NewRepoIteratorFromQuery(ctx context.Context, query string, repoQueryExecut
 
 func (s *RepoIteratorFromQuery) ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
 	for _, repo := range s.repos {
-		err := each(repo.name, repo.id)
+		err := each(string(repo.Name), repo.ID)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func loadRepoIdsFromSearch(ctx context.Context, query string, executor *query.StreamingRepoQueryExecutor) ([]simpleRepo, error) {
-	repos, err := executor.ExecuteRepoList(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	var results []simpleRepo
-	for _, repo := range repos {
-		results = append(results, simpleRepo{
-			name: string(repo.Name),
-			id:   repo.ID,
-		})
-	}
-	return results, nil
 }
