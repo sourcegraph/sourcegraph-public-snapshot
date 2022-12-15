@@ -19,7 +19,7 @@ const sanitizeString = (str: string): string =>
         .replaceAll(/ +(?= )/g, '') // remove extra spaces
         .replaceAll(/\n/g, '')}"` // remove extra newlines
 
-const searchResultsToFileContent = (searchResults: SearchMatch[], sourcegraphURL: string): string => {
+export const searchResultsToFileContent = (searchResults: SearchMatch[], sourcegraphURL: string): string => {
     let content = []
     const resultType = searchResults[0].type
     const headers = ['Match type', 'Repository', 'Repository external URL']
@@ -153,21 +153,26 @@ const searchResultsToFileContent = (searchResults: SearchMatch[], sourcegraphURL
         .join('\n')
 }
 
+export const buildFileName = (query?: string): string => {
+    const formattedQuery = query?.trim().replace(/\W/g, '-')
+    const downloadFilename = `sourcegraph-search-export${formattedQuery ? `-${formattedQuery}` : ''}.csv`
+
+    return downloadFilename
+}
+
 export const downloadSearchResults = (
     results: AggregateStreamingSearchResults,
     sourcegraphURL: string,
     query?: string
 ) => {
     const content = searchResultsToFileContent(results.results, sourcegraphURL)
-    const formattedQuery = query?.trim().replace(/\W/g, '-')
-    const downloadFilename = `sourcegraph-search-export${formattedQuery ? `-${formattedQuery}` : ''}.csv`
     const blob = new Blob([content], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
 
     const a = document.createElement('a')
     a.href = url
     a.style.display = 'none'
-    a.download = downloadFilename
+    a.download = buildFileName(query)
     a.click()
     eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
 
