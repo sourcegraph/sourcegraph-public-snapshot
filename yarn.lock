@@ -27283,6 +27283,7 @@ __metadata:
     "@opentelemetry/instrumentation": ^0.31.0
     "@opentelemetry/instrumentation-fetch": ^0.31.0
     "@opentelemetry/resources": 1.5.0
+    "@opentelemetry/sdk-trace-base": 1.5.0
     "@opentelemetry/sdk-trace-web": ^1.5.0
     "@opentelemetry/semantic-conventions": ^1.5.0
     "@peculiar/webcrypto": ^1.1.7
