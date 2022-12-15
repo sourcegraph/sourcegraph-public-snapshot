@@ -1,5 +1,6 @@
-import { FC, ReactElement } from 'react'
+import { ChangeEvent, FC, PropsWithChildren, ReactElement } from 'react'
 
+import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
@@ -16,7 +17,6 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { MonacoPreviewLink } from '../../../../../../components/form/monaco-field'
 import { useExperimentalFeatures } from '../../../../../../../../stores'
 import {
     FormGroup,
@@ -27,7 +27,8 @@ import {
     useFieldAPI,
     MonacoField,
 } from '../../../../../../components'
-import { CreateInsightFormFields } from '../../types'
+import { MonacoPreviewLink } from '../../../../../../components/form/monaco-field'
+import { CreateInsightFormFields, RepoMode } from '../../types'
 
 import styles from './InsightRepoSection.module.scss'
 
@@ -35,6 +36,7 @@ interface RepoSettingSectionProps {
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
+    repoMode: useFieldAPI<CreateInsightFormFields['repoMode']>
 }
 
 /**
@@ -43,7 +45,8 @@ interface RepoSettingSectionProps {
  * experimental flags.
  */
 export const RepoSettingSection: FC<RepoSettingSectionProps> = props => {
-    const { repositories, allReposMode, repoQuery } = props
+    const { repositories, allReposMode, repoQuery, repoMode } = props
+
     const repoUIVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
 
     if (repoUIVariation === 'old-strict-list') {
@@ -54,7 +57,7 @@ export const RepoSettingSection: FC<RepoSettingSectionProps> = props => {
         return <SmartRepoSettingSection repoQuery={repoQuery} />
     }
 
-    return null
+    return <SearchQueryOrRepoListSection repoMode={repoMode} repoQuery={repoQuery} repositories={repositories} />
 }
 
 interface OldRepoSettingSectionProps {
@@ -126,6 +129,114 @@ interface SmartRepoSettingSectionProps {
 export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props => {
     const { repoQuery } = props
 
+    return (
+        <FormGroup name="insight repositories" title="Targeted repositories">
+            <SmartSearchQueryRepoField repoQuery={repoQuery} />
+        </FormGroup>
+    )
+}
+
+interface SearchQueryOrRepoListSectionProps {
+    repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
+    repoMode: useFieldAPI<CreateInsightFormFields['repoMode']>
+    repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+}
+
+export const SearchQueryOrRepoListSection: FC<SearchQueryOrRepoListSectionProps> = props => {
+    const { repoQuery, repoMode, repositories } = props
+
+    return (
+        <FormGroup
+            name="insight repositories"
+            title="Targeted repositories"
+            contentClassName={styles.radioGroupSection}
+        >
+            <RadioGroupSection
+                label="Repositories query"
+                name="repoMode"
+                labelId="smart-repo-search-query"
+                value={RepoMode.SearchQuery.toString()}
+                checked={RepoMode.SearchQuery.toString() === repoMode.input.value.toString()}
+                onChange={repoMode.input.onChange}
+            >
+                <SmartSearchQueryRepoField
+                    repoQuery={repoQuery}
+                    disabled={RepoMode.SearchQuery.toString() !== repoMode.input.value.toString()}
+                    aria-labelledby="smart-repo-search-query"
+                />
+            </RadioGroupSection>
+
+            <RadioGroupSection
+                label="Explicit list of repositories"
+                name="repoMode"
+                labelId="strict-list-repo"
+                value={RepoMode.DirectURLList.toString()}
+                checked={RepoMode.DirectURLList.toString() === repoMode.input.value.toString()}
+                onChange={repoMode.input.onChange}
+            >
+                <Input
+                    as={RepositoriesField}
+                    required={true}
+                    message="Use a full repo URL (github.com/...). Separate repositories with comas"
+                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    aria-labelledby="strict-list-repo"
+                    {...getDefaultInputProps(repositories)}
+                />
+            </RadioGroupSection>
+        </FormGroup>
+    )
+}
+
+interface RadioGroupSectionProps {
+    name: string
+    label: string
+    value: string
+    checked: boolean
+    labelId: string
+    className?: string
+    contentClassName?: string
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void
+}
+
+function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): ReactElement {
+    const { name, label, value, checked, labelId, children, onChange } = props
+
+    return (
+        <div className={styles.radioGroup}>
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <input
+                id={labelId}
+                name={name}
+                type="radio"
+                value={value}
+                checked={checked}
+                className={styles.radioGroupInput}
+                onChange={onChange}
+            />
+            <Label htmlFor={labelId} className={styles.radioGroupLabel}>
+                {label}
+            </Label>
+            <div
+                className={classNames(styles.radioGroupContent, {
+                    [styles.radioGroupContentNonActive]: !checked,
+                })}
+            >
+                {children}
+            </div>
+        </div>
+    )
+}
+
+interface SmartSearchQueryRepoFieldProps {
+    repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
+    label?: string
+    disabled?: boolean
+    'aria-labelledby'?: string
+}
+
+function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): ReactElement {
+    const { repoQuery, label, disabled, 'aria-labelledby': ariaLabelledby } = props
+
     const { value, onChange, ...attributes } = repoQuery.input
 
     const handleChipSuggestions = (chip: SmartRepoQueryChip): void => {
@@ -139,10 +250,12 @@ export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props =
         }
     }
 
+    const LabelComponent = label ? Label : 'div'
+
     return (
-        <FormGroup name="insight repositories" title="Targeted repositories">
-            <Label className={styles.repoLabel}>
-                <span className={styles.repoLabelText}>Repositories query</span>
+        <div>
+            <LabelComponent className={styles.repoLabel} id="search-repo-query">
+                {label && <span className={styles.repoLabelText}>Repositories query</span>}
 
                 <InputElement
                     as={MonacoField}
@@ -150,8 +263,10 @@ export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props =
                     autoFocus={true}
                     status={getDefaultInputStatus(repoQuery)}
                     placeholder="Example: repo:^github\.com/sourcegraph/sourcegraph$"
+                    aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
                     className={styles.repoInput}
                     onChange={handleOnChange}
+                    disabled={disabled}
                     {...attributes}
                 />
 
@@ -162,7 +277,7 @@ export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props =
                 >
                     <LinkExternalIcon size={18} />
                 </MonacoPreviewLink>
-            </Label>
+            </LabelComponent>
 
             <SmartRepoQueryChips onChipClick={handleChipSuggestions} />
 
@@ -181,7 +296,7 @@ export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props =
                     </li>
                 </ul>
             </InputDescription>
-        </FormGroup>
+        </div>
     )
 }
 

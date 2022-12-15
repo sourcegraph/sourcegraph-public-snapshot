@@ -1,21 +1,21 @@
 import { QueryState } from '@sourcegraph/search'
 
 import {
-    useField,
-    useFieldAPI,
+    createDefaultEditSeries,
+    EditableDataSeries,
     Form,
     FormChangeEvent,
-    SubmissionErrors,
-    useForm,
-    EditableDataSeries,
-    insightTitleValidator,
-    insightRepositoriesValidator,
     insightRepositoriesAsyncValidator,
-    insightStepValueValidator,
+    insightRepositoriesValidator,
     insightSeriesValidator,
-    createDefaultEditSeries,
+    insightStepValueValidator,
+    insightTitleValidator,
+    SubmissionErrors,
+    useField,
+    useFieldAPI,
+    useForm,
 } from '../../../../../components'
-import { CreateInsightFormFields, InsightStep } from '../types'
+import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
@@ -26,6 +26,7 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     stepValue: '2',
     title: '',
     repositories: '',
+    repoMode: RepoMode.DirectURLList,
     repoQuery: { query: '' },
     allRepos: false,
     dashboardReferenceCount: 0,
@@ -43,6 +44,7 @@ export interface InsightCreationForm {
     title: useFieldAPI<string>
     repositories: useFieldAPI<string>
     repoQuery: useFieldAPI<QueryState>
+    repoMode: useFieldAPI<RepoMode>
     series: useFieldAPI<EditableDataSeries[]>
     step: useFieldAPI<InsightStep>
     stepValue: useFieldAPI<string>
@@ -56,9 +58,8 @@ export interface InsightCreationForm {
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
     const { touched, initialValue = {}, onSubmit, onChange } = props
 
-    const initValues = { ...INITIAL_INSIGHT_VALUES, ...initialValue }
     const form = useForm<CreateInsightFormFields>({
-        initialValues: initValues,
+        initialValues: { ...INITIAL_INSIGHT_VALUES, ...initialValue },
         onSubmit,
         onChange,
         touched,
@@ -94,6 +95,11 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         disabled: isAllReposMode,
     })
 
+    const repoMode = useField({
+        name: 'repoMode',
+        formApi: form.formAPI,
+    })
+
     const repoQuery = useField({
         name: 'repoQuery',
         formApi: form.formAPI,
@@ -123,6 +129,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         title,
         repositories,
         repoQuery,
+        repoMode,
         series,
         step,
         stepValue,

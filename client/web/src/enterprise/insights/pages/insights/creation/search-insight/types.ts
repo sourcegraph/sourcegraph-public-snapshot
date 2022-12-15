@@ -4,6 +4,11 @@ import { EditableDataSeries } from '../../../../components'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
+export enum RepoMode {
+    SearchQuery,
+    DirectURLList,
+}
+
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */
     series: EditableDataSeries[]
@@ -13,6 +18,13 @@ export interface CreateInsightFormFields {
 
     /** Repositories which to be used to get the info for code insights */
     repositories: string
+
+    /**
+     * [Experimental] Repositories UI can work in different modes when we have
+     * two repo UI fields version of the creation UI. This field controls the
+     * current mode
+     */
+    repoMode: RepoMode
 
     /**
      * Search-powered query, this is used to gather different repositories though

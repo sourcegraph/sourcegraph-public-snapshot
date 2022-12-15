@@ -37,6 +37,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
         title,
         repositories,
         repoQuery,
+        repoMode,
         series,
         step,
         stepValue,
@@ -85,6 +86,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 title={title}
                 repositories={repositories}
                 repoQuery={repoQuery}
+                repoMode={repoMode}
                 allReposMode={allReposMode}
                 series={series}
                 step={step}
