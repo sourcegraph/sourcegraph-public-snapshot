@@ -256,6 +256,7 @@
     "eslint-plugin-monorepo": "^0.3.2",
     "events": "^3.3.0",
     "execa": "^5.0.0",
+    "expect": "^27.5.1",
     "express": "^4.17.1",
     "express-static-gzip": "^2.1.1",
     "glob": "^7.1.6",
