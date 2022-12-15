@@ -44,17 +44,25 @@ import styles from './TreePage.module.scss'
 const TREE_COMMITS_PER_PAGE = 10
 
 const TREE_COMMITS_QUERY = gql`
-    query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
+    query TreeCommits(
+        $repo: ID!
+        $revspec: String!
+        $first: Int
+        $filePath: String
+        $after: String
+        $afterCursor: String
+    ) {
         node(id: $repo) {
             __typename
             ... on Repository {
                 commit(rev: $revspec) {
-                    ancestors(first: $first, path: $filePath, after: $after) {
+                    ancestors(first: $first, path: $filePath, after: $after, afterCursor: $afterCursor) {
                         nodes {
                             ...GitCommitFields
                         }
                         pageInfo {
                             hasNextPage
+                            endCursor
                         }
                     }
                 }
@@ -96,6 +104,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             first: TREE_COMMITS_PER_PAGE,
             filePath,
             after,
+            afterCursor: null,
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -114,6 +123,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         },
         options: {
             fetchPolicy: 'cache-first',
+            useAlternateAfterCursor: true,
         },
     })
 
