@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
@@ -50,7 +50,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     onExpandAllResultsToggle,
     onSaveQueryClick,
 }) => {
-    const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
+    const resultsFound = results ? results.results.length > 0 : false
     const downloadResults = useCallback(
         () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
         [results, sourcegraphURL, query]
