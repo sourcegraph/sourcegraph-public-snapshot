@@ -148,7 +148,7 @@ async function _generateGraphQlOperations(operations) {
           BigInt: 'string',
         },
       },
-      generates: generates,
+      generates,
     },
     true
   )
