@@ -88,36 +88,22 @@ func TestConcurrentTransactions(t *testing.T) {
 		require.NoError(t, g.Wait())
 	})
 
-	t.Run("parallel insertion on a single transaction does not fail but logs an error", func(t *testing.T) {
+	t.Run("parallel insert on a single transaction fails with an error", func(t *testing.T) {
 		tx, err := store.Transact(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() {
-			if err := tx.Done(err); err != nil {
-				t.Fatalf("closing transaction failed: %s", err)
-			}
-		})
-
-		capturingLogger, export := logtest.Captured(t)
-		tx.handle.(*txHandle).logger = capturingLogger
+		defer func() { tx.Done(err) }()
 
 		var g errgroup.Group
-		for i := 0; i < 2; i++ {
-			routine := i
-			g.Go(func() (err error) {
-				if err := tx.Exec(ctx, sqlf.Sprintf(`SELECT pg_sleep(0.1);`)); err != nil {
-					return err
-				}
-				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, routine, routine))
-			})
-		}
+		g.Go(func() error {
+			return tx.Exec(ctx, sqlf.Sprintf(`SELECT pg_sleep(0.1);`))
+		})
+		g.Go(func() error {
+			return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 1) RETURNING pg_sleep(0.1)`))
+		})
 		err = g.Wait()
-		require.NoError(t, err)
-
-		captured := export()
-		require.NotEmpty(t, captured)
-		require.Equal(t, "transaction used concurrently", captured[0].Message)
+		require.ErrorIs(t, err, ErrConcurrentTransactionAccess)
 	})
 }
 

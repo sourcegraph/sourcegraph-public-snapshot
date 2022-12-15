@@ -199,12 +199,20 @@ type lockingTx struct {
 	logger log.Logger
 }
 
+func (t *lockingTx) tryLock() error {
+	if t.mu.TryLock() {
+		return nil
+	}
+	return ErrConcurrentTransactionAccess
+}
+
 func (t *lockingTx) lock() {
 	if !t.mu.TryLock() {
-		// For now, log an error, but try to serialize access anyways to try to
-		// keep things slightly safer.
-		err := errors.WithStack(ErrConcurrentTransactionAccess)
-		t.logger.Error("transaction used concurrently", log.Error(err))
+		// Since lock() is infallible, if concurrent transaction usage is
+		// detected, just log an error and attempt to serialize access to make
+		// this slightly safer. We need this method because QueryRowContext
+		// returns a *sql.Row, which cannot be constructed with an error.
+		t.logger.Error("transaction used concurrently", log.Error(ErrConcurrentTransactionAccess))
 		t.mu.Lock()
 	}
 }
@@ -214,14 +222,18 @@ func (t *lockingTx) unlock() {
 }
 
 func (t *lockingTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	t.lock()
+	if err := t.tryLock(); err != nil {
+		return nil, err
+	}
 	defer t.unlock()
 
 	return t.tx.ExecContext(ctx, query, args...)
 }
 
 func (t *lockingTx) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	t.lock()
+	if err := t.tryLock(); err != nil {
+		return nil, err
+	}
 	defer t.unlock()
 
 	return t.tx.QueryContext(ctx, query, args...)
@@ -235,14 +247,18 @@ func (t *lockingTx) QueryRowContext(ctx context.Context, query string, args ...a
 }
 
 func (t *lockingTx) Commit() error {
-	t.lock()
+	if err := t.tryLock(); err != nil {
+		return err
+	}
 	defer t.unlock()
 
 	return t.tx.Commit()
 }
 
 func (t *lockingTx) Rollback() error {
-	t.lock()
+	if err := t.tryLock(); err != nil {
+		return err
+	}
 	defer t.unlock()
 
 	return t.tx.Rollback()
