@@ -1,5 +1,6 @@
 node_modules
 client/branded/node_modules
+client/browser/node_modules
 client/build-config/node_modules
 client/client-api/node_modules
 client/codeintellify/node_modules
@@ -18,5 +19,7 @@ client/storybook/node_modules
 client/template-parser/node_modules
 client/web/node_modules
 client/wildcard/node_modules
+client/vscode/node_modules
+dev/release/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark

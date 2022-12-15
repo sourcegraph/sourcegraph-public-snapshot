@@ -308,13 +308,13 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	opts.SupportsAugmentation = definition.SupportsAugmentation
 
 	// Default to last 12 points of data
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
-	}, time.Now())
+	}, definition.CreatedAt.Truncate(time.Minute))
 	oldest := time.Now().AddDate(-1, 0, 0)
 	if len(frames) != 0 {
-		possibleOldest := frames[0].From
+		possibleOldest := frames[0]
 		if possibleOldest.Before(oldest) {
 			oldest = possibleOldest
 		}

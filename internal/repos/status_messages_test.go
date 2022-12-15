@@ -48,10 +48,9 @@ func TestStatusMessages(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		testSetup   func()
-		testCleanup func()
-		name        string
-		repos       types.Repos
+		testSetup func()
+		name      string
+		repos     types.Repos
 		// maps repoName to CloneStatus
 		cloneStatus map[string]types.CloneStatus
 		// indexed is list of repo names that are indexed
@@ -68,9 +67,6 @@ func TestStatusMessages(t *testing.T) {
 						DisableAutoGitUpdates: true,
 					},
 				})
-			},
-			testCleanup: func() {
-				conf.Mock(nil)
 			},
 			name: "disableAutoGitUpdates set to true",
 			res: []StatusMessage{
@@ -215,10 +211,6 @@ func TestStatusMessages(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.testCleanup != nil {
-				t.Cleanup(tc.testCleanup)
-			}
-
 			if tc.testSetup != nil {
 				tc.testSetup()
 			}
@@ -236,6 +228,8 @@ func TestStatusMessages(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
+				conf.Mock(nil)
+
 				ids := make([]api.RepoID, 0, len(stored))
 				for _, r := range stored {
 					ids = append(ids, r.ID)

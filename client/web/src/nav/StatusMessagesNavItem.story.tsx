@@ -61,3 +61,24 @@ export const IndexingMessage: Story = () => (
 )
 
 IndexingMessage.storyName = 'Indexing progress'
+
+export const GitUpdatesDisabled: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider
+                mocks={[
+                    newStatusMessageMock([
+                        {
+                            __typename: 'GitUpdatesDisabled',
+                            message: 'Repositories will not be cloned or updated.',
+                        },
+                    ]),
+                ]}
+            >
+                <StatusMessagesNavItem disablePolling={true} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+GitUpdatesDisabled.storyName = 'Code syncing status'

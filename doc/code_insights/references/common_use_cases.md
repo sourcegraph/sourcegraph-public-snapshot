@@ -280,6 +280,13 @@ See the most common reasons for why secuirty checks in checkov are skipped
 patterntype:regexp file:.tf #checkov:skip=(.*) 
 ```
 
+
+### Tracer calls
+See all your tracer calls to minimize spend on, or track the growth of, tools like Datadog. 
+```sgquery
+tracer\.trace\(([\s"'\w@\/:^.#,+-=]+)\)
+```
+
 ## Code health
 
 

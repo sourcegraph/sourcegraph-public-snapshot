@@ -222,7 +222,6 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		sqlf.Join(idQueries, ", "),
 		sqlf.Join(monikerQueries, ", "),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
-		sqlf.Join(idQueries, ", "),
 	)
 
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
@@ -294,11 +293,9 @@ WITH RECURSIVE
 		NULL,
 		%s,
 		document_path
-	FROM codeintel_scip_symbols ss
+	FROM matching_symbol_names msn
+	JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
 	JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-	JOIN matching_symbol_names msn ON msn.id = ss.symbol_id
-	WHERE
-		ss.upload_id IN (%s)
 	ORDER BY
 		(ss.upload_id, msn.symbol_name)
 )

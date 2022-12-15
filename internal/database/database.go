@@ -39,6 +39,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
+	Roles() RoleStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
@@ -175,6 +176,10 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
+}
+
+func (d *db) Roles() RoleStore {
+	return &roleStore{d.Store}
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
