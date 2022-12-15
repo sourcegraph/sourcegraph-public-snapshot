@@ -1,9 +1,12 @@
 package codeintel
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/kballard/go-shellquote"
@@ -12,14 +15,62 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 )
 
-const defaultOutfile = "dump.lsif"
-const uploadRoute = "/.executors/lsif/upload"
-const schemeExecutorToken = "token-executor"
+const (
+	defaultOutfile      = "dump.lsif"
+	uploadRoute         = "/.executors/lsif/upload"
+	schemeExecutorToken = "token-executor"
+)
 
-func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+// accessLogTransformer sets the approriate fields on the executor secret access log entry
+// for auto-indexing access
+type accessLogTransformer struct {
+	database.ExecutorSecretAccessLogCreator
+}
+
+func (e *accessLogTransformer) Create(ctx context.Context, log *database.ExecutorSecretAccessLog) error {
+	log.MachineUser = "codeintel-autoindexing"
+	log.UserID = nil
+	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
+}
+
+func transformRecord(ctx context.Context, index types.Index, db database.DB, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
+
+	var secrets []*database.ExecutorSecret
+	var err error
+	if len(index.RequestedEnvVars) > 0 {
+		secretsStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		secrets, _, err = secretsStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
+			// Note: No namespace set, codeintel secrets are only available in the global namespace for now.
+			Keys: index.RequestedEnvVars,
+		})
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+	}
+
+	// And build the env vars from the secrets.
+	secretEnvVars := make([]string, len(secrets))
+	redactedEnvVars := make(map[string]string, len(secrets))
+	secretStore := &accessLogTransformer{db.ExecutorSecretAccessLogs()}
+	for i, secret := range secrets {
+		// Get the secret value. This also creates an access log entry in the
+		// name of the user.
+		val, err := secret.Value(ctx, secretStore)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+
+		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		// We redact secret values as ${{ secrets.NAME }}.
+		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+	}
+
+	envVars := append(resourceEnvironment, secretEnvVars...)
 
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
 	for i, dockerStep := range index.DockerSteps {
@@ -28,7 +79,7 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 			Image:    dockerStep.Image,
 			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Root,
-			Env:      resourceEnvironment,
+			Env:      envVars,
 		})
 	}
 
@@ -38,7 +89,7 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 			Image:    index.Indexer,
 			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
 			Dir:      index.Root,
-			Env:      resourceEnvironment,
+			Env:      envVars,
 		})
 	}
 
@@ -57,11 +108,8 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 		outfile = defaultOutfile
 	}
 
-	fetchTags := false
 	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	if strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go") {
-		fetchTags = true
-	}
+	fetchTags := strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go")
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",
@@ -87,6 +135,20 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 		},
 	})
 
+	allRedactedValues := map[string]string{
+		// 🚨 SECURITY: Catch leak of authorization header.
+		authorizationHeader: redactedAuthorizationHeader,
+
+		// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
+		// construct another target (in src-cli). We only pass the
+		// Authorization header to src-cli, which we trust not to ship the
+		// values to a third party, but not to trust to ensure the values
+		// are absent from the command's stdout or stderr streams.
+		accessToken: "PASSWORD_REMOVED",
+	}
+	// 🚨 SECURITY: Catch uses of executor secrets from the executor secret store
+	maps.Copy(allRedactedValues, redactedEnvVars)
+
 	return apiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
@@ -94,22 +156,14 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 		ShallowClone:   true,
 		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of authorization header.
-			authorizationHeader: redactedAuthorizationHeader,
-
-			// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
-			// construct another target (in src-cli). We only pass the
-			// Authorization header to src-cli, which we trust not to ship the
-			// values to a third party, but not to trust to ensure the values
-			// are absent from the command's stdout or stderr streams.
-			accessToken: "PASSWORD_REMOVED",
-		},
+		RedactedValues: allRedactedValues,
 	}, nil
 }
 
-const defaultMemory = "12G"
-const defaultDiskSpace = "20G"
+const (
+	defaultMemory    = "12G"
+	defaultDiskSpace = "20G"
+)
 
 func makeResourceEnvironment(resourceMetadata handler.ResourceMetadata) []string {
 	env := []string{}
