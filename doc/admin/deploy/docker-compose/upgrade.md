@@ -1,12 +1,8 @@
 # Upgrade Sourcegraph on Docker Compose
 
-## 🚧 Still supported, but no longer recommended. 🚧
+> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
 
-If you're starting a new Sourcegraph deployment: **consider using one of our [newer & simpler deployments](../../../index.md) instead.**
-
-(This deployment type is still supported, however.)
-
-## About upgrading a Docker Compose deployment
+---
 
 This document describes the process to update a Docker Compose Sourcegraph instance.
 
