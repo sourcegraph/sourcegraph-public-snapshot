@@ -176,7 +176,11 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 		return nil, errors.New("missing id from sql query")
 	}
 
-	q := sqlf.Sprintf(getPermissionQueryFmtStr, opts.ID)
+	q := sqlf.Sprintf(
+		getPermissionQueryFmtStr,
+		sqlf.Join(permissionColumns, ", "),
+		opts.ID,
+	)
 
 	permission, err := scanPermission(p.QueryRow(ctx, q))
 	if err != nil {
