@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	insightsgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -26,10 +26,8 @@ import (
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -222,9 +220,9 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: insightsgitserver.NewCachedGitFirstEverCommit().GitFirstEverCommit,
+		gitFirstEverCommit: gitserver.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			return gitserver.NewGitCommitClient(frontend).RecentCommits(ctx, repoName, target)
 		},
 	}
 }
@@ -521,7 +519,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if errors.Is(err, insightsgitserver.EmptyRepoErr) {
+		if errors.Is(err, gitserver.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // repository is empty
 		}
