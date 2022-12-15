@@ -43,6 +43,7 @@ js_binary(
         ":extract_graphql_operation_codegen_plugin",
         "//:node_modules/@graphql-codegen/cli",
         "//:node_modules/@graphql-codegen/typescript",
+        "//:node_modules/@graphql-codegen/typescript-apollo-client-helpers",
         "//:node_modules/@graphql-codegen/typescript-operations",
         "//:node_modules/prettier",
         "//cmd/frontend/graphqlbackend:graphql_schema",

@@ -43,6 +43,10 @@ const GLOBS = {
   WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
 }
 
+const EXTRA_PLUGINS = {
+  SharedGraphQlOperations: ['typescript-apollo-client-helpers']
+}
+
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
 const ALL_DOCUMENTS_GLOB = [
   ...new Set([
@@ -109,7 +113,7 @@ async function _generateGraphQlOperations(operations) {
         enumValues: '@sourcegraph/shared/src/graphql-operations',
         interfaceNameForOperations: operation.interfaceNameForOperations,
       },
-      plugins: SHARED_PLUGINS,
+      plugins: [...SHARED_PLUGINS, ...(EXTRA_PLUGINS[operation.interfaceNameForOperations] || [])],
     }
     return generates
   }, {})
