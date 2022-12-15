@@ -49,6 +49,9 @@ func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphq
 	}
 
 	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(querybuilder.BasicQuery(args.Query))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not build repository scope query")
+	}
 
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	repos, err := executor.ExecuteRepoList(ctx, repoScopeQuery.String())
