@@ -162,20 +162,45 @@ Global metadatadata about a single processed upload.
 
 **upload_id**: The identifier of the upload that provided this SCIP index.
 
+# Table "public.codeintel_scip_symbol_names"
+```
+    Column    |  Type   | Collation | Nullable | Default 
+--------------+---------+-----------+----------+---------
+ id           | integer |           | not null | 
+ upload_id    | integer |           | not null | 
+ name_segment | text    |           | not null | 
+ prefix_id    | integer |           |          | 
+Indexes:
+    "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
+    "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
+    "codeisdntel_scip_symbol_names_upload_id_children" btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL
+
+```
+
+Stores a prefix tree of symbol names within a particular upload.
+
+**id**: An identifier unique within the index for this symbol name segment.
+
+**name_segment**: The portion of the symbol name that is unique to this symbol and its children.
+
+**prefix_id**: The identifier of the segment that forms the prefix of this symbol, if any.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
 # Table "public.codeintel_scip_symbols"
 ```
          Column         |  Type   | Collation | Nullable | Default 
 ------------------------+---------+-----------+----------+---------
  upload_id              | integer |           | not null | 
- symbol_name            | text    |           | not null | 
  document_lookup_id     | bigint  |           | not null | 
  schema_version         | integer |           | not null | 
  definition_ranges      | bytea   |           |          | 
  reference_ranges       | bytea   |           |          | 
  implementation_ranges  | bytea   |           |          | 
  type_definition_ranges | bytea   |           |          | 
+ symbol_id              | integer |           | not null | 
 Indexes:
-    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_name, document_lookup_id)
+    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
@@ -196,7 +221,7 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of denormalized data.
 
-**symbol_name**: The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&amp;patternType=standard).
+**symbol_id**: The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.
 
 **type_definition_ranges**: An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.
 

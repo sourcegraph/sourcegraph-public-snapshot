@@ -115,7 +115,8 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	return nil
 }
 
-// Remove removes the e-mail from the specified user.
+// Remove removes the e-mail from the specified user. Perforce external accounts
+// using the e-mail will also be removed.
 func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (err error) {
 	logger := e.logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
@@ -180,7 +181,9 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 }
 
 // SetVerified sets the supplied e-mail as the verified email for the given user.
-func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+// If verified is false, Perforce external accounts using the e-mail will be
+// removed.
+func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) (err error) {
 	logger := e.logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
@@ -190,16 +193,24 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
-	if err := e.db.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+	tx, err := e.db.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
 		return err
 	}
 
-	// Avoid unnecessary calls if the email is set to unverified.
 	if !verified {
+		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+			return errors.Wrap(err, "removing stale perforce external account")
+		}
 		return nil
 	}
 
-	if err := e.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+	if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: userID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,

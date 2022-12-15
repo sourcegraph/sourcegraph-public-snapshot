@@ -80,9 +80,10 @@ func (s *store) getLocations(
 			if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
 				monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
 					locationsSymbolSearchQuery,
+					pq.Array([]string{occurrence.Symbol}),
+					pq.Array([]int{bundleID}),
 					sqlf.Sprintf(scipFieldName),
 					bundleID,
-					pq.Array([]string{occurrence.Symbol}),
 					path,
 					sqlf.Sprintf(scipFieldName),
 				)))
@@ -178,6 +179,8 @@ const locationsDocumentQuery = `
 `
 
 const locationsSymbolSearchQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
 SELECT
 	ss.upload_id,
 	'' AS scheme,
@@ -187,9 +190,9 @@ SELECT
 	sid.document_path
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup sid ON sid.id = ss.document_lookup_id
+JOIN matching_symbol_names msn ON msn.id = ss.symbol_id
 WHERE
 	ss.upload_id = %s AND
-	ss.symbol_name = ANY(%s) AND
 	sid.document_path != %s AND
 	ss.%s IS NOT NULL
 `

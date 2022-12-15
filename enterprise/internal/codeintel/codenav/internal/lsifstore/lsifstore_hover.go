@@ -75,8 +75,9 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 
 		documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 			hoverSymbolsQuery,
-			bundleID,
 			pq.Array(symbolNames),
+			pq.Array([]int{bundleID}),
+			bundleID,
 		)))
 		if err != nil {
 			return "", types.Range{}, false, err
@@ -155,7 +156,64 @@ const hoverDocumentQuery = `
 )
 `
 
+const symbolIDsCTEs = `
+-- Search for the set of trie paths that match one of the given search terms. We
+-- do a recursive walk starting at the roots of the trie for a given set of uploads,
+-- and only traverse down trie paths that continue to match our search text.
+matching_prefixes(upload_id, id, prefix, search) AS (
+	(
+		-- Base case: Select roots of the tries for this upload that are also a
+		-- prefix of the search term. We cut the prefix we matched from our search
+		-- term so that we only need to match the _next_ segment, not the entire
+		-- reconstructed prefix so far (which is computationally more expensive).
+
+		SELECT
+			ssn.upload_id,
+			ssn.id,
+			ssn.name_segment,
+			substring(t.name from length(ssn.name_segment) + 1) AS search
+		FROM codeintel_scip_symbol_names ssn
+		JOIN unnest(%s::text[]) AS t(name) ON t.name LIKE ssn.name_segment || '%%'
+		WHERE
+			ssn.upload_id = ANY(%s) AND
+			ssn.prefix_id IS NULL AND
+			t.name LIKE ssn.name_segment || '%%'
+	) UNION (
+		-- Iterative case: Follow the edges of the trie nodes in the worktable so far.
+		-- If our search term is empty, then any children will be a proper superstring
+		-- of our search term - exclude these. If our search term does not match the
+		-- name segment, then we share some proper prefix with the search term but
+		-- diverge - also exclude these. The remaining rows are all prefixes (or matches)
+		-- of the target search term.
+
+		SELECT
+			ssn.upload_id,
+			ssn.id,
+			mp.prefix || ssn.name_segment,
+			substring(mp.search from length(ssn.name_segment) + 1) AS search
+		FROM matching_prefixes mp
+		JOIN codeintel_scip_symbol_names ssn ON
+			ssn.upload_id = mp.upload_id AND
+			ssn.prefix_id = mp.id
+		WHERE
+			mp.search != '' AND
+			mp.search LIKE ssn.name_segment || '%%'
+	)
+),
+
+-- Consume from the worktable results defined above. This will throw out any rows
+-- that still have a non-empty search field, as this indicates a proper prefix and
+-- therefore a non-match. The remaining rows will all be exact matches.
+matching_symbol_names AS (
+	SELECT mp.upload_id, mp.id, mp.prefix AS symbol_name
+	FROM matching_prefixes mp
+	WHERE mp.search = ''
+)
+`
+
 const hoverSymbolsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
 SELECT
 	sd.id,
 	sid.document_path,
@@ -173,7 +231,7 @@ WHERE EXISTS (
 	FROM codeintel_scip_symbols ss
 	WHERE
 		ss.upload_id = %s AND
-		ss.symbol_name = ANY(%s) AND
+		ss.symbol_id IN (SELECT id FROM matching_symbol_names) AND
 		ss.document_lookup_id = sid.id AND
 		ss.definition_ranges IS NOT NULL
 )

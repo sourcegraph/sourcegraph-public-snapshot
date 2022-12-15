@@ -1,14 +1,20 @@
 package lsifstore
 
 import (
+	"bytes"
 	"context"
-	"encoding/base64"
+	"crypto/sha256"
+	"sort"
 	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -33,11 +39,9 @@ type ProcessedMetadata struct {
 }
 
 type ProcessedSCIPDocument struct {
-	DocumentPath   string
-	Hash           []byte
-	RawSCIPPayload []byte
-	Symbols        []types.InvertedRangeIndex
-	Err            error
+	Path     string
+	Document *scip.Document
+	Err      error
 }
 
 func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) (err error) {
@@ -70,141 +74,63 @@ INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_nam
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
-func (s *store) InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (_ int, err error) {
-	ctx, _, endObservation := s.operations.insertSCIPDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("uploadID", uploadID),
-		otlog.String("documentPath", documentPath),
-		otlog.String("hash", base64.StdEncoding.EncodeToString(hash)),
-		otlog.Int("rawSCIPPayloadLen", len(rawSCIPPayload)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	id, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
-		insertSCIPDocumentQuery,
-		1,
-		hash,
-		rawSCIPPayload,
-		hash,
-		uploadID,
-		documentPath,
-	)))
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
-}
-
-const insertSCIPDocumentQuery = `
-WITH
-new_shared_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (%s, %s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-),
-shared_document AS (
-	SELECT id FROM new_shared_document
-	UNION ALL
-	SELECT id FROM codeintel_scip_documents WHERE payload_hash = %s
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM shared_document LIMIT 1
-RETURNING id
-`
-
-func (s *store) NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter, error) {
+func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
 	if !s.db.InTransaction() {
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsTemporaryTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
+		return nil, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIpWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
-	inserter := batch.NewInserter(
+	symbolNameInserter := batch.NewInserter(
+		ctx,
+		s.db.Handle(),
+		"t_codeintel_scip_symbol_names",
+		batch.MaxNumPostgresParameters,
+		"id",
+		"name_segment",
+		"prefix_id",
+	)
+
+	symbolInserter := batch.NewInserter(
 		ctx,
 		s.db.Handle(),
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
 		"type_definition_ranges",
 	)
 
-	symbolWriter := &symbolWriter{
-		uploadID: uploadID,
-		db:       s.db,
-		inserter: inserter,
-		count:    0,
+	scipWriter := &scipWriter{
+		uploadID:           uploadID,
+		db:                 s.db,
+		symbolNameInserter: symbolNameInserter,
+		symbolInserter:     symbolInserter,
+		count:              0,
 	}
 
-	return symbolWriter, nil
+	return scipWriter, nil
 }
 
-type symbolWriter struct {
-	uploadID int
-	db       *basestore.Store
-	inserter *batch.Inserter
-	count    uint32
-}
+const newSCIPWriterTemporarySymbolNamesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+	id integer NOT NULL,
+	name_segment text NOT NULL,
+	prefix_id integer
+) ON COMMIT DROP
+`
 
-func (s *symbolWriter) WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error {
-	for _, symbol := range symbols {
-		definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
-		if err != nil {
-			return err
-		}
-		referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
-		if err != nil {
-			return err
-		}
-		implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
-		if err != nil {
-			return err
-		}
-		typeDefinitionRanges, err := types.EncodeRanges(symbol.TypeDefinitionRanges)
-		if err != nil {
-			return err
-		}
-
-		if err := s.inserter.Insert(
-			ctx,
-			documentLookupID,
-			symbol.SymbolName,
-			definitionRanges,
-			referenceRanges,
-			implementationRanges,
-			typeDefinitionRanges,
-		); err != nil {
-			return err
-		}
-
-		atomic.AddUint32(&s.count, 1)
-	}
-
-	return nil
-
-}
-
-func (s *symbolWriter) Flush(ctx context.Context) (uint32, error) {
-	if err := s.inserter.Flush(ctx); err != nil {
-		return 0, err
-	}
-
-	if err := s.db.Exec(ctx, sqlf.Sprintf(writeSCIPSymbolsInsertQuery, s.uploadID, 1)); err != nil {
-		return 0, err
-	}
-
-	return s.count, nil
-}
-
-const writeSCIPSymbolsTemporaryTableQuery = `
+const newSCIpWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
+	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
@@ -213,10 +139,254 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 ) ON COMMIT DROP
 `
 
-const writeSCIPSymbolsInsertQuery = `
+type scipWriter struct {
+	uploadID           int
+	nextID             int
+	db                 *basestore.Store
+	symbolNameInserter *batch.Inserter
+	symbolInserter     *batch.Inserter
+	count              uint32
+	batchPayloadSum    int
+	batch              []bufferedDocument
+}
+
+type bufferedDocument struct {
+	path         string
+	scipDocument *scip.Document
+	payload      []byte
+	payloadHash  []byte
+}
+
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
+
+func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
+	if s.batchPayloadSum >= MaxBatchPayloadSum {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
+	}
+
+	payload, err := proto.Marshal(scipDocument)
+	if err != nil {
+		return err
+	}
+
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
+	s.batch = append(s.batch, bufferedDocument{
+		path:         path,
+		scipDocument: scipDocument,
+		payload:      compressedPayload,
+		payloadHash:  hashPayload(payload),
+	})
+	s.batchPayloadSum += len(payload)
+
+	if len(s.batch) >= DocumentsBatchSize {
+		if err := s.flush(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *scipWriter) flush(ctx context.Context) error {
+	documents := s.batch
+	s.batch = nil
+	s.batchPayloadSum = 0
+
+	documentIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.db.Handle(),
+		"codeintel_scip_documents",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"schema_version",
+			"payload_hash",
+			"raw_scip_payload",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for _, document := range documents {
+				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentIDs) != len(documents) {
+		return errors.New("unexpected number of document records inserted")
+	}
+
+	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.db.Handle(),
+		"codeintel_scip_document_lookup",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"upload_id",
+			"document_path",
+			"document_id",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for i, document := range documents {
+				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentLookupIDs) != len(documents) {
+		return errors.New("unexpected number of document lookup records inserted")
+	}
+
+	symbolNameMap := map[string]struct{}{}
+	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	for _, document := range documents {
+		index := types.ExtractSymbolIndexes(document.scipDocument)
+		invertedRangeIndexes = append(invertedRangeIndexes, index)
+
+		for _, invertedRange := range index {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
+
+	var symbolNameTrie trie.Trie
+	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+
+	symbolNameByIDs := map[int]string{}
+	idsBySymbolName := map[string]int{}
+
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		name := prefix
+		if parentID != nil {
+			parentPrefix, ok := symbolNameByIDs[*parentID]
+			if !ok {
+				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+			}
+
+			name = parentPrefix + prefix
+		}
+		symbolNameByIDs[id] = name
+		idsBySymbolName[name] = id
+
+		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for i, invertedRangeIndexes := range invertedRangeIndexes {
+		for _, index := range invertedRangeIndexes {
+			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
+			if err != nil {
+				return err
+			}
+			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
+			if err != nil {
+				return err
+			}
+			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
+			if err != nil {
+				return err
+			}
+			typeDefinitionRanges, err := types.EncodeRanges(index.TypeDefinitionRanges)
+			if err != nil {
+				return err
+			}
+
+			symbolID, ok := idsBySymbolName[index.SymbolName]
+			if !ok {
+				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
+			}
+
+			if err := s.symbolInserter.Insert(
+				ctx,
+				documentLookupIDs[i],
+				symbolID,
+				definitionRanges,
+				referenceRanges,
+				implementationRanges,
+				typeDefinitionRanges,
+			); err != nil {
+				return err
+			}
+
+			atomic.AddUint32(&s.count, 1)
+		}
+	}
+
+	return nil
+}
+
+func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
+	// Flush all buffered documents
+	if err := s.flush(ctx); err != nil {
+		return 0, err
+	}
+
+	// Flush all data into temp tables
+	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
+	if err := s.symbolInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
+
+	// Move all data from temp tables into target tables
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+		return 0, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+		return 0, err
+	}
+
+	return s.count, nil
+}
+
+const scipWriterFlushSymbolNamesQuery = `
+INSERT INTO codeintel_scip_symbol_names (
+	upload_id,
+	id,
+	name_segment,
+	prefix_id
+)
+SELECT
+	%s,
+	source.id,
+	source.name_segment,
+	source.prefix_id
+FROM t_codeintel_scip_symbol_names source
+`
+
+const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
-	symbol_name,
+	symbol_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -226,7 +396,7 @@ INSERT INTO codeintel_scip_symbols (
 )
 SELECT
 	%s,
-	source.symbol_name,
+	source.symbol_id,
 	source.document_lookup_id,
 	%s,
 	source.definition_ranges,
@@ -235,3 +405,10 @@ SELECT
 	source.type_definition_ranges
 FROM t_codeintel_scip_symbols source
 `
+
+// hashPayload returns a sha256 checksum of the given payload.
+func hashPayload(payload []byte) []byte {
+	hash := sha256.New()
+	_, _ = hash.Write(payload)
+	return hash.Sum(nil)
+}

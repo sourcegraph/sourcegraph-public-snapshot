@@ -6,20 +6,24 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type scipMigrator struct {
@@ -325,24 +329,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	payload, err := proto.Marshal(scipDocument)
-	if err != nil {
-		return err
-	}
-
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-
-	if err := scipWriter.Write(
-		ctx,
-		uploadID,
-		path,
-		compressedPayload,
-		hashPayload(payload),
-		types.ExtractSymbolIndexes(scipDocument),
-	); err != nil {
+	if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
 		return err
 	}
 
@@ -420,50 +407,74 @@ WHERE
 `
 
 type scipWriter struct {
-	tx              *basestore.Store
-	inserter        *batch.Inserter
-	uploadID        int
-	batchPayloadSum int
-	batch           []bufferedDocument
+	tx                 *basestore.Store
+	symbolNameInserter *batch.Inserter
+	symbolInserter     *batch.Inserter
+	uploadID           int
+	nextID             int
+	batchPayloadSum    int
+	batch              []bufferedDocument
 }
 
 type bufferedDocument struct {
-	path        string
-	payload     []byte
-	payloadHash []byte
-	symbols     []types.InvertedRangeIndex
+	path         string
+	scipDocument *ogscip.Document
+	payload      []byte
+	payloadHash  []byte
 }
 
 // makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
 // should be written to Postgres by calling Write. The Flush method should be called after
 // each document has been processed.
 func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*scipWriter, error) {
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporaryTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
+		return nil, err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
-	inserter := batch.NewInserter(
+	symbolNameInserter := batch.NewInserter(
+		ctx,
+		tx.Handle(),
+		"t_codeintel_scip_symbol_names",
+		batch.MaxNumPostgresParameters,
+		"id",
+		"name_segment",
+		"prefix_id",
+	)
+
+	symbolInserter := batch.NewInserter(
 		ctx,
 		tx.Handle(),
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"document_lookup_id",
-		"symbol_name",
+		"symbol_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
 	)
 
 	return &scipWriter{
-		tx:       tx,
-		inserter: inserter,
-		uploadID: uploadID,
+		tx:                 tx,
+		symbolNameInserter: symbolNameInserter,
+		symbolInserter:     symbolInserter,
+		uploadID:           uploadID,
 	}, nil
 }
 
-const makeSCIPWriterTemporaryTableQuery = `
+const makeSCIPWriterTemporarySymbolNamesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+	id integer NOT NULL,
+	name_segment text NOT NULL,
+	prefix_id integer
+) ON COMMIT DROP
+`
+
+const makeSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
-	symbol_name text NOT NULL,
+	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
@@ -471,35 +482,41 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 ) ON COMMIT DROP
 `
 
-// Write inserts a new document and document lookup row, and pushes all of the given
-// symbols into the batch inserter.
-func (s *scipWriter) Write(
+// InsertDocument batches a new document, document lookup row, and all of its symbols for insertion.
+func (s *scipWriter) InsertDocument(
 	ctx context.Context,
-	uploadID int,
 	path string,
-	payload []byte,
-	payloadHash []byte,
-	symbols []types.InvertedRangeIndex,
+	scipDocument *ogscip.Document,
 ) error {
-	uniquePrefix := []byte(fmt.Sprintf(
-		"lsif-%d:%d:",
-		uploadID,
-		time.Now().UnixNano()/int64(time.Millisecond)),
-	)
-
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
 	}
 
+	uniquePrefix := []byte(fmt.Sprintf(
+		"lsif-%d:%d:",
+		s.uploadID,
+		time.Now().UnixNano()/int64(time.Millisecond)),
+	)
+
+	payload, err := proto.Marshal(scipDocument)
+	if err != nil {
+		return err
+	}
+
+	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
 	s.batch = append(s.batch, bufferedDocument{
-		path:        path,
-		payload:     payload,
-		payloadHash: append(uniquePrefix, hashPayload(payload)...),
-		symbols:     symbols,
+		path:         path,
+		scipDocument: scipDocument,
+		payload:      compressedPayload,
+		payloadHash:  append(uniquePrefix, hashPayload(payload)...),
 	})
-	s.batchPayloadSum += len(payload)
+	s.batchPayloadSum += len(compressedPayload)
 
 	if len(s.batch) >= DocumentsBatchSize {
 		if err := s.flush(ctx); err != nil {
@@ -518,36 +535,132 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	s.batch = nil
 	s.batchPayloadSum = 0
 
+	documentIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_documents",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"schema_version",
+			"payload_hash",
+			"raw_scip_payload",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for _, document := range documents {
+				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentIDs) != len(documents) {
+		return errors.New("unexpected number of document records inserted")
+	}
+
+	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+		ctx,
+		s.tx.Handle(),
+		"codeintel_scip_document_lookup",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"upload_id",
+			"document_path",
+			"document_id",
+		},
+		"",
+		"id",
+		func(inserter *batch.Inserter) error {
+			for i, document := range documents {
+				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if len(documentLookupIDs) != len(documents) {
+		return errors.New("unexpected number of document lookup records inserted")
+	}
+
+	symbolNameMap := map[string]struct{}{}
+	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		documentLookupID, _, err := basestore.ScanFirstInt(s.tx.Query(ctx, sqlf.Sprintf(
-			scipWriterWriteDocumentQuery,
-			document.payloadHash,
-			document.payload,
-			s.uploadID,
-			document.path,
-		)))
-		if err != nil {
+		index := types.ExtractSymbolIndexes(document.scipDocument)
+		invertedRangeIndexes = append(invertedRangeIndexes, index)
+
+		for _, invertedRange := range index {
+			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+	sort.Strings(symbolNames)
+
+	var symbolNameTrie trie.Trie
+	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+
+	symbolNameByIDs := map[int]string{}
+	idsBySymbolName := map[string]int{}
+
+	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
+		name := prefix
+		if parentID != nil {
+			parentPrefix, ok := symbolNameByIDs[*parentID]
+			if !ok {
+				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+			}
+
+			name = parentPrefix + prefix
+		}
+		symbolNameByIDs[id] = name
+		idsBySymbolName[name] = id
+
+		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
 			return err
 		}
 
-		for _, symbol := range document.symbols {
-			definitionRanges, err := types.EncodeRanges(symbol.DefinitionRanges)
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for i, invertedRangeIndexes := range invertedRangeIndexes {
+		for _, index := range invertedRangeIndexes {
+			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := types.EncodeRanges(symbol.ReferenceRanges)
+			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := types.EncodeRanges(symbol.ImplementationRanges)
+			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
 			if err != nil {
 				return err
 			}
 
-			if err := s.inserter.Insert(
+			symbolID, ok := idsBySymbolName[index.SymbolName]
+			if !ok {
+				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
+			}
+
+			if err := s.symbolInserter.Insert(
 				ctx,
-				documentLookupID,
-				symbol.SymbolName,
+				documentLookupIDs[i],
+				symbolID,
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
@@ -560,40 +673,53 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	return nil
 }
 
-const scipWriterWriteDocumentQuery = `
-WITH
-new_document AS (
-	INSERT INTO codeintel_scip_documents (schema_version, payload_hash, raw_scip_payload)
-	VALUES (1, %s, %s)
-	RETURNING id
-)
-INSERT INTO codeintel_scip_document_lookup (upload_id, document_path, document_id)
-SELECT %s, %s, id FROM new_document
-RETURNING id
-`
-
 // Flush ensures that all symbol writes have hit the database, and then moves all of the
 // rows from the temporary table into the permanent one.
 func (s *scipWriter) Flush(ctx context.Context) error {
+	// Flush all buffered documents
 	if err := s.flush(ctx); err != nil {
 		return err
 	}
 
-	if err := s.inserter.Flush(ctx); err != nil {
+	// Flush all data into temp tables
+	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return err
 	}
 
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushQuery, s.uploadID)); err != nil {
+	// Move all data from temp tables into target tables
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+		return err
+	}
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const scipWriterFlushQuery = `
+const scipWriterFlushSymbolNamesQuery = `
+INSERT INTO codeintel_scip_symbol_names (
+	upload_id,
+	id,
+	name_segment,
+	prefix_id
+)
+SELECT
+	%s,
+	source.id,
+	source.name_segment,
+	source.prefix_id
+FROM t_codeintel_scip_symbol_names source
+ON CONFLICT DO NOTHING
+`
+
+const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
-	symbol_name,
+	symbol_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -602,7 +728,7 @@ INSERT INTO codeintel_scip_symbols (
 )
 SELECT
 	%s,
-	source.symbol_name,
+	source.symbol_id,
 	source.document_lookup_id,
 	1,
 	source.definition_ranges,

@@ -32,7 +32,7 @@ interface BuiltInInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
     const { insight, resizing, telemetryService, children, ...attributes } = props
 
-    const { currentDashboard, dashboards } = useContext(InsightContext)
+    const { currentDashboard } = useContext(InsightContext)
     const cardRef = useMergeRefs([ref])
 
     const { lazyQuery } = useLazyLivePreviewLangStatsInsight({
@@ -75,7 +75,6 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
                     <InsightContextMenu
                         insight={insight}
                         currentDashboard={currentDashboard}
-                        dashboards={dashboards}
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                     />

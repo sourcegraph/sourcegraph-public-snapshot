@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -19,8 +20,7 @@ type LsifStore interface {
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
-	NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter, error)
-	InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (int, error)
+	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
 
 	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
 	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error)
@@ -39,8 +39,8 @@ type LsifStore interface {
 	ScanLocations(ctx context.Context, id int, f func(scheme, identifier, monikerType string, locations []precise.LocationData) error) (err error)
 }
 
-type SymbolWriter interface {
-	WriteSCIPSymbols(ctx context.Context, documentLookupID int, symbols []types.InvertedRangeIndex) error
+type SCIPWriter interface {
+	InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error
 	Flush(ctx context.Context) (uint32, error)
 }
 
