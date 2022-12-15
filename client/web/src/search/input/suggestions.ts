@@ -24,6 +24,8 @@ import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/sear
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
+import { fetchSearchContexts } from '@sourcegraph/search'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 const filterRenderer = (option: Option): React.ReactElement => React.createElement(FilterOption, { option })
 const queryRenderer = (option: Option): React.ReactElement => React.createElement(QueryOption, { option })
@@ -115,6 +117,8 @@ function starTiebraker(a: { item: { stars: number } }, b: { item: { stars: numbe
     return b.item.stars - a.item.stars
 }
 
+const queryCache: Map<string, Promise<any[]>> = new Map()
+
 const repoFzfOptions: FzfOptions<Repo> = {
     selector: item => item.name,
     tiebreakers: [starTiebraker],
@@ -137,8 +141,8 @@ interface Repo {
     name: string
     stars: number
 }
+
 const repoCache: Map<string, Repo> = new Map()
-const queryCache: Map<string, Promise<Repo[]>> = new Map()
 
 function cachedRepos<T>(value: string, mapper: (item: FzfResultItem<Repo>) => T): T[] {
     const fzf = new Fzf([...repoCache.values()], repoFzfOptions)
@@ -198,7 +202,7 @@ function toRepoCompletion(item: FzfResultItem<Repo>, from: number, to?: number):
     }
 }
 
-export const dynamicRepoSuggestions = async (token?: Token): Promise<Target[]> => {
+const dynamicRepoSuggestions = async (token?: Token): Promise<Target[]> => {
     if (token?.type !== 'pattern') {
         return []
     }
@@ -212,6 +216,46 @@ const cachedRepoSuggestions = (token?: Token): Target[] => {
     }
 
     return cachedRepos(token.value, toRepoTarget)
+}
+
+const contextFzfOptions: FzfOptions<Context> = {
+    selector: item => item.name,
+}
+
+interface Context {
+    name: string
+    default: boolean
+}
+
+const contextCache: Map<string, Context> = new Map()
+
+function cachedContexts<T>(value: string, mapper: (item: FzfResultItem<Context>) => T): T[] {
+    const fzf = new Fzf([...contextCache.values()], contextFzfOptions)
+    return fzf.find(value).map(mapper)
+}
+
+async function dynamicContexts<T>(platformContext: Pick<PlatformContext, 'requestGraphQL'>, value: string, mapper: (item: FzfResultItem<Context>) => T): Promise<T[]> {
+    const query = `context:${value}`
+    const results = fetchSearchContexts({
+        first: 50,
+        query: value,
+        platformContext,
+    }).toPromise().then(response => response.nodes.map(node => {
+        const context = {name: node.name, default: node.viewerHasAsDefault}
+        if (!contextCache.has(node.spec)) {
+            contextCache.set(node.spec, context)
+        }
+        return context
+    }))
+
+    if (!queryCache.has(query)) {
+        queryCache.set(query, results)
+    }
+
+    await results
+    // Remove common regex special characters
+    const cleanValue = value.replace(/^\^|\\\.|\$$/g, '')
+    return cachedContexts(cleanValue, mapper)
 }
 
 /**
@@ -244,8 +288,32 @@ function filterValueSuggestions(token: Token | undefined): ReturnType<Source> | 
             }
 
             default: {
-                const suggestions = staticFilterValueSuggestions(token)
-                return suggestions ? { result: [suggestions] } : null
+                switch (resolvedFilter?.type) {
+                    case FilterType.context:
+                        return {
+                            valid,
+                            result: [{title: 'Contexts', options: cachedContexts(value, item => ({
+                                type: 'completion',
+                                icon: mdiSourceRepository,
+                                value: item.item.name,
+                                matches: item.positions,
+                                from,
+                                to,
+                            }))}],
+                            next: () => dynamicContexts(, value, item => ({
+                                type: 'completion',
+                                icon: mdiSourceRepository,
+                                value: item.item.name,
+                                matches: item.positions,
+                                from,
+                                to,
+                            })).then(options => ({valid, result: [{title: "Contexts", options}]}))
+                        }
+                    default: {
+                        const suggestions = staticFilterValueSuggestions(token)
+                        return suggestions ? { result: [suggestions] } : null
+                    }
+                }
             }
         }
     }
@@ -325,7 +393,7 @@ function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
     return result
 }
 
-export const suggestions: Source = (state, pos) => {
+export const createSuggestionsSource  = (platformContext: Pick<PlatformContext, 'requestGraphQL'>): Source => (state, pos) => {
     const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
     const token = tokenAt(tokens, pos)
 

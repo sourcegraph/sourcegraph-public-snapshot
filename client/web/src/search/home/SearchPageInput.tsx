@@ -37,7 +37,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { suggestions } from '../input/suggestions'
+import { createSuggestionsSource } from '../input/suggestions'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
@@ -122,7 +122,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             onSubmit={onSubmit}
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
-            suggestionSource={suggestions}
+            suggestionSource={createSuggestionsSource}
             history={props.history}
         />
     ) : (
