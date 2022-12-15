@@ -15,7 +15,11 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- Renamed `src users clean` command to `src users prune` [#901](https://github.com/sourcegraph/src-cli/pull/901)
+
 ### Fixed
+
+- Fix network timeout in `src users clean` occuring in instances with many users  [#901](https://github.com/sourcegraph/src-cli/pull/901)
 
 ### Removed
 
