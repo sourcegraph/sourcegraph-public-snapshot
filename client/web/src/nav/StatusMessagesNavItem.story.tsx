@@ -70,7 +70,7 @@ export const GitUpdatesDisabled: Story = () => (
                     newStatusMessageMock([
                         {
                             __typename: 'GitUpdatesDisabled',
-                            message:  'Repositories will not be cloned or updated.'
+                            message: 'Repositories will not be cloned or updated.',
                         },
                     ]),
                 ]}
