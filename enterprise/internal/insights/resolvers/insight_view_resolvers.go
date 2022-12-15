@@ -803,6 +803,8 @@ func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.Upda
 	return nil
 }
 
+// existingSeriesHasChanged returns a bool indicating if the series was changed in a way that would invalid the existing data.
+// This function assumes that the input has already been validated
 func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSeriesInput, existing types.InsightViewSeries) bool {
 	if new.Query != existing.Query {
 		return true
