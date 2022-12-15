@@ -3,124 +3,18 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchContextProps, SearchMode } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchContextProps } from '@sourcegraph/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon, Code, H2, H3, H4, Text, createLinkUrl } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
-import searchBoxStyle from '../input/SearchBox.module.scss'
-import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
 import styles from './NoResultsPage.module.scss'
-
-const noop = (): void => {}
-
-interface SearchInputExampleProps {
-    showSearchContext: boolean
-    query: string
-    patternType?: SearchPatternType
-    runnable?: boolean
-    onRun: () => void
-}
-
-const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<SearchInputExampleProps>> = ({
-    showSearchContext,
-    query,
-    patternType = SearchPatternType.standard,
-    runnable = false,
-    onRun,
-}) => {
-    const example = (
-        <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchbox)}>
-            <div
-                className={classNames(
-                    searchBoxStyle.searchBoxBackgroundContainer,
-                    styles.fakeSearchboxBackgroundContainer,
-                    'flex-shrink-past-contents'
-                )}
-            >
-                {showSearchContext && (
-                    <>
-                        <div className={classNames(searchBoxStyle.searchBoxAlignMiddle, styles.fakeSearchContext)}>
-                            <Button
-                                as="div"
-                                variant="link"
-                                className={classNames(
-                                    styles.fakeSearchContextButton,
-                                    searchContextDropDownStyles.button,
-                                    'text-monospace dropdown-toggle'
-                                )}
-                            >
-                                <Code className={searchContextDropDownStyles.buttonContent}>
-                                    {/*
-                                       a11y-ignore
-                                       Rule: "color-contrast" (Elements must have sufficient color contrast)
-                                       GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
-                                     */}
-                                    <span className="search-filter-keyword a11y-ignore">context:</span>
-                                    global
-                                </Code>
-                            </Button>
-                        </div>
-                        <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
-                    </>
-                )}
-                <div
-                    className={classNames(
-                        searchBoxStyle.searchBoxFocusContainer,
-                        styles.fakeSearchboxFocusContainer,
-                        'flex-shrink-past-contents'
-                    )}
-                >
-                    <div
-                        className={classNames(
-                            searchBoxStyle.searchBoxInput,
-                            styles.fakeSearchInput,
-                            'flex-shrink-past-contents'
-                        )}
-                    >
-                        <SyntaxHighlightedSearchQuery query={query} />
-                    </div>
-                </div>
-                <div className={styles.fakeSearchboxToggles}>
-                    <Toggles
-                        navbarSearchQuery={query}
-                        caseSensitive={false}
-                        patternType={patternType}
-                        searchMode={SearchMode.Precise}
-                        setCaseSensitivity={noop}
-                        setPatternType={noop}
-                        setSearchMode={noop}
-                        settingsCascade={{ subjects: null, final: {} }}
-                        showCopyQueryButton={false}
-                        interactive={false}
-                    />
-                </div>
-            </div>
-        </div>
-    )
-
-    if (runnable) {
-        const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
-        return (
-            <Link onClick={onRun} to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}>
-                <div className={styles.searchInputExample}>
-                    {example}
-                    <span className="ml-2 text-nowrap">Run Search</span>
-                </div>
-            </Link>
-        )
-    }
-    return <div className={styles.searchInputExample}>{example}</div>
-}
 
 interface ContainerProps {
     sectionID?: SectionID
