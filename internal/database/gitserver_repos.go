@@ -33,6 +33,7 @@ type GitserverRepoStore interface {
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+	// SetCorruptedAt sets the corrupted_at timestamp for the repo
 	SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
@@ -503,7 +504,6 @@ WHERE
 	return nil
 }
 
-// SetCorruptedAt sets the corrupted_at timestamp for the repo
 func (s *gitserverRepoStore) SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
