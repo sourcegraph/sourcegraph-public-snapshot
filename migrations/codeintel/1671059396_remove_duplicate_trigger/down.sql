@@ -16,8 +16,6 @@ CREATE OR REPLACE FUNCTION update_codeintel_scip_documents_schema_versions_inser
     RETURN NULL;
 END $$;
 
-CREATE OR REPLACE TRIGGER codeintel_scip_documents_schema_versions_insert 
-AFTER INSERT ON codeintel_scip_document_lookup 
-REFERENCING NEW TABLE AS newtab 
-FOR EACH STATEMENT 
-EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
+DROP TRIGGER IF EXISTS codeintel_scip_documents_schema_versions_insert ON codeintel_scip_document_lookup;
+CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup 
+REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
