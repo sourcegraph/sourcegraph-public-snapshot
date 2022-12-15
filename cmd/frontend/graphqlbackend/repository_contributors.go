@@ -35,7 +35,7 @@ func (r *RepositoryResolver) Contributors(args *struct {
 		connectionArgs: connectionArgs,
 		repo:           r,
 	}
-	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, nil)
+	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{DoNotReverse: true})
 }
 
 type repositoryContributorConnectionStore struct {
@@ -140,13 +140,6 @@ func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]
 	}
 
 	nodes = nodes[start:end]
-
-	if args.Last != nil {
-		// Invert order because the abstraction expects this for a backward pagination
-		for i, j := 0, len(nodes)-1; i < j; i, j = i+1, j-1 {
-			nodes[i], nodes[j] = nodes[j], nodes[i]
-		}
-	}
 
 	return nodes, start, nil
 }
