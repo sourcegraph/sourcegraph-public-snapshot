@@ -377,7 +377,7 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	err = s.Exec(ctx, definition.UpQuery)
+	err = s.Exec(ctx, definition.DownQuery)
 
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
