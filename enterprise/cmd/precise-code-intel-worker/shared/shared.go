@@ -15,6 +15,7 @@ import (
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -85,6 +86,7 @@ func Main() {
 	close(ready)
 
 	// Initialize sub-repo permissions client
+	database.SubRepoPermsWith = edb.SubRepoPermsWith
 	var err error
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {

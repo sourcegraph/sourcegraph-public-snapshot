@@ -48,6 +48,8 @@ func Init(
 		return edb.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
 
+	database.SubRepoPermsWith = edb.SubRepoPermsWith
+
 	extsvcStore := db.ExternalServices()
 
 	// TODO(nsc): use c
