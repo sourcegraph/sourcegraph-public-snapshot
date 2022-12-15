@@ -637,6 +637,11 @@ input UpdateLineChartSearchInsightInput {
     repositoryScope: RepositoryScopeInput
 
     """
+    The time scope for this insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    timeScope: TimeScopeInput
+
+    """
     The presentation options for this line chart.
     """
     presentationOptions: LineChartOptionsInput!
