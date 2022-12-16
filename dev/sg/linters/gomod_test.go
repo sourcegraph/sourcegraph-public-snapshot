@@ -41,4 +41,17 @@ func TestGoModGuards(t *testing.T) {
 		}))
 		assert.Nil(t, err)
 	})
+
+	t.Run("banned import", func(t *testing.T) {
+		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
+			"monitoring/go.mod": []repo.DiffHunk{
+				{
+					AddedLines: []string{
+						`	github.com/sourcegraph/sourcegraph v0.37.0`,
+					},
+				},
+			},
+		}))
+		assert.Error(t, err)
+	})
 }

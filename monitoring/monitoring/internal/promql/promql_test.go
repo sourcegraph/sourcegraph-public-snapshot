@@ -204,7 +204,7 @@ func TestInjectGroupings(t *testing.T) {
 			name:       "repeated and without existing by()",
 			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
 			groupings:  []string{"project_id"},
-			want:       `max by (project_id) ((max by(project_id) (src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
+			want:       `max by (project_id) ((max by (project_id) (src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
 			wantErr:    false,
 		},
 	} {

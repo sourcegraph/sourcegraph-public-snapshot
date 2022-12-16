@@ -2,21 +2,25 @@ module github.com/sourcegraph/sourcegraph/monitoring
 
 go 1.19
 
-// When developing, this replace uses the local package instead of a pushed version.
-replace github.com/sourcegraph/sourcegraph/lib => ../lib
-
 require (
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
 	github.com/grafana/regexp v0.0.0-20221122212121-6b5c0a4cb7fd
 	github.com/hashicorp/hcl v1.0.0
-	github.com/prometheus/common v0.39.0
-	github.com/prometheus/prometheus v0.40.7
+	github.com/prometheus/common v0.37.0
+	github.com/prometheus/prometheus v0.40.5
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221216195033-42d26a0a2063
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.23.7
 	golang.org/x/text v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
+)
+
+replace (
+	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
+	github.com/prometheus/common => github.com/prometheus/common v0.32.1
+	// When developing, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib => ../lib
 )
 
 require (
@@ -44,7 +48,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_golang v1.13.1 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
