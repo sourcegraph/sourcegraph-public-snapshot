@@ -44,7 +44,7 @@ const GLOBS = {
 }
 
 const EXTRA_PLUGINS = {
-  SharedGraphQlOperations: ['typescript-apollo-client-helpers']
+  SharedGraphQlOperations: ['typescript-apollo-client-helpers'],
 }
 
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
