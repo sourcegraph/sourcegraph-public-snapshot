@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { ErrorAlert } from './alerts'
-
-jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
+import { ErrorAlert } from './ErrorAlert'
 
 describe('ErrorAlert', () => {
     it('should render an Error object as an alert', () => {

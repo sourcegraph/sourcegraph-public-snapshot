@@ -7,14 +7,13 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import styles from './LoaderInput.module.scss'
 
 /** Takes loading prop, input component as child */
-
-interface Props {
+interface LoaderInputProps {
     loading: boolean
     children: React.ReactNode
     className?: string
 }
 
-export const LoaderInput: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const LoaderInput: React.FunctionComponent<React.PropsWithChildren<LoaderInputProps>> = ({
     loading,
     children,
     className,
