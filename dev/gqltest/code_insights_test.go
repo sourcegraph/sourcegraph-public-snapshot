@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -640,6 +641,7 @@ func TestCreateInsight(t *testing.T) {
 			},
 		}
 		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
+		t.Logf("%v", insight)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -738,8 +740,8 @@ func TestCreateInsight(t *testing.T) {
 		}
 		timeScope := map[string]any{
 			"stepInterval": map[string]any{
-				"unit":  1,
-				"value": "DAY",
+				"unit":  "DAY",
+				"value": 1,
 			},
 		}
 		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, repoScope, timeScope)
@@ -766,11 +768,9 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-
 	})
 
 	t.Run("a repo and time scope are required ", func(t *testing.T) {
-
 		dataSeries := map[string]any{
 			"query": "lang:go",
 			"options": map[string]string{
@@ -780,15 +780,13 @@ func TestCreateInsight(t *testing.T) {
 		}
 
 		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
+		assert.Error(t, err)
 		if err == nil {
-			t.Fatal("repo and time scope required")
-		}
-
-		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
 				t.Fatalf("couldn't disable insight series: %v", err)
 			}
-		}()
+		}
+
 	})
 
 }
