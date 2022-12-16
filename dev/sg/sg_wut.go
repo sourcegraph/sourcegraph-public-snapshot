@@ -16,6 +16,9 @@ var wutCommand = &cli.Command{
 # List
 `,
 	Category: CategoryCompany,
+	// This is where we do the actual searching for an abbreviation.
+	// Assuming the command entered is `sg wut RFC`, this goes ahead and searches
+	// the glossary for RFC.
 	Action: func(ctx *cli.Context) error {
 		if len(os.Args) == 2 {
 			return errors.New("No search term provided")
@@ -25,6 +28,11 @@ var wutCommand = &cli.Command{
 		fmt.Printf("Searching for %s\n", searchTerm)
 		return nil
 	},
+	// These are the subcommands available under the `sg wut` command.
+	// - sg wut add
+	// - sg wut refresh
+	// - sg wut list
+	// e.t.c
 	Subcommands: []*cli.Command{
 		{
 			Name:      "add",
