@@ -1,0 +1,28 @@
+// Representation of code ownership for a repository as described in a CODEOWNERS file.
+// As various orgainzations have slightly different syntax for CODEOWNERS files,
+// this algebraic representation servers as a unified funnel.
+
+syntax = "proto3";
+
+package codeowners;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto/";
+
+message File {
+    repeated Rule rule = 1;
+}
+
+message Rule {
+    string filepattern = 1;
+    // Note: empty owners is meaningful as per GitHub docs
+    // https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#example-of-a-codeowners-file
+    repeated Owner owner = 2;
+}
+
+message Owner {
+    // @owner in a file can refer to a user or a group,
+    // @org/group or @group/sub-group can refer to nested groups
+    // The handle text does not contain the initial @.
+    string handle = 1;
+    string email = 2;
+}
