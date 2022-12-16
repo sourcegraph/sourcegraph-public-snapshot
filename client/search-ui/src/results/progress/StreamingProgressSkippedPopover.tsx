@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import {
     Button,
@@ -18,8 +19,6 @@ import {
     H3,
     Markdown,
 } from '@sourcegraph/wildcard'
-
-import { SyntaxHighlightedSearchQuery } from '../../components'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'
