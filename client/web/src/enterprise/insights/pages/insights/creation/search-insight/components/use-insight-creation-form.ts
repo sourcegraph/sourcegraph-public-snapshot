@@ -12,10 +12,9 @@ import {
     useField,
     useFieldAPI,
     useForm,
+    useRepoFields,
 } from '../../../../../components'
 import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
-
-import { useRepoFields } from './insight-repo-section/use-repo-fields'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
@@ -28,7 +27,6 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     repositories: '',
     repoMode: 'urls-list',
     repoQuery: { query: '' },
-    allRepos: false,
     dashboardReferenceCount: 0,
 }
 
