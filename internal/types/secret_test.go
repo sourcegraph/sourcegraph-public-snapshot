@@ -166,22 +166,25 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 
 func TestExternalService_UnredactConfig(t *testing.T) {
 	for i, tc := range []struct {
-		kind string
-		old  any
-		in   any
-		out  any
+		kind    string
+		old     any
+		in      any
+		out     any
+		wantErr error
 	}{
 		{
-			kind: extsvc.KindGitHub,
-			old:  schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
-			in:   schema.GitHubConnection{Token: RedactedSecret, Url: "https://ghe.sgdev.org"},
-			out:  schema.GitHubConnection{Token: "foobar", Url: "https://ghe.sgdev.org"},
+			kind:    extsvc.KindGitHub,
+			old:     schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
+			in:      schema.GitHubConnection{Token: RedactedSecret, Url: "https://ghe.sgdev.org"},
+			out:     schema.GitHubConnection{Token: "foobar", Url: "https://ghe.sgdev.org"},
+			wantErr: urlChErr,
 		},
 		{
-			kind: extsvc.KindGitLab,
-			old:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
-			in:   schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.corp.com", TokenOauthRefresh: RedactedSecret},
-			out:  schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com", TokenOauthRefresh: "refresh-it"},
+			kind:    extsvc.KindGitLab,
+			old:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
+			in:      schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.corp.com", TokenOauthRefresh: RedactedSecret},
+			out:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com", TokenOauthRefresh: "refresh-it"},
+			wantErr: urlChErr,
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -200,12 +203,14 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				Token:    "foobar",
 				Url:      "https://bbs.corp.org",
 			},
+			wantErr: urlChErr,
 		},
 		{
-			kind: extsvc.KindBitbucketCloud,
-			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
-			in:   schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
-			out:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
+			kind:    extsvc.KindBitbucketCloud,
+			old:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
+			in:      schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
+			out:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
+			wantErr: urlChErr,
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
@@ -235,10 +240,11 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			},
 		},
 		{
-			kind: extsvc.KindPhabricator,
-			old:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
-			in:   schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
-			out:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
+			kind:    extsvc.KindPhabricator,
+			old:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
+			in:      schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
+			out:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
+			wantErr: urlChErr,
 		},
 		{
 			kind: extsvc.KindGitolite,
@@ -251,6 +257,13 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:  schema.PerforceConnection{P4User: "foo", P4Passwd: "bar"},
 			in:   schema.PerforceConnection{P4User: "baz", P4Passwd: RedactedSecret},
 			out:  schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
+		},
+		{
+			kind:    extsvc.KindPerforce,
+			old:     schema.PerforceConnection{P4Port: "tcp://es.ninja", P4User: "foo", P4Passwd: "bar"},
+			in:      schema.PerforceConnection{P4Port: "tcp://vr.ninja", P4User: "foo", P4Passwd: RedactedSecret},
+			out:     schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
+			wantErr: urlChErr,
 		},
 		{
 			// Tests that we can remove a secret field and that it won't appear redacted in the output
@@ -272,10 +285,11 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"bar"}}},
 		},
 		{
-			kind: extsvc.KindNpmPackages,
-			old:  schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
-			in:   schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://private-registry.npmjs.org"},
-			out:  schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://private-registry.npmjs.org"},
+			kind:    extsvc.KindNpmPackages,
+			old:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
+			in:      schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://private-registry.npmjs.org"},
+			out:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://private-registry.npmjs.org"},
+			wantErr: urlChErr,
 		},
 		{
 			kind: extsvc.KindOther,
@@ -284,10 +298,11 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
 		},
 		{
-			kind: extsvc.KindOther,
-			old:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
-			in:   schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
+			kind:    extsvc.KindOther,
+			old:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
+			in:      schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
+			out:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
+			wantErr: urlChErr,
 		},
 		{
 			kind: extsvc.KindGoPackages,
@@ -415,8 +430,21 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 
 			ctx := context.Background()
 			err = in.UnredactConfig(ctx, &old)
-			if err != nil {
+
+			if err != nil && tc.wantErr == nil {
 				t.Fatal(err)
+			}
+
+			if err == nil && tc.wantErr != nil {
+				t.Fatal("expected an error, got nil")
+			}
+
+			if err != nil {
+				if tc.wantErr.Error() != err.Error() {
+					t.Fatal("received error, but not equals to expected one")
+				}
+
+				return
 			}
 
 			cfg, err := in.Config.Decrypt(ctx)
