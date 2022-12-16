@@ -30,16 +30,13 @@ type GSMClient interface {
 	Close() error
 }
 
-var Client GSMClient
+var MockClient GSMClient
 
-func initClient(ctx context.Context) error {
-	var err error
-
-	if Client == nil {
-		Client, err = secretmanager.NewClient(ctx)
+func getClient(ctx context.Context) (GSMClient, error) {
+	if MockClient != nil {
+		return MockClient, nil
 	}
-
-	return err
+	return secretmanager.NewClient(ctx)
 }
 
 // NewSecretSet returns a set of requested secrets from Google Secret Manager
@@ -50,15 +47,15 @@ func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []Secr
 	var errs error
 	var secrets = make(SecretSet)
 
-	err := initClient(ctx)
+	client, errs := getClient(ctx)
 
-	if err != nil {
-		return secrets, err
+	if errs != nil {
+		return secrets, errs
 	}
-	defer Client.Close()
+	defer client.Close()
 
 	for _, rs := range requestedSecrets {
-		value, err := getSecretFromGSM(ctx, rs.Name, projectID)
+		value, err := getSecretFromGSM(ctx, client, rs.Name, projectID)
 		secrets[rs.Name] = Secret{
 			value,
 			rs.Description,
@@ -75,7 +72,7 @@ func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []Secr
 // getSecretFromGSM calls Google SecretManager and attempts to fetch the latest
 // version of the secret specified by name. Returns an empty string and an error
 // message when the secret cannot be found.
-func getSecretFromGSM(ctx context.Context, name string, projectID string) ([]byte, error) {
+func getSecretFromGSM(ctx context.Context, client GSMClient, name string, projectID string) ([]byte, error) {
 	// build the resource id and always fetch latest secret
 	secretId := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectID, name)
 
@@ -83,7 +80,7 @@ func getSecretFromGSM(ctx context.Context, name string, projectID string) ([]byt
 		Name: secretId,
 	}
 
-	result, err := Client.AccessSecretVersion(ctx, accessRequest)
+	result, err := client.AccessSecretVersion(ctx, accessRequest)
 
 	if err != nil {
 		return nil, err

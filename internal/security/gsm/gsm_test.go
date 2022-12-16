@@ -11,16 +11,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type MockClient struct {
+type mockClient struct {
 	AccessFunc func(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
 	CloseFunc  func() error
 }
 
-func (m *MockClient) AccessSecretVersion(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
+func (m *mockClient) AccessSecretVersion(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
 	return m.AccessFunc(ctx, req, opts...)
 }
 
-func (m *MockClient) Close() error {
+func (m *mockClient) Close() error {
 	return m.CloseFunc()
 }
 
@@ -28,7 +28,7 @@ func TestFetchGSM(t *testing.T) {
 
 	testcases := []struct {
 		name     string
-		client   *MockClient
+		client   *mockClient
 		project  string
 		secret   string
 		value    []byte
@@ -37,7 +37,7 @@ func TestFetchGSM(t *testing.T) {
 	}{
 		{
 			name: "Test cannot find secret returns empty secret",
-			client: &MockClient{
+			client: &mockClient{
 				AccessFunc: func(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
 					return nil, errors.New(fmt.Sprintf("rpc error: code = NotFound desc = Secret [%s] not found or has no versions", req.Name))
 				},
@@ -51,7 +51,7 @@ func TestFetchGSM(t *testing.T) {
 		},
 		{
 			name: "Can find secret returns a secret",
-			client: &MockClient{
+			client: &mockClient{
 				AccessFunc: func(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
 					var secret secretmanagerpb.AccessSecretVersionResponse
 					secret.Name = "message-signing-secret"
@@ -74,7 +74,7 @@ func TestFetchGSM(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			Client = tc.client
+			MockClient = tc.client
 
 			requestedSecrets := []SecretRequest{
 				{
