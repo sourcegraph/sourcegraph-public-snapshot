@@ -71,8 +71,8 @@ func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	raw := *queryString
-	if raw == "" {
+	var raw string
+	if queryString == nil || *queryString == "" {
 		raw = ".*"
 	}
 
