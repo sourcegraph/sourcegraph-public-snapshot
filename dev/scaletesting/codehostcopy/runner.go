@@ -162,6 +162,9 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	for !repoIter.Done() && repoIter.Err() == nil {
 		repos := repoIter.Next(ctx)
 		if err = r.store.Insert(repos); err != nil {
+			for _, rr := range repos {
+				r.logger.Error("wfpwfpwf", log.String("repo", rr.Name))
+			}
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 		}
 
@@ -208,6 +211,11 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 			})
 		}
 	}
+
+	if repoIter.Err() != nil {
+		return repoIter.Err()
+	}
+
 	errs := g.Wait()
 	for _, e := range errs {
 		if e != nil {
@@ -218,6 +226,11 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 }
 
 func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts []GitOpt) error {
+	// Handle the testing case
+	if strings.HasPrefix(repo.ToGitURL, "https://dummy.local") {
+		return nil
+	}
+
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {
 		return err
