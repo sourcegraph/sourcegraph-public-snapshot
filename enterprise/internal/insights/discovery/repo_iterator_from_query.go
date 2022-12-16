@@ -35,3 +35,8 @@ func (s *RepoIteratorFromQuery) ForEach(ctx context.Context, each func(repoName 
 	}
 	return nil
 }
+
+// RepoQueryExecutor is the consumer interface for query.RepoQueryExecutor, used for tests.
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
+}

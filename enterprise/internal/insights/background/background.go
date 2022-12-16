@@ -59,7 +59,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
