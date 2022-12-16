@@ -307,7 +307,7 @@ func generateAll(
 	}
 
 	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.Reload {
+	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Reload {
 		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
 			With(log.String("instance", opts.PrometheusURL))
 		// Reload all Prometheus rules
