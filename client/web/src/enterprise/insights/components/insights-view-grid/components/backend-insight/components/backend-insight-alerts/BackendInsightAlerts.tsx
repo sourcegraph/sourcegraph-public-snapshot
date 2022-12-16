@@ -18,7 +18,9 @@ import {
     PopoverContent,
     PopoverTail,
     ScrollBox,
-    Link, ErrorAlert } from '@sourcegraph/wildcard'
+    Link,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { BackendInsightSeries } from '../../../../../../core'
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'

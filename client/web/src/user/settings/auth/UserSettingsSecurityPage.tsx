@@ -13,7 +13,9 @@ import {
     H3,
     Input,
     Label,
-    Text, ErrorAlert } from '@sourcegraph/wildcard'
+    Text,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'

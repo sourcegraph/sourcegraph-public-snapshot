@@ -31,7 +31,9 @@ import {
     Popover,
     Position,
     PopoverOpenEvent,
-    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import {
     SiteUserOrderBy,

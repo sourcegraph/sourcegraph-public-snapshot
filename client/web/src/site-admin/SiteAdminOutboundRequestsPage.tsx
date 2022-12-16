@@ -23,7 +23,9 @@ import {
     PopoverTrigger,
     Position,
     Text,
-    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
