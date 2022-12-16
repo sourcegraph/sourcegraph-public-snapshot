@@ -69,6 +69,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
                     repositories,
+                    // TODO [VK] Connect new repo query API to the search based insight
+                    repoQuery: '',
                     query,
                     step,
                     filters: {
