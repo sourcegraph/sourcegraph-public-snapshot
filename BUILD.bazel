@@ -1,5 +1,15 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+# Gazelle config
+#
+# gazelle:prefix github.com/sourcegraph/sourcegraph
+# gazelle:build_file_name BUILD.bazel
+
+# Disable some by default, only include configured BUILDs
+#
+# gazelle:aspect_js disabled
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,5 +20,15 @@ js_library(
     srcs = ["prettier.config.js"],
     data = [
         "//:node_modules/@sourcegraph/prettierrc",
+    ],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.bazel.json",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@sourcegraph/tsconfig",
+        "//:tsconfig.json",
     ],
 )

@@ -1,8 +1,10 @@
 # Install Sourcegraph on Google Cloud
 
-This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
+> ⚠️ We recommend new users use our [GCE machine image](../machine-images/gce.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
 
 ---
+
+This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single node running on Google Cloud.
 
 ## Configure
 
@@ -54,7 +56,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.2.1'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.3.0'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 # IMPORTANT: DO NOT MAKE ANY CHANGES FROM THIS POINT ONWARD
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'

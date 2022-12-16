@@ -5237,7 +5237,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sourcegraph/extension-api-types@^2.1.0, @sourcegraph/extension-api-types@workspace:client/extension-api-types":
+"@sourcegraph/extension-api-types@^2.1.0, @sourcegraph/extension-api-types@workspace:*, @sourcegraph/extension-api-types@workspace:client/extension-api-types":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/extension-api-types@workspace:client/extension-api-types"
   peerDependencies:
@@ -27264,6 +27264,7 @@ __metadata:
     "@gql2ts/from-schema": ^1.10.1
     "@gql2ts/language-typescript": ^1.9.0
     "@gql2ts/types": ^1.9.0
+    "@graphiql/react": ^0.10.0
     "@graphql-codegen/cli": ^2.16.1
     "@graphql-codegen/typescript": 2.8.5
     "@graphql-codegen/typescript-apollo-client-helpers": ^2.2.6
@@ -27281,6 +27282,8 @@ __metadata:
     "@opentelemetry/exporter-trace-otlp-http": ^0.31.0
     "@opentelemetry/instrumentation": ^0.31.0
     "@opentelemetry/instrumentation-fetch": ^0.31.0
+    "@opentelemetry/resources": 1.5.0
+    "@opentelemetry/sdk-trace-base": 1.5.0
     "@opentelemetry/sdk-trace-web": ^1.5.0
     "@opentelemetry/semantic-conventions": ^1.5.0
     "@peculiar/webcrypto": ^1.1.7
@@ -27306,6 +27309,7 @@ __metadata:
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@sourcegraph/extension-api-stubs": ^1.6.1
+    "@sourcegraph/extension-api-types": "workspace:*"
     "@sourcegraph/prettierrc": ^3.0.3
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/stylelint-plugin-sourcegraph": ^1.0.1
@@ -27467,6 +27471,7 @@ __metadata:
     events: ^3.3.0
     eventsource: 1.1.1
     execa: ^5.0.0
+    expect: ^27.5.1
     express: ^4.17.1
     express-static-gzip: ^2.1.1
     focus-visible: ^5.2.0
@@ -27572,6 +27577,7 @@ __metadata:
     sinon: ^9.0.2
     socket.io: ^4.5.2
     socket.io-client: ^4.5.2
+    sourcegraph: "workspace:*"
     speed-measure-webpack-plugin: ^1.5.0
     storybook-addon-designs: ^6.3.1
     storybook-dark-mode: ^2.0.4
@@ -28590,7 +28596,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sourcegraph@^25.5.0, sourcegraph@workspace:client/extension-api":
+"sourcegraph@^25.5.0, sourcegraph@workspace:*, sourcegraph@workspace:client/extension-api":
   version: 0.0.0-use.local
   resolution: "sourcegraph@workspace:client/extension-api"
   dependencies:

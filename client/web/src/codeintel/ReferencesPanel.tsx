@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
@@ -586,9 +586,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                         ) : (
-                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -847,7 +847,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronUp : mdiChevronDown} />
                     <small>
                         <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
                             {displayRepoName(repoLocationGroup.repoName)}
@@ -972,9 +972,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                     ) : (
-                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

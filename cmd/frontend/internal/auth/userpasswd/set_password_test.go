@@ -81,7 +81,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 			gotEmail := &txemail.Message{
 				To:       []string{tst.email},
-				Template: setPasswordEmailTemplates,
+				Template: defaultSetPasswordEmailTemplate,
 				Data: struct {
 					Username string
 					URL      string
@@ -93,7 +93,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 			want := &txemail.Message{
 				To:       []string{tst.email},
-				Template: setPasswordEmailTemplates,
+				Template: defaultSetPasswordEmailTemplate,
 				Data: struct {
 					Username string
 					URL      string

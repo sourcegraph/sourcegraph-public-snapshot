@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
@@ -124,7 +123,7 @@ func Init(
 
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
-			log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
+			observationCtx.Logger.Error("Error reading license key for Sourcegraph subscription.", log.Error(err))
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
 				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
@@ -159,7 +158,7 @@ func Init(
 					return
 				}
 				if err != auth.ErrMustBeSiteAdmin {
-					log15.Error("Error checking current user is site admin", "err", err)
+					observationCtx.Logger.Error("Error checking current user is site admin", log.Error(err))
 					http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 					return
 				}
@@ -173,7 +172,7 @@ func Init(
 			// to save that DB lookup in most cases.
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
-				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
+				observationCtx.Logger.Error("Error reading license key for Sourcegraph subscription.", log.Error(err))
 				siteadminOrHandler(func() {
 					enforcement.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
 				})
