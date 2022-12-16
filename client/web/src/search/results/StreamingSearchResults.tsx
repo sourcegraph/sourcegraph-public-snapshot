@@ -121,7 +121,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
-    const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     // Log view event on first load
     useEffect(
@@ -375,7 +374,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         query={submittedURLQuery}
                         enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                         enableCodeMonitoring={enableCodeMonitoring}
-                        resultsFound={resultsFound}
+                        results={results}
                         className={styles.infobar}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}

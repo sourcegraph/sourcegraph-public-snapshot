@@ -14,7 +14,6 @@ export enum SectionID {
 
 export enum NoResultsSectionID {
     SEARCH_BAR = 'search-bar',
-    VIDEOS = 'videos',
 }
 
 export type SidebarTabID = 'filters'

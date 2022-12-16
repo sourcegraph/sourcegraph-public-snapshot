@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/run"
 
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,7 +31,7 @@ func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeH
 
 	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(baseURL.String()))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create GitLab client")
 	}
 	return &GitLabCodeHost{
 		def: def,
@@ -105,6 +106,18 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 		return errors.Newf("failed to delete key %v. Got status %d code", keyID, res.StatusCode)
 	}
 	return nil
+}
+
+func (g *GitLabCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+	return 0, 0, errors.New("not implemented for Gitlab")
+}
+
+func (g *GitLabCodeHost) Iterator() Iterator[[]*store.Repo] {
+	panic("not implemented")
+}
+
+func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+	return nil, errors.New("not implemented for Gitlab")
 }
 
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
