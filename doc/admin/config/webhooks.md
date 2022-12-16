@@ -25,7 +25,7 @@ Before adding an incoming webhook you should ensure that you have at least one [
 The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
 1. Navigate to **Site Admin > Incoming webhooks**
-   ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
+   ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/incoming-webhook-page.png)
 2. Click **Add webhook**
    ![Adding an incoming webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
 3. Fill out the form:
