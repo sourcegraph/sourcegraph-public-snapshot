@@ -24,5 +24,5 @@ export const getFeatureFlagOverrideValue = (flagName: string): boolean | null =>
         return false
     }
 
-    throw new Error(`FeatureFlagOverride "${flagName}" has invalid value: ${overriddenValue}`)
+    return null
 }

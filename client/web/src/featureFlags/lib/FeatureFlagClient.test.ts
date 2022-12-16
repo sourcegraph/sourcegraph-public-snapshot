@@ -131,7 +131,7 @@ describe('FeatureFlagClient', () => {
 
             client.get(ENABLED_FLAG).subscribe(value => {
                 expect(value).toBe(false)
-                sinon.assert.calledOnce(mockRequestGraphQL)
+                sinon.assert.notCalled(mockRequestGraphQL)
                 done()
             })
         })
@@ -143,7 +143,7 @@ describe('FeatureFlagClient', () => {
 
             client.get(DISABLED_FLAG).subscribe(value => {
                 expect(value).toBe(true)
-                sinon.assert.calledOnce(mockRequestGraphQL)
+                sinon.assert.notCalled(mockRequestGraphQL)
                 done()
             })
         })
