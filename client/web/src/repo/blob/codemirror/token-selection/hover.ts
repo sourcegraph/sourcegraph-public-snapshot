@@ -202,8 +202,8 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
 // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
 // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
 // ignoring the min/max width rules.
-const tooltipStyles = EditorView.baseTheme({
-    '.cm-tooltip.loading-tooltip': {
+const tooltipStyles = EditorView.theme({
+    '.cm-tooltip': {
         fontSize: '0.875rem',
         backgroundClip: 'padding-box',
         backgroundColor: 'var(--dropdown-bg)',
