@@ -174,7 +174,6 @@ type insightViewDebugResolver struct {
 }
 
 func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
-
 	type queueDebug struct {
 		types.InsightSeriesStatus
 		searchErrors []types.InsightSearchFailure
