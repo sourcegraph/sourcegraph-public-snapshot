@@ -13,7 +13,9 @@ import {
     LegendItem,
     LegendList,
     ParentSize,
-    Series, ErrorAlert } from '@sourcegraph/wildcard'
+    Series,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'

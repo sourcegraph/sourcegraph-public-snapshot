@@ -43,7 +43,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
             await deleteExternalService(node.id)
             setIsDeleting(false)
             onDidUpdate()
-             
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
             history.push(afterDeleteRoute)
         } catch (error) {

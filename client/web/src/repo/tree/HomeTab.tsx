@@ -18,7 +18,9 @@ import {
     LoadingSpinner,
     H2,
     Text,
-    ButtonLink, ErrorMessage } from '@sourcegraph/wildcard'
+    ButtonLink,
+    ErrorMessage,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'

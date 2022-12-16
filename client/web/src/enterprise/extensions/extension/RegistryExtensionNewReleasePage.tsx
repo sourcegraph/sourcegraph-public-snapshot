@@ -26,7 +26,9 @@ import {
     Code,
     H2,
     H3,
-    Text, ErrorAlert } from '@sourcegraph/wildcard'
+    Text,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
