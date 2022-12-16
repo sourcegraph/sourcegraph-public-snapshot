@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -78,7 +79,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObservationCtx, name),
+		Metrics:  *dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
 	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")
@@ -161,13 +162,13 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 					log.String("reason", string(reason)))...)
 
 			id := int(repoId)
-			for _, frame := range execution.frames {
+			for _, frame := range execution.sampleTimes {
 				tss := h.insightsStore.WithOther(tx)
 				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
 					SeriesID: execution.series.ID,
 					RepoID:   &id,
 					Reason:   reason,
-					Time:     frame.From,
+					Time:     frame,
 				}); err != nil {
 					return errors.Wrap(err, "AddIncompleteDatapoint")
 				}
@@ -197,7 +198,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 				}
 
 				execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: execution.frames})
+				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, SampleTimes: execution.sampleTimes})
 				if runErr != nil {
 					execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
 				}
@@ -279,12 +280,12 @@ func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExe
 	if err = ex.itr.MarkComplete(ctx, tx.Store); err != nil {
 		return errors.Wrap(err, "itr.MarkComplete")
 	}
-	for _, frame := range ex.frames {
+	for _, frame := range ex.sampleTimes {
 		tss := h.insightsStore.WithOther(tx)
 		if err = tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
 			SeriesID: ex.series.ID,
 			Reason:   store.ReasonExceedsErrorLimit,
-			Time:     frame.From,
+			Time:     frame,
 		}); err != nil {
 			return errors.Wrap(err, "SetFailed.AddIncompleteDatapoint")
 		}
@@ -308,27 +309,27 @@ func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfil
 		return nil, errors.Wrap(err, "repoIterator")
 	}
 
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
 
 	return &backfillExecution{
-		series:   series,
-		backfill: backfillJob,
-		itr:      itr,
-		logger:   logger,
-		frames:   frames,
+		series:      series,
+		backfill:    backfillJob,
+		itr:         itr,
+		logger:      logger,
+		sampleTimes: sampleTimes,
 	}, nil
 }
 
 type backfillExecution struct {
-	series   *itypes.InsightSeries
-	backfill *SeriesBackfill
-	itr      *iterator.PersistentRepoIterator
-	logger   log.Logger
-	frames   []itypes.Frame
-	config   handlerConfig
+	series      *itypes.InsightSeries
+	backfill    *SeriesBackfill
+	itr         *iterator.PersistentRepoIterator
+	logger      log.Logger
+	sampleTimes []time.Time
+	config      handlerConfig
 }
 
 func (b *backfillExecution) logFields(extra ...log.Field) []log.Field {

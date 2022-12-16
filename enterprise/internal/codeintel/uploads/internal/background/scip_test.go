@@ -60,7 +60,7 @@ func TestCorrelateSCIP(t *testing.T) {
 	} else {
 		documentMap := map[string]lsifstore.ProcessedSCIPDocument{}
 		for _, document := range documents {
-			documentMap[document.DocumentPath] = document
+			documentMap[document.Path] = document
 		}
 
 		var paths []string
@@ -86,7 +86,7 @@ func TestCorrelateSCIP(t *testing.T) {
 			t.Errorf("unexpected paths (-want +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(testedInvertedRangeIndex, documentMap["template/src/util/graphql.ts"].Symbols); diff != "" {
+		if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(documentMap["template/src/util/graphql.ts"].Document)); diff != "" {
 			t.Errorf("unexpected inverted symbols (-want +got):\n%s", diff)
 		}
 	}

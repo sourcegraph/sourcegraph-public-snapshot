@@ -9,14 +9,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,13 +39,8 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 }
 
 func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
-	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "SelectRepoQuery")
-	}
-
 	decoder, selectRepoResult := streaming.SelectRepoDecoder()
-	err = streaming.Search(ctx, modified.String(), nil, decoder)
+	err := streaming.Search(ctx, query, nil, decoder)
 	if err != nil {
 		return nil, errors.Wrap(err, "streaming.Search")
 	}
@@ -77,21 +70,21 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	frames := timeseries.BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Minute))
 	points := timeCounts{}
 	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
-		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			if errors.Is(err, discovery.EmptyRepoErr) {
+			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
 			} else {
 				return nil, errors.Wrapf(err, "FirstEverCommit")
 			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
-		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
+		plan := c.filter.Filter(ctx, frames, api.RepoName(repository))
 
 		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
 		for _, execution := range plan.Executions {
@@ -102,7 +95,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewClient(c.db).Commits(ctx, api.RepoName(repository), gitserver.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			commits, err := gitserver.NewGitCommitClient(c.db).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

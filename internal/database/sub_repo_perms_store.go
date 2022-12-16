@@ -30,6 +30,7 @@ func init() {
 }
 
 type SubRepoPermsStore interface {
+	basestore.ShareableStore
 	With(other basestore.ShareableStore) SubRepoPermsStore
 	Transact(ctx context.Context) (SubRepoPermsStore, error)
 	Done(err error) error
@@ -42,6 +43,7 @@ type SubRepoPermsStore interface {
 	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
 	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+	DeleteByUser(ctx context.Context, userID int32) error
 }
 
 // subRepoPermsStore is the unified interface for managing sub repository
@@ -254,4 +256,12 @@ AND external_service_type IN (%s)
 		return false, errors.Wrap(err, "querying database")
 	}
 	return exists, nil
+}
+
+// DeleteByUser deletes all rows associated with the given user
+func (s *subRepoPermsStore) DeleteByUser(ctx context.Context, userID int32) error {
+	q := sqlf.Sprintf(`
+DELETE FROM sub_repo_permissions where user_id = %d
+`, userID)
+	return s.Exec(ctx, q)
 }

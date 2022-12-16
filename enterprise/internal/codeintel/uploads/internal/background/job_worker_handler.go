@@ -262,7 +262,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		if upload.ContentType == lsifContentType {
 			// Note: this is writing to a different database than the block below, so we need to use a
 			// different transaction context (managed by the writeData function).
-			if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
+			if err := writeData(ctx, s.lsifstore, upload, groupedBundleData, trace); err != nil {
 				if isUniqueConstraintViolation(err) {
 					// If this is a unique constraint violation, then we've previously processed this same
 					// upload record up to this point, but failed to perform the transaction below. We can
@@ -277,7 +277,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		} else if upload.ContentType == scipContentType {
 			// Note: this is writing to a different database than the block below, so we need to use a
 			// different transaction context (managed by the writeData function).
-			if err := writeSCIPData(ctx, s.lsifstore, upload, repo, isDefaultBranch, correlatedSCIPData, trace); err != nil {
+			if err := writeSCIPData(ctx, s.lsifstore, upload, correlatedSCIPData, trace); err != nil {
 				if isUniqueConstraintViolation(err) {
 					// If this is a unique constraint violation, then we've previously processed this same
 					// upload record up to this point, but failed to perform the transaction below. We can
@@ -433,7 +433,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore lsifstore.LsifStore, upload codeinteltypes.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
+func writeData(ctx context.Context, lsifStore lsifstore.LsifStore, upload codeinteltypes.Upload, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err

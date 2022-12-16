@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/go-github/github"
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
@@ -24,7 +29,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -80,6 +88,49 @@ sg db add-user -name=foo
 				Usage:     "Drops, recreates and migrates the specified Sourcegraph Redis database",
 				UsageText: "sg db reset-redis",
 				Action:    dbResetRedisExec,
+			},
+			{
+				Name:        "update-user-external-services",
+				Usage:       "Manually update a user's external services",
+				Description: `Patches the table 'user_external_services' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.`,
+				Action:      dbUpdateUserExternalAccount,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "sg.username",
+						Value: "sourcegraph",
+						Usage: "Username of the user account on Sourcegraph",
+					},
+					&cli.StringFlag{
+						Name:  "extsvc.display-name",
+						Value: "",
+						Usage: "The display name of the GitHub instance connected to the Sourcegraph instance (as listed under Site admin > Manage code hosts)",
+					},
+					&cli.StringFlag{
+						Name:  "github.username",
+						Value: "sourcegraph",
+						Usage: "Username of the account on the GitHub instance",
+					},
+					&cli.StringFlag{
+						Name:  "github.token",
+						Value: "",
+						Usage: "GitHub token with a scope to read all user data",
+					},
+					&cli.StringFlag{
+						Name:  "github.baseurl",
+						Value: "",
+						Usage: "The base url of the GitHub instance to connect to",
+					},
+					&cli.StringFlag{
+						Name:  "github.client-id",
+						Value: "",
+						Usage: "The client ID of an OAuth app on the GitHub instance",
+					},
+					&cli.StringFlag{
+						Name:  "oauth.token",
+						Value: "",
+						Usage: "OAuth token to patch for the provided user",
+					},
+				},
 			},
 			{
 				Name:        "add-user",
@@ -157,6 +208,140 @@ func dbAddUserAction(cmd *cli.Context) error {
 	)
 
 	return nil
+}
+
+func dbUpdateUserExternalAccount(cmd *cli.Context) error {
+	logger := log.Scoped("dbUpdateUserExternalAccount", "")
+	ctx := cmd.Context
+	username := cmd.String("sg.username")
+	serviceName := cmd.String("extsvc.display-name")
+	ghUsername := cmd.String("github.username")
+	token := cmd.String("github.token")
+	baseurl := cmd.String("github.baseurl")
+	clientID := cmd.String("github.client-id")
+	oauthToken := cmd.String("oauth.token")
+
+	// Read the configuration.
+	conf, _ := getConfig()
+	if conf == nil {
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+	}
+
+	// Connect to the database.
+	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	if err != nil {
+		return err
+	}
+	db := database.NewDB(logger, conn)
+
+	// Find the service
+	services, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to list services")
+	}
+	var service *types.ExternalService
+	for _, s := range services {
+		if s.DisplayName == serviceName {
+			service = s
+		}
+	}
+	if service == nil {
+		return errors.Newf("cannot find service whose display name is %q", serviceName)
+	}
+
+	// Get URL from the external service config
+	serviceConfigString, err := service.Config.Decrypt(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to decrypt external service config")
+	}
+	serviceConfigMap := make(map[string]any)
+	if err = json.Unmarshal([]byte(serviceConfigString), &serviceConfigMap); err != nil {
+		return errors.Wrap(err, "failed to unmarshal service config JSON")
+	}
+	if serviceConfigMap["url"] == nil {
+		return errors.New("failed to find url in external service config")
+	}
+	// Add trailing slash to the URL if missing
+	serviceID, err := url.JoinPath(serviceConfigMap["url"].(string), "/")
+	if err != nil {
+		return errors.Wrap(err, "failed to create external service ID url")
+	}
+
+	// Find the user
+	user, err := db.Users().GetByUsername(ctx, username)
+	if err != nil {
+		return errors.Wrap(err, "failed to get user")
+	}
+
+	ghc, err := githubClient(ctx, baseurl, token)
+	if err != nil {
+		return errors.Wrap(err, "failed to authenticate on the github instance")
+	}
+
+	ghUser, _, err := ghc.Users.Get(ctx, ghUsername)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch github user")
+	}
+
+	authData, err := newAuthData(oauthToken)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate oauth data")
+	}
+
+	logger.Info("Writing external account to the DB")
+
+	err = db.UserExternalAccounts().AssociateUserAndSave(
+		ctx,
+		user.ID,
+		extsvc.AccountSpec{
+			ServiceType: strings.ToLower(service.Kind),
+			ServiceID:   serviceID,
+			ClientID:    clientID,
+			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
+		},
+		extsvc.AccountData{
+			AuthData: authData,
+			Data:     nil,
+		},
+	)
+	return err
+}
+
+type authdata struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	Expiry      string `json:"expiry"`
+}
+
+func newAuthData(accessToken string) (*encryption.JSONEncryptable[any], error) {
+	raw, err := json.Marshal(authdata{
+		AccessToken: accessToken,
+		TokenType:   "bearer",
+		Expiry:      "0001-01-01T00:00:00Z",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return extsvc.NewUnencryptedData(raw), nil
+}
+
+func githubClient(ctx context.Context, baseurl string, token string) (*github.Client, error) {
+	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	))
+
+	baseURL, err := url.Parse(baseurl)
+	if err != nil {
+		return nil, err
+	}
+	baseURL.Path = "/api/v3"
+
+	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	if err != nil {
+		return nil, err
+	}
+	return gh, nil
 }
 
 func dbResetRedisExec(ctx *cli.Context) error {

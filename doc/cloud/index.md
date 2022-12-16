@@ -11,7 +11,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
-      <p>Sign up for a 30 day trial for your team.</p>
+      <p>Sign up for a 15 day trial for your team.</p>
     </div>
     <div class="cloud-cta-btn-container">
       <div class="visual-btn">Get free trial now</div>
@@ -29,7 +29,7 @@ If your organization has fewer than 100 developers, we recommend trying [Sourceg
 
 If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, we recommend using the [onboarding checklist](../getting-started/cloud-instance.md) to set up your instance quickly.
 
-Trials last 30 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
+Trials last 15 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
 
 ## Cloud subscription
 
@@ -49,10 +49,11 @@ As part of this service you will receive a number of benefits from our team, inc
   
 ### Access to all Sourcegraph features
 
-All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, such as:
+All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
 
 - [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
 - [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
+- [Code Monitoring](../code_monitoring/index.md) (including [email delivery](#managed-smtp) of notifications)
 
 ### Access restrictions
 
@@ -92,8 +93,6 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
   - Advice and templates on how to introduce Sourcegraph to your engineering organization
 
 ### Managed SMTP
-
-> NOTE: This feature is currently undergoing a staged rollout.
 
 All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
 

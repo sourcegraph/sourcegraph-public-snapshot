@@ -41,6 +41,7 @@ type SearchContextsStore interface {
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
 	SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error
+	GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error)
 	CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
 	DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
 }
@@ -502,7 +503,7 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&sc.Name,
 			&sc.Description,
 			&sc.Public,
-			&sc.Autodefined,
+			&sc.AutoDefined,
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
@@ -668,6 +669,30 @@ func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context,
 		userID,
 		searchContextID)
 	return s.Exec(ctx, q)
+}
+
+func (s *searchContextsStore) GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error) {
+	permissionsCond := searchContextsPermissionsCondition(ctx)
+	authenticatedUserId := actor.FromContext(ctx).UID
+	rows, err := s.Query(
+		ctx,
+		sqlf.Sprintf(
+			listSearchContextsFmtStr,
+			authenticatedUserId,
+			authenticatedUserId,
+			authenticatedUserId,
+			permissionsCond,
+			sqlf.Sprintf("user_default = true"),
+			getSearchContextOrderByClause(SearchContextsOrderByID, false),
+			1, // limit
+			0, // offset
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanSingleSearchContext(rows)
 }
 
 // 🚨 SECURITY: The caller must ensure that the actor is the user creating the star for themselves.

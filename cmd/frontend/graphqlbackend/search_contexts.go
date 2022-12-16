@@ -25,6 +25,7 @@ type SearchContextsResolver interface {
 	SearchContextByID(ctx context.Context, id graphql.ID) (SearchContextResolver, error)
 	SearchContextBySpec(ctx context.Context, args SearchContextBySpecArgs) (SearchContextResolver, error)
 	IsSearchContextAvailable(ctx context.Context, args IsSearchContextAvailableArgs) (bool, error)
+	DefaultSearchContext(ctx context.Context) (SearchContextResolver, error)
 	CreateSearchContext(ctx context.Context, args CreateSearchContextArgs) (SearchContextResolver, error)
 	UpdateSearchContext(ctx context.Context, args UpdateSearchContextArgs) (SearchContextResolver, error)
 	DeleteSearchContext(ctx context.Context, args DeleteSearchContextArgs) (*EmptyResponse, error)

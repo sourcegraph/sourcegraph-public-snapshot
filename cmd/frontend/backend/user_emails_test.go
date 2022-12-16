@@ -10,9 +10,12 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -428,7 +431,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	assertSendCalled(false)
 }
 
-func TestDeleteStaleExternalAccount(t *testing.T) {
+func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -448,11 +451,20 @@ func TestDeleteStaleExternalAccount(t *testing.T) {
 	createdUser, err := db.Users().Create(ctx, newUser)
 	assert.NoError(t, err)
 
+	createdRepo := &types.Repo{
+		Name:         "github.com/soucegraph/sourcegraph",
+		URI:          "github.com/soucegraph/sourcegraph",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+	err = db.Repos().Create(ctx, createdRepo)
+	require.NoError(t, err)
+
 	svc := NewUserEmailsService(db, logger)
 	ctx = actor.WithInternalActor(ctx)
-	assert.NoError(t, svc.Add(ctx, createdUser.ID, email2))
 
-	t.Run("Perforce", func(t *testing.T) {
+	setup := func() {
+		require.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypePerforce,
 			ServiceID:   "test-instance",
@@ -464,29 +476,63 @@ func TestDeleteStaleExternalAccount(t *testing.T) {
 			Email:    email2,
 		}
 		serializedData, err := json.Marshal(perforceData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		assert.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
 
 		// Confirm that the external account was added
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			UserID:      createdUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, accounts, 1)
+		require.NoError(t, err)
+		require.Len(t, accounts, 1)
 
-		// Remove the email
-		assert.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+		// We also want to add some fake sub-repo permissions and check that they are
+		// deleted
+		err = db.SubRepoPerms().Upsert(ctx, createdUser.ID, createdRepo.ID, authz.SubRepoPermissions{Paths: []string{"**"}})
+		require.NoError(t, err)
+	}
 
+	assertRemovals := func(t *testing.T) {
 		// Confirm that the external account is gone
-		accounts, err = db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			UserID:      createdUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, accounts, 0)
+		require.NoError(t, err)
+		require.Len(t, accounts, 0)
+
+		// Confirm that sub-repo permissions are gone
+		perms, err := db.SubRepoPerms().Get(ctx, createdUser.ID, createdRepo.ID)
+		require.NoError(t, err)
+		assert.Empty(t, perms.Paths)
+
+		// Confirm that user permissions were revoked
+		authedRepos, err := db.Authz().AuthorizedRepos(ctx, &database.AuthorizedReposArgs{
+			UserID: createdUser.ID,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, authedRepos)
+	}
+
+	t.Run("OnDelete", func(t *testing.T) {
+		setup()
+
+		// Remove the email
+		require.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+
+		assertRemovals(t)
+	})
+
+	t.Run("OnUnverified", func(t *testing.T) {
+		setup()
+
+		// Mark the e-mail as unverified
+		require.NoError(t, svc.SetVerified(ctx, createdUser.ID, email2, false))
+
+		assertRemovals(t)
 	})
 }

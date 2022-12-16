@@ -37,7 +37,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
     globbing: false,
     branding: undefined,
     routes: [],

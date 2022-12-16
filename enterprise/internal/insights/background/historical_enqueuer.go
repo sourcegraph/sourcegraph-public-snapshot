@@ -4,22 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/ksuid"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -27,10 +25,8 @@ import (
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -83,7 +79,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observati
 		Metrics: metrics,
 	})
 
-	repoStore := database.NewDBWith(observationCtx.Logger, workerBaseStore).Repos()
+	primaryDb := database.NewDBWith(observationCtx.Logger, workerBaseStore)
+	repoStore := primaryDb.Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		repoStore,
@@ -97,8 +94,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observati
 		})
 
 	enq := globalBackfiller(observationCtx.Logger, workerBaseStore, dataSeriesStore, insightsStore)
-	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
-	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
+	enq.analyzer.frameFilter = compression.NewGitserverFilter(primaryDb, observationCtx.Logger)
 	enq.repoIterator = iterator.ForEach
 	enq.featureFlagStore = ffs
 
@@ -159,10 +155,10 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 				uniques[repository] = struct{}{}
 			}
 		}
-		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(definition.SampleIntervalUnit),
 			Value: definition.SampleIntervalValue,
-		}, definition.CreatedAt.Truncate(time.Hour*24))
+		}, definition.CreatedAt.Truncate(time.Minute))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: definition.ID,
 			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
@@ -223,9 +219,9 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: discovery.NewCachedGitFirstEverCommit().GitFirstEverCommit,
+		gitFirstEverCommit: gitserver.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			return gitserver.NewGitCommitClient(frontend).RecentCommits(ctx, repoName, target, "")
 		},
 	}
 }
@@ -476,10 +472,10 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 
 	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
 	for _, series := range definitions {
-		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
-		}, series.CreatedAt.Truncate(time.Hour*24))
+		}, series.CreatedAt.Truncate(time.Minute))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: series.ID,
 			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
@@ -522,7 +518,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if errors.Is(err, discovery.EmptyRepoErr) {
+		if errors.Is(err, gitserver.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // repository is empty
 		}
@@ -534,13 +530,13 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 	// For every series that we want to potentially gather historical data for, try.
 	for _, series := range definitions {
-		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
-		}, series.CreatedAt.Truncate(time.Hour*24))
+		}, series.CreatedAt.Truncate(time.Minute))
 
 		log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
-		plan := a.frameFilter.FilterFrames(ctx, frames, id)
+		plan := a.frameFilter.Filter(ctx, frames, api.RepoName(repoName))
 		if len(frames) != len(plan.Executions) {
 			a.statistics[series.SeriesID].Compressed += 1
 			log15.Debug("compressed frames", "repo_id", id, "series_id", series.SeriesID, "plan", plan)
@@ -582,7 +578,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
 
-	execution *compression.QueryExecution
+	execution compression.QueryExecution
 
 	// The repository we're building historical data for.
 	id       api.RepoID
@@ -696,31 +692,4 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job
-}
-
-// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
-// using a map, and entries are never evicted because they are expected to be small and in general
-// unchanging.
-type cachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
-
-	mu    sync.Mutex
-	cache map[api.RepoName]*gitdomain.Commit
-}
-
-func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cache == nil {
-		c.cache = map[api.RepoName]*gitdomain.Commit{}
-	}
-	if cached, ok := c.cache[repoName]; ok {
-		return cached, nil
-	}
-	entry, err := c.impl(ctx, db, repoName)
-	if err != nil {
-		return nil, err
-	}
-	c.cache[repoName] = entry
-	return entry, nil
 }

@@ -846,6 +846,29 @@ export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
                 id: SEARCH_BASED_INSIGHT.id,
                 dataSeries: [
                     {
+                        seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
+                        label: 'sourcegraph/run',
+                        points: [
+                            { dateTime: '2022-05-15T00:00:00Z', value: 16, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-05-29T00:00:00Z', value: 68, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-06-12T00:00:00Z', value: 84, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-06-26T00:00:00Z', value: 89, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-07-10T00:00:00Z', value: 94, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-07-24T00:00:00Z', value: 104, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-08-07T00:00:00Z', value: 98, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-08-21T17:31:36Z', value: 103, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-09-04T18:07:32Z', value: 99, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-09-18T18:07:51Z', value: 101, __typename: 'InsightDataPoint' },
+                            { dateTime: '2022-09-22T00:33:09Z', value: 100, __typename: 'InsightDataPoint' },
+                        ],
+                        status: {
+                            isLoadingData: false,
+                            incompleteDatapoints: [],
+                            __typename: 'InsightSeriesStatus',
+                        },
+                        __typename: 'InsightsSeries',
+                    },
+                    {
                         seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
                         label: 'exec',
                         points: [
@@ -865,29 +888,6 @@ export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
                             { dateTime: '2022-09-04T18:07:31Z', value: 160, __typename: 'InsightDataPoint' },
                             { dateTime: '2022-09-18T18:07:51Z', value: 160, __typename: 'InsightDataPoint' },
                             { dateTime: '2022-09-22T00:33:08Z', value: 161, __typename: 'InsightDataPoint' },
-                        ],
-                        status: {
-                            isLoadingData: false,
-                            incompleteDatapoints: [],
-                            __typename: 'InsightSeriesStatus',
-                        },
-                        __typename: 'InsightsSeries',
-                    },
-                    {
-                        seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
-                        label: 'sourcegraph/run',
-                        points: [
-                            { dateTime: '2022-05-15T00:00:00Z', value: 16, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-05-29T00:00:00Z', value: 68, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-06-12T00:00:00Z', value: 84, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-06-26T00:00:00Z', value: 89, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-07-10T00:00:00Z', value: 94, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-07-24T00:00:00Z', value: 104, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-08-07T00:00:00Z', value: 98, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-08-21T17:31:36Z', value: 103, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-09-04T18:07:32Z', value: 99, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-09-18T18:07:51Z', value: 101, __typename: 'InsightDataPoint' },
-                            { dateTime: '2022-09-22T00:33:09Z', value: 100, __typename: 'InsightDataPoint' },
                         ],
                         status: {
                             isLoadingData: false,

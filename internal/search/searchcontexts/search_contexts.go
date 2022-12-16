@@ -544,7 +544,7 @@ func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID
 }
 
 func IsAutoDefinedSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext.Autodefined
+	return searchContext.AutoDefined
 }
 
 func IsInstanceLevelSearchContext(searchContext *types.SearchContext) bool {
@@ -561,15 +561,15 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 }
 
 func GetUserSearchContext(userID int32, name string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID, Autodefined: true}
+	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID, AutoDefined: true}
 }
 
 func GetOrganizationSearchContext(orgID int32, name string, displayName string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID, Autodefined: true}
+	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID, AutoDefined: true}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
-	return &types.SearchContext{Name: GlobalSearchContextName, Public: true, Description: "All repositories on Sourcegraph", Autodefined: true}
+	return &types.SearchContext{Name: GlobalSearchContextName, Public: true, Description: "All repositories on Sourcegraph", AutoDefined: true}
 }
 
 func GetSearchContextSpec(searchContext *types.SearchContext) string {

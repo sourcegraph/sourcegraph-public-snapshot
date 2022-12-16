@@ -81,7 +81,7 @@ func NewHandler(
 	})
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
+	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield())))
 	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	webhookMiddleware := webhooks.NewLogMiddleware(
@@ -89,7 +89,8 @@ func NewHandler(
 	)
 
 	wh := webhooks.WebhookRouter{
-		DB: db,
+		Logger: logger.Scoped("WebhookRouter", "handling webhook requests and dispatching them to handlers"),
+		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)

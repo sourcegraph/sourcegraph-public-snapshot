@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -208,20 +209,21 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
 	}
 
-	symbolQueries := make([]*sqlf.Query, 0, len(monikers))
+	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		symbolQueries = append(symbolQueries, sqlf.Sprintf("%s", arg.Identifier))
+		symbolNames = append(symbolNames, arg.Identifier)
 	}
 
 	query := sqlf.Sprintf(
 		bulkMonikerResultsQuery,
+		pq.Array(symbolNames),
+		pq.Array(uploadIDs),
 		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
 		sqlf.Join(idQueries, ", "),
 		sqlf.Join(monikerQueries, ", "),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
-		sqlf.Join(idQueries, ", "),
-		sqlf.Join(symbolQueries, ", "),
 	)
+
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
@@ -267,18 +269,37 @@ outer:
 }
 
 const bulkMonikerResultsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
 (
-	SELECT dump_id, scheme, identifier, data, NULL AS scip_payload, '' AS scip_uri
+	SELECT
+		dump_id,
+		scheme,
+		identifier,
+		data,
+		NULL AS scip_payload,
+		'' AS scip_uri
 	FROM %s
-	WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s)
-	ORDER BY (dump_id, scheme, identifier)
-) UNION (
-	SELECT ss.upload_id, 'scip', ss.symbol_name, NULL, %s, document_path
-	FROM codeintel_scip_symbols ss
+	WHERE
+		dump_id IN (%s) AND
+		(scheme, identifier) IN (%s)
+	ORDER BY
+		(dump_id, scheme, identifier)
+) UNION ALL (
+	SELECT
+		ss.upload_id,
+		'scip',
+		msn.symbol_name,
+		NULL,
+		%s,
+		document_path
+	FROM matching_symbol_names msn
+	JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
 	JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-	WHERE ss.upload_id IN (%s) AND ss.symbol_name IN (%s)
-	ORDER BY (ss.upload_id, ss.symbol_name)
+	ORDER BY
+		(ss.upload_id, msn.symbol_name)
 )
+ORDER BY dump_id, scheme, identifier
 `
 
 func monikersToString(vs []precise.MonikerData) string {

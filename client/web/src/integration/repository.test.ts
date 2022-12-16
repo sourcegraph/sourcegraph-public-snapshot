@@ -53,7 +53,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
-            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
@@ -270,7 +270,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: 'abc' },
                             },
                         },
                     },
@@ -640,13 +640,14 @@ describe('Repository', () => {
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
-                        __typename: 'GitCommit',
+                        __typename: 'Repository',
                         commit: {
                             __typename: 'GitCommit',
                             ancestors: {
                                 __typename: 'GitCommitConnection',
                                 nodes: [
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
                                         oid: '284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         abbreviatedOID: '284aba0',
@@ -654,7 +655,9 @@ describe('Repository', () => {
                                         subject: 'sg: create a test command to run e2e tests locally (#34627)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Jean-Hadrien Chabran',
                                                 email: 'jr9@gmail.com',
@@ -664,7 +667,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'noreply@yahoo.com',
@@ -686,7 +691,7 @@ describe('Repository', () => {
                                         externalURLs: [
                                             {
                                                 url: 'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
-                                                serviceKind: 'GITHUB',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -695,6 +700,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
                                         oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         abbreviatedOID: 'a2d1fd4',
@@ -703,7 +709,9 @@ describe('Repository', () => {
                                         subject: 'Wildcard V2: <Checkbox /> migration (#34324)',
                                         body: 'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitStart-SourceGraph',
                                                 email: '89894075h@facebook.net',
@@ -713,7 +721,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'google@yahoo.com',
@@ -735,7 +745,7 @@ describe('Repository', () => {
                                         externalURLs: [
                                             {
                                                 url: 'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
-                                                serviceKind: 'GITHUB',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -744,6 +754,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
                                         oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         abbreviatedOID: '3a163b9',
@@ -751,7 +762,9 @@ describe('Repository', () => {
                                         subject: 'web: ban `reactstrap` imports (#34881)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Valery Bugakov',
                                                 email: 'user23@gmail.com',
@@ -761,7 +774,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'user43@gmail.com',
@@ -783,7 +798,7 @@ describe('Repository', () => {
                                         externalURLs: [
                                             {
                                                 url: 'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
-                                                serviceKind: 'GITHUB',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -795,6 +810,7 @@ describe('Repository', () => {
                                 pageInfo: {
                                     __typename: 'PageInfo',
                                     hasNextPage: true,
+                                    endCursor: 'abc',
                                 },
                             },
                         },
@@ -814,6 +830,7 @@ describe('Repository', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
+            await driver.page.waitForSelector('.list-group-item', { visible: true })
             await percySnapshotWithVariants(driver.page, 'Repository commits page')
             await accessibilityAudit(driver.page)
         })

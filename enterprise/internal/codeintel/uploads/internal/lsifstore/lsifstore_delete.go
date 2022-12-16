@@ -100,6 +100,9 @@ func (s *store) deleteSCIPData(ctx context.Context, uploadIDs []int) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(deleteSCIPMetadataQuery, pq.Array(uploadIDs))); err != nil {
 		return err
 	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolNamesQuery, pq.Array(uploadIDs), pq.Array(uploadIDs))); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -128,6 +131,19 @@ locked_document_lookup AS (
 )
 DELETE FROM codeintel_scip_document_lookup
 WHERE id IN (SELECT id FROM locked_document_lookup)
+`
+
+const deleteSCIPSymbolNamesQuery = `
+WITH
+locked_document_lookup AS (
+	SELECT id
+	FROM codeintel_scip_symbol_names
+	WHERE upload_id = ANY(%s)
+	ORDER BY id
+	FOR UPDATE
+)
+DELETE FROM codeintel_scip_symbol_names
+WHERE upload_id = ANY(%s) AND id IN (SELECT id FROM locked_document_lookup)
 `
 
 func intsToString(vs []int) string {

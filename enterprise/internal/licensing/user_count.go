@@ -7,9 +7,9 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/log"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 var (
@@ -81,7 +81,7 @@ func getMaxUsers(c redis.Conn, key string) (int, string, error) {
 
 // checkMaxUsers runs periodically, and if a license key is in use, updates the
 // record of maximum count of user accounts in use.
-func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
+func checkMaxUsers(ctx context.Context, logger log.Logger, s UsersStore, signature string) error {
 	if signature == "" {
 		// No license key is in use.
 		return nil
@@ -89,12 +89,12 @@ func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
 
 	count, err := s.Count(ctx)
 	if err != nil {
-		log15.Error("licensing.checkMaxUsers: error getting user count", "error", err)
+		logger.Error("error getting user count", log.Error(err))
 		return err
 	}
 	err = setMaxUsers(signature, count)
 	if err != nil {
-		log15.Error("licensing.checkMaxUsers: error setting new max users", "error", err)
+		logger.Error("error setting new max users", log.Error(err))
 		return err
 	}
 	return nil
@@ -133,7 +133,7 @@ func ActualUserCountDate(ctx context.Context) (string, error) {
 }
 
 // StartMaxUserCount starts checking for a new count of max user accounts periodically.
-func StartMaxUserCount(s UsersStore) {
+func StartMaxUserCount(logger log.Logger, s UsersStore) {
 	if started {
 		panic("already started")
 	}
@@ -144,10 +144,10 @@ func StartMaxUserCount(s UsersStore) {
 	for {
 		_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
 		if err != nil {
-			log15.Error("licensing.startMaxUserCount: error getting configured license info")
+			logger.Error("error getting configured license info", log.Error(err))
 		} else if signature != "" {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			_ = checkMaxUsers(ctx, s, signature) // updates global state on its own, can safely ignore return value
+			_ = checkMaxUsers(ctx, logger, s, signature) // updates global state on its own, can safely ignore return value
 			cancel()
 		}
 		time.Sleep(delay)

@@ -116,7 +116,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:            "Test batch changes",
+			Name:            "Test-batch-changes",
 			Description:     "Testing THE WEBHOOKS",
 			CreatorID:       userID,
 			NamespaceUserID: userID,

@@ -32,6 +32,7 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 
+import { useDefaultContext } from './hooks/useDefaultContext'
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
 import { SearchContextStarButton } from './SearchContextStarButton'
 
@@ -163,13 +164,14 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
     const searchContext =
         searchContextOrError === LOADING || isErrorLike(searchContextOrError) ? null : searchContextOrError
 
+    const [alert, setAlert] = useState('')
+
     const { starred, toggleStar } = useToggleSearchContextStar(
         searchContext?.viewerHasStarred || false,
         searchContext?.id || undefined,
         authenticatedUser?.id || undefined
     )
 
-    const [alert, setAlert] = useState('')
     const toggleStarWithErrorHandling = useCallback(() => {
         setAlert('') // Clear previous alerts
         toggleStar().catch(error => {
@@ -178,6 +180,19 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
             }
         })
     }, [setAlert, toggleStar])
+
+    const { defaultContext, setAsDefault } = useDefaultContext(
+        searchContext?.viewerHasAsDefault ? searchContext.id : undefined
+    )
+    const isDefault = defaultContext === searchContext?.id
+    const setAsDefaultWithErrorHandling = useCallback(() => {
+        setAlert('') // Clear previous alerts
+        setAsDefault(searchContext?.id, authenticatedUser?.id).catch(error => {
+            if (isErrorLike(error)) {
+                setAlert(error.message)
+            }
+        })
+    }, [authenticatedUser?.id, searchContext?.id, setAsDefault])
 
     const actions = searchContext && (
         <div className={styles.actions}>
@@ -192,6 +207,11 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                     as={Link}
                 >
                     Edit
+                </Button>
+            )}
+            {searchContext && authenticatedUser && !isDefault && (
+                <Button variant="secondary" onClick={setAsDefaultWithErrorHandling}>
+                    Use as default
                 </Button>
             )}
         </div>
@@ -223,27 +243,39 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                             >
                                                 {searchContext.spec}
                                             </span>
-                                            {!searchContext.public && (
-                                                <Badge
-                                                    variant="secondary"
-                                                    pill={true}
-                                                    className={styles.searchContextPagePrivateBadge}
-                                                    as="div"
-                                                >
-                                                    Private
-                                                </Badge>
-                                            )}
                                         </div>
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
                             </PageHeader>
-                            {!searchContext.autoDefined && (
-                                <div className="text-muted">
-                                    <span className="ml-1">
+                            <div>
+                                {isDefault ? (
+                                    <>
+                                        <Badge
+                                            variant="secondary"
+                                            className="text-uppercase"
+                                            data-testid="search-context-default-badge"
+                                        >
+                                            Default
+                                        </Badge>{' '}
+                                    </>
+                                ) : null}
+                                {!searchContext.public ? (
+                                    <>
+                                        <Badge variant="secondary" pill={true}>
+                                            Private
+                                        </Badge>{' '}
+                                    </>
+                                ) : null}
+                                {searchContext.autoDefined ? (
+                                    <Badge variant="outlineSecondary" pill={true}>
+                                        Auto
+                                    </Badge>
+                                ) : (
+                                    <span className="ml-1 text-muted">
                                         Updated <Timestamp date={searchContext.updatedAt} noAbout={true} />
                                     </span>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             {alert && (
                                 <Alert variant="danger" className="mt-3">
                                     {alert}

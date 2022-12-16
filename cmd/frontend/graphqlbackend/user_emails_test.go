@@ -90,6 +90,11 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 		db := database.NewMockDB()
 
+		db.TransactFunc.SetDefaultReturn(db, nil)
+		db.DoneFunc.SetDefaultHook(func(err error) error {
+			return err
+		})
+
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 		userEmails := database.NewMockUserEmailsStore()
@@ -224,10 +229,23 @@ func TestSetUserEmailVerified(t *testing.T) {
 			authz := database.NewMockAuthzStore()
 			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
+			userExternalAccounts := database.NewMockUserExternalAccountsStore()
+			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
+
+			subrepoPerms := database.NewMockSubRepoPermsStore()
+			subrepoPerms.DeleteByUserFunc.SetDefaultReturn(nil)
+
 			db := database.NewMockDB()
+			db.TransactFunc.SetDefaultReturn(db, nil)
+			db.DoneFunc.SetDefaultHook(func(err error) error {
+				return err
+			})
+
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
+			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.SubRepoPermsFunc.SetDefaultReturn(subrepoPerms)
 
 			RunTests(t, test.gqlTests(db))
 

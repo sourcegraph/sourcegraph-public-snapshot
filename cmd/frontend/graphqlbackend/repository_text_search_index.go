@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
@@ -65,6 +66,28 @@ func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*reposi
 		return nil, nil
 	}
 	return &repositoryTextSearchIndexStatus{entry: *entry}, nil
+}
+
+func (r *repositoryTextSearchIndexResolver) Host(ctx context.Context) (*repositoryIndexserverHostResolver, error) {
+	// We don't want to let the user wait for too long. If the socket
+	// connection is working, 500ms should be generous.
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*500)
+	defer cancel()
+	host, err := searchzoekt.GetIndexserverHost(ctx, r.repo.RepoName())
+	if err != nil {
+		return nil, nil
+	}
+	return &repositoryIndexserverHostResolver{
+		host,
+	}, nil
+}
+
+type repositoryIndexserverHostResolver struct {
+	host searchzoekt.Host
+}
+
+func (r *repositoryIndexserverHostResolver) Name(ctx context.Context) string {
+	return r.host.Name
 }
 
 type repositoryTextSearchIndexStatus struct {
@@ -211,7 +234,7 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 		return 0, err
 	}
 
-	q := &zoektquery.And{[]zoektquery.Q{
+	q := &zoektquery.And{Children: []zoektquery.Q{
 		&zoektquery.Regexp{Regexp: expr, Content: true, CaseSensitive: true},
 		zoektquery.NewSingleBranchesRepos(r.branch, uint32(r.repo.IDInt32())),
 	}}

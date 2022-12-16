@@ -285,6 +285,7 @@ var sg = &cli.App{
 		opsCommand,
 		auditCommand,
 		pageCommand,
+		cloudCommand,
 
 		// Util
 		helpCommand,

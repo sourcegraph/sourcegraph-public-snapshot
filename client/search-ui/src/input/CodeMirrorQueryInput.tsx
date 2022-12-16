@@ -9,7 +9,6 @@ import {
     StateEffect,
     StateField,
     Prec,
-    RangeSetBuilder,
     MapMode,
     Compartment,
     Range,
@@ -35,7 +34,7 @@ import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegr
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
@@ -56,6 +55,7 @@ import {
     setQueryParseOptions,
     parsedQuery,
 } from './codemirror/parsedQuery'
+import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { QueryInputProps } from './QueryInput'
 
@@ -518,28 +518,7 @@ const [callbacksField, setCallbacks] = createUpdateableField<
 ])
 
 // Defines decorators for syntax highlighting
-const tokenDecorators: { [key: string]: Decoration } = {}
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
-
-// Chooses the correct decorator for the decorated token
-const decoratedToDecoration = (token: DecoratedToken): Decoration => {
-    const className = toCSSClassName(token)
-    const decorator = tokenDecorators[className]
-    return decorator || (tokenDecorators[className] = Decoration.mark({ class: className }))
-}
-
-// This provides syntax highlighting. This is a custom solution so that we an
-// use our existing query parser (instead of using CodeMirror's language
-// support). That's not to say that we couldn't properly integrate with
-// CodeMirror's language system with more effort.
-const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens], state => {
-    const tokens = state.facet(decoratedTokens)
-    const builder = new RangeSetBuilder<Decoration>()
-    for (const token of tokens) {
-        builder.add(token.range.start, token.range.end, decoratedToDecoration(token))
-    }
-    return builder.finish()
-})
 
 class PlaceholderWidget extends WidgetType {
     constructor(private placeholder: string) {
