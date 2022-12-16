@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -182,4 +183,9 @@ func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSer
 		return nil, errors.Wrap(err, "enqueueBackfill")
 	}
 	return bf, nil
+}
+
+// RepoQueryExecutor is the consumer interface for query.RepoQueryExecutor, used for tests.
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
 }
