@@ -1,17 +1,22 @@
 [
   {
-    "path": "enterprise/internal/batches/store",
-    "prefix": "TestIntegration",
-    "reason": "Dropped IDs from batch changes table"
+    "path": "enterprise/cmd/frontend/internal/batches/webhooks",
+    "prefix": "TestWebhooksIntegration",
+    "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
     "prefix": "TestChangesetApplyPreviewResolverWithPublicationStates",
-    "reason": "Dropped IDs from batch changes table"
+    "reason": "Test was having incomplete data, fails now that constraints are in place"
   },
   {
-    "path": "enterprise/cmd/frontend/internal/batches/webhooks",
-    "prefix": "TestWebhooksIntegration",
-    "reason": "Dropped IDs from batch changes table"
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestChangesetCountsOverTimeIntegration",
+    "reason": "Test was having incomplete data, fails now that constraints are in place"
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestRepositoryPermissions",
+    "reason": "Test was having incomplete data, fails now that constraints are in place"
   }
 ]
