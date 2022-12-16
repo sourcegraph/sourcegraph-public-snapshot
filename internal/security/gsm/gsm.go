@@ -30,12 +30,7 @@ type GSMClient interface {
 	Close() error
 }
 
-var MockClient GSMClient
-
-func getClient(ctx context.Context) (GSMClient, error) {
-	if MockClient != nil {
-		return MockClient, nil
-	}
+func GetClient(ctx context.Context) (GSMClient, error) {
 	return secretmanager.NewClient(ctx)
 }
 
@@ -43,16 +38,9 @@ func getClient(ctx context.Context) (GSMClient, error) {
 // it calls getSecretFromGSM and collects the errors. It doesn't fail when
 // secrets cannot be fetched. Error checking has to be done to make sure
 // the secrets you want to use have been fetched.
-func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []SecretRequest) (SecretSet, error) {
+func NewSecretSet(ctx context.Context, client GSMClient, projectID string, requestedSecrets []SecretRequest) (SecretSet, error) {
 	var errs error
 	var secrets = make(SecretSet)
-
-	client, errs := getClient(ctx)
-
-	if errs != nil {
-		return secrets, errs
-	}
-	defer client.Close()
 
 	for _, rs := range requestedSecrets {
 		value, err := getSecretFromGSM(ctx, client, rs.Name, projectID)

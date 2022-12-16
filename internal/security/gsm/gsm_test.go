@@ -74,8 +74,6 @@ func TestFetchGSM(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			MockClient = tc.client
-
 			requestedSecrets := []SecretRequest{
 				{
 					Name:        "message-signing-secret",
@@ -83,7 +81,7 @@ func TestFetchGSM(t *testing.T) {
 				},
 			}
 
-			secrets, err := NewSecretSet(ctx, "foo", requestedSecrets)
+			secrets, err := NewSecretSet(ctx, tc.client, "foo", requestedSecrets)
 
 			for secret := range secrets {
 				assert.Equal(t, tc.value, secrets[secret].Value)
