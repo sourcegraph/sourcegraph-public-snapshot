@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -17,9 +18,13 @@ import (
 const separator = "_-_"
 
 type BitbucketCodeHost struct {
-	logger  log.Logger
-	def     *CodeHostDefinition
-	c       *bitbucket.Client
+	logger log.Logger
+	def    *CodeHostDefinition
+	c      *bitbucket.Client
+
+	project *bitbucket.Project
+	once    sync.Once
+
 	page    int
 	perPage int
 	done    bool
@@ -69,7 +74,7 @@ func (bt *BitbucketCodeHost) DropSSHKey(ctx context.Context, keyID int64) error 
 }
 
 func (bt *BitbucketCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
-	return 0, 0, nil
+	return bt.def.RepositoryLimit, -1, nil
 }
 
 // listRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
@@ -78,23 +83,29 @@ func (bt *BitbucketCodeHost) InitializeFromState(ctx context.Context, stateRepos
 func (bt *BitbucketCodeHost) listRepos(ctx context.Context, page int, perPage int) ([]*store.Repo, int, error) {
 	bt.logger.Debug("fetching repos")
 
-	projects, err := bt.c.ListProjects(ctx)
-	if err != nil {
-		return nil, 0, err
+	var outerErr error
+	bt.once.Do(func() {
+		projects, err := bt.c.ListProjects(ctx)
+		if err != nil {
+			outerErr = err
+		}
+
+		for _, p := range projects {
+			if p.Name == bt.def.Path {
+				bt.project = p
+				break
+			}
+		}
+	})
+	if outerErr != nil {
+		return nil, 0, outerErr
 	}
 
-	var project *bitbucket.Project
-	for _, p := range projects {
-		if p.Name == bt.def.Path {
-			project = p
-			break
-		}
-	}
-	if project == nil {
+	if bt.project == nil {
 		return nil, 0, errors.Newf("project named %s not found", bt.def.Path)
 	}
 
-	repos, next, err := bt.c.ListRepos(ctx, project, page, perPage)
+	repos, next, err := bt.c.ListRepos(ctx, bt.project, page, perPage)
 	if err != nil {
 		bt.logger.Debug("failed to list repos", log.Error(err))
 		return nil, 0, err
