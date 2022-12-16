@@ -1701,17 +1701,16 @@ func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSer
 		return errors.New("group by series require a list of repositories to be specified.")
 	}
 
-	//TODO:: Uncomment once IsValidScopeQuery merged
-	// if repoCriteriaSpecified {
-	// 	plan, err := querybuilder.ParseQuery(*seriesInput.RepositoryScope.RepositoryCriteria, "literal")
-	// 	if err != nil {
-	// 		return errors.Wrap(err, "ParseQuery")
-	// 	}
-	// 	msg, valid := querybuilder.IsValidScopeQuery(plan)
-	// 	if !valid {
-	// 		return errors.New(msg)
-	// 	}
-	// }
+	if repoCriteriaSpecified {
+		plan, err := querybuilder.ParseQuery(*seriesInput.RepositoryScope.RepositoryCriteria, "literal")
+		if err != nil {
+			return errors.Wrap(err, "ParseQuery")
+		}
+		msg, valid := querybuilder.IsValidScopeQuery(plan)
+		if !valid {
+			return errors.New(msg)
+		}
+	}
 
 	return nil
 }
