@@ -5,11 +5,10 @@ import endOfDay from 'date-fns/endOfDay'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Button, useEventObservable, Link, Label, Input, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Button, useEventObservable, Link, Label, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../../backend/graphql'
 import {

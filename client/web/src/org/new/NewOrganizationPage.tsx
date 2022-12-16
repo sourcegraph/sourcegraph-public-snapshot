@@ -2,9 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import * as H from 'history'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Input, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'

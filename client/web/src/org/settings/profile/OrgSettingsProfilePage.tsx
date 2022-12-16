@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'

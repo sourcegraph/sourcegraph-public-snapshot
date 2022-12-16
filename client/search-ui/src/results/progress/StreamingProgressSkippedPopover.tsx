@@ -17,6 +17,7 @@ import {
     Text,
     H3,
     Markdown,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'

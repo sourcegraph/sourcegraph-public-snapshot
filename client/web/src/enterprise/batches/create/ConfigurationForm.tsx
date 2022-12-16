@@ -5,10 +5,9 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import { useHistory, useLocation } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import {
