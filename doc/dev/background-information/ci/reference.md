@@ -90,8 +90,8 @@ The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
+- Trigger 4.3 release branch healthcheck build
 - Trigger 4.2 release branch healthcheck build
-- Trigger 4.1 release branch healthcheck build
 - Upload build trace
 
 ### Browser extension nightly release build
