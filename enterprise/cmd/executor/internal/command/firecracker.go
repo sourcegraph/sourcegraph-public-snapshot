@@ -24,7 +24,10 @@ type commandRunner interface {
 	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
-const firecrackerContainerDir = "/work"
+const (
+	firecrackerContainerDir  = "/work"
+	firecrackerDockerConfDir = "/etc/docker/cli"
+)
 
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
@@ -142,7 +145,7 @@ func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, e
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) (dockerConfigPath string, err error) {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) (_ string, err error) {
 	var daemonConfigFile string
 	if len(options.FirecrackerOptions.DockerRegistryMirrorURLs) > 0 {
 		var err error
@@ -153,6 +156,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	}
 
 	// If docker auth config is present, write it.
+	var dockerConfigPath string
 	if len(options.DockerOptions.DockerAuthConfig.Auths) > 0 {
 		d, err := json.Marshal(options.DockerOptions.DockerAuthConfig)
 		if err != nil {
@@ -218,7 +222,11 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		}
 	}
 
-	return dockerConfigPath, nil
+	if dockerConfigPath != "" {
+		return firecrackerDockerConfDir, nil
+	}
+
+	return "", nil
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
@@ -259,7 +267,7 @@ func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile, dockerConfi
 	}
 
 	if dockerConfigPath != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, dockerConfigPath))
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, firecrackerDockerConfDir))
 	}
 
 	sort.Strings(copyfiles)
