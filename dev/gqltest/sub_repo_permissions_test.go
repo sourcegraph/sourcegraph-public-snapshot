@@ -25,7 +25,10 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
-	userClient, repoName := createTestUserAndWaitForRepo(t)
+	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
 
 	// Test cases
 
@@ -85,9 +88,12 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
-	userClient, repoName := createTestUserAndWaitForRepo(t)
+	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
 
-	err := client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WaitForReposToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,9 +125,12 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
-	userClient, _ := createTestUserAndWaitForRepo(t)
+	userClient, _, err := createTestUserAndWaitForRepo(t)
+	if err != nil {
+		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+	}
 
-	err := client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WaitForReposToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +326,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	})
 }
 
-func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
+func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, error) {
 	t.Helper()
 
 	// We need to create the `alice` user with a specific e-mail address. This user is
@@ -339,13 +348,13 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeClonedWithin(45*time.Second, perforceRepoName)
+	err = userClient.WaitForReposToBeClonedWithin(5*time.Second, perforceRepoName)
 	if err != nil {
-		t.Fatal(err)
+		return nil, "", err
 	}
 
 	syncUserPerms(t, aliceID, aliceUsername)
-	return userClient, perforceRepoName
+	return userClient, perforceRepoName, nil
 }
 
 func syncUserPerms(t *testing.T, userID, userName string) {
