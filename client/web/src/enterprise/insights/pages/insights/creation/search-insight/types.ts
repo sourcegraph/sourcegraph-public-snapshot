@@ -3,11 +3,7 @@ import { QueryState } from '@sourcegraph/search'
 import { EditableDataSeries } from '../../../../components'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
-
-export enum RepoMode {
-    SearchQuery,
-    DirectURLList,
-}
+export type RepoMode = 'search-query' | 'urls-list'
 
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */
