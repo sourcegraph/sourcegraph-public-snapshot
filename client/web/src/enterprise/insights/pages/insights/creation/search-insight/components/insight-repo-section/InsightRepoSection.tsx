@@ -157,9 +157,9 @@ interface SmartSearchQueryRepoFieldProps {
 }
 
 function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): ReactElement {
-    const { repoQuery, label, disabled, 'aria-labelledby': ariaLabelledby } = props
+    const { repoQuery, label, 'aria-labelledby': ariaLabelledby } = props
 
-    const { value, onChange, ...attributes } = repoQuery.input
+    const { value, onChange, disabled, ...attributes } = repoQuery.input
 
     const handleChipSuggestions = (chip: SmartRepoQueryChip): void => {
         const nextQueryValue = `${value.query} ${chip.query}`.trimStart()
@@ -195,12 +195,13 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     query={value.query}
                     patternType={SearchPatternType.standard}
                     className={styles.repoLabelPreviewLink}
+                    tabIndex={disabled ? -1 : 0}
                 >
                     <LinkExternalIcon size={18} />
                 </MonacoPreviewLink>
             </LabelComponent>
 
-            <SmartRepoQueryChips onChipClick={handleChipSuggestions} />
+            <SmartRepoQueryChips disabled={disabled} onChipClick={handleChipSuggestions} />
 
             {getDefaultInputError(repoQuery) && (
                 <InputErrorMessage message={getDefaultInputError(repoQuery)} className="mt-2 mb-2" />
@@ -242,17 +243,24 @@ const CHIP_QUERIES: SmartRepoQueryChip[] = [
 ]
 
 interface SmartRepoQueryChipsProps {
+    disabled?: boolean
     onChipClick: (chip: SmartRepoQueryChip) => void
 }
 
 function SmartRepoQueryChips(props: SmartRepoQueryChipsProps): ReactElement {
-    const { onChipClick } = props
+    const { disabled, onChipClick } = props
 
     return (
         <ul className={styles.chipsList}>
             {CHIP_QUERIES.map(chip => (
                 <li key={chip.id}>
-                    <Button type="button" className={styles.queryChip} onClick={() => onChipClick(chip)}>
+                    <Button
+                        type="button"
+                        tabIndex={disabled ? -1 : 0}
+                        disabled={disabled}
+                        className={styles.queryChip}
+                        onClick={() => onChipClick(chip)}
+                    >
                         <SyntaxHighlightedSearchQuery
                             query={chip.query}
                             searchPatternType={SearchPatternType.standard}
