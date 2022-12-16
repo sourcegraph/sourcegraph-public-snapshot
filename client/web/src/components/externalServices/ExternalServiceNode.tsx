@@ -4,9 +4,8 @@ import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, Icon, Tooltip, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'

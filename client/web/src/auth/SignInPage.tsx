@@ -5,8 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
