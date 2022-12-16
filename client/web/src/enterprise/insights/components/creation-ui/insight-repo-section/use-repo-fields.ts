@@ -1,15 +1,13 @@
 import { QueryState } from '@sourcegraph/search'
 
-import { useExperimentalFeatures } from '../../../../../../../../stores'
+import { useExperimentalFeatures } from '../../../../../stores'
+import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
+import { useField, useFieldAPI, ValidationResult } from '../../form'
+import { FormAPI } from '../../form/hooks/useForm'
 import {
     insightRepositoriesAsyncValidator,
     insightRepositoriesValidator,
-    useField,
-    useFieldAPI,
-    ValidationResult,
-} from '../../../../../../components'
-import { FormAPI } from '../../../../../../components/form/hooks/useForm'
-import { RepoMode } from '../../types'
+} from '../validators/validators'
 
 const SEARCH_QUERY_VALIDATOR = (value?: QueryState): ValidationResult => {
     if (value && value.query.trim() === '') {

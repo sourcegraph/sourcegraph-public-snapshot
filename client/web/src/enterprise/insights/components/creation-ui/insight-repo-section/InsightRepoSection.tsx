@@ -7,7 +7,8 @@ import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@s
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Code, Input, Label, InputElement, InputErrorMessage, InputDescription } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../../stores'
+import { useExperimentalFeatures } from '../../../../../stores'
+import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
 import {
     FormGroup,
     getDefaultInputProps,
@@ -16,9 +17,8 @@ import {
     RepositoriesField,
     useFieldAPI,
     MonacoField,
-} from '../../../../../../components'
-import { MonacoPreviewLink } from '../../../../../../components/form/monaco-field'
-import { CreateInsightFormFields } from '../../types'
+} from '../../form'
+import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'
 

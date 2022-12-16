@@ -10,11 +10,10 @@ import {
     getDefaultInputProps,
     useFieldAPI,
     SubmissionErrors,
+    RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateInsightFormFields } from '../types'
-
-import { RepoSettingSection } from './insight-repo-section/InsightRepoSection'
 
 interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     handleSubmit: FormEventHandler
