@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -104,13 +105,14 @@ type BackgroundJobMonitor struct {
 }
 
 type JobMonitorConfig struct {
-	InsightsDB      edb.InsightsDB
-	InsightStore    store.Interface
-	RepoStore       database.RepoStore
-	BackfillRunner  pipeline.Backfiller
-	ObservationCtx  *observation.Context
-	AllRepoIterator *discovery.AllReposIterator
-	CostAnalyzer    *priority.QueryAnalyzer
+	InsightsDB        edb.InsightsDB
+	InsightStore      store.Interface
+	RepoStore         database.RepoStore
+	BackfillRunner    pipeline.Backfiller
+	ObservationCtx    *observation.Context
+	AllRepoIterator   *discovery.AllReposIterator
+	CostAnalyzer      *priority.QueryAnalyzer
+	RepoQueryExecutor query.RepoQueryExecutor
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {

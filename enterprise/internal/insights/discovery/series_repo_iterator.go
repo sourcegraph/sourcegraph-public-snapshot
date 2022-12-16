@@ -10,7 +10,7 @@ import (
 type seriesRepoIterator struct {
 	allRepoIterator   *AllReposIterator
 	repoStore         RepoStore
-	repoQueryExecutor *query.StreamingRepoQueryExecutor
+	repoQueryExecutor query.RepoQueryExecutor
 }
 
 type SeriesRepoIterator interface {
@@ -31,9 +31,10 @@ func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.Insigh
 	}
 }
 
-func NewSeriesRepoIterator(allReposIterator *AllReposIterator, repoStore RepoStore) SeriesRepoIterator {
+func NewSeriesRepoIterator(allReposIterator *AllReposIterator, repoStore RepoStore, repoQueryExecutor query.RepoQueryExecutor) SeriesRepoIterator {
 	return &seriesRepoIterator{
-		allRepoIterator: allReposIterator,
-		repoStore:       repoStore,
+		allRepoIterator:   allReposIterator,
+		repoStore:         repoStore,
+		repoQueryExecutor: repoQueryExecutor,
 	}
 }

@@ -19,6 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
+}
+
 type StreamingQueryExecutor struct {
 	justInTimeExecutor
 
@@ -130,7 +134,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	return generated, nil
 }
 
-func NewStreamingRepoExecutor(logger log.Logger) *StreamingRepoQueryExecutor {
+func NewStreamingRepoExecutor(logger log.Logger) RepoQueryExecutor {
 	return &StreamingRepoQueryExecutor{
 		logger: logger,
 	}

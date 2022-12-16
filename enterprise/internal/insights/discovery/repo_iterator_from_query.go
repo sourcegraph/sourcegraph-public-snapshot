@@ -14,12 +14,12 @@ type RepoIteratorFromQuery struct {
 	repos      []itypes.MinimalRepo
 }
 
-func NewRepoIteratorFromQuery(ctx context.Context, query string, repoQueryExecutor *query.StreamingRepoQueryExecutor) (*RepoIteratorFromQuery, error) {
+func NewRepoIteratorFromQuery(ctx context.Context, query string, executor query.RepoQueryExecutor) (*RepoIteratorFromQuery, error) {
 	// 🚨 SECURITY: this context will ensure that this iterator runs a search that can fetch all matching repositories,
 	// not just the ones visible for a user context.
 	globalCtx := actor.WithInternalActor(ctx)
-	
-	repos, err := repoQueryExecutor.ExecuteRepoList(globalCtx, query)
+
+	repos, err := executor.ExecuteRepoList(globalCtx, query)
 	if err != nil {
 		return nil, err
 	}
