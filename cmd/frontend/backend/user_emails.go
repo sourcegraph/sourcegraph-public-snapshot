@@ -365,7 +365,7 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 
 	// We also need to delete sub-repo permissions granted to the user.
 	if err := db.SubRepoPerms().DeleteByUser(ctx, userID); err != nil {
-		return errors.Wrapf(err, "removing sub-repo permissions for user %d", userID)
+		return errors.Wrapf(err, "removing sub-repo permissions for user with ID %d", userID)
 	}
 
 	return nil
