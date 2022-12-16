@@ -137,6 +137,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 				indexer = indexer,
 				indexer_args = args,
 				outfile = "index.scip",
+				requested_envvars = { "NPM_TOKEN" },
 			}
 		end,
 	}))

@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -260,7 +260,7 @@ func TestMakeSearchJobs(t *testing.T) {
 		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit error", []string{"error occurred: true"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-				return nil, discovery.EmptyRepoErr
+				return nil, gitserver.EmptyRepoErr
 			},
 			recentCommits: basicCommitClient.RecentCommits,
 		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Empty repo", []string{"error occurred: false"})},

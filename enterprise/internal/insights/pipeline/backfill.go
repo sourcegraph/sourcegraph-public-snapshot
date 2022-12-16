@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -139,7 +139,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Name)
 		if err != nil {
-			if errors.Is(err, discovery.EmptyRepoErr) {
+			if errors.Is(err, gitserver.EmptyRepoErr) {
 				// This is fine it's empty there is no work to be done
 				compressionSavingsMetric.
 					With(prometheus.Labels{"preempted": "true"}).

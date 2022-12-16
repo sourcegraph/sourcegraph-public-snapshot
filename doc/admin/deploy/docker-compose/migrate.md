@@ -1,5 +1,9 @@
 # Migrate from the single Docker image to Docker Compose
 
+> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
+---
+
 Since Sourcegraph 3.13, deploying via Docker Compose is the recommended method for production deployments as it provides resource isolation between Sourcegraph services which makes it more scalable and stable. This page describes how to migrate from a single Docker image deployment to the Docker Compose deployment method.
 
 Sourcegraph's core data (including user accounts, configuration, repository-metadata, etc.), can be migrated from the single Docker image (`sourcegraph/server`) to the Docker Compose deployment by dumping and restoring the Postgres database.

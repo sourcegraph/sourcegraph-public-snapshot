@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
@@ -64,7 +65,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,

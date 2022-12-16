@@ -41,7 +41,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 		}
 
 		values = append(values, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 			index.State,
 			index.Commit,
 			index.RepositoryID,
@@ -52,6 +52,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
 			pq.Array(index.ExecutionLogs),
+			pq.Array(index.RequestedEnvVars),
 		))
 	}
 
@@ -82,7 +83,8 @@ INSERT INTO lsif_indexes (
 	indexer,
 	indexer_args,
 	outfile,
-	execution_logs
+	execution_logs,
+	requested_envvars
 ) VALUES %s
 RETURNING id
 `
@@ -158,6 +160,7 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
+	u.requested_envvars,
 	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
@@ -363,7 +366,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -419,7 +423,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -801,7 +806,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id

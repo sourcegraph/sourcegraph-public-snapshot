@@ -1228,3 +1228,46 @@ input SaveInsightAsNewViewInput {
     """
     viewControls: InsightViewControlsInput
 }
+
+extend type Query {
+    """
+    Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
+    """
+    validateScopedInsightQuery(query: String!): ScopedInsightQueryPayload!
+    """
+    Returns the number of repositories matched given a valid query.
+    """
+    previewRepositoriesFromQuery(query: String!): RepositoryPreviewPayload!
+}
+
+"""
+Information about scope query validity
+"""
+type ScopedInsightQueryPayload {
+    """
+    The original query.
+    """
+    query: String!
+    """
+    Whether the query is valid.
+    """
+    isValid: Boolean!
+    """
+    The reason why the query is invalid.
+    """
+    invalidReason: String
+}
+
+"""
+Information about the number of repositories matched from a query
+"""
+type RepositoryPreviewPayload {
+    """
+    The query used to find number of repository matches.
+    """
+    query: String!
+    """
+    The number of repositories matched.
+    """
+    numberOfRepositories: Int
+}
