@@ -39988,6 +39988,9 @@ func (c SettingsStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockSubRepoPermsStore struct {
+	// DeleteByUserFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteByUser.
+	DeleteByUserFunc *SubRepoPermsStoreDeleteByUserFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *SubRepoPermsStoreDoneFunc
@@ -40028,6 +40031,11 @@ type MockSubRepoPermsStore struct {
 // overwritten.
 func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 	return &MockSubRepoPermsStore{
+		DeleteByUserFunc: &SubRepoPermsStoreDeleteByUserFunc{
+			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
 		DoneFunc: &SubRepoPermsStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
@@ -40091,6 +40099,11 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 // overwritten.
 func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
 	return &MockSubRepoPermsStore{
+		DeleteByUserFunc: &SubRepoPermsStoreDeleteByUserFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockSubRepoPermsStore.DeleteByUser")
+			},
+		},
 		DoneFunc: &SubRepoPermsStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockSubRepoPermsStore.Done")
@@ -40154,6 +40167,9 @@ func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
 // implementation, unless overwritten.
 func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
 	return &MockSubRepoPermsStore{
+		DeleteByUserFunc: &SubRepoPermsStoreDeleteByUserFunc{
+			defaultHook: i.DeleteByUser,
+		},
 		DoneFunc: &SubRepoPermsStoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -40188,6 +40204,113 @@ func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
 			defaultHook: i.With,
 		},
 	}
+}
+
+// SubRepoPermsStoreDeleteByUserFunc describes the behavior when the
+// DeleteByUser method of the parent MockSubRepoPermsStore instance is
+// invoked.
+type SubRepoPermsStoreDeleteByUserFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []SubRepoPermsStoreDeleteByUserFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteByUser delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSubRepoPermsStore) DeleteByUser(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteByUserFunc.nextHook()(v0, v1)
+	m.DeleteByUserFunc.appendCall(SubRepoPermsStoreDeleteByUserFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteByUser method
+// of the parent MockSubRepoPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *SubRepoPermsStoreDeleteByUserFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteByUser method of the parent MockSubRepoPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SubRepoPermsStoreDeleteByUserFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SubRepoPermsStoreDeleteByUserFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SubRepoPermsStoreDeleteByUserFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *SubRepoPermsStoreDeleteByUserFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SubRepoPermsStoreDeleteByUserFunc) appendCall(r0 SubRepoPermsStoreDeleteByUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SubRepoPermsStoreDeleteByUserFuncCall
+// objects describing the invocations of this function.
+func (f *SubRepoPermsStoreDeleteByUserFunc) History() []SubRepoPermsStoreDeleteByUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SubRepoPermsStoreDeleteByUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SubRepoPermsStoreDeleteByUserFuncCall is an object that describes an
+// invocation of method DeleteByUser on an instance of
+// MockSubRepoPermsStore.
+type SubRepoPermsStoreDeleteByUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SubRepoPermsStoreDeleteByUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SubRepoPermsStoreDeleteByUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SubRepoPermsStoreDoneFunc describes the behavior when the Done method of
