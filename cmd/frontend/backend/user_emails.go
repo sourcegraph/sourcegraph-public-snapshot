@@ -141,11 +141,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 		// transaction has committed so that it takes into account any changes triggered
 		// by the removal of the e-mail.
-		if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-			UserIDs: []int32{userID},
-		}); err != nil {
-			logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
-		}
+		triggerPermissionsSync(ctx, logger, userID)
 	}()
 
 	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
@@ -222,11 +218,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 		// transaction has committed so that it takes into account any changes triggered
 		// by changes in the verification status of the e-mail.
-		if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-			UserIDs: []int32{userID},
-		}); err != nil {
-			logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
-		}
+		triggerPermissionsSync(ctx, logger, userID)
 	}()
 
 	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
@@ -479,3 +471,11 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,
 })
+
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, userID int32) {
+	if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	}); err != nil {
+		logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
+	}
+}
