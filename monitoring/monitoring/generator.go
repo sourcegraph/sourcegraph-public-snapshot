@@ -17,8 +17,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/grafanaclient"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/headertransport"
 )
 
 // GenerateOptions declares options for the monitoring generator.
@@ -85,20 +85,11 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if opts.GrafanaURL != "" && opts.Reload {
 		gclog := logger.Scoped("grafana.client", "grafana client setup")
 
-		// DefaultHTTPClient is used unless additional headers are requested
-		httpClient := grafanasdk.DefaultHTTPClient
-		if len(opts.GrafanaHeaders) > 0 {
-			gclog.Debug("Adding additional headers to Grafana requests",
-				log.String("headers", fmt.Sprintf("%v", opts.GrafanaHeaders)))
-			httpClient.Transport = headertransport.New(httpClient.Transport, opts.GrafanaHeaders)
+		grafanaClient, err := grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
+		if err != nil {
+			return err
 		}
 
-		// Init Grafana client
-		var err error
-		grafanaClient, err = grafanasdk.NewClient(opts.GrafanaURL, opts.GrafanaCredentials, httpClient)
-		if err != nil {
-			return errors.Wrap(err, "Failed to initialize Grafana client")
-		}
 		if opts.GrafanaFolder != "" {
 			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
 
