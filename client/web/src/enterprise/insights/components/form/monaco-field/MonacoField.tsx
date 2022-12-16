@@ -68,6 +68,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         patternType = SearchPatternType.regexp,
         'aria-labelledby': ariaLabelledby,
         'aria-invalid': ariaInvalid,
+        tabIndex = 0,
     } = props
 
     const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
@@ -105,6 +106,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             autoFocus={autoFocus}
             onBlur={onBlur}
             applySuggestionsOnEnter={applySuggestionsOnEnter}
+            tabIndex={tabIndex}
         />
     )
 })
