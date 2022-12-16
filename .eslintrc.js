@@ -13,8 +13,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.eslint.json',
+    // EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
+    // project: __dirname + '/tsconfig.eslint.json',
   },
   settings: {
     react: {
@@ -38,7 +38,6 @@ const config = {
     'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
-    '@typescript-eslint/consistent-type-exports': 'warn',
     'no-restricted-imports': [
       'error',
       {

@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react'
 import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
@@ -21,8 +20,7 @@ import {
     Icon,
     H4,
     Text,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { StatusMessagesResult } from '../graphql-operations'
 

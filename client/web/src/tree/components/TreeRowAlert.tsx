@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert, ErrorAlertProps } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorAlert } from '@sourcegraph/wildcard';
 
 import styles from '../Tree.module.scss'
 

@@ -6,7 +6,6 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -19,8 +18,7 @@ import {
     LoadingSpinner,
     H2,
     Text,
-    ButtonLink,
-} from '@sourcegraph/wildcard'
+    ButtonLink, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'

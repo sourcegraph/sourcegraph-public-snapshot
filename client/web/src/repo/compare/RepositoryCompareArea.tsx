@@ -9,7 +9,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
@@ -30,7 +29,7 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'

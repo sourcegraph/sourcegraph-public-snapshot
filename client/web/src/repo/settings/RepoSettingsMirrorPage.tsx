@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     Container,
@@ -18,8 +17,7 @@ import {
     Icon,
     Input,
     Text,
-    Code,
-} from '@sourcegraph/wildcard'
+    Code, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'

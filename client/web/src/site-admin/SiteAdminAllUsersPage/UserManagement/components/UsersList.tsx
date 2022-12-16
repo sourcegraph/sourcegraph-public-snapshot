@@ -15,7 +15,6 @@ import {
 import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import {
@@ -32,8 +31,7 @@ import {
     Popover,
     Position,
     PopoverOpenEvent,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     SiteUserOrderBy,

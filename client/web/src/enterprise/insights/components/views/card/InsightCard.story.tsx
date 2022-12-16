@@ -2,7 +2,6 @@ import { mdiFilterOutline, mdiDotsVertical } from '@mdi/js'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
     Button,
     Menu,
@@ -14,8 +13,7 @@ import {
     LegendItem,
     LegendList,
     ParentSize,
-    Series,
-} from '@sourcegraph/wildcard'
+    Series, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'

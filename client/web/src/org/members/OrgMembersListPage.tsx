@@ -5,7 +5,6 @@ import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import {
     Container,
@@ -20,8 +19,7 @@ import {
     PageSelector,
     H3,
     Icon,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {

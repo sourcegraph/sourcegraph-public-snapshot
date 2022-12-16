@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
 import { IncompleteDatapointAlert } from '@sourcegraph/shared/src/schema'
 import {
@@ -19,8 +18,7 @@ import {
     PopoverContent,
     PopoverTail,
     ScrollBox,
-    Link,
-} from '@sourcegraph/wildcard'
+    Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BackendInsightSeries } from '../../../../../../core'
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'

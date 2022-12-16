@@ -8,7 +8,6 @@ import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client/src'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -24,8 +23,7 @@ import {
     PopoverTrigger,
     Position,
     Text,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,

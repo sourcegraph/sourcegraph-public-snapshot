@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Badge,
@@ -14,8 +13,7 @@ import {
     MenuDivider,
     MenuHeader,
     MenuList,
-    Position,
-} from '@sourcegraph/wildcard'
+    Position, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LSIFUploadState, LSIFIndexState } from '../../../../graphql-operations'
 import {

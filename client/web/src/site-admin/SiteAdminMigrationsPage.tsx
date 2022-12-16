@@ -7,7 +7,6 @@ import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
 import { parse as _parseVersion, SemVer } from 'semver'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -20,8 +19,7 @@ import {
     H3,
     Text,
     Tooltip,
-    PageHeader,
-} from '@sourcegraph/wildcard'
+    PageHeader, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'

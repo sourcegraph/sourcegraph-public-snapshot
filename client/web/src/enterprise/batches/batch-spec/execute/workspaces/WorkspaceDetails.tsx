@@ -18,7 +18,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -44,8 +43,7 @@ import {
     CollapseHeader,
     Collapse,
     Heading,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'

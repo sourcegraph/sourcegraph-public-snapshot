@@ -5,10 +5,9 @@ import classNames from 'classnames'
 import { RouteComponentProps, useLocation } from 'react-router'
 import { of, Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -164,9 +163,9 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
         (args: FilteredConnectionQueryArguments) => {
             setArgs({
                 query: args.query ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                 
                 state: (args as any).state ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                 
                 isLatestForRepo: (args as any).isLatestForRepo ?? null,
                 repository: repo?.id ?? null,
             })
@@ -211,7 +210,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                         className="mr-2"
                         variant="primary"
                         disabled={selection !== 'all' && selection.size === 0}
-                        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                         
                         onClick={async () => {
                             if (selection === 'all') {
                                 if (args === undefined) {
