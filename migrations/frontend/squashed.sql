@@ -3133,6 +3133,56 @@ CREATE SEQUENCE out_of_band_migrations_id_seq
 
 ALTER SEQUENCE out_of_band_migrations_id_seq OWNED BY out_of_band_migrations.id;
 
+CREATE TABLE outbound_webhook_event_types (
+    id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text
+);
+
+CREATE SEQUENCE outbound_webhook_event_types_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_event_types_id_seq OWNED BY outbound_webhook_event_types.id;
+
+CREATE TABLE outbound_webhooks (
+    id bigint NOT NULL,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text,
+    url bytea NOT NULL,
+    secret bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhooks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhooks_id_seq OWNED BY outbound_webhooks.id;
+
+CREATE VIEW outbound_webhooks_with_event_types AS
+ SELECT outbound_webhooks.id,
+    outbound_webhooks.created_by,
+    outbound_webhooks.created_at,
+    outbound_webhooks.updated_by,
+    outbound_webhooks.updated_at,
+    outbound_webhooks.encryption_key_id,
+    outbound_webhooks.url,
+    outbound_webhooks.secret,
+    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object
+           FROM outbound_webhook_event_types
+          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
+   FROM outbound_webhooks;
+
 CREATE TABLE permissions (
     id integer NOT NULL,
     namespace text NOT NULL,
@@ -3941,6 +3991,10 @@ ALTER TABLE ONLY out_of_band_migrations ALTER COLUMN id SET DEFAULT nextval('out
 
 ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_errors_id_seq'::regclass);
 
+ALTER TABLE ONLY outbound_webhook_event_types ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_event_types_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
+
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
@@ -4246,6 +4300,12 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 
 ALTER TABLE ONLY out_of_band_migrations
     ADD CONSTRAINT out_of_band_migrations_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permissions
     ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
@@ -4648,6 +4708,8 @@ CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHER
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
+
+CREATE INDEX outbound_webhook_event_types_event_type_idx ON outbound_webhook_event_types USING btree (event_type, scope);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
@@ -5101,6 +5163,15 @@ ALTER TABLE ONLY org_stats
 
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);

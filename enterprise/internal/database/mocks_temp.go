@@ -6880,6 +6880,9 @@ type MockEnterpriseDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *EnterpriseDBOrgsFunc
+	// OutboundWebhooksFunc is an instance of a mock function object
+	// controlling the behavior of the method OutboundWebhooks.
+	OutboundWebhooksFunc *EnterpriseDBOutboundWebhooksFunc
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *EnterpriseDBPermissionsFunc
@@ -7068,6 +7071,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: func() (r0 database.OrgStore) {
+				return
+			},
+		},
+		OutboundWebhooksFunc: &EnterpriseDBOutboundWebhooksFunc{
+			defaultHook: func(encryption.Key) (r0 database.OutboundWebhookStore) {
 				return
 			},
 		},
@@ -7313,6 +7321,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Orgs")
 			},
 		},
+		OutboundWebhooksFunc: &EnterpriseDBOutboundWebhooksFunc{
+			defaultHook: func(encryption.Key) database.OutboundWebhookStore {
+				panic("unexpected invocation of MockEnterpriseDB.OutboundWebhooks")
+			},
+		},
 		PermissionsFunc: &EnterpriseDBPermissionsFunc{
 			defaultHook: func() database.PermissionStore {
 				panic("unexpected invocation of MockEnterpriseDB.Permissions")
@@ -7511,6 +7524,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: i.Orgs,
+		},
+		OutboundWebhooksFunc: &EnterpriseDBOutboundWebhooksFunc{
+			defaultHook: i.OutboundWebhooks,
 		},
 		PermissionsFunc: &EnterpriseDBPermissionsFunc{
 			defaultHook: i.Permissions,
@@ -9798,6 +9814,109 @@ func (c EnterpriseDBOrgsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBOrgsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBOutboundWebhooksFunc describes the behavior when the
+// OutboundWebhooks method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBOutboundWebhooksFunc struct {
+	defaultHook func(encryption.Key) database.OutboundWebhookStore
+	hooks       []func(encryption.Key) database.OutboundWebhookStore
+	history     []EnterpriseDBOutboundWebhooksFuncCall
+	mutex       sync.Mutex
+}
+
+// OutboundWebhooks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) OutboundWebhooks(v0 encryption.Key) database.OutboundWebhookStore {
+	r0 := m.OutboundWebhooksFunc.nextHook()(v0)
+	m.OutboundWebhooksFunc.appendCall(EnterpriseDBOutboundWebhooksFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OutboundWebhooks
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBOutboundWebhooksFunc) SetDefaultHook(hook func(encryption.Key) database.OutboundWebhookStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OutboundWebhooks method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBOutboundWebhooksFunc) PushHook(hook func(encryption.Key) database.OutboundWebhookStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBOutboundWebhooksFunc) SetDefaultReturn(r0 database.OutboundWebhookStore) {
+	f.SetDefaultHook(func(encryption.Key) database.OutboundWebhookStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBOutboundWebhooksFunc) PushReturn(r0 database.OutboundWebhookStore) {
+	f.PushHook(func(encryption.Key) database.OutboundWebhookStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBOutboundWebhooksFunc) nextHook() func(encryption.Key) database.OutboundWebhookStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBOutboundWebhooksFunc) appendCall(r0 EnterpriseDBOutboundWebhooksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBOutboundWebhooksFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBOutboundWebhooksFunc) History() []EnterpriseDBOutboundWebhooksFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBOutboundWebhooksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBOutboundWebhooksFuncCall is an object that describes an
+// invocation of method OutboundWebhooks on an instance of MockEnterpriseDB.
+type EnterpriseDBOutboundWebhooksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 encryption.Key
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.OutboundWebhookStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBOutboundWebhooksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBOutboundWebhooksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
