@@ -257,16 +257,12 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRe
 				View struct {
 					Id                   string `json:"id"`
 					RepositoryDefinition struct {
-						InsightRepositoryScope struct {
-							Repositories []string `json:"Repositories"`
-						} `json:"InsightRepositoryScope"`
-					} `json:"RepositoryDefinition"`
+						Repositories []string `json:"Repositories"`
+					} `json:"repositoryDefinition"`
 					TimeScope struct {
-						InsightIntervalTimeScope struct {
-							Unit  string `json:"unit"`
-							Value int32  `json:"value"`
-						} `json:"InsightIntervalTimeScope"`
-					} `json:"TimeScope"`
+						Unit  string `json:"Unit"`
+						Value int32  `json:"Value"`
+					} `json:"timeScope"`
 					Presentation struct {
 						SeriesPresentation []struct {
 							SeriesId string `json:"SeriesId"`
@@ -291,9 +287,9 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRe
 		SeriesId:      singleSeries[0].SeriesId,
 		Label:         singleSeries[0].Label,
 		Color:         singleSeries[0].Color,
-		Repos:         resp.Data.CreateLineChartSearchInsight.View.RepositoryDefinition.InsightRepositoryScope.Repositories,
-		IntervalUnit:  resp.Data.CreateLineChartSearchInsight.View.TimeScope.InsightIntervalTimeScope.Unit,
-		IntervalValue: resp.Data.CreateLineChartSearchInsight.View.TimeScope.InsightIntervalTimeScope.Value,
+		Repos:         resp.Data.CreateLineChartSearchInsight.View.RepositoryDefinition.Repositories,
+		IntervalUnit:  resp.Data.CreateLineChartSearchInsight.View.TimeScope.Unit,
+		IntervalValue: resp.Data.CreateLineChartSearchInsight.View.TimeScope.Value,
 	}, nil
 }
 
