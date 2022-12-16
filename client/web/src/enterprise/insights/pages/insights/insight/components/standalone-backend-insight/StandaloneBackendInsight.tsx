@@ -27,7 +27,6 @@ import {
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
 import {
     BackendInsightData,
     BackendInsight,
@@ -133,7 +132,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         })
 
         setOriginalInsightFilters(filters)
-        history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
+        history.push('/insights/all')
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 

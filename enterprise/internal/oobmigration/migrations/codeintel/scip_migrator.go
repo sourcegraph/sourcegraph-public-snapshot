@@ -535,6 +535,12 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	s.batch = nil
 	s.batchPayloadSum = 0
 
+	// NOTE: This logic differs from similar logic in scip_write.go when processing SCIP uploads.
+	// In that scenario, we have to be careful of inserting a row with an existing `payload_hash`.
+	// Because we have a unique prefix containing the upload ID here, and we have no expectation
+	// that interned LSIF graphs will produce the same SCIP document, there should be no expected
+	// collisions on insertion here.
+
 	documentIDs, err := batch.WithInserterForIdentifiers(
 		ctx,
 		s.tx.Handle(),
