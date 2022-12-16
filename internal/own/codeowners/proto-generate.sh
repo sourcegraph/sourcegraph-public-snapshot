@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-CODEOWNERS="$(readlink -f $(dirname "${BASH_SOURCE[0]}"))"
+CODEOWNERS="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 REPO_ROOT="$(readlink -f "${CODEOWNERS}/../../..")" # cd to repo root dir
 cd "${CODEOWNERS}"
 
