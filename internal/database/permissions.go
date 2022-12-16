@@ -72,6 +72,10 @@ type permissionStore struct {
 
 var _ PermissionStore = &permissionStore{}
 
+func PermissionsWith(other basestore.ShareableStore) PermissionStore {
+	return &permissionStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 const permissionCreateQueryFmtStr = `
 INSERT INTO
 	permissions(%s)
