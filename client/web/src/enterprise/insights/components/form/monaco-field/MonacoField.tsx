@@ -67,6 +67,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         placeholder,
         patternType = SearchPatternType.regexp,
         'aria-labelledby': ariaLabelledby,
+        'aria-invalid': ariaInvalid,
     } = props
 
     const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
@@ -86,6 +87,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     return (
         <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
+            ariaInvalid={ariaInvalid?.toString()}
             queryState={queryState}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
