@@ -49,6 +49,10 @@ type RoleStore interface {
 	Update(ctx context.Context, role *types.Role) (*types.Role, error)
 }
 
+func RolesWith(other basestore.ShareableStore) RoleStore {
+	return &roleStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 type RoleOpts struct {
 	ID int32
 }
