@@ -180,6 +180,7 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
             value: state.value,
             onBlur: handleBlur,
             onChange: handleChange,
+            disabled,
             ...inputProps,
         },
         meta: {
