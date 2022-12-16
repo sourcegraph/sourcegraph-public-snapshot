@@ -2,7 +2,7 @@ import { FC, FormHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { Card, Checkbox, Input, Label, Link } from '@sourcegraph/wildcard'
+import { Card, Input, Label, Link } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightTimeStepPicker,
@@ -11,9 +11,9 @@ import {
     getDefaultInputProps,
     useFieldAPI,
     Form,
-    RepositoriesField,
     LimitedAccessLabel,
     SubmissionErrors,
+    RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CaptureGroupFormFields } from '../types'
@@ -27,7 +27,8 @@ interface CaptureGroupCreationFormProps extends Omit<FormHTMLAttributes<HTMLForm
     form: Form<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
-    allReposMode: useFieldAPI<CaptureGroupFormFields['allRepos']>
+    repoQuery: useFieldAPI<CaptureGroupFormFields['repoQuery']>
+    repoMode: useFieldAPI<CaptureGroupFormFields['repoMode']>
     step: useFieldAPI<CaptureGroupFormFields['step']>
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery'], Checks>
@@ -49,8 +50,9 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
     const {
         form,
         title,
+        repoMode,
+        repoQuery,
         repositories,
-        allReposMode,
         query,
         step,
         stepValue,
@@ -70,43 +72,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
     return (
         // eslint-disable-next-line react/forbid-elements
         <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
-            <FormGroup
-                name="insight repositories"
-                title="Targeted repositories"
-                subtitle="Create a list of repositories to run your search over"
-            >
-                <Input
-                    as={RepositoriesField}
-                    autoFocus={true}
-                    required={true}
-                    label="Repositories"
-                    message="Separate repositories with commas"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    {...getDefaultInputProps(repositories)}
-                    className="mb-0 d-flex flex-column"
-                />
-
-                <Checkbox
-                    {...allReposMode.input}
-                    wrapperClassName="mb-1 mt-3 font-weight-normal"
-                    id="RunInsightsOnAllRepoInput"
-                    type="checkbox"
-                    value="all-repos-mode"
-                    checked={allReposMode.input.value}
-                    label="Run your insight over all your repositories"
-                />
-
-                <small className="w-100 mt-2 text-muted">
-                    This feature is actively in development. Read about the{' '}
-                    <Link
-                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        limitations here.
-                    </Link>
-                </small>
-            </FormGroup>
+            <RepoSettingSection repositories={repositories} repoQuery={repoQuery} repoMode={repoMode} />
 
             <hr aria-hidden={true} className="my-4 w-100" />
 
@@ -205,7 +171,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={allReposMode.input.value ? 12 : 7}
+                    numberOfPoints={7}
                 />
             </FormGroup>
 
