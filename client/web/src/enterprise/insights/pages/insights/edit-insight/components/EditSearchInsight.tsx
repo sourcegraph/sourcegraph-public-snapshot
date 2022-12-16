@@ -23,18 +23,22 @@ interface EditSearchBasedInsightProps {
 export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => {
     const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
-    const insightFormValues = useMemo<CreateInsightFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CreateInsightFormFields>(() => {
+        const isAllReposInsight = insight.repoQuery === '' && insight.repositories.length === 0
+        const repoQuery = isAllReposInsight ? 'repo:.*' : insight.repoQuery
+
+        return {
             title: insight.title,
+            repoMode: repoQuery ? 'search-query' : 'urls-list',
+            repoQuery: { query: repoQuery },
             repositories: insight.repositories.join(', '),
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-        }),
-        [insight]
-    )
+        }
+    }, [insight])
 
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
