@@ -76,11 +76,11 @@ func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
 const userRoleCreateQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
-	VALUES (
-		%s,
-		%s
-	)
-	RETURNING %s;
+VALUES (
+	%s,
+	%s
+)
+RETURNING %s;
 `
 
 func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error) {

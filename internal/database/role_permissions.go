@@ -38,6 +38,8 @@ type (
 type RolePermissionStore interface {
 	basestore.ShareableStore
 
+	// Create inserts the given role and permission relationship into the database.
+	Create(ctx context.Context, opts CreateRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
@@ -211,6 +213,40 @@ func (rp *rolePermissionStore) GetByRoleIDAndPermissionID(ctx context.Context, o
 		return nil, errors.Wrap(err, "scanning role permission")
 	}
 
+	return rolePermission, nil
+}
+
+const rolePermissionCreateQueryFmtStr = `
+INSERT INTO
+	role_permissions (%s)
+VALUES (
+	%s,
+	%s
+)
+RETURNING %s;
+`
+
+func (rp *rolePermissionStore) Create(ctx context.Context, opts CreateRolePermissionOpts) (*types.RolePermission, error) {
+	if opts.PermissionID == 0 {
+		return nil, errors.New("missing permission id")
+	}
+
+	if opts.RoleID == 0 {
+		return nil, errors.New("missing role id")
+	}
+
+	q := sqlf.Sprintf(
+		rolePermissionCreateQueryFmtStr,
+		sqlf.Join(rolePermissionInsertColumns, ", "),
+		opts.RoleID,
+		opts.PermissionID,
+		sqlf.Join(rolePermissionColumns, ", "),
+	)
+
+	rolePermission, err := scanRolePermission(rp.QueryRow(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning user role")
+	}
 	return rolePermission, nil
 }
 
