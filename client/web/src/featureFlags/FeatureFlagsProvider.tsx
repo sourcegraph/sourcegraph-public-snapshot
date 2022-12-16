@@ -50,7 +50,7 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
 const MINUTE = 60000
 
 const featureFlagsContextValue = {
-    client: new FeatureFlagClient(requestGraphQL, MINUTE),
+    client: new FeatureFlagClient(requestGraphQL, MINUTE * 10),
 } satisfies FeatureFlagsContextValue
 
 interface FeatureFlagsProviderProps {

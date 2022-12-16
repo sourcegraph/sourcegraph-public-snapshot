@@ -7,7 +7,7 @@ import type { requestGraphQL } from '../../backend/graphql'
 import { EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
-import { getFeatureFlagOverride, getFeatureFlagOverrideValue } from './feature-flag-local-overrides'
+import { getFeatureFlagOverrideValue } from './feature-flag-local-overrides'
 
 /**
  * Evaluate feature flags for the current user
