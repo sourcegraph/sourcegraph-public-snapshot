@@ -11,11 +11,12 @@ import styles from './MonacoPreviewLink.module.scss'
 export interface MonacoPreviewLinkProps {
     query: string
     patternType: SearchPatternType
+    tabIndex?: number
     className?: string
 }
 
 export const MonacoPreviewLink: FC<PropsWithChildren<MonacoPreviewLinkProps>> = props => {
-    const { query, patternType, className, children } = props
+    const { query, patternType, tabIndex, className, children } = props
     const queryURL = useMemo(() => `/search?${buildSearchURLQuery(query, patternType, false)}`, [patternType, query])
 
     return (
@@ -26,6 +27,7 @@ export const MonacoPreviewLink: FC<PropsWithChildren<MonacoPreviewLinkProps>> = 
             as={Link}
             target="_blank"
             rel="noopener noreferrer"
+            tabIndex={tabIndex}
         >
             {children}
         </Button>
