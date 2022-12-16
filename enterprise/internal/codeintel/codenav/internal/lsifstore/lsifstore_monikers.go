@@ -299,6 +299,7 @@ WITH RECURSIVE
 	ORDER BY
 		(ss.upload_id, msn.symbol_name)
 )
+ORDER BY dump_id, scheme, identifier
 `
 
 func monikersToString(vs []precise.MonikerData) string {

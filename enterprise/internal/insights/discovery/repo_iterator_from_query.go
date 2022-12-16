@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoIteratorFromQuery struct {
@@ -19,7 +21,12 @@ func NewRepoIteratorFromQuery(ctx context.Context, query string, executor query.
 	// not just the ones visible for a user context.
 	globalCtx := actor.WithInternalActor(ctx)
 
-	repos, err := executor.ExecuteRepoList(globalCtx, query)
+	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not build repository scope query")
+	}
+
+	repos, err := executor.ExecuteRepoList(globalCtx, repoScopeQuery)
 	if err != nil {
 		return nil, err
 	}

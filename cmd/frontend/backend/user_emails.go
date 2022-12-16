@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -130,7 +132,17 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 	if err != nil {
 		return errors.Wrap(err, "starting transaction")
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		if err != nil {
+			return
+		}
+
+		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+		// transaction has committed so that it takes into account any changes triggered
+		// by the removal of the e-mail.
+		triggerPermissionsSync(ctx, logger, userID)
+	}()
 
 	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 		return errors.Wrap(err, "removing user e-mail")
@@ -197,7 +209,17 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	if err != nil {
 		return errors.Wrap(err, "starting transaction")
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		if err != nil {
+			return
+		}
+
+		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+		// transaction has committed so that it takes into account any changes triggered
+		// by changes in the verification status of the e-mail.
+		triggerPermissionsSync(ctx, logger, userID)
+	}()
 
 	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
 		return err
@@ -319,11 +341,27 @@ Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Usern
 // deleteStalePerforceExternalAccounts will remove any Perforce external accounts
 // associated with the given user and e-mail combination.
 func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
-	return db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+	if err := db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
 		UserID:      userID,
 		AccountID:   email,
 		ServiceType: extsvc.TypePerforce,
-	})
+	}); err != nil {
+		return errors.Wrap(err, "deleting stale external account")
+	}
+
+	// Since we deleted an external account for the user we can no longer trust user
+	// based permissions, so we clear them out.
+	if err := db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
+		return errors.Wrapf(err, "revoking user permissions for user with ID %d", userID)
+	}
+
+	// We also need to delete sub-repo permissions granted to the user.
+	if err := db.SubRepoPerms().DeleteByUser(ctx, userID); err != nil {
+		return errors.Wrapf(err, "removing sub-repo permissions for user with ID %d", userID)
+	}
+
+	return nil
+
 }
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
@@ -433,3 +471,11 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,
 })
+
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, userID int32) {
+	if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	}); err != nil {
+		logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
+	}
+}

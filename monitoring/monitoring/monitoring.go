@@ -347,7 +347,9 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 						continue
 					}
 
-					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers, newVariableApplier(c.Variables))
+					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers,
+						// Alert queries cannot use variable intervals
+						newVariableApplierWith(c.Variables, false))
 					if err != nil {
 						return nil, errors.Errorf("%s.%s.%s: unable to generate query: %+v",
 							c.Name, o.Name, level, err)
@@ -691,7 +693,8 @@ func (o Observable) validate(variables []ContainerVariable) error {
 	}
 
 	// Check if query is valid
-	if err := promql.Validate(o.Query, newVariableApplier(variables)); err != nil {
+	allowIntervalVariables := o.NoAlert // if no alert is configured, allow interval variables
+	if err := promql.Validate(o.Query, newVariableApplierWith(variables, allowIntervalVariables)); err != nil {
 		return errors.Wrapf(err, "Query is invalid")
 	}
 

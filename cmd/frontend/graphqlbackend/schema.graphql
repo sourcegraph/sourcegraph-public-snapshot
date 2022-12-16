@@ -1723,6 +1723,11 @@ enum ExecutorSecretScope {
     The secret is meant to be used with Batch Changes execution.
     """
     BATCHES
+
+    """
+    The secret is meant to be used with Auto-indexing.
+    """
+    CODEINTEL
 }
 
 """
@@ -1837,8 +1842,14 @@ type ExecutorSecretAccessLog implements Node {
     executorSecret: ExecutorSecret!
     """
     The user in which name the secret has been used.
+    This is null when the access was not by a user account, or
+    when the user account was deleted.
     """
-    user: User!
+    user: User
+    """
+    True when the secret was accessed by an internal procedure.
+    """
+    machineUser: String!
     """
     The date and time when the secret has been used.
     """
@@ -3466,6 +3477,10 @@ type RepositoryTextSearchIndex {
     Git refs in the repository that are configured for text search indexing.
     """
     refs: [RepositoryTextSearchIndexedRef!]!
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
+    host: repositoryIndexserverHost
 }
 
 """
@@ -3507,6 +3522,16 @@ type RepositoryTextSearchIndexStatus {
     EXPERIMENTAL: The number of newlines in the other branches.
     """
     otherBranchesNewLinesCount: Int!
+}
+
+"""
+Information about the indexserver that hosts the repo's index.
+"""
+type repositoryIndexserverHost {
+    """
+    The hostname of the indexserver.
+    """
+    name: String!
 }
 
 """

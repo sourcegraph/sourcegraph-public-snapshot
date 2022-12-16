@@ -1209,6 +1209,21 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "email.templates": {
+      "description": "Configurable templates for some email types sent by Sourcegraph.",
+      "type": "object",
+      "properties": {
+        "resetPassword": {
+          "description": "Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        },
+        "setPassword": {
+          "description": "Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        }
+      },
+      "group": "Email"
+    },
     "executors.frontendURL": {
       "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
       "type": "string",
@@ -2500,6 +2515,24 @@
         "type": {
           "type": "string",
           "const": "noop"
+        }
+      }
+    },
+    "EmailTemplate": {
+      "type": "object",
+      "required": ["subject", "text", "html"],
+      "properties": {
+        "subject": {
+          "description": "Template for email subject header",
+          "type": "string"
+        },
+        "text": {
+          "description": "Template for plain-text body",
+          "type": "string"
+        },
+        "html": {
+          "description": "Template for HTML body",
+          "type": "string"
         }
       }
     }

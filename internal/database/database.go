@@ -48,6 +48,7 @@ type DB interface {
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
+	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
 	Webhooks(encryption.Key) WebhookStore
@@ -179,7 +180,7 @@ func (d *db) RepoKVPs() RepoKVPStore {
 }
 
 func (d *db) Roles() RoleStore {
-	return &roleStore{d.Store}
+	return RolesWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -212,6 +213,10 @@ func (d *db) UserEmails() UserEmailsStore {
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
 	return ExternalAccountsWith(d.logger, d.Store)
+}
+
+func (d *db) UserRoles() UserRoleStore {
+	return UserRolesWith(d.Store)
 }
 
 func (d *db) Users() UserStore {

@@ -2,15 +2,11 @@
 
 Sourcegraph is a code search and intelligence platform. Devs use it to search, understand, and fix code across large codebases.
 
-To try Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
+## [Sourcegraph.com/search](https://sourcegraph.com/search)
 
-## Deploy Sourcegraph
+[Sourcegraph.com](https://sourcegraph.com/search) lets you try Sourcegraph instantly on 2 million+ open-source repositories.
 
-Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
-
-<a href="admin/deploy" target="_blank">Learn more about our deployment methods</a>
-
-### Cloud
+## Sourcegraph Cloud for private code
 
 <div>
   <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
@@ -24,15 +20,15 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </a>
 </div>
 
-### Self-hosted
+## Self-hosted for private code
 
 <div class="grid">
-  <!-- AWS AMI-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-ami">
+  <!-- AWS One Click-->
+  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
     <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
     <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
-    <h3>AWS</h3>
-    <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
+    <h3>AWS One-Click</h3>
+    <p>Deploy onto AWS in one click (AMI)</p>
   </a>
 </div>
 <div class="grid">
@@ -40,41 +36,35 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <a class="btn-app btn" href="/admin/deploy/machine-images/gce">
     <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
     <h3>Google Compute Engine</h3>
-    <p>Launch a pre-configured Sourcegraph instance from a GCE Image</p>
+    <p>Launch quickly using a GCE machine image</p>
   </a>
 </div>
 <div class="grid">
   <!-- Azure -->
-  <a class="btn-app btn" href="/admin/deploy/docker-compose/azure">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
     <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
     <h3>Azure</h3>
-    <p>Deploy onto Microsoft Azure</p>
-  </a>
-  <!-- AWS One Click-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
-    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
-    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
-    <h3>AWS One-Click</h3>
-    <p>Deploy onto AWS in one click</p>
+    <p>Deploy onto Microsoft Azure<br/>(install script)</p>
   </a>
   <!-- Digital Ocean -->
-  <a class="btn-app btn" href="/admin/deploy/docker-compose/digitalocean">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
     <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
     <h3>DigitalOcean</h3>
-    <p>Deploy onto DigitalOcean</p>
-  </a>
-  <!-- Docker Compose -->
-  <a class="btn-app btn" href="/admin/deploy/docker-compose">
-    <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
-    <h3>Docker Compose</h3>
-    <p>Deploy with Docker Compose</p>
+    <p>Deploy onto DigitalOcean<br/>(install script)</p>
   </a>
   <!-- Others -->
-  <a class="btn-app btn" href="/admin/deploy">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
     <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
-    <h3>Private cloud</h3>
-    <p>Deploy into a generic cloud environment</p>
+    <h3>Script install</h3>
+    <p>Deploy on any Linux machine using our script</p>
   </a>
+</div>
+
+## Enterprise options
+
+For our largest customers, we also offer a Kubernetes multi-node cluster deployment and enterprise support.
+
+<div class="grid">
   <!-- Kubernetes -->
   <a class="btn-app btn" href="/admin/deploy/kubernetes">
     <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
@@ -84,7 +74,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </a>
 </div>
 
-### Local machine
+## Non-production
 
 <div class="grid">
   <a class="btn-app btn" href="/admin/deploy/docker-single-container">
@@ -104,8 +94,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </a>
   <div></div>
 </div>
-
----
 
 ## Quickstart
 
@@ -130,5 +118,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ## Explanations
 
+- [About deploying Sourcegraph, upgrades, etc.](/admin/deploy.md)
 - [How GitHub code search compares to Sourcegraph](https://docs.sourcegraph.com/getting-started/github-vs-sourcegraph)
 - [How Sourcegraph is licensed](https://docs.sourcegraph.com/getting-started/oss-enterprise)

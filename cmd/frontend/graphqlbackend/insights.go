@@ -22,6 +22,9 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
+	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
+	PreviewRepositoriesFromQuery(ctx context.Context, args PreviewRepositoriesFromQueryArgs) (RepositoryPreviewPayloadResolver, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -475,4 +478,23 @@ type TimeoutDatapointAlert interface {
 type GenericIncompleteDatapointAlert interface {
 	Time() gqlutil.DateTime
 	Reason() string
+}
+
+type ValidateScopedInsightQueryArgs struct {
+	Query string
+}
+
+type ScopedInsightQueryPayloadResolver interface {
+	Query(ctx context.Context) string
+	IsValid(ctx context.Context) bool
+	InvalidReason(ctx context.Context) *string
+}
+
+type PreviewRepositoriesFromQueryArgs struct {
+	Query string
+}
+
+type RepositoryPreviewPayloadResolver interface {
+	Query(ctx context.Context) string
+	NumberOfRepositories(ctx context.Context) *int32
 }

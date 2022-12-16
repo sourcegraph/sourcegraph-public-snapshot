@@ -8,7 +8,7 @@ import {
     mdiSync,
     mdiLinkVariantRemove,
     mdiChevronDown,
-    mdiChevronRight,
+    mdiChevronUp,
     mdiOpenInNew,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -403,7 +403,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                 as={Button}
                 className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} className="mr-1" />
                 <div className={styles.collapseHeader}>
                     <Heading as="h4" styleAs="h3" className="mb-0 d-inline-block mr-2">
                         <VisuallyHidden>Execution</VisuallyHidden>
@@ -446,7 +446,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
                                 <Icon
                                     aria-hidden={true}
-                                    svgPath={areChangesExpanded ? mdiChevronDown : mdiChevronRight}
+                                    svgPath={areChangesExpanded ? mdiChevronUp : mdiChevronDown}
                                     className="mr-1"
                                 />
                                 <Heading className="mb-0" as="h4" styleAs="h3">
@@ -531,7 +531,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 as={Button}
                 className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} className="mr-1" />
                 <div className={classNames(styles.collapseHeader, step.skipped && 'text-muted')}>
                     <StepStateIcon step={step} />
                     <H3 className={styles.stepNumber}>Step {step.number}</H3>

@@ -155,7 +155,7 @@ type SearchAggregationNotAvailable {
 }
 
 """
-An enum to describe the reasons why a search aggregations are not available
+An enum to describe the reasons why search aggregations are not available
 """
 enum NotAvailableReasonType {
     INVALID_QUERY

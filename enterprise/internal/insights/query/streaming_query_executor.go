@@ -19,17 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RepoQueryExecutor interface {
-	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
-}
-
 type StreamingQueryExecutor struct {
 	justInTimeExecutor
 
-	logger log.Logger
-}
-
-type StreamingRepoQueryExecutor struct {
 	logger log.Logger
 }
 
@@ -134,6 +126,14 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	return generated, nil
 }
 
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
+}
+
+type StreamingRepoQueryExecutor struct {
+	logger log.Logger
+}
+
 func NewStreamingRepoExecutor(logger log.Logger) RepoQueryExecutor {
 	return &StreamingRepoQueryExecutor{
 		logger: logger,
@@ -141,27 +141,21 @@ func NewStreamingRepoExecutor(logger log.Logger) RepoQueryExecutor {
 }
 
 func (c *StreamingRepoQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
-	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "SelectRepoQuery")
-	}
-
 	decoder, result := streaming.RepoDecoder()
-	err = streaming.Search(ctx, modified.String(), nil, decoder)
+	err := streaming.Search(ctx, query, nil, decoder)
 	if err != nil {
-		return nil, errors.Wrap(err, "streaming.Search")
+		return nil, errors.Wrap(err, "RepoDecoder")
 	}
 
 	repoResult := *result
 	if len(repoResult.SkippedReasons) > 0 {
-		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
+		c.logger.Error("repo search encountered skipped events", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
 	}
 	if len(repoResult.Errors) > 0 {
-		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
+		return nil, errors.Errorf("streaming repo search: errors: %v", repoResult.Errors)
 	}
 	if len(repoResult.Alerts) > 0 {
-		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
+		return nil, errors.Errorf("streaming repo search: alerts: %v", repoResult.Alerts)
 	}
-
 	return repoResult.Repos, nil
 }
