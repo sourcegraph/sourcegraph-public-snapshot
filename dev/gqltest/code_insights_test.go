@@ -643,6 +643,12 @@ func TestCreateInsight(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
 		if insight.InsightViewId == "" {
 			t.Fatal("Did not get an insight view ID")
 		}
@@ -658,12 +664,6 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-		defer func() {
-			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
-			}
-		}()
-
 	})
 
 	t.Run("view level repo & time scopes", func(t *testing.T) {
@@ -690,6 +690,11 @@ func TestCreateInsight(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
 		if insight.InsightViewId == "" {
 			t.Fatal("Did not get an insight view ID")
 		}
@@ -705,11 +710,7 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-		defer func() {
-			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
-			}
-		}()
+
 	})
 
 	t.Run("series level scopes override", func(t *testing.T) {
@@ -745,6 +746,11 @@ func TestCreateInsight(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
 		if insight.InsightViewId == "" {
 			t.Fatal("Did not get an insight view ID")
 		}
@@ -760,11 +766,7 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-		defer func() {
-			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
-			}
-		}()
+
 	})
 
 	t.Run("a repo and time scope are required ", func(t *testing.T) {

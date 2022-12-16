@@ -482,14 +482,16 @@ func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (graphq
 }
 
 func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphqlbackend.RepositorySearchScopeResolver, bool) {
-	if r.series.RepositoryCriteria != nil || len(r.series.Repositories) == 0 {
-		allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
-		return &reposSearchScope{
-			search:   emptyIfNil(r.series.RepositoryCriteria),
-			allRepos: allRepos,
-		}, true
+	if len(r.series.Repositories) > 0 {
+		return nil, false
 	}
-	return nil, false
+
+	allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
+	return &reposSearchScope{
+		search:   emptyIfNil(r.series.RepositoryCriteria),
+		allRepos: allRepos,
+	}, true
+
 }
 
 type allReposScope struct {
