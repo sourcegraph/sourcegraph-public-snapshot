@@ -6,10 +6,9 @@ import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Checkbox, Container, Icon, PageHeader, Code, Label, Input, ErrorAlert } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader, Code, Label, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'

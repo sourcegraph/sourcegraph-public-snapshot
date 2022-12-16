@@ -5,12 +5,22 @@ import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+    Input,
+    Label,
+    Tooltip,
+    Form,
+} from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
