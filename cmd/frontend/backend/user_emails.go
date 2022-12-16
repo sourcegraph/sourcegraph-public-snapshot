@@ -134,16 +134,17 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 	}
 	defer func() {
 		err = tx.Done(err)
+		if err != nil {
+			return
+		}
 
-		if err == nil {
-			// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-			// transaction has committed so that it takes into account any changes triggered
-			// by the removal of the e-mail.
-			if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{userID},
-			}); err != nil {
-				logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
-			}
+		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+		// transaction has committed so that it takes into account any changes triggered
+		// by the removal of the e-mail.
+		if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+			UserIDs: []int32{userID},
+		}); err != nil {
+			logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
 		}
 	}()
 
@@ -214,16 +215,17 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	}
 	defer func() {
 		err = tx.Done(err)
+		if err != nil {
+			return
+		}
 
-		if err == nil {
-			// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-			// transaction has committed so that it takes into account any changes triggered
-			// by changes in the verification status of the e-mail.
-			if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{userID},
-			}); err != nil {
-				logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
-			}
+		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+		// transaction has committed so that it takes into account any changes triggered
+		// by changes in the verification status of the e-mail.
+		if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+			UserIDs: []int32{userID},
+		}); err != nil {
+			logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
 		}
 	}()
 
