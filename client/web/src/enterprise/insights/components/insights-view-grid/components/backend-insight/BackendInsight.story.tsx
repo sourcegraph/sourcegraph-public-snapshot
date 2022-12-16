@@ -307,6 +307,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     title: 'Backend Insight Mock',
     step: { weeks: 2 },
     repositories: [],
+    repoQuery: '',
     query: '',
     filters: {
         excludeRepoRegexp: '',

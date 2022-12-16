@@ -4,10 +4,7 @@ import { useExperimentalFeatures } from '../../../../../stores'
 import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
 import { useField, useFieldAPI, ValidationResult } from '../../form'
 import { FormAPI } from '../../form/hooks/useForm'
-import {
-    insightRepositoriesAsyncValidator,
-    insightRepositoriesValidator,
-} from '../validators/validators'
+import { insightRepositoriesAsyncValidator, insightRepositoriesValidator } from '../validators/validators'
 
 const SEARCH_QUERY_VALIDATOR = (value?: QueryState): ValidationResult => {
     if (value && value.query.trim() === '') {
