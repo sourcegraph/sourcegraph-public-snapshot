@@ -42,4 +42,5 @@ export interface QueryInputProps
 
     ariaLabel?: string
     ariaLabelledby?: string
+    ariaInvalid?: string
 }
