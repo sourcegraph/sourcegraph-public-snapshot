@@ -11,6 +11,7 @@ import {
     DecorationMapByLine,
     decorationStyleForTheme,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createLinkUrl, Link, Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
