@@ -112,7 +112,7 @@ type RepoBlock struct {
 	Reason string
 }
 
-// DebugID is useful to represent an external service in a log or an error string.
+// DebugID is useful to represent a repo in a log or an error string.
 func (r *Repo) DebugID() string {
 	return fmt.Sprintf("repo: (ID: %d, Name: %q)", r.ID, r.Name)
 }
