@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map, retry, shareReplay } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -7,7 +7,7 @@ import type { requestGraphQL } from '../../backend/graphql'
 import { EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
-import { getFeatureFlagOverride } from './feature-flag-local-overrides'
+import { getFeatureFlagOverride, getFeatureFlagOverrideValue } from './feature-flag-local-overrides'
 
 /**
  * Evaluate feature flags for the current user
@@ -56,22 +56,15 @@ export class FeatureFlagClient {
      */
     public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
         if (!this.flags.has(flagName)) {
+            const overriddenValue = getFeatureFlagOverrideValue(flagName)
+
+            // Use local feature flag override if exists
+            if (overriddenValue !== null) {
+                return of(overriddenValue)
+            }
+
             const flag$ = fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(
                 retry(3),
-                map(value => {
-                    // Use local feature flag override if exists
-                    const overriddenValue = getFeatureFlagOverride(flagName)
-                    if (overriddenValue === null) {
-                        return value
-                    }
-                    if (['true', 1].includes(overriddenValue)) {
-                        return true
-                    }
-                    if (['false', 0].includes(overriddenValue)) {
-                        return false
-                    }
-                    return value
-                }),
                 distinctUntilChanged(),
                 // shared between all subscribers to avoid multiple computations/API calls
                 shareReplay(1)
