@@ -1,6 +1,6 @@
 # Dashboards reference
 
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+<!-- DO NOT EDIT: generated via: 'RELOAD=false sg run monitoring-generator' -->
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
