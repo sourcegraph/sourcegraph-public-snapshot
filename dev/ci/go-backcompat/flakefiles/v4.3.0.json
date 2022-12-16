@@ -1,7 +1,17 @@
 [
   {
     "path": "enterprise/internal/batches/store",
-    "prefix": "TestDeleteExpiredChangesetSpecs",
+    "prefix": "TestIntegration/Store/ChangesetSpecs/DeleteExpiredChangesetSpecs",
+    "reason": "Dropped IDs from batch changes table"
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration/Store/ChangesetSpecs/GetRewirerMappings ",
+    "reason": "Dropped IDs from batch changes table"
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration/Store/ChangesetSpecs/ListChangesetSpecsWithConflictingHeadRef",
     "reason": "Dropped IDs from batch changes table"
   },
   {
