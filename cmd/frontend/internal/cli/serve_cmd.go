@@ -13,7 +13,6 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2/store/redigostore"
@@ -124,7 +123,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	observationCtx := observation.NewContext(logger)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		log15.Warn("Skipping out-of-band migrations check")
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
@@ -261,12 +260,12 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 		return err
 	}
 
-	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -289,7 +288,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	return nil
 }
 
-func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
@@ -323,13 +322,14 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP running", "on", httpAddr)
+	logger.Debug("HTTP running", sglog.String("on", httpAddr))
 	return server, nil
 }
 
 func makeInternalAPI(
-	schema *graphql.Schema,
 	db database.DB,
+	logger sglog.Logger,
+	schema *graphql.Schema,
 	enterprise enterprise.Services,
 	rateLimiter graphqlbackend.LimitWatcher,
 ) (goroutine.BackgroundRoutine, error) {
@@ -361,7 +361,7 @@ func makeInternalAPI(
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+	logger.Debug("HTTP (internal) running", sglog.String("on", httpAddrInternal))
 	return server, nil
 }
 

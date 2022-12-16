@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, Alert, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
@@ -15,6 +15,9 @@ export interface AddSecretModalProps {
     afterCreate: () => void
     namespaceID: Scalars['ID'] | null
     scope: ExecutorSecretScope
+
+    /** For testing only */
+    initialKey?: string
 }
 
 export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<AddSecretModalProps>> = ({
@@ -22,10 +25,11 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
     afterCreate,
     namespaceID,
     scope,
+    initialKey = '',
 }) => {
     const labelId = 'addSecret'
 
-    const [key, setKey] = useState<string>('')
+    const [key, setKey] = useState<string>(initialKey)
     const onChangeKey = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setKey(event.target.value)
     }, [])
@@ -85,11 +89,25 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                         message={
                             <>
                                 Must be uppercase characters, digits and underscores only. Must start with an uppercase
-                                character.
+                                character.{' '}
+                                <Link
+                                    to="/help/admin/deploy_executors#using-private-registries"
+                                    rel="noopener"
+                                    target="_blank"
+                                >
+                                    DOCKER_AUTH_CONFIG will be used to authenticate with private registries
+                                </Link>
+                                .
                             </>
                         }
                         label="Key"
                     />
+                    {key === 'DOCKER_AUTH_CONFIG' && (
+                        <Alert variant="info" className="mt-2">
+                            This secret value will be used to configure docker client authentication with private
+                            registries.
+                        </Alert>
+                    )}
                 </div>
                 <div className="form-group">
                     <Input

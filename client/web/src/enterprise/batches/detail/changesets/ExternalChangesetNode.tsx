@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { mdiChevronDown, mdiChevronRight, mdiSync } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -92,7 +92,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -195,7 +195,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

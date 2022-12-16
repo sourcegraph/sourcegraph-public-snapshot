@@ -41,12 +41,12 @@ func TestIterator_Err(t *testing.T) {
 			err = errors.New("boom")
 		}
 		sendErr = true
-		// We always return items, to test that we stop collecting after err.
+		// We always return items, to test that we returns all items before err.
 		return []int{1, 2, 3}, err
 	})
 
 	got, err := iterator.Collect(it)
-	assert.Equal([]int{1, 2, 3}, got)
+	assert.Equal([]int{1, 2, 3, 1, 2, 3}, got)
 	assert.ErrorContains(err, "boom")
 
 	// Double check it is safe to call Next and Err again.

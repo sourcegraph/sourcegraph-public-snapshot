@@ -38,8 +38,10 @@ func (r *executorSecretAccessLogConnectionResolver) Nodes(ctx context.Context) (
 			log:                  log,
 			attemptPreloadedUser: true,
 		}
-		if user, ok := userMap[log.UserID]; ok {
-			r.preloadedUser = user
+		if log.UserID != nil {
+			if user, ok := userMap[*log.UserID]; ok {
+				r.preloadedUser = user
+			}
 		}
 		resolvers = append(resolvers, r)
 	}
@@ -75,9 +77,12 @@ func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context)
 			userIDMap := make(map[int32]struct{})
 			userIDs := []int32{}
 			for _, log := range r.logs {
-				if _, ok := userIDMap[log.UserID]; !ok {
-					userIDMap[log.UserID] = struct{}{}
-					userIDs = append(userIDs, log.UserID)
+				if log.UserID == nil {
+					continue
+				}
+				if _, ok := userIDMap[*log.UserID]; !ok {
+					userIDMap[*log.UserID] = struct{}{}
+					userIDs = append(userIDs, *log.UserID)
 				}
 			}
 			r.users, r.err = r.db.Users().List(ctx, &database.UsersListOptions{UserIDs: userIDs})

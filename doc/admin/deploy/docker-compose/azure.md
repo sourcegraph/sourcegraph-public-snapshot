@@ -1,5 +1,7 @@
 # Install Sourcegraph on Azure
 
+> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
 This guide will take you through how to set up a Sourcegraph instance on an Azure virtual machine with [Docker Compose](https://docs.docker.com/compose/).
 
 ---
@@ -75,7 +77,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.2.1'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.3.0'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_COMPOSE_VERSION='1.29.2'
