@@ -36,9 +36,10 @@ func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*Bitbucke
 	c := bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second))
 
 	return &BitbucketCodeHost{
-		logger: logger.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
-		def:    def,
-		c:      c,
+		logger:  logger.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
+		def:     def,
+		c:       c,
+		perPage: 30,
 	}, nil
 }
 
@@ -76,7 +77,6 @@ func (bt *BitbucketCodeHost) InitializeFromState(ctx context.Context, stateRepos
 // just want the repo name you would have to strip the project key and '_-_' separator out.
 func (bt *BitbucketCodeHost) listRepos(ctx context.Context, page int, perPage int) ([]*store.Repo, int, error) {
 	bt.logger.Debug("fetching repos")
-	// bt.def.Path
 
 	projects, err := bt.c.ListProjects(ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func (bt *BitbucketCodeHost) listRepos(ctx context.Context, page int, perPage in
 		return nil, 0, errors.Newf("project named %s not found", bt.def.Path)
 	}
 
-	repos, next, err := bt.c.ListRepos(ctx, project, 0, 0)
+	repos, next, err := bt.c.ListRepos(ctx, project, page, perPage)
 	if err != nil {
 		bt.logger.Debug("failed to list repos", log.Error(err))
 		return nil, 0, err

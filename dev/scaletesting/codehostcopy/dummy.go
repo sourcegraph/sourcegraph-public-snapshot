@@ -38,5 +38,5 @@ func (d *DummyCodeHostDestination) DropSSHKey(ctx context.Context, keyID int64) 
 
 func (d *DummyCodeHostDestination) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	d.logger.Info("adding repo", log.String("name", name))
-	return url.Parse(fmt.Sprintf("https://dummmy.local/%s", name))
+	return url.Parse(fmt.Sprintf("https://dummy.local/%s", name))
 }

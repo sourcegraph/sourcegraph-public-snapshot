@@ -36,8 +36,6 @@ type Client struct {
 	setAuth SetAuthFunc
 	apiURL  *url.URL
 	http    http.Client
-	// FetchLimit The amount of records to request per page
-	FetchLimit int // TODO remove
 }
 
 type ClientOpt func(client *Client)
@@ -67,9 +65,8 @@ func WithTimeout(n time.Duration) ClientOpt {
 // to do by the Bitbucket API ie. CreateRepo
 func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:     url,
-		setAuth:    setBasicAuth(username, password),
-		FetchLimit: 150,
+		apiURL:  url,
+		setAuth: setBasicAuth(username, password),
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -84,9 +81,8 @@ func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientO
 // REST API. For more power like create projects and repos, use the Basic auth client.
 func NewTokenClient(token string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:     url,
-		setAuth:    setTokenAuth(token),
-		FetchLimit: 150,
+		apiURL:  url,
+		setAuth: setTokenAuth(token),
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -177,7 +173,6 @@ func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, err
 // getAll continuously calls getPaged by adjusting the start query parameter based on the previous
 // paged response. A GetResult is returned which contains the results as well as any errors that were
 // encountered.
-// TODO estnwrseitnwtein
 func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], error) {
 	start := 0
 	count := 0
@@ -329,7 +324,7 @@ func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 }
 
 func (c *Client) ListRepos(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
-	return c.ListReposForProjects(ctx, []*Project{project}, page, perPage) // TODO fix
+	return c.ListReposForProject(ctx, project, page, perPage)
 }
 
 func extractResults[T any](items []getResult[T]) ([]T, error) {
@@ -346,28 +341,20 @@ func extractResults[T any](items []getResult[T]) ([]T, error) {
 	return results, err
 }
 
-func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project, page int, perPage int) ([]*Repo, int, error) {
+func (c *Client) ListReposForProject(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
 	repos := make([]*Repo, 0)
-	if len(projects) > 1 {
-		panic("todo")
+	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
+	resp, err := c.getPaged(ctx, url, page, perPage)
+	if err != nil {
+		return nil, 0, err
 	}
-
-	for _, p := range projects {
-		project := p
-		url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
-		resp, err := c.getPaged(ctx, url, page, perPage)
+	for _, v := range resp.Values {
+		var repo Repo
+		err := json.Unmarshal(v, &repo)
 		if err != nil {
 			return nil, 0, err
 		}
-		for _, v := range resp.Values {
-			var repo Repo
-			err := json.Unmarshal(v, &repo)
-			if err != nil {
-				return nil, 0, err
-			}
-			repos = append(repos, &repo)
-		}
-		return repos, resp.NextPageStart, nil
+		repos = append(repos, &repo)
 	}
-	panic("fiwfiwfipw")
+	return repos, resp.NextPageStart, nil
 }

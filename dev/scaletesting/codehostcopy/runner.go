@@ -162,9 +162,6 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	for !repoIter.Done() && repoIter.Err() == nil {
 		repos := repoIter.Next(ctx)
 		if err = r.store.Insert(repos); err != nil {
-			for _, rr := range repos {
-				r.logger.Error("wfpwfpwf", log.String("repo", rr.Name))
-			}
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 		}
 
