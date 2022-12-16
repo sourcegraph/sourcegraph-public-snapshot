@@ -5,8 +5,6 @@ import {
     EditableDataSeries,
     Form,
     FormChangeEvent,
-    insightRepositoriesAsyncValidator,
-    insightRepositoriesValidator,
     insightSeriesValidator,
     insightStepValueValidator,
     insightTitleValidator,
@@ -17,6 +15,8 @@ import {
 } from '../../../../../components'
 import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
 
+import { useRepoFields } from './insight-repo-section/use-repo-fields'
+
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
     // we want to show the series form as soon as possible
@@ -26,7 +26,7 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     stepValue: '2',
     title: '',
     repositories: '',
-    repoMode: RepoMode.DirectURLList,
+    repoMode: 'urls-list',
     repoQuery: { query: '' },
     allRepos: false,
     dashboardReferenceCount: 0,
@@ -48,7 +48,6 @@ export interface InsightCreationForm {
     series: useFieldAPI<EditableDataSeries[]>
     step: useFieldAPI<InsightStep>
     stepValue: useFieldAPI<string>
-    allReposMode: useFieldAPI<boolean>
 }
 
 /**
@@ -65,44 +64,12 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         touched,
     })
 
-    const allReposMode = useField({
-        name: 'allRepos',
-        formApi: form.formAPI,
-        onChange: (checked: boolean) => {
-            // Reset form values in case if All repos mode was activated
-            if (checked) {
-                repositories.input.onChange('')
-            }
-        },
-    })
-
-    const isAllReposMode = allReposMode.input.value
+    const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })
 
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
         validators: { sync: insightTitleValidator },
-    })
-
-    const repositories = useField({
-        name: 'repositories',
-        formApi: form.formAPI,
-        validators: {
-            // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: !isAllReposMode ? insightRepositoriesValidator : undefined,
-            async: !isAllReposMode ? insightRepositoriesAsyncValidator : undefined,
-        },
-        disabled: isAllReposMode,
-    })
-
-    const repoMode = useField({
-        name: 'repoMode',
-        formApi: form.formAPI,
-    })
-
-    const repoQuery = useField({
-        name: 'repoQuery',
-        formApi: form.formAPI,
     })
 
     const series = useField({
@@ -115,13 +82,11 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         name: 'step',
         formApi: form.formAPI,
     })
+
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: {
-            // Turn off any validations if we are in all repos mode
-            sync: !isAllReposMode ? insightStepValueValidator : undefined,
-        },
+        validators: { sync: insightStepValueValidator },
     })
 
     return {
@@ -133,6 +98,5 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         series,
         step,
         stepValue,
-        allReposMode,
     }
 }

@@ -26,7 +26,6 @@ interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFor
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
-    allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
     repoMode: useFieldAPI<CreateInsightFormFields['repoMode']>
 
@@ -56,7 +55,6 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         submitted,
         title,
         repositories,
-        allReposMode,
         repoQuery,
         repoMode,
         series,
@@ -74,12 +72,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
     return (
         // eslint-disable-next-line react/forbid-elements
         <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
-            <RepoSettingSection
-                allReposMode={allReposMode}
-                repositories={repositories}
-                repoQuery={repoQuery}
-                repoMode={repoMode}
-            />
+            <RepoSettingSection repositories={repositories} repoQuery={repoQuery} repoMode={repoMode} />
 
             <hr aria-hidden={true} className="my-4 w-100" />
 
@@ -118,7 +111,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={allReposMode.input.value ? 12 : 7}
+                    numberOfPoints={7}
                 />
             </FormGroup>
 
