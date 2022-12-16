@@ -70,8 +70,13 @@
     "reason": "Dropped symbol_name column on codeintel_scip_symbols"
   },
   {
-    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "path": "enterprise/internal/codeintel/uploads/internal/lsifstore",
     "prefix": "TestWriteSCIPSymbols",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/oobmigration/migrations/codeintel",
+    "prefix": "TestSCIPMigrator",
     "reason": "Dropped symbol_name column on codeintel_scip_symbols"
   }
 ]
