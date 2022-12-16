@@ -20,11 +20,16 @@
         "title": "View AI suggestions"
       },
       {
+        "command": "codebot.generate-test-from-selection",
+        "title": "Generate a unit test from a selection"
+      },
+      {
         "command": "codebot.generate-test",
         "title": "Generate a unit test"
       }
+
     ],
-    "keybindings":[
+    "keybindings": [
       {
         "command": "vscode-codegen.ai-suggest",
         "key": "alt+\\"
@@ -34,9 +39,9 @@
       "type": "object",
       "title": "Codebot extension settings",
       "properties": {
-          "conf.codebot.openai.apiKey": {
-              "type": "string"
-          }
+        "conf.codebot.openai.apiKey": {
+          "type": "string"
+        }
       }
     }
   },

@@ -12,7 +12,7 @@ import * as openai from "openai";
 import { cp } from "fs";
 import { CompletionSupplier } from "./models/model";
 import { OpenAICompletionSupplier } from "./models/codegen";
-import { generateTest } from "./testgen";
+import { generateTestFromSelection, generateTest } from "./testgen";
 import {
   CodegenDocumentProvider,
   completionsDisplayString,
@@ -48,6 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
     ],
     documentProvider
   );
+
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(
       "codegen",
@@ -59,6 +60,10 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("vscode-codegen.ai-suggest", () =>
       codegenCompletionProvider.executeSuggestCommand()
+    ),
+    vscode.commands.registerCommand(
+      "codebot.generate-test-from-selection",
+      () => generateTestFromSelection(documentProvider)
     ),
     vscode.commands.registerCommand("codebot.generate-test", () =>
       generateTest(documentProvider)
