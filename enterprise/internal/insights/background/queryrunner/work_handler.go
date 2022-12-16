@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -109,6 +110,10 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 	}
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+	if series.RepositoryCriteria != nil {
+		logger.Info("global snapshot search is not yet implemented for repo scoped insights")
+		return nil
 	}
 
 	recordTime := time.Now()

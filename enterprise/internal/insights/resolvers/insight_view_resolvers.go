@@ -1295,10 +1295,11 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:                   ksuid.New().String(),
-			Query:                      series.Query,
-			CreatedAt:                  time.Now(),
-			Repositories:               repos,
+			SeriesID:     ksuid.New().String(),
+			Query:        series.Query,
+			CreatedAt:    time.Now(),
+			Repositories: repos,
+			//RepositoryCriteria:         &repositoryCriteria,
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
