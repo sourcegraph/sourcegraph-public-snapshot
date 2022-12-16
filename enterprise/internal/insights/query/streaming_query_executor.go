@@ -134,7 +134,7 @@ type StreamingRepoQueryExecutor struct {
 	logger log.Logger
 }
 
-func NewStreamingRepoExecutor(logger log.Logger) RepoQueryExecutor {
+func NewStreamingRepoQueryExecutor(logger log.Logger) RepoQueryExecutor {
 	return &StreamingRepoQueryExecutor{
 		logger: logger,
 	}

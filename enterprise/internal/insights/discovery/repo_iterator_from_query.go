@@ -26,7 +26,7 @@ func NewRepoIteratorFromQuery(ctx context.Context, query string, executor query.
 		return nil, errors.Wrap(err, "could not build repository scope query")
 	}
 
-	repos, err := executor.ExecuteRepoList(globalCtx, repoScopeQuery)
+	repos, err := executor.ExecuteRepoList(globalCtx, repoScopeQuery.String())
 	if err != nil {
 		return nil, err
 	}

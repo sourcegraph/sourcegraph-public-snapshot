@@ -89,7 +89,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
 				}),
 			CostAnalyzer:      priority.DefaultQueryAnalyzer(),
-			RepoQueryExecutor: query.NewStreamingRepoExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
+			RepoQueryExecutor: query.NewStreamingRepoQueryExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
 		}
 
 		// Add the backfill v2 workers
