@@ -3,7 +3,7 @@ import { forwardRef } from 'react'
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { QueryState } from '@sourcegraph/search'
+import { QueryChangeSource, QueryState } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import type { MonacoFieldProps } from '../monaco-field'
@@ -38,7 +38,7 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputP
                         {...otherProps}
                         ref={reference}
                         patternType={patternType}
-                        queryState={{ query: value }}
+                        queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
                         className={props.className}
                         onChange={handleOnChange}
                     />
@@ -50,7 +50,7 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputP
                     {...otherProps}
                     ref={reference}
                     patternType={patternType}
-                    queryState={{ query: value }}
+                    queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
                     className={classNames(styles.inputWrapper, props.className)}
                     onChange={handleOnChange}
                 />
