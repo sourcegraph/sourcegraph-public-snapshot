@@ -4,7 +4,7 @@ export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
-export { ErrorMessage } from './ErrorMessage'
+export { ErrorMessage, renderError } from './ErrorMessage'
 export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
 export {
     Checkbox,
