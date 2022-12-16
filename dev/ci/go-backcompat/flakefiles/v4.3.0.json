@@ -1,0 +1,22 @@
+[
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestDeleteExpiredChangesetSpecs",
+    "reason": "Dropped IDs from batch changes table"
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestChangesetApplyPreviewResolverWithPublicationStates",
+    "reason": "Dropped IDs from batch changes table"
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/webhooks ",
+    "prefix": "TestWebhooksIntegration",
+    "reason": "Dropped IDs from batch changes table"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "",
+    "reason": "Dropped IDs from batch changes table"
+  }
+]
