@@ -7,14 +7,20 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/googleapis/gax-go/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Secret struct {
-	Value       string
+	Value       []byte
 	Description string
 }
 
 type SecretSet map[string]Secret
+
+type SecretRequest struct {
+	Name        string
+	Description string
+}
 
 type GSMClient interface {
 	AccessSecretVersion(
@@ -26,9 +32,12 @@ type GSMClient interface {
 
 var Client GSMClient
 
-func Init(ctx context.Context) error {
+func initClient(ctx context.Context) error {
 	var err error
-	Client, err = secretmanager.NewClient(ctx)
+
+	if Client == nil {
+		Client, err = secretmanager.NewClient(ctx)
+	}
 
 	return err
 }
@@ -37,13 +46,16 @@ func Init(ctx context.Context) error {
 // it calls getSecretFromGSM and collects the errors. It doesn't fail when
 // secrets cannot be fetched. Error checking has to be done to make sure
 // the secrets you want to use have been fetched.
-func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []struct {
-	Name        string
-	Description string
-}) (SecretSet, []error) {
-
-	var errs []error
+func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []SecretRequest) (SecretSet, error) {
+	var errs error
 	var secrets = make(SecretSet)
+
+	err := initClient(ctx)
+
+	if err != nil {
+		return secrets, err
+	}
+	defer Client.Close()
 
 	for _, rs := range requestedSecrets {
 		value, err := getSecretFromGSM(ctx, rs.Name, projectID)
@@ -53,7 +65,7 @@ func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []stru
 		}
 
 		if err != nil {
-			errs = append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 
@@ -63,7 +75,7 @@ func NewSecretSet(ctx context.Context, projectID string, requestedSecrets []stru
 // getSecretFromGSM calls Google SecretManager and attempts to fetch the latest
 // version of the secret specified by name. Returns an empty string and an error
 // message when the secret cannot be found.
-func getSecretFromGSM(ctx context.Context, name string, projectID string) (string, error) {
+func getSecretFromGSM(ctx context.Context, name string, projectID string) ([]byte, error) {
 	// build the resource id and always fetch latest secret
 	secretId := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectID, name)
 
@@ -74,8 +86,8 @@ func getSecretFromGSM(ctx context.Context, name string, projectID string) (strin
 	result, err := Client.AccessSecretVersion(ctx, accessRequest)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(result.Payload.Data), nil
+	return result.Payload.Data, nil
 }

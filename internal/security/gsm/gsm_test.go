@@ -2,12 +2,12 @@ package gsm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/googleapis/gax-go/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ func TestFetchGSM(t *testing.T) {
 		client   *MockClient
 		project  string
 		secret   string
-		value    string
+		value    []byte
 		pass     bool
 		contains string
 	}{
@@ -45,9 +45,28 @@ func TestFetchGSM(t *testing.T) {
 			},
 			project:  "foo",
 			secret:   "message-signing-secret",
-			value:    "",
+			value:    nil,
 			pass:     false,
-			contains: fmt.Sprintf("projects/foo/secrets/message-signing-secret/versions/latest] not found"),
+			contains: "projects/foo/secrets/message-signing-secret/versions/latest] not found",
+		},
+		{
+			name: "Can find secret returns a secret",
+			client: &MockClient{
+				AccessFunc: func(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
+					var secret secretmanagerpb.AccessSecretVersionResponse
+					secret.Name = "message-signing-secret"
+					secret.Payload = &secretmanagerpb.SecretPayload{}
+					secret.Payload.Data = []byte("secret-value")
+
+					return &secret, nil
+				},
+				CloseFunc: func() error { return nil },
+			},
+			project:  "foo",
+			secret:   "message-signing-secret",
+			value:    []byte("secret-value"),
+			pass:     true,
+			contains: "",
 		},
 	}
 
@@ -56,11 +75,21 @@ func TestFetchGSM(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			Client = tc.client
-			secret, err := getSecretFromGSM(ctx, tc.secret, tc.project)
 
-			assert.Equal(t, secret, tc.value)
-			if !tc.pass {
-				assert.ErrorContains(t, err, tc.contains)
+			requestedSecrets := []SecretRequest{
+				{
+					Name:        "message-signing-secret",
+					Description: "For signing purposes",
+				},
+			}
+
+			secrets, err := NewSecretSet(ctx, "foo", requestedSecrets)
+
+			for secret := range secrets {
+				assert.Equal(t, tc.value, secrets[secret].Value)
+				if !tc.pass {
+					assert.ErrorContains(t, err, tc.contains)
+				}
 			}
 		})
 	}
