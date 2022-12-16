@@ -75,8 +75,8 @@ var _ PermissionStore = &permissionStore{}
 const permissionCreateQueryFmtStr = `
 INSERT INTO
 	permissions(%s)
-	VALUES %S
-	RETURNING %s
+VALUES %S
+RETURNING %s
 `
 
 func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error) {
