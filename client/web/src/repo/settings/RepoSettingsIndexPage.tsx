@@ -151,7 +151,7 @@ const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID
             }
             details={
                 <>
-                    {error && <ErrorAlert className="mt-4 mb-0" error={error} icon={false} />}
+                    {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
                     {loading && (
                         <Alert className="mt-4 mb-0" variant="primary">
                             <LoadingSpinner /> Triggering reindex ...

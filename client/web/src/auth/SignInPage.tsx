@@ -75,7 +75,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
+                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
                 <div
                     className={classNames(
                         'test-signin-form rounded p-4 my-3',

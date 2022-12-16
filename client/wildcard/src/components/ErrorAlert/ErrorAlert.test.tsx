@@ -13,12 +13,6 @@ describe('ErrorAlert', () => {
         ).toMatchSnapshot()
     })
 
-    it('should omit the icon if icon={false}', () => {
-        expect(
-            render(<ErrorAlert error={new Error('an error happened')} icon={false} />).asFragment()
-        ).toMatchSnapshot()
-    })
-
     it('should render a Go multierror nicely', () => {
         expect(
             render(
