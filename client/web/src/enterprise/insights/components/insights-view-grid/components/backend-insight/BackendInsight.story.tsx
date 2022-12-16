@@ -37,6 +37,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
     repositories: [],
+    repoQuery: '',
     series: [
         { id: 'series_001', query: '', name: 'A metric', stroke: 'var(--warning)' },
         { id: 'series_002', query: '', name: 'B metric', stroke: 'var(--warning)' },
@@ -280,6 +281,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
+    repoQuery: '',
     dashboards: [],
 }
 
@@ -309,6 +311,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
+    repoQuery: '',
     dashboards: [],
 }
 
