@@ -18,7 +18,9 @@ import {
     CardBody,
     Card,
     Icon,
-    H2, ErrorAlert } from '@sourcegraph/wildcard'
+    H2,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'

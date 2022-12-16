@@ -20,7 +20,9 @@ import {
     Icon,
     H4,
     Text,
-    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { StatusMessagesResult } from '../graphql-operations'
 

@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { upperFirst } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
-import { ErrorMessage } from '@sourcegraph/wildcard';
+import { ErrorMessage } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
