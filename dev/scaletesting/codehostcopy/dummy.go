@@ -8,35 +8,35 @@ import (
 	"github.com/sourcegraph/log"
 )
 
-type DummyCodeHost struct {
+type DummyCodeHostDestination struct {
 	def    *CodeHostDefinition
 	logger log.Logger
 }
 
-var _ CodeHostDestination = (*DummyCodeHost)(nil)
+var _ CodeHostDestination = (*DummyCodeHostDestination)(nil)
 
-func NewDummyCodeHost(logger log.Logger, def *CodeHostDefinition) *DummyCodeHost {
-	return &DummyCodeHost{
+func NewDummyCodeHost(logger log.Logger, def *CodeHostDefinition) *DummyCodeHostDestination {
+	return &DummyCodeHostDestination{
 		logger: logger.Scoped("dummy", "DummyCodeHost, pretending to perform actions"),
 		def:    def,
 	}
 }
 
-func (d *DummyCodeHost) GitOpts() []GitOpt {
+func (d *DummyCodeHostDestination) GitOpts() []GitOpt {
 	return nil
 }
 
-func (d *DummyCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+func (d *DummyCodeHostDestination) AddSSHKey(ctx context.Context) (int64, error) {
 	d.logger.Info("adding SSH key")
 	return 0, nil
 }
 
-func (d *DummyCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+func (d *DummyCodeHostDestination) DropSSHKey(ctx context.Context, keyID int64) error {
 	d.logger.Info("dropping SSH key", log.Int64("keyID", keyID))
 	return nil
 }
 
-func (d *DummyCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
+func (d *DummyCodeHostDestination) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	d.logger.Info("adding repo", log.String("name", name))
 	return url.Parse(fmt.Sprintf("https://dummmy.local/%s", name))
 }
