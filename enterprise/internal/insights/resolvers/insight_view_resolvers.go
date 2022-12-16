@@ -35,6 +35,7 @@ var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPre
 var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSeriesPresentationResolver{}
 var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
+var _ graphqlbackend.InsightRepositoryDefinition = &insightRepositoryDefinitionResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
@@ -239,6 +240,39 @@ func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbacke
 	}
 }
 
+func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
+	}
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no repository definitions available")
+	}
+
+	return &insightRepositoryDefinitionResolver{
+		series: i.view.Series[0],
+	}, nil
+}
+
+func (i *insightViewResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
+	}
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no time scope available")
+	}
+
+	return &insightTimeScopeUnionResolver{
+		resolver: &insightIntervalTimeScopeResolver{
+			unit:  i.view.Series[0].SampleIntervalUnit,
+			value: int32(i.view.Series[0].SampleIntervalValue),
+		},
+	}, nil
+}
+
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]any)
 
@@ -385,6 +419,13 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 	return &insightRepositoryScopeResolver{repositories: s.series.Repositories}, nil
 }
 
+func (s *searchInsightDataSeriesDefinitionResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+	if s.series == nil {
+		return nil, errors.New("series required")
+	}
+	return &insightRepositoryDefinitionResolver{series: *s.series}, nil
+}
+
 func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
 	intervalResolver := &insightIntervalTimeScopeResolver{
 		unit:  s.series.SampleIntervalUnit,
@@ -427,6 +468,45 @@ func (i *insightRepositoryScopeResolver) Repositories(ctx context.Context) ([]st
 	return i.repositories, nil
 }
 
+type insightRepositoryDefinitionResolver struct {
+	series types.InsightViewSeries
+}
+
+func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (graphqlbackend.InsightRepositoryScopeResolver, bool) {
+	if len(r.series.Repositories) > 0 && r.series.RepositoryCriteria == nil {
+		return &insightRepositoryScopeResolver{
+			repositories: r.series.Repositories,
+		}, true
+	}
+	return nil, false
+}
+
+func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphqlbackend.RepositorySearchScopeResolver, bool) {
+	if len(r.series.Repositories) > 0 {
+		return nil, false
+	}
+
+	allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
+	return &reposSearchScope{
+		search:   emptyIfNil(r.series.RepositoryCriteria),
+		allRepos: allRepos,
+	}, true
+
+}
+
+type allReposScope struct {
+}
+
+func (a *allReposScope) AllRepos() bool { return true }
+
+type reposSearchScope struct {
+	search   string
+	allRepos bool
+}
+
+func (r *reposSearchScope) Search() string        { return r.search }
+func (r *reposSearchScope) AllRepositories() bool { return r.allRepos }
+
 type lineChartInsightViewPresentation struct {
 	view *types.Insight
 }
@@ -462,8 +542,26 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	// Validation
+
+	v2BackfillEnabled := v2BackfillEnabled()
+	// Needs at least 1 series
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to create an insight view")
+	}
+
+	// Use view level Repo & Time scope if provided and ensure input is valid
+	for i := 0; i < len(args.Input.DataSeries); i++ {
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	uid := actor.FromContext(ctx).UID
@@ -540,6 +638,20 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")
+	}
+	v2BackfillEnabled := v2BackfillEnabled()
+	// Ensure Repo Scope is valid for each scope
+	for i := 0; i < len(args.Input.DataSeries); i++ {
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -693,6 +805,8 @@ func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.Upda
 	return nil
 }
 
+// existingSeriesHasChanged returns a bool indicating if the series was changed in a way that would invalid the existing data.
+// This function assumes that the input has already been validated
 func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSeriesInput, existing types.InsightViewSeries) bool {
 	if new.Query != existing.Query {
 		return true
@@ -714,6 +828,15 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	})
 	for i := 0; i < len(existing.Repositories); i++ {
 		if new.RepositoryScope.Repositories[i] != existing.Repositories[i] {
+			return true
+		}
+	}
+	if isNilString(new.RepositoryScope.RepositoryCriteria) != isNilString(existing.RepositoryCriteria) {
+		return true
+	}
+
+	if !isNilString(new.RepositoryScope.RepositoryCriteria) && !isNilString(existing.RepositoryCriteria) {
+		if *new.RepositoryScope.RepositoryCriteria != *existing.RepositoryCriteria {
 			return true
 		}
 	}
@@ -989,6 +1112,10 @@ func emptyIfNil(in *string) string {
 	return *in
 }
 
+func isNilString(in *string) bool {
+	return in == nil
+}
+
 // A dummy type to represent the GraphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
 	resolver any
@@ -1181,12 +1308,7 @@ type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 	flags := featureflag.FromContext(ctx)
 	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
-	v2BackfillEnabled := true
-	if v2BackfillSetting != nil {
-		v2BackfillEnabled = *v2BackfillSetting
-	}
-
+	v2BackfillEnabled := v2BackfillEnabled()
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
@@ -1276,7 +1398,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
-	if len(series.RepositoryScope.Repositories) == 0 {
+	// Also don't try to match on series that use repo critieria
+	// TODO: Reconsider matching on on criteria based series. If so the edit case would need work to ensure other insights remain the same.
+	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
@@ -1307,6 +1431,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 			GroupBy:                    groupBy,
 			NextRecordingAfter:         nextRecordingAfter,
 			OldestHistoricalAt:         oldestHistoricalAt,
+			RepositoryCriteria:         series.RepositoryScope.RepositoryCriteria,
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
@@ -1546,4 +1671,47 @@ func lowercaseGroupBy(groupBy *string) *string {
 		return &temp
 	}
 	return groupBy
+}
+
+func v2BackfillEnabled() bool {
+	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
+	v2BackfillEnabled := true
+	if v2BackfillSetting != nil {
+		v2BackfillEnabled = *v2BackfillSetting
+	}
+	return v2BackfillEnabled
+}
+
+func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput, v2BackfillEnabled bool) error {
+	if seriesInput.RepositoryScope == nil {
+		return errors.New("a repository scope is required")
+	}
+	if seriesInput.TimeScope == nil {
+		return errors.New("a time scope is required")
+	}
+	repoCriteriaSpecified := seriesInput.RepositoryScope.RepositoryCriteria != nil
+	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
+	if repoListSpecified && repoCriteriaSpecified {
+		return errors.New("series can not specify both a repository list and repository critieria")
+	}
+	if repoCriteriaSpecified && !v2BackfillEnabled {
+		return errors.New("series using repository critieria require the InsightsBackfillerV2 setting to be enabled")
+	}
+	if !repoListSpecified && seriesInput.GroupBy != nil {
+		return errors.New("group by series require a list of repositories to be specified.")
+	}
+
+	//TODO:: Uncomment once IsValidScopeQuery merged
+	// if repoCriteriaSpecified {
+	// 	plan, err := querybuilder.ParseQuery(*seriesInput.RepositoryScope.RepositoryCriteria, "literal")
+	// 	if err != nil {
+	// 		return errors.Wrap(err, "ParseQuery")
+	// 	}
+	// 	msg, valid := querybuilder.IsValidScopeQuery(plan)
+	// 	if !valid {
+	// 		return errors.New(msg)
+	// 	}
+	// }
+
+	return nil
 }

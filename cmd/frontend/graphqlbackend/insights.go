@@ -204,6 +204,8 @@ type InsightViewResolver interface {
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 	SeriesCount(ctx context.Context) (*int32, error)
+	RepositoryDefinition(ctx context.Context) (InsightRepositoryDefinition, error)
+	TimeScope(ctx context.Context) (InsightTimeScope, error)
 }
 
 type InsightDataSeriesDefinition interface {
@@ -230,6 +232,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
+	RepositoryDefinition(ctx context.Context) (InsightRepositoryDefinition, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
 	IsCalculated() (bool, error)
@@ -252,6 +255,16 @@ type InsightIntervalTimeScope interface {
 
 type InsightRepositoryScopeResolver interface {
 	Repositories(ctx context.Context) ([]string, error)
+}
+
+type InsightRepositoryDefinition interface {
+	ToInsightRepositoryScope() (InsightRepositoryScopeResolver, bool)
+	ToRepositorySearchScope() (RepositorySearchScopeResolver, bool)
+}
+
+type RepositorySearchScopeResolver interface {
+	Search() string
+	AllRepositories() bool
 }
 
 type InsightsDashboardPayloadResolver interface {
@@ -325,10 +338,12 @@ type CreateLineChartSearchInsightArgs struct {
 }
 
 type CreateLineChartSearchInsightInput struct {
-	DataSeries   []LineChartSearchInsightDataSeriesInput
-	Options      LineChartOptionsInput
-	Dashboards   *[]graphql.ID
-	ViewControls *InsightViewControlsInput
+	DataSeries      []LineChartSearchInsightDataSeriesInput
+	Options         LineChartOptionsInput
+	Dashboards      *[]graphql.ID
+	ViewControls    *InsightViewControlsInput
+	RepositoryScope *RepositoryScopeInput
+	TimeScope       *TimeScopeInput
 }
 
 type UpdateLineChartSearchInsightArgs struct {
@@ -340,6 +355,8 @@ type UpdateLineChartSearchInsightInput struct {
 	DataSeries          []LineChartSearchInsightDataSeriesInput
 	PresentationOptions LineChartOptionsInput
 	ViewControls        InsightViewControlsInput
+	RepositoryScope     *RepositoryScopeInput
+	TimeScope           *TimeScopeInput
 }
 
 type CreatePieChartSearchInsightArgs struct {
@@ -403,8 +420,8 @@ type InsightViewFiltersInput struct {
 type LineChartSearchInsightDataSeriesInput struct {
 	SeriesId                   *string
 	Query                      string
-	TimeScope                  TimeScopeInput
-	RepositoryScope            RepositoryScopeInput
+	TimeScope                  *TimeScopeInput
+	RepositoryScope            *RepositoryScopeInput
 	Options                    LineChartDataSeriesOptionsInput
 	GeneratedFromCaptureGroups *bool
 	GroupBy                    *string
@@ -416,7 +433,8 @@ type LineChartDataSeriesOptionsInput struct {
 }
 
 type RepositoryScopeInput struct {
-	Repositories []string
+	Repositories       []string
+	RepositoryCriteria *string
 }
 
 type TimeScopeInput struct {
