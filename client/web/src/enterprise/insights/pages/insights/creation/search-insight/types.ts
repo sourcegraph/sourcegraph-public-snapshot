@@ -34,12 +34,6 @@ export interface CreateInsightFormFields {
     /** Value for insight step setting */
     stepValue: string
 
-    /**
-     * This setting stands for turning on/off all repos mode that means this insight
-     * will be run over all repos on BE (BE insight)
-     */
-    allRepos: boolean
-
     /** The total number of dashboards on which this insight is referenced. */
     dashboardReferenceCount: number
 }
