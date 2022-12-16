@@ -615,7 +615,6 @@ type ExternalServiceSyncJob struct {
 }
 
 // DebugID is useful to represent an external service in a log or an error string.
-// Similar to URN(), but a little different.
 func (e *ExternalService) DebugID() string {
 	return fmt.Sprintf("codeHost: (ID: %d, DisplayName: %q)", e.ID, e.DisplayName)
 }
