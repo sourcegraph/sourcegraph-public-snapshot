@@ -104,3 +104,5 @@
   is_enterprise: true
   introduced_version_major: 4
   introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
