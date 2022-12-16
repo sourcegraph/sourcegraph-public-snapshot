@@ -4,20 +4,10 @@ import { RouteComponentProps } from 'react-router'
 import { NEVER } from 'rxjs'
 import { catchError, startWith, tap } from 'rxjs/operators'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Container,
-    PageHeader,
-    Button,
-    useObservable,
-    Link,
-    LoadingSpinner,
-    Alert,
-    Text,
-    ErrorAlert,
-    Form,
-} from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, useObservable, Link, LoadingSpinner, Alert, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { CopyableText } from '../../../components/CopyableText'

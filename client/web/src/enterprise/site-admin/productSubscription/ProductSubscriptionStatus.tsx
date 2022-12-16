@@ -6,16 +6,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import {
-    LoadingSpinner,
-    useObservable,
-    Link,
-    CardFooter,
-    Alert,
-    ButtonLink,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductLicenseInfoResult } from '../../../graphql-operations'

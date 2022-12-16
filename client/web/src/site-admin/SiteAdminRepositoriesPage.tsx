@@ -19,9 +19,7 @@ import {
     LoadingSpinner,
     PageHeader,
     Text,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,

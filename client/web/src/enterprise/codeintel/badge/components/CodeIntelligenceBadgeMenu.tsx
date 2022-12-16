@@ -13,9 +13,7 @@ import {
     MenuDivider,
     MenuHeader,
     MenuList,
-    Position,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Position, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LSIFUploadState, LSIFIndexState } from '../../../../graphql-operations'
 import {

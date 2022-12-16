@@ -43,9 +43,7 @@ import {
     CollapseHeader,
     Collapse,
     Heading,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'

@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/wildcard';
 
 import styles from '../Tree.module.scss'
 

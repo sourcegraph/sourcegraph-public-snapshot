@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -18,10 +19,7 @@ import {
     Checkbox,
     Input,
     Code,
-    Label,
-    ErrorAlert,
-    Form,
-} from '@sourcegraph/wildcard'
+    Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -148,7 +146,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                            { }
                             <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
                             </Label>

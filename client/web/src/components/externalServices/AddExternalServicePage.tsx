@@ -91,7 +91,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
         if (createdExternalService && !isErrorLike(createdExternalService)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
+             
             refreshSiteFlags().subscribe({ error: error => logger.error(error) })
             history.push(afterCreateRoute)
         }

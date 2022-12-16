@@ -28,9 +28,7 @@ import {
     Icon,
     ButtonGroup,
     Button,
-    Text,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { BatchChangesIcon } from '../../batches/icons'
