@@ -9,19 +9,8 @@ import { map, switchMap, tap } from 'rxjs/operators'
 
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import {
-    Button,
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Link,
-    Alert,
-    Icon,
-    Code,
-    H3,
-    ErrorAlert,
-    LinkOrSpan,
-} from '@sourcegraph/wildcard'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'

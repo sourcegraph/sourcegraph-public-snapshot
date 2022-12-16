@@ -36,9 +36,7 @@ import {
     LoadingSpinner,
     Text,
     useEventObservable,
-    useObservable,
-    ErrorMessage,
-} from '@sourcegraph/wildcard'
+    useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'

@@ -19,9 +19,7 @@ import {
     Checkbox,
     Input,
     Text,
-    Label,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'

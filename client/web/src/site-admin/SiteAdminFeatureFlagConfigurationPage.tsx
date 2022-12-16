@@ -25,9 +25,7 @@ import {
     Code,
     Label,
     H3,
-    Text,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { LoaderButton } from '../components/LoaderButton'

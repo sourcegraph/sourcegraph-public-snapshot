@@ -18,9 +18,7 @@ import {
     PageSelector,
     H3,
     Icon,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {

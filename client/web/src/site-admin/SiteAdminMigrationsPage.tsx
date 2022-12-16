@@ -19,9 +19,7 @@ import {
     H3,
     Text,
     Tooltip,
-    PageHeader,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    PageHeader, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'

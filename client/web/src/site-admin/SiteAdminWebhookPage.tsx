@@ -6,18 +6,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Button,
-    ButtonLink,
-    Container,
-    H2,
-    H5,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, H2, H5, Link, LoadingSpinner, PageHeader, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {

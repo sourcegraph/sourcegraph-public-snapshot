@@ -8,18 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import {
-    LoadingSpinner,
-    Button,
-    Link,
-    Alert,
-    Icon,
-    Input,
-    Text,
-    Code,
-    Tooltip,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'

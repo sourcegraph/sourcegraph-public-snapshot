@@ -17,9 +17,7 @@ import {
     Icon,
     Input,
     Text,
-    Code,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+    Code, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
