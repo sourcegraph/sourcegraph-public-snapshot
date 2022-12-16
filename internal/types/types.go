@@ -112,6 +112,11 @@ type RepoBlock struct {
 	Reason string
 }
 
+// DebugID is useful to represent an external service in a log or an error string.
+func (r *Repo) DebugID() string {
+	return fmt.Sprintf("repo: (ID: %d, Name: %q)", r.ID, r.Name)
+}
+
 // CloneURLs returns all the clone URLs this repo is cloneable from.
 func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
@@ -607,6 +612,12 @@ type ExternalServiceSyncJob struct {
 	ReposDeleted    int32
 	ReposModified   int32
 	ReposUnmodified int32
+}
+
+// DebugID is useful to represent an external service in a log or an error string.
+// Similar to URN(), but a little different.
+func (e *ExternalService) DebugID() string {
+	return fmt.Sprintf("codeHost: (ID: %d, DisplayName: %q)", e.ID, e.DisplayName)
 }
 
 // URN returns a unique resource identifier of this external service,

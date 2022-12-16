@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
@@ -370,17 +369,11 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		metadata,
 	)
 
-	errInfo := fmt.Sprintf(
-		"codeHost: (ID: %d, DisplayName: %q), repo: (ID: %d, Name: %q)",
-		svc.ID, svc.DisplayName,
-		r.ID, r.Name,
-	)
-
 	src := r.Sources[svc.URN()]
 	if src == nil {
-		return errors.Newf("CreateExternalServiceRepo: repo missing source info for %s", errInfo)
+		return errors.Newf("CreateExternalServiceRepo: repo missing source info for %s, %s", svc.DebugID(), r.DebugID())
 	} else if src.CloneURL == "" {
-		return errors.Newf("CreateExternalServiceRepo: missing CloneURL for %s", errInfo)
+		return errors.Newf("CreateExternalServiceRepo: missing CloneURL for %s, %s", svc.DebugID(), r.DebugID())
 	}
 
 	if !s.InTransaction() {
