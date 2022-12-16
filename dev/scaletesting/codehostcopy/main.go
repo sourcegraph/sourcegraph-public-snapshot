@@ -98,43 +98,29 @@ var app = &cli.App{
 
 func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostDestination, error) {
 	switch cfg.Kind {
+	case "dummy":
+		return NewDummyCodeHost(logger, &cfg), nil
 	case "bitbucket":
-		{
-			return NewBitbucketCodeHost(logger, &cfg)
-		}
+		return NewBitbucketCodeHost(logger, &cfg)
 	case "gitlab":
-		{
-			return NewGitLabCodeHost(ctx, &cfg)
-		}
+		return NewGitLabCodeHost(ctx, &cfg)
 	case "github":
-		{
-			return NewGithubCodeHost(ctx, &cfg)
-		}
+		return NewGithubCodeHost(ctx, &cfg)
 	default:
-		{
-			return nil, errors.Newf("unknown code host %q", cfg.Kind)
-		}
+		return nil, errors.Newf("unknown code host %q", cfg.Kind)
 	}
 }
 
 func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostSource, error) {
 	switch cfg.Kind {
 	case "bitbucket":
-		{
-			return NewBitbucketCodeHost(logger, &cfg)
-		}
+		return NewBitbucketCodeHost(logger, &cfg)
 	case "github":
-		{
-			return NewGithubCodeHost(ctx, &cfg)
-		}
+		return NewGithubCodeHost(ctx, &cfg)
 	case "gitlab":
-		{
-			return NewGitLabCodeHost(ctx, &cfg)
-		}
+		return NewGitLabCodeHost(ctx, &cfg)
 	default:
-		{
-			return nil, errors.Newf("unknown code host %q", cfg.Kind)
-		}
+		return nil, errors.Newf("unknown code host %q", cfg.Kind)
 	}
 }
 

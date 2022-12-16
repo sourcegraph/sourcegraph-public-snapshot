@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type getResult[T any] struct {
@@ -39,7 +37,7 @@ type Client struct {
 	apiURL  *url.URL
 	http    http.Client
 	// FetchLimit The amount of records to request per page
-	FetchLimit int
+	FetchLimit int // TODO remove
 }
 
 type ClientOpt func(client *Client)
@@ -103,8 +101,8 @@ func (c *Client) url(fragment string) string {
 
 // getPaged issues a get request against a url that returns a paged response. The response is marshalled into
 // a PagedResponse and returned. Otherwise an APIError is returned
-func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedResp, error) {
-	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, c.FetchLimit)
+func (c *Client) getPaged(ctx context.Context, url string, start int, perPage int) (*PagedResp, error) {
+	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, perPage)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	c.setAuth(req)
@@ -179,6 +177,7 @@ func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, err
 // getAll continuously calls getPaged by adjusting the start query parameter based on the previous
 // paged response. A GetResult is returned which contains the results as well as any errors that were
 // encountered.
+// TODO estnwrseitnwtein
 func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], error) {
 	start := 0
 	count := 0
@@ -186,7 +185,7 @@ func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], 
 	var apiErr *APIError
 	for {
 		ctx := ctx
-		resp, err := c.getPaged(ctx, url, start)
+		resp, err := c.getPaged(ctx, url, start, 30)
 		// If the error is a APIError we store the error and continue, otherwise
 		// something severe is wrong and we stop and exit early
 		if err != nil && errors.As(err, &apiErr) {
@@ -329,12 +328,8 @@ func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 	return results, err
 }
 
-func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
-	projects, err := c.ListProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.ListReposForProjects(ctx, projects)
+func (c *Client) ListRepos(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
+	return c.ListReposForProjects(ctx, []*Project{project}, page, perPage) // TODO fix
 }
 
 func extractResults[T any](items []getResult[T]) ([]T, error) {
@@ -351,39 +346,28 @@ func extractResults[T any](items []getResult[T]) ([]T, error) {
 	return results, err
 }
 
-func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) ([]*Repo, error) {
-	g := group.NewWithResults[getResult[[]*Repo]]().WithMaxConcurrency(10)
+func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project, page int, perPage int) ([]*Repo, int, error) {
 	repos := make([]*Repo, 0)
+	if len(projects) > 1 {
+		panic("todo")
+	}
+
 	for _, p := range projects {
-
 		project := p
-		g.Go(func() getResult[[]*Repo] {
-			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
-			all, err := getAll[*Repo](ctx, c, url)
-			if err != nil {
-				return getResult[[]*Repo]{
-					Err: err,
-				}
-			}
-
-			results, error := extractResults(all)
-			return getResult[[]*Repo]{
-				Result: results,
-				Err:    error,
-			}
-
-		})
-	}
-	results := g.Wait()
-	var err error
-	for _, r := range results {
-		if r.Err != nil {
-			err = errors.Append(err, r.Err)
-		} else if r.Result != nil {
-			repos = append(repos, r.Result...)
+		url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
+		resp, err := c.getPaged(ctx, url, page, perPage)
+		if err != nil {
+			return nil, 0, err
 		}
-
+		for _, v := range resp.Values {
+			var repo Repo
+			err := json.Unmarshal(v, &repo)
+			if err != nil {
+				return nil, 0, err
+			}
+			repos = append(repos, &repo)
+		}
+		return repos, resp.NextPageStart, nil
 	}
-
-	return repos, err
+	panic("fiwfiwfipw")
 }

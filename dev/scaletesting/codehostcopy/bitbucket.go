@@ -17,9 +17,13 @@ import (
 const separator = "_-_"
 
 type BitbucketCodeHost struct {
-	logger log.Logger
-	def    *CodeHostDefinition
-	c      *bitbucket.Client
+	logger  log.Logger
+	def     *CodeHostDefinition
+	c       *bitbucket.Client
+	page    int
+	perPage int
+	done    bool
+	err     error
 }
 
 func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
@@ -63,15 +67,37 @@ func (bt *BitbucketCodeHost) DropSSHKey(ctx context.Context, keyID int64) error 
 	return nil
 }
 
-// ListRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
+func (bt *BitbucketCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+	return 0, 0, nil
+}
+
+// listRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
 // url is extracted. Note that the repo name has the following format: <project key>_-_<repo name>. Thus if you
 // just want the repo name you would have to strip the project key and '_-_' separator out.
-func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+func (bt *BitbucketCodeHost) listRepos(ctx context.Context, page int, perPage int) ([]*store.Repo, int, error) {
 	bt.logger.Debug("fetching repos")
-	repos, err := bt.c.ListRepos(ctx)
+	// bt.def.Path
+
+	projects, err := bt.c.ListProjects(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var project *bitbucket.Project
+	for _, p := range projects {
+		if p.Name == bt.def.Path {
+			project = p
+			break
+		}
+	}
+	if project == nil {
+		return nil, 0, errors.Newf("project named %s not found", bt.def.Path)
+	}
+
+	repos, next, err := bt.c.ListRepos(ctx, project, 0, 0)
 	if err != nil {
 		bt.logger.Debug("failed to list repos", log.Error(err))
-		return nil, err
+		return nil, 0, err
 	}
 
 	bt.logger.Debug("fetched list of repos", log.Int("repos", len(repos)))
@@ -81,7 +107,7 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
 			bt.logger.Debug("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
-			return nil, err
+			return nil, 0, err
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
@@ -91,7 +117,41 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 		})
 	}
 
-	return results, nil
+	return results, next, nil
+}
+
+func (bt *BitbucketCodeHost) Iterator() Iterator[[]*store.Repo] {
+	return bt
+}
+
+func (bt *BitbucketCodeHost) Done() bool {
+	return bt.done
+}
+
+func (bt *BitbucketCodeHost) Err() error {
+	return bt.err
+}
+
+func (bt *BitbucketCodeHost) Next(ctx context.Context) []*store.Repo {
+	if bt.done {
+		return nil
+	}
+
+	results, next, err := bt.listRepos(ctx, bt.page, bt.perPage)
+	if err != nil {
+		bt.err = err
+		return nil
+	}
+
+	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
+	if next > 0 {
+		// Ensure that the next request starts at the next page
+		bt.page = next
+	} else {
+		bt.done = true
+	}
+
+	return results
 }
 
 // CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>_-_<repo name>.

@@ -108,6 +108,14 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	return nil
 }
 
+func (g *GitLabCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+	return 0, 0, errors.New("not implemented for Gitlab")
+}
+
+func (g *GitLabCodeHost) Iterator() Iterator[[]*store.Repo] {
+	panic("not implemented")
+}
+
 func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	return nil, errors.New("not implemented for Gitlab")
 }
