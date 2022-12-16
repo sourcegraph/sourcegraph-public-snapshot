@@ -10,8 +10,7 @@ import {
     FormChangeEvent,
     SubmissionErrors,
     useForm,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
+    useRepoFields,
 } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
@@ -25,7 +24,8 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     title: '',
     step: 'months',
     stepValue: '2',
-    allRepos: false,
+    repoMode: 'urls-list',
+    repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }
 
@@ -49,32 +49,12 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
         onChange,
     })
 
+    const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })
+
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
         validators: { sync: TITLE_VALIDATORS },
-    })
-
-    const allReposMode = useField({
-        name: 'allRepos',
-        formApi: form.formAPI,
-        onChange: (checked: boolean) => {
-            // Reset form values in case if All repos mode was activated
-            if (checked) {
-                repositories.input.onChange('')
-            }
-        },
-    })
-
-    const repositories = useField({
-        name: 'repositories',
-        formApi: form.formAPI,
-        validators: {
-            // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: !allReposMode.input.value ? insightRepositoriesValidator : undefined,
-            async: !allReposMode.input.value ? insightRepositoriesAsyncValidator : undefined,
-        },
-        disabled: allReposMode.input.value,
     })
 
     const query = useField({
@@ -96,6 +76,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
 
     const handleFormReset = (): void => {
         title.input.onChange('')
+        repoQuery.input.onChange({ query: '' })
         repositories.input.onChange('')
         query.input.onChange('')
         step.input.onChange('months')
@@ -106,14 +87,15 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     }
 
     const hasFilledValue =
-        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
+        form.values.title !== '' ||
+        form.values.repositories !== '' ||
+        form.values.repoQuery.query !== '' ||
+        form.values.groupSearchQuery !== ''
 
     const areAllFieldsForPreviewValid =
-        repositories.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repoQuery.meta.validState === 'VALID') &&
         stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID' &&
-        // For all repos mode we are not able to show the live preview chart
-        !allReposMode.input.value
+        query.meta.validState === 'VALID'
 
     return (
         <CreationUiLayout className={className}>
@@ -122,12 +104,13 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
                 as={CaptureGroupCreationForm}
                 form={form}
                 title={title}
+                repoMode={repoMode}
+                repoQuery={repoQuery}
                 repositories={repositories}
                 step={step}
                 stepValue={stepValue}
                 query={query}
                 isFormClearActive={hasFilledValue}
-                allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
                 onFormReset={handleFormReset}
             >
@@ -137,7 +120,6 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
             <CreationUIPreview
                 as={LineChartLivePreview}
                 disabled={!areAllFieldsForPreviewValid}
-                isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
                 series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
