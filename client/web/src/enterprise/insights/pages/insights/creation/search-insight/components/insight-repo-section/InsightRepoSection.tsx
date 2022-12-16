@@ -3,19 +3,9 @@ import { ChangeEvent, FC, PropsWithChildren, ReactElement } from 'react'
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import {
-    Button,
-    Checkbox,
-    Code,
-    Input,
-    Label,
-    InputElement,
-    InputErrorMessage,
-    InputDescription,
-    Link,
-} from '@sourcegraph/wildcard'
+import { Button, Code, Input, Label, InputElement, InputErrorMessage, InputDescription } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../../stores'
 import {
@@ -28,13 +18,12 @@ import {
     MonacoField,
 } from '../../../../../../components'
 import { MonacoPreviewLink } from '../../../../../../components/form/monaco-field'
-import { CreateInsightFormFields, RepoMode } from '../../types'
+import { CreateInsightFormFields } from '../../types'
 
 import styles from './InsightRepoSection.module.scss'
 
 interface RepoSettingSectionProps {
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
-    allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
     repoMode: useFieldAPI<CreateInsightFormFields['repoMode']>
 }
@@ -45,77 +34,15 @@ interface RepoSettingSectionProps {
  * experimental flags.
  */
 export const RepoSettingSection: FC<RepoSettingSectionProps> = props => {
-    const { repositories, allReposMode, repoQuery, repoMode } = props
+    const { repositories, repoQuery, repoMode } = props
 
     const repoUIVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
-
-    if (repoUIVariation === 'old-strict-list') {
-        return <OldRepoSettingSection allReposMode={allReposMode} repositories={repositories} />
-    }
 
     if (repoUIVariation === 'single-search-query') {
         return <SmartRepoSettingSection repoQuery={repoQuery} />
     }
 
     return <SearchQueryOrRepoListSection repoMode={repoMode} repoQuery={repoQuery} repositories={repositories} />
-}
-
-interface OldRepoSettingSectionProps {
-    repositories: useFieldAPI<CreateInsightFormFields['repositories']>
-    allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
-}
-
-/**
- * This repo form section provides a standard UI for picking repositories URL
- * for the insight creation form. Strict list of direct repo URLS and all repositories
- * mode checkbox.
- *
- * @deprecated (Remove this section as soon as strat-scoped insight UI is merged)
- */
-export const OldRepoSettingSection: FC<OldRepoSettingSectionProps> = props => {
-    const { repositories, allReposMode } = props
-
-    return (
-        <FormGroup
-            name="insight repositories"
-            title="Targeted repositories"
-            subtitle="Create a list of repositories to run your search over"
-        >
-            <Input
-                as={RepositoriesField}
-                autoFocus={true}
-                required={true}
-                label="Repositories"
-                message="Separate repositories with commas"
-                placeholder={
-                    allReposMode.input.value ? 'All repositories' : 'Example: github.com/sourcegraph/sourcegraph'
-                }
-                className="mb-0 d-flex flex-column"
-                {...getDefaultInputProps(repositories)}
-            />
-
-            <Checkbox
-                {...allReposMode.input}
-                type="checkbox"
-                id="RunInsightsOnAllRepoCheck"
-                wrapperClassName="mb-1 mt-3 font-weight-normal"
-                value="all-repos-mode"
-                checked={allReposMode.input.value}
-                label="Run your insight over all your repositories"
-            />
-
-            <small className="w-100 mt-2 text-muted">
-                This feature is actively in development. Read about the{' '}
-                <Link
-                    to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    limitations here.
-                </Link>
-            </small>
-        </FormGroup>
-    )
 }
 
 interface SmartRepoSettingSectionProps {
@@ -155,28 +82,23 @@ export const SearchQueryOrRepoListSection: FC<SearchQueryOrRepoListSectionProps>
                 label="Repositories query"
                 name="repoMode"
                 labelId="smart-repo-search-query"
-                value={RepoMode.SearchQuery.toString()}
-                checked={RepoMode.SearchQuery.toString() === repoMode.input.value.toString()}
+                value="search-query"
+                checked={repoMode.input.value === 'search-query'}
                 onChange={repoMode.input.onChange}
             >
-                <SmartSearchQueryRepoField
-                    repoQuery={repoQuery}
-                    disabled={RepoMode.SearchQuery.toString() !== repoMode.input.value.toString()}
-                    aria-labelledby="smart-repo-search-query"
-                />
+                <SmartSearchQueryRepoField repoQuery={repoQuery} aria-labelledby="smart-repo-search-query" />
             </RadioGroupSection>
 
             <RadioGroupSection
                 label="Explicit list of repositories"
                 name="repoMode"
                 labelId="strict-list-repo"
-                value={RepoMode.DirectURLList.toString()}
-                checked={RepoMode.DirectURLList.toString() === repoMode.input.value.toString()}
+                value="urls-list"
+                checked={repoMode.input.value === 'urls-list'}
                 onChange={repoMode.input.onChange}
             >
                 <Input
                     as={RepositoriesField}
-                    required={true}
                     message="Use a full repo URL (github.com/...). Separate repositories with comas"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
                     aria-labelledby="strict-list-repo"
@@ -246,7 +168,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
 
     const handleOnChange = (queryState: QueryState): void => {
         if (queryState.query !== value.query) {
-            onChange(queryState)
+            onChange({ query: queryState.query, changeSource: QueryChangeSource.userInput })
         }
     }
 
@@ -260,8 +182,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 <InputElement
                     as={MonacoField}
                     queryState={value}
-                    autoFocus={true}
-                    status={getDefaultInputStatus(repoQuery)}
+                    status={getDefaultInputStatus(repoQuery, value => value.query)}
                     placeholder="Example: repo:^github\.com/sourcegraph/sourcegraph$"
                     aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
                     className={styles.repoInput}
@@ -281,7 +202,9 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
 
             <SmartRepoQueryChips onChipClick={handleChipSuggestions} />
 
-            {getDefaultInputError(repoQuery) && <InputErrorMessage message={getDefaultInputError(repoQuery)} />}
+            {getDefaultInputError(repoQuery) && (
+                <InputErrorMessage message={getDefaultInputError(repoQuery)} className="mt-2 mb-2" />
+            )}
 
             <InputDescription>
                 <ul>
