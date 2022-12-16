@@ -172,7 +172,6 @@ func doList(ctx context.Context, logger log.Logger, state string, config string,
 
 	runner := NewRunner(logger, s, from, nil)
 	return runner.List(ctx, limit)
-
 }
 
 func main() {
@@ -185,5 +184,4 @@ func main() {
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))
 	}
-
 }
