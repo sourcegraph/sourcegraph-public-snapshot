@@ -23,5 +23,55 @@
     "path": "enterprise/cmd/frontend/internal/batches/resolvers",
     "prefix": "TestRepositoryPermissions",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestDatabaseExists",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestDatabaseHover",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestDatabaseDefinitions",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestDatabaseReferences",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestDatabaseMonikersByPosition",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestGetBulkMonikerLocations",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestGetPackageInformation",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestGetRanges",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestStencil",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
+  },
+  {
+    "path": "enterprise/internal/codeintel/codenav/internal/lsifstore",
+    "prefix": "TestWriteSCIPSymbols",
+    "reason": "Dropped symbol_name column on codeintel_scip_symbols"
   }
 ]
