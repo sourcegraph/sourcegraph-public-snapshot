@@ -24,9 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -143,12 +141,6 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 	}
 
 	// create the known ways to resolve a data series
-	jitCaptureGroupGenerator := newSeriesResolverGenerator(
-		func(series types.InsightViewSeries) bool {
-			return series.JustInTime && series.GeneratedFromCaptureGroups
-		},
-		expandCaptureGroupSeriesJustInTime,
-	)
 	recordedCaptureGroupGenerator := newSeriesResolverGenerator(
 		func(series types.InsightViewSeries) bool {
 			return !series.JustInTime && series.GeneratedFromCaptureGroups
@@ -161,21 +153,11 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 		},
 		recordedSeries,
 	)
-
-	jitStreamingGenerator := newSeriesResolverGenerator(
-		func(series types.InsightViewSeries) bool {
-			return series.JustInTime && !series.GeneratedFromCaptureGroups
-		},
-		streamingSeriesJustInTime,
-	)
-
 	// build the chain of generators
-	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
 	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
-	recordedGenerator.SetNext(jitStreamingGenerator)
 
 	// set the struct variable to the first generator in the chain
-	i.dataSeriesGenerator = jitCaptureGroupGenerator
+	i.dataSeriesGenerator = recordedCaptureGroupGenerator
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
@@ -543,8 +525,6 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	// Validation
-
-	v2BackfillEnabled := v2BackfillEnabled()
 	// Needs at least 1 series
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to create an insight view")
@@ -558,7 +538,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		if args.Input.DataSeries[i].TimeScope == nil {
 			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
 		}
-		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
+		err := isValidSeriesInput(args.Input.DataSeries[i])
 		if err != nil {
 			return nil, err
 		}
@@ -573,7 +553,6 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 	defer func() { err = insightTx.Done(err) }()
 	dashboardTx := r.dashboardStore.With(insightTx)
-	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(insightTx))
 
 	var dashboardIds []int
 	if args.Input.Dashboards != nil {
@@ -608,7 +587,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, backfiller, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, r.scheduler, r.insightEnqueuer)
 
 	for _, series := range args.Input.DataSeries {
 		if err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series); err != nil {
@@ -639,7 +618,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")
 	}
-	v2BackfillEnabled := v2BackfillEnabled()
+
 	// Ensure Repo Scope is valid for each scope
 	for i := 0; i < len(args.Input.DataSeries); i++ {
 		if args.Input.DataSeries[i].RepositoryScope == nil {
@@ -648,7 +627,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		if args.Input.DataSeries[i].TimeScope == nil {
 			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
 		}
-		err := isValidSeriesInput(args.Input.DataSeries[i], v2BackfillEnabled)
+		err := isValidSeriesInput(args.Input.DataSeries[i])
 		if err != nil {
 			return nil, err
 		}
@@ -710,8 +689,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, tx, backfiller, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(ctx, tx, r.scheduler, r.insightEnqueuer)
 
 	if captureGroupInsight {
 		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, seriesFillStrategy); err != nil {
@@ -1305,18 +1283,15 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 
 type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 
-func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillEnabled := v2BackfillEnabled()
+func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
+
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
 		}
-		if v2BackfillEnabled {
-			return v2HistoricFill(ctx, deprecateJustInTime, series, tx, scheduler)
-		}
-		return v1HistoricFill(ctx, deprecateJustInTime, series, tx, scopedBackfiller)
+
+		return v2HistoricFill(ctx, series, tx, scheduler)
+
 	}
 }
 
@@ -1333,10 +1308,7 @@ func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *stor
 	return nil
 }
 
-func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
-	if len(series.Repositories) > 0 && !deprecateJustInTime {
-		return nil
-	}
+func v2HistoricFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
 	backfillScheduler = backfillScheduler.With(tx)
 	_, err := backfillScheduler.InitialBackfill(ctx, series)
 	if err != nil {
@@ -1347,23 +1319,6 @@ func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.
 		return errors.Wrap(err, "StampBackfill")
 	}
 
-	return nil
-
-}
-
-func v1HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller) error {
-	if !deprecateJustInTime || len(series.Repositories) == 0 {
-		return nil
-	}
-
-	err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{series})
-	if err != nil {
-		return errors.Wrap(err, "ScopedBackfill")
-	}
-	_, err = tx.StampBackfill(ctx, series) // note that this isn't transactional with the backfill above until the queue is migrated to the insights DB
-	if err != nil {
-		return errors.Wrap(err, "StampBackfill")
-	}
 	return nil
 }
 
@@ -1413,9 +1368,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 		}
 	}
 
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
@@ -1426,7 +1378,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
+			JustInTime:                 false,
 			GenerationMethod:           searchGenerationMethod(series),
 			GroupBy:                    groupBy,
 			NextRecordingAfter:         nextRecordingAfter,
@@ -1673,16 +1625,7 @@ func lowercaseGroupBy(groupBy *string) *string {
 	return groupBy
 }
 
-func v2BackfillEnabled() bool {
-	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
-	v2BackfillEnabled := true
-	if v2BackfillSetting != nil {
-		v2BackfillEnabled = *v2BackfillSetting
-	}
-	return v2BackfillEnabled
-}
-
-func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput, v2BackfillEnabled bool) error {
+func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
 	if seriesInput.RepositoryScope == nil {
 		return errors.New("a repository scope is required")
 	}
@@ -1693,9 +1636,6 @@ func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSer
 	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
 	if repoListSpecified && repoCriteriaSpecified {
 		return errors.New("series can not specify both a repository list and repository critieria")
-	}
-	if repoCriteriaSpecified && !v2BackfillEnabled {
-		return errors.New("series using repository critieria require the InsightsBackfillerV2 setting to be enabled")
 	}
 	if !repoListSpecified && seriesInput.GroupBy != nil {
 		return errors.New("group by series require a list of repositories to be specified.")
