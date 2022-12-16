@@ -1,5 +1,10 @@
 [
   {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration",
+    "reason": "Added a UNIQUE constraint on batch_specs.rand_id and changeset_specs.rand_id, some tests fail because we had some duplicate Rand ID creation in tests."
+  },
+  {
     "path": "enterprise/cmd/frontend/internal/batches/webhooks",
     "prefix": "TestWebhooksIntegration",
     "reason": "Test was having incomplete data, fails now that constraints are in place"
