@@ -228,7 +228,7 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 			}
 
 			start := time.Now()
-			if err := root.Run(run.Cmd(ctx, "go", "generate", pkgPath)).Wait(); err != nil {
+			if err := root.Run(run.Cmd(ctx, "go", "generate", ".").Dir(pkgPath)).Wait(); err != nil {
 				return err
 			}
 			duration := time.Since(start)
