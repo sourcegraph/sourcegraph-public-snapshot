@@ -201,7 +201,8 @@ func generateAll(
 		}
 	}
 	if grafanaClient != nil {
-		logger.Debug("Reloading Grafana dashboard")
+		homeLogger := logger.With(log.String("dashboard", "home"))
+		homeLogger.Debug("Reloading Grafana dashboard")
 		if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
 			Dashboard: data,
 			Parameters: grafanasdk.SetDashboardParams{
@@ -211,7 +212,7 @@ func generateAll(
 		}); err != nil {
 			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard 'Overview'")
 		} else {
-			logger.Info("Reloaded Grafana dashboard")
+			homeLogger.Info("Reloaded Grafana dashboard")
 		}
 	}
 
