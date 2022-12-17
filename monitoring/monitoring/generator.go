@@ -3,7 +3,6 @@ package monitoring
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -64,7 +63,7 @@ type GenerateOptions struct {
 func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
 	ctx := context.TODO()
 
-	logger.Info("Regenerating monitoring", log.String("options", fmt.Sprintf("%+v", opts)))
+	logger.Info("Regenerating monitoring")
 
 	// Verify dashboard configuration
 	var validationErrors error
