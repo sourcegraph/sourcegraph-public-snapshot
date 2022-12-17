@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/xanzy/go-gitlab"
 
 	"github.com/sourcegraph/run"
@@ -17,9 +16,8 @@ import (
 )
 
 type GitLabCodeHost struct {
-	def    *CodeHostDefinition
-	c      *gitlab.Client
-	logger log.Logger
+	def *CodeHostDefinition
+	c   *gitlab.Client
 }
 
 var _ CodeHostDestination = (*GitLabCodeHost)(nil)
@@ -35,11 +33,9 @@ func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeH
 	if err != nil {
 		return nil, err
 	}
-	l := log.Scoped("gitlab", "")
 	return &GitLabCodeHost{
-		def:    def,
-		c:      gl,
-		logger: l,
+		def: def,
+		c:   gl,
 	}, nil
 }
 
