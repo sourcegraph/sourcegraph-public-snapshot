@@ -84,7 +84,8 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if opts.GrafanaURL != "" && opts.Reload {
 		gclog := logger.Scoped("grafana.client", "grafana client setup")
 
-		grafanaClient, err := grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
+		var err error
+		grafanaClient, err = grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
 		if err != nil {
 			return err
 		}
