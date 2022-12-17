@@ -93,32 +93,10 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		if opts.GrafanaFolder != "" {
 			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
 
-			// Get all the folders and look up the customer by the customer name (title)
-			folders, err := grafanaClient.GetAllFolders(ctx)
-			if err != nil {
-				return errors.Wrap(err, "Unable to get all folders from Grafana API")
-			}
-			for _, folder := range folders {
-				if folder.Title == opts.GrafanaFolder {
-					gclog.Debug("Found existing folder matching name",
-						log.String("folder.uid", folder.UID),
-						log.Int("folder.id", folder.ID))
-
-					if folder.UID != opts.GrafanaFolder {
-						// If UID does not match the folder name, then delete it so it can
-						// be recreated. We want folders to have stable UIDs
-						_, err := grafanaClient.DeleteFolderByUID(ctx, folder.UID)
-						if err != nil {
-							return errors.Wrapf(err, "Unable to delete misnamed folder %q",
-								folder.UID)
-						}
-					} else {
-						// Mark as found
-						grafanaFolderID = folder.ID
-					}
-
-					break
-				}
+			// try to find existing folder
+			if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
+				gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))
+				grafanaFolderID = folder.ID
 			}
 
 			// folderId is not found, create it
