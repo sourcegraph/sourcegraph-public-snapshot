@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Utils } from "vscode-uri";
 import {
   TextDocument,
   Position,

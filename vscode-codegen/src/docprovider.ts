@@ -11,8 +11,8 @@ export class CodegenDocumentProvider implements TextDocumentContentProvider {
   setDocument(uri: vscode.Uri, contents: Promise<string> | null): void {
     const uriStr = uri.toString();
     delete this.loadedDocuments[uriStr];
+    this.fireDocumentChanged(uri);
     if (!contents) {
-      this.fireDocumentChanged(uri);
       return;
     }
     contents.then((loadedContents) => {

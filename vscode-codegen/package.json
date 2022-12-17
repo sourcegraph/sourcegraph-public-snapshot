@@ -27,7 +27,6 @@
         "command": "codebot.generate-test",
         "title": "Generate a unit test"
       }
-
     ],
     "keybindings": [
       {
@@ -67,6 +66,7 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "openai": "^3.1.0"
+    "openai": "^3.1.0",
+    "vscode-uri": "^3.0.7"
   }
 }

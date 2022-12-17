@@ -19,6 +19,8 @@ import {
   CodegenDocumentProvider,
   completionsDisplayString,
 } from "./docprovider";
+import path = require("path");
+import { Utils } from "vscode-uri";
 
 export async function generateTestFromSelection(
   documentProvider: CodegenDocumentProvider
@@ -52,7 +54,7 @@ export async function generateTestFromSelection(
   });
 }
 
-function getCompletions(prompt: string) {
+function getCompletions(prompt: string, docstring?: string) {
   const config = new openai.Configuration({
     apiKey: vscode.workspace
       .getConfiguration()
@@ -68,7 +70,11 @@ function getCompletions(prompt: string) {
       stop: "```",
       n: 1,
     })
-    .then((response) => response.data.choices.map((choice) => choice.text))
+    .then((response) =>
+      response.data.choices.map((choice) =>
+        docstring ? `// ${docstring}\n${choice.text}` : choice.text
+      )
+    )
     .then((choiceText) => choiceText.filter((c) => c).join("\n\n"));
   return completions;
 }
@@ -80,11 +86,12 @@ export async function generateTest(documentProvider: CodegenDocumentProvider) {
     return;
   }
   const symbols = await getSymbols(editor.document.uri);
-
   symbols.sort((a, b) => {
     let diff = 0;
-    diff += 4 * ((isTestable(a) ? 0 : 1) - (isTestable(b) ? 0 : 1));
-    diff += 2 * ((isProbablyTest(a) ? 0 : 1) - (isProbablyTest(b) ? 0 : 1));
+    diff += 4 * ((isFunctionLike(a) ? 0 : 1) - (isFunctionLike(b) ? 0 : 1));
+    diff +=
+      2 *
+      ((isProbablyTestSymbol(a) ? 0 : 1) - (isProbablyTestSymbol(b) ? 0 : 1));
     diff += 1 * ((isClose(a) ? 0 : 1) - (isClose(b) ? 0 : 1));
     return diff;
   });
@@ -107,26 +114,100 @@ export async function generateTest(documentProvider: CodegenDocumentProvider) {
       }
     });
   });
-
   if (!selected) {
+    console.log("aborted (no selection made)");
     return; // aborted
   }
-
   const selectedSymbol = symbols.find((s) => s.name === selected);
   const symbolCode = editor.document.getText(selectedSymbol?.range);
 
-  const prompt = `\`\`\`
-  ${symbolCode}
-  \`\`\`
-  Write the unit test for the above code:
-  \`\`\
-  `;
+  // Get test function to mimic
+  const dirname = Utils.dirname(editor.document.uri);
+  const dir = await vscode.workspace.fs.readDirectory(
+    Utils.dirname(editor.document.uri)
+  );
+  const testFiles = [...dir.entries()]
+    .map(([_, info]) => info[1] === vscode.FileType.File && info[0])
+    .filter((e) => e && isProbablyTestFile(e)) as string[];
 
+  const testSymbols = (
+    await Promise.all(
+      testFiles.map((testFile) => {
+        const uri = Utils.joinPath(dirname, testFile);
+        return getSymbols(uri).then((symbols) =>
+          symbols.map((symbol) => ({
+            uri,
+            symbol,
+          }))
+        );
+      })
+    )
+  ).flatMap((arr) => arr);
+  testSymbols.sort(({ symbol: a }, { symbol: b }) => {
+    let diff = 0;
+    diff += 4 * ((isFunctionLike(a) ? 0 : 1) - (isFunctionLike(b) ? 0 : 1));
+    diff +=
+      2 *
+      ((isProbablyTestSymbol(b) ? 0 : 1) - (isProbablyTestSymbol(a) ? 0 : 1));
+    diff += 1 * ((isClose(a) ? 0 : 1) - (isClose(b) ? 0 : 1));
+    return diff;
+  });
+
+  const tqp = await vscode.window.createQuickPick();
+  tqp.title =
+    "(Optional) Is there an existing test whose structure you'd like copy?";
+  const noneSentinel = "[NONE]";
+  tqp.items = [
+    { label: noneSentinel },
+    ...testSymbols.map((s) => ({ label: s.symbol.name })),
+  ];
+  tqp.onDidChangeActive(async () => {
+    if (tqp.activeItems.length === 0) {
+      return;
+    }
+    const symbolName = tqp.activeItems[0].label;
+    const symbol = testSymbols.find((s) => s.symbol.name === symbolName);
+    if (symbol) {
+      const doc = await vscode.workspace.openTextDocument(symbol.uri);
+      const editor = await vscode.window.showTextDocument(doc, 1, true);
+      editor.revealRange(
+        symbol.symbol.range,
+        vscode.TextEditorRevealType.AtTop
+      );
+    }
+  });
+  tqp.show();
+  const selectedTestSymbolName = await new Promise(async (resolve) => {
+    tqp.onDidChangeSelection((s) => resolve(s.length > 0 && s[0].label));
+  });
+  const selectedTestSymbol = testSymbols.find(
+    (ts) => ts.symbol.name === selectedTestSymbolName
+  );
+
+  let testCode;
+  if (selectedTestSymbol) {
+    const testfileDoc = await vscode.workspace.openTextDocument(
+      selectedTestSymbol.uri
+    );
+    // TODO: need to close testfileDoc?
+    testCode = await testfileDoc.getText(selectedTestSymbol.symbol.range);
+  }
+
+  const testCodeString = testCode
+    ? `Here is an example unit test:\n\`\`\`\n${testCode}\n\`\`\`\n`
+    : "";
+  const prompt = `${testCodeString}Here is the code I want to test:
+\`\`\`
+${symbolCode}
+\`\`\`
+Write the unit test for the function. It doesn't have to follow the example unit test exactly.
+\`\`\`
+`;
+
+  console.log(prompt);
   const completions = getCompletions(prompt);
-
   const generatedUri = vscode.Uri.parse(`codegen:unittests.${ext}`);
   documentProvider.setDocument(generatedUri, completions);
-
   const doc = await vscode.workspace.openTextDocument(generatedUri);
   await vscode.window.showTextDocument(doc, {
     preview: false,
@@ -164,7 +245,11 @@ function flattenSymbols(symbols: DocumentSymbol[]): DocumentSymbol[] {
   return symbols.flatMap((s) => [s, ...s.children]);
 }
 
-function isProbablyTest(s: DocumentSymbol): boolean {
+function isProbablyTestFile(filename: string): boolean {
+  return filename.toLowerCase().indexOf("test") !== -1;
+}
+
+function isProbablyTestSymbol(s: DocumentSymbol): boolean {
   if (s.name.toLowerCase().indexOf("test") !== -1) {
     return true;
   }
@@ -174,7 +259,7 @@ function isProbablyTest(s: DocumentSymbol): boolean {
   return false;
 }
 
-function isTestable(s: DocumentSymbol): boolean {
+function isFunctionLike(s: DocumentSymbol): boolean {
   return [SymbolKind.Function, SymbolKind.Method].indexOf(s.kind) !== -1;
 }
 
