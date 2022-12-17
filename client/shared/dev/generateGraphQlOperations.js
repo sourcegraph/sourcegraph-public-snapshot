@@ -110,7 +110,10 @@ async function _generateGraphQlOperations(operations) {
       config: {
         onlyOperationTypes: true,
         noExport: false,
-        enumValues: '@sourcegraph/shared/src/graphql-operations',
+        enumValues:
+          operation.interfaceNameForOperations === 'SharedGraphQlOperations'
+            ? undefined
+            : '@sourcegraph/shared/src/graphql-operations',
         interfaceNameForOperations: operation.interfaceNameForOperations,
       },
       plugins: [...SHARED_PLUGINS, ...(EXTRA_PLUGINS[operation.interfaceNameForOperations] || [])],
@@ -172,7 +175,7 @@ async function main(args) {
     throw new Error('Usage: <schemaName>')
   }
 
-  const [interfaceNameForOperations, outputPath] = args;
+  const [interfaceNameForOperations, outputPath] = args
 
   await _generateGraphQlOperations([{ interfaceNameForOperations, outputPath }])
 }
