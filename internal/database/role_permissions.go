@@ -89,7 +89,7 @@ func (rp *rolePermissionStore) Delete(ctx context.Context, opts DeleteRolePermis
 
 	q := sqlf.Sprintf(
 		deleteRolePermissionQueryFmtStr,
-		sqlf.Sprintf("permission_id = %s AND role_id = %s", opts.PermissionID, opts.RoleID),
+		sqlf.Sprintf("role_permissions.permission_id = %s AND role_permissions.role_id = %s", opts.PermissionID, opts.RoleID),
 	)
 
 	result, err := rp.ExecResult(ctx, q)
@@ -129,6 +129,29 @@ FROM role_permissions
 WHERE %s;
 `
 
+func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
+	q := sqlf.Sprintf(
+		getRolePermissionQueryFmtStr,
+		sqlf.Join(rolePermissionColumns, ", "),
+		w,
+	)
+
+	fmt.Println(q.Query(sqlf.PostgresBindVar))
+
+	rows, err := rp.Query(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := scanFunc(rows); err != nil {
+			return err
+		}
+	}
+
+	return rows.Err()
+}
+
 func (rp *rolePermissionStore) GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error) {
 	if opts.PermissionID == 0 {
 		return nil, errors.New("missing permission id")
@@ -165,29 +188,8 @@ func (rp *rolePermissionStore) GetByRoleID(ctx context.Context, opts GetRolePerm
 		return nil
 	}
 
-	err := rp.get(ctx, sqlf.Sprintf("role_id = %s", opts.PermissionID), scanFunc)
+	err := rp.get(ctx, sqlf.Sprintf("role_id = %s", opts.RoleID), scanFunc)
 	return rps, err
-}
-
-func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	q := sqlf.Sprintf(
-		getRolePermissionQueryFmtStr,
-		sqlf.Join(rolePermissionColumns, ", "),
-		w,
-	)
-
-	rows, err := rp.Query(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-	for rows.Next() {
-		if err := scanFunc(rows); err != nil {
-			return err
-		}
-	}
-
-	return rows.Err()
 }
 
 func (rp *rolePermissionStore) GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error) {
