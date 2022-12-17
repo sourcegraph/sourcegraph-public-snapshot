@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '../../LoadingSpinner/LoadingSpinner'
 
 import styles from './LoaderInput.module.scss'
 
