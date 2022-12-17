@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -31,7 +30,7 @@ to_git_url STRING DEFAULT ""
 // New returns a new store and creates the underlying database if
 // it doesn't exist already.
 func New(path string) (*Store, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("%s?_busy_timeout=15000", path))
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
