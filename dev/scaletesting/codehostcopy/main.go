@@ -105,7 +105,7 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 	}
 
 	runner := NewRunner(logger, s, gh, gl)
-	return runner.Run(ctx, 20)
+	return runner.Run(ctx, 250)
 }
 
 func main() {
