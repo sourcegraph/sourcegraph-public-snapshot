@@ -131,6 +131,8 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 						currentRepo.Failed = cErr.Error()
 						r.logger.Error("failed to create repo", logRepo(currentRepo, log.Error(cErr))...)
 					} else {
+						// clear outdated error messages
+						currentRepo.Failed = ""
 						currentRepo.ToGitURL = toGitURL.String()
 						currentRepo.Created = true
 					}
@@ -143,8 +145,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 				// Push the repo on destination.
 				if !currentRepo.Pushed && currentRepo.Created {
 					cErr := pushRepo(ctx, currentRepo, r.source.GitOpts(), r.destination.GitOpts())
-					// state might be out of date so ignore existing repos
-					if cErr != nil && !strings.Contains(cErr.Error(), "has already been taken") {
+					if cErr != nil {
 						currentRepo.Failed = cErr.Error()
 						r.logger.Error("failed to push repo", logRepo(currentRepo, log.Error(cErr))...)
 					} else {

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/xanzy/go-gitlab"
 
 	"github.com/sourcegraph/run"
@@ -15,8 +17,9 @@ import (
 )
 
 type GitLabCodeHost struct {
-	def *CodeHostDefinition
-	c   *gitlab.Client
+	def    *CodeHostDefinition
+	c      *gitlab.Client
+	logger log.Logger
 }
 
 var _ CodeHostDestination = (*GitLabCodeHost)(nil)
@@ -32,9 +35,11 @@ func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeH
 	if err != nil {
 		return nil, err
 	}
+	l := log.Scoped("gitlab", "")
 	return &GitLabCodeHost{
-		def: def,
-		c:   gl,
+		def:    def,
+		c:      gl,
+		logger: l,
 	}, nil
 }
 
@@ -121,7 +126,13 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 		Name:        gitlab.String(name),
 		NamespaceID: &group.ID,
 	})
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), "has already been taken") {
+		// state does not match reality, get existing repo
+		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Name, name), &gitlab.GetProjectOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
 	}
 
