@@ -27,7 +27,7 @@ func LoadConfig() {
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
-var DefaultClient *Client
+var DefaultClient *Client = &Client{} // TODO(sqs): needs a zero value or else a lot of tests will fail
 
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
