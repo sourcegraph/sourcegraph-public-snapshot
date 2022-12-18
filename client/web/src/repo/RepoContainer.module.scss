@@ -2,3 +2,13 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+.breadcrumb {
+    white-space: nowrap;
+    border: 0;
+    background-color: unset;
+
+    // The left side of the breadcrumb should be flush. There's an icon on the left side, so it
+    // doesn't look bad and asymmetrical.
+    padding: 0.125rem 0.25rem 0.125rem 0;
+}

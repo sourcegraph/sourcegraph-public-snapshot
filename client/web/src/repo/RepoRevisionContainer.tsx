@@ -10,7 +10,7 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -27,7 +27,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
-import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
+import { RepoRevisionWrapper } from './components/RepoRevision'
 import { isPackageServiceType } from './packages/isPackageServiceType'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -120,10 +120,12 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
-    const revisionLabel = (revision && revision === resolvedRevision?.commitID
-        ? resolvedRevision?.commitID.slice(0, 7)
-        : revision.slice(0, 7)) ||
-        resolvedRevision?.defaultBranch || <LoadingSpinner />
+    const revisionLabel =
+        (revision && revision === resolvedRevision?.commitID
+            ? resolvedRevision?.commitID.slice(0, 7)
+            : revision.slice(0, 7)) ||
+        resolvedRevision?.defaultBranch ||
+        '⋯'
 
     const isPopoverContentReady = repo && resolvedRevision
 
@@ -131,17 +133,15 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
                 as={Button}
-                className="d-flex align-items-center text-nowrap"
+                className={styles.breadcrumb}
                 key="repo-revision"
                 id="repo-revision-popover"
                 aria-label="Change revision"
-                outline={true}
                 variant="secondary"
-                size="sm"
                 disabled={!isPopoverContentReady}
             >
+                <span className="text-muted">@</span>
                 {revisionLabel}
-                <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
                 position={Position.bottomStart}
@@ -181,7 +181,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
 
             return {
                 key: 'revision',
-                divider: <span className={styles.divider}>@</span>,
+                divider: <></>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevision={resolvedRevision}

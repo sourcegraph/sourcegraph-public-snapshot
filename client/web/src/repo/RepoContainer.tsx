@@ -208,11 +208,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             const button = (
                 <Button
                     to={resolvedRevisionOrError?.rootTreeURL || repoOrError?.url || ''}
-                    disabled={!resolvedRevisionOrError}
-                    className="text-nowrap test-repo-header-repo-link"
+                    className={classNames(styles.breadcrumb, 'test-repo-header-repo-link')}
                     variant="secondary"
-                    outline={true}
-                    size="sm"
                     as={Link}
                 >
                     <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoName)}
