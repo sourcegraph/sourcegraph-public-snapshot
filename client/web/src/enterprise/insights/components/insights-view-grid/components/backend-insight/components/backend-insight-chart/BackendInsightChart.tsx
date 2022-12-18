@@ -181,7 +181,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <Button
                         role="checkbox"
                         aria-checked={isSeriesSelected(`${item.id}`)}
-                        className={styles.legendListItem}
+                        className={classNames(styles.legendListItem, styles.legendListItemInteractive)}
                         onPointerEnter={() => setHoveredId(`${item.id}`)}
                         onPointerLeave={() => setHoveredId(undefined)}
                         onFocus={() => setHoveredId(`${item.id}`)}
