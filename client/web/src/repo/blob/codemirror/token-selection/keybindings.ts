@@ -44,7 +44,7 @@ const keybindings: readonly KeyBinding[] = [
                 return false
             }
             const cmLine = view.state.doc.line(occurrence.range.start.line + 1)
-            const cmPos = cmLine.from + occurrence.range.end.character
+            const cmPos = cmLine.from + occurrence.range.start.character
             const spinner = new LoadingTooltip(view, cmPos)
             goToDefinitionAtOccurrence(view, occurrence)
                 .then(
