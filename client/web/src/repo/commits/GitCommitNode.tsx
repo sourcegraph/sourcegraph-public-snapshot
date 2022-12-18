@@ -53,6 +53,9 @@ export interface GitCommitNodeProps {
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
 
+    /** Hide the SHA (compact mode only). */
+    hideSHAInCompactMode?: boolean
+
     /**
      * Element that should wrap the commit data. Only use 'li' when rendering the component in a list
      *
@@ -76,6 +79,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
+    hideSHAInCompactMode,
     wrapperElement: WrapperElement = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
@@ -326,7 +330,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {!hideSHAInCompactMode && <Link to={node.canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}
