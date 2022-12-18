@@ -538,6 +538,7 @@ func NewSchema(
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
+		graphql.PanicHandler(nil),
 	)
 }
 
