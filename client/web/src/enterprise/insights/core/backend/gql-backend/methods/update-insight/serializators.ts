@@ -15,7 +15,6 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: insight.filters.includeRepoRegexp,
@@ -26,6 +25,10 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
     const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesDisplayOptions)
 
     return {
+        repositoryScope: {
+            repositories: insight.repositories,
+            repositoryCriteria: insight.repoQuery,
+        },
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             seriesId: series.id,
             query: series.query,
@@ -33,7 +36,6 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories },
             timeScope: { stepInterval: { unit, value } },
         })),
         presentationOptions: {
@@ -46,17 +48,15 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
+    const { step, filters, query, title, repositories, repoQuery, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
-    const _seriesDisplayOptions = parseSeriesDisplayOptions(seriesDisplayOptions)
-
     return {
+        repositoryScope: { repositories, repositoryCriteria: repoQuery },
         dataSeries: [
             {
                 query,
                 options: {},
-                repositoryScope: { repositories },
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
@@ -70,7 +70,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions: _seriesDisplayOptions,
+            seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
         },
     }
 }
