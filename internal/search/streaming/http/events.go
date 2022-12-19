@@ -51,6 +51,7 @@ type EventPathMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Debug           string     `json:"debug,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
