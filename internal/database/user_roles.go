@@ -122,7 +122,7 @@ func (e *UserRoleNotFoundErr) NotFound() bool {
 
 const deleteUserRoleQueryFmtStr = `
 DELETE FROM user_roles
-WHERE %s;
+WHERE %s
 `
 
 func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) error {
