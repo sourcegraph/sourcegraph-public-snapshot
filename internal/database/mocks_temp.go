@@ -23138,9 +23138,9 @@ type MockGitserverRepoStore struct {
 	// SetCloneStatusFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCloneStatus.
 	SetCloneStatusFunc *GitserverRepoStoreSetCloneStatusFunc
-	// SetCorruptedAtFunc is an instance of a mock function object
-	// controlling the behavior of the method SetCorruptedAt.
-	SetCorruptedAtFunc *GitserverRepoStoreSetCorruptedAtFunc
+	// SetCorruptedFunc is an instance of a mock function object controlling
+	// the behavior of the method SetCorrupted.
+	SetCorruptedFunc *GitserverRepoStoreSetCorruptedFunc
 	// SetLastErrorFunc is an instance of a mock function object controlling
 	// the behavior of the method SetLastError.
 	SetLastErrorFunc *GitserverRepoStoreSetLastErrorFunc
@@ -23220,8 +23220,8 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
-		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Time) (r0 error) {
+		SetCorruptedFunc: &GitserverRepoStoreSetCorruptedFunc{
+			defaultHook: func(context.Context, api.RepoName, time.Time, string) (r0 error) {
 				return
 			},
 		},
@@ -23318,9 +23318,9 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloneStatus")
 			},
 		},
-		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Time) error {
-				panic("unexpected invocation of MockGitserverRepoStore.SetCorruptedAt")
+		SetCorruptedFunc: &GitserverRepoStoreSetCorruptedFunc{
+			defaultHook: func(context.Context, api.RepoName, time.Time, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.SetCorrupted")
 			},
 		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
@@ -23396,8 +23396,8 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: i.SetCloneStatus,
 		},
-		SetCorruptedAtFunc: &GitserverRepoStoreSetCorruptedAtFunc{
-			defaultHook: i.SetCorruptedAt,
+		SetCorruptedFunc: &GitserverRepoStoreSetCorruptedFunc{
+			defaultHook: i.SetCorrupted,
 		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
 			defaultHook: i.SetLastError,
@@ -24524,37 +24524,36 @@ func (c GitserverRepoStoreSetCloneStatusFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitserverRepoStoreSetCorruptedAtFunc describes the behavior when the
-// SetCorruptedAt method of the parent MockGitserverRepoStore instance is
+// GitserverRepoStoreSetCorruptedFunc describes the behavior when the
+// SetCorrupted method of the parent MockGitserverRepoStore instance is
 // invoked.
-type GitserverRepoStoreSetCorruptedAtFunc struct {
-	defaultHook func(context.Context, api.RepoName, time.Time) error
-	hooks       []func(context.Context, api.RepoName, time.Time) error
-	history     []GitserverRepoStoreSetCorruptedAtFuncCall
+type GitserverRepoStoreSetCorruptedFunc struct {
+	defaultHook func(context.Context, api.RepoName, time.Time, string) error
+	hooks       []func(context.Context, api.RepoName, time.Time, string) error
+	history     []GitserverRepoStoreSetCorruptedFuncCall
 	mutex       sync.Mutex
 }
 
-// SetCorruptedAt delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetCorruptedAt(v0 context.Context, v1 api.RepoName, v2 time.Time) error {
-	r0 := m.SetCorruptedAtFunc.nextHook()(v0, v1, v2)
-	m.SetCorruptedAtFunc.appendCall(GitserverRepoStoreSetCorruptedAtFuncCall{v0, v1, v2, r0})
+// SetCorrupted delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) SetCorrupted(v0 context.Context, v1 api.RepoName, v2 time.Time, v3 string) error {
+	r0 := m.SetCorruptedFunc.nextHook()(v0, v1, v2, v3)
+	m.SetCorruptedFunc.appendCall(GitserverRepoStoreSetCorruptedFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the SetCorruptedAt
-// method of the parent MockGitserverRepoStore instance is invoked and the
-// hook queue is empty.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Time) error) {
+// SetDefaultHook sets function that is called when the SetCorrupted method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreSetCorruptedFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Time, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SetCorruptedAt method of the parent MockGitserverRepoStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Context, api.RepoName, time.Time) error) {
+// SetCorrupted method of the parent MockGitserverRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreSetCorruptedFunc) PushHook(hook func(context.Context, api.RepoName, time.Time, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -24562,20 +24561,20 @@ func (f *GitserverRepoStoreSetCorruptedAtFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, time.Time) error {
+func (f *GitserverRepoStoreSetCorruptedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, time.Time, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, time.Time) error {
+func (f *GitserverRepoStoreSetCorruptedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, time.Time, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetCorruptedAtFunc) nextHook() func(context.Context, api.RepoName, time.Time) error {
+func (f *GitserverRepoStoreSetCorruptedFunc) nextHook() func(context.Context, api.RepoName, time.Time, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -24588,27 +24587,27 @@ func (f *GitserverRepoStoreSetCorruptedAtFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *GitserverRepoStoreSetCorruptedAtFunc) appendCall(r0 GitserverRepoStoreSetCorruptedAtFuncCall) {
+func (f *GitserverRepoStoreSetCorruptedFunc) appendCall(r0 GitserverRepoStoreSetCorruptedFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverRepoStoreSetCorruptedAtFuncCall
+// History returns a sequence of GitserverRepoStoreSetCorruptedFuncCall
 // objects describing the invocations of this function.
-func (f *GitserverRepoStoreSetCorruptedAtFunc) History() []GitserverRepoStoreSetCorruptedAtFuncCall {
+func (f *GitserverRepoStoreSetCorruptedFunc) History() []GitserverRepoStoreSetCorruptedFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverRepoStoreSetCorruptedAtFuncCall, len(f.history))
+	history := make([]GitserverRepoStoreSetCorruptedFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverRepoStoreSetCorruptedAtFuncCall is an object that describes an
-// invocation of method SetCorruptedAt on an instance of
+// GitserverRepoStoreSetCorruptedFuncCall is an object that describes an
+// invocation of method SetCorrupted on an instance of
 // MockGitserverRepoStore.
-type GitserverRepoStoreSetCorruptedAtFuncCall struct {
+type GitserverRepoStoreSetCorruptedFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -24618,6 +24617,9 @@ type GitserverRepoStoreSetCorruptedAtFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -24625,13 +24627,13 @@ type GitserverRepoStoreSetCorruptedAtFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverRepoStoreSetCorruptedAtFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c GitserverRepoStoreSetCorruptedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverRepoStoreSetCorruptedAtFuncCall) Results() []interface{} {
+func (c GitserverRepoStoreSetCorruptedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
