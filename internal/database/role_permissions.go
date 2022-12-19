@@ -75,7 +75,7 @@ func (rp *rolePermissionStore) Transact(ctx context.Context) (RolePermissionStor
 
 const deleteRolePermissionQueryFmtStr = `
 DELETE FROM role_permissions
-WHERE %s;
+WHERE %s
 `
 
 func (rp *rolePermissionStore) Delete(ctx context.Context, opts DeleteRolePermissionOpts) error {
