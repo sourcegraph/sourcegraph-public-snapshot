@@ -15,7 +15,8 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         type: InsightType.CaptureGroup,
         executionType: InsightExecutionType.Backend,
         step: { [values.step]: +values.stepValue },
-        repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
+        repositories: values.repoMode === 'urls-list' ? getSanitizedRepositories(values.repositories) : [],
+        repoQuery: values.repoQuery.query,
         filters: {
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
