@@ -47,6 +47,9 @@ message Rule {
     //   will match `/docs/foo/bar/internal/file`.
     // * The file part of the pattern can use a `*` wildcard like so:
     //   `docs/*.md` will match `/src/docs/index.md` but not `/src/docs/index.js`.
+    // * In BITBUCKET plugin, patterns that serve to exclude ownership
+    //   start with an exclamation mark `!/src/noownershere`. These are
+    //   translated to a pattern without the `!` and now owners.
     string pattern = 1;
     // Owners list all the parties that claim ownership over files
     // matched by a given pattern.

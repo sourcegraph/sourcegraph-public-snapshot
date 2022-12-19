@@ -11,11 +11,10 @@
 package proto
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -27,14 +26,14 @@ const (
 
 // File represents the contents of a single CODEOWNERS file.
 // As specified by various CODEOWNERS implementations the following apply:
-//   - There is at most one CODEOWNERS file per repository.
-//   - The semantic contents of the file boil down to rules.
-//   - Order matters: When discerning ownership for a path
-//     only the owners from the last rule that matches the path
-//     is applied.
-//   - Except if using sections - then every section is considered
-//     separately. That is, an owner is potentially extracted
-//     for every section.
+// * There is at most one CODEOWNERS file per repository.
+// * The semantic contents of the file boil down to rules.
+// * Order matters: When discerning ownership for a path
+//   only the owners from the last rule that matches the path
+//   is applied.
+// * Except if using sections - then every section is considered
+//   separately. That is, an owner is potentially extracted
+//   for every section.
 type File struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -111,6 +110,9 @@ type Rule struct {
 	//   will match `/docs/foo/bar/internal/file`.
 	// * The file part of the pattern can use a `*` wildcard like so:
 	//   `docs/*.md` will match `/src/docs/index.md` but not `/src/docs/index.js`.
+	// * In BITBUCKET plugin, patterns that serve to exclude ownership
+	//   start with an exclamation mark `!/src/noownershere`. These are
+	//   translated to a pattern without the `!` and now owners.
 	Pattern string `protobuf:"bytes,1,opt,name=pattern,proto3" json:"pattern,omitempty"`
 	// Owners list all the parties that claim ownership over files
 	// matched by a given pattern.

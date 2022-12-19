@@ -494,6 +494,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg generate buf
+
+Re-generate protcol buffer bindings using buf..
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg db
 
 Interact with local Sourcegraph databases for development.
