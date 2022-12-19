@@ -70,16 +70,16 @@ query getCurrentUser {
 
 		getInactiveUsersQuery := `
 query getInactiveUsers {
-	  site {
-    users {
-      nodes {
-        username
-        email
-        siteAdmin
-        lastActiveAt
-      }
-    }
-  }
+	site {
+		users {
+			nodes {
+				username
+				email
+				siteAdmin
+				lastActiveAt
+			}
+		}
+	}
 }
 `
 
