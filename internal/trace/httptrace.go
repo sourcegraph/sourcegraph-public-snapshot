@@ -115,7 +115,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		ctx := r.Context()
 
 		// extract propagated span
-		wireContext, err := ot.GetTracer(ctx).Extract(
+		wireContext, err := ot.GetTracer(ctx).Extract( //lint:ignore SA1019 // OT is deprecated
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
@@ -123,7 +123,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		}
 
 		// start new span
-		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
+		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext)) //lint:ignore SA1019 // OT is deprecated
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
