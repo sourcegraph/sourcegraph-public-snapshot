@@ -24,8 +24,7 @@ const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
     title: ALPINE_VERSIONS_INSIGHT.title,
-    repoMode: 'search-query',
-    repoQuery: { query: 'repo:.*' },
+    repoQuery: 'repo:.*',
     groupSearchQuery: ALPINE_VERSIONS_INSIGHT.groupSearch,
 })
 

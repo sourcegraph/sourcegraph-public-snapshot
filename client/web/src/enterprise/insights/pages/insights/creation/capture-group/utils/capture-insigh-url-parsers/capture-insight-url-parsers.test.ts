@@ -13,14 +13,14 @@ describe('encodeSearchInsightUrl', () => {
         const encodedSearchInsightParameters = encodeCaptureInsightURL({
             repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
             title: 'Insight title',
-            allRepos: true,
             groupSearchQuery: 'file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp',
         })
 
         expect(decodeCaptureInsightURL(encodedSearchInsightParameters)).toStrictEqual({
             repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
             title: 'Insight title',
-            allRepos: true,
             groupSearchQuery: 'file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp',
         })
     })
