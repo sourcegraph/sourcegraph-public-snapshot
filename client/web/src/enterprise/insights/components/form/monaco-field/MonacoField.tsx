@@ -62,7 +62,9 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     },
 }
 
-export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
+type NativeInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'onBlur'>
+
+export interface MonacoFieldProps extends NativeInputProps {
     queryState: QueryState
     patternType?: SearchPatternType
     onBlur?: () => void

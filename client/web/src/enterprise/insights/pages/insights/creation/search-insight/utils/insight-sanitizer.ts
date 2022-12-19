@@ -9,35 +9,12 @@ import { CreateInsightFormFields } from '../types'
  * presented in user/org settings.
  */
 export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): MinimalSearchBasedInsightData {
-    if (rawInsight.allRepos) {
-        return {
-            executionType: InsightExecutionType.Backend,
-            repositories: [],
-            type: InsightType.SearchBased,
-            title: rawInsight.title,
-            series: getSanitizedSeries(rawInsight.series),
-            step: { [rawInsight.step]: +rawInsight.stepValue },
-            dashboards: [],
-            filters: {
-                excludeRepoRegexp: '',
-                includeRepoRegexp: '',
-                context: '',
-                seriesDisplayOptions: {
-                    limit: `${MAX_NUMBER_OF_SERIES}`,
-                    sortOptions: {
-                        direction: SeriesSortDirection.DESC,
-                        mode: SeriesSortMode.RESULT_COUNT,
-                    },
-                },
-            },
-        }
-    }
-
     return {
         executionType: InsightExecutionType.Backend,
         type: InsightType.SearchBased,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
+        repoQuery: rawInsight.repoQuery.query,
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
         dashboards: [],
