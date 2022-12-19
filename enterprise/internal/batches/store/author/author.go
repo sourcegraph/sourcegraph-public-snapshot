@@ -15,7 +15,7 @@ func GetChangesetAuthorForUser(ctx context.Context, userStore database.UserStore
 
 	email, _, err := userEmailStore.GetPrimaryEmail(ctx, userID)
 	if errcode.IsNotFound(err) {
-		// No e-mail just means there's no author, so we'll return nil. It's not
+		// No match just means there's no author, so we'll return nil. It's not
 		// an error, though.
 		return nil, nil
 	} else if err != nil {
