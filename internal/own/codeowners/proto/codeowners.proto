@@ -1,5 +1,5 @@
 // Representation of code ownership for a repository as described in a CODEOWNERS file.
-// As various orgainzations have slightly different syntax for CODEOWNERS files,
+// As various implementations have slightly different syntax for CODEOWNERS files,
 // this algebraic representation servers as a unified funnel.
 
 syntax = "proto3";
