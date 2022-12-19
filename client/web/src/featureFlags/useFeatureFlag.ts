@@ -40,7 +40,7 @@ export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false):
         }
 
         async function getValue(): Promise<void> {
-            const newValue = await client!.get(flagName).toPromise()
+            const newValue = await client!.get(flagName)
 
             if (newValue === value && status !== 'initial') {
                 return

@@ -1,5 +1,4 @@
-import { Observable, of } from 'rxjs'
-import { distinctUntilChanged, map, retry, shareReplay } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
@@ -15,7 +14,7 @@ import { getFeatureFlagOverrideValue } from './feature-flag-local-overrides'
 const fetchEvaluateFeatureFlag = (
     requestGraphQLFunc: typeof requestGraphQL,
     flagName: FeatureFlagName
-): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
+): Promise<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
     requestGraphQLFunc<EvaluateFeatureFlagResult>(
         gql`
             query EvaluateFeatureFlag($flagName: String!) {
@@ -25,16 +24,18 @@ const fetchEvaluateFeatureFlag = (
         {
             flagName,
         }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.evaluateFeatureFlag)
     )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.evaluateFeatureFlag)
+        )
+        .toPromise()
 
 /**
  * Feature flag client service. Should be used as singleton for the whole application.
  */
 export class FeatureFlagClient {
-    private flags = new Map<FeatureFlagName, Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
+    private flags = new Map<FeatureFlagName, Promise<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
 
     /**
      * @param requestGraphQLFunction function to use for making GQL API calls.
@@ -54,23 +55,17 @@ export class FeatureFlagClient {
     /**
      * Evaluates and returns feature flag value
      */
-    public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
+    public get(flagName: FeatureFlagName): Promise<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
         if (!this.flags.has(flagName)) {
             const overriddenValue = getFeatureFlagOverrideValue(flagName)
 
             // Use local feature flag override if exists
             if (overriddenValue !== null) {
-                return of(overriddenValue)
+                return Promise.resolve(overriddenValue)
             }
 
-            const flag$ = fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(
-                retry(3),
-                distinctUntilChanged(),
-                // shared between all subscribers to avoid multiple computations/API calls
-                shareReplay(1)
-            )
-
-            this.flags.set(flagName, flag$)
+            const flag = fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName)
+            this.flags.set(flagName, flag)
 
             if (this.cacheTimeToLive) {
                 setTimeout(() => this.flags.delete(flagName), this.cacheTimeToLive)
