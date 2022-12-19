@@ -1,6 +1,6 @@
 import { CaptureGroupFormFields } from '../../types'
 
-type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery'
+type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery' | 'repoMode'
 
 export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, UnsupportedFields> & {
     repoQuery: string
