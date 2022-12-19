@@ -16,6 +16,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	otelog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -156,12 +157,12 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	// First do a fast-path, assume already on disk
 	f, err := os.Open(path)
 	if err == nil {
-		trace.Tag(otelog.String("source", "fast"))
+		trace.SetAttributes(attribute.String("source", "fast"))
 		return &File{File: f, Path: path}, nil
 	}
 
 	// We (probably) have to fetch
-	trace.Tag(otelog.String("source", "fetch"))
+	trace.SetAttributes(attribute.String("source", "fetch"))
 
 	// Do the fetch in another goroutine so we can respect ctx cancellation.
 	type result struct {
@@ -372,10 +373,10 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		size -= entry.info.Size()
 	}
 
-	trace.Tag(
-		otelog.Int("evicted", stats.Evicted),
-		otelog.Int64("beforeSizeBytes", stats.CacheSize),
-		otelog.Int64("afterSizeBytes", size),
+	trace.SetAttributes(
+		attribute.Int("evicted", stats.Evicted),
+		attribute.Int64("beforeSizeBytes", stats.CacheSize),
+		attribute.Int64("afterSizeBytes", size),
 	)
 
 	return stats, nil
