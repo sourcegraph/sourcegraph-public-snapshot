@@ -1,9 +1,10 @@
 package definitions
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
-	"time"
 )
 
 func OtelCollector() *monitoring.Dashboard {
