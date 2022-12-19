@@ -83,7 +83,7 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
 export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
     const cmLine = view.state.doc.lineAt(pos)
     const line = cmLine.number - 1
-    const character = countColumn(cmLine.text, 1, pos - cmLine.from) - 1
+    const character = countColumn(cmLine.text, 1, pos - cmLine.from)
     const occurrence = occurrenceAtPosition(view.state, new Position(line, character))
     if (!occurrence) {
         return null
