@@ -1,8 +1,7 @@
 import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { Timestamp } from '../../../../components/time/Timestamp'

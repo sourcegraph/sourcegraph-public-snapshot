@@ -10,9 +10,8 @@ import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import styles from './LineDecorator.module.scss'
 

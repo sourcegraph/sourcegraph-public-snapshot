@@ -2,8 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { RegistryExtensionFields } from '../../../graphql-operations'
 

@@ -2,10 +2,9 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { toTreeURL } from '../util/url'
 
