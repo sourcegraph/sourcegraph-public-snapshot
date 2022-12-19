@@ -11,7 +11,7 @@ response will look like.
 """
 type Error {
     """
-    A string giving more context about the error that ocurred.
+    A string giving more context about the error that occurred.
     """
     message: String!
     """
@@ -1934,7 +1934,7 @@ extend type Mutation {
         """
         scope: ExecutorSecretScope!
         """
-        The idenitifier of the secret that shall be updated.
+        The identifier of the secret that shall be updated.
         """
         id: ID!
         """
@@ -1952,7 +1952,7 @@ extend type Mutation {
         """
         scope: ExecutorSecretScope!
         """
-        The idenitifier of the secret that shall be deleted.
+        The identifier of the secret that shall be deleted.
         """
         id: ID!
     ): EmptyResponse
@@ -2024,7 +2024,7 @@ type FeatureFlagOverride {
     targetFlag: FeatureFlag!
 
     """
-    The overriden value of the feature flag
+    The overridden value of the feature flag
     """
     value: Boolean!
 }
@@ -2086,7 +2086,7 @@ type OutOfBandMigration implements Node {
     this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
-    Otherwsie, the next instance version will no longer be aware of the old data format.
+    Otherwise, the next instance version will no longer be aware of the old data format.
     """
     deprecated: String
 
@@ -2744,7 +2744,7 @@ type ExternalService implements Node {
 
     """
     External services are synced with code hosts in the background. This optional field
-    will contain any errors that occured during the most recent completed sync.
+    will contain any errors that occurred during the most recent completed sync.
     """
     lastSyncError: String
 
@@ -2815,7 +2815,7 @@ type ExternalService implements Node {
 }
 
 """
-Avaiability status of an external service for diagnostic purposes.
+Availability status of an external service for diagnostic purposes.
 
 This is so that the UI can surface whether the external service
 can serve requests, and if not, why is the reason for that.
@@ -2851,7 +2851,7 @@ supported. In that case unknown variant of ExternalServiceAvailability is return
 """
 type ExternalServiceAvailabilityUnknown {
     """
-    User-friendly textual description of the implementation status of availablity.
+    User-friendly textual description of the implementation status of availability.
     This is expected to be tied to specific kinds of external services.
     """
     implementationNote: String!
@@ -2892,12 +2892,12 @@ enum ExternalServiceSyncJobState {
     PROCESSING
 
     """
-    An error occured while syncing. Will be retried eventually.
+    An error occurred while syncing. Will be retried eventually.
     """
     ERRORED
 
     """
-    A fatal error occured while syncing. No retries will be made.
+    A fatal error occurred while syncing. No retries will be made.
     """
     FAILED
 
@@ -6316,7 +6316,7 @@ type Site implements SettingsSubject {
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
-    order to ensure that if the frontend goes down you still recieve alerts:
+    order to ensure that if the frontend goes down you still receive alerts:
     Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
     Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
     """
@@ -6631,7 +6631,7 @@ A pre-defined periods to get site analytics.
 """
 enum AnalyticsDateRange {
     """
-    Last 3 monthes date range.
+    Last 3 month's date range.
     """
     LAST_THREE_MONTHS
     """
@@ -8378,7 +8378,7 @@ type Executor implements Node {
     os: String!
 
     """
-    The machine architure running the executor.
+    The machine architecture running the executor.
     """
     architecture: String!
 
