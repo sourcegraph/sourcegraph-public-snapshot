@@ -1774,9 +1774,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// Check stderr to see if the repo is corrupted, if it is set the corruptedAt time on the repo
 	// and emit a metric.
 	// The corrupted at time will be cleared when the repo is updated in the DB after a re-fetch/reclone
-	if err := s.markIfCorrupted(ctx, req.Repo, dir, stderr); err != nil {
-		s.Logger.Warn("failed to mark with corrupted time", log.Error(err))
-	}
+	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
@@ -2027,7 +2025,7 @@ func setGitAttributes(dir GitDir) error {
 func (s *Server) markIfCorrupted(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) error {
 	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
 		now := time.Now()
-		return s.DB.GitserverRepos().SetCorrupted(ctx, repo, now)
+		return s.DB.GitserverRepos().SetCorrupted(ctx, repo, now, stderr)
 	}
 	return nil
 }

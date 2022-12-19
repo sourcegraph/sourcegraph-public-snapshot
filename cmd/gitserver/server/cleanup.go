@@ -1034,15 +1034,6 @@ func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, std
 	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
 
 	if !stdErrIndicatesCorruption(stderr) {
-		// Check the repo directory for other cases where Sourcegraph regards it as corrupt
-		corrupt, reason, err := checkRepoDirCorrupt(dir)
-		if err != nil {
-			logger.Error("failed to check for repo directory corruption", log.Error(err))
-		}
-		if corrupt {
-			logger.Warn("repo directory corrupt", log.String("reason", reason))
-			return true
-		}
 		return false
 	}
 

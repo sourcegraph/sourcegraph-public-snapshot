@@ -2180,12 +2180,12 @@ CREATE TABLE gitserver_repos (
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone DEFAULT '0001-01-01 00:00:00+00'::timestamp with time zone NOT NULL,
-    corruption_log text DEFAULT ''::text NOT NULL
+    corruption_log jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
-COMMENT ON COLUMN gitserver_repos.corruption_log IS 'log output of the corruption that was detected on the repo';
+COMMENT ON COLUMN gitserver_repos.corruption_log IS 'log output of the corruption that was detected on the repo encoded as json';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,

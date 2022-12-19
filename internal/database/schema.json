@@ -10702,15 +10702,15 @@
         {
           "Name": "corruption_log",
           "Index": 11,
-          "TypeName": "text",
+          "TypeName": "jsonb",
           "IsNullable": false,
-          "Default": "''::text",
+          "Default": "'[]'::jsonb",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "log output of the corruption that was detected on the repo"
+          "Comment": "log output of the corruption that was detected on the repo encoded as json"
         },
         {
           "Name": "last_changed",
