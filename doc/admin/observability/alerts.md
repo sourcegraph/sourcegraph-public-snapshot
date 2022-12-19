@@ -7876,7 +7876,7 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
+Generated query for warning alert: `max((sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
 
 </details>
 
@@ -7907,7 +7907,7 @@ Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
+Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
 
 </details>
 
@@ -8003,7 +8003,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*otel-collector"}) / count by(app) (up{app=~".*otel-collector"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100) <= 90)`
 
 </details>
 
