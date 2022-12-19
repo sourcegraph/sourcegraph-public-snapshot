@@ -16,9 +16,19 @@ import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import { RouteDescriptor } from '../util/contributions'
 
-import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import {
+    maintenanceGroupHeaderLabel,
+    maintenanceGroupInstrumentationItemLabel,
+    maintenanceGroupMonitoringItemLabel,
+    maintenanceGroupMigrationsItemLabel,
+    maintenanceGroupUpdatesItemLabel,
+    maintenanceGroupTracingItemLabel,
+} from './sidebaritems'
+import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
 
@@ -64,8 +74,74 @@ interface SiteAdminAreaProps
     isSourcegraphDotCom: boolean
 }
 
+const sourcegraphOperatorSiteAdminMaintenanceBlockItems = new Set([
+    maintenanceGroupInstrumentationItemLabel,
+    maintenanceGroupMonitoringItemLabel,
+    maintenanceGroupMigrationsItemLabel,
+    maintenanceGroupUpdatesItemLabel,
+    maintenanceGroupTracingItemLabel,
+])
+
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
+
+    const { data: externalAccounts, loading: isExternalAccountsLoading } = useUserExternalAccounts(
+        props.authenticatedUser.username
+    )
+    const [isSourcegraphOperatorSiteAdminHideMaintenance] = useFeatureFlag(
+        'sourcegraph-operator-site-admin-hide-maintenance'
+    )
+
+    const adminSideBarGroups = React.useMemo(
+        () =>
+            props.sideBarGroups.reduce((groups, group) => {
+                // DO NOT RETURN early in this function when reducing
+                // curr is used to modify the current group in place, use cases:
+                // - override the group with another one
+                // - modify the items in the group
+                // - assign null to curr to skip adding the group
+                let curr = group
+
+                // we default to hide o11y items if we are still trying to load external accounts
+                // as long as the 'sourcegraph-operator-site-admin-hide-maintenance' is enabled
+                // this is okay since such flag is only enabled on Cloud
+                // for customer admin, those items are always invisble
+                // for sourcegraph operator, they may notice some flickering during loading
+                // this is okay as long as we do not impact customer admin experience
+                if (isSourcegraphOperatorSiteAdminHideMaintenance) {
+                    if (isExternalAccountsLoading) {
+                        if (curr.header?.label === maintenanceGroupHeaderLabel) {
+                            curr = {
+                                ...curr,
+                                items: curr.items.filter(
+                                    item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
+                                ),
+                            }
+                        }
+                    } else if (!externalAccounts.some(account => account.serviceType === 'sourcegraph-operator')) {
+                            if (curr.header?.label === maintenanceGroupHeaderLabel) {
+                                curr = {
+                                    ...curr,
+                                    items: curr.items.filter(
+                                        item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
+                                    ),
+                                }
+                            }
+                        }
+                }
+
+                if (curr === null) {
+                    return groups
+                }
+                return [...groups, curr]
+            }, [] as SiteAdminSideBarGroup[]),
+        [
+            props.sideBarGroups,
+            isSourcegraphOperatorSiteAdminHideMaintenance,
+            isExternalAccountsLoading,
+            externalAccounts,
+        ]
+    )
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -96,7 +172,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
-                    groups={props.sideBarGroups}
+                    groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
