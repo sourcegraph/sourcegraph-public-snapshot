@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -30,7 +31,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 		insightStore := store.NewInsightStore(insightsDB)
@@ -94,7 +95,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("insights[0][0].Points", []graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
-
 	})
 }
 
@@ -109,6 +109,7 @@ func fakeBackfillGetter(backfills []scheduler.SeriesBackfill, err error) GetSeri
 		return backfills, err
 	}
 }
+
 func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
 	return func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
 		return nil, nil
@@ -116,7 +117,6 @@ func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
 }
 
 func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
-
 	type isLoadingTestCase struct {
 		backfills    []scheduler.SeriesBackfill
 		backfillsErr error
@@ -212,7 +212,6 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 			tc.want.Equal(t, fmt.Sprintf("loading:%t error:%s", loadingResult, errMsg))
 		})
 	}
-
 }
 
 func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
@@ -220,7 +219,7 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
@@ -270,5 +269,4 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 		require.NoError(t, err)
 		autogold.Want("as timeout", []string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
-
 }

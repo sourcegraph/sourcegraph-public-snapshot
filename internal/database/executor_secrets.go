@@ -39,13 +39,21 @@ type ExecutorSecret struct {
 	encryptedValue *encryption.Encryptable
 }
 
+type ExecutorSecretAccessLogCreator interface {
+	Create(ctx context.Context, log *ExecutorSecretAccessLog) error
+}
+
 // Value decrypts the contained value and logs an access log event. Calling Value
 // multiple times will not require another decryption call, but will create an
 // additional access log entry.
-func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStore) (string, error) {
+func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogCreator) (string, error) {
+	var userID *int32
+	if uid := actor.FromContext(ctx).UID; uid != 0 {
+		userID = &uid
+	}
 	if err := s.Create(ctx, &ExecutorSecretAccessLog{
-		// user is set automatically from the context actor.
 		ExecutorSecretID: e.ID,
+		UserID:           userID,
 	}); err != nil {
 		return "", errors.Wrap(err, "creating secret access log entry")
 	}
@@ -55,7 +63,8 @@ func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStor
 type ExecutorSecretScope string
 
 const (
-	ExecutorSecretScopeBatches ExecutorSecretScope = "batches"
+	ExecutorSecretScopeBatches   ExecutorSecretScope = "batches"
+	ExecutorSecretScopeCodeIntel ExecutorSecretScope = "codeintel"
 )
 
 // ExecutorSecretNotFoundErr is returned when a secret cannot be found.
@@ -111,11 +120,8 @@ type ExecutorSecretsListOpts struct {
 	NamespaceOrgID int32
 }
 
-func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) (*sqlf.Query, error) {
-	authz, err := executorSecretsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) *sqlf.Query {
+	authz := executorSecretsAuthzQueryConds(ctx)
 
 	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
 
@@ -136,7 +142,7 @@ func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope Executor
 		preds = append(preds, sqlf.Sprintf("key = ANY(%s)", pq.Array(opts.Keys)))
 	}
 
-	return sqlf.Join(preds, "\n AND "), nil
+	return sqlf.Join(preds, "\n AND ")
 }
 
 // limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -181,8 +187,10 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
-var ErrEmptyExecutorSecretKey = errors.New("empty executor secret key is not allowed")
-var ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
+var (
+	ErrEmptyExecutorSecretKey   = errors.New("empty executor secret key is not allowed")
+	ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
+)
 
 var ErrDuplicateExecutorSecret = errors.New("duplicate executor secret")
 
@@ -250,10 +258,7 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 		return err
 	}
 
-	authz, err := executorSecretsAuthzQueryConds(ctx)
-	if err != nil {
-		return err
-	}
+	authz := executorSecretsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
 		executorSecretUpdateQueryFmtstr,
@@ -299,10 +304,7 @@ func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretSc
 		return err
 	}
 
-	authz, err := executorSecretsAuthzQueryConds(ctx)
-	if err != nil {
-		return err
-	}
+	authz := executorSecretsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
 	res, err := tx.ExecResult(ctx, q)
@@ -320,10 +322,7 @@ func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
-	authz, err := executorSecretsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, err
-	}
+	authz := executorSecretsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM executor_secrets WHERE id = %s AND %s",
@@ -344,10 +343,7 @@ func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretS
 }
 
 func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
-	conds, err := opts.sqlConds(ctx, scope)
-	if err != nil {
-		return nil, 0, err
-	}
+	conds := opts.sqlConds(ctx, scope)
 
 	q := sqlf.Sprintf(
 		executorSecretsListQueryFmtstr,
@@ -384,10 +380,7 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 }
 
 func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx, scope)
-	if err != nil {
-		return 0, err
-	}
+	conds := opts.sqlConds(ctx, scope)
 
 	q := sqlf.Sprintf(
 		executorSecretsCountQueryFmtstr,
@@ -499,7 +492,8 @@ RETURNING %s
 // ExecutorSecret.
 func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
 	Scan(...any) error
-}) error {
+},
+) error {
 	var (
 		value []byte
 		keyID string
@@ -574,10 +568,10 @@ func ensureActorHasNamespaceWriteAccess(ctx context.Context, db DB, secret *Exec
 // executorSecretsAuthzQueryConds generates authz query conditions for checking
 // access to the secret at the database level.
 // Internal actors will always pass.
-func executorSecretsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
+func executorSecretsAuthzQueryConds(ctx context.Context) *sqlf.Query {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() {
-		return sqlf.Sprintf("(TRUE)"), nil
+		return sqlf.Sprintf("(TRUE)")
 	}
 
 	return sqlf.Sprintf(
@@ -585,7 +579,7 @@ func executorSecretsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 		a.UID,
 		a.UID,
 		a.UID,
-	), nil
+	)
 }
 
 // executorSecretsAuthzQueryCondsFmtstr contains the SQL used to determine if a user

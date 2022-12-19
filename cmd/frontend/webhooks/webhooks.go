@@ -16,13 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+const pingEventType = "ping"
+
 type webhookEventHandlers map[string][]WebhookHandler
 
 // WebhookRouter is responsible for handling incoming http requests for all webhooks
 // and routing to any registered WebhookHandlers, events are routed by their code host kind
 // and event type.
 type WebhookRouter struct {
-	DB database.DB
+	Logger log.Logger
+	DB     database.DB
 
 	mu sync.RWMutex
 	// Mapped by codeHostKind: webhookEvent: handlers
@@ -41,6 +44,20 @@ type RegistererHandler interface {
 	http.Handler
 }
 
+func defaultHandlers() map[string]webhookEventHandlers {
+	handlePing := func(_ context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, event any) error {
+		return nil
+	}
+	return map[string]webhookEventHandlers{
+		extsvc.KindGitHub: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+		extsvc.KindBitbucketServer: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+	}
+}
+
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
@@ -48,7 +65,7 @@ func (wr *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, e
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 	if wr.handlers == nil {
-		wr.handlers = make(map[string]webhookEventHandlers)
+		wr.handlers = defaultHandlers()
 	}
 	if _, ok := wr.handlers[codeHostKind]; !ok {
 		wr.handlers[codeHostKind] = make(map[string][]WebhookHandler)
@@ -119,7 +136,9 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindBitbucketCloud:
-			// TODO: handle Bitbucket Cloud secret verification
+			// Bitbucket Cloud does not support secrets for webhooks
+			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
+			return
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
@@ -131,10 +150,13 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
-	g := errgroup.Group{}
+
 	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
-		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
+		wr.Logger.Warn("No handler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
+		return nil
 	}
+
+	g := errgroup.Group{}
 	for _, handler := range wr.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
@@ -143,17 +165,4 @@ func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHos
 		})
 	}
 	return g.Wait()
-}
-
-type eventTypeNotFoundError struct {
-	eventType    string
-	codeHostKind string
-}
-
-func (e eventTypeNotFoundError) NotFound() bool {
-	return true
-}
-
-func (e eventTypeNotFoundError) Error() string {
-	return fmt.Sprintf("event type %s not supported for code host kind %s", e.eventType, e.codeHostKind)
 }

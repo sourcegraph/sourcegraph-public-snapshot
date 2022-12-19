@@ -36,7 +36,7 @@ import (
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 	ctx := context.Background()
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -241,7 +241,7 @@ func TestGetUploadByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// Upload does not exist initially
 	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
@@ -303,7 +303,7 @@ func TestGetUploadByID(t *testing.T) {
 func TestGetUploadByIDDeleted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// Upload does not exist initially
 	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
@@ -345,7 +345,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 func TestGetQueuedUploadRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -396,7 +396,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1},
@@ -449,7 +449,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	var uploads []types.Upload
 	for i := 0; i < 25; i++ {
@@ -521,7 +521,7 @@ func TestRecentUploadsSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -579,7 +579,7 @@ func TestRecentUploadsSummary(t *testing.T) {
 func TestDeleteUploadsStuckUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute * 1)
@@ -627,7 +627,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 func TestDeleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute * 1)
@@ -676,7 +676,7 @@ func TestDeleteUploads(t *testing.T) {
 func TestHardDeleteUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 51, State: "deleting"},
@@ -704,7 +704,7 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -754,7 +754,7 @@ func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 func TestSoftDeleteExpiredUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 50, RepositoryID: 100, State: "completed"},
@@ -834,7 +834,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// The packages in this test reference each other in the following way:
 	//
@@ -1012,7 +1012,7 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 func TestDeleteUploadByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, RepositoryID: 50},
@@ -1050,7 +1050,7 @@ func TestDeleteUploadByID(t *testing.T) {
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
@@ -1088,7 +1088,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
@@ -1100,7 +1100,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1159,7 +1159,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1212,7 +1212,7 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1255,7 +1255,7 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1330,7 +1330,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1386,7 +1386,7 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -1453,7 +1453,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -1488,7 +1488,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1581,7 +1581,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
 	//
@@ -1691,7 +1691,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
@@ -1812,7 +1812,7 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 func TestCommitGraphMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 		t.Errorf("unexpected error marking repository as dirty: %s", err)
@@ -1855,7 +1855,7 @@ func TestCommitGraphMetadata(t *testing.T) {
 func TestInsertUploadUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
@@ -1905,7 +1905,7 @@ func TestInsertUploadUploading(t *testing.T) {
 func TestInsertUploadQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
@@ -1958,7 +1958,7 @@ func TestInsertUploadQueued(t *testing.T) {
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
@@ -2015,7 +2015,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 func TestAddUploadPart(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
@@ -2039,7 +2039,7 @@ func TestAddUploadPart(t *testing.T) {
 func TestMarkQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
@@ -2066,7 +2066,7 @@ func TestMarkQueued(t *testing.T) {
 func TestMarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
@@ -2249,7 +2249,7 @@ func keysOf(m map[string][]int) (keys []string) {
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	logger := logtest.Scoped(b)
 	db := database.NewDB(logger, dbtest.NewDB(logger, b))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	graph, err := readBenchmarkCommitGraph()
 	if err != nil {

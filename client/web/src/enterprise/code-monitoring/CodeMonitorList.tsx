@@ -62,7 +62,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                     <div className="d-flex align-items-center justify-content-between">
                         <H3 className="mb-2">Your code monitors</H3>
                         {isSourcegraphDotCom && (
-                            <CloudCtaBanner outlined={true}>
+                            <CloudCtaBanner variant="outlined" small={true}>
                                 To monitor changes across your private repos,{' '}
                                 <Link
                                     to="https://signup.sourcegraph.com/?p=monitoring"

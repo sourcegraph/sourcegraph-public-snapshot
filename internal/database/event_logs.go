@@ -200,6 +200,8 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
+const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
+
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
@@ -231,7 +233,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			result, err := jsonc.Edit(
 				string(publicArgument),
 				true,
-				"sourcegraph_operator",
+				EventLogsSourcegraphOperatorKey,
 			)
 			publicArgument = json.RawMessage(result)
 			if err != nil {
@@ -433,38 +435,39 @@ const (
 	Monthly PeriodType = "monthly"
 )
 
+var ErrInvalidPeriodType = errors.New("invalid period type")
+
 // calcStartDate calculates the the starting date of a number of periods given the period type.
-// from the current time supplied as `now`. Returns a second false value if the period type is
+// from the current time supplied as `now`. Returns an error if the period type is
 // illegal.
-func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
 	case Daily:
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), true
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), nil
 	case Weekly:
-		return timeutil.StartOfWeek(now, periodsAgo), true
+		return timeutil.StartOfWeek(now, periodsAgo), nil
 	case Monthly:
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), true
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
 	}
-	return time.Time{}, false
+	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
 
 // calcEndDate calculates the the ending date of a number of periods given the period type.
 // Returns a second false value if the period type is illegal.
-func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
 	case Daily:
-		return startDate.AddDate(0, 0, periodsAgo), true
+		return startDate.AddDate(0, 0, periodsAgo), nil
 	case Weekly:
-		return startDate.AddDate(0, 0, 7*periodsAgo), true
+		return startDate.AddDate(0, 0, 7*periodsAgo), nil
 	case Monthly:
-		return startDate.AddDate(0, periodsAgo, 0), true
+		return startDate.AddDate(0, periodsAgo, 0), nil
 	}
-
-	return time.Time{}, false
+	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
 }
 
 // CommonUsageOptions provides a set of options that are common across different usage calculations.
@@ -475,7 +478,13 @@ type CommonUsageOptions struct {
 	// are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
 	// Exclude Sourcegraph (employee) admins.
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
 	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
@@ -574,6 +583,8 @@ func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf
 		// This method of filtering is imperfect and may still incur false positives, but
 		// the two together should help prevent that in the majority of cases, and we
 		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		//
+		// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 		if opt.ExcludeSourcegraphAdmins {
 			conds = append(conds, sqlf.Sprintf(`
 -- No matching user exists
@@ -594,17 +605,39 @@ OR NOT(
 )
 `))
 		}
+
+		if opt.ExcludeSourcegraphOperators {
+			conds = append(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_argument @> '{"%s": true}'`, EventLogsSourcegraphOperatorKey)))
+		}
 	}
 	return conds
 }
 
 func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
-	startDateDays, _ := calcStartDate(now, Daily, dayPeriods)
-	endDateDays, _ := calcEndDate(startDateDays, Daily, dayPeriods)
-	startDateWeeks, _ := calcStartDate(now, Weekly, weekPeriods)
-	endDateWeeks, _ := calcEndDate(startDateWeeks, Weekly, weekPeriods)
-	startDateMonths, _ := calcStartDate(now, Monthly, monthPeriods)
-	endDateMonths, _ := calcEndDate(startDateMonths, Monthly, monthPeriods)
+	startDateDays, err := calcStartDate(now, Daily, dayPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateDays, err := calcEndDate(startDateDays, Daily, dayPeriods)
+	if err != nil {
+		return nil, err
+	}
+	startDateWeeks, err := calcStartDate(now, Weekly, weekPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateWeeks, err := calcEndDate(startDateWeeks, Weekly, weekPeriods)
+	if err != nil {
+		return nil, err
+	}
+	startDateMonths, err := calcStartDate(now, Monthly, monthPeriods)
+	if err != nil {
+		return nil, err
+	}
+	endDateMonths, err := calcEndDate(startDateMonths, Monthly, monthPeriods)
+	if err != nil {
+		return nil, err
+	}
 
 	conds := buildCountUniqueUserConds(opt)
 
@@ -848,9 +881,10 @@ type SiteUsageOptions struct {
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
 		CommonUsageOptions{
-			ExcludeSystemUsers:       true,
-			ExcludeNonActiveUsers:    true,
-			ExcludeSourcegraphAdmins: true,
+			ExcludeSystemUsers:          true,
+			ExcludeNonActiveUsers:       true,
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
 		},
 	})
 }

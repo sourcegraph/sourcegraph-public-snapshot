@@ -3,12 +3,12 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'reac
 import { mdiClose, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
-import { useAutoFocus, useLocalStorage } from '../../..'
+import { useAutoFocus, useLocalStorage } from '../../../hooks'
+import { ErrorAlert } from '../../ErrorAlert'
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 
@@ -41,9 +41,10 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
 }) => {
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const textAreaReference = useRef<HTMLInputElement>(null)
-    const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
-        setText,
-    ])
+    const handleTextChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value),
+        [setText]
+    )
 
     const [submitting, setSubmitting] = useState(false)
     const [submitResponse, setSubmitResponse] = useState<FeedbackPromptSubmitResponse>()
@@ -128,7 +129,6 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     {submitResponse?.errorMessage && (
                         <ErrorAlert
                             error={submitResponse?.errorMessage}
-                            icon={false}
                             className="mt-3"
                             prefix="Error submitting feedback"
                         />

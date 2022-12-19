@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	gh "github.com/google/go-github/v41/github"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -58,8 +57,6 @@ type UserExternalAccountsStore interface {
 	// If options are all zero values then it does nothing.
 	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
-	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
-
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
 	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
@@ -70,8 +67,6 @@ type UserExternalAccountsStore interface {
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
-
-	ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error)
 
 	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
 	// association with the external account already exist).
@@ -370,66 +365,17 @@ WHERE %s`, sqlf.Join(conds, "AND"))
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
-	UserID        int32
-	ServiceType   string
-	ServiceID     string
-	ClientID      string
-	AccountID     string
-	AccountIDLike string
+	UserID      int32
+	ServiceType string
+	ServiceID   string
+	ClientID    string
+	AccountID   string
 
 	// Only one of these should be set
 	ExcludeExpired bool
 	OnlyExpired    bool
 
 	*LimitOffset
-}
-
-func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
-	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
-		ServiceType:    extsvc.TypeGitHubApp,
-		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	validInstallations := []*extsvc.Account{}
-ACCTINSTALLATIONS:
-	for _, acctInstallation := range acctInstallations {
-		for _, installation := range installations {
-			installationID := strconv.FormatInt(*installation.ID, 10)
-			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				validInstallations = append(validInstallations, acctInstallation)
-				continue ACCTINSTALLATIONS
-			}
-		}
-		if err = s.Delete(ctx, ExternalAccountsDeleteOptions{IDs: []int32{acctInstallation.ID}}); err != nil {
-			return err
-		}
-	}
-
-INSTALLATIONS:
-	for _, installation := range installations {
-		installationID := strconv.FormatInt(*installation.ID, 10)
-		for _, validInstallation := range validInstallations {
-			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				continue INSTALLATIONS
-			}
-		}
-		accountID := installationID + "/" + acct.AccountID
-		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHubApp,
-			ServiceID:   acct.ServiceID,
-			ClientID:    acct.ClientID,
-			AccountID:   accountID,
-		},
-			extsvc.AccountData{AuthData: nil, Data: nil},
-		); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
@@ -448,7 +394,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 	}()
 
 	conds := s.listSQL(opt)
-	return s.ListBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
@@ -460,7 +406,7 @@ func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 }
 
 func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
-	results, err := s.ListBySQL(ctx, querySuffix)
+	results, err := s.listBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -470,8 +416,22 @@ func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *s
 	return results[0], nil
 }
 
-func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
-	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at, t.encryption_key_id FROM user_external_accounts t %s`, querySuffix)
+func (s *userExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
+	q := sqlf.Sprintf(`
+SELECT
+    t.id,
+    t.user_id,
+    t.service_type,
+    t.service_id,
+    t.client_id,
+    t.account_id,
+    t.auth_data,
+    t.account_data,
+    t.created_at,
+    t.updated_at,
+    t.encryption_key_id
+FROM user_external_accounts t
+%s`, querySuffix)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -528,9 +488,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
-	}
-	if opt.AccountIDLike != "" {
-		conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
 	}
 
 	return conds

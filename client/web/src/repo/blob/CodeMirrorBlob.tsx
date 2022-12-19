@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, Extension } from '@codemirror/state'
+import { Compartment, EditorState, Extension, Line } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
@@ -26,9 +26,12 @@ import { blobPropsFacet } from './codemirror'
 import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
-import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { selectableLineNumbers, SelectedLineRange, selectLines, shouldScrollIntoView } from './codemirror/linenumbers'
+import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 
@@ -85,6 +88,8 @@ const blameVisibilityCompartment = new Compartment()
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
+// Compartment for line wrapping.
+const wrapCodeCompartment = new Compartment()
 
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -98,7 +103,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         history,
         isBlameVisible,
         blameHunks,
-        tokenKeyboardNavigation,
+        enableLinkDrivenCodeNavigation,
+        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -120,14 +126,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
 
-    const settings = useMemo(
-        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
-        [wrapCode, isLightTheme]
-    )
+    const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
+    const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
-    const blameVisibility = useMemo(() => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []), [
-        isBlameVisible,
-    ])
+    const blameVisibility = useMemo(
+        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
+        [isBlameVisible]
+    )
     const blameDecorations = useMemo(
         () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
         [isBlameVisible, blameHunks]
@@ -179,19 +184,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const extensions = useMemo(
         () => [
+            // Log uncaught errors that happen in callbacks that we pass to
+            // CodeMirror. Without this exception sink, exceptions get silently
+            // ignored making it difficult to debug issues caused by uncaught
+            // exceptions.
+            // eslint-disable-next-line no-console
+            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                enableSelectionDrivenCodeNavigation,
             }),
-            tokenKeyboardNavigation
-                ? tokensAsLinks({
-                      history,
-                      blobInfo,
-                      preloadGoToDefinition,
-                  })
-                : [],
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -201,12 +208,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                       disableStatusBar,
                       disableDecorations,
+                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
-            settingsCompartment.of(settings),
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
+            settingsCompartment.of(themeSettings),
+            wrapCodeCompartment.of(wrapCodeSettings),
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
@@ -236,12 +246,26 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            editor.setState(
-                EditorState.create({
-                    doc: blobInfo.content,
-                    extensions,
-                })
-            )
+            const state = EditorState.create({ doc: blobInfo.content, extensions })
+            editor.setState(state)
+
+            if (!enableSelectionDrivenCodeNavigation) {
+                return
+            }
+
+            // Sync editor selection with the URL so that triggering
+            // `history.goBack/goForward()` works similar to the "Go back"
+            // command in VS Code.
+            const { range } = selectionFromLocation(editor, historyRef.current.location)
+            if (range) {
+                selectRange(editor, range)
+                // Automatically focus the content DOM to enable keyboard
+                // navigation. Without this automatic focus, users need to click
+                // on the blob view with the mouse.
+                // NOTE: this focus statment does not seem to have an effect
+                // when using macOS VoiceOver.
+                editor.contentDOM.focus({ preventScroll: true })
+            }
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -278,15 +302,33 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blameDecorations])
 
-    // Update settings
+    // Update theme
     useEffect(() => {
         if (editor) {
-            editor.dispatch({ effects: settingsCompartment.reconfigure(settings) })
+            editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [settings])
+    }, [themeSettings])
+
+    // Update line wrapping
+    useEffect(() => {
+        if (editor) {
+            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings)]
+            const firstLine = firstVisibleLine(editor)
+            if (firstLine) {
+                // Avoid jumpy scrollbar when enabling line wrapping by forcing the
+                // scroll bar to preserve the top line number that's visible.
+                // Details https://github.com/sourcegraph/sourcegraph/issues/41413
+                effects.push(EditorView.scrollIntoView(firstLine.from, { y: 'start' }))
+            }
+            editor.dispatch({ effects })
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wrapCodeSettings])
 
     // Update selected lines when URL changes
     useEffect(() => {
@@ -352,4 +394,25 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         }
         return blobRef.current
     }, [blobInfo])
+}
+
+// Returns the first line that is visible in the editor. We can't directly use
+// the viewport for this functionality because the viewport includes lines that
+// are rendered but not visible.
+function firstVisibleLine(view: EditorView): Line | undefined {
+    for (const { from, to } of view.visibleRanges) {
+        for (let pos = from; pos < to; ) {
+            const line = view.state.doc.lineAt(pos)
+            // This may be an inefficient way to detect the first visible line
+            // but it appears to work correctly and this is unlikely to be a
+            // performance bottleneck since we should only use need to compute
+            // this for infrequently used code-paths like when enabling/disabling
+            // line wrapping, or when lazy syntax highlighting gets loaded.
+            if (!shouldScrollIntoView(view, { line: line.number + 1 })) {
+                return line
+            }
+            pos = line.to + 1
+        }
+    }
+    return undefined
 }

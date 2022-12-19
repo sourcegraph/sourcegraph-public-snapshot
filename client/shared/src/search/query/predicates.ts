@@ -39,6 +39,7 @@ export const PREDICATES: Access[] = [
                     },
                     { name: 'description' },
                     { name: 'tag' },
+                    { name: 'key' },
                 ],
             },
         ],
@@ -206,6 +207,11 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has(...)',
                 insertText: 'has(${1:key}:${2:value})',
+                asSnippet: true,
+            },
+            {
+                label: 'has.key(...)',
+                insertText: 'has.key(${1})',
                 asSnippet: true,
             },
         ]

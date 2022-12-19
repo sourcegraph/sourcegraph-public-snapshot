@@ -25,16 +25,16 @@ type operations struct {
 	gitBlobLsifData *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"codeintel_codenav_transport_graphql",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.codenav.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
@@ -58,9 +58,9 @@ func observeResolver(
 	ctx context.Context,
 	err *error,
 	operation *observation.Operation,
-	threshold time.Duration,
+	threshold time.Duration, //nolint:unparam // same value everywhere but probably want to keep this
 	observationArgs observation.Args,
-) (context.Context, observation.TraceLogger, func()) {
+) (context.Context, observation.TraceLogger, func()) { // nolint:unparam // observation.TraceLogger is never used, but it makes sense API wise
 	start := time.Now()
 	ctx, trace, endObservation := operation.With(ctx, err, observationArgs)
 

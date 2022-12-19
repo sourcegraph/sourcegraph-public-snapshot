@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -44,27 +45,37 @@ type operations struct {
 	expireFailedRecords         *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_autoindexing_store",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var (
+	indexesInsertedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
+		indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "src_codeintel_dbstore_indexes_inserted",
+			Help: "The number of codeintel index records inserted.",
+		})
+		r.MustRegister(indexesInsertedCounter)
+		return indexesInsertedCounter, nil
+	})
+	m = new(metrics.SingletonREDMetrics)
+)
+
+func newOperations(observationCtx *observation.Context) *operations {
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_autoindexing_store",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.autoindexing.store.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
 		})
 	}
 
-	indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_codeintel_dbstore_indexes_inserted",
-		Help: "The number of codeintel index records inserted.",
-	})
-	observationContext.Registerer.MustRegister(indexesInsertedCounter)
+	indexesInsertedCounter, _ := indexesInsertedCounterMemo.Init(observationCtx.Registerer)
 
 	return &operations{
 		// Commits

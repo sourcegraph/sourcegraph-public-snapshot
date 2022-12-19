@@ -26,9 +26,9 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
-)
 
-var ErrIndexDisabled = errors.New("indexed search has been disabled")
+	IndexedMock zoekt.Streamer
+)
 
 func SearcherURLs() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
@@ -40,10 +40,9 @@ func SearcherURLs() *endpoint.Map {
 }
 
 func Indexed() zoekt.Streamer {
-	if !conf.SearchIndexEnabled() {
-		return &backend.FakeSearcher{SearchError: ErrIndexDisabled, ListError: ErrIndexDisabled}
+	if IndexedMock != nil {
+		return IndexedMock
 	}
-
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -58,12 +57,21 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`. If
-// indexed search is disabled it returns ErrIndexDisabled.
+// ListAllIndexed lists all indexed repositories with `Minimal: true`. If any
+// crashes occur an error is returned instead of returning partial results.
 func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Minimal: true}
-	return Indexed().List(ctx, q, opts)
+	rl, err := Indexed().List(ctx, q, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if rl.Crashes > 0 {
+		return nil, errors.New("zoekt.List call occurred while not all Zoekt replicas are available")
+	}
+
+	return rl, nil
 }
 
 func Indexers() *backend.Indexers {

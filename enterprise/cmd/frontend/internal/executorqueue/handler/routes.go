@@ -52,7 +52,8 @@ func (h *handler[T]) handleDequeue(w http.ResponseWriter, r *http.Request) {
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		job, dequeued, err := h.dequeue(r.Context(), executorMetadata{
-			Name: payload.ExecutorName,
+			Name:    payload.ExecutorName,
+			Version: payload.Version,
 			Resources: ResourceMetadata{
 				NumCPUs:   payload.NumCPUs,
 				Memory:    payload.Memory,

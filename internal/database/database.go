@@ -36,9 +36,11 @@ type DB interface {
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	OrgStats() OrgStatsStore
+	Permissions() PermissionStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
+	Roles() RoleStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
@@ -47,6 +49,7 @@ type DB interface {
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
+	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
 	Webhooks(encryption.Key) WebhookStore
@@ -65,7 +68,7 @@ var _ DB = (*db)(nil)
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
 func NewDB(logger log.Logger, inner *sql.DB) DB {
-	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
@@ -165,6 +168,10 @@ func (d *db) OrgStats() OrgStatsStore {
 	return OrgStatsWith(d.Store)
 }
 
+func (d *db) Permissions() PermissionStore {
+	return &permissionStore{Store: d.Store}
+}
+
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
 }
@@ -175,6 +182,10 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
+}
+
+func (d *db) Roles() RoleStore {
+	return RolesWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -207,6 +218,10 @@ func (d *db) UserEmails() UserEmailsStore {
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
 	return ExternalAccountsWith(d.logger, d.Store)
+}
+
+func (d *db) UserRoles() UserRoleStore {
+	return UserRolesWith(d.Store)
 }
 
 func (d *db) Users() UserStore {

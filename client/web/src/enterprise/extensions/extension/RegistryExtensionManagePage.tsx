@@ -8,11 +8,22 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+    Alert,
+    Icon,
+    Code,
+    H2,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'

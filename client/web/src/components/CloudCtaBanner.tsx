@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent, ReactNode } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,19 +7,24 @@ import { Icon, Text } from '@sourcegraph/wildcard'
 
 import styles from './CloudCtaBanner.module.scss'
 
-export const CloudCtaBanner: React.FunctionComponent<
-    React.PropsWithChildren<{ outlined?: boolean; className?: string; children: React.ReactNode }>
-> = ({ outlined = false, className, children }) => (
-    <section
-        className={classNames(
-            outlined ? styles.containerOutline : styles.primaryBg,
-            className,
-            'd-flex justify-content-center'
-        )}
-    >
-        <Icon className="mr-2 text-merged" size={outlined ? 'sm' : 'md'} aria-hidden={true} svgPath={mdiArrowRight} />
+export interface CloudCtaBanner {
+    variant?: 'filled' | 'outlined' | 'underlined' | string | undefined
+    small?: boolean
+    className?: string
+    children: ReactNode
+}
 
-        <Text size={outlined ? 'small' : 'base'} className="my-auto">
+export const CloudCtaBanner: FunctionComponent<CloudCtaBanner> = ({ variant, small, className, children }) => (
+    <section
+        className={classNames(className, 'd-flex justify-content-center', {
+            [styles.filled]: variant === 'filled',
+            [styles.outlined]: variant === 'outlined',
+            [styles.underlined]: variant === 'underlined',
+        })}
+    >
+        <Icon className="mr-2 text-merged" size={small ? 'sm' : 'md'} aria-hidden={true} svgPath={mdiArrowRight} />
+
+        <Text size={small ? 'small' : 'base'} className="my-auto">
             {children}
         </Text>
     </section>

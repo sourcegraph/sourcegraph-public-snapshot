@@ -11,9 +11,7 @@ import styles from './EditorActionsGroup.module.scss'
  * A helper function that modifies site configuration to configure specific
  * common things, such as syncing GitHub repositories.
  */
-export type ConfigInsertionFunction = (
-    configJSON: string
-) => {
+export type ConfigInsertionFunction = (configJSON: string) => {
     /** The edits to make to the input configuration to insert the new configuration. */
     edits: jsonc.Edit[]
 

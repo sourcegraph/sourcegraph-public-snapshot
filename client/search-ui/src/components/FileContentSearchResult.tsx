@@ -26,6 +26,7 @@ import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
+import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
@@ -163,9 +164,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const collapsedMatchCount = collapsedMatchGroups.matches.length
 
     const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
-    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
-        collapsedMatchGroups,
-    ])
+    const collapsedHighlightRangesCount = useMemo(
+        () => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0),
+        [collapsedMatchGroups]
+    )
 
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
     const collapsible = !showAllMatches && items.length > collapsedMatchCount
@@ -221,6 +223,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             : undefined
                     }
                     className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                    isKeyboardSelectable={true}
                 />
                 <CopyPathAction
                     className={styles.copyButton}
@@ -232,6 +235,28 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         </>
     )
 
+    useEffect(() => {
+        const ref = rootRef.current
+        if (!ref) {
+            return
+        }
+
+        const expand = (): void => setExpanded(true)
+        const collapse = (): void => setExpanded(false)
+        const toggle = (): void => setExpanded(expanded => !expanded)
+
+        // Custom events triggered by search results keyboard navigation (from the useSearchResultsKeyboardNavigation hook).
+        ref.addEventListener('expandSearchResultsGroup', expand)
+        ref.addEventListener('collapseSearchResultsGroup', collapse)
+        ref.addEventListener('toggleSearchResultsGroup', toggle)
+
+        return () => {
+            ref.removeEventListener('expandSearchResultsGroup', expand)
+            ref.removeEventListener('collapseSearchResultsGroup', collapse)
+            ref.removeEventListener('toggleSearchResultsGroup', toggle)
+        }
+    }, [rootRef, setExpanded])
+
     return (
         <ResultContainer
             index={index}
@@ -241,6 +266,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             repoName={result.repository}
             repoStars={result.repoStars}
             className={classNames(styles.copyButtonContainer, containerClassName)}
+            resultClassName={resultContainerStyles.highlightResult}
             ref={rootRef}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>

@@ -3,9 +3,12 @@ package lsifstore
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,13 +29,40 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(rangesDocumentQuery, bundleID, path)))
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		rangesDocumentQuery,
+		bundleID,
+		path,
+		bundleID,
+		path,
+	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := precise.FindRangesInWindow(documentData.Document.Ranges, startLine, endLine)
+	if documentData.SCIPData != nil {
+		var ranges []shared.CodeIntelligenceRange
+		for _, occurrence := range documentData.SCIPData.Occurrences {
+			r := translateRange(scip.NewRange(occurrence.Range))
+
+			if (startLine <= r.Start.Line && r.Start.Line < endLine) || (startLine <= r.End.Line && r.End.Line < endLine) {
+				data := extractOccurrenceData(documentData.SCIPData, occurrence)
+
+				ranges = append(ranges, shared.CodeIntelligenceRange{
+					Range:           r,
+					Definitions:     convertSCIPRangesToLocations(data.definitions, bundleID, path),
+					References:      convertSCIPRangesToLocations(data.references, bundleID, path),
+					Implementations: convertSCIPRangesToLocations(data.implementations, bundleID, path),
+					HoverText:       strings.Join(data.hoverText, "\n"),
+				})
+			}
+		}
+
+		return ranges, nil
+	}
+
+	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	ranges := precise.FindRangesInWindow(documentData.LSIFData.Ranges, startLine, endLine)
 	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	definitionResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.DefinitionResultID })
@@ -42,13 +72,13 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 	}
 
 	referenceResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.ReferenceResultID })
-	referenceLocations, err := s.getLocationsWithinFile(ctx, bundleID, referenceResultIDs, path, documentData.Document)
+	referenceLocations, err := s.getLocationsWithinFile(ctx, bundleID, referenceResultIDs, path, *documentData.LSIFData)
 	if err != nil {
 		return nil, err
 	}
 
 	implementationResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.ImplementationResultID })
-	implementationLocations, err := s.getLocationsWithinFile(ctx, bundleID, implementationResultIDs, path, documentData.Document)
+	implementationLocations, err := s.getLocationsWithinFile(ctx, bundleID, implementationResultIDs, path, *documentData.LSIFData)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +90,7 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 			Definitions:     definitionLocations[r.DefinitionResultID],
 			References:      referenceLocations[r.ReferenceResultID],
 			Implementations: implementationLocations[r.ImplementationResultID],
-			HoverText:       documentData.Document.HoverResults[r.HoverResultID],
+			HoverText:       documentData.LSIFData.HoverResults[r.HoverResultID],
 		})
 	}
 	sort.Slice(codeintelRanges, func(i, j int) bool {
@@ -71,21 +101,41 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 }
 
 const rangesDocumentQuery = `
-SELECT
-	dump_id,
-	path,
-	data,
-	ranges,
-	hovers,
-	NULL AS monikers,
-	NULL AS packages,
-	NULL AS diagnostics
-FROM
-	lsif_data_documents
-WHERE
-	dump_id = %s AND
-	path = %s
-LIMIT 1
+(
+	SELECT
+		sd.id,
+		sid.document_path,
+		NULL AS data,
+		NULL AS ranges,
+		NULL AS hovers,
+		NULL AS monikers,
+		NULL AS packages,
+		NULL AS diagnostics,
+		sd.raw_scip_payload AS scip_document
+	FROM codeintel_scip_document_lookup sid
+	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+	WHERE
+		sid.upload_id = %s AND
+		sid.document_path = %s
+	LIMIT 1
+) UNION (
+	SELECT
+		dump_id,
+		path,
+		data,
+		ranges,
+		hovers,
+		NULL AS monikers,
+		NULL AS packages,
+		NULL AS diagnostics,
+		NULL AS scip_document
+	FROM
+		lsif_data_documents
+	WHERE
+		dump_id = %s AND
+		path = %s
+	LIMIT 1
+)
 `
 
 // getLocationsWithinFile queries the file-local locations associated with the given definition or reference
@@ -128,4 +178,17 @@ func (s *store) getLocationsWithinFile(ctx context.Context, bundleID int, ids []
 	trace.Log(log.Int("numLocations", totalCount))
 
 	return locationsByResultID, nil
+}
+
+func convertSCIPRangesToLocations(ranges []*scip.Range, dumpID int, path string) []shared.Location {
+	locations := make([]shared.Location, 0, len(ranges))
+	for _, r := range ranges {
+		locations = append(locations, shared.Location{
+			DumpID: dumpID,
+			Path:   path,
+			Range:  translateRange(r),
+		})
+	}
+
+	return locations
 }

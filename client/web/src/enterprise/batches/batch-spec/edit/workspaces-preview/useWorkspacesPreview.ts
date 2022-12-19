@@ -54,6 +54,8 @@ export interface UseWorkspacesPreviewResult {
      * on the page.
      */
     hasPreviewed: boolean
+    /** Whether or not the batch spec should be executed with the cache disabled. */
+    noCache: boolean
 }
 
 interface UseWorkspacesPreviewOptions {
@@ -99,6 +101,7 @@ export const useWorkspacesPreview = (
     batchSpecID: Scalars['ID'],
     { isBatchSpecApplied, namespaceID, noCache, onComplete, filters, batchChange }: UseWorkspacesPreviewOptions
 ): UseWorkspacesPreviewResult => {
+    const [currentBatchSpecID, setCurrentBatchSpecID] = useState(batchSpecID)
     // Track whether the user has previewed the batch spec workspaces at least once.
     const [hasRequestedPreview, setHasRequestedPreview] = useState(false)
     const [hasPreviewed, setHasPreviewed] = useState(false)
@@ -126,7 +129,7 @@ export const useWorkspacesPreview = (
         WorkspaceResolutionStatusResult,
         WorkspaceResolutionStatusVariables
     >(WORKSPACE_RESOLUTION_STATUS, {
-        variables: { batchSpec: batchSpecID },
+        variables: { batchSpec: currentBatchSpecID },
         fetchPolicy: 'network-only',
         onError: error => setError(error.message),
     })
@@ -158,15 +161,20 @@ export const useWorkspacesPreview = (
             > =>
                 isBatchSpecApplied
                     ? createBatchSpecFromRaw({
-                          variables: { spec: code, namespace: namespaceID, noCache, batchChange },
+                          variables: { spec: code, namespace: namespaceID, batchChange },
                       }).then(result => result.data?.createBatchSpecFromRaw)
-                    : replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } }).then(
-                          result => result.data?.replaceBatchSpecInput
-                      )
+                    : replaceBatchSpecInput({
+                          variables: { spec: code, previousSpec: currentBatchSpecID },
+                      }).then(result => result.data?.replaceBatchSpecInput)
 
             return preview()
                 .then(result => {
-                    const resolution = result?.__typename === 'BatchSpec' ? result.workspaceResolution : null
+                    const batchSpec = result?.__typename === 'BatchSpec' ? result : null
+                    if (!batchSpec) {
+                        return
+                    }
+                    setCurrentBatchSpecID(batchSpec.id)
+                    const resolution = batchSpec.workspaceResolution
                     if (resolution?.state) {
                         // Set to the current workspace resolution state.
                         setUIState(resolution.state)
@@ -183,10 +191,9 @@ export const useWorkspacesPreview = (
                 })
         },
         [
-            batchSpecID,
+            currentBatchSpecID,
             namespaceID,
             isBatchSpecApplied,
-            noCache,
             createBatchSpecFromRaw,
             replaceBatchSpecInput,
             batchChange,
@@ -197,7 +204,7 @@ export const useWorkspacesPreview = (
         WORKSPACES,
         {
             variables: {
-                batchSpec: batchSpecID,
+                batchSpec: currentBatchSpecID,
                 after: null,
                 first: WORKSPACES_PER_PAGE_COUNT,
                 search: filters?.search ?? null,
@@ -211,7 +218,7 @@ export const useWorkspacesPreview = (
         BatchSpecImportingChangesetsVariables
     >(IMPORTING_CHANGESETS, {
         variables: {
-            batchSpec: batchSpecID,
+            batchSpec: currentBatchSpecID,
             after: null,
             first: CHANGESETS_PER_PAGE_COUNT,
         },
@@ -270,5 +277,6 @@ export const useWorkspacesPreview = (
         error,
         clearError: () => setError(undefined),
         hasPreviewed: hasRequestedPreview && hasPreviewed,
+        noCache,
     }
 }

@@ -69,22 +69,19 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
                             __typename: 'AggregationGroup',
                             label: 'ExampleFrom',
                             count: 38,
-                            query:
-                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:ExampleFrom)string/',
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:ExampleFrom)string/',
                         },
                         {
                             __typename: 'AggregationGroup',
                             label: '       ',
                             count: 26,
-                            query:
-                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:       )string/',
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:       )string/',
                         },
                         {
                             __typename: 'AggregationGroup',
                             label: ', summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []',
                             count: 15,
-                            query:
-                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:, summaryQuery, err := makeEventLogsQueries\\(s\\.DateRange, s\\.Grouping, \\[\\])string/',
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:, summaryQuery, err := makeEventLogsQueries\\(s\\.DateRange, s\\.Grouping, \\[\\])string/',
                         },
                         {
                             __typename: 'AggregationGroup',
@@ -102,8 +99,7 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
                             __typename: 'AggregationGroup',
                             label: 'Parameters: map[string][]',
                             count: 8,
-                            query:
-                                'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:Parameters: map\\[string\\]\\[\\])string/',
+                            query: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$ /query(?:Parameters: map\\[string\\]\\[\\])string/',
                         },
                     ],
                 },

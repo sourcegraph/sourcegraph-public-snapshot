@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -26,7 +24,7 @@ func NewMetricsReporterJob() job.Job {
 }
 
 func (j *metricsReporterJob) Description() string {
-	return ""
+	return "executor push-based metrics reporting routines"
 }
 
 func (j *metricsReporterJob) Config() []env.Config {
@@ -35,33 +33,29 @@ func (j *metricsReporterJob) Config() []env.Config {
 	}
 }
 
-func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+func (j *metricsReporterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	observationContext := observation.ContextWithLogger(
-		logger.Scoped("routines", "metrics reporting routines"),
-	)
-
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: move this and dependency {sync,index} metrics back to their respective jobs and keep for executor reporting only
-	uploads.MetricReporters(services.UploadsService, observationContext)
+	uploads.MetricReporters(observationCtx, services.UploadsService)
 
-	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions, observationContext)
-	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
-	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
+	dependencySyncStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions)
+	dependencyIndexingStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions)
+	dbworker.InitPrometheusMetric(observationCtx, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationCtx, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(
-		observationContext,
+		observationCtx,
 		"codeintel",
-		dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext),
+		dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions),
 		configInst.MetricsConfig,
 	)
 	if err != nil {

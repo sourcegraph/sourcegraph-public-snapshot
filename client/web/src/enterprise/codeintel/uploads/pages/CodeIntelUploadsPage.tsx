@@ -5,10 +5,9 @@ import classNames from 'classnames'
 import { RouteComponentProps, useLocation } from 'react-router'
 import { of, Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -120,11 +119,10 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
     )
 
     const commitGraphMetadata = useObservable(
-        useMemo(() => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)), [
-            repo,
-            queryCommitGraphMetadata,
-            apolloClient,
-        ])
+        useMemo(
+            () => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)),
+            [repo, queryCommitGraphMetadata, apolloClient]
+        )
     )
 
     const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })

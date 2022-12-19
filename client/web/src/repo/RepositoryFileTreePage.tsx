@@ -120,7 +120,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                             // TODO: see if we can render without resolvedRevision.commitID
                             <TreePage
                                 {...props}
-                                commitID={context.revision}
+                                commitID={resolvedRevision?.commitID}
                                 filePath={filePath}
                                 globbing={globbing}
                                 repo={repo}

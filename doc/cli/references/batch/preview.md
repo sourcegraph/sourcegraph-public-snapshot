@@ -19,6 +19,7 @@
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the batch change within. Default is the currently authenticated user. |  |
+| `-run-as-root` | If true, forces all step containers to run as root. | `false` |
 | `-skip-errors` | If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped. | `false` |
 | `-text-only` | INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines. | `false` |
 | `-timeout` | The maximum duration a single batch spec step can take. | `1h0m0s` |
@@ -61,6 +62,8 @@ Usage of 'src batch preview':
     	Alias for -namespace.
   -namespace string
     	The user or organization namespace to place the batch change within. Default is the currently authenticated user.
+  -run-as-root
+    	If true, forces all step containers to run as root.
   -skip-errors
     	If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped.
   -text-only

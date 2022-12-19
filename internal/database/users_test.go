@@ -4,10 +4,13 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -362,6 +364,82 @@ func TestUsers_ListCount(t *testing.T) {
 	assert.Len(t, users, 0)
 }
 
+func TestUsers_List_Query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	users := map[string]int32{}
+	for _, u := range []string{
+		"foo",
+		"bar",
+		"baz",
+	} {
+		user, err := db.Users().Create(ctx, NewUser{
+			Email:                 u + "@a.com",
+			Username:              u,
+			Password:              "p",
+			EmailVerificationCode: "c",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		users[u] = user.ID
+	}
+
+	cases := []struct {
+		Name  string
+		Query string
+		Want  string
+	}{{
+		Name:  "all",
+		Query: "",
+		Want:  "foo bar baz",
+	}, {
+		Name:  "none",
+		Query: "sdfsdf",
+		Want:  "",
+	}, {
+		Name:  "some",
+		Query: "a",
+		Want:  "bar baz",
+	}, {
+		Name:  "id",
+		Query: strconv.Itoa(int(users["foo"])),
+		Want:  "foo",
+	}, {
+		Name:  "graphqlid",
+		Query: string(relay.MarshalID("User", users["foo"])),
+		Want:  "foo",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			us, err := db.Users().List(ctx, &UsersListOptions{
+				Query: tc.Query,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.Fields(tc.Want)
+			got := []string{}
+			for _, u := range us {
+				got = append(got, u.Username)
+			}
+
+			sort.Strings(want)
+			sort.Strings(got)
+
+			assert.Equal(t, want, got)
+		})
+	}
+}
+
 func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -597,20 +675,6 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Create external service owned by the user
-			confGet := func() *conf.Unified {
-				return &conf.Unified{}
-			}
-			err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-				NamespaceUserID: user.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			// Create settings for the user, and for another user authored by this user.
 			if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
@@ -689,17 +753,6 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			} else if settings.AuthorUserID != nil {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
-			}
-
-			// User's external services no longer exist
-			ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-				NamespaceUserID: user.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(ess) > 0 {
-				t.Errorf("got %d external services, want 0", len(ess))
 			}
 
 			// Can't delete already-deleted user.

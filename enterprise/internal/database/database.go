@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -48,8 +50,8 @@ type InsightsDB interface {
 	Done(error) error
 }
 
-func NewInsightsDB(inner *sql.DB) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+func NewInsightsDB(inner *sql.DB, logger log.Logger) InsightsDB {
+	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
@@ -78,7 +80,6 @@ func (d *insightsDB) QueryContext(ctx context.Context, q string, args ...any) (*
 
 func (d *insightsDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
-
 }
 
 func (d *insightsDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {

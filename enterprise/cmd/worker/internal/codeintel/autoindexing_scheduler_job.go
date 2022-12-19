@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -13,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -33,24 +30,24 @@ func (j *autoindexingScheduler) Config() []env.Config {
 	}
 }
 
-func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+func (j *autoindexingScheduler) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "indexScheduler", "gitserver"))
+	gitserverClient := gitserver.New(observationCtx, db)
 
 	return autoindexing.NewIndexSchedulers(
+		observationCtx,
 		services.UploadsService,
 		services.PoliciesService,
 		policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true),
 		services.AutoIndexingService,
-		observation.ContextWithLogger(logger),
 	), nil
 }

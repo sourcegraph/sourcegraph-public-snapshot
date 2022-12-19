@@ -13,7 +13,6 @@ import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } 
 
 import {
     queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
     BULK_OPERATIONS,
@@ -26,6 +25,7 @@ import {
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
+import { CHANGESET_COUNTS_OVER_TIME_MOCK } from './testdata'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
@@ -78,70 +78,6 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
-    of([
-        {
-            date: subDays(new Date('2020-08-10'), 5).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 5,
-            total: 10,
-            draft: 5,
-            openChangesRequested: 0,
-            openApproved: 0,
-        },
-        {
-            date: subDays(new Date('2020-08-10'), 4).toISOString(),
-            closed: 0,
-            merged: 0,
-            openPending: 4,
-            total: 10,
-            draft: 3,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date('2020-08-10'), 3).toISOString(),
-            closed: 0,
-            merged: 2,
-            openPending: 5,
-            total: 10,
-            draft: 0,
-            openChangesRequested: 0,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date('2020-08-10'), 2).toISOString(),
-            closed: 0,
-            merged: 3,
-            openPending: 3,
-            total: 10,
-            draft: 0,
-            openChangesRequested: 1,
-            openApproved: 3,
-        },
-        {
-            date: subDays(new Date('2020-08-10'), 1).toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 2,
-            total: 10,
-            draft: 0,
-            openChangesRequested: 0,
-            openApproved: 2,
-        },
-        {
-            date: new Date('2020-08-10').toISOString(),
-            closed: 1,
-            merged: 5,
-            openPending: 0,
-            total: 10,
-            draft: 0,
-            openChangesRequested: 0,
-            openApproved: 4,
-        },
-    ])
-
 const deleteBatchChange = () => Promise.resolve(undefined)
 
 const Template: Story<{
@@ -152,7 +88,7 @@ const Template: Story<{
     isClosed?: boolean
 }> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
     const batchChange: BatchChangeFields = useMemo(() => {
-        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
+        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec!
 
         return {
             ...MOCK_BATCH_CHANGE,
@@ -198,6 +134,7 @@ const Template: Story<{
             result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        CHANGESET_COUNTS_OVER_TIME_MOCK,
     ])
 
     return (
@@ -209,7 +146,6 @@ const Template: Story<{
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
@@ -282,7 +218,7 @@ export const UnpublishableBatchSpec = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
     currentBatchSpec: {
-        ...MOCK_BATCH_CHANGE.currentSpec,
+        ...MOCK_BATCH_CHANGE.currentSpec!,
         viewerBatchChangesCodeHosts: {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 1,
@@ -331,7 +267,6 @@ export const EmptyChangesets: Story = args => {
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         extensionsController={{} as any}

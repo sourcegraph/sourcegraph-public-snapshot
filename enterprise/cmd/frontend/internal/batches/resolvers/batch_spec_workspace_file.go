@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -19,11 +20,37 @@ func marshalWorkspaceFileRandID(id string) graphql.ID {
 	return relay.MarshalID(workspaceFileIDKind, id)
 }
 
+func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
+	return
+}
+
 var _ graphqlbackend.BatchWorkspaceFileResolver = &batchSpecWorkspaceFileResolver{}
 
 type batchSpecWorkspaceFileResolver struct {
 	batchSpecRandID string
 	file            *btypes.BatchSpecWorkspaceFile
+
+	/*
+	 * Added this to the struct, so it's easy to mock in tests.
+	 * We expect `createVirtualFile` to return an interface so it's mockable.
+	 */
+	createVirtualFile func(content []byte, path string) graphqlbackend.FileResolver
+}
+
+func newBatchSpecWorkspaceFileResolver(batchSpecRandID string, file *btypes.BatchSpecWorkspaceFile) *batchSpecWorkspaceFileResolver {
+	return &batchSpecWorkspaceFileResolver{
+		batchSpecRandID:   batchSpecRandID,
+		file:              file,
+		createVirtualFile: createVirtualFile,
+	}
+}
+
+func createVirtualFile(content []byte, path string) graphqlbackend.FileResolver {
+	fileInfo := graphqlbackend.CreateFileInfo(path, false)
+	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
+		return string(content), nil
+	})
 }
 
 func (r *batchSpecWorkspaceFileResolver) ID() graphql.ID {
@@ -66,7 +93,8 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {
-	return false, errors.New("not implemented")
+	vfr := r.createVirtualFile(r.file.Content, r.file.Path)
+	return vfr.Binary(ctx)
 }
 
 func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, error) {
@@ -74,7 +102,7 @@ func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, 
 }
 
 func (r *batchSpecWorkspaceFileResolver) URL(ctx context.Context) (string, error) {
-	return "", errors.New("not implemented")
+	return fmt.Sprintf("/files/batch-changes/%s/%s", r.file.RandID, r.batchSpecRandID), nil
 }
 
 func (r *batchSpecWorkspaceFileResolver) CanonicalURL() string {
@@ -86,7 +114,8 @@ func (r *batchSpecWorkspaceFileResolver) ExternalURLs(ctx context.Context) ([]*e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
-	return nil, errors.New("not implemented")
+	vfr := r.createVirtualFile(r.file.Content, r.file.Path)
+	return vfr.Highlight(ctx, args)
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {

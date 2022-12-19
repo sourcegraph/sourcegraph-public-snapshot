@@ -128,6 +128,10 @@ type MockStore struct {
 	// GetUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByIDs.
 	GetUploadsByIDsFunc *StoreGetUploadsByIDsFunc
+	// GetUploadsByIDsAllowDeletedFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetUploadsByIDsAllowDeleted.
+	GetUploadsByIDsAllowDeletedFunc *StoreGetUploadsByIDsAllowDeletedFunc
 	// GetUploadsForRankingFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsForRanking.
 	GetUploadsForRankingFunc *StoreGetUploadsForRankingFunc
@@ -357,6 +361,11 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetUploadsByIDsFunc: &StoreGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
+				return
+			},
+		},
+		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
 			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
 				return
 			},
@@ -643,6 +652,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetUploadsByIDs")
 			},
 		},
+		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
+			defaultHook: func(context.Context, ...int) ([]types.Upload, error) {
+				panic("unexpected invocation of MockStore.GetUploadsByIDsAllowDeleted")
+			},
+		},
 		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
 			defaultHook: func(context.Context, string, string, int) ([]store.ExportedUpload, error) {
 				panic("unexpected invocation of MockStore.GetUploadsForRanking")
@@ -870,6 +884,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetUploadsByIDsFunc: &StoreGetUploadsByIDsFunc{
 			defaultHook: i.GetUploadsByIDs,
+		},
+		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
+			defaultHook: i.GetUploadsByIDsAllowDeleted,
 		},
 		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
 			defaultHook: i.GetUploadsForRanking,
@@ -4008,6 +4025,124 @@ func (c StoreGetUploadsByIDsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreGetUploadsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreGetUploadsByIDsAllowDeletedFunc describes the behavior when the
+// GetUploadsByIDsAllowDeleted method of the parent MockStore instance is
+// invoked.
+type StoreGetUploadsByIDsAllowDeletedFunc struct {
+	defaultHook func(context.Context, ...int) ([]types.Upload, error)
+	hooks       []func(context.Context, ...int) ([]types.Upload, error)
+	history     []StoreGetUploadsByIDsAllowDeletedFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadsByIDsAllowDeleted delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) GetUploadsByIDsAllowDeleted(v0 context.Context, v1 ...int) ([]types.Upload, error) {
+	r0, r1 := m.GetUploadsByIDsAllowDeletedFunc.nextHook()(v0, v1...)
+	m.GetUploadsByIDsAllowDeletedFunc.appendCall(StoreGetUploadsByIDsAllowDeletedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetUploadsByIDsAllowDeleted method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadsByIDsAllowDeleted method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultReturn(r0 []types.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]types.Upload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushReturn(r0 []types.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]types.Upload, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) nextHook() func(context.Context, ...int) ([]types.Upload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) appendCall(r0 StoreGetUploadsByIDsAllowDeletedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetUploadsByIDsAllowDeletedFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) History() []StoreGetUploadsByIDsAllowDeletedFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetUploadsByIDsAllowDeletedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetUploadsByIDsAllowDeletedFuncCall is an object that describes an
+// invocation of method GetUploadsByIDsAllowDeleted on an instance of
+// MockStore.
+type StoreGetUploadsByIDsAllowDeletedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c StoreGetUploadsByIDsAllowDeletedFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetUploadsByIDsAllowDeletedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -7410,6 +7545,10 @@ type MockLsifStore struct {
 	// object controlling the behavior of the method
 	// DeleteLsifDataByUploadIds.
 	DeleteLsifDataByUploadIdsFunc *LsifStoreDeleteLsifDataByUploadIdsFunc
+	// DeleteUnreferencedDocumentsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteUnreferencedDocuments.
+	DeleteUnreferencedDocumentsFunc *LsifStoreDeleteUnreferencedDocumentsFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LsifStoreDoneFunc
@@ -7420,6 +7559,12 @@ type MockLsifStore struct {
 	// IDsWithMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method IDsWithMeta.
 	IDsWithMetaFunc *LsifStoreIDsWithMetaFunc
+	// InsertMetadataFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertMetadata.
+	InsertMetadataFunc *LsifStoreInsertMetadataFunc
+	// NewSCIPWriterFunc is an instance of a mock function object
+	// controlling the behavior of the method NewSCIPWriter.
+	NewSCIPWriterFunc *LsifStoreNewSCIPWriterFunc
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *LsifStoreReconcileCandidatesFunc
@@ -7464,6 +7609,11 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
@@ -7476,6 +7626,16 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) (r0 []int, r1 error) {
+				return
+			},
+		},
+		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
+			defaultHook: func(context.Context, int, lsifstore.ProcessedMetadata) (r0 error) {
+				return
+			},
+		},
+		NewSCIPWriterFunc: &LsifStoreNewSCIPWriterFunc{
+			defaultHook: func(context.Context, int) (r0 lsifstore.SCIPWriter, r1 error) {
 				return
 			},
 		},
@@ -7546,6 +7706,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.DeleteLsifDataByUploadIds")
 			},
 		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (int, error) {
+				panic("unexpected invocation of MockLsifStore.DeleteUnreferencedDocuments")
+			},
+		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockLsifStore.Done")
@@ -7559,6 +7724,16 @@ func NewStrictMockLsifStore() *MockLsifStore {
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) ([]int, error) {
 				panic("unexpected invocation of MockLsifStore.IDsWithMeta")
+			},
+		},
+		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
+			defaultHook: func(context.Context, int, lsifstore.ProcessedMetadata) error {
+				panic("unexpected invocation of MockLsifStore.InsertMetadata")
+			},
+		},
+		NewSCIPWriterFunc: &LsifStoreNewSCIPWriterFunc{
+			defaultHook: func(context.Context, int) (lsifstore.SCIPWriter, error) {
+				panic("unexpected invocation of MockLsifStore.NewSCIPWriter")
 			},
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
@@ -7626,6 +7801,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: i.DeleteLsifDataByUploadIds,
 		},
+		DeleteUnreferencedDocumentsFunc: &LsifStoreDeleteUnreferencedDocumentsFunc{
+			defaultHook: i.DeleteUnreferencedDocuments,
+		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -7634,6 +7812,12 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: i.IDsWithMeta,
+		},
+		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
+			defaultHook: i.InsertMetadata,
+		},
+		NewSCIPWriterFunc: &LsifStoreNewSCIPWriterFunc{
+			defaultHook: i.NewSCIPWriter,
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
@@ -7784,6 +7968,124 @@ func (c LsifStoreDeleteLsifDataByUploadIdsFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreDeleteLsifDataByUploadIdsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// LsifStoreDeleteUnreferencedDocumentsFunc describes the behavior when the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// is invoked.
+type LsifStoreDeleteUnreferencedDocumentsFunc struct {
+	defaultHook func(context.Context, int, time.Duration, time.Time) (int, error)
+	hooks       []func(context.Context, int, time.Duration, time.Time) (int, error)
+	history     []LsifStoreDeleteUnreferencedDocumentsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUnreferencedDocuments delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) DeleteUnreferencedDocuments(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) (int, error) {
+	r0, r1 := m.DeleteUnreferencedDocumentsFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteUnreferencedDocumentsFunc.appendCall(LsifStoreDeleteUnreferencedDocumentsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// is invoked and the hook queue is empty.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUnreferencedDocuments method of the parent MockLsifStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, time.Duration, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) appendCall(r0 LsifStoreDeleteUnreferencedDocumentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LsifStoreDeleteUnreferencedDocumentsFuncCall objects describing the
+// invocations of this function.
+func (f *LsifStoreDeleteUnreferencedDocumentsFunc) History() []LsifStoreDeleteUnreferencedDocumentsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreDeleteUnreferencedDocumentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreDeleteUnreferencedDocumentsFuncCall is an object that describes
+// an invocation of method DeleteUnreferencedDocuments on an instance of
+// MockLsifStore.
+type LsifStoreDeleteUnreferencedDocumentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreDeleteUnreferencedDocumentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreDoneFunc describes the behavior when the Done method of the
@@ -8109,6 +8411,222 @@ func (c LsifStoreIDsWithMetaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreIDsWithMetaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LsifStoreInsertMetadataFunc describes the behavior when the
+// InsertMetadata method of the parent MockLsifStore instance is invoked.
+type LsifStoreInsertMetadataFunc struct {
+	defaultHook func(context.Context, int, lsifstore.ProcessedMetadata) error
+	hooks       []func(context.Context, int, lsifstore.ProcessedMetadata) error
+	history     []LsifStoreInsertMetadataFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertMetadata delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) InsertMetadata(v0 context.Context, v1 int, v2 lsifstore.ProcessedMetadata) error {
+	r0 := m.InsertMetadataFunc.nextHook()(v0, v1, v2)
+	m.InsertMetadataFunc.appendCall(LsifStoreInsertMetadataFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the InsertMetadata
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreInsertMetadataFunc) SetDefaultHook(hook func(context.Context, int, lsifstore.ProcessedMetadata) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertMetadata method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreInsertMetadataFunc) PushHook(hook func(context.Context, int, lsifstore.ProcessedMetadata) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreInsertMetadataFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, lsifstore.ProcessedMetadata) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreInsertMetadataFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, lsifstore.ProcessedMetadata) error {
+		return r0
+	})
+}
+
+func (f *LsifStoreInsertMetadataFunc) nextHook() func(context.Context, int, lsifstore.ProcessedMetadata) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreInsertMetadataFunc) appendCall(r0 LsifStoreInsertMetadataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreInsertMetadataFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreInsertMetadataFunc) History() []LsifStoreInsertMetadataFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreInsertMetadataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreInsertMetadataFuncCall is an object that describes an invocation
+// of method InsertMetadata on an instance of MockLsifStore.
+type LsifStoreInsertMetadataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 lsifstore.ProcessedMetadata
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreInsertMetadataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreInsertMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LsifStoreNewSCIPWriterFunc describes the behavior when the NewSCIPWriter
+// method of the parent MockLsifStore instance is invoked.
+type LsifStoreNewSCIPWriterFunc struct {
+	defaultHook func(context.Context, int) (lsifstore.SCIPWriter, error)
+	hooks       []func(context.Context, int) (lsifstore.SCIPWriter, error)
+	history     []LsifStoreNewSCIPWriterFuncCall
+	mutex       sync.Mutex
+}
+
+// NewSCIPWriter delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockLsifStore) NewSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
+	r0, r1 := m.NewSCIPWriterFunc.nextHook()(v0, v1)
+	m.NewSCIPWriterFunc.appendCall(LsifStoreNewSCIPWriterFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the NewSCIPWriter method
+// of the parent MockLsifStore instance is invoked and the hook queue is
+// empty.
+func (f *LsifStoreNewSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewSCIPWriter method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreNewSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreNewSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
+	f.PushHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreNewSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreNewSCIPWriterFunc) appendCall(r0 LsifStoreNewSCIPWriterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreNewSCIPWriterFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreNewSCIPWriterFunc) History() []LsifStoreNewSCIPWriterFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreNewSCIPWriterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreNewSCIPWriterFuncCall is an object that describes an invocation
+// of method NewSCIPWriter on an instance of MockLsifStore.
+type LsifStoreNewSCIPWriterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 lsifstore.SCIPWriter
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreNewSCIPWriterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreNewSCIPWriterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

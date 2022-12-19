@@ -46,6 +46,7 @@ type Store interface {
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
+	GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) (ids []int, recordsScanned int, totalCount int, err error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
@@ -90,7 +91,7 @@ type Store interface {
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 
 	// Workerutil
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload]
+	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
@@ -112,11 +113,11 @@ type store struct {
 }
 
 // New returns a new uploads store.
-func New(db database.DB, observationContext *observation.Context) Store {
+func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		logger:     logger.Scoped("uploads.store", ""),
 		db:         basestore.NewWithHandle(db.Handle()),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

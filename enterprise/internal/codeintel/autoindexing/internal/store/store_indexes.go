@@ -41,7 +41,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 		}
 
 		values = append(values, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 			index.State,
 			index.Commit,
 			index.RepositoryID,
@@ -52,6 +52,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
 			pq.Array(index.ExecutionLogs),
+			pq.Array(index.RequestedEnvVars),
 		))
 	}
 
@@ -82,7 +83,8 @@ INSERT INTO lsif_indexes (
 	indexer,
 	indexer_args,
 	outfile,
-	execution_logs
+	execution_logs,
+	requested_envvars
 ) VALUES %s
 RETURNING id
 `
@@ -158,6 +160,7 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
+	u.requested_envvars,
 	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
@@ -363,7 +366,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -419,7 +423,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -564,6 +569,17 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 }
 
 const isQueuedQuery = `
+-- The query has two parts, 'A' UNION 'B', where 'A' is true if there's a manual and
+-- reachable upload for a repo/commit pair. This signifies that the user has configured
+-- manual indexing on a repo and we shouldn't clobber it with autoindexing. The other
+-- query 'B' is true if there's an auto-index record already enqueued for this repo. This
+-- signifies that we've already infered jobs for this repo/commit pair so we can skip it
+-- (we should infer the same jobs).
+
+-- We added a way to say "you might infer different jobs" for part 'B' by adding the
+-- check on u.should_reindex. We're now adding a way to say "the indexer might result
+-- in a different output_ for part A, allowing auto-indexing to clobber records that
+-- have undergone some possibly lossy transformation (like LSIF -> SCIP conversion in-db).
 SELECT
 	EXISTS (
 		SELECT 1
@@ -572,7 +588,8 @@ SELECT
 			repository_id = %s AND
 			commit = %s AND
 			state NOT IN ('deleting', 'deleted') AND
-			associated_index_id IS NULL
+			associated_index_id IS NULL AND
+			NOT u.should_reindex
 	)
 
 	OR
@@ -789,7 +806,8 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex
+	u.should_reindex,
+	u.requested_envvars
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id

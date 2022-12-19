@@ -5,9 +5,9 @@ import { History } from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
-import { createLinkClickHandler } from '@sourcegraph/shared/src/components/utils/linkClickHandler'
 import {
     createRectangle,
+    createLinkClickHandler,
     Icon,
     Link,
     Popover,
@@ -124,10 +124,10 @@ export const BlameDecoration: React.FunctionComponent<{
         onClose,
     })
 
-    const onPopoverOpenChange = useCallback((event: PopoverOpenEvent) => (event.isOpen ? close() : open()), [
-        close,
-        open,
-    ])
+    const onPopoverOpenChange = useCallback(
+        (event: PopoverOpenEvent) => (event.isOpen ? close() : open()),
+        [close, open]
+    )
 
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])

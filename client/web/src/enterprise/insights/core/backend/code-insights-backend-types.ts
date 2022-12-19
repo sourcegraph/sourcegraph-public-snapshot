@@ -1,3 +1,4 @@
+import { IncompleteDatapointAlert } from '@sourcegraph/shared/src/schema'
 import { Series } from '@sourcegraph/wildcard'
 
 import {
@@ -19,8 +20,12 @@ export interface CategoricalChartContent<Datum> {
     getCategory?: (datum: Datum) => string | undefined
 }
 
+export interface BackendInsightSeries<Datum> extends Series<Datum> {
+    alerts: IncompleteDatapointAlert[]
+}
+
 export interface SeriesChartContent<Datum> {
-    series: Series<Datum>[]
+    series: BackendInsightSeries<Datum>[]
 }
 
 export interface InsightCategoricalContent<Datum> {
@@ -30,7 +35,7 @@ export interface InsightCategoricalContent<Datum> {
 
 export interface InsightSeriesContent<Datum> {
     type: InsightContentType.Series
-    content: SeriesChartContent<Datum>
+    series: BackendInsightSeries<Datum>[]
 }
 
 export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
@@ -98,4 +103,5 @@ export interface BackendInsightDatum {
 export interface BackendInsightData {
     data: InsightContent<any>
     isFetchingHistoricalData: boolean
+    incompleteAlert: IncompleteDatapointAlert | null
 }

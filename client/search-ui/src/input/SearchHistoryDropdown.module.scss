@@ -12,6 +12,7 @@
         cursor: pointer;
         display: flex;
         justify-content: space-between;
+        align-items: baseline;
 
         &:hover {
             background-color: var(--body-bg);

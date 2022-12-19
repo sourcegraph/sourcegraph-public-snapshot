@@ -40,7 +40,7 @@ func NewJobSelector(
 
 var (
 	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-	MaximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
+	MaximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 50, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
@@ -251,15 +251,16 @@ func convertInferredConfiguration(repositoryID int, commit string, indexJobs []c
 		}
 
 		indexes = append(indexes, types.Index{
-			RepositoryID: repositoryID,
-			Commit:       commit,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
+			RepositoryID:     repositoryID,
+			Commit:           commit,
+			State:            "queued",
+			DockerSteps:      dockerSteps,
+			LocalSteps:       indexJob.LocalSteps,
+			Root:             indexJob.Root,
+			Indexer:          indexJob.Indexer,
+			IndexerArgs:      indexJob.IndexerArgs,
+			Outfile:          indexJob.Outfile,
+			RequestedEnvVars: indexJob.RequestedEnvVars,
 		})
 	}
 

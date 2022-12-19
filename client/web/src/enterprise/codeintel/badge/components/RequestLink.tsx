@@ -3,8 +3,7 @@ import React, { useState } from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
@@ -26,7 +25,11 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
 }) => {
     const language = indexerName.startsWith('lsif-') ? indexerName.slice('lsif-'.length) : indexerName
 
-    const { data, loading: loadingSupport, error } = useRequestedLanguageSupportQuery({
+    const {
+        data,
+        loading: loadingSupport,
+        error,
+    } = useRequestedLanguageSupportQuery({
         variables: {},
     })
 

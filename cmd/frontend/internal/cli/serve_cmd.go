@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -14,12 +13,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2/store/redigostore"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -52,7 +48,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -82,30 +77,10 @@ var (
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
-// defaultExternalURL returns the default external URL of the application.
-func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
-	addr := nginxAddr
-	if addr == "" {
-		addr = httpAddr
-	}
-
-	var hostPort string
-	if strings.HasPrefix(addr, ":") {
-		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + addr
-	} else {
-		hostPort = addr
-	}
-
-	return &url.URL{Scheme: "http", Host: hostPort}
-}
-
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB(logger sglog.Logger) (*sql.DB, error) {
-	obsCtx := observation.TestContext
-	obsCtx.Logger = logger
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
+	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
@@ -145,15 +120,12 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	observationCtx := observation.NewContext(logger)
+
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		log15.Warn("Skipping out-of-band migrations check")
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
-		observationContext := &observation.Context{
-			Logger:     logger,
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
 		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
 			return errors.Wrap(err, "failed to synchronized out of band migration metadata")
@@ -253,7 +225,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	siteid.Init(db)
 
 	globals.WatchBranding()
-	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
+	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
@@ -288,12 +260,12 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 		return err
 	}
 
-	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -316,7 +288,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	return nil
 }
 
-func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
@@ -329,6 +301,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		rateLimiter,
 		&httpapi.Handlers{
 			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
+			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
 			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
 			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
@@ -349,13 +322,14 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP running", "on", httpAddr)
+	logger.Debug("HTTP running", sglog.String("on", httpAddr))
 	return server, nil
 }
 
 func makeInternalAPI(
-	schema *graphql.Schema,
 	db database.DB,
+	logger sglog.Logger,
+	schema *graphql.Schema,
 	enterprise enterprise.Services,
 	rateLimiter graphqlbackend.LimitWatcher,
 ) (goroutine.BackgroundRoutine, error) {
@@ -387,7 +361,7 @@ func makeInternalAPI(
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+	logger.Debug("HTTP (internal) running", sglog.String("on", httpAddrInternal))
 	return server, nil
 }
 

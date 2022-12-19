@@ -100,7 +100,6 @@ const getSymbolIconComponent = (kind: SymbolKind): string => {
 interface SymbolIconProps {
     kind: SymbolKind
     className?: string
-    inheritColor?: boolean
 }
 function getSymbolIconClassName(kind: SymbolKind): string | undefined {
     return (styles as Record<string, string>)[`symbolIconKind${upperFirst(kind.toLowerCase())}`]
@@ -112,13 +111,12 @@ function getSymbolIconClassName(kind: SymbolKind): string | undefined {
 export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolIconProps>> = ({
     kind,
     className = '',
-    inheritColor,
 }) => (
     <Tooltip content={kind.toLowerCase()}>
         <Icon
             data-testid="symbol-icon"
             data-symbol-kind={kind.toLowerCase()}
-            className={classNames(getSymbolIconClassName(kind), inheritColor && styles.inheritColor, className)}
+            className={classNames(getSymbolIconClassName(kind), className)}
             svgPath={getSymbolIconComponent(kind)}
             aria-label={`Symbol kind ${kind.toLowerCase()}`}
         />

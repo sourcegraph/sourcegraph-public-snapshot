@@ -93,8 +93,9 @@ func NewClient(db database.DB) Client {
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
-		logger: sglog.Scoped("NewTestClient", "Test New client"),
+		logger: logger,
 		addrs: func() []string {
 			return addrs
 		},
@@ -106,7 +107,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
-		operations: newOperations(&observation.TestContext),
+		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
 
@@ -1282,11 +1283,29 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
+			Repo:         req.Repo,
+			BaseCommit:   req.BaseCommit,
+			Patch:        string(req.Patch),
+			TargetRef:    req.TargetRef,
+			UniqueRef:    req.UniqueRef,
+			CommitInfo:   req.CommitInfo,
+			Push:         req.Push,
+			GitApplyArgs: req.GitApplyArgs,
+		})
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

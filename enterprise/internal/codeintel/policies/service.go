@@ -24,16 +24,16 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	policiesStore store.Store,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
-	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		store:      policiesStore,
 		uploadSvc:  uploadSvc,
 		gitserver:  gitserver,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

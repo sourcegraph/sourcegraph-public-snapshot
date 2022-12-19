@@ -202,8 +202,7 @@ export const LOG_4_J_INCIDENT_INSIGHT: SearchInsightExampleContent<Datum> = {
                 { x: new Date('February 1, 2022'), y: 200 },
             ],
             color: DATA_SERIES_COLORS.RED,
-            query:
-                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
+            query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
             getXValue: datum => datum.x,
             getYValue: datum => datum.y,
         },
@@ -227,8 +226,7 @@ export const OPENSSL_PYTHON: SearchInsightExampleContent<Datum> = {
             ],
             name: 'pip/pipenv',
             color: DATA_SERIES_COLORS.BLUE,
-            query:
-                'file:requirements.*txt cryptography(s*[=~]=s*(36.|37.|38.0.[0-2])) patternType:regexp archived:no fork:no',
+            query: 'file:requirements.*txt cryptography(s*[=~]=s*(36.|37.|38.0.[0-2])) patternType:regexp archived:no fork:no',
             getXValue: datum => datum.x,
             getYValue: datum => datum.y,
         },

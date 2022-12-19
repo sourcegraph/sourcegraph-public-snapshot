@@ -370,8 +370,10 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	)
 
 	src := r.Sources[svc.URN()]
-	if src == nil || src.CloneURL == "" {
+	if src == nil {
 		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+	} else if src.CloneURL == "" {
+		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
 	}
 
 	if !s.InTransaction() {
@@ -389,8 +391,6 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -418,20 +418,14 @@ const upsertExternalServiceRepoQuery = `
 INSERT INTO external_service_repos (
 	external_service_id,
 	repo_id,
-	user_id,
-	org_id,
 	clone_url
 )
-VALUES (%s, %s, NULLIF(%s, 0), NULLIF(%s, 0), %s)
+VALUES (%s, %s, %s)
 ON CONFLICT (external_service_id, repo_id)
 DO UPDATE SET
-	clone_url = excluded.clone_url,
-	user_id   = excluded.user_id,
-	org_id    =  excluded.org_id
+	clone_url = excluded.clone_url
 WHERE
-	external_service_repos.clone_url != excluded.clone_url OR
-	external_service_repos.user_id   != excluded.user_id OR
-	external_service_repos.org_id    != excluded.org_id
+	external_service_repos.clone_url != excluded.clone_url
 `
 
 func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
@@ -560,8 +554,6 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }

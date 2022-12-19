@@ -107,35 +107,37 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const getSnippetPositionAdjuster = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({ direction, codeView, position }) =>
-    fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
-        map(lines => {
-            const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
-                codeView,
-                position.line,
-                position.part
-            )
-            if (!codeElement) {
-                throw new Error('(adjustPosition) could not find code element for line provided')
-            }
+const getSnippetPositionAdjuster =
+    (
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) =>
+        fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
+            map(lines => {
+                const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
+                    codeView,
+                    position.line,
+                    position.part
+                )
+                if (!codeElement) {
+                    throw new Error('(adjustPosition) could not find code element for line provided')
+                }
 
-            const actualLine = lines[position.line - 1]
-            const documentLine = codeElement.textContent || ''
+                const actualLine = lines[position.line - 1]
+                const documentLine = codeElement.textContent || ''
 
-            const actualLeadingWhiteSpace = actualLine.length - trimStart(actualLine).length
-            const documentLeadingWhiteSpace = documentLine.length - trimStart(documentLine).length
+                const actualLeadingWhiteSpace = actualLine.length - trimStart(actualLine).length
+                const documentLeadingWhiteSpace = documentLine.length - trimStart(documentLine).length
 
-            const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
-            const delta = Math.abs(actualLeadingWhiteSpace - documentLeadingWhiteSpace) * modifier
+                const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
+                const delta = Math.abs(actualLeadingWhiteSpace - documentLeadingWhiteSpace) * modifier
 
-            return {
-                line: position.line,
-                character: position.character + delta,
-            }
-        })
-    )
+                return {
+                    line: position.line,
+                    character: position.character + delta,
+                }
+            })
+        )
 
 const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
@@ -164,8 +166,9 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.className = className
 
     // new GitHub UI
-    const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-        ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+    const container =
+        codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
@@ -604,9 +607,8 @@ function enhanceSearchPage(sourcegraphURL: string): void {
 
             const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
             const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
-            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>(
-                "button[type='submit']"
-            )
+            const pageSearchFormSubmitButton =
+                pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>("button[type='submit']")
 
             if (pageSearchInput && pageSearchFormSubmitButton) {
                 const buttonContainer = queryByIdOrCreate('pageSearchFormSourcegraphButton', 'ml-2 d-none d-md-block')
@@ -629,9 +631,8 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             )
             const searchResultsContainer = document.querySelector<HTMLDivElement>('.codesearch-results')
             const emptyResultsContainer = searchResultsContainer?.querySelector('.blankslate')
-            const searchResultsContainerHeading = searchResultsContainer?.querySelector<HTMLHeadingElement>(
-                'div > div > h3'
-            )
+            const searchResultsContainerHeading =
+                searchResultsContainer?.querySelector<HTMLHeadingElement>('div > div > h3')
 
             if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
                 const buttonContainer: HTMLElement = queryByIdOrCreate(

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,6 +19,14 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 		return MockStatusMessages(ctx)
 	}
 	var messages []StatusMessage
+
+	if conf.Get().DisableAutoGitUpdates {
+		messages = append(messages, StatusMessage{
+			GitUpdatesDisabled: &GitUpdatesDisabled{
+				Message: "Repositories will not be cloned or updated.",
+			},
+		})
+	}
 
 	// We first fetch affiliated sync errors since this will also find all the
 	// external services the user cares about.
@@ -75,11 +83,6 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 	// instances.
 	// So for now we don't return the indexing message on sourcegraph.com.
 	if !envvar.SourcegraphDotComMode() {
-		// Check feature flag
-		if !featureflag.FromContext(ctx).GetBoolOr("indexing-status-message", false) {
-			return messages, nil
-		}
-
 		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "loading repo statistics")
@@ -104,6 +107,10 @@ func pluralize(count int, singularNoun, pluralNoun string) string {
 	return pluralNoun
 }
 
+type GitUpdatesDisabled struct {
+	Message string
+}
+
 type CloningProgress struct {
 	Message string
 }
@@ -117,14 +124,15 @@ type SyncError struct {
 	Message string
 }
 
+type IndexingProgress struct {
+	NotIndexed int
+	Indexed    int
+}
+
 type StatusMessage struct {
+	GitUpdatesDisabled       *GitUpdatesDisabled       `json:"git_updates_disabled"`
 	Cloning                  *CloningProgress          `json:"cloning"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
 	Indexing                 *IndexingProgress         `json:"indexing"`
-}
-
-type IndexingProgress struct {
-	NotIndexed int
-	Indexed    int
 }

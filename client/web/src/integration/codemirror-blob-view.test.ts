@@ -291,7 +291,11 @@ describe('CodeMirror blob view', () => {
 
         describe('hovercards', () => {
             beforeEach(() => {
-                const { graphqlResults: extensionGraphQlResult, intercept, userSettings } = createExtensionData([
+                const {
+                    graphqlResults: extensionGraphQlResult,
+                    intercept,
+                    userSettings,
+                } = createExtensionData([
                     {
                         id: 'test',
                         extensionID: 'test/test',
@@ -412,7 +416,11 @@ describe('CodeMirror blob view', () => {
          * This test is meant to prevent regression: https://github.com/sourcegraph/sourcegraph/pull/15099
          */
         it('adds and clears line decoration attachments properly', async () => {
-            const { graphqlResults: extensionsGraphqlResult, intercept, userSettings } = createExtensionData([
+            const {
+                graphqlResults: extensionsGraphqlResult,
+                intercept,
+                userSettings,
+            } = createExtensionData([
                 {
                     id: 'test',
                     extensionID: 'test/fixed-line',
@@ -631,7 +639,11 @@ describe('CodeMirror blob view', () => {
              * add attachment to lines that contain a certain word.
              */
 
-            const { graphqlResults: extensionsGraphqlResult, intercept, userSettings } = createExtensionData([
+            const {
+                graphqlResults: extensionsGraphqlResult,
+                intercept,
+                userSettings,
+            } = createExtensionData([
                 {
                     id: 'word-finder',
                     extensionID: 'test/word-finder',
@@ -858,6 +870,8 @@ describe('CodeMirror blob view', () => {
 
             // Start searching (which implies that the search input has focus)
             await driver.page.keyboard.type('line')
+            // Wait for search input debounce timeout (100ms)
+            await driver.page.waitForTimeout(150)
             // All three lines should have matches
             assert.strictEqual(await getMatchCount(), 3, 'finds three matches')
 
@@ -988,9 +1002,7 @@ interface MockExtension {
     bundle: () => void
 }
 
-function createExtensionData(
-    extensions: MockExtension[]
-): {
+function createExtensionData(extensions: MockExtension[]): {
     intercept: (testContext: WebIntegrationTestContext, driver: Driver) => void
     graphqlResults: Pick<SharedGraphQlOperations, 'Extensions'>
     userSettings: Required<Pick<Settings, 'extensions'>>

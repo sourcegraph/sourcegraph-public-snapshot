@@ -197,6 +197,7 @@ export interface Skipped {
      * - shard-timeout :: we ran out of time before searching a shard/repository.
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - backend-missing :: we may be missing results due to a backend being transiently down.
      * - excluded-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
      * - display :: we hit the display limit, so we stopped sending results from the backend.
@@ -208,6 +209,7 @@ export interface Skipped {
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
+        | 'backend-missing'
         | 'excluded-fork'
         | 'excluded-archive'
         | 'display'

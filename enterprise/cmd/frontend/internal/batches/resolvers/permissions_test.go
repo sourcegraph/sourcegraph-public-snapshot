@@ -1424,7 +1424,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:            "my batch change",
+			Name:            "my-batch-change",
 			CreatorID:       userID,
 			NamespaceUserID: userID,
 			LastApplierID:   userID,

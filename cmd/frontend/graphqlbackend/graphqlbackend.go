@@ -145,6 +145,21 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 					log.String("variables", string(enc)),
 				)
 			}
+			errFields := make([]string, 0, len(err))
+			for _, e := range err {
+				errFields = append(errFields, e.Error())
+			}
+			req := &types.SlowRequest{
+				Start:     start,
+				Duration:  d,
+				UserID:    currentUserID,
+				Name:      requestName,
+				Source:    string(requestSource),
+				Variables: variables,
+				Errors:    errFields,
+				Query:     queryString,
+			}
+			captureSlowRequest(t.logger, req)
 		}
 	}
 }
@@ -606,6 +621,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return webhookLogByID(ctx, db, id)
+		},
+		"OutboundRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.outboundRequestByID(ctx, id)
 		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id)

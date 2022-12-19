@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/smartsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,7 +43,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
-		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
 		if err != nil {
@@ -54,7 +54,9 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		}
 	}
 
-	return NewAlertJob(inputs, jobTree), nil
+	job := NewAlertJob(inputs, jobTree)
+	job = NewLogJob(inputs, job)
+	return job, nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -445,11 +447,14 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
+						repoFilterPrefix, _ := search.ParseRepositoryRevisions(repoFilter)
+						// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
+						// above, regexp meta characters in literal patterns are already escaped before the
+						// pattern is added to repoOptions, so no need to check that before compiling to regex
 						if repoOptions.CaseSensitiveRepoFilters {
-							// escaping regexp meta characters in literal patterns is handled by call to PatternString() above
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter))
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilterPrefix))
 						} else {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilter))
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilterPrefix))
 						}
 					}
 

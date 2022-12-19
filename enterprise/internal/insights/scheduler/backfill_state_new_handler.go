@@ -43,7 +43,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 
 	name := "backfill_new_backfill_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
+	workerStore := dbworkerstore.New(config.ObservationCtx, insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_new",
@@ -54,7 +54,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
 		MaxNumRetries:     3,
-	}, config.ObsContext)
+	})
 
 	task := newBackfillHandler{
 		workerStore:     workerStore,
@@ -70,13 +70,13 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
+		Metrics:           workerutil.NewMetrics(config.ObservationCtx, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
+		Metrics:  *dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
 	return worker, resetter, workerStore
@@ -133,10 +133,10 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{

@@ -3,8 +3,7 @@ import { FunctionComponent } from 'react'
 import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
@@ -51,22 +50,20 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const createGitCommitPreview = (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> => ({
-    repoId,
-    pattern,
-    typeText,
-}) => {
-    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
+const createGitCommitPreview =
+    (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> =>
+    ({ repoId, pattern, typeText }) => {
+        const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
 
-    return (
-        <GitObjectPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
+        return (
+            <GitObjectPreview
+                typeText={typeText}
+                preview={previewResult}
+                previewLoading={isLoadingPreview}
+                previewError={previewError}
+            />
+        )
+    }
 
 const GitTagPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
     GitObjectType.GIT_TAG

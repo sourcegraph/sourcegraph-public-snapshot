@@ -4,13 +4,13 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Button, Series, LegendItemPoint } from '@sourcegraph/wildcard'
+import { Button, BarChart, LegendItem, LegendList, LegendItemPoint, ScrollBox } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, InsightContent } from '../../../../../../core'
+import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
-import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
+import { BackendAlertOverlay, InsightSeriesIncompleteAlert } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -42,17 +42,17 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
+    seriesToggleState: UseSeriesToggleReturn
     className?: string
     onDatumClick: () => void
-    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { data, isFetchingHistoricalData, locked, zeroYAxisMin, seriesToggleState, className, onDatumClick } = props
+
     const { ref, width = 0 } = useResizeObserver()
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
-
     const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
@@ -66,48 +66,53 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            {width && (
+            {width > 0 && (
                 <>
                     <ParentSize
                         debounceTime={0}
                         enableDebounceLeadingCall={true}
                         className={styles.responsiveContainer}
                     >
-                        {parent => (
-                            <>
-                                <BackendAlertOverlay
-                                    hasNoData={isEmptyDataset}
-                                    isFetchingHistoricalData={isFetchingHistoricalData}
-                                    className={styles.alertOverlay}
-                                />
+                        {parent =>
+                            // Render chart element only when we have real non-empty parent sizes
+                            // otherwise, the first chart render happens on a not fully rendered
+                            // element that causes the element's flickering
+                            parent.height * parent.width !== 0 && (
+                                <>
+                                    <BackendAlertOverlay
+                                        hasNoData={isEmptyDataset}
+                                        isFetchingHistoricalData={isFetchingHistoricalData}
+                                        className={styles.alertOverlay}
+                                    />
 
-                                {data.type === InsightContentType.Series ? (
-                                    <SeriesChart
-                                        type={SeriesBasedChartTypes.Line}
-                                        width={parent.width}
-                                        height={parent.height}
-                                        locked={locked}
-                                        className={styles.chart}
-                                        onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
-                                        seriesToggleState={seriesToggleState}
-                                        {...data.content}
-                                    />
-                                ) : (
-                                    <BarChart
-                                        aria-label="Bar chart"
-                                        width={parent.width}
-                                        height={parent.height}
-                                        {...data.content}
-                                    />
-                                )}
-                            </>
-                        )}
+                                    {data.type === InsightContentType.Series ? (
+                                        <SeriesChart
+                                            type={SeriesBasedChartTypes.Line}
+                                            width={parent.width}
+                                            height={parent.height}
+                                            locked={locked}
+                                            className={styles.chart}
+                                            onDatumClick={onDatumClick}
+                                            zeroYAxisMin={zeroYAxisMin}
+                                            seriesToggleState={seriesToggleState}
+                                            series={data.series}
+                                        />
+                                    ) : (
+                                        <BarChart
+                                            aria-label="Bar chart"
+                                            width={parent.width}
+                                            height={parent.height}
+                                            {...data.content}
+                                        />
+                                    )}
+                                </>
+                            )
+                        }
                     </ParentSize>
 
                     {isSeriesLikeInsight && (
                         <ScrollBox className={styles.legendListContainer}>
-                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                            <SeriesLegends series={data.series} seriesToggleState={seriesToggleState} />
                         </ScrollBox>
                     )}
                 </>
@@ -118,7 +123,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
 
 const isManyKeysInsight = (data: InsightContent<any>): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+        return data.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     }
 
     return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
@@ -126,7 +131,7 @@ const isManyKeysInsight = (data: InsightContent<any>): boolean => {
 
 const hasNoData = (data: InsightContent<any>): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.every(series => series.data.length === 0)
+        return data.series.every(series => series.data.length === 0)
     }
 
     // If all datum have zero matches render no data layout. We need to
@@ -137,7 +142,7 @@ const hasNoData = (data: InsightContent<any>): boolean => {
 }
 
 interface SeriesLegendsProps {
-    series: Series<any>[]
+    series: BackendInsightSeries<any>[]
     seriesToggleState: UseSeriesToggleReturn
 }
 
@@ -149,7 +154,11 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
         return (
             <LegendList className={styles.legendList}>
                 {series.map(item => (
-                    <LegendItem key={item.id as string} name={item.name} color={item.color} />
+                    <LegendItem key={item.id as string} color={item.color}>
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                        {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
+                    </LegendItem>
                 ))}
             </LegendList>
         )
@@ -187,6 +196,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
+                    {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
                 </LegendItem>
             ))}
         </LegendList>

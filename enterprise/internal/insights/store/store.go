@@ -410,12 +410,18 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
 		for _, regex := range opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
 		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
 		for _, regex := range opts.ExcludeRepoRegex {
@@ -833,6 +839,7 @@ type IncompleteDatapoint struct {
 type IncompleteReason string
 
 const (
-	ReasonTimeout IncompleteReason = "timeout"
-	ReasonGeneric IncompleteReason = "generic"
+	ReasonTimeout           IncompleteReason = "timeout"
+	ReasonGeneric           IncompleteReason = "generic"
+	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
 )

@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -65,18 +68,8 @@ func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
 	}, nil
 }
 
-func (r *Runner) Run(ctx context.Context, concurrency int) error {
+func (r *Runner) List(ctx context.Context, limit int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
-
-	out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Adding codehost ssh key"))
-	cleanup, err := r.addSSHKey(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Removing codehost ssh key"))
-		cleanup()
-	}()
 
 	// Load existing repositories.
 	srcRepos, err := r.store.Load()
@@ -84,11 +77,20 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 		r.logger.Error("failed to open state database", log.Error(err))
 		return err
 	}
+	loadedFromDB := true
 
 	// If we're starting fresh, really fetch them.
 	if len(srcRepos) == 0 {
+		loadedFromDB = false
 		r.logger.Info("No existing state found, creating ...")
-		repos, err := r.source.ListRepos(ctx)
+		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
+
+		var repos []*store.Repo
+		repoIter := r.source.Iterator()
+		for !repoIter.Done() && repoIter.Err() == nil {
+			repos = append(repos, repoIter.Next(ctx)...)
+		}
+
 		if err != nil {
 			r.logger.Error("failed to list repositories from source", log.Error(err))
 			return err
@@ -98,70 +100,134 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 			return err
 		}
-		r.logger.Info(fmt.Sprintf("Found %d repos in source", len(srcRepos)))
-	} else {
-		r.logger.Info(fmt.Sprintf("Resuming work (%d repos)", len(srcRepos)))
+	}
+	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (db: %v limit: %d total: %d)", loadedFromDB, limit, len(srcRepos))))
+	if limit != 0 && limit < len(srcRepos) {
+		srcRepos = srcRepos[:limit]
+	}
+	for _, r := range srcRepos {
+		block.Writef("Name: %s Created: %v Pushed: %v GitURL: %s ToGitURL: %s Failed: %s", r.Name, r.Created, r.Pushed, r.GitURL, r.ToGitURL, r.Failed)
+	}
+	block.Close()
+	return nil
+}
+
+func (r *Runner) Copy(ctx context.Context, concurrency int) error {
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
+
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Adding codehost ssh key"))
+	cleanup, err := r.addSSHKey(ctx)
+	if err != nil {
+		return err
 	}
 
+	pruneKeys := func() {
+		out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Removing codehost ssh key"))
+		cleanup()
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		pruneKeys()
+		os.Exit(1)
+	}()
+	defer pruneKeys()
+
+	// Load existing repositories.
+	srcRepos, err := r.store.Load()
+	if err != nil {
+		r.logger.Error("failed to open state database", log.Error(err))
+		return err
+	}
+
+	t, remainder, err := r.source.InitializeFromState(ctx, srcRepos)
+	if err != nil {
+		r.logger.Fatal(err.Error())
+	}
+
+	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
+
 	bars := []output.ProgressBar{
-		{Label: "Copying repos", Max: float64(len(srcRepos))},
+		{Label: "Copying repos", Max: float64(t)},
 	}
 	progress := out.Progress(bars, nil)
 	defer progress.Destroy()
-
 	var done int64
-	total := len(srcRepos)
 
 	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
-	for _, repo := range srcRepos {
-		repo := repo
-		g.Go(func() error {
-			// Create the repo on destination.
-			if !repo.Created {
-				toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
-				if err != nil {
-					repo.Failed = err.Error()
-					r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
-				} else {
-					repo.ToGitURL = toGitURL.String()
-					repo.Created = true
-				}
-				if err := r.store.SaveRepo(repo); err != nil {
-					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
-					return err
-				}
-			}
 
-			// Push the repo on destination.
-			if !repo.Pushed && repo.Created {
-				err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
-				if err != nil {
-					repo.Failed = err.Error()
-					r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
-				} else {
-					repo.Pushed = true
+	repoIter := r.source.Iterator()
+	for !repoIter.Done() && repoIter.Err() == nil {
+		repos := repoIter.Next(ctx)
+		if err = r.store.Insert(repos); err != nil {
+			r.logger.Error("failed to insert repositories from source", log.Error(err))
+		}
+
+		for _, repo := range repos {
+			repo := repo
+			g.Go(func() error {
+				// Create the repo on destination.
+				if !repo.Created {
+					toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
+					if err != nil {
+						repo.Failed = err.Error()
+						r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
+					} else {
+						repo.ToGitURL = toGitURL.String()
+						repo.Created = true
+						// If we resumed and this repo previously failed, we need to clear the failed status as it succeeded now
+						repo.Failed = ""
+					}
+					if err = r.store.SaveRepo(repo); err != nil {
+						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+						return err
+					}
 				}
-				if err := r.store.SaveRepo(repo); err != nil {
-					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
-					return err
+
+				// Push the repo on destination.
+				if !repo.Pushed && repo.Created {
+					err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
+					// state might be out of date so ignore existing repos
+					if err != nil && !strings.Contains(err.Error(), "has already been taken") {
+						repo.Failed = err.Error()
+						r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
+					} else {
+						repo.Pushed = true
+					}
+					if err = r.store.SaveRepo(repo); err != nil {
+						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+						return err
+					}
 				}
-			}
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(0, float64(done))
-			progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, total))
-			return nil
-		})
+				atomic.AddInt64(&done, 1)
+				progress.SetValue(0, float64(done))
+				progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, t))
+				return nil
+			})
+		}
 	}
+
+	if repoIter.Err() != nil {
+		return repoIter.Err()
+	}
+
 	errs := g.Wait()
-	for _, err := range errs {
-		if err != nil {
-			return err
+	for _, e := range errs {
+		if e != nil {
+			return e
 		}
 	}
 	return nil
 }
 
 func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts []GitOpt) error {
+	// Handle the testing case
+	if strings.HasPrefix(repo.ToGitURL, "https://dummy.local") {
+		return nil
+	}
+
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {
 		return err
@@ -170,7 +236,9 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	cmd := run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir)
+	// we add the repo name so that we ensure we cd to the right repo directory
+	// if we don't do this, there is no guarantee that the repo name and the git url are the same
+	cmd := run.Bash(ctx, "git clone --mirror", repo.GitURL).Dir(tmpDir)
 	for _, opt := range srcOpts {
 		cmd = opt(cmd)
 	}
@@ -193,7 +261,8 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...GitOpt) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		cmd := run.Bash(ctx, "git push destination").Dir(dir)
+		// --force, with mirror we want the remote to look exactly as we have it
+		cmd := run.Bash(ctx, "git push --mirror --force destination").Dir(dir)
 		for _, opt := range destOpts {
 			cmd = opt(cmd)
 		}

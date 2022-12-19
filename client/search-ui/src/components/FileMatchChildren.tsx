@@ -24,7 +24,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
@@ -148,10 +147,12 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.log(...codeCopiedEvent('file-match'))
     }, [telemetryService])
 
-    const getItemRef = useFocusOnLoadedMore<HTMLDivElement>(grouped.length ?? 0)
-
     return (
-        <div className={styles.fileMatchChildren} data-testid="file-match-children">
+        <div
+            className={styles.fileMatchChildren}
+            data-testid="file-match-children"
+            data-selectable-search-results-group="true"
+        >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
 
             {/* Line matches */}
@@ -177,7 +178,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
-                                ref={getItemRef(index)}
+                                data-selectable-search-result="true"
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}

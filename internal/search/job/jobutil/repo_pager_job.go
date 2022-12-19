@@ -85,6 +85,8 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 	repoResolver := repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	pager := func(page *repos.Resolved) error {
+		page.MaybeSendStats(stream)
+
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
 			clients.Logger,

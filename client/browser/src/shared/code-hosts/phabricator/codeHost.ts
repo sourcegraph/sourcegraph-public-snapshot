@@ -54,35 +54,41 @@ const adjustCharacter = (position: Position, adjustment: number): Position => ({
     character: position.character + adjustment,
 })
 
-const getPositionAdjuster = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({ direction, codeView, position }) =>
-    fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
-        map(lines => {
-            const codeElement = diffDomFunctions.getCodeElementFromLineNumber(codeView, position.line, position.part)
-            if (!codeElement) {
-                throw new Error('(adjustPosition) could not find code element for line provided')
-            }
+const getPositionAdjuster =
+    (
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) =>
+        fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
+            map(lines => {
+                const codeElement = diffDomFunctions.getCodeElementFromLineNumber(
+                    codeView,
+                    position.line,
+                    position.part
+                )
+                if (!codeElement) {
+                    throw new Error('(adjustPosition) could not find code element for line provided')
+                }
 
-            const textContentInfo = getTextContent(codeElement)
+                const textContentInfo = getTextContent(codeElement)
 
-            const documentLineContent = textContentInfo.textContent
-            const actualLineContent = lines[position.line - 1]
+                const documentLineContent = textContentInfo.textContent
+                const actualLineContent = lines[position.line - 1]
 
-            // See if we should adjust for whitespace changes.
-            const convertSpaces = convertSpacesToTabs(actualLineContent, documentLineContent)
+                // See if we should adjust for whitespace changes.
+                const convertSpaces = convertSpacesToTabs(actualLineContent, documentLineContent)
 
-            // Whether the adjustment should add or subtract from the given position.
-            const modifier = direction === AdjustmentDirection.CodeViewToActual ? -1 : 1
+                // Whether the adjustment should add or subtract from the given position.
+                const modifier = direction === AdjustmentDirection.CodeViewToActual ? -1 : 1
 
-            return convertSpaces
-                ? adjustCharacter(
-                      position,
-                      (spacesToTabsAdjustment(documentLineContent) + textContentInfo.adjust) * modifier
-                  )
-                : adjustCharacter(position, textContentInfo.adjust * modifier)
-        })
-    )
+                return convertSpaces
+                    ? adjustCharacter(
+                          position,
+                          (spacesToTabsAdjustment(documentLineContent) + textContentInfo.adjust) * modifier
+                      )
+                    : adjustCharacter(position, textContentInfo.adjust * modifier)
+            })
+        )
 
 export const commitCodeView = {
     dom: diffDomFunctions,

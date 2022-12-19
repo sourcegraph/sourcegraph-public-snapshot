@@ -2,8 +2,10 @@
     flex: 1;
     min-height: 0;
     position: relative;
+    isolation: isolate;
+
     display: grid;
-    gap: 0.75rem;
+    grid-template-areas: 'chart';
 
     // Hack for generating a proper scoped css nested class
     // see https://css-tricks.com/using-sass-control-scope-bem-naming/
@@ -14,6 +16,7 @@
         grid-template-areas:
             'chart'
             'legend';
+        gap: 0.75rem;
 
         // Chart section can grow and take all space if we don't have any legends
         // Legends section can grow until the chart section is bigger than 12rem.
@@ -22,7 +25,6 @@
         &#{ $self }--horizontal {
             grid-template-areas: 'chart legend';
             grid-template-columns: auto minmax(10rem, 30%);
-            grid-template-rows: auto;
 
             .legend-list {
                 flex-wrap: nowrap;
@@ -35,7 +37,17 @@
 .responsive-container {
     grid-area: chart;
     position: relative;
+
+    // Without overflow hidden parent size container measures sizes
+    // incorrectly within the chart containers.
     overflow: hidden;
+
+    // Since this container has overflow hidden inner chart block focus ring
+    // styles is cutting off, re-add focus ring styles on this block instead
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
 
     &:hover,
     &:focus-within {
@@ -53,7 +65,6 @@
 
 .legend-list-container {
     grid-area: legend;
-    overflow: hidden;
 
     &::-webkit-scrollbar {
         width: 0.25rem;
@@ -78,6 +89,9 @@
     font-weight: normal;
     font-size: inherit;
     text-align: left;
+    line-height: inherit;
+    display: flex;
+    border: none;
 }
 
 .alert-overlay {

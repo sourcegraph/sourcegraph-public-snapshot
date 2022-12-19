@@ -2,8 +2,7 @@ import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FormGroup,
@@ -41,7 +40,9 @@ export interface InsightsDashboardCreationContentProps {
 /**
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
-export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
+export const InsightsDashboardCreationContent: React.FunctionComponent<
+    InsightsDashboardCreationContentProps
+> = props => {
     const { initialValues, owners, onSubmit, children } = props
 
     const { licensed } = useUiFeatures()

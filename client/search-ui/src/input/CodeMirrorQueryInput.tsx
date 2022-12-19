@@ -9,7 +9,6 @@ import {
     StateEffect,
     StateField,
     Prec,
-    RangeSetBuilder,
     MapMode,
     Compartment,
     Range,
@@ -35,7 +34,7 @@ import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegr
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
@@ -56,6 +55,7 @@ import {
     setQueryParseOptions,
     parsedQuery,
 } from './codemirror/parsedQuery'
+import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { QueryInputProps } from './QueryInput'
 
@@ -330,89 +330,90 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * "Core" codemirror query input component. Provides the basic behavior such as
  * theming, syntax highlighting and token info.
  */
-export const CodeMirrorQueryInput: React.FunctionComponent<
-    React.PropsWithChildren<CodeMirrorQueryInputProps>
-> = React.memo(
-    ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
-        // This is using state instead of a ref because `useRef` doesn't cause a
-        // re-render when the ref is attached, but we need that so that
-        // `useCodeMirror` is called again and the editor is actually created.
-        // See https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node
-        const [container, setContainer] = useState<HTMLDivElement | null>(null)
-        const externalExtensions = useMemo(() => new Compartment(), [])
-        const themeExtension = useMemo(() => new Compartment(), [])
+export const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<CodeMirrorQueryInputProps>> =
+    React.memo(
+        ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
+            // This is using state instead of a ref because `useRef` doesn't cause a
+            // re-render when the ref is attached, but we need that so that
+            // `useCodeMirror` is called again and the editor is actually created.
+            // See https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node
+            const [container, setContainer] = useState<HTMLDivElement | null>(null)
+            const externalExtensions = useMemo(() => new Compartment(), [])
+            const themeExtension = useMemo(() => new Compartment(), [])
 
-        const editor = useCodeMirror(
-            container,
-            value,
-            useMemo(
-                () => [
-                    keymap.of(historyKeymap),
-                    keymap.of(defaultKeymap),
-                    history(),
-                    themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
-                    parseInputAsQuery({ patternType, interpretComments }),
-                    queryDiagnostic(),
-                    // The precedence of these extensions needs to be decreased
-                    // explicitly, otherwise the diagnostic indicators will be
-                    // hidden behind the highlight background color
-                    Prec.low([
-                        tokenInfo(),
-                        highlightFocusedFilter,
-                        // It baffels me but the syntax highlighting extension has
-                        // to come after the highlight current filter extension,
-                        // otherwise CodeMirror keeps steeling the focus.
-                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                        querySyntaxHighlighting,
-                    ]),
-                    externalExtensions.of(extensions),
-                ],
-                // patternType and interpretComments are updated via a
-                // transaction since there is no need to re-initialize all
-                // extensions
-                // The extensions passed in via `extensions` are update via a
-                // compartment
-                // The theme (`isLightTheme`) is also updated via a compartment
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [themeExtension, externalExtensions]
+            const editor = useCodeMirror(
+                container,
+                value,
+                useMemo(
+                    () => [
+                        keymap.of(historyKeymap),
+                        keymap.of(defaultKeymap),
+                        history(),
+                        themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
+                        parseInputAsQuery({ patternType, interpretComments }),
+                        queryDiagnostic(),
+                        // The precedence of these extensions needs to be decreased
+                        // explicitly, otherwise the diagnostic indicators will be
+                        // hidden behind the highlight background color
+                        Prec.low([
+                            tokenInfo(),
+                            highlightFocusedFilter,
+                            // It baffels me but the syntax highlighting extension has
+                            // to come after the highlight current filter extension,
+                            // otherwise CodeMirror keeps steeling the focus.
+                            // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                            querySyntaxHighlighting,
+                        ]),
+                        externalExtensions.of(extensions),
+                    ],
+                    // patternType and interpretComments are updated via a
+                    // transaction since there is no need to re-initialize all
+                    // extensions
+                    // The extensions passed in via `extensions` are update via a
+                    // compartment
+                    // The theme (`isLightTheme`) is also updated via a compartment
+                    // eslint-disable-next-line react-hooks/exhaustive-deps
+                    [themeExtension, externalExtensions]
+                )
             )
-        )
 
-        // Notify parent component about editor instance. Among other things,
-        // having a reference to the editor allows other components to initiate
-        // transactions.
-        useEffect(() => {
-            if (editor) {
-                onEditorCreated?.(editor)
-            }
-        }, [editor, onEditorCreated])
+            // Notify parent component about editor instance. Among other things,
+            // having a reference to the editor allows other components to initiate
+            // transactions.
+            useEffect(() => {
+                if (editor) {
+                    onEditorCreated?.(editor)
+                }
+            }, [editor, onEditorCreated])
 
-        // Update pattern type and/or interpretComments when changed
-        useEffect(() => {
-            editor?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
-        }, [editor, patternType, interpretComments])
+            // Update pattern type and/or interpretComments when changed
+            useEffect(() => {
+                editor?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
+            }, [editor, patternType, interpretComments])
 
-        // Update theme if it changes
-        useEffect(() => {
-            editor?.dispatch({ effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)) })
-        }, [editor, themeExtension, isLightTheme])
+            // Update theme if it changes
+            useEffect(() => {
+                editor?.dispatch({
+                    effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)),
+                })
+            }, [editor, themeExtension, isLightTheme])
 
-        // Update external extensions if they changed
-        useEffect(() => {
-            editor?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
-        }, [editor, externalExtensions, extensions])
+            // Update external extensions if they changed
+            useEffect(() => {
+                editor?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
+            }, [editor, externalExtensions, extensions])
 
-        return (
-            <TraceSpanProvider name="CodeMirrorQueryInput">
-                <div
-                    ref={setContainer}
-                    className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
-                    data-editor="codemirror6"
-                />
-            </TraceSpanProvider>
-        )
-    }
-)
+            return (
+                <TraceSpanProvider name="CodeMirrorQueryInput">
+                    <div
+                        ref={setContainer}
+                        className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                        data-editor="codemirror6"
+                    />
+                </TraceSpanProvider>
+            )
+        }
+    )
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
@@ -517,28 +518,7 @@ const [callbacksField, setCallbacks] = createUpdateableField<
 ])
 
 // Defines decorators for syntax highlighting
-const tokenDecorators: { [key: string]: Decoration } = {}
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
-
-// Chooses the correct decorator for the decorated token
-const decoratedToDecoration = (token: DecoratedToken): Decoration => {
-    const className = toCSSClassName(token)
-    const decorator = tokenDecorators[className]
-    return decorator || (tokenDecorators[className] = Decoration.mark({ class: className }))
-}
-
-// This provides syntax highlighting. This is a custom solution so that we an
-// use our existing query parser (instead of using CodeMirror's language
-// support). That's not to say that we couldn't properly integrate with
-// CodeMirror's language system with more effort.
-const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens], state => {
-    const tokens = state.facet(decoratedTokens)
-    const builder = new RangeSetBuilder<Decoration>()
-    for (const token of tokens) {
-        builder.add(token.range.start, token.range.end, decoratedToDecoration(token))
-    }
-    return builder.finish()
-})
 
 class PlaceholderWidget extends WidgetType {
     constructor(private placeholder: string) {
@@ -776,11 +756,11 @@ function getTokensTooltipInformation(
                 break
             case 'keyword':
                 switch (token.kind) {
-                    case KeywordKind.Or:
+                    case KeywordKind.And:
                         values.push('Find results which match both the left and the right expression.')
                         range = token.range
                         break
-                    case KeywordKind.And:
+                    case KeywordKind.Or:
                         values.push('Find results which match the left or the right expression.')
                         range = token.range
                         break

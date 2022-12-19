@@ -5,7 +5,6 @@ import formatISO from 'date-fns/formatISO'
 import subYears from 'date-fns/subYears'
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -16,10 +15,10 @@ import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Heading, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading, Link, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -44,17 +43,25 @@ import styles from './TreePage.module.scss'
 const TREE_COMMITS_PER_PAGE = 10
 
 const TREE_COMMITS_QUERY = gql`
-    query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
+    query TreeCommits(
+        $repo: ID!
+        $revspec: String!
+        $first: Int
+        $filePath: String
+        $after: String
+        $afterCursor: String
+    ) {
         node(id: $repo) {
             __typename
             ... on Repository {
                 commit(rev: $revspec) {
-                    ancestors(first: $first, path: $filePath, after: $after) {
+                    ancestors(first: $first, path: $filePath, after: $after, afterCursor: $afterCursor) {
                         nodes {
                             ...GitCommitFields
                         }
                         pageInfo {
                             hasNextPage
+                            endCursor
                         }
                     }
                 }
@@ -84,7 +91,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [showOlderCommits, setShowOlderCommits] = useState(false)
     const after = useMemo(() => (showOlderCommits ? null : formatISO(subYears(Date.now(), 1))), [showOlderCommits])
 
-    const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useShowMorePagination<
         TreeCommitsResult,
         TreeCommitsVariables,
         GitCommitFields
@@ -96,6 +103,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             first: TREE_COMMITS_PER_PAGE,
             filePath,
             after,
+            afterCursor: null,
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -114,6 +122,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         },
         options: {
             fetchPolicy: 'cache-first',
+            useAlternateAfterCursor: true,
         },
     })
 

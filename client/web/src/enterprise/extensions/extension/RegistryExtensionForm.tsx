@@ -1,9 +1,8 @@
 import * as React from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Input, Select } from '@sourcegraph/wildcard'
+import { Input, Select, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     EXTENSION_NAME_MAX_LENGTH,

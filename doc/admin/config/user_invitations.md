@@ -14,7 +14,7 @@ If `"allowSignup": false,` is configured in any of your authentication providers
 
 ## Disabling
 
-You can disable user invitations for all users by setting the feature flag to _false_ in your **global user settings** at e.g. https://sourcegraph.example.com/site-admin/global-settings with the following:
+You can disable user invitations for all users by setting the feature flag to _false_ in your **global user settings** at e.g. `https://sourcegraph.example.com/site-admin/global-settings` with the following:
 
 ```json
 {
@@ -26,6 +26,6 @@ You can disable user invitations for all users by setting the feature flag to _f
 
 Teams on Sourcegraph.com can disable this via **Your organizations** > **Settings** using the same configuration.
 
-Individuals can disable this in their user settings at https://sourcegraph.example.com/user/settings using the same configuration.
+Individuals can disable this in their user settings at `https://sourcegraph.example.com/user/settings` using the same configuration.
 
 If you have any feedback on how we can improve this feature, please [let us know](mailto:feedback@sourcegraph.com)!

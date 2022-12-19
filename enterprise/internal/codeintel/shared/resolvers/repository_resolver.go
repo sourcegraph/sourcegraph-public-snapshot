@@ -71,10 +71,10 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (resolverstubs.GitCommitResolver, error) {
-	return r.commitFromID(ctx, args, commitID)
+	return r.commitFromID(args, commitID)
 }
 
-func (r *RepositoryResolver) commitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
+func (r *RepositoryResolver) commitFromID(args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
 	resolver := NewGitCommitResolver(r, commitID)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec

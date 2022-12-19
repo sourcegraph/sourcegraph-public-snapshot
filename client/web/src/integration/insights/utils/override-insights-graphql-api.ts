@@ -46,12 +46,6 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 nodes: [],
             },
         }),
-        HasAvailableCodeInsight: () => ({
-            insightViews: {
-                __typename: 'InsightViewConnection',
-                nodes: [{ id: '001', isFrozen: false }],
-            },
-        }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
         InsightsDashboards: () => ({
             currentUser: {
@@ -90,6 +84,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 organizations: {
                     nodes: [
                         {
+                            __typename: 'Org',
                             name: 'test organization',
                             displayName: 'Test organization',
                             id: 'Org_test_id',

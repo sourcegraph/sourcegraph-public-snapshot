@@ -43,7 +43,7 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
                 __typename: 'User',
                 executorSecrets: {
                     pageInfo: { hasNextPage: false, endCursor: null },
-                    totalCount: 4,
+                    totalCount: 5,
                     nodes: [
                         // Global secret.
                         {
@@ -121,6 +121,24 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
                                 namespaceName: 'jdoe',
                                 url: '/users/jdoe',
                             },
+                            overwritesGlobalSecret: false,
+                            scope: ExecutorSecretScope.BATCHES,
+                            createdAt: subDays(new Date(), 1).toISOString(),
+                            updatedAt: subDays(new Date(), 1).toISOString(),
+                        },
+                        // Docker auth secret.
+                        {
+                            __typename: 'ExecutorSecret',
+                            id: 'secret5',
+                            creator: {
+                                __typename: 'User',
+                                id: 'user1',
+                                displayName: 'John Doe',
+                                url: '/users/jdoe',
+                                username: 'jdoe',
+                            },
+                            key: 'DOCKER_AUTH_CONFIG',
+                            namespace: null,
                             overwritesGlobalSecret: false,
                             scope: ExecutorSecretScope.BATCHES,
                             createdAt: subDays(new Date(), 1).toISOString(),

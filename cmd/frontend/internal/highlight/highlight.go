@@ -108,6 +108,11 @@ type Params struct {
 
 	// Format defines the response format of the syntax highlighting request.
 	Format gosyntect.HighlightResponseType
+
+	// KeepFinalNewline keeps the final newline of the file content when highlighting.
+	// By default we drop the last newline to match behavior of common code hosts
+	// that don't render another line at the end of the file.
+	KeepFinalNewline bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -340,7 +345,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// TODO: It could be worthwhile to log that this language isn't supported or something
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
-	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 
@@ -392,7 +397,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// This matches other online code reading tools such as e.g. GitHub; see
 	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
 	// background.
-	code = strings.TrimSuffix(code, "\n")
+	if !p.KeepFinalNewline {
+		code = strings.TrimSuffix(code, "\n")
+	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)

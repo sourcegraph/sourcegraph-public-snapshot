@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -48,7 +49,7 @@ func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentR
 
 func TestForNextAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	ctx := context.Background()
@@ -170,7 +171,7 @@ func TestForNextAndFinish(t *testing.T) {
 func TestNew(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	repos := []int32{1, 6, 10, 22, 55}
@@ -189,7 +190,7 @@ func TestNew(t *testing.T) {
 
 func TestForNextRetryAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
 	ctx := context.Background()
@@ -334,6 +335,41 @@ func TestForNextRetryAndFinish(t *testing.T) {
 
 		jsonify, _ := json.Marshal(itr)
 		autogold.Want("ensure retry that exceeds max attempts calls back", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
+	})
+
+	t.Run("ensure retry with all terminal errors has no errors to continue", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		repos := []int32{1, 5}
+		itr, _ := NewWithClock(ctx, store, clock, repos)
+		var seen []api.RepoID
+
+		addError(ctx, itr, store, t)
+		addError(ctx, itr, store, t)
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, 2, len(itr.errors))
+		require.Equal(t, float64(0), itr.PercentComplete)
+		itr.retryRepos = nil
+
+		testForNextRetryAndFinish(t, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+			clock.Advance(time.Second * 1)
+
+			err := fn(ctx, store, errors.New("second err"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return true
+		}, IterationConfig{MaxFailures: 1, OnTerminal: func(ctx context.Context, store *basestore.Store, repoId int32, terminalErr error) error {
+			return nil
+		}})
+
+		require.False(t, itr.HasErrors())
+		require.Equal(t, 2, len(itr.terminalErrors))
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, float64(0), itr.PercentComplete)
+
+		jsonify, _ := json.Marshal(itr)
+		autogold.Want("ensure retry with only terminal errors reports no errors", `{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 

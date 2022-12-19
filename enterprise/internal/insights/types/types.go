@@ -41,6 +41,7 @@ type InsightViewSeries struct {
 	GroupBy                       *string
 	BackfillAttempts              int32
 	SupportsAugmentation          bool
+	RepositoryCriteria            *string
 }
 
 type Insight struct {
@@ -107,6 +108,7 @@ type InsightSeries struct {
 	GroupBy                    *string
 	BackfillAttempts           int32
 	SupportsAugmentation       bool
+	RepositoryCriteria         *string
 }
 
 type IntervalUnit string
@@ -128,20 +130,6 @@ const (
 	LanguageStats  GenerationMethod = "language-stats"
 	MappingCompute GenerationMethod = "mapping-compute"
 )
-
-type DirtyQuery struct {
-	ID      int
-	Query   string
-	ForTime time.Time
-	DirtyAt time.Time
-	Reason  string
-}
-
-type DirtyQueryAggregate struct {
-	Count   int
-	ForTime time.Time
-	Reason  string
-}
 
 type Dashboard struct {
 	ID           int
@@ -179,12 +167,6 @@ const (
 	Line PresentationType = "LINE"
 	Pie  PresentationType = "PIE"
 )
-
-type Frame struct {
-	From   time.Time
-	To     time.Time
-	Commit string
-}
 
 type SeriesSortMode string
 

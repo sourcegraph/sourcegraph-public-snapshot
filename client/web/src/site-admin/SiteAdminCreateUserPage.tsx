@@ -5,10 +5,9 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, logger } from '@sourcegraph/common'
-import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Label, H2, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'

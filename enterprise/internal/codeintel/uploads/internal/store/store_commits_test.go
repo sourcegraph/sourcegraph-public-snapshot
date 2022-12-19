@@ -27,7 +27,7 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -81,7 +81,7 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -123,7 +123,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -169,7 +169,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 func TestGetOldestCommitDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
@@ -254,7 +254,7 @@ func TestHasCommit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	testCases := []struct {
 		repositoryID int
@@ -328,8 +328,9 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				num_parts,
 				uploaded_parts,
 				upload_size,
-				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				associated_index_id,
+				content_type
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -349,6 +350,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.ContentType,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -378,7 +380,8 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
 				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
 				upload_size = COALESCE(%s, upload_size),
-				associated_index_id = COALESCE(%s, associated_index_id)
+				associated_index_id = COALESCE(%s, associated_index_id),
+				content_type = COALESCE(NULLIF(%s, ''), content_type)
 			WHERE id = %s
 		`,
 			upload.Commit,
@@ -398,7 +401,9 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
-			upload.ID)
+			upload.ContentType,
+			upload.ID,
+		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error while updating upload: %s", err)
@@ -426,15 +431,34 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	if strings.HasPrefix(name, "DELETED-") {
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
-
-	query := sqlf.Sprintf(
+	insertRepoQuery := sqlf.Sprintf(
 		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
 		deletedAt,
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
+	}
+
+	status := "cloned"
+	if strings.HasPrefix(name, "DELETED-") {
+		status = "not_cloned"
+	}
+	updateGitserverRepoQuery := sqlf.Sprintf(
+		`UPDATE gitserver_repos SET clone_status = %s WHERE repo_id = %s`,
+		status,
+		id,
+	)
+	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
+	}
+}
+
+func updateGitserverUpdatedAt(t *testing.T, db database.DB, now time.Time) {
+	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s`, now.Add(-time.Hour*24))
+	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
 	}
 }
 
