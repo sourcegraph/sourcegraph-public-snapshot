@@ -173,7 +173,7 @@ func (r *BackgroundJobResolver) Routines() []*RoutineResolver {
 
 func (r *RoutineResolver) Name() string { return r.routine.Name }
 
-func (r *RoutineResolver) Type() string { return r.routine.Type }
+func (r *RoutineResolver) Type() types.BackgroundRoutineType { return r.routine.Type }
 
 func (r *RoutineResolver) Description() string { return r.routine.Description }
 

@@ -8261,13 +8261,18 @@ type BackgroundRoutine {
 }
 
 """
-Enum of the possible scopes for executor secrets.
+Enum of the possible background routine types
 """
 enum BackgroundRoutineType {
     """
-    The secret is meant to be used with Batch Changes execution.
+    Periodic routine
     """
-    BATCHES
+    PERIODIC
+
+    """
+    Periodic routine with metrics set up
+    """
+    PERIODIC_WITH_METRICS
 }
 
 """

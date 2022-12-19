@@ -17,7 +17,7 @@ import (
 type Monitorable interface {
 	BackgroundRoutine
 	Name() string
-	Type() string
+	Type() types.BackgroundRoutineType
 	Description() string
 	JobName() string
 	SetJobName(string)
@@ -31,15 +31,19 @@ type RedisMonitor struct {
 	hostName string
 }
 
+// seenTimeout signifies the maximum time to have no records of a host, job, or routine.
+// After this time, we consider them nonexistent, and they'll be removed
+const seenTimeout = 5 * 24 * time.Hour // 5 days
+
 const keyPrefix = "background-routine-monitor:"
 
 // backgroundRoutineForRedis represents a single routine in a background job, and is used for serialization to/from Redis.
 type backgroundRoutineForRedis struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	JobName     string `json:"jobName"`
-	Description string `json:"description"`
-	LastSeen    string `json:"lastSeen"`
+	Name        string                      `json:"name"`
+	Type        types.BackgroundRoutineType `json:"type"`
+	JobName     string                      `json:"jobName"`
+	Description string                      `json:"description"`
+	LastSeen    string                      `json:"lastSeen"`
 }
 
 func NewRedisMonitor(logger log.Logger) *RedisMonitor {
@@ -59,7 +63,7 @@ func (m *RedisMonitor) RegistrationDone() {
 	}
 
 	// Save/update all known host names
-	err = m.rcache.SetHashItem("knownHostNames", m.hostName, time.Now().String())
+	err = m.rcache.SetHashItem("knownHostNames", m.hostName, time.Now().Format(time.RFC3339))
 	if err != nil {
 		m.logger.Error("failed to save known host names", log.Error(err))
 	}
@@ -84,7 +88,7 @@ func saveKnownJobNames(c *rcache.Cache, routines []*Monitorable) error {
 
 	// Save/update job names
 	for _, jobName := range allJobNames {
-		err := c.SetHashItem("knownJobNames", jobName, time.Now().String())
+		err := c.SetHashItem("knownJobNames", jobName, time.Now().Format(time.RFC3339))
 		if err != nil {
 			return err
 		}
@@ -102,8 +106,19 @@ func GetKnownJobNames(c *rcache.Cache) ([]string, error) {
 
 	// Get the values only from the map
 	var values []string
-	for _, value := range jobNames {
-		values = append(values, value)
+	for jobName, lastSeenString := range jobNames {
+		// Parse last seen time
+		lastSeen, err := time.Parse(time.RFC3339, lastSeenString)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse job last seen time")
+		}
+
+		// Check if job is still running
+		if time.Since(lastSeen) > seenTimeout {
+			continue
+		}
+
+		values = append(values, jobName)
 	}
 
 	// Sort the values
@@ -120,10 +135,23 @@ func GetKnownHostNames(c *rcache.Cache) ([]string, error) {
 
 	// Get the values only from the map
 	var values []string
-	for _, value := range hostNames {
-		values = append(values, value)
+	for hostName, lastSeenString := range hostNames {
+		// Parse last seen time
+		lastSeen, err := time.Parse(time.RFC3339, lastSeenString)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse host last seen time")
+		}
 
+		// Check if job is still running
+		if time.Since(lastSeen) > seenTimeout {
+			continue
+		}
+
+		values = append(values, hostName)
 	}
+
+	// Sort the values
+	sort.Strings(values)
 
 	return values, nil
 }

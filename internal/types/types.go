@@ -1797,10 +1797,10 @@ type BackgroundJobInfo struct {
 
 // BackgroundRoutineInfo contains information about a background routine.
 type BackgroundRoutineInfo struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	JobName     string `json:"jobName"`
-	Description string `json:"description"`
+	Name        string                `json:"name"`
+	Type        BackgroundRoutineType `json:"type"`
+	JobName     string                `json:"jobName"`
+	Description string                `json:"description"`
 	Instances   []BackgroundRoutineInstanceInfo
 	RecentRuns  []BackgroundRoutineRun
 	Stats       BackgroundRoutineRunStats
@@ -1832,3 +1832,10 @@ type BackgroundRoutineRunStats struct {
 	AvgDurationMs int32 `json:"avgDurationMs"`
 	MaxDurationMs int32 `json:"maxDurationMs"`
 }
+
+type BackgroundRoutineType string
+
+const (
+	BackgroundRoutinePeriodic            BackgroundRoutineType = "PERIODIC"
+	BackgroundRoutinePeriodicWithMetrics BackgroundRoutineType = "PERIODIC_WITH_METRICS"
+)

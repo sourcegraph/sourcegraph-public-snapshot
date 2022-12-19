@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/log"
 
@@ -20,7 +21,7 @@ import (
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	name        string
-	routineType string
+	routineType types.BackgroundRoutineType
 	description string
 	jobName     string
 	interval    time.Duration
@@ -181,11 +182,11 @@ func (r *PeriodicGoroutine) Name() string {
 	return r.name
 }
 
-func (r *PeriodicGoroutine) Type() string {
+func (r *PeriodicGoroutine) Type() types.BackgroundRoutineType {
 	if r.operation != nil {
-		return "periodicGoroutineWithMetrics"
+		return types.BackgroundRoutinePeriodicWithMetrics
 	} else {
-		return "periodicGoroutine"
+		return types.BackgroundRoutinePeriodic
 	}
 }
 
