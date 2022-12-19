@@ -6,7 +6,7 @@ On the **Outbound requests** page, site admins can see all outbound requests gen
 
 ## Prerequisites
 
-This document assumes you are a [site administrator](../index.md).
+This document assumes you are a [site admin](../index.md).
 
 ## Enabling the logs
 
