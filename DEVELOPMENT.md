@@ -71,8 +71,9 @@ We adhere to the [general Sourcegraph principles for testing](https://docs.sourc
     3. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
 5.  Make the necessary updates to the main Sourcegraph repo:
     1. Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
-    2. Commit the changes, and open a PR.
- 6. Once the version bump PR is merged and the commit is live on dotcom, check that the [curl commands in the README](README.markdown#installation) also fetch the new latest version.
+    2. Update the reference documentation by running `go generate ./doc/cli/references`.
+    3. Commit the changes, and open a PR.
+ 6. Once the version bump PR is merged and the commit is live on dotcom, check that the [curl commands in the README](README.md#installation) also fetch the new latest version.
 
 ### Patch releases
 
