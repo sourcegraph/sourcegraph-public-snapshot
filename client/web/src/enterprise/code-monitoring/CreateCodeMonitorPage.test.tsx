@@ -9,6 +9,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CreateCodeMonitorVariables } from '../../graphql-operations'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
@@ -29,8 +30,10 @@ describe('CreateCodeMonitorPage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         history,
-        deleteCodeMonitor: sinon.spy(() => NEVER),
-        createCodeMonitor: sinon.spy(() => of({ description: mockCodeMonitor.node.description })),
+        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
+        createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
+            of({ description: mockCodeMonitor.node.description })
+        ),
         isLightTheme: true,
         isSourcegraphDotCom: false,
     }

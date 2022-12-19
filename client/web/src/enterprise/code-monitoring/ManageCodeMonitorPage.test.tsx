@@ -5,11 +5,16 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
-import { MonitorEmailPriority } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
-import { FetchCodeMonitorResult } from '../../graphql-operations'
+import {
+    FetchCodeMonitorResult,
+    MonitorEditInput,
+    MonitorEditTriggerInput,
+    MonitorEditActionInput,
+    MonitorEmailPriority,
+} from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
@@ -34,17 +39,22 @@ describe('ManageCodeMonitorPage', () => {
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
-        fetchUserCodeMonitors: sinon.spy(),
-        updateCodeMonitor: sinon.spy(() => of(mockCodeMonitorFields)),
-        fetchCodeMonitor: sinon.spy(() => of(mockCodeMonitor as FetchCodeMonitorResult)),
+        updateCodeMonitor: sinon.spy(
+            (
+                monitorEditInput: MonitorEditInput,
+                triggerEditInput: MonitorEditTriggerInput,
+                actionEditInput: MonitorEditActionInput[]
+            ) => of(mockCodeMonitorFields)
+        ),
+        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor as FetchCodeMonitorResult)),
         match: {
             params: { id: 'test-id' },
             isExact: true,
             path: history.location.pathname,
             url: 'https://sourcegraph.com',
         },
-        toggleCodeMonitorEnabled: sinon.spy(() => of({ id: 'test', enabled: true })),
-        deleteCodeMonitor: sinon.spy(() => NEVER),
+        toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
+        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
         isLightTheme: false,
         isSourcegraphDotCom: false,
     }

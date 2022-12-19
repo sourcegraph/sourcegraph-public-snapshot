@@ -56,11 +56,11 @@ describe('FileMatchChildren', () => {
             file matches because falling back to plaintext rendering is most
             ideal.
         */
-        const fetchHighlightedFileLineRanges = sinon.spy(() => of(HIGHLIGHTED_FILE_LINES))
+        const fetchHighlightedFileLineRanges = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
         renderWithBrandedContext(
             <FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />
         )
         sinon.assert.calledOnce(fetchHighlightedFileLineRanges)
-        sinon.assert.calledWithMatch<unknown[]>(fetchHighlightedFileLineRanges, { disableTimeout: false })
+        sinon.assert.calledWithMatch(fetchHighlightedFileLineRanges, { disableTimeout: false })
     })
 })
