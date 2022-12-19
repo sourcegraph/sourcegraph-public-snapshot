@@ -181,7 +181,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <Button
                         role="checkbox"
                         aria-checked={isSeriesSelected(`${item.id}`)}
-                        className={styles.legendListItem}
+                        className={classNames(styles.legendListItem, styles.legendListItemInteractive)}
                         onPointerEnter={() => setHoveredId(`${item.id}`)}
                         onPointerLeave={() => setHoveredId(undefined)}
                         onFocus={() => setHoveredId(`${item.id}`)}
@@ -196,7 +196,9 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
+                    {item.alerts.length > 0 && (
+                        <InsightSeriesIncompleteAlert series={item} className={styles.legendIncompleteAlert} />
+                    )}
                 </LegendItem>
             ))}
         </LegendList>
