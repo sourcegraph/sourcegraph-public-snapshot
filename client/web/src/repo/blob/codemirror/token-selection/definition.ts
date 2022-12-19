@@ -12,7 +12,7 @@ import { blobPropsFacet } from '..'
 import { isInteractiveOccurrence, occurrenceAtMouseEvent, OccurrenceMap, rangeToCmSelection } from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
-import { tooltipPositionForOccurrence } from '../utils'
+import { preciseOffsetAtCoords } from '../utils'
 
 import { hoveredOccurrenceField } from './hover'
 import { isModifierKey, isModifierKeyHeld } from './modifier-click'
@@ -90,7 +90,7 @@ export function goToDefinitionOnMouseEvent(
     if (!isModifierKey(event) && !options?.isLongClick) {
         return
     }
-    const spinner = new LoadingTooltip(view, tooltipPositionForOccurrence(view, atEvent.occurrence))
+    const spinner = new LoadingTooltip(view, preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY }))
     goToDefinitionAtOccurrence(view, atEvent.occurrence)
         .then(
             ({ handler }) => handler(atEvent.position),

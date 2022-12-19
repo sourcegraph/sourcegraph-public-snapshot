@@ -2,7 +2,6 @@ import { Line, SelectionRange, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { Position } from '@sourcegraph/extension-api-types'
-import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 /**
@@ -194,12 +193,4 @@ export function isValidLineRange(
     }
 
     return true
-}
-
-/**
- * Returns the document position at which to show the tooltip for the given occurrence.
- */
-export function tooltipPositionForOccurrence(view: EditorView, occurrence: Occurrence): number {
-    const cmLine = view.state.doc.line(occurrence.range.start.line + 1)
-    return cmLine.from + occurrence.range.start.character
 }

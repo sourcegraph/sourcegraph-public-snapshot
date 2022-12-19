@@ -6,7 +6,6 @@ import { syntaxHighlight } from '../highlight'
 import { occurrenceAtPosition, positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
 import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-import { tooltipPositionForOccurrence } from '../utils'
 
 import { goToDefinitionAtOccurrence } from './definition'
 import { closeHover, getHoverTooltip, hoverField, showHover } from './hover'
@@ -44,7 +43,9 @@ const keybindings: readonly KeyBinding[] = [
             if (!occurrence) {
                 return false
             }
-            const spinner = new LoadingTooltip(view, tooltipPositionForOccurrence(view, occurrence))
+            const cmLine = view.state.doc.line(occurrence.range.start.line + 1)
+            const cmPos = cmLine.from + occurrence.range.start.character
+            const spinner = new LoadingTooltip(view, cmPos)
             goToDefinitionAtOccurrence(view, occurrence)
                 .then(
                     ({ handler, url }) => {
