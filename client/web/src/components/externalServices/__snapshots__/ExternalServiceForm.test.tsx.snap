@@ -9,7 +9,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="label w-100 mb-0"
+        class="label label mb-0"
       >
         <div
           class="mb-2"
@@ -57,7 +57,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="label w-100 mb-0"
+        class="label label mb-0"
       >
         <div
           class="mb-2"
@@ -105,7 +105,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       class="form-group"
     >
       <label
-        class="label w-100 mb-0"
+        class="label label mb-0"
       >
         <div
           class="mb-2"
