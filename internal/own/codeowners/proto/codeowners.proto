@@ -1,5 +1,5 @@
 // Representation of code ownership for a repository as described in a CODEOWNERS file.
-// As various orgainzations have slightly different syntax for CODEOWNERS files,
+// As various implementations have slightly different syntax for CODEOWNERS files,
 // this algebraic representation servers as a unified funnel.
 
 syntax = "proto3";
@@ -74,7 +74,7 @@ message Rule {
 // Owner is denoted by either a handle or an email.
 // We expect exactly one of the fields to be present.
 message Owner {
-    // Handle can refer to a user or a group defined externally.
+    // Handle can refer to a user or a team defined externally.
     // In the text config, a handle always starts with `@`.
     // In can contain `/` to denote a sub-group.
     // The string content of the handle stored here DOES NOT CONTAIN
