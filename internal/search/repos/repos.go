@@ -635,7 +635,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				addBackendsMissing(repos.Crashes)
 
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.Minimal {
+				for repoID, repo := range repos.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
 					for _, branch := range repo.Branches {
 						for _, inputRev := range inputRevs {

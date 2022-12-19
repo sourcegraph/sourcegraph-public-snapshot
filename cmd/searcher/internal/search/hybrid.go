@@ -331,7 +331,7 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 		return "", false, err
 	}
 
-	for _, v := range resp.Minimal {
+	for _, v := range resp.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		return api.CommitID(v.Branches[0].Version), true, nil
 	}
 

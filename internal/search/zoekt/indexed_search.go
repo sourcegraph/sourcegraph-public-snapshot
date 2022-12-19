@@ -228,7 +228,7 @@ func PartitionRepos(
 	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	tr.LogFields(
 		otlog.Int("indexed.size", len(indexed.RepoRevs)),

@@ -581,8 +581,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		aggregate.Crashes += r.rl.Crashes
 		aggregate.Stats.Add(&r.rl.Stats)
 
-		for k, v := range r.rl.Minimal {
-			aggregate.Minimal[k] = v
+		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		}
 	}
 
