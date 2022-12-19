@@ -151,8 +151,8 @@ func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r ba
 }
 
 // ChangesetSpecsFromCache takes the execution.Result and generates all changeset specs from it.
-func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string, fallbackAuthor *batches.ChangesetSpecAuthor) ([]*batches.ChangesetSpec, error) {
-	if result.Diff == "" {
+func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string, binaryDiffs bool, fallbackAuthor *batches.ChangesetSpecAuthor) ([]*batches.ChangesetSpec, error) {
+	if len(result.Diff) == 0 {
 		return []*batches.ChangesetSpec{}, nil
 	}
 
@@ -170,5 +170,5 @@ func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, resu
 		Path:             path,
 	}
 
-	return batches.BuildChangesetSpecs(input, fallbackAuthor)
+	return batches.BuildChangesetSpecs(input, binaryDiffs, fallbackAuthor)
 }

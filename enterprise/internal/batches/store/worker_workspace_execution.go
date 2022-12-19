@@ -228,6 +228,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		},
 		latestStepResult.Value,
 		workspace.Path,
+		true,
 		author,
 	)
 	if err != nil {

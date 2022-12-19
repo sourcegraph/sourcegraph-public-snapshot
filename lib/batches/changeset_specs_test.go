@@ -162,7 +162,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input, tt.author)
+			have, err := BuildChangesetSpecs(tt.input, true, tt.author)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {

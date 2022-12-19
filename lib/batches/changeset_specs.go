@@ -42,7 +42,7 @@ type ChangesetSpecAuthor struct {
 	Email string
 }
 
-func BuildChangesetSpecs(input *ChangesetSpecInput, fallbackAuthor *ChangesetSpecAuthor) ([]*ChangesetSpec, error) {
+func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAuthor *ChangesetSpecAuthor) ([]*ChangesetSpec, error) {
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{

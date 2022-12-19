@@ -84,7 +84,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 		}
 
 		if author.Name != user.DisplayName {
-			t.Fatalf("found incorrect email: %v", author)
+			t.Fatalf("found incorrect name: %v", author)
 		}
 	})
 }
