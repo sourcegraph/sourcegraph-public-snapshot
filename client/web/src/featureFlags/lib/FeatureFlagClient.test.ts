@@ -1,5 +1,4 @@
-import delay from 'delay'
-import { of } from 'rxjs'
+import { combineLatest, of } from 'rxjs'
 import sinon, { SinonSpy } from 'sinon'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -30,65 +29,72 @@ describe('FeatureFlagClient', () => {
         sinon.assert.notCalled(mockRequestGraphQL)
     })
 
-    it('returns [true] response from API call for feature flag evaluation', async () => {
+    it('returns [true] response from API call for feature flag evaluation', done => {
         const client = new FeatureFlagClient(mockRequestGraphQL)
         expect.assertions(1)
 
-        const value = await client.get(ENABLED_FLAG)
-        expect(value).toBe(true)
-        sinon.assert.calledOnce(mockRequestGraphQL)
+        client.get(ENABLED_FLAG).subscribe(value => {
+            expect(value).toBe(true)
+            sinon.assert.calledOnce(mockRequestGraphQL)
+            done()
+        })
     })
 
-    it('returns [false] response from API call for feature flag evaluation', async () => {
+    it('returns [false] response from API call for feature flag evaluation', done => {
+        const client = new FeatureFlagClient(mockRequestGraphQL, 1000)
+        expect.assertions(1)
+
+        client.get(DISABLED_FLAG).subscribe({
+            next: value => {
+                expect(value).toBe(false)
+                sinon.assert.calledOnce(mockRequestGraphQL)
+                done()
+            },
+            complete: () => {
+                throw new Error('Should not complete when passing refetch interval')
+            },
+        })
+    })
+
+    it('returns [defaultValue] correctly', done => {
         const client = new FeatureFlagClient(mockRequestGraphQL)
         expect.assertions(1)
 
-        const value = await client.get(DISABLED_FLAG)
-        expect(value).toBe(false)
-        sinon.assert.calledOnce(mockRequestGraphQL)
+        client.get(NON_EXISTING_FLAG).subscribe(value => {
+            expect(value).toBeNull()
+            sinon.assert.calledOnce(mockRequestGraphQL)
+            done()
+        })
     })
 
-    it('returns [defaultValue] correctly', async () => {
+    it('completes after single fall if no refetch interval passed', done => {
         const client = new FeatureFlagClient(mockRequestGraphQL)
         expect.assertions(1)
 
-        const value = await client.get(NON_EXISTING_FLAG)
-        expect(value).toBeNull()
-        sinon.assert.calledOnce(mockRequestGraphQL)
+        client.get(ENABLED_FLAG).subscribe({
+            next: value => {
+                expect(value).toBe(true)
+            },
+            complete: () => {
+                sinon.assert.calledOnce(mockRequestGraphQL)
+                done()
+            },
+        })
     })
 
-    it('makes only single API call per feature flag evaluation', async () => {
+    it('makes only single API call per feature flag evaluation', done => {
         const client = new FeatureFlagClient(mockRequestGraphQL)
         expect.assertions(2)
 
-        const [value1, value2] = await Promise.all([client.get(ENABLED_FLAG), client.get(ENABLED_FLAG)])
-        expect(value1).toBe(true)
-        expect(value2).toBe(true)
-        sinon.assert.calledOnce(mockRequestGraphQL)
+        combineLatest([client.get(ENABLED_FLAG), client.get(ENABLED_FLAG)]).subscribe(([value1, value2]) => {
+            expect(value1).toBe(true)
+            expect(value2).toBe(true)
+            sinon.assert.calledOnce(mockRequestGraphQL)
+            done()
+        })
     })
 
-    it('makes only single API call per feature flag if cache is still active', async () => {
-        const cacheTimeToLive = 10
-        const client = new FeatureFlagClient(mockRequestGraphQL, cacheTimeToLive)
-        expect.assertions(3)
-
-        const value1 = await client.get(ENABLED_FLAG)
-        expect(value1).toBe(true)
-
-        await delay(5)
-
-        const value2 = await client.get(ENABLED_FLAG)
-        expect(value2).toBe(true)
-        sinon.assert.calledOnce(mockRequestGraphQL)
-
-        await delay(5)
-
-        const value3 = await client.get(ENABLED_FLAG)
-        expect(value3).toBe(true)
-        sinon.assert.calledTwice(mockRequestGraphQL)
-    })
-
-    it('updates on new/different value after cache TTL', async () => {
+    it('updates on new/different value', done => {
         let index = -1
         const mockRequestGraphQL = sinon.spy((query, variables) => {
             index++
@@ -98,17 +104,18 @@ describe('FeatureFlagClient', () => {
             })
         }) as typeof requestGraphQL & SinonSpy
 
-        const cacheTimeToLive = 1
-        const client = new FeatureFlagClient(mockRequestGraphQL, cacheTimeToLive)
+        const client = new FeatureFlagClient(mockRequestGraphQL, 1)
         expect.assertions(2)
 
-        const value1 = await client.get(ENABLED_FLAG)
-        expect(value1).toBe(true)
-
-        await delay(cacheTimeToLive)
-
-        const value2 = await client.get(ENABLED_FLAG)
-        expect(value2).toBe(false)
+        client.get(ENABLED_FLAG).subscribe(value => {
+            if (index === 0) {
+                expect(value).toBe(true)
+            } else {
+                expect(value).toBe(false)
+                sinon.assert.calledTwice(mockRequestGraphQL)
+                done()
+            }
+        })
     })
 
     describe('local feature flag overrides', () => {
@@ -116,36 +123,42 @@ describe('FeatureFlagClient', () => {
             // remove local overrides
             localStorage.clear()
         })
-        it('returns [false] override if it exists', async () => {
+        it('returns [false] override if it exists', done => {
             const client = new FeatureFlagClient(mockRequestGraphQL)
             setFeatureFlagOverride(ENABLED_FLAG, false)
             expect.assertions(1)
 
-            const value = await client.get(ENABLED_FLAG)
-            expect(value).toBe(false)
-            sinon.assert.notCalled(mockRequestGraphQL)
+            client.get(ENABLED_FLAG).subscribe(value => {
+                expect(value).toBe(false)
+                sinon.assert.calledOnce(mockRequestGraphQL)
+                done()
+            })
         })
 
-        it('returns [true] override if it exists', async () => {
+        it('returns [true] override if it exists', done => {
             const client = new FeatureFlagClient(mockRequestGraphQL)
             setFeatureFlagOverride(DISABLED_FLAG, true)
             expect.assertions(1)
 
-            const value = await client.get(DISABLED_FLAG)
-            expect(value).toBe(true)
-            sinon.assert.notCalled(mockRequestGraphQL)
+            client.get(DISABLED_FLAG).subscribe(value => {
+                expect(value).toBe(true)
+                sinon.assert.calledOnce(mockRequestGraphQL)
+                done()
+            })
         })
 
-        it('does not use non-boolean override', async () => {
+        it('does not use non-boolean override', done => {
             const client = new FeatureFlagClient(mockRequestGraphQL)
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             setFeatureFlagOverride(DISABLED_FLAG, 'something else')
             expect.assertions(1)
 
-            const value = await client.get(DISABLED_FLAG)
-            expect(value).toBe(false)
-            sinon.assert.calledOnce(mockRequestGraphQL)
+            client.get(DISABLED_FLAG).subscribe(value => {
+                expect(value).toBe(false)
+                sinon.assert.calledOnce(mockRequestGraphQL)
+                done()
+            })
         })
     })
 })
