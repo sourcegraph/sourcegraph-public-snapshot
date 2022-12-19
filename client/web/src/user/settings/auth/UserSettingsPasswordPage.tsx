@@ -4,10 +4,19 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Input, Label } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Link,
+    Alert,
+    Input,
+    Label,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'

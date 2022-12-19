@@ -2,10 +2,9 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Link, Code, Label, Text, Input } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'

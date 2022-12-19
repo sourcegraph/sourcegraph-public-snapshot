@@ -7,7 +7,6 @@ import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -28,6 +27,7 @@ import {
     H2,
     H3,
     Text,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

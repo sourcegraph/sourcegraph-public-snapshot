@@ -7,11 +7,21 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Link,
+    Alert,
+    Icon,
+    Code,
+    H3,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -144,7 +154,7 @@ const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID
             }
             details={
                 <>
-                    {error && <ErrorAlert className="mt-4 mb-0" error={error} icon={false} />}
+                    {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
                     {loading && (
                         <Alert className="mt-4 mb-0" variant="primary">
                             <LoadingSpinner /> Triggering reindex ...

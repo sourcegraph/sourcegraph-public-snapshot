@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input } from '../Input'
 
 import { LoaderInput } from './LoaderInput'
 

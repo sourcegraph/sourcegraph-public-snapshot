@@ -4,7 +4,6 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -21,6 +20,7 @@ import {
     PageHeader,
     Text,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import {

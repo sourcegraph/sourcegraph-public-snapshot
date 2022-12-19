@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     Container,
@@ -19,6 +18,7 @@ import {
     Input,
     Text,
     Code,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

@@ -4,12 +4,11 @@ import { Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, H3, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'

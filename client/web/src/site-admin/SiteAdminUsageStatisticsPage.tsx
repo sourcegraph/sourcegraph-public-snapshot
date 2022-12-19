@@ -5,9 +5,8 @@ import format from 'date-fns/format'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, H2, H3, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
+import { Icon, H2, H3, Tooltip, Button, AnchorLink, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
