@@ -6880,6 +6880,9 @@ type MockEnterpriseDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *EnterpriseDBOrgsFunc
+	// PermissionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Permissions.
+	PermissionsFunc *EnterpriseDBPermissionsFunc
 	// PermsFunc is an instance of a mock function object controlling the
 	// behavior of the method Perms.
 	PermsFunc *EnterpriseDBPermsFunc
@@ -6934,6 +6937,9 @@ type MockEnterpriseDB struct {
 	// UserExternalAccountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserExternalAccounts.
 	UserExternalAccountsFunc *EnterpriseDBUserExternalAccountsFunc
+	// UserRolesFunc is an instance of a mock function object controlling
+	// the behavior of the method UserRoles.
+	UserRolesFunc *EnterpriseDBUserRolesFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *EnterpriseDBUsersFunc
@@ -7062,6 +7068,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		PermissionsFunc: &EnterpriseDBPermissionsFunc{
+			defaultHook: func() (r0 database.PermissionStore) {
+				return
+			},
+		},
 		PermsFunc: &EnterpriseDBPermsFunc{
 			defaultHook: func() (r0 PermsStore) {
 				return
@@ -7149,6 +7160,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: func() (r0 database.UserExternalAccountsStore) {
+				return
+			},
+		},
+		UserRolesFunc: &EnterpriseDBUserRolesFunc{
+			defaultHook: func() (r0 database.UserRoleStore) {
 				return
 			},
 		},
@@ -7289,6 +7305,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Orgs")
 			},
 		},
+		PermissionsFunc: &EnterpriseDBPermissionsFunc{
+			defaultHook: func() database.PermissionStore {
+				panic("unexpected invocation of MockEnterpriseDB.Permissions")
+			},
+		},
 		PermsFunc: &EnterpriseDBPermsFunc{
 			defaultHook: func() PermsStore {
 				panic("unexpected invocation of MockEnterpriseDB.Perms")
@@ -7377,6 +7398,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: func() database.UserExternalAccountsStore {
 				panic("unexpected invocation of MockEnterpriseDB.UserExternalAccounts")
+			},
+		},
+		UserRolesFunc: &EnterpriseDBUserRolesFunc{
+			defaultHook: func() database.UserRoleStore {
+				panic("unexpected invocation of MockEnterpriseDB.UserRoles")
 			},
 		},
 		UsersFunc: &EnterpriseDBUsersFunc{
@@ -7473,6 +7499,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: i.Orgs,
 		},
+		PermissionsFunc: &EnterpriseDBPermissionsFunc{
+			defaultHook: i.Permissions,
+		},
 		PermsFunc: &EnterpriseDBPermsFunc{
 			defaultHook: i.Perms,
 		},
@@ -7526,6 +7555,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: i.UserExternalAccounts,
+		},
+		UserRolesFunc: &EnterpriseDBUserRolesFunc{
+			defaultHook: i.UserRoles,
 		},
 		UsersFunc: &EnterpriseDBUsersFunc{
 			defaultHook: i.Users,
@@ -9753,6 +9785,105 @@ func (c EnterpriseDBOrgsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnterpriseDBPermissionsFunc describes the behavior when the Permissions
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBPermissionsFunc struct {
+	defaultHook func() database.PermissionStore
+	hooks       []func() database.PermissionStore
+	history     []EnterpriseDBPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// Permissions delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Permissions() database.PermissionStore {
+	r0 := m.PermissionsFunc.nextHook()()
+	m.PermissionsFunc.appendCall(EnterpriseDBPermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Permissions method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBPermissionsFunc) SetDefaultHook(hook func() database.PermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Permissions method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBPermissionsFunc) PushHook(hook func() database.PermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBPermissionsFunc) SetDefaultReturn(r0 database.PermissionStore) {
+	f.SetDefaultHook(func() database.PermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBPermissionsFunc) PushReturn(r0 database.PermissionStore) {
+	f.PushHook(func() database.PermissionStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBPermissionsFunc) nextHook() func() database.PermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBPermissionsFunc) appendCall(r0 EnterpriseDBPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBPermissionsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBPermissionsFunc) History() []EnterpriseDBPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBPermissionsFuncCall is an object that describes an invocation
+// of method Permissions on an instance of MockEnterpriseDB.
+type EnterpriseDBPermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.PermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // EnterpriseDBPermsFunc describes the behavior when the Perms method of the
 // parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBPermsFunc struct {
@@ -11582,6 +11713,105 @@ func (c EnterpriseDBUserExternalAccountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBUserExternalAccountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBUserRolesFunc describes the behavior when the UserRoles
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBUserRolesFunc struct {
+	defaultHook func() database.UserRoleStore
+	hooks       []func() database.UserRoleStore
+	history     []EnterpriseDBUserRolesFuncCall
+	mutex       sync.Mutex
+}
+
+// UserRoles delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) UserRoles() database.UserRoleStore {
+	r0 := m.UserRolesFunc.nextHook()()
+	m.UserRolesFunc.appendCall(EnterpriseDBUserRolesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserRoles method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBUserRolesFunc) SetDefaultHook(hook func() database.UserRoleStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserRoles method of the parent MockEnterpriseDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBUserRolesFunc) PushHook(hook func() database.UserRoleStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBUserRolesFunc) SetDefaultReturn(r0 database.UserRoleStore) {
+	f.SetDefaultHook(func() database.UserRoleStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBUserRolesFunc) PushReturn(r0 database.UserRoleStore) {
+	f.PushHook(func() database.UserRoleStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBUserRolesFunc) nextHook() func() database.UserRoleStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBUserRolesFunc) appendCall(r0 EnterpriseDBUserRolesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBUserRolesFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBUserRolesFunc) History() []EnterpriseDBUserRolesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBUserRolesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBUserRolesFuncCall is an object that describes an invocation
+// of method UserRoles on an instance of MockEnterpriseDB.
+type EnterpriseDBUserRolesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UserRoleStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBUserRolesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBUserRolesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

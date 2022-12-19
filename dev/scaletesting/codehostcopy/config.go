@@ -8,14 +8,14 @@ import (
 )
 
 var schema = `#CodeHost: {
-	kind:             "github" | "gitlab" | "bitbucket"
+	kind:             "github" | "gitlab" | "bitbucket" | "dummy" 
 	token:            string
 	url:              string
 	path:             string
 	username?:        string
 	password?:        string
-    sshKey:           string
-    repositoryLimit?: number
+  sshKey?:           string
+  repositoryLimit?: number
 }
 
 #Config: {

@@ -84,6 +84,9 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
                             }
                         }
                     }
+                    host {
+                        name
+                    }
                 }
             }
         `,
@@ -295,7 +298,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 {this.state.textSearchIndex.status && (
                                     <>
                                         <H3>Statistics</H3>
-                                        <table className={classNames('table mb-0', styles.stats)}>
+                                        <table className={classNames('table mb-3', styles.stats)}>
                                             <tbody>
                                                 <tr>
                                                     <th>Last indexed at</th>
@@ -340,6 +343,25 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                         </table>
                                     </>
                                 )}
+                                <>
+                                    <H3>Indexserver</H3>
+                                    {this.state.textSearchIndex.host ? (
+                                        <table className={classNames('table mb-0', styles.stats)}>
+                                            <tbody>
+                                                <tr>
+                                                    <th>Hostname</th>
+                                                    <td>{this.state.textSearchIndex.host.name}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <Alert className="mb-0" variant="info">
+                                            We were unable to determine the indexserver that hosts the index. However,
+                                            this does not impact indexed search. The root cause is most likely a
+                                            limitation of the runtime environment.
+                                        </Alert>
+                                    )}
+                                </>
                             </>
                         ) : (
                             <Alert className="mb-0" variant="info">

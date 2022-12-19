@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/ksuid"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -26,10 +25,8 @@ import (
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -222,9 +219,9 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: discovery.NewCachedGitFirstEverCommit().GitFirstEverCommit,
+		gitFirstEverCommit: gitserver.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			return gitserver.NewGitCommitClient(frontend).RecentCommits(ctx, repoName, target, "")
 		},
 	}
 }
@@ -521,7 +518,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if errors.Is(err, discovery.EmptyRepoErr) {
+		if errors.Is(err, gitserver.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, softErr // repository is empty
 		}
@@ -695,31 +692,4 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job
-}
-
-// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
-// using a map, and entries are never evicted because they are expected to be small and in general
-// unchanging.
-type cachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
-
-	mu    sync.Mutex
-	cache map[api.RepoName]*gitdomain.Commit
-}
-
-func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cache == nil {
-		c.cache = map[api.RepoName]*gitdomain.Commit{}
-	}
-	if cached, ok := c.cache[repoName]; ok {
-		return cached, nil
-	}
-	entry, err := c.impl(ctx, db, repoName)
-	if err != nil {
-		return nil, err
-	}
-	c.cache[repoName] = entry
-	return entry, nil
 }

@@ -18,7 +18,6 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
-    resultsFound: true,
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,

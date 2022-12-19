@@ -109,8 +109,24 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			}
 			for _, folder := range folders {
 				if folder.Title == opts.GrafanaFolder {
-					gclog.Debug("Found existing folder", log.Int("folder.id", folder.ID))
-					grafanaFolderID = folder.ID
+					gclog.Debug("Found existing folder matching name",
+						log.String("folder.uid", folder.UID),
+						log.Int("folder.id", folder.ID))
+
+					if folder.UID != opts.GrafanaFolder {
+						// If UID does not match the folder name, then delete it so it can
+						// be recreated. We want folders to have stable UIDs
+						_, err := grafanaClient.DeleteFolderByUID(ctx, folder.UID)
+						if err != nil {
+							return errors.Wrapf(err, "Unable to delete misnamed folder %q",
+								folder.UID)
+						}
+					} else {
+						// Mark as found
+						grafanaFolderID = folder.ID
+					}
+
+					break
 				}
 			}
 
@@ -119,6 +135,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				gclog.Debug("No existing folder found, creating a new one")
 				folder, err := grafanaClient.CreateFolder(ctx, grafanasdk.Folder{
 					Title: opts.GrafanaFolder,
+					UID:   opts.GrafanaFolder,
 				})
 				if err != nil {
 					return errors.Wrapf(err, "Error creating new folder %s", opts.GrafanaFolder)
@@ -290,7 +307,7 @@ func generateAll(
 	}
 
 	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.Reload {
+	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Reload {
 		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
 			With(log.String("instance", opts.PrometheusURL))
 		// Reload all Prometheus rules
