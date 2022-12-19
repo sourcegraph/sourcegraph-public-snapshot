@@ -314,7 +314,7 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 func addExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return cli.NewExitError("no migration name specified", 1)
+		return cli.Exit("no migration name specified", 1)
 	}
 	if len(args) != 1 {
 		return cli.Exit("too many arguments", 1)
