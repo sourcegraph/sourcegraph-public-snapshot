@@ -196,7 +196,9 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
+                    {item.alerts.length > 0 && (
+                        <InsightSeriesIncompleteAlert series={item} className={styles.legendIncompleteAlert} />
+                    )}
                 </LegendItem>
             ))}
         </LegendList>
