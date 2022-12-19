@@ -38,6 +38,28 @@ func TestServiceConnections(t *testing.T) {
 	}
 }
 
+func TestServiceConnectionsZoektsIntentionallyEmpty(t *testing.T) {
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+
+	// We override the URLs so service discovery doesn't try and talk to k8s
+	oldSearcherURL := searcherURL
+	t.Cleanup(func() { searcherURL = oldSearcherURL })
+	searcherURL = "http://searcher:3181"
+
+	indexedKey := "INDEXED_SEARCH_SERVERS"
+	oldIndexedSearchServers := os.Getenv(indexedKey)
+	t.Cleanup(func() { os.Setenv(indexedKey, oldIndexedSearchServers) })
+	os.Setenv(indexedKey, "")
+
+	sc := serviceConnections(logtest.Scoped(t))
+	if sc.Zoekts != nil {
+		t.Errorf("Expected zero Zoekt service connections but identified %v", len(sc.Zoekts))
+	}
+	if !sc.ZoektsIntentionallyEmpty {
+		t.Error("Expected ZoektsIntentionallyEmpty")
+	}
+}
+
 func TestWriteSiteConfig(t *testing.T) {
 	db := database.NewMockDB()
 	confStore := database.NewMockConfStore()
