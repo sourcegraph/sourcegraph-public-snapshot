@@ -207,6 +207,40 @@ func (q ComputeInsightQuery) String() string {
 	return string(q)
 }
 
+// WithCount adds or updates a count paramerter for an existing query
+func (q BasicQuery) WithCount(count string) (BasicQuery, error) {
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldCount,
+			Value:      count,
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	plan, err := searchquery.Pipeline(searchquery.Init(string(q), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(upsertParams))
+
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
 var QueryNotSupported = errors.New("query not supported")
 
 // IsSingleRepoQuery - Returns a boolean indicating if the query provided targets only a single repo.
