@@ -3209,6 +3209,52 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.team_members"
+```
+   Column   |           Type           | Collation | Nullable |                 Default                  
+------------+--------------------------+-----------+----------+------------------------------------------
+ id         | integer                  |           | not null | nextval('team_members_id_seq'::regclass)
+ team_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+ user_id    | integer                  |           | not null | 
+Indexes:
+    "team_members_pkey" PRIMARY KEY, btree (id)
+    "team_members_team_id_user_id_key" UNIQUE CONSTRAINT, btree (team_id, user_id)
+Foreign-key constraints:
+    "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.teams"
+```
+    Column    |           Type           | Collation | Nullable |              Default              
+--------------+--------------------------+-----------+----------+-----------------------------------
+ id           | integer                  |           | not null | nextval('teams_id_seq'::regclass)
+ name         | citext                   |           | not null | 
+ display_name | text                     |           |          | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
+ creator_id   | integer                  |           | not null | 
+ readonly     | boolean                  |           | not null | false
+ parent_team  | integer                  |           |          | 
+Indexes:
+    "teams_pkey" PRIMARY KEY, btree (id)
+    "teams_name" UNIQUE, btree (name)
+Check constraints:
+    "teams_display_name_check" CHECK (char_length(display_name) <= 255)
+    "teams_name_check" CHECK (char_length(name::text) <= 255)
+    "teams_name_check1" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+Foreign-key constraints:
+    "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "teams_parent_team_fkey" FOREIGN KEY (parent_team) REFERENCES teams(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_parent_team_fkey" FOREIGN KEY (parent_team) REFERENCES teams(id) ON DELETE CASCADE
+
+```
+
 # Table "public.temporary_settings"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                     
@@ -3453,6 +3499,8 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "team_members" CONSTRAINT "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

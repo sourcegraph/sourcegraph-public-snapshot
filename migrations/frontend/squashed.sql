@@ -3763,6 +3763,48 @@ CREATE SEQUENCE survey_responses_id_seq
 
 ALTER SEQUENCE survey_responses_id_seq OWNED BY survey_responses.id;
 
+CREATE TABLE team_members (
+    id integer NOT NULL,
+    team_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    user_id integer NOT NULL
+);
+
+CREATE SEQUENCE team_members_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE team_members_id_seq OWNED BY team_members.id;
+
+CREATE TABLE teams (
+    id integer NOT NULL,
+    name citext NOT NULL,
+    display_name text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    creator_id integer NOT NULL,
+    readonly boolean DEFAULT false NOT NULL,
+    parent_team integer,
+    CONSTRAINT teams_display_name_check CHECK ((char_length(display_name) <= 255)),
+    CONSTRAINT teams_name_check CHECK ((char_length((name)::text) <= 255)),
+    CONSTRAINT teams_name_check1 CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+);
+
+CREATE SEQUENCE teams_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
+
 CREATE TABLE temporary_settings (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -4140,6 +4182,10 @@ ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq':
 
 ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_responses_id_seq'::regclass);
 
+ALTER TABLE ONLY team_members ALTER COLUMN id SET DEFAULT nextval('team_members_id_seq'::regclass);
+
+ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
+
 ALTER TABLE ONLY temporary_settings ALTER COLUMN id SET DEFAULT nextval('temporary_settings_id_seq'::regclass);
 
 ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_credentials_id_seq'::regclass);
@@ -4510,6 +4556,15 @@ ALTER TABLE ONLY settings
 
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY team_members
+    ADD CONSTRAINT team_members_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY team_members
+    ADD CONSTRAINT team_members_team_id_user_id_key UNIQUE (team_id, user_id);
+
+ALTER TABLE ONLY teams
+    ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_pkey PRIMARY KEY (id);
@@ -4938,6 +4993,8 @@ CREATE INDEX settings_user_id_idx ON settings USING btree (user_id);
 CREATE UNIQUE INDEX sub_repo_permissions_repo_id_user_id_version_uindex ON sub_repo_permissions USING btree (repo_id, user_id, version);
 
 CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id);
+
+CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 
@@ -5411,6 +5468,18 @@ ALTER TABLE ONLY sub_repo_permissions
 
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY team_members
+    ADD CONSTRAINT team_members_team_id_fkey FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY team_members
+    ADD CONSTRAINT team_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY teams
+    ADD CONSTRAINT teams_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY teams
+    ADD CONSTRAINT teams_parent_team_fkey FOREIGN KEY (parent_team) REFERENCES teams(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
