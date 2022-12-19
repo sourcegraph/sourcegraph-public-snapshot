@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, InputHTMLAttributes, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
@@ -13,52 +13,65 @@ import { generateRepoFiltersQuery } from './utils/generate-repo-filters-query'
 
 import styles from './InsightQueryInput.module.scss'
 
-export interface InsightQueryInputProps extends Omit<MonacoFieldProps, 'queryState' | 'onChange'> {
+type NativeInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'onBlur'>
+type MonacoPublicProps = Omit<MonacoFieldProps, 'queryState' | 'onChange' | 'aria-invalid'>
+
+export interface InsightQueryInputProps extends MonacoPublicProps, NativeInputProps {
     value: string
     patternType: SearchPatternType
     repositories?: string
     onChange: (value: string) => void
 }
 
-export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputProps>((props, reference) => {
-    const { children, patternType, repositories = '', value, onChange, ...otherProps } = props
-    const previewQuery = `${generateRepoFiltersQuery(repositories)} ${props.value}`.trim()
+export const InsightQueryInput = forwardRef<HTMLInputElement, PropsWithChildren<InsightQueryInputProps>>(
+    (props, reference) => {
+        const {
+            value,
+            patternType,
+            repositories = '',
+            'aria-invalid': ariaInvalid,
+            onChange,
+            children,
+            ...otherProps
+        } = props
+        const previewQuery = `${generateRepoFiltersQuery(repositories)} ${props.value}`.trim()
 
-    const handleOnChange = (queryState: QueryState): void => {
-        if (queryState.query !== value) {
-            onChange(queryState.query)
+        const handleOnChange = (queryState: QueryState): void => {
+            if (queryState.query !== value) {
+                onChange(queryState.query)
+            }
         }
-    }
 
-    return (
-        <div className={styles.root}>
-            {children ? (
-                <Monaco.Root className={classNames(props.className, styles.inputWrapper)}>
+        return (
+            <div className={styles.root}>
+                {children ? (
+                    <Monaco.Root className={classNames(props.className, styles.inputWrapper)}>
+                        <Monaco.Field
+                            {...otherProps}
+                            ref={reference}
+                            patternType={patternType}
+                            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+                            className={props.className}
+                            onChange={handleOnChange}
+                        />
+
+                        {children}
+                    </Monaco.Root>
+                ) : (
                     <Monaco.Field
                         {...otherProps}
                         ref={reference}
                         patternType={patternType}
                         queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
-                        className={props.className}
+                        className={classNames(styles.inputWrapper, props.className)}
                         onChange={handleOnChange}
                     />
+                )}
 
-                    {children}
-                </Monaco.Root>
-            ) : (
-                <Monaco.Field
-                    {...otherProps}
-                    ref={reference}
-                    patternType={patternType}
-                    queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
-                    className={classNames(styles.inputWrapper, props.className)}
-                    onChange={handleOnChange}
-                />
-            )}
-
-            <Monaco.PreviewLink query={previewQuery} patternType={patternType} className={styles.previewButton}>
-                Preview results <LinkExternalIcon size={18} />
-            </Monaco.PreviewLink>
-        </div>
-    )
-})
+                <Monaco.PreviewLink query={previewQuery} patternType={patternType} className={styles.previewButton}>
+                    Preview results <LinkExternalIcon size={18} />
+                </Monaco.PreviewLink>
+            </div>
+        )
+    }
+)

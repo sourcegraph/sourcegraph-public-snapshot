@@ -10,13 +10,11 @@ export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateI
         const title = searchParameter.get('title')
         const rawSeries = JSON.parse(searchParameter.get('series') ?? '[]') as SearchBasedInsightSeries[]
         const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false, valid: true }))
-        const allRepos = searchParameter.get('allRepos')
 
-        if (repositories || title || editableSeries.length > 0 || allRepos) {
+        if (repositories || title || editableSeries.length > 0) {
             return {
                 title: title ?? '',
                 repositories: repositories ?? '',
-                allRepos: !!allRepos,
                 series: editableSeries,
             }
         }
@@ -43,11 +41,6 @@ export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>):
         switch (key) {
             case 'title':
             case 'repositories':
-            case 'allRepos': {
-                parameters.set(key, fields[key].toString())
-
-                break
-            }
             case 'series': {
                 parameters.set(key, encodeURIComponent(JSON.stringify(fields[key])))
 
