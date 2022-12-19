@@ -22,11 +22,6 @@ func TestRepoIteratorFromQuery(t *testing.T) {
 	}}
 	executor.ExecuteRepoListFunc.SetDefaultReturn(mockResponse, nil)
 
-	var names []string
-	for _, repo := range mockResponse {
-		names = append(names, string(repo.Name))
-	}
-
 	iterator, err := NewRepoIteratorFromQuery(context.Background(), "repo:repo", executor)
 	if err != nil {
 		t.Fatal(err)
