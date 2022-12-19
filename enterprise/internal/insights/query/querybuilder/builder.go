@@ -371,3 +371,9 @@ func RepositoryScopeQuery(query string) (BasicQuery, error) {
 	}
 	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
 }
+
+func MakeQueryWithRepoFilters(repositoryCriteria string, query string) (string, error) {
+	// parse repo query - it should only be with repo filters though this should have been validated before.
+	// apply repo filters to each part of the query
+	return "", nil
+}

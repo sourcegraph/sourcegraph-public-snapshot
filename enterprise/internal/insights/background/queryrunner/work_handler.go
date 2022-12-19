@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -112,8 +113,13 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
 	if series.RepositoryCriteria != nil {
-		logger.Info("global snapshot search is not yet implemented for repo scoped insights")
-		return nil
+		jobModifiedQuery, err := querybuilder.MakeQueryWithRepoFilters(*series.RepositoryCriteria, job.SearchQuery)
+		if err != nil {
+			// This should never happen as it would fail if query parsing failed, and we should have parsed it on creation.
+			return errors.Wrap(err, "making a global search for a repo search-scoped insight errored")
+		}
+		r.logger.Debug("insight repo search scoped query", log.Int("seriesId", series.ID), log.String("search query", job.SearchQuery))
+		job.SearchQuery = jobModifiedQuery
 	}
 
 	recordTime := time.Now()
