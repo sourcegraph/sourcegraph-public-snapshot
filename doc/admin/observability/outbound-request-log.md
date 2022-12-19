@@ -18,7 +18,7 @@ You can later disable it by setting `outboundRequestLogLimit` to `0`, or by remo
 
 HTTP headers that may be sensitive (such as `Authorization`) are being redacted before saving. Sensitive information is not stored in the logs.
 
-Logs are stored in memory in Redis, and are automatically cleared on a Redis instance restart or when you disable the feature.
+Logs are stored in memory in Redis with an expiration of seven days. They are automatically cleared when you disable the feature.
 
 ## Logged data
 
