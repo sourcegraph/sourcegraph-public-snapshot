@@ -631,3 +631,37 @@ func TestRepositoryScopeQuery(t *testing.T) {
 		})
 	}
 }
+
+func TestWithCount(t *testing.T) {
+	tests := []struct {
+		input BasicQuery
+		want  autogold.Value
+	}{
+		{
+			BasicQuery("repo:sourcegraph"),
+			autogold.Want("adds count", BasicQuery("repo:sourcegraph count:99")),
+		},
+		{
+			BasicQuery("repo:s or repo:l"),
+			autogold.Want("compound query", BasicQuery("(repo:s count:99 OR repo:l count:99)")),
+		},
+		{
+			BasicQuery("repo:a count:1"),
+			autogold.Want("overwrites count values", BasicQuery("repo:a count:99")),
+		},
+		{
+			BasicQuery("repo:a count:all"),
+			autogold.Want("overwrites count all", BasicQuery("repo:a count:99")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := test.input.WithCount("99")
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}
