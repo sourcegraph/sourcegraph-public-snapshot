@@ -12,10 +12,13 @@ This document assumes you are a [site administrator](../index.md).
 
 This feature is off by default. You can enable it by setting `outboundRequestLogLimit` to a non-zero value in the site config. The recommended value is `50`.
 
+You can later disable it by setting `outboundRequestLogLimit` to `0`, or by removing the setting entirely.
+
 ## Privacy
 
-HTTP headers that are considered sensitive (such as `Authorization`) are redacted.
-The logs are stored in memory in Redis and are automatically cleared on an instance restart or when you disable the feature.
+HTTP headers that may be sensitive (such as `Authorization`) are being redacted before saving. Sensitive information is not stored in the logs.
+
+Logs are stored in memory in Redis, and are automatically cleared on a Redis instance restart or when you disable the feature.
 
 ## Logged data
 
