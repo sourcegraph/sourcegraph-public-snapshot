@@ -27,7 +27,10 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
         excludeRepoRegex: '',
     },
     dashboards: { nodes: [] },
-
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Migration to new GraphQL TS types',
@@ -93,6 +96,10 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
+    },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
     },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
