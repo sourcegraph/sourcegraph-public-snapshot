@@ -49,7 +49,7 @@ export class CodeIntelTooltip implements Tooltip {
             // To prevent the "Go to definition" from delaying the loading of
             // the popover, we provide an instant result that doesn't handle the
             // "No definition found" or "You are at the definition" cases. This
-            // instant result gets dynamically replaced the actual result once
+            // instant result gets dynamically replaced the actual result onced
             // it finishes loading.
             const instantDefinitionResult: AsyncDefinitionResult = {
                 locations: [{ uri: '' }],
@@ -93,7 +93,7 @@ export class CodeIntelTooltip implements Tooltip {
                     id: 'invokeFunction',
                     title: 'Go to definition',
                     disabledTitle: noDefinitionFound ? 'No definition found' : 'You are at the definition',
-                    command: 'invokeFunction',
+                    command: 'invokeFunction-new',
                     commandArguments: [() => definition.asyncHandler()],
                 },
             },
