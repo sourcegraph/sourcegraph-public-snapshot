@@ -6,7 +6,6 @@ import * as H from 'history'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
@@ -30,6 +29,7 @@ import {
     ButtonGroup,
     Button,
     Text,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'

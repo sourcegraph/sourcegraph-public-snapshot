@@ -7,7 +7,6 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
@@ -27,6 +26,7 @@ import {
     Label,
     H3,
     Text,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'

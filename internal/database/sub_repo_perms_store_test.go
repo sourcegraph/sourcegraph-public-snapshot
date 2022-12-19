@@ -50,6 +50,41 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	}
 }
 
+func TestSubRepoPermsDeleteByUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	ctx := context.Background()
+	prepareSubRepoTestData(ctx, t, db)
+	s := db.SubRepoPerms()
+
+	userID := int32(1)
+	repoID := api.RepoID(1)
+	perms := authz.SubRepoPermissions{
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	}
+	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteByUser(ctx, userID); err != nil {
+		t.Fatal(err)
+	}
+	have, err := s.Get(ctx, userID, repoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := authz.SubRepoPermissions{}
+	if diff := cmp.Diff(&want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestSubRepoPermsUpsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -314,9 +349,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	prepareSubRepoTestData(ctx, t, db)
 
 	testSubRepoNotSupportedForRepo(ctx, t, s, 3, "perforce1", "Repo is not private, therefore sub-repo perms are not supported")
-
 	testSubRepoSupportedForRepo(ctx, t, s, 4, "perforce2", "Repo is private, therefore sub-repo perms are supported")
-
 	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms are not supported")
 }
 

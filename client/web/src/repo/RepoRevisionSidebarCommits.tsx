@@ -4,10 +4,9 @@ import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { Icon, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {

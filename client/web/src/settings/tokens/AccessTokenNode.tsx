@@ -3,10 +3,9 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import { map, mapTo } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { Timestamp } from '../../components/time/Timestamp'

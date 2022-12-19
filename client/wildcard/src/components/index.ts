@@ -3,11 +3,14 @@ export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
+export { ErrorAlert } from './ErrorAlert'
+export { ErrorMessage, renderError } from './ErrorMessage'
 export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
 export {
     Checkbox,
     FlexTextArea,
     Input,
+    LoaderInput,
     RadioButton,
     Select,
     MultiSelect,
@@ -32,6 +35,7 @@ export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList
 export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
+export { Markdown } from './Markdown'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export {

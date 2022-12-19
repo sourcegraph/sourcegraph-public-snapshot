@@ -4,9 +4,8 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { useHistory } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, CardBody, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
+import { Card, CardBody, H3, H1, Icon, Text, Code, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'

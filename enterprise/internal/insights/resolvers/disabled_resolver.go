@@ -90,3 +90,11 @@ func (r *disabledResolver) InsightViewDebug(ctx context.Context, args graphqlbac
 func (r *disabledResolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }
+
+func (r *disabledResolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphqlbackend.PreviewRepositoriesFromQueryArgs) (graphqlbackend.RepositoryPreviewPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
