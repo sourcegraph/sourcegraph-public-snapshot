@@ -20,6 +20,7 @@ import (
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	name        string
+	routineType string
 	description string
 	jobName     string
 	interval    time.Duration
@@ -29,7 +30,7 @@ type PeriodicGoroutine struct {
 	ctx         context.Context    // root context passed to the handler
 	cancel      context.CancelFunc // cancels the root context
 	finished    chan struct{}      // signals that Start has finished
-	monitor     *Monitor
+	monitor     *RedisMonitor
 }
 
 var _ Monitorable = &PeriodicGoroutine{}
@@ -144,7 +145,7 @@ loop:
 		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
 		if r.monitor != nil {
-			go (*r.monitor).LogRun(r, shutdown, err, duration)
+			go (*r.monitor).LogRun(r, duration, err)
 		}
 
 		if shutdown {
@@ -180,6 +181,14 @@ func (r *PeriodicGoroutine) Name() string {
 	return r.name
 }
 
+func (r *PeriodicGoroutine) Type() string {
+	if r.operation != nil {
+		return "periodicGoroutineWithMetrics"
+	} else {
+		return "periodicGoroutine"
+	}
+}
+
 func (r *PeriodicGoroutine) Description() string {
 	return r.description
 }
@@ -192,7 +201,7 @@ func (r *PeriodicGoroutine) SetJobName(jobName string) {
 	r.jobName = jobName
 }
 
-func (r *PeriodicGoroutine) RegisterMonitor(monitor *Monitor) {
+func (r *PeriodicGoroutine) RegisterMonitor(monitor *RedisMonitor) {
 	r.monitor = monitor
 }
 

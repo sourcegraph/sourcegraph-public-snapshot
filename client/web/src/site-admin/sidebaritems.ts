@@ -168,8 +168,8 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             source: 'server',
         },
         {
-            label: 'Workers',
-            to: '/site-admin/workers',
+            label: 'Background jobs',
+            to: '/site-admin/background-jobs',
             source: 'server',
         },
     ],

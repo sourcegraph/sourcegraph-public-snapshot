@@ -194,6 +194,56 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 	return ttl, ttl >= 0
 }
 
+// SetHashItem sets a key in a HASH.
+// If the HASH does not exist, it is created.
+// If the key already exists and is a different type, an error is returned.
+// If the hash key does not exist, it is created. If it exists, the value is overwritten.
+func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
+	_, err := c.Do("HSET", r.rkeyPrefix()+key, hashKey, hashValue)
+	return err
+}
+
+// GetHashItem gets a key in a HASH.
+func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
+	return redis.String(c.Do("HGET", r.rkeyPrefix()+key, hashKey))
+}
+
+// GetHashAll returns the members of the HASH stored at `key`, in no particular order.
+func (r *Cache) GetHashAll(key string) (map[string]string, error) {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
+	return redis.StringMap(c.Do("HGETALL", r.rkeyPrefix()+key))
+}
+
+// AddToList adds a value to the end of a list.
+// If the list does not exist, it is created.
+func (r *Cache) AddToList(key string, value string) error {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
+	_, err := c.Do("RPUSH", r.rkeyPrefix()+key, value)
+	return err
+}
+
+func (r *Cache) GetLastListItems(key string, count int32) ([]string, error) {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		_ = c.Close()
+	}(c)
+	return redis.Strings(c.Do("LRANGE", r.rkeyPrefix()+key, -count, -1))
+}
+
 // DeleteMulti deletes the given keys.
 func (r *Cache) DeleteMulti(keys ...string) {
 	for _, key := range keys {

@@ -1787,3 +1787,48 @@ type SlowRequest struct {
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
 }
+
+// BackgroundJobInfo contains information about a background job, including all its routines.
+type BackgroundJobInfo struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Routines []BackgroundRoutineInfo
+}
+
+// BackgroundRoutineInfo contains information about a background routine.
+type BackgroundRoutineInfo struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	JobName     string `json:"jobName"`
+	Description string `json:"description"`
+	Instances   []BackgroundRoutineInstanceInfo
+	RecentRuns  []BackgroundRoutineRun
+	Stats       BackgroundRoutineRunStats
+}
+
+// BackgroundRoutineInstanceInfo contains information about a background routine instance.
+// That is, a single version that's running (or ran) on a single node.
+type BackgroundRoutineInstanceInfo struct {
+	HostName      string     `json:"hostName"`
+	LastStartedAt *time.Time `json:"lastStart"`
+	LastStoppedAt *time.Time `json:"lastStop"`
+}
+
+// BackgroundRoutineRun contains information about a single run of a background routine.
+// That is, a single action that a running instance of a background routine performed.
+type BackgroundRoutineRun struct {
+	At           time.Time `json:"at"`
+	HostName     string    `json:"hostname"`
+	DurationMs   int32     `json:"durationMs"`
+	ErrorMessage string    `json:"errorMessage"`
+	StackTrace   string    `json:"stackTrace"`
+}
+
+// BackgroundRoutineRunStats contains statistics about a background routine.
+type BackgroundRoutineRunStats struct {
+	Count         int32 `json:"count"`
+	ErrorCount    int32 `json:"errorCount"`
+	MinDurationMs int32 `json:"minDurationMs"`
+	AvgDurationMs int32 `json:"avgDurationMs"`
+	MaxDurationMs int32 `json:"maxDurationMs"`
+}
