@@ -1,18 +1,21 @@
-import React, { createContext, useEffect } from 'react'
+import React, { createContext, useEffect, useMemo } from 'react'
+
+import { Observable, of, throwError } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 
 import { requestGraphQL } from '../backend/graphql'
 
+import { FeatureFlagName } from './featureFlags'
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 import { FeatureFlagClient } from './lib/FeatureFlagClient'
 import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags'
 
-interface FeatureFlagsContextValue {
-    client?: FeatureFlagClient
-}
+export const FeatureFlagsContext = createContext<{ client?: FeatureFlagClient }>({})
 
-export const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({})
+interface FeatureFlagsProviderProps {
+    isLocalOverrideEnabled?: boolean
+}
 
 /**
  * Overrides feature flag based on initial URL query parameters
@@ -48,21 +51,65 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
 })
 
 const MINUTE = 60000
-
-const featureFlagsContextValue = {
-    client: new FeatureFlagClient(requestGraphQL, MINUTE * 10),
-} satisfies FeatureFlagsContextValue
-
-interface FeatureFlagsProviderProps {
-    isLocalOverrideEnabled?: boolean
-}
-
 export const FeatureFlagsProvider: React.FunctionComponent<React.PropsWithChildren<FeatureFlagsProviderProps>> = ({
     isLocalOverrideEnabled = true,
     children,
-}) => (
-    <FeatureFlagsContext.Provider value={featureFlagsContextValue}>
-        {isLocalOverrideEnabled && <FeatureFlagsLocalOverrideAgent />}
-        {children}
-    </FeatureFlagsContext.Provider>
-)
+}) => {
+    const client = useMemo(() => new FeatureFlagClient(requestGraphQL, MINUTE), [])
+
+    return (
+        <FeatureFlagsContext.Provider value={{ client }}>
+            {isLocalOverrideEnabled && <FeatureFlagsLocalOverrideAgent />}
+            {children}
+        </FeatureFlagsContext.Provider>
+    )
+}
+
+interface MockedFeatureFlagsProviderProps {
+    overrides: Partial<Record<FeatureFlagName, boolean | Error>>
+    refetchInterval?: number
+}
+
+/**
+ * Provides mocked feature flag value for testing purposes.
+ *
+ * @example
+ * return (<MockedFeatureFlagsProvider overrides={{'my-feature-flag': true}}>
+ *              <ComponentUsingFeatureFlag />
+ *         </MockedFeatureFlagsProvider>)
+ */
+export const MockedFeatureFlagsProvider: React.FunctionComponent<
+    React.PropsWithChildren<MockedFeatureFlagsProviderProps>
+> = ({ overrides, refetchInterval, children }) => {
+    const mockRequestGraphQL = useMemo(
+        () =>
+            (
+                query: string,
+                variables: any
+            ): Observable<{
+                data: { evaluateFeatureFlag: boolean | null }
+            }> => {
+                const value = overrides[variables.flagName as FeatureFlagName]
+                if (value instanceof Error) {
+                    return throwError(value)
+                }
+
+                return of({
+                    data: { evaluateFeatureFlag: value ?? null },
+                })
+            },
+        [overrides]
+    )
+
+    const client = useMemo(
+        () => new FeatureFlagClient(mockRequestGraphQL as typeof requestGraphQL, refetchInterval),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
+    useEffect(() => {
+        client.setRequestGraphQLFunction(mockRequestGraphQL as typeof requestGraphQL)
+    }, [client, mockRequestGraphQL])
+
+    return <FeatureFlagsContext.Provider value={{ client }}>{children}</FeatureFlagsContext.Provider>
+}
