@@ -34,7 +34,7 @@ func goModGuards() *linter {
 		},
 	}
 
-	var lintGoMod = func(diffHUnks []repo.DiffHunk, maxVersions map[string]*semver.Version) error {
+	var lintGoMod = func(diffHunks []repo.DiffHunk, maxVersions map[string]*semver.Version) error {
 		failedLibs := map[string]error{}
 		for _, hunk := range diffHunks {
 			for _, l := range hunk.AddedLines {
