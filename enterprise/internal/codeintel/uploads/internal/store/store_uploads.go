@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -331,7 +332,7 @@ func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (
 	if err != nil {
 		return nil, err
 	}
-	logger.Log(log.Int("numUploads", len(uploads)))
+	logger.AddEvent("scanUploadComplete", attribute.Int("numUploads", len(uploads)))
 
 	groupedUploads := make([]shared.UploadsWithRepositoryNamespace, 1, len(uploads)+1)
 	for _, index := range uploads {
