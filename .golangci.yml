@@ -52,7 +52,6 @@ linters-settings:
   staticcheck:
     checks:
       - "all"
-      - "-SA1019" #TODO(burmudar): Mostly because of opentracing deprecatio
   forbidigo:
     forbid:
       # Use errors.Newf instead
