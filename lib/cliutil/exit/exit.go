@@ -1,4 +1,4 @@
-package cliutil
+package exit
 
 import "github.com/urfave/cli/v2"
 
