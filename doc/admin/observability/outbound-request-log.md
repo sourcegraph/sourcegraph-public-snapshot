@@ -38,6 +38,6 @@ This data is logged and displayed by the feature:
 
 To recreate a request for debugging, you can copy the cURL command for any request by clicking the "Copy curl" button. Then you can paste the command into your terminal and run it, or paste it to something like [Postman](https://www.postman.com/) for further debugging.
 
-Keep in mind that some headers might be redacted (you'll see the word "REDACTED" in their place, in which case you'll need to add the missing pieces manually.
+Keep in mind that some headers might be redacted (you'll see the word "REDACTED" in their place), in which case you'll need to add the missing pieces manually.
 
 Note: You can set the `redactOutboundRequestHeaders` [site config](../config/site_config#redactOutboundRequestHeaders) option to `false` to disable the redaction of headers and make the "Copy curl" function more convenient. But for security reasons, this setting is only respected in development environments. 
