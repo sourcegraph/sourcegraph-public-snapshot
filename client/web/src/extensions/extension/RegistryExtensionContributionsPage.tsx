@@ -3,12 +3,11 @@ import * as React from 'react'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { H3, Code, Text } from '@sourcegraph/wildcard'
+import { H3, Code, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -29,7 +28,7 @@ interface ContributionGroup {
 
 const ContributionsTable: React.FunctionComponent<
     React.PropsWithChildren<{ contributionGroups: ContributionGroup[]; history: H.History }>
-> = ({ contributionGroups, history }) => (
+> = ({ contributionGroups }) => (
     <div>
         {contributionGroups.length === 0 && (
             <Text>This extension doesn't define any settings or actions. No configuration is required to use it.</Text>

@@ -3,18 +3,18 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { createLinkClickHandler } from './utils/linkClickHandler'
+import { createLinkClickHandler } from '../../utils'
 
 import styles from './Markdown.module.scss'
 
-interface Props {
+interface MarkdownProps {
     wrapper?: 'div' | 'span'
     dangerousInnerHTML: string
     className?: string
     testId?: string
 }
 
-export const Markdown = React.forwardRef<HTMLElement, Props>(
+export const Markdown = React.forwardRef<HTMLElement, MarkdownProps>(
     ({ wrapper: RootComponent = 'div', className, dangerousInnerHTML, testId }, reference) => {
         const history = useHistory()
 
@@ -34,3 +34,5 @@ export const Markdown = React.forwardRef<HTMLElement, Props>(
         )
     }
 )
+
+Markdown.displayName = 'Markdown'

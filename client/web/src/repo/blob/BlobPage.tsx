@@ -10,7 +10,6 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import {
     useCurrentSpan,
@@ -38,6 +37,7 @@ import {
     Text,
     useEventObservable,
     useObservable,
+    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

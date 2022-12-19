@@ -5,9 +5,8 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
+import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {

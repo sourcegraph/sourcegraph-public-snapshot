@@ -5,13 +5,12 @@ import * as H from 'history'
 import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolKind as SymbolKindEnum } from '@sourcegraph/shared/src/schema'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Alert, useDebounce } from '@sourcegraph/wildcard'
+import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {

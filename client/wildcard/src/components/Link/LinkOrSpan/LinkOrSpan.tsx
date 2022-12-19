@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { ForwardReferenceComponent, Link } from '@sourcegraph/wildcard'
 
-type Props = React.PropsWithChildren<
+type LinkOrSpanProps = React.PropsWithChildren<
     {
         to: string | undefined | null
         children?: React.ReactNode
@@ -14,7 +14,7 @@ type Props = React.PropsWithChildren<
  * text in a <span> (with no link).
  */
 // eslint-disable-next-line react/display-name
-const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherProps }: Props, reference) => {
+const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherProps }: LinkOrSpanProps, reference) => {
     if (to) {
         return (
             <Link ref={reference} to={to} className={className} {...otherProps}>
@@ -28,7 +28,7 @@ const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherPro
             {children}
         </span>
     )
-}) as ForwardReferenceComponent<typeof Link, Props>
+}) as ForwardReferenceComponent<typeof Link, LinkOrSpanProps>
 
 LinkOrSpan.displayName = 'LinkOrSpan'
 

@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -53,7 +52,7 @@ func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphq
 		return nil, errors.Wrap(err, "could not build repository scope query")
 	}
 
-	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
+	executor := query.NewStreamingRepoQueryExecutor(r.logger.Scoped("StreamingRepoQueryExecutor", "preview repositories"))
 	repos, err := executor.ExecuteRepoList(ctx, repoScopeQuery.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "executing the repository search errored")

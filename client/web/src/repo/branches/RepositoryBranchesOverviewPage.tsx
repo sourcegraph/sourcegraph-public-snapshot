@@ -5,11 +5,10 @@ import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'

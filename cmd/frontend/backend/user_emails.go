@@ -472,6 +472,9 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 `,
 })
 
+// triggerPermissionsSync is a helper that attempts to schedule a new permissions
+// sync for the given user. Errors are not fatal since our background permissions
+// syncer will eventually sync the user anyway, so we just log any errors.
 func triggerPermissionsSync(ctx context.Context, logger log.Logger, userID int32) {
 	if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},

@@ -5,8 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -76,7 +75,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
+                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
                 <div
                     className={classNames(
                         'test-signin-form rounded p-4 my-3',

@@ -1,34 +1,14 @@
 import React, { HTMLAttributes } from 'react'
 
-import { upperFirst } from 'lodash'
-
-import { asError, renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
-export const renderError = (error: unknown): string =>
-    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
-        .trim()
-        .replace(/^<p>/, '')
-        .replace(/<\/p>$/, '')
-
-export const ErrorMessage: React.FunctionComponent<React.PropsWithChildren<{ className?: string; error: unknown }>> = ({
-    className,
-    error,
-}) => <Markdown className={className} wrapper="span" dangerousInnerHTML={renderError(error)} />
+import { ErrorMessage } from '../ErrorMessage'
 
 export type ErrorAlertProps = {
     /**
      * An Error-like object or a string.
      */
     error: unknown
-
-    /**
-     * Whether to show an icon.
-     *
-     * @default true
-     */
-    icon?: boolean
 
     /**
      * Optional prefix for the message
@@ -54,7 +34,6 @@ export type ErrorAlertProps = {
 export const ErrorAlert: React.FunctionComponent<React.PropsWithChildren<ErrorAlertProps>> = ({
     error,
     className,
-    icon = true,
     prefix,
     variant = 'danger',
     ...rest

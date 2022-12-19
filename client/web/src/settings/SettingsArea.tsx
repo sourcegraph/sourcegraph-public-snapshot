@@ -7,7 +7,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -23,7 +22,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'

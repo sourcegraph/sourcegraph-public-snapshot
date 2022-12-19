@@ -345,7 +345,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// TODO: It could be worthwhile to log that this language isn't supported or something
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
-	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 

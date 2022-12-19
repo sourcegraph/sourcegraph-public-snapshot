@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { ErrorAlert } from './alerts'
-
-jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
+import { ErrorAlert } from './ErrorAlert'
 
 describe('ErrorAlert', () => {
     it('should render an Error object as an alert', () => {
@@ -12,12 +10,6 @@ describe('ErrorAlert', () => {
     it('should add a prefix if given', () => {
         expect(
             render(<ErrorAlert error={new Error('an error happened')} prefix="An error happened" />).asFragment()
-        ).toMatchSnapshot()
-    })
-
-    it('should omit the icon if icon={false}', () => {
-        expect(
-            render(<ErrorAlert error={new Error('an error happened')} icon={false} />).asFragment()
         ).toMatchSnapshot()
     })
 

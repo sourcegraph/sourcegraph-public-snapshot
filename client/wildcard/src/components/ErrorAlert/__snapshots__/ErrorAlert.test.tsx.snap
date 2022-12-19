@@ -20,23 +20,6 @@ exports[`ErrorAlert should add a prefix if given 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ErrorAlert should omit the icon if icon={false} 1`] = `
-<DocumentFragment>
-  <div
-    aria-live="assertive"
-    class=""
-    role="alert"
-  >
-     
-    <span
-      class="markdown"
-    >
-      An error happened
-    </span>
-  </div>
-</DocumentFragment>
-`;
-
 exports[`ErrorAlert should render a Go multierror nicely 1`] = `
 <DocumentFragment>
   <div

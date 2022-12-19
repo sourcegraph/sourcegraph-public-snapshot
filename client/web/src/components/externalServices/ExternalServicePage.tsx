@@ -7,11 +7,10 @@ import { Redirect, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 import { delay, repeatWhen } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,

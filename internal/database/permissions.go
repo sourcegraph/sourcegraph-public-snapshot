@@ -72,6 +72,10 @@ type permissionStore struct {
 
 var _ PermissionStore = &permissionStore{}
 
+func PermissionsWith(other basestore.ShareableStore) PermissionStore {
+	return &permissionStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 const permissionCreateQueryFmtStr = `
 INSERT INTO
 	permissions(%s)
@@ -193,9 +197,13 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 	return permission, nil
 }
 
+// The ORDER BY clause should not be changed because it ensures permissions retrieved
+// from the database are already sorted therefore making the rbac schema migration easy.
+// We compare permissions in the database to those generated from the schema and both
+// need to be sorted.
 const permissionListQueryFmtStr = `
 SELECT * FROM permissions
-ORDER BY permissions.namespace ASC
+ORDER BY permissions.namespace, permissions.action ASC
 `
 
 func (p *permissionStore) List(ctx context.Context) ([]*types.Permission, error) {

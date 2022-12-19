@@ -2,11 +2,10 @@ import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
 import { mdiPlay } from '@mdi/js'
 
-import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Text, Link, Tooltip, Button, Icon } from '@sourcegraph/wildcard'
+import { Text, Link, Tooltip, Button, Icon, ErrorAlert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../../../graphql-operations'
 
