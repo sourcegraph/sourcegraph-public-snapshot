@@ -20,7 +20,7 @@ import {
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
-import { RequiredExtensionsControllerProps } from '../extensions/controller'
+import type { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -53,7 +53,7 @@ export interface ActionItemStyleProps {
 }
 
 export interface ActionItemComponentProps
-    extends RequiredExtensionsControllerProps<'executeCommand'>,
+    extends ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings'> {
     location: H.Location
 
@@ -145,7 +145,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 .pipe(
                     mergeMap(parameters =>
                         from(
-                            this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                            this.props.extensionsController
+                                ? this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                                : Promise.reject(new Error('ActionItems commands other than open are deprecated'))
                         ).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
