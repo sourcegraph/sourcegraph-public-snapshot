@@ -9,6 +9,7 @@ import {
     useRef,
     useEffect,
     useLayoutEffect,
+    InputHTMLAttributes,
 } from 'react'
 
 import {
@@ -78,7 +79,10 @@ export const Combobox = forwardRef((props, ref) => {
     )
 }) as ForwardReferenceComponent<'div', ComboboxProps>
 
-interface ComboboxInputProps extends ReachComboboxInputProps, Omit<InputProps, 'value'> {}
+interface ComboboxInputProps
+    extends ReachComboboxInputProps,
+        Omit<InputHTMLAttributes<HTMLInputElement>, 'value'>,
+        InputProps {}
 
 /**
  * Combobox Input wrapper over Reach UI combobox input component. We wrap this component

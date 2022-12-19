@@ -1,4 +1,4 @@
-import { FC, forwardRef, InputHTMLAttributes, ReactNode, HTMLAttributes } from 'react'
+import { FC, forwardRef, ReactNode, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -20,7 +20,7 @@ export enum InputStatus {
 
 export { Label }
 
-export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+export interface InputProps {
     /**
      * Text label of input.
      * @deprecated Use <Label /> composition components instead
