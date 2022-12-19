@@ -17,6 +17,7 @@ client/search-ui/node_modules
 client/shared/node_modules
 client/storybook/node_modules
 client/template-parser/node_modules
+client/testing/node_modules
 client/web/node_modules
 client/wildcard/node_modules
 client/vscode/node_modules
