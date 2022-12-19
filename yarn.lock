@@ -27264,6 +27264,7 @@ __metadata:
     "@gql2ts/from-schema": ^1.10.1
     "@gql2ts/language-typescript": ^1.9.0
     "@gql2ts/types": ^1.9.0
+    "@graphiql/react": ^0.10.0
     "@graphql-codegen/cli": ^2.16.1
     "@graphql-codegen/typescript": 2.8.5
     "@graphql-codegen/typescript-apollo-client-helpers": ^2.2.6
@@ -27278,9 +27279,12 @@ __metadata:
     "@octokit/rest": ^16.36.0
     "@opentelemetry/api": ^1.1.0
     "@opentelemetry/context-zone": ^1.5.0
+    "@opentelemetry/core": 1.5.0
     "@opentelemetry/exporter-trace-otlp-http": ^0.31.0
     "@opentelemetry/instrumentation": ^0.31.0
     "@opentelemetry/instrumentation-fetch": ^0.31.0
+    "@opentelemetry/resources": 1.5.0
+    "@opentelemetry/sdk-trace-base": 1.5.0
     "@opentelemetry/sdk-trace-web": ^1.5.0
     "@opentelemetry/semantic-conventions": ^1.5.0
     "@peculiar/webcrypto": ^1.1.7
@@ -27468,8 +27472,10 @@ __metadata:
     events: ^3.3.0
     eventsource: 1.1.1
     execa: ^5.0.0
+    expect: ^27.5.1
     express: ^4.17.1
     express-static-gzip: ^2.1.1
+    fast-json-stable-stringify: ^2.0.0
     focus-visible: ^5.2.0
     fzf: ^0.5.1
     glob: ^7.1.6
@@ -27482,6 +27488,7 @@ __metadata:
     gulp: ^4.0.2
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
+    history: 4.5.1
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.5.0
     http-proxy-agent: ^5.0.0
@@ -27531,6 +27538,7 @@ __metadata:
     open: ^7.0.4
     open-color: ^1.8.0
     ordinal: ^1.0.3
+    original: ^1.0.0
     p-retry: ^4.2.0
     p-timeout: ^4.1.0
     path-browserify: ^1.0.1

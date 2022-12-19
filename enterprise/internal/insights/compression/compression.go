@@ -27,7 +27,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,7 +47,7 @@ type commitFetcher interface {
 }
 
 func NewGitserverFilter(db database.DB, logger log.Logger) DataFrameFilter {
-	return &gitserverFilter{commitFetcher: discovery.NewGitCommitClient(db), logger: logger}
+	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(db), logger: logger}
 }
 
 type gitserverFilter struct {

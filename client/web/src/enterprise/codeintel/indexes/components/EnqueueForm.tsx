@@ -2,8 +2,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 
 import { Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert, Input, Label, Link } from '@sourcegraph/wildcard'
+import { Button, Alert, Input, Label, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 

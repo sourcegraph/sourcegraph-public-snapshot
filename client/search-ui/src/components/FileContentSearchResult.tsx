@@ -267,6 +267,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             repoStars={result.repoStars}
             className={classNames(styles.copyButtonContainer, containerClassName)}
             resultClassName={resultContainerStyles.highlightResult}
+            rankingDebug={result.debug}
             ref={rootRef}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>

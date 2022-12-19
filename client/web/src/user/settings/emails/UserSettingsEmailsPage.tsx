@@ -2,10 +2,9 @@ import { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'

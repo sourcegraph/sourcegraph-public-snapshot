@@ -1904,8 +1904,10 @@ ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 CREATE TABLE executor_secret_access_logs (
     id integer NOT NULL,
     executor_secret_id integer NOT NULL,
-    user_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    machine_user text DEFAULT ''::text NOT NULL,
+    CONSTRAINT user_id_or_machine_user CHECK ((((user_id IS NULL) AND (machine_user <> ''::text)) OR ((user_id IS NOT NULL) AND (machine_user = ''::text))))
 );
 
 CREATE SEQUENCE executor_secret_access_logs_id_seq
@@ -2638,6 +2640,7 @@ CREATE TABLE lsif_indexes (
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
+    requested_envvars text[],
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2691,6 +2694,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

@@ -5,7 +5,6 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
@@ -28,7 +27,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'

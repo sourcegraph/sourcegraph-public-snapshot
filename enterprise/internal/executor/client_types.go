@@ -60,6 +60,12 @@ type Job struct {
 	// environment variables, as well as secret values passed along with the dequeued job
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
+
+	// DockerAuthConfig can optionally set the content of the docker CLI config to be used
+	// when spawning containers. Used to authenticate to private registries. When set, this
+	// takes precedence over a potentially configured EXECUTOR_DOCKER_AUTH_CONFIG environment
+	// variable.
+	DockerAuthConfig DockerAuthConfig `json:"dockerAuthConfig,omitempty"`
 }
 
 func (j Job) MarshalJSON() ([]byte, error) {
@@ -76,6 +82,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 			DockerSteps:         j.DockerSteps,
 			CliSteps:            j.CliSteps,
 			RedactedValues:      j.RedactedValues,
+			DockerAuthConfig:    j.DockerAuthConfig,
 		}
 		v2.VirtualMachineFiles = make(map[string]v2VirtualMachineFile, len(j.VirtualMachineFiles))
 		for k, v := range j.VirtualMachineFiles {
@@ -132,6 +139,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		j.DockerSteps = v2.DockerSteps
 		j.CliSteps = v2.CliSteps
 		j.RedactedValues = v2.RedactedValues
+		j.DockerAuthConfig = v2.DockerAuthConfig
 		return nil
 	}
 	var v1 v1Job
@@ -177,6 +185,7 @@ type v2Job struct {
 	DockerSteps         []DockerStep                    `json:"dockerSteps"`
 	CliSteps            []CliStep                       `json:"cliSteps"`
 	RedactedValues      map[string]string               `json:"redactedValues"`
+	DockerAuthConfig    DockerAuthConfig                `json:"dockerAuthConfig,omitempty"`
 }
 
 type v1Job struct {
@@ -329,4 +338,20 @@ type HeartbeatResponse struct {
 type CanceledJobsRequest struct {
 	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
+}
+
+// DockerAuthConfig represents a subset of the docker cli config with the necessary
+// fields to make authentication work.
+type DockerAuthConfig struct {
+	// Auths is a map from registry URL to auth object.
+	Auths DockerAuthConfigAuths `json:"auths,omitempty"`
+}
+
+// DockerAuthConfigAuths maps a registry URL to an auth object.
+type DockerAuthConfigAuths map[string]DockerAuthConfigAuth
+
+// DockerAuthConfigAuth is a single registrys auth configuration.
+type DockerAuthConfigAuth struct {
+	// Auth is the base64 encoded credential in the format user:password.
+	Auth []byte `json:"auth"`
 }

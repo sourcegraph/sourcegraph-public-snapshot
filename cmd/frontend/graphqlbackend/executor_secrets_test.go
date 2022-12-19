@@ -770,3 +770,77 @@ type executorSecretsIntegrationTestResponseAccessLogExecutorSecret struct {
 type executorSecretsIntegrationTestResponseAccessLogUser struct {
 	ID graphql.ID `json:"id"`
 }
+
+func TestValidateExecutorSecret(t *testing.T) {
+	tts := []struct {
+		name    string
+		key     string
+		value   string
+		wantErr string
+	}{
+		{
+			name:    "empty value",
+			value:   "",
+			wantErr: "value cannot be empty string",
+		},
+		{
+			name:    "valid secret",
+			value:   "set",
+			key:     "ANY",
+			wantErr: "",
+		},
+		{
+			name:    "unparseable docker auth config",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   "notjson",
+			wantErr: "failed to unmarshal docker auth config for validation: invalid character 'o' in literal null (expecting 'u')",
+		},
+		{
+			name:    "docker auth config with cred helper",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"credHelpers": { "hub.docker.com": "sg-login" }}`,
+			wantErr: "cannot use credential helpers in docker auth config set via secrets",
+		},
+		{
+			name:    "docker auth config with cred helper",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"credsStore": "desktop"}`,
+			wantErr: "cannot use credential stores in docker auth config set via secrets",
+		},
+		{
+			name:    "docker auth config with additional property",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"additionalProperty": true}`,
+			wantErr: "failed to unmarshal docker auth config for validation: json: unknown field \"additionalProperty\"",
+		},
+		{
+			name:    "docker auth config with invalid auth value",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"auths": { "hub.docker.com": { "auth": "bm90d2l0aGNvbG9u" }}}`, // content: base64(notwithcolon)
+			wantErr: "invalid credential in auths section for \"hub.docker.com\" format has to be base64(username:password)",
+		},
+		{
+			name:    "docker auth config with valid auth value",
+			key:     "DOCKER_AUTH_CONFIG",
+			value:   `{"auths": { "hub.docker.com": { "auth": "dXNlcm5hbWU6cGFzc3dvcmQ=" }}}`, // content: base64(username:password)
+			wantErr: "",
+		},
+	}
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			have := validateExecutorSecret(&database.ExecutorSecret{Key: tt.key}, tt.value)
+			if have == nil && tt.wantErr == "" {
+				return
+			}
+			if have != nil && tt.wantErr == "" {
+				t.Fatalf("invalid non-nil error returned %s", have)
+			}
+			if have == nil && tt.wantErr != "" {
+				t.Fatalf("invalid nil error returned")
+			}
+			if have.Error() != tt.wantErr {
+				t.Fatalf("invalid error, want=%q have =%q", tt.wantErr, have.Error())
+			}
+		})
+	}
+}

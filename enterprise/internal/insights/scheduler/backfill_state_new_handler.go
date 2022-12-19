@@ -60,7 +60,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		workerStore:     workerStore,
 		backfillStore:   backfillStore,
 		seriesReader:    store.NewInsightStore(insightsDB),
-		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
+		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore, config.RepoQueryExecutor),
 		costAnalyzer:    *config.CostAnalyzer,
 		timeseriesStore: config.InsightStore,
 	}

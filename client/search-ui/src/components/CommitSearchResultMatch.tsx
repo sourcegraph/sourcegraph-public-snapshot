@@ -8,10 +8,9 @@ import sanitizeHtml from 'sanitize-html'
 
 import { highlightNode, logger } from '@sourcegraph/common'
 import { highlightCode } from '@sourcegraph/search'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { LoadingSpinner, Link, Code } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 

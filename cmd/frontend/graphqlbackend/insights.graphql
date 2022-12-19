@@ -573,6 +573,11 @@ input RepositoryScopeInput {
     The list of repositories included in this scope.
     """
     repositories: [String!]!
+
+    """
+    A search query to select repositories for this scope.
+    """
+    repositoryCriteria: String
 }
 
 """
@@ -593,6 +598,16 @@ input LineChartSearchInsightInput {
     The list of data series to create (or add) to this insight.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The scope of repositories for the insight. If provided here it will apply to all series unless overwritten.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The scope of time for the insight view. If provided here it will apply to all series unless overwritten.
+    """
+    timeScope: TimeScopeInput
 
     """
     The options for this line chart.
@@ -618,6 +633,16 @@ input UpdateLineChartSearchInsightInput {
     The complete list of data series on this line chart. Note: excluding a data series will remove it.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The scope of repositories for the insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The time scope for this insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    timeScope: TimeScopeInput
 
     """
     The presentation options for this line chart.
@@ -753,13 +778,16 @@ input LineChartSearchInsightDataSeriesInput {
     """
     options: LineChartDataSeriesOptionsInput!
     """
-    The scope of repositories.
+    The scope of repositories. The repository scope can be provided at the LineChartSearchInsightInput level.
+    If scope is provided here will take priority of any other scope provide at a higher level in the input.
     """
-    repositoryScope: RepositoryScopeInput!
+    repositoryScope: RepositoryScopeInput
+
     """
-    The scope of time.
+    The scope of time. This time scope can also be provided at the LineChartSearchInsightInput level.
+    If the scope is provided here it will take priority over any other scope provided at a higher level in the input.
     """
-    timeScope: TimeScopeInput!
+    timeScope: TimeScopeInput
 
     """
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
@@ -963,6 +991,16 @@ type InsightView implements Node {
     The total number of series on this insight.
     """
     seriesCount: Int
+
+    """
+    The Repositories the dataSeries on this insight will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
 }
 
 """
@@ -1017,9 +1055,14 @@ type SearchInsightDataSeriesDefinition {
     query: String!
 
     """
-    A scope of repositories defined for this insight.
+    A scope of repositories defined for this series. Series with repository scopes defined by a search query are not identifiable via this field
     """
-    repositoryScope: InsightRepositoryScope!
+    repositoryScope: InsightRepositoryScope! @deprecated(reason: "use repositoryDefinition instead")
+
+    """
+    A definition of Repositories this series will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
 
     """
     The scope of time for which the insight data is generated.
@@ -1042,6 +1085,25 @@ type SearchInsightDataSeriesDefinition {
     """
     groupBy: GroupByField
 }
+
+"""
+Describes a scope of repositories, this type is used for both the search based scopes and all repositories
+"""
+type RepositorySearchScope {
+    """
+    The user provided search used to generate the list of repositories the insight runs over.
+    """
+    search: String!
+    """
+    Indicates if this search scope represents all repositories
+    """
+    allRepositories: Boolean!
+}
+
+"""
+Defines how the scope of repositories was generated
+"""
+union InsightRepositoryDefinition = RepositorySearchScope | InsightRepositoryScope
 
 """
 View presentation for a line chart insight
@@ -1227,4 +1289,47 @@ input SaveInsightAsNewViewInput {
     The default values for filters and aggregates for this line chart.
     """
     viewControls: InsightViewControlsInput
+}
+
+extend type Query {
+    """
+    Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
+    """
+    validateScopedInsightQuery(query: String!): ScopedInsightQueryPayload!
+    """
+    Returns the number of repositories matched given a valid query.
+    """
+    previewRepositoriesFromQuery(query: String!): RepositoryPreviewPayload!
+}
+
+"""
+Information about scope query validity
+"""
+type ScopedInsightQueryPayload {
+    """
+    The original query.
+    """
+    query: String!
+    """
+    Whether the query is valid.
+    """
+    isValid: Boolean!
+    """
+    The reason why the query is invalid.
+    """
+    invalidReason: String
+}
+
+"""
+Information about the number of repositories matched from a query
+"""
+type RepositoryPreviewPayload {
+    """
+    The query used to find number of repository matches.
+    """
+    query: String!
+    """
+    The number of repositories matched.
+    """
+    numberOfRepositories: Int
 }

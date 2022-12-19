@@ -17,8 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -57,14 +59,13 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
 			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,
@@ -87,7 +88,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 					Name:      "insight_backfill_new_index_repositories_analyzed",
 					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
 				}),
-			CostAnalyzer: priority.DefaultQueryAnalyzer(),
+			CostAnalyzer:      priority.DefaultQueryAnalyzer(),
+			RepoQueryExecutor: query.NewStreamingRepoQueryExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
 		}
 
 		// Add the backfill v2 workers

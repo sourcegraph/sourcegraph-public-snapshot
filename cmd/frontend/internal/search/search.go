@@ -326,6 +326,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 		pathEvent.Branches = []string{*fm.InputRev}
 	}
 
+	if fm.Debug != nil {
+		pathEvent.Debug = *fm.Debug
+	}
+
 	return pathEvent
 }
 

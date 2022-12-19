@@ -1,7 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
 import {
     CloneInProgressError,
@@ -11,7 +10,7 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { Code } from '@sourcegraph/wildcard'
+import { Code, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 

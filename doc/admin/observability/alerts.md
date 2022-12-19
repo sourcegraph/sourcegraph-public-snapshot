@@ -7851,3 +7851,161 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 
 <br />
 
+## otel-collector: otel_span_refused
+
+<p class="subtitle">spans refused per receiver</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans refused per receiver for 5m0s
+
+**Next steps**
+
+- Check logs of the collector and configuration of the receiver
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-refused).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otel_span_refused"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
+
+</details>
+
+<br />
+
+## otel-collector: otel_span_export_failures
+
+<p class="subtitle">span export failures by exporter</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ span export failures by exporter for 5m0s
+
+**Next steps**
+
+- Check the configuration of the exporter and if the service being exported is up
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-export-failures).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otel_span_export_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
+
+</details>
+
+<br />
+
+## otel-collector: container_cpu_usage
+
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 99%+ container cpu usage total (1m average) across all cores by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the otel-collector container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#otel-collector-container-cpu-usage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_container_cpu_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage_total{name=~"^otel-collector.*"}) >= 99)`
+
+</details>
+
+<br />
+
+## otel-collector: container_memory_usage
+
+<p class="subtitle">container memory usage by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 99%+ container memory usage by instance
+
+**Next steps**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of otel-collector container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#otel-collector-container-memory-usage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_container_memory_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((cadvisor_container_memory_usage_percentage_total{name=~"^otel-collector.*"}) >= 99)`
+
+</details>
+
+<br />
+
+## otel-collector: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> otel-collector: less than 90% percentage pods available for 10m0s
+
+**Next steps**
+
+- Determine if the pod was OOM killed using `kubectl describe pod otel-collector` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p otel-collector`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#otel-collector-pods-available-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_otel-collector_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `min((sum by(app) (up{app=~".*otel-collector"}) / count by(app) (up{app=~".*otel-collector"}) * 100) <= 90)`
+
+</details>
+
+<br />
+

@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
@@ -124,7 +122,7 @@ func ProvidersFromConfig(
 					PerforceConnection: c,
 				})
 			default:
-				log15.Error("ProvidersFromConfig", "error", errors.Errorf("unexpected connection type: %T", cfg))
+				logger.Error("ProvidersFromConfig", log.Error(errors.Errorf("unexpected connection type: %T", cfg)))
 				continue
 			}
 		}

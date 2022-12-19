@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import prettyBytes from 'pretty-bytes'
@@ -106,7 +106,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
+                        <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
