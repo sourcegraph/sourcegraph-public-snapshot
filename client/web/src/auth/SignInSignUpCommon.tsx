@@ -5,8 +5,9 @@ import * as H from 'history'
 import { Input, InputProps } from '@sourcegraph/wildcard'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
+import { InputHTMLAttributes } from 'react'
 
-interface CommonInputProps extends InputProps {
+interface CommonInputProps extends InputProps, InputHTMLAttributes<HTMLInputElement> {
     inputRef?: React.Ref<HTMLInputElement>
 }
 

@@ -15,6 +15,11 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
                 break
             }
 
+            case 'repoQuery': {
+                parameters.set(key, encodeURIComponent(fields[key].query))
+                break
+            }
+
             default:
                 parameters.set(key, fields[key].toString())
         }
@@ -30,14 +35,16 @@ export function decodeCaptureInsightURL(queryParameters: string): Partial<Captur
         const repositories = searchParameter.get('repositories')
         const title = searchParameter.get('title')
         const groupSearchQuery = decodeURIComponent(searchParameter.get('groupSearchQuery') ?? '')
-        const allRepos = searchParameter.get('allRepos')
+        const repoMode = searchParameter.get('repoMode') as any
+        const repoQuery = searchParameter.get('repoQuery')
 
-        if (repositories || title || groupSearchQuery || allRepos) {
+        if (repositories || title || groupSearchQuery || repoMode || repoQuery) {
             return {
                 title: title ?? '',
                 repositories: repositories ?? '',
-                allRepos: !!allRepos,
                 groupSearchQuery: groupSearchQuery ?? '',
+                repoMode: repoMode ?? 'urls-list',
+                repoQuery: { query: repoQuery ?? '' },
             }
         }
 
