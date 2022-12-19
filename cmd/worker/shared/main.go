@@ -38,7 +38,7 @@ import (
 const addr = ":3189"
 
 type backgroundRoutineWithJobName struct {
-	Routine goroutine.BackgroundRoutine
+	Routine *goroutine.BackgroundRoutine
 	JobName string
 }
 
@@ -105,17 +105,19 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		WriteTimeout: 10 * time.Minute,
 		Handler:      httpserver.NewHandler(nil),
 	})
-	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: server, JobName: "health-server"}
+	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: &server, JobName: "health-server"}
 	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
 
 	// Register monitor in all routines that support it
-	monitor := goroutine.NewRedisMonitor()
+	monitor := goroutine.NewRedisMonitor(observationCtx.Logger)
 	for _, r := range allRoutinesWithJobNames {
-		if mr, ok := r.Routine.(goroutine.Monitorable); ok {
-			mr.SetJobName(r.JobName)
-			monitor.Register(mr)
+		if monitorable, ok := (*r.Routine).(goroutine.Monitorable); ok {
+			monitorable.SetJobName(r.JobName)
+			monitorable.RegisterMonitor(monitor)
+			monitor.Register(&monitorable)
 		}
 	}
+	monitor.RegistrationDone()
 
 	// We're all set up now
 	// Respond positively to ready checks
@@ -125,7 +127,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	// the type checker.
 	routines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
 	for _, r := range allRoutinesWithJobNames {
-		routines = append(routines, r.Routine)
+		routines = append(routines, *r.Routine)
 	}
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
@@ -271,7 +273,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			routinesWithJobNames := make([]backgroundRoutineWithJobName, 0, len(routines))
 			for _, r := range routines {
 				routinesWithJobNames = append(routinesWithJobNames, backgroundRoutineWithJobName{
-					Routine: r,
+					Routine: &r,
 					JobName: name,
 				})
 			}

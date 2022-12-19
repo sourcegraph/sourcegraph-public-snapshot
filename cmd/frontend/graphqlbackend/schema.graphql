@@ -1640,6 +1640,26 @@ type Query {
     ): OutboundRequestConnection!
 
     """
+    Get a list of background jobs that are currently known in the system.
+    """
+    backgroundJobs(
+        """
+        Returns the first n jobs. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        The maximum number of recent runs to return for each routine.
+        """
+        recentRunCount: Int
+    ): BackgroundJobConnection!
+
+    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
@@ -8282,6 +8302,181 @@ type HTTPHeader {
     Can be multiple values
     """
     values: [String!]!
+}
+
+"""
+A list of background jobs that are currently known in the system
+"""
+type BackgroundJobConnection {
+    """
+    A list of outbound requests.
+    """
+    nodes: [BackgroundJob!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single background job.
+"""
+type BackgroundJob implements Node {
+    """
+    The background job ID.
+    """
+    id: ID!
+
+    """
+    The name of the job.
+    """
+    name: String!
+
+    """
+    TODO: Document me
+    """
+    routines: [BackgroundRoutine!]!
+}
+
+"""
+TODO: Document
+"""
+type BackgroundRoutine {
+    """
+    The name of the routine.
+    """
+    name: String!
+
+    """
+    Tells whether this is a periodic goroutine, a DB worker, or something else
+    """
+    type: BackgroundRoutineType!
+
+    """
+    Explains what the routine does.
+    """
+    description: String!
+
+    """
+    TODO: Document me
+    """
+    instances: [BackgroundRoutineInstance!]!
+
+    """
+    TODO: Document me
+    """
+    recentRuns: [BackgroundRoutineRecentRun!]!
+
+    """
+    TODO: Document me
+    """
+    stats: BackgroundRoutineStats!
+}
+
+"""
+Enum of the possible scopes for executor secrets.
+"""
+enum BackgroundRoutineType {
+    """
+    The secret is meant to be used with Batch Changes execution.
+    """
+    BATCHES
+}
+
+"""
+TODO: Document
+"""
+type BackgroundRoutineInstance {
+    """
+    The ID of the instance.
+    """
+    hostName: String!
+
+    """
+    The time the instance was last started. (If it's unknown, this will be null.)
+    """
+    lastStartedAt: DateTime
+
+    """
+    The time the instance was last stopped. (If it's unknown, this will be null.)
+    """
+    lastStoppedAt: DateTime
+}
+
+"""
+TODO: Document
+"""
+type BackgroundRoutineRecentRun {
+    """
+    The time the run started.
+    """
+    at: DateTime!
+
+    """
+    TODO: Document
+    """
+    hostName: String!
+
+    """
+    TODO: Document
+    """
+    durationMs: Int!
+
+    """
+    The error, if any.
+    """
+    error: BackgroundRoutineRunError
+}
+
+"""
+TODO: Document
+"""
+type BackgroundRoutineRunError {
+    """
+    The error message.
+    """
+    message: String!
+
+    """
+    The stack trace.
+    """
+    stackTrace: String!
+}
+
+"""
+TODO: Document
+"""
+type BackgroundRoutineStats {
+    """
+    The number of times the routine ran in the last period. TODO: Describe which period that is.
+    """
+    runCount: Int!
+
+    """
+    The number of times the routine run ended with an error.
+    """
+    errorCount: Int!
+
+    """
+    The minimum duration of a run, in milliseconds.
+    """
+    minDurationMs: Int!
+
+    """
+    The average duration of a run, in milliseconds.
+    """
+    avgDurationMs: Int!
+
+    """
+    The maximum duration of a run, in milliseconds.
+    """
+    maxDurationMs: Int!
 }
 
 """

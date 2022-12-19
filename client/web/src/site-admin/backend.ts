@@ -315,6 +315,41 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
+export const BACKGROUND_JOBS = gql`
+    query BackgroundJobs($recentRunCount: Int) {
+        backgroundJobs(recentRunCount: $recentRunCount) {
+            nodes {
+                name
+
+                routines {
+                    name
+                    type
+                    description
+                    instances {
+                        hostName
+                        lastStartedAt
+                        lastStoppedAt
+                    }
+                    recentRuns {
+                        at
+                        hostName
+                        durationMs
+                        error {
+                            message
+                            stackTrace
+                        }
+                    }
+                    stats {
+                        runCount
+                        minDurationMs
+                        avgDurationMs
+                        maxDurationMs
+                    }
+                }
+            }
+        }
+    }
+`
 
 export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
 
