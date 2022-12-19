@@ -13,6 +13,7 @@ import sinon from 'sinon'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { InsightsDashboardsResult } from '../../../graphql-operations'
 import { CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'

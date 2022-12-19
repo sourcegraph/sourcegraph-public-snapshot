@@ -4,7 +4,7 @@ import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 

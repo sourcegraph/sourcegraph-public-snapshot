@@ -5,14 +5,9 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
-import {
-    MonitorEditInput,
-    MonitorEditTriggerInput,
-    MonitorEditActionInput,
-    MonitorEmailPriority,
-} from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MonitorEmailPriority } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { FetchCodeMonitorResult } from '../../graphql-operations'
 
@@ -40,22 +35,16 @@ describe('ManageCodeMonitorPage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         fetchUserCodeMonitors: sinon.spy(),
-        updateCodeMonitor: sinon.spy(
-            (
-                monitorEditInput: MonitorEditInput,
-                triggerEditInput: MonitorEditTriggerInput,
-                actionEditInput: MonitorEditActionInput[]
-            ) => of(mockCodeMonitorFields)
-        ),
-        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor as FetchCodeMonitorResult)),
+        updateCodeMonitor: sinon.spy(() => of(mockCodeMonitorFields)),
+        fetchCodeMonitor: sinon.spy(() => of(mockCodeMonitor as FetchCodeMonitorResult)),
         match: {
             params: { id: 'test-id' },
             isExact: true,
             path: history.location.pathname,
             url: 'https://sourcegraph.com',
         },
-        toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
-        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
+        toggleCodeMonitorEnabled: sinon.spy(() => of({ id: 'test', enabled: true })),
+        deleteCodeMonitor: sinon.spy(() => NEVER),
         isLightTheme: false,
         isSourcegraphDotCom: false,
     }

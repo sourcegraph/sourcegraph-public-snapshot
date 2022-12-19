@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 

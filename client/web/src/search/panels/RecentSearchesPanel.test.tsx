@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 

@@ -23,7 +23,7 @@ interface FeedbackPromptAuthenticatedUserProps {
     authenticatedUser: {
         username: string
         email: string
-    }
+    } | null
 }
 
 interface FeedbackPromptContentProps extends FeedbackPromptAuthenticatedUserProps {
