@@ -34,6 +34,9 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 		user, err := userStore.Create(ctx, database.NewUser{
 			Username: "mary",
 		})
+		if err != nil {
+			return
+		}
 
 		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
 		if err != nil {
@@ -50,7 +53,6 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 			Username: "jane",
 			Email:    "jane@doe.com",
 		})
-
 		if err != nil {
 			return
 		}
