@@ -1,5 +1,4 @@
 import { Duration } from 'date-fns'
-import { uniq } from 'lodash'
 
 import {
     InsightViewNode,
@@ -42,9 +41,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             const { appliedFilters } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
-            const repositories = uniq(
-                insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
-            )
+            const { repositories, repoSearch } = getInsightRepositories(insight.repositoryDefinition)
 
             // Transform display options into format compatible with our input forms
             // TODO: Remove when we consume GQL types directly
@@ -69,8 +66,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
                     repositories,
-                    // TODO [VK] Connect new repo query API to the search based insight
-                    repoQuery: '',
+                    repoQuery: repoSearch,
                     query,
                     step,
                     filters: {
@@ -123,8 +119,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
                 repositories,
-                // TODO [VK] Connect new repo query API to the search based insight
-                repoQuery: '',
+                repoQuery: repoSearch,
                 series,
                 step,
                 filters: {
@@ -140,7 +135,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             // At the moment BE doesn't have a special fragment type for Lang Stats repositories.
             // We use search based definition (first repo of first definition). For lang-stats
             // it always should be exactly one series with repository scope info.
-            const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
+            const { repositories } = getInsightRepositories(insight.repositoryDefinition)
 
             return {
                 ...baseInsight,
@@ -148,9 +143,28 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 type: InsightType.LangStats,
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
-                repository,
+                repository: repositories[0] ?? '',
             }
         }
+    }
+}
+
+interface InsightRepositories {
+    repoSearch: string
+    repositories: string[]
+}
+
+function getInsightRepositories(repoDefinition: InsightViewNode['repositoryDefinition']): InsightRepositories {
+    if (repoDefinition.__typename === 'InsightRepositoryScope') {
+        return {
+            repoSearch: '',
+            repositories: repoDefinition.repositories,
+        }
+    }
+
+    return {
+        repoSearch: repoDefinition.search,
+        repositories: [],
     }
 }
 
