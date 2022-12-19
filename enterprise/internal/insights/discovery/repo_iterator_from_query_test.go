@@ -6,6 +6,7 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -31,9 +32,11 @@ func TestRepoIteratorFromQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if executor.ExecuteRepoListFunc.History()[0].Arg1 != "repo:repo" {
-		t.Errorf("argument mismatch on query argument, got %v", executor.ExecuteRepoListFunc.History()[0].Arg1)
+	expectedScopeQuery, err := querybuilder.RepositoryScopeQuery("repo:repo")
+	if err != nil {
+		t.Fatal(err)
 	}
+	autogold.Want("expect_equal_repo_scope_query", expectedScopeQuery.String()).Equal(t, executor.ExecuteRepoListFunc.History()[0].Arg1)
 
 	var got []types.MinimalRepo
 	err = iterator.ForEach(context.Background(), func(repoName string, id api.RepoID) error {
