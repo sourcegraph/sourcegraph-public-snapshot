@@ -29,6 +29,7 @@ export function hoverExtension(): Extension {
         hoverCache,
         hoveredOccurrenceField,
         hoverTooltip((view, position) => getHoverTooltip(view, position), { hoverTime: 200, hideOnChange: true }),
+        tooltipStyles,
         hoverField,
         pinManager,
     ]
@@ -197,3 +198,26 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
     }
     return false
 }
+
+const tooltipStyles = EditorView.theme({
+    // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
+    // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
+    // ignoring the min/max width rules.
+    '.cm-tooltip': {
+        fontSize: '0.875rem',
+        backgroundClip: 'padding-box',
+        backgroundColor: 'var(--dropdown-bg)',
+        border: '1px solid var(--dropdown-border-color)',
+        borderRadius: 'var(--popover-border-radius)',
+        color: 'var(--body-color)',
+        boxShadow: 'var(--dropdown-shadow)',
+        padding: '0.5rem',
+    },
+
+    '.cm-tooltip-above .cm-tooltip-arrow:before': {
+        borderTopColor: 'var(--dropdown-border-color)',
+    },
+    '.cm-tooltip-above .cm-tooltip-arrow:after': {
+        borderTopColor: 'var(--dropdown-bg)',
+    },
+})
