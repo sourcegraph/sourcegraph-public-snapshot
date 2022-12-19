@@ -10700,6 +10700,19 @@
           "Comment": "Timestamp of when repo corruption was detected"
         },
         {
+          "Name": "corruption_log",
+          "Index": 11,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "log output of the corruption that was detected on the repo"
+        },
+        {
           "Name": "last_changed",
           "Index": 7,
           "TypeName": "timestamp with time zone",

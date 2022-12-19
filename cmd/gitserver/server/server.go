@@ -2027,7 +2027,7 @@ func setGitAttributes(dir GitDir) error {
 func (s *Server) markIfCorrupted(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) error {
 	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
 		now := time.Now()
-		return s.DB.GitserverRepos().SetCorruptedAt(ctx, repo, now)
+		return s.DB.GitserverRepos().SetCorrupted(ctx, repo, now)
 	}
 	return nil
 }

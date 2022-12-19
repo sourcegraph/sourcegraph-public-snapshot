@@ -530,7 +530,8 @@ func TestCorruptedAt(t *testing.T) {
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+		//TODO(burmudar): put something in as the logOutput
+		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
@@ -546,7 +547,8 @@ func TestCorruptedAt(t *testing.T) {
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+		//TODO(burmudar): put something in as the logOutput
+		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
 
 		setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
 
@@ -564,7 +566,8 @@ func TestCorruptedAt(t *testing.T) {
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		setGitserverCorruptedAt(t, db, repo.Name, time.Now())
+		//TODO(burmudar): put something in as the logOutput
+		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
 
 		setGitserverRepoLastChanged(t, db, repo.Name, time.Now())
 

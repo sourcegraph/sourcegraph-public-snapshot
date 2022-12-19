@@ -33,8 +33,8 @@ type GitserverRepoStore interface {
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	// SetCorruptedAt sets the corrupted_at timestamp for the repo
-	SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error
+	// SetCorrupted sets the corrupted at value and corruption output for a repo
+	SetCorrupted(ctx context.Context, name api.RepoName, corruptedAt time.Time, logOutput string) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
 	// If the status value hasn't changed, the row will not be updated.
@@ -504,16 +504,17 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) SetCorruptedAt(ctx context.Context, name api.RepoName, ts time.Time) error {
+func (s *gitserverRepoStore) SetCorrupted(ctx context.Context, name api.RepoName, ts time.Time, logOutput string) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
 	corrupted_at = %s,
+    corrupted_log = %s,
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-    `, ts, name))
+    `, ts, logOutput, name))
 	if err != nil {
-		return errors.Wrapf(err, "setting corrupted_at")
+		return errors.Wrapf(err, "setting corrupted")
 	}
 
 	if nrows, err := res.RowsAffected(); err != nil {
