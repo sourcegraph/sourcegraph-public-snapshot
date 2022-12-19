@@ -225,7 +225,7 @@ VALUES (
 	%s,
 	%s
 )
-RETURNING %s;
+RETURNING %s
 `
 
 func (rp *rolePermissionStore) Create(ctx context.Context, opts CreateRolePermissionOpts) (*types.RolePermission, error) {
