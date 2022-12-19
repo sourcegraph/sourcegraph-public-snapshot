@@ -126,7 +126,7 @@ const getRolePermissionQueryFmtStr = `
 SELECT
 	%s
 FROM role_permissions
-WHERE %s;
+WHERE %s
 `
 
 func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
