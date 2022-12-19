@@ -2,13 +2,13 @@ import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from '
 
 import classNames from 'classnames'
 
-import { Button, Input, Label } from '@sourcegraph/wildcard'
+import { Button, Input, InputProps, Label } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './DrillDownInput.module.scss'
 
-interface DrillDownRegExpInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface DrillDownRegExpInputProps extends InputProps, InputHTMLAttributes<HTMLInputElement> {
     prefix: string
 }
 
