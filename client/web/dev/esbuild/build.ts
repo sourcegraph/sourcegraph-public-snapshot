@@ -64,7 +64,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.ttf': 'file',
         '.png': 'file',
     },
-    target: 'es2021',
+    target: 'esnext',
     sourcemap: true,
 
     // TODO(sqs): When https://github.com/evanw/esbuild/pull/1458 is merged (or the issue is
