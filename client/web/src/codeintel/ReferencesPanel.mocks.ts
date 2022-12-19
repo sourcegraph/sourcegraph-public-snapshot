@@ -9,7 +9,6 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
@@ -31,6 +30,7 @@ import {
     FETCH_HIGHLIGHTED_BLOB,
 } from './ReferencesPanelQueries'
 import { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 const goDiffFileContent =
     'package main\n\nimport (\n\t"flag"\n\t"fmt"\n\t"io"\n\t"log"\n\t"os"\n\n\t"github.com/sourcegraph/go-diff/diff"\n)\n\n// A diagnostic program to aid in debugging diff parsing or printing\n// errors.\n\nconst stdin = "\u003Cstdin\u003E"\n\nvar (\n\tdiffPath = flag.String("f", stdin, "filename of diff (default: stdin)")\n\tfileIdx  = flag.Int("i", -1, "if \u003E= 0, only print and report errors from the i\'th file (0-indexed)")\n)\n\nfunc main() {\n\tlog.SetFlags(0)\n\tflag.Parse()\n\n\tvar diffFile *os.File\n\tif *diffPath == stdin {\n\t\tdiffFile = os.Stdin\n\t} else {\n\t\tvar err error\n\t\tdiffFile, err = os.Open(*diffPath)\n\t\tif err != nil {\n\t\t\tlog.Fatal(err)\n\t\t}\n\t}\n\tdefer diffFile.Close()\n\n\tr := diff.NewMultiFileDiffReader(diffFile)\n\tfor i := 0; ; i++ {\n\t\treport := (*fileIdx == -1) || i == *fileIdx // true if -i==-1 or if this is the i\'th file\n\n\t\tlabel := fmt.Sprintf("file(%d)", i)\n\t\tfdiff, err := r.ReadFile()\n\t\tif fdiff != nil {\n\t\t\tlabel = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)\n\t\t}\n\t\tif err == io.EOF {\n\t\t\tbreak\n\t\t}\n\t\tif err != nil {\n\t\t\tif report {\n\t\t\t\tlog.Fatalf("err read %s: %s", label, err)\n\t\t\t} else {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\n\t\tif report {\n\t\t\tlog.Printf("ok read: %s", label)\n\t\t}\n\n\t\tout, err := diff.PrintFileDiff(fdiff)\n\t\tif err != nil {\n\t\t\tif report {\n\t\t\t\tlog.Fatalf("err print %s: %s", label, err)\n\t\t\t} else {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\t\tif report {\n\t\t\tif _, err := os.Stdout.Write(out); err != nil {\n\t\t\t\tlog.Fatal(err)\n\t\t\t}\n\t\t}\n\t}\n}\n'
@@ -319,17 +319,6 @@ const HIGHLIGHTED_FILE_MOCK = {
     },
 }
 
-const NOOP_SETTINGS_CASCADE = {
-    subjects: null,
-    final: null,
-}
-
-const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
-    requestGraphQL: () => EMPTY,
-    urlToFile: () => '',
-    settings: of(NOOP_SETTINGS_CASCADE),
-}
-
 const NOOP_EXTENSIONS_CONTROLLER: Controller = {
     executeCommand: () => Promise.resolve(),
     registerCommand: () => new Subscription(),
@@ -355,7 +344,7 @@ export const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'exter
         subjects: null,
         final: null,
     },
-    platformContext: NOOP_PLATFORM_CONTEXT,
+    platformContext: NOOP_PLATFORM_CONTEXT as any,
     isLightTheme: false,
     fetchHighlightedFileLineRanges: args => {
         if (args.filePath === 'cmd/go-diff/go-diff.go') {
