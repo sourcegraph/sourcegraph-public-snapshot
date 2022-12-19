@@ -424,10 +424,6 @@ func unredactedURL(new, old string) (string, bool, error) {
 		newURL.User = url.User(newURL.User.Username())
 	}
 
-	var urlCh bool
-	if newURL.Host != oldURL.Host {
-		urlCh = true
-	}
-
-	return newURL.String(), urlCh, nil
+	urlChanged := newURL.Host != oldURL.Host
+	return newURL.String(), urlChanged, nil
 }
