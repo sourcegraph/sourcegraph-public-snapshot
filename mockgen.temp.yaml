@@ -107,3 +107,7 @@
   interfaces:
     - UserEmailsService
     - ReposService
+- filename: internal/repoupdater/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/repoupdater
+  interfaces:
+    - Client

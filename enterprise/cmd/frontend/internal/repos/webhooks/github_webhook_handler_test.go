@@ -117,7 +117,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoupdater.DefaultClient = &repoupdater.Client{
+	repoupdater.DefaultClient = &repoupdater.client{
 		URL:        server.URL,
 		HTTPClient: doer,
 	}

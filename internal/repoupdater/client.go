@@ -19,6 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Client interface {
+	RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error)
+	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+	EnqueueChangesetSync(ctx context.Context, ids []int64) error
+	SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
+}
+
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
@@ -27,7 +36,7 @@ var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
 // Client is a repoupdater client.
-type Client struct {
+type client struct {
 	// URL to repoupdater server.
 	URL string
 
@@ -36,15 +45,15 @@ type Client struct {
 }
 
 // NewClient will initiate a new repoupdater Client with the given serverURL.
-func NewClient(serverURL string) *Client {
-	return &Client{
+func NewClient(serverURL string) Client {
+	return &client{
 		URL:        serverURL,
 		HTTPClient: defaultDoer,
 	}
 }
 
 // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-func (c *Client) RepoUpdateSchedulerInfo(
+func (c *client) RepoUpdateSchedulerInfo(
 	ctx context.Context,
 	args protocol.RepoUpdateSchedulerInfoArgs,
 ) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
@@ -66,7 +75,7 @@ func (c *Client) RepoUpdateSchedulerInfo(
 var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 // RepoLookup retrieves information about the repository on repoupdater.
-func (c *Client) RepoLookup(
+func (c *client) RepoLookup(
 	ctx context.Context,
 	args protocol.RepoLookupArgs,
 ) (result *protocol.RepoLookupResult, err error) {
@@ -74,7 +83,7 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -134,7 +143,7 @@ var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protoco
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (c *client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
@@ -179,7 +188,7 @@ func (e *repoNotFoundError) Error() string {
 // MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
 var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
 
-func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
+func (c *client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	if MockEnqueueChangesetSync != nil {
 		return MockEnqueueChangesetSync(ctx, ids)
 	}
@@ -212,7 +221,7 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 // MockSchedulePermsSync mocks (*Client).SchedulePermsSync for tests.
 var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
 
-func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+func (c *client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
 	if MockSchedulePermsSync != nil {
 		return MockSchedulePermsSync(ctx, args)
 	}
@@ -242,7 +251,7 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 }
 
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
+func (c *client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
@@ -270,7 +279,7 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	return &result, nil
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
+func (c *client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -284,8 +293,8 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 	return c.do(ctx, req)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+func (c *client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -298,7 +307,7 @@ func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, e
 
 	req = req.WithContext(ctx)
 	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("RepoUpdater Client"),
+		nethttp.OperationName("RepoUpdater client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
