@@ -375,5 +375,14 @@ func RepositoryScopeQuery(query string) (BasicQuery, error) {
 func MakeQueryWithRepoFilters(repositoryCriteria string, query string) (string, error) {
 	// parse repo query - it should only be with repo filters though this should have been validated before.
 	// apply repo filters to each part of the query
-	return "", nil
+	// For compute queries this should override the patterntype.
+	queryPlan, err := ParseQuery(query, "literal")
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing search query")
+	}
+	repositoryPlan, err := ParseQuery(repositoryCriteria, "literal")
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing repository filters")
+	}
+	return searchquery.StringHuman(repositoryPlan.ToQ()) + " " + searchquery.StringHuman(queryPlan.ToQ()) + " count:all", nil
 }

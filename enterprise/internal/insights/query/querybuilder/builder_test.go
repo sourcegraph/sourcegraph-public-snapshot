@@ -631,3 +631,47 @@ func TestRepositoryScopeQuery(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeQueryWithRepoFilters(t *testing.T) {
+	tests := []struct {
+		repos string
+		query string
+		want  autogold.Value
+	}{
+		{
+			"repo:sourcegraph",
+			"insights",
+			autogold.Want("simple repo with simple query", "repo:sourcegraph insights count:all"),
+		},
+		{
+			"repo:sourcegraph or repo:handbook",
+			"insights",
+			autogold.Want("compound repo with simple query", "(repo:sourcegraph OR repo:handbook) insights count:all"),
+		},
+		{
+			"repo:sourcegraph",
+			"insights or todo",
+			autogold.Want("simple repo with compound query", "repo:sourcegraph (insights OR todo) count:all"),
+		},
+		{
+			"repo:sourcegraph or repo:has.file(content:sourcegraph)",
+			"insights or todo",
+			autogold.Want("compound repo with compound query", "(repo:sourcegraph OR repo:has.file(content:sourcegraph)) (insights OR todo) count:all"),
+		},
+		{
+			"repo:test or repo:handbook",
+			"insights fork:yes",
+			autogold.Want("compound repo with fork:yes query", "(repo:test OR repo:handbook) fork:yes insights count:all"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := MakeQueryWithRepoFilters(test.repos, test.query)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}

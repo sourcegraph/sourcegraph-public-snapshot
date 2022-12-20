@@ -115,7 +115,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 	if series.RepositoryCriteria != nil {
 		jobModifiedQuery, err := querybuilder.MakeQueryWithRepoFilters(*series.RepositoryCriteria, job.SearchQuery)
 		if err != nil {
-			// This should never happen as it would fail if query parsing failed, and we should have parsed it on creation.
+			// This should never happen as we should have failed on query parsing on insight creation.
 			return errors.Wrap(err, "making a global search for a repo search-scoped insight errored")
 		}
 		r.logger.Debug("insight repo search scoped query", log.Int("seriesId", series.ID), log.String("search query", job.SearchQuery))
