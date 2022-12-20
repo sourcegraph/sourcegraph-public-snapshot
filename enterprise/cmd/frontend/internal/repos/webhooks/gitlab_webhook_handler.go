@@ -3,8 +3,6 @@ package webhooks
 import (
 	"context"
 
-	gh "github.com/google/go-github/v43/github"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -12,33 +10,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitHubWebhookHandler struct {
+type GitLabWebhookHandler struct {
 	logger log.Logger
 }
 
-func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
-	router.Register(g.handleGitHubWebhook, extsvc.KindGitHub, "push")
+func (g *GitLabWebhookHandler) Register(router *webhooks.WebhookRouter) {
+	router.Register(g.handle, extsvc.KindGitLab, "push")
 }
 
-func NewGitHubWebhookHandler() *GitHubWebhookHandler {
-	return &GitHubWebhookHandler{
-		logger: log.Scoped("repos.GitHubWebhookHandler", "github webhook handler"),
+func NewGitLabWebhookHandler() *GitLabWebhookHandler {
+	return &GitLabWebhookHandler{
+		logger: log.Scoped("repos.GitLabWebhookHandler", "gitlab webhook handler"),
 	}
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-	event, ok := payload.(*gh.PushEvent)
+func (g *GitLabWebhookHandler) handle(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+	event, ok := payload.(*gitlabwebhooks.PushEvent)
 	if !ok {
-		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
+		return errors.Newf("expected GitLab.PushEvent, got %T", payload)
 	}
 
-	repoName, err := githubNameFromEvent(event)
+	repoName, err := gitlabNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handleGitHubWebhook: get name failed")
+		return errors.Wrap(err, "handleGitLabWebhook: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -54,8 +53,8 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ databa
 	return nil
 }
 
-func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
-	url := *event.Repo.URL
+func gitlabNameFromEvent(event *gitlabwebhooks.PushEvent) (api.RepoName, error) {
+	url := event.Project.WebURL
 	if len(url) <= 8 {
 		return "", errors.Newf("expected URL length > 8, got %v", len(url))
 	}
