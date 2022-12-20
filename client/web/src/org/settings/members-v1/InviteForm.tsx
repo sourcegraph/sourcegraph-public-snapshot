@@ -4,7 +4,6 @@ import { mdiPlus, mdiEmailOpenOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -19,6 +18,7 @@ import {
     Code,
     Tooltip,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

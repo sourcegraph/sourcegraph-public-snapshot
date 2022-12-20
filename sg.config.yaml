@@ -713,7 +713,7 @@ commands:
     cmd: ./dev/postgres_exporter.sh
 
   monitoring-generator:
-    cmd: go generate ./monitoring
+    cmd: (cd monitoring/ && go generate ./... )
     env:
       RELOAD: true
     watch:

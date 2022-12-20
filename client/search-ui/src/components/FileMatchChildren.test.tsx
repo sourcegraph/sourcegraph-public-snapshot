@@ -4,7 +4,6 @@ import { of } from 'rxjs'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     CHUNK_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
@@ -12,6 +11,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { FileMatchChildren } from './FileMatchChildren'
 

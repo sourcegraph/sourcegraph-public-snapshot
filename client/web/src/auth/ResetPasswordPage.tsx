@@ -3,9 +3,8 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom-v5-compat'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'

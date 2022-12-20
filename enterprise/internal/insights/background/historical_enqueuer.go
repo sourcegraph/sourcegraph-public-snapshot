@@ -492,7 +492,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 }
 
 func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, err error, softErr error) {
-	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
+	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo_id", id)
 	defer func() {
 		if err != nil {

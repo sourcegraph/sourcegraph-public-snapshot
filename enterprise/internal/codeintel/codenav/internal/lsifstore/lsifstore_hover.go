@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,9 +37,9 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	}
 
 	if documentData.SCIPData != nil {
-		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-		trace.Log(log.Int("numIntersectingOccurrences", len(occurrences)))
+		trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 		for _, occurrence := range occurrences {
 			// Return the hover data we can extract from the most specific occurrence
@@ -105,9 +106,9 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		return "", types.Range{}, false, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("LSIF Data ranges", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	trace.AddEvent("FindRanges", attribute.Int("numIntersectingRanges", len(ranges)))
 
 	for _, r := range ranges {
 		if text, ok := documentData.LSIFData.HoverResults[r.HoverResultID]; ok {

@@ -5,7 +5,7 @@ import { MemoryHistory, createMemoryHistory } from 'history'
 import { Router } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
-import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
 
 export interface RenderWithBrandedContextResult extends RenderResult {
     history: MemoryHistory

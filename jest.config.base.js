@@ -67,6 +67,7 @@ const config = {
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
+    path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
 }

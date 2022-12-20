@@ -1,6 +1,7 @@
 import { isMacPlatform } from '@sourcegraph/common'
-import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
-import { getModKey } from '@sourcegraph/shared/src/react-shortcuts/ShortcutManager'
+
+import { ModifierKey, Key } from './react-shortcuts/keys'
+import { getModKey } from './react-shortcuts/ShortcutManager'
 
 /**
  * An action and its associated keybindings.

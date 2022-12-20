@@ -15,6 +15,7 @@ import (
 // in the base query. For example an input query of `repo:myrepo test` might be provided a default `archived:no`,
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
+// This also converts count:all to count:99999999.
 func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -207,6 +208,40 @@ func (q ComputeInsightQuery) String() string {
 	return string(q)
 }
 
+// WithCount adds or updates a count paramerter for an existing query
+func (q BasicQuery) WithCount(count string) (BasicQuery, error) {
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldCount,
+			Value:      count,
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	plan, err := searchquery.Pipeline(searchquery.Init(string(q), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(upsertParams))
+
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
 var QueryNotSupported = errors.New("query not supported")
 
 // IsSingleRepoQuery - Returns a boolean indicating if the query provided targets only a single repo.
@@ -370,4 +405,16 @@ func RepositoryScopeQuery(query string) (BasicQuery, error) {
 		modified = append(modified, basic.MapParameters(p))
 	}
 	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
+func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery) (BasicQuery, error) {
+	modifiedQuery, err := withDefaults(withCountAll(query), CodeInsightsQueryDefaults(true))
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing search query")
+	}
+	repositoryPlan, err := ParseQuery(repositoryCriteria, "literal")
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing repository filters")
+	}
+	return BasicQuery(searchquery.StringHuman(repositoryPlan.ToQ()) + " " + modifiedQuery.String()), nil
 }

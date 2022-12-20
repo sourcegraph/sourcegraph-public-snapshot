@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -45,10 +46,9 @@ func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLast
 	for _, commits := range sourcedCommits {
 		numCommits += len(commits.Commits)
 	}
-	trace.Log(
-		log.Int("numRepositories", len(sourcedCommits)),
-		log.Int("numCommits", numCommits),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numRepositories", len(sourcedCommits)),
+		attribute.Int("numCommits", numCommits))
 
 	return sourcedCommits, nil
 }
@@ -100,7 +100,7 @@ func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 	if err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("uploadsUpdated", uploadsUpdated))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadsUpdated", uploadsUpdated))
 
 	return uploadsUpdated, nil
 }
@@ -160,10 +160,9 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	if err != nil {
 		return 0, 0, err
 	}
-	trace.Log(
-		log.Int("uploadsUpdated", uploadsUpdated),
-		log.Int("uploadsDeleted", uploadsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("uploadsUpdated", uploadsUpdated),
+		attribute.Int("uploadsDeleted", uploadsDeleted))
 
 	return uploadsUpdated, uploadsDeleted, nil
 }

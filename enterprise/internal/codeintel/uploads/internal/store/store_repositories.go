@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -270,7 +271,7 @@ func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err er
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numRepositories", len(repositories)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRepositories", len(repositories)))
 
 	return repositories, nil
 }

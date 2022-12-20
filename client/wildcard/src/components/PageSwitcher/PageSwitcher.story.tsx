@@ -4,7 +4,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Text } from '@sourcegraph/wildcard'
+
+import { Text } from '../Typography/Text/Text'
 
 import { PageSwitcher } from './PageSwitcher'
 

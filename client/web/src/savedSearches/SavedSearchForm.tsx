@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -21,6 +20,7 @@ import {
     Code,
     Label,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

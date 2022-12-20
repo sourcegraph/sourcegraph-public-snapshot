@@ -1,4 +1,4 @@
-package cliutil
+package completions
 
 import (
 	"fmt"

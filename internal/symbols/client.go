@@ -131,7 +131,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -200,7 +200,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel")
+	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -236,7 +236,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 }
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.SymbolInfo")
+	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.SymbolInfo") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -301,7 +301,7 @@ func (c *Client) httpPost(
 	repo api.RepoName,
 	payload any,
 ) (resp *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
+	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

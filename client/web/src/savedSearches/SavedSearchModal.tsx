@@ -3,9 +3,8 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { Button, Modal, Select, H3 } from '@sourcegraph/wildcard'
+import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 

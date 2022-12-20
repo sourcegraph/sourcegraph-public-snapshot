@@ -3704,6 +3704,9 @@ type MockDB struct {
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
+	// RolePermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method RolePermissions.
+	RolePermissionsFunc *DBRolePermissionsFunc
 	// RolesFunc is an instance of a mock function object controlling the
 	// behavior of the method Roles.
 	RolesFunc *DBRolesFunc
@@ -3895,6 +3898,11 @@ func NewMockDB() *MockDB {
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: func() (r0 RepoStore) {
+				return
+			},
+		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: func() (r0 RolePermissionStore) {
 				return
 			},
 		},
@@ -4125,6 +4133,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Repos")
 			},
 		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: func() RolePermissionStore {
+				panic("unexpected invocation of MockDB.RolePermissions")
+			},
+		},
 		RolesFunc: &DBRolesFunc{
 			defaultHook: func() RoleStore {
 				panic("unexpected invocation of MockDB.Roles")
@@ -4295,6 +4308,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
+		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: i.RolePermissions,
 		},
 		RolesFunc: &DBRolesFunc{
 			defaultHook: i.Roles,
@@ -7159,6 +7175,105 @@ func (c DBReposFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRolePermissionsFunc describes the behavior when the RolePermissions
+// method of the parent MockDB instance is invoked.
+type DBRolePermissionsFunc struct {
+	defaultHook func() RolePermissionStore
+	hooks       []func() RolePermissionStore
+	history     []DBRolePermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// RolePermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RolePermissions() RolePermissionStore {
+	r0 := m.RolePermissionsFunc.nextHook()()
+	m.RolePermissionsFunc.appendCall(DBRolePermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RolePermissions
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRolePermissionsFunc) SetDefaultHook(hook func() RolePermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RolePermissions method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRolePermissionsFunc) PushHook(hook func() RolePermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRolePermissionsFunc) SetDefaultReturn(r0 RolePermissionStore) {
+	f.SetDefaultHook(func() RolePermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRolePermissionsFunc) PushReturn(r0 RolePermissionStore) {
+	f.PushHook(func() RolePermissionStore {
+		return r0
+	})
+}
+
+func (f *DBRolePermissionsFunc) nextHook() func() RolePermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRolePermissionsFunc) appendCall(r0 DBRolePermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRolePermissionsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRolePermissionsFunc) History() []DBRolePermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRolePermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRolePermissionsFuncCall is an object that describes an invocation of
+// method RolePermissions on an instance of MockDB.
+type DBRolePermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RolePermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRolePermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRolePermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

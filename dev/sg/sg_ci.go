@@ -19,7 +19,6 @@ import (
 	sgrun "github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -28,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -409,7 +410,7 @@ sg ci build docker-images-patch
 # Publish a custom Prometheus image build without running tests
 sg ci build docker-images-patch-notest prometheus
 `,
-		BashComplete: cliutil.CompleteOptions(getAllowedBuildTypeArgs),
+		BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&ciPipelineFlag,
 			&cli.StringFlag{
@@ -463,7 +464,7 @@ sg ci build docker-images-patch-notest prometheus
 				if rt == runtype.PullRequest {
 					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
 					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					return cliutil.NewEmptyExitErr(1)
+					return exit.NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {

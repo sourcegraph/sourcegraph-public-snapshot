@@ -9,8 +9,8 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'

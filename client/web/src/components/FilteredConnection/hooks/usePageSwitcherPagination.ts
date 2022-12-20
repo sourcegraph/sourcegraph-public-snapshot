@@ -20,8 +20,8 @@ export interface PaginatedConnection<N> {
     pageInfo?: {
         hasNextPage: boolean
         hasPreviousPage: boolean
-        startCursor?: string
-        endCursor?: string
+        startCursor?: string | null
+        endCursor?: string | null
     }
     error?: string | null
 }
