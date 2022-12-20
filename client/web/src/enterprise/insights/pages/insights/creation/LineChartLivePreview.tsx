@@ -69,7 +69,7 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
         <aside {...attributes}>
             <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
-            <LivePreviewCard>
+            <LivePreviewCard className="flex-1">
                 {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === LivePreviewStatus.Error ? (
