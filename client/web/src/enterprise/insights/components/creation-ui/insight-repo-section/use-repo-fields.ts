@@ -1,16 +1,15 @@
+import { useMemo } from 'react'
+
+import { ApolloClient, gql, useApolloClient } from '@apollo/client'
+
 import { QueryState } from '@sourcegraph/search'
 
+import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
-import { useField, useFieldAPI, ValidationResult } from '../../form'
+import { AsyncValidator, useField, useFieldAPI, ValidationResult } from '../../form'
 import { FormAPI } from '../../form/hooks/useForm'
 import { insightRepositoriesAsyncValidator, insightRepositoriesValidator } from '../validators/validators'
-
-const SEARCH_QUERY_VALIDATOR = (value?: QueryState): ValidationResult => {
-    if (value && value.query.trim() === '') {
-        return 'Search repositories query is a required filed, please fill in the field.'
-    }
-}
 
 interface RepositoriesFields {
     /**
@@ -42,7 +41,10 @@ interface Fields {
 
 export function useRepoFields<FormFields extends RepositoriesFields>(props: Input<FormFields>): Fields {
     const { formApi } = props
+
+    const apolloClient = useApolloClient()
     const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+
     const isSingleSearchQueryRepo = repoFieldVariation === 'single-search-query'
     const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
 
@@ -64,12 +66,15 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
     // required
     const isRepoURLsListRequired = isSearchQueryORUrlsList && isURLsListMode
 
+    const validateRepoQuerySyntax = useMemo(() => createValidateRepoQuerySyntax(apolloClient), [apolloClient])
+
     const repoQuery = useField({
         formApi,
         name: 'repoQuery',
         disabled: !isSearchQueryMode,
         validators: {
-            sync: isRepoQueryRequired ? SEARCH_QUERY_VALIDATOR : undefined,
+            sync: isRepoQueryRequired ? validateRepoQuery : undefined,
+            async: isRepoQueryRequired ? validateRepoQuerySyntax : undefined,
         },
     })
 
@@ -86,4 +91,36 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
     })
 
     return { repoMode, repoQuery, repositories }
+}
+
+function validateRepoQuery(value?: QueryState): ValidationResult {
+    if (value && value.query.trim() === '') {
+        return 'Search repositories query is a required filed, please fill in the field.'
+    }
+}
+
+const VALIDATE_REPO_QUERY_GQL = gql`
+    query ValidateInsightRepoQuery($query: String!) {
+        validateScopedInsightQuery(query: $query) {
+            isValid
+            invalidReason
+        }
+    }
+`
+
+function createValidateRepoQuerySyntax(apolloClient: ApolloClient<unknown>): AsyncValidator<QueryState> {
+    return async (value?: QueryState): Promise<ValidationResult<unknown>> => {
+        if (!value) {
+            return
+        }
+
+        const { data } = await apolloClient.query<ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables>({
+            query: VALIDATE_REPO_QUERY_GQL,
+            variables: { query: value.query },
+        })
+
+        if (data.validateScopedInsightQuery.invalidReason) {
+            return data.validateScopedInsightQuery.invalidReason
+        }
+    }
 }

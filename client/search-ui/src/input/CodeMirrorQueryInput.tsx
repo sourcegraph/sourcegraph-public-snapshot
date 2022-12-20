@@ -124,6 +124,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
     ariaLabel = 'Search query',
     ariaLabelledby,
     ariaInvalid,
+    ariaBusy,
     tabIndex = 0,
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
@@ -188,6 +189,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             extensions.push(EditorView.contentAttributes.of({ 'aria-invalid': ariaInvalid }))
         }
 
+        if (ariaBusy) {
+            extensions.push(EditorView.contentAttributes.of({ 'aria-busy': ariaBusy }))
+        }
+
         if (tabIndex !== 0) {
             extensions.push(EditorView.contentAttributes.of({ tabIndex: tabIndex.toString() }))
         }
@@ -234,6 +239,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
         ariaLabel,
         ariaLabelledby,
         ariaInvalid,
+        ariaBusy,
         tabIndex,
         autocompletion,
         placeholder,
