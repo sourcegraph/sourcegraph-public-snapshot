@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/run"
@@ -47,7 +48,7 @@ var cloudCommand = &cli.Command{
 				if existingPath, err := exec.LookPath(executable); err == nil {
 					// If this mi2 installation is installed elsewhere, remove it to
 					// avoid conflicts
-					if !filepath.HasPrefix(existingPath, locationDir) {
+					if !strings.HasPrefix(existingPath, locationDir) {
 						std.Out.WriteNoticef("Removing existing installation at of %q at %q",
 							executable, existingPath)
 						_ = os.Remove(existingPath)

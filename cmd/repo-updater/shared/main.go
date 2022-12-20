@@ -72,7 +72,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
 
-	logging.Init()
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,

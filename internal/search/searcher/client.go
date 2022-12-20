@@ -133,7 +133,7 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req, //nolint:staticcheck // Drop once we get rid of OpenTracing
 		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()

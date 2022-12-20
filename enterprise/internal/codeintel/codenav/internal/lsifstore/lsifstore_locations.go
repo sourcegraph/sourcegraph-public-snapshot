@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -67,9 +68,9 @@ func (s *store) getLocations(
 	}
 
 	if documentData.SCIPData != nil {
-		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-		trace.Log(log.Int("numIntersectingOccurrences", len(occurrences)))
+		trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 		for _, occurrence := range occurrences {
 			var locations []shared.Location
@@ -121,16 +122,16 @@ func (s *store) getLocations(
 		return nil, 0, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("LSIF Data ranges", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	trace.AddEvent("FindRanges", attribute.Int("numIntersectingRanges", len(ranges)))
 
 	orderedResultIDs := extractResultIDs(ranges, lsifExtractor)
 	locationsMap, totalCount, err := s.locations(ctx, bundleID, orderedResultIDs, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("locations", attribute.Int("totalCount", totalCount))
 
 	locations := make([]shared.Location, 0, limit)
 	for _, resultID := range orderedResultIDs {
@@ -219,9 +220,9 @@ func (s *store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(
-		log.Int("numIndexes", len(indexes)),
-		log.String("indexes", intsToString(indexes)),
+	trace.AddEvent("indexes",
+		attribute.Int("numIndexes", len(indexes)),
+		attribute.String("indexes", intsToString(indexes)),
 	)
 
 	// Read the result sets and construct the set of documents we need to open to resolve range
@@ -230,16 +231,15 @@ func (s *store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
 	// Filter out all data in rangeIDsByResultID that falls outside of the current page. This
 	// also returns the set of paths for documents we will need to fetch to resolve the results
 	// of the current page.
 	rangeIDsByResultID, paths := limitResultMap(ids, rangeIDsByResultID, limit, offset)
-	trace.Log(
-		log.Int("numPaths", len(paths)),
-		log.String("paths", strings.Join(paths, ", ")),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numPaths", len(paths)),
+		attribute.String("paths", strings.Join(paths, ", ")))
 
 	// Hydrate the locations result set by replacing range ids with their actual data from their
 	// containing document. This refines the map constructed in the previous step.
@@ -431,11 +431,10 @@ func (s *store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[prec
 				})
 			}
 		}
-		trace.Log(
-			log.String("id", string(id)),
-			log.String("path", path),
-			log.Int("numLocationsForIDInPath", len(locations)),
-		)
+		trace.AddEvent("TODO Domain Owner",
+			attribute.String("id", string(id)),
+			attribute.String("path", path),
+			attribute.Int("numLocationsForIDInPath", len(locations)))
 
 		totalCount += len(locations)
 		locationsByResultID[id] = append(locationsByResultID[id], locations...)

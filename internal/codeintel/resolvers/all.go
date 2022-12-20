@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"regexp" // nolint:depguard // regexps are passed to bluemonday, which expects the std ones
+	"regexp" //nolint:depguard // regexps are passed to bluemonday, which expects the std ones
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"

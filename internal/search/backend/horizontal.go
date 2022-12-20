@@ -11,12 +11,12 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -581,8 +581,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		aggregate.Crashes += r.rl.Crashes
 		aggregate.Stats.Add(&r.rl.Stats)
 
-		for k, v := range r.rl.Minimal {
-			aggregate.Minimal[k] = v
+		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		}
 	}
 
@@ -754,9 +754,9 @@ func isZoektRolloutError(ctx context.Context, err error) bool {
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
 	if span := trace.TraceFromContext(ctx); span != nil {
-		span.LogFields(
-			otlog.String("rollout.reason", reason),
-			otlog.String("rollout.error", err.Error()))
+		span.AddEvent("rollout",
+			attribute.String("rollout.reason", reason),
+			attribute.String("rollout.error", err.Error()))
 	}
 
 	return true

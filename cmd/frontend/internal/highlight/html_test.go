@@ -47,7 +47,7 @@ func TestMultilineOccurrence2(t *testing.T) {
 			// Valid range at the beginning, should be skipped.
 			{
 				Range:      []int32{0, 0, 8},
-				SyntaxKind: scip.SyntaxKind_IdentifierModule,
+				SyntaxKind: scip.SyntaxKind_IdentifierNamespace,
 			},
 
 			// Past end range occurrence, should not cause panic
@@ -60,14 +60,14 @@ func TestMultilineOccurrence2(t *testing.T) {
 
 	// Should stay false, because we should skip this identifier
 	// due to the valid lines that is passed to lsifToHTML
-	sawModuleIdentifier := false
+	sawNamespaceIdentifier := false
 
 	rowsSeen := map[int32]bool{}
 	lsifToHTML(code, document, func(row int32) {
 		rowsSeen[row] = true
 	}, func(kind scip.SyntaxKind, line string) {
-		if kind == scip.SyntaxKind_IdentifierModule {
-			sawModuleIdentifier = true
+		if kind == scip.SyntaxKind_IdentifierNamespace {
+			sawNamespaceIdentifier = true
 		}
 
 	}, map[int32]bool{
@@ -82,7 +82,7 @@ func TestMultilineOccurrence2(t *testing.T) {
 		t.Error("Should only add the rows from 2 until the end (due to weird multiline occurrence)")
 	}
 
-	if sawModuleIdentifier {
+	if sawNamespaceIdentifier {
 		t.Error("Should not have seen identifier for module, because line was skipped")
 	}
 }
