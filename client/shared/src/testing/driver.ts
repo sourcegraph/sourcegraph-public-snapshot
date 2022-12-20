@@ -232,13 +232,13 @@ export class Driver {
             await delay(1000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 300000 })
-        } catch (err) {
+        } catch (error) {
             /**
              * In case a user is not authenticated, and site-init is required, two redirects happen:
              * 1. Redirect to /sign-in?returnTo=%2F
              * 2. Redirect to /site-admin/init
              */
-            if (err.message.includes('waiting for selector `.test-signin-form` failed')) {
+            if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
 
                 await this.page.waitForSelector('.test-signup-form')
@@ -255,6 +255,8 @@ export class Driver {
                 await delay(1000)
                 await this.page.click('button[type=submit]')
                 await this.page.waitForNavigation({ timeout: 300000 })
+            } else {
+                throw error
             }
         }
     }
