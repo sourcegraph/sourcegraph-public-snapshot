@@ -1,4 +1,5 @@
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("//dev:defs.bzl", "sass_library")
 load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 
 js_run_binary(
@@ -20,3 +21,11 @@ js_run_binary(
     "settings",
     "batch_spec",
 ]]
+
+sass_library(
+    name = "global-style-vars",
+    srcs = [
+        "src/global-styles/icons.scss",
+    ],
+    visibility = ["//visibility:public"],
+)

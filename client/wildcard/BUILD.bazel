@@ -1,0 +1,9 @@
+load("//dev:defs.bzl", "sass_library")
+
+sass_library(
+    name = "global-style-vars",
+    srcs = [
+        "src/global-styles/breakpoints.scss",
+    ],
+    visibility = ["//visibility:public"],
+)
