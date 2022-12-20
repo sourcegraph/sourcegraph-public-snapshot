@@ -233,6 +233,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $cloneStatus: CloneStatus
                 $orderBy: RepositoryOrderBy
                 $descending: Boolean
+                $externalService: ID
             ) {
                 repositories(
                     first: $first
@@ -243,6 +244,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     cloneStatus: $cloneStatus
                     orderBy: $orderBy
                     descending: $descending
+                    externalService: $externalService
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -265,6 +267,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             cloneStatus: args.cloneStatus ?? null,
             orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
             descending: args.descending ?? false,
+            externalService: args.externalService ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),

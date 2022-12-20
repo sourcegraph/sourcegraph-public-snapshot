@@ -1323,6 +1323,10 @@ type Query {
         """
         failedFetch: Boolean = false
         """
+        Return repositories that are associated with the given external service.
+        """
+        externalService: ID
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME

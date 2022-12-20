@@ -23,6 +23,7 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
+import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -33,6 +34,8 @@ import {
     RepositoriesResult,
     RepositoryOrderBy,
     RepositoryStatsResult,
+    ExternalServicesResult,
+    ExternalServicesVariables,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
@@ -276,6 +279,49 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         ]
     }, [data])
 
+    const {
+        loading: extSvcLoading,
+        data: extSvcs,
+        error: extSvcError,
+    } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
+        variables: {
+            first: null,
+            after: null,
+        },
+    })
+
+    const filters = useMemo(() => {
+        if (!extSvcs) {
+            return FILTERS
+        }
+
+        const values = [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all repositories',
+                args: {},
+            },
+        ]
+        for (const extSvc of extSvcs.externalServices.nodes) {
+            values.push({
+                label: extSvc.displayName,
+                value: extSvc.id,
+                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                args: { externalService: extSvc.id },
+            })
+        }
+
+        const filtersWithExternalServices = FILTERS
+        filtersWithExternalServices.push({
+            id: 'codeHost',
+            label: 'Code Host',
+            type: 'select',
+            values: values,
+        })
+        return filtersWithExternalServices
+    }, [extSvcs])
+
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
@@ -284,6 +330,9 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
     const licenseInfo = window.context.licenseInfo
+
+    const combinedError = error || extSvcError
+    const combinedLoading = loading || extSvcLoading
 
     return (
         <div className="site-admin-repositories-page">
@@ -327,8 +376,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             )}
 
             <Container className="mb-3">
-                {error && !loading && <ErrorAlert error={error} />}
-                {loading && !error && <LoadingSpinner />}
+                {combinedError && !combinedLoading && <ErrorAlert error={combinedError} />}
+                {combinedLoading && !combinedError && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
@@ -339,8 +388,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
-                    inputClassName="flex-1"
-                    filters={FILTERS}
+                    inputClassName="ml-2 flex-1"
+                    filters={filters}
                     history={history}
                     location={location}
                 />
