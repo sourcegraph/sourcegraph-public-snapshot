@@ -35,7 +35,8 @@ func (r *RepositoryResolver) Contributors(args *struct {
 		connectionArgs: connectionArgs,
 		repo:           r,
 	}
-	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{DoNotReverse: true})
+	reverse := false
+	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{Reverse: &reverse})
 }
 
 type repositoryContributorConnectionStore struct {
@@ -77,7 +78,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 	}
 
 	var start int
-	results, start, err = offsetBasedCursorSlice(results, args)
+	results, start, err = OffsetBasedCursorSlice(results, args)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 	return s.results, s.err
 }
 
-func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
+func OffsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
 	start := 0
 	end := 0
 	totalFloat := float64(len(nodes))
