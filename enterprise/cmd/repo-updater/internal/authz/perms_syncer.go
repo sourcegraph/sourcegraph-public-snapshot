@@ -568,7 +568,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	providerStates = results.providerStates
 	if err != nil {
 		tryTouchUserPerms()
-		return providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %v (user id: %d)", user.Username, user.ID)
+		return providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %v (id: %d)", user.Username, user.ID)
 	}
 
 	// fetch current permissions from database
@@ -596,7 +596,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	srp := s.db.SubRepoPerms()
 	for spec, perm := range results.subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
-			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %v (user id: %d)", spec, user.Username, user.ID)
+			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %v (id: %d)", spec, user.Username, user.ID)
 		}
 	}
 
@@ -612,7 +612,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
-		return providerStates, errors.Wrapf(err, "set user permissions for user %v (user id: %d)", user.Username, user.ID)
+		return providerStates, errors.Wrapf(err, "set user permissions for user %v (id: %d)", user.Username, user.ID)
 	}
 
 	logger.Debug("synced",
@@ -722,7 +722,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
-			return providerStates, errors.Wrap(err, "fetch repository permissions")
+			return providerStates, errors.Wrapf(err, "fetch repository permissions for repository %v (id: %d)", repo.Name, repo.ID)
 		}
 		logger.Warn("proceedWithPartialResults", log.Error(err))
 	}
@@ -741,7 +741,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		})
 
 		if err != nil {
-			return providerStates, errors.Wrap(err, "get user IDs by external accounts")
+			return providerStates, errors.Wrapf(err, "get user IDs by external accounts for repository %v (id: %d)", repo.Name, repo.ID)
 		}
 
 		// Set up the set of all account IDs that need to be bound to permissions
@@ -785,12 +785,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	txs, err := s.permsStore.Transact(ctx)
 	if err != nil {
-		return providerStates, errors.Wrap(err, "start transaction")
+		return providerStates, errors.Wrapf(err, "start transaction for repository %v (id: %d)", repo.Name, repo.ID)
 	}
 	defer func() { err = txs.Done(err) }()
 
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
-		return providerStates, errors.Wrap(err, "set repository permissions")
+		return providerStates, errors.Wrapf(err, "set repository permissions for repository %v (id: %d)", repo.Name, repo.ID)
 	}
 	regularCount := len(p.UserIDs)
 
@@ -800,7 +800,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		AccountIDs:  pendingAccountIDs,
 	}
 	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
-		return providerStates, errors.Wrap(err, "set repository pending permissions")
+		return providerStates, errors.Wrapf(err, "set repository pending permissions for repository %v (id: %d)", repo.Name, repo.ID)
 	}
 	pendingCount := len(p.UserIDs)
 
