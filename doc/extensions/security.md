@@ -12,7 +12,7 @@ We designed Sourcegraph extensions with security and privacy in mind:
 - Extensions are sandboxed by your web browser. Because *Sourcegraph extensions* run inside of the Sourcegraph for Chrome/Firefox *browser extension*, they are limited by the permissions you granted to the browser extension.
 - Sourcegraph development is open source, so these claims are verifiable.
 
-<a name="note-1"><sup>1</sup></a> To use extensions other than the default set of language extensions, you currently do need an account or self-hosted instance. We plan to remove this limitation soon.
+<a name="note-1"><sup>1</sup></a> To use extensions other than the default set of language extensions, you need an account or self-hosted instance. We plan to remove this limitation soon.
 
 ## Additional Admin security features
 
