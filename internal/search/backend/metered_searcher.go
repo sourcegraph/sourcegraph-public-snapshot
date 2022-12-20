@@ -13,6 +13,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -93,7 +94,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 			log.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
-		tr.LogFields(fields...)
+		tr.LogFields(fields...) //nolint:staticcheck // TODO when upgrading the observation package
 		event.AddLogFields(fields)
 	}
 
@@ -101,7 +102,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	// out the marshalled size of the query.
 	if gobCache, ok := q.(*query.GobCache); ok {
 		b, _ := gobCache.GobEncode()
-		tr.LogFields(log.Int("query.size", len(b)))
+		tr.SetAttributes(attribute.Int("query.size", len(b)))
 		event.AddField("query.size", len(b))
 	}
 
@@ -124,7 +125,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	if isLeaf {
 		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
 			WriteRequestStart: func() {
-				tr.LogFields(log.String("event", "rpc.write_request_start"))
+				tr.SetAttributes(attribute.String("event", "rpc.write_request_start"))
 				writeRequestStart = time.Now()
 			},
 
@@ -133,7 +134,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 				if err != nil {
 					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
 				}
-				tr.LogFields(fields...)
+				tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
 				writeRequestDone = time.Now()
 			},
 		})
@@ -154,13 +155,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first.Do(func() {
 			if isLeaf {
 				if !writeRequestStart.IsZero() {
-					tr.LogFields(
-						log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-						log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+					tr.SetAttributes(
+						attribute.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+						attribute.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
 					)
 				}
-				tr.LogFields(
-					log.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
+				tr.SetAttributes(
+					attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
 				)
 			}
 		})
@@ -209,7 +210,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
 		log.String("stats.flush_reason", statsAgg.FlushReason.String()),
 	}
-	tr.LogFields(fields...)
+	tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
 		event.AddField("error", err.Error())
@@ -251,7 +252,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	qStr := queryString(q)
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
-	tr.LogFields(trace.Stringer("opts", opts))
+	tr.LogFields(trace.Stringer("opts", opts)) //nolint:staticcheck // TODO deal with stringer thing
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
@@ -286,7 +287,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	tr.SetError(err)
 	if zsl != nil {
-		tr.LogFields(log.Int("repos", len(zsl.Repos)))
+		tr.SetAttributes(attribute.Int("repos", len(zsl.Repos)))
 	}
 	tr.Finish()
 

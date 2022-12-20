@@ -168,7 +168,7 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 		}
 	}
 	if t.trace != nil {
-		t.trace.LogFields(fields...)
+		t.trace.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
 		if enableTraceLog {
 			t.Logger.
 				AddCallerSkip(1). // Log() -> Logger
@@ -425,7 +425,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.LogFields(logFields...)
+	tr.LogFields(logFields...) //nolint:staticcheck // TODO when updating the observation package
 	tr.Finish()
 }
 

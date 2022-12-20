@@ -11,10 +11,10 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -543,7 +543,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	err error,
 ) {
 	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
-	tr.LogFields(otlog.Int("inputRevCount", len(repoRevs)))
+	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -705,10 +705,9 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	tr.LogFields(
-		otlog.Int("filteredRevCount", len(matchedRepoRevs)),
-		otlog.Int("backendsMissing", backendsMissing),
-	)
+	tr.SetAttributes(
+		attribute.Int("filteredRevCount", len(matchedRepoRevs)),
+		attribute.Int("backendsMissing", backendsMissing))
 	return matchedRepoRevs, missing, backendsMissing, nil
 }
 

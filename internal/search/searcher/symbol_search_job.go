@@ -7,6 +7,7 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -61,7 +62,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.LogFields(log.String("repo", string(repoRevs.Repo.Name)), log.Error(err))
+				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), attribute.String("error", err.Error()))
 				// Only record error if we haven't timed out.
 				if ctx.Err() == nil {
 					cancel()
