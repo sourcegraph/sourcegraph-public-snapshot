@@ -1,7 +1,7 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'

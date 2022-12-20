@@ -5,7 +5,7 @@ import { spy, assert } from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { useNotepadState } from '../stores'
 import { addNotepadEntry, NotepadEntry } from '../stores/notepad'

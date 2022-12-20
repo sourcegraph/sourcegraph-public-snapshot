@@ -3,8 +3,8 @@ import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
 import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 

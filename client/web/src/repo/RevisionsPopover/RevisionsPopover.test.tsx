@@ -1,7 +1,7 @@
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
 
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'

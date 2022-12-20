@@ -2,13 +2,13 @@ import React from 'react'
 
 import { createLocation, createMemoryHistory } from 'history'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
