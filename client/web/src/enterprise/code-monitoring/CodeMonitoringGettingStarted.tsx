@@ -3,8 +3,8 @@ import React, { useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 

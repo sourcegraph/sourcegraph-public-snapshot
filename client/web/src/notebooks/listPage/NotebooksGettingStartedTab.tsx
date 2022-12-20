@@ -4,8 +4,8 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 

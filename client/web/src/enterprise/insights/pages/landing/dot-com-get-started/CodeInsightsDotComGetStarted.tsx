@@ -2,8 +2,8 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
