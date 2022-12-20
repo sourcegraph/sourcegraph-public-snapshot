@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,13 +30,23 @@ func (d *dynamicInsightSeriesResolver) Label() string {
 
 func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
-	for _, point := range d.generated.Points {
-		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
+	for i := 0; i < len(d.generated.Points); i++ {
+		var previous *store.SeriesPoint
+		if i > 0 {
+			previous = &store.SeriesPoint{
+				SeriesID: d.generated.SeriesId,
+				Time:     d.generated.Points[i-1].Time,
+				Value:    float64(d.generated.Points[i-1].Count),
+			}
+		}
+		point := store.SeriesPoint{
 			SeriesID: d.generated.SeriesId,
-			Time:     point.Time,
-			Value:    float64(point.Count),
-		}})
+			Time:     d.generated.Points[i].Time,
+			Value:    float64(d.generated.Points[i].Count),
+		}
+		resolvers = append(resolvers, &insightsDataPointResolver{p: point, previous: previous, series: types.InsightViewSeries{}})
 	}
+
 	return resolvers, nil
 }
 

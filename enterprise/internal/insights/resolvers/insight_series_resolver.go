@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -77,13 +78,75 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
-type insightsDataPointResolver struct{ p store.SeriesPoint }
+type insightsDataPointResolver struct {
+	p              store.SeriesPoint
+	previous       *store.SeriesPoint
+	series         types.InsightViewSeries
+	appliedFilters types.InsightViewFilters
+}
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: i.p.Time}
 }
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
+
+func isNilOrEmpty(s *string) bool {
+	if s == nil {
+		return true
+	}
+	return *s == ""
+}
+
+func (i insightsDataPointResolver) DiffQuery() (*string, error) {
+	if len(i.appliedFilters.SearchContexts) > 1 {
+		return nil, errors.New("invalid search context")
+	}
+
+	includeRepoFilter := ""
+	if !isNilOrEmpty(i.appliedFilters.IncludeRepoRegex) {
+		includeRepoFilter = "repo:" + *i.appliedFilters.IncludeRepoRegex
+	}
+	excludeRepoFilter := ""
+	if !isNilOrEmpty(i.appliedFilters.ExcludeRepoRegex) {
+		excludeRepoFilter = "-repo:" + *i.appliedFilters.ExcludeRepoRegex
+	}
+
+	filtersRepoScope := strings.TrimSpace(fmt.Sprintf("%s %s", includeRepoFilter, excludeRepoFilter))
+
+	searchContext := ""
+	if len(i.appliedFilters.SearchContexts) == 1 {
+		if i.appliedFilters.SearchContexts[0] != "" {
+			searchContext = "context:" + i.appliedFilters.SearchContexts[0]
+		}
+	}
+	seriesRepoFilter := ""
+	if len(i.series.Repositories) > 0 {
+		seriesRepoFilter = fmt.Sprintf("^%s$", strings.Join(i.series.Repositories, "|"))
+	} else if i.series.RepositoryCriteria != nil {
+		seriesRepoFilter = *i.series.RepositoryCriteria
+	}
+
+	repoFilters := strings.TrimSpace(fmt.Sprintf("%s %s", filtersRepoScope, seriesRepoFilter))
+
+	afterFilter := ""
+	if i.previous != nil {
+		afterFilter = "after:" + i.previous.Time.UTC().Format(time.RFC3339)
+	}
+	beforeFilter := "before:" + i.p.Time.UTC().Format(time.RFC3339)
+
+	timeFilter := strings.TrimSpace(fmt.Sprintf("%s %s", beforeFilter, afterFilter))
+
+	query := fmt.Sprintf("%s %s type:diff %s %s",
+		searchContext,
+		repoFilters,
+		timeFilter,
+		i.series.Query,
+	)
+	query = strings.TrimSpace(query)
+
+	return &query, nil
+}
 
 type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
@@ -209,9 +272,15 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
 	modifiedPoints := removeClosePoints(p.points, p.series)
-	for _, point := range modifiedPoints {
-		resolvers = append(resolvers, insightsDataPointResolver{point})
+	for i := 0; i < len(modifiedPoints); i++ {
+		var previousPoint *store.SeriesPoint
+		if i > 0 {
+			previousPoint = &modifiedPoints[i-1]
+		}
+		pointResolver := insightsDataPointResolver{p: modifiedPoints[i], previous: previousPoint, series: p.series, appliedFilters: p.filters}
+		resolvers = append(resolvers, pointResolver)
 	}
+
 	return resolvers, nil
 }
 

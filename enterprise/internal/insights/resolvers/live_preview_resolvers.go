@@ -121,13 +121,24 @@ type searchInsightLivePreviewSeriesResolver struct {
 
 func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
-	for _, point := range s.series.Points {
-		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
+	for i := 0; i < len(s.series.Points); i++ {
+		point := store.SeriesPoint{
 			SeriesID: s.series.SeriesId,
-			Time:     point.Time,
-			Value:    float64(point.Count),
-		}})
+			Time:     s.series.Points[i].Time,
+			Value:    float64(s.series.Points[i].Count),
+		}
+		var previous *store.SeriesPoint
+		if i > 0 {
+			previous = &store.SeriesPoint{
+				SeriesID: s.series.SeriesId,
+				Time:     s.series.Points[i-1].Time,
+				Value:    float64(s.series.Points[i-1].Count),
+			}
+		}
+		//TODO fix series
+		resolvers = append(resolvers, &insightsDataPointResolver{p: point, previous: previous, series: types.InsightViewSeries{}})
 	}
+
 	return resolvers, nil
 }
 
