@@ -26,14 +26,14 @@ const (
 
 // File represents the contents of a single CODEOWNERS file.
 // As specified by various CODEOWNERS implementations the following apply:
-// * There is at most one CODEOWNERS file per repository.
-// * The semantic contents of the file boil down to rules.
-// * Order matters: When discerning ownership for a path
-//   only the owners from the last rule that matches the path
-//   is applied.
-// * Except if using sections - then every section is considered
-//   separately. That is, an owner is potentially extracted
-//   for every section.
+//   - There is at most one CODEOWNERS file per repository.
+//   - The semantic contents of the file boil down to rules.
+//   - Order matters: When discerning ownership for a path
+//     only the owners from the last rule that matches the path
+//     is applied.
+//   - Except if using sections - then every section is considered
+//     separately. That is, an owner is potentially extracted
+//     for every section.
 type File struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
