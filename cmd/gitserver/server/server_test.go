@@ -1339,8 +1339,6 @@ func TestCorruptedAt(t *testing.T) {
 
 		os.Remove(dst.Path("HEAD"))
 
-		s.markIfCorrupted(ctx, repoName, s.dir(repoName), "")
-
 		// Verify corrupt time was set
 		repo, err := db.GitserverRepos().GetByName(ctx, repoName)
 		if err != nil {

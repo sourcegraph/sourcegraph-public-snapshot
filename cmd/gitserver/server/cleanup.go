@@ -260,6 +260,8 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 			return false, err
 		}
 
+		s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason))
+
 		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
 		if err := s.removeRepoDirectory(dir, true); err != nil {
 			return true, err
@@ -318,6 +320,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			reason = maybeCorrupt
+			s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), "git detected corruption: could not read object or pack file(s). See log for more details")
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
@@ -1030,11 +1033,11 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
+func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) {
 	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
 
 	if !stdErrIndicatesCorruption(stderr) {
-		return false
+		return
 	}
 
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
@@ -1046,8 +1049,6 @@ func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, std
 	if err != nil {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
-
-	return true
 }
 
 // stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates

@@ -2022,14 +2022,6 @@ func setGitAttributes(dir GitDir) error {
 	return nil
 }
 
-func (s *Server) markIfCorrupted(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) error {
-	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
-		now := time.Now()
-		return s.DB.GitserverRepos().SetCorrupted(ctx, repo, now, stderr)
-	}
-	return nil
-}
-
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
 // HEAD, zeroing it out, etc.)
 var testRepoCorrupter func(ctx context.Context, tmpDir GitDir)

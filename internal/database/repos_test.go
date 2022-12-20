@@ -119,12 +119,12 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 	}
 }
 
-func setGitserverRepoCorrupt(t *testing.T, db DB, name api.RepoName, ts time.Time, logOutput string) {
+func logRepoCorruption(t *testing.T, db DB, name api.RepoName, logOutput string) {
 	t.Helper()
 
-	err := db.GitserverRepos().SetCorrupted(context.Background(), name, ts, logOutput)
+	err := db.GitserverRepos().LogCorruption(context.Background(), name, logOutput)
 	if err != nil {
-		t.Fatalf("failed to set repo corrupted: %s", err)
+		t.Fatalf("failed to log repo corruption: %s", err)
 	}
 }
 

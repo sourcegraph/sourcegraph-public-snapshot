@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -33,8 +34,8 @@ type GitserverRepoStore interface {
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	// SetCorrupted sets the corrupted at value and corruption output for a repo
-	SetCorrupted(ctx context.Context, name api.RepoName, corruptedAt time.Time, logOutput string) error
+	// LogCorruption sets the corrupted at value and logs the corruption reason
+	LogCorruption(ctx context.Context, name api.RepoName, reason string) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
 	// If the status value hasn't changed, the row will not be updated.
@@ -312,7 +313,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at
+    gr.corrupted_at,
+    gr.corruption_log
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
@@ -343,7 +345,8 @@ SELECT
 	last_changed,
 	repo_size_bytes,
 	updated_at,
-    corrupted_at
+    corrupted_at,
+    corruption_log
 FROM gitserver_repos
 WHERE repo_id = %s
 `
@@ -371,7 +374,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at
+    gr.corrupted_at,
+    gr.corruption_log
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
@@ -393,7 +397,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at
+    gr.corrupted_at,
+    gr.corruption_log
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
@@ -421,6 +426,7 @@ func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoNa
 
 func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoName, error) {
 	var gr types.GitserverRepo
+	var rawLogs []byte
 	var cloneStatus string
 	var repoName api.RepoName
 	err := scanner.Scan(
@@ -434,12 +440,17 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		&gr.UpdatedAt,
 		&gr.CorruptedAt,
+		&rawLogs,
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
 	}
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
 
+	err = json.Unmarshal(rawLogs, &gr.CorruptionLog)
+	if err != nil {
+		return nil, repoName, errors.Wrap(err, "unmarshal of corruption log failed")
+	}
 	return &gr, repoName, nil
 }
 
@@ -504,17 +515,45 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) SetCorrupted(ctx context.Context, name api.RepoName, ts time.Time, logOutput string) error {
+func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string) error {
+	row := s.QueryRow(ctx, sqlf.Sprintf(`
+SELECT corruption_log FROM gitserver_repos
+WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
+    `, name))
+
+	var rawLog []byte
+	if err := row.Scan(&rawLog); err != nil {
+		return errors.Wrap(err, "could not scan corrution_log value")
+	}
+	var logs []types.RepoCorruptionLog
+
+	if err := json.Unmarshal(rawLog, &logs); err != nil {
+		return errors.Wrap(err, "could not unmarshal corruption_log")
+	}
+
+	logs = append(logs, types.RepoCorruptionLog{Timestamp: time.Now(), Reason: reason})
+
+	// we only keep the last 10 entries
+	if len(logs) > 10 {
+		logs = logs[1:]
+	}
+
+	if data, err := json.Marshal(logs); err != nil {
+		return errors.Wrap(err, "could not marshal corruption_log")
+	} else {
+		rawLog = data
+	}
+
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	corrupted_at = %s,
-    corrupted_log = %s,
+	corrupted_at = NOW(),
+    corruption_log = %s,
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-    `, ts, logOutput, name))
+    `, rawLog, name))
 	if err != nil {
-		return errors.Wrapf(err, "setting corrupted")
+		return errors.Wrapf(err, "logging repo corruption")
 	}
 
 	if nrows, err := res.RowsAffected(); err != nil {

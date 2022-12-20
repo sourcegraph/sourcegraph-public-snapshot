@@ -4,6 +4,7 @@ package types
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -558,8 +559,20 @@ type GitserverRepo struct {
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
 	// Time when corruption of repo was detected
-	CorruptedAt time.Time
-	UpdatedAt   time.Time
+	CorruptedAt   time.Time
+	UpdatedAt     time.Time
+	CorruptionLog []RepoCorruptionLog
+}
+
+type RepoCorruptionLog struct {
+	Timestamp time.Time `json:"ts"`
+	Reason    string    `json:"reason"`
+}
+
+func UnmarshalCorruptionLog(data []byte) ([]RepoCorruptionLog, error) {
+	var logs []RepoCorruptionLog
+	err := json.Unmarshal(data, &logs)
+	return logs, err
 }
 
 // ExternalService is a connection to an external service.

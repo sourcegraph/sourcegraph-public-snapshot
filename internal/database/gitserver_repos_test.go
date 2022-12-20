@@ -515,7 +515,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 }
 
-func TestCorruptedAt(t *testing.T) {
+func TestLogCorruption(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -524,21 +524,31 @@ func TestCorruptedAt(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	t.Run("corruptedAt gets set", func(t *testing.T) {
+	t.Run("log repo corruption sets corrupted_at time", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
 			Name:          "github.com/sourcegraph/repo1",
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		//TODO(burmudar): put something in as the logOutput
-		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
+		logRepoCorruption(t, db, repo.Name, "test")
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
+
 		if fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Expected corruptedAt time to be set. Got non zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Expected corruptedAt time to be set. Got zero value for time %q", fromDB.CorruptedAt)
+		}
+		// We should have one corruption log entry
+		if len(fromDB.CorruptionLog) != 1 {
+			t.Errorf("Wanted 1 Corruption log entries,  got %d entries", len(fromDB.CorruptionLog))
+		}
+		if fromDB.CorruptionLog[0].Timestamp.IsZero() {
+			t.Errorf("Corruption Log entry expected to have non zero timestamp. Got %q", fromDB.CorruptionLog[0])
+		}
+		if fromDB.CorruptionLog[0].Reason != "test" {
+			t.Errorf("Wanted Corruption Log reason %q got %q", "test", fromDB.CorruptionLog[0].Reason)
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
@@ -547,8 +557,7 @@ func TestCorruptedAt(t *testing.T) {
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		//TODO(burmudar): put something in as the logOutput
-		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
+		logRepoCorruption(t, db, repo.Name, "test 2")
 
 		setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
 
@@ -557,7 +566,7 @@ func TestCorruptedAt(t *testing.T) {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
 		if !fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Expected corruptedAt to be time zero value. Got non zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Setting clone status should set corrupt_at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
@@ -566,8 +575,7 @@ func TestCorruptedAt(t *testing.T) {
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
-		//TODO(burmudar): put something in as the logOutput
-		setGitserverRepoCorrupt(t, db, repo.Name, time.Now(), "")
+		logRepoCorruption(t, db, repo.Name, "test 3")
 
 		setGitserverRepoLastChanged(t, db, repo.Name, time.Now())
 
@@ -576,8 +584,35 @@ func TestCorruptedAt(t *testing.T) {
 			t.Fatalf("failed to get repo by id: %s", err)
 		}
 		if !fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Expected corruptedAt to be time zero value. Got non zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Setting Last Changed should set corrupted at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
+	})
+	t.Run("consequative corruption logs appends", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo4",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+		for i := 0; i < 12; i++ {
+			logRepoCorruption(t, db, repo.Name, fmt.Sprintf("test %d", i))
+		}
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to retrieve repo from db: %s", err)
+		}
+
+		// We added 12 entries but we only keep 10
+		if len(fromDB.CorruptionLog) != 10 {
+			t.Errorf("expected 10 corruption log entries but got %d", len(fromDB.CorruptionLog))
+		}
+
+		// Our last log entry should have "test 12" as the reason - the last element in the loop earlier
+		wanted := "test 11"
+		if fromDB.CorruptionLog[9].Reason != wanted {
+			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLog[9].Reason)
+		}
+
 	})
 }
 
@@ -1040,8 +1075,9 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 	}
 
 	want := &types.GitserverRepo{
-		RepoID:      repo.ID,
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo.ID,
+		CloneStatus:   types.CloneStatusNotCloned,
+		CorruptionLog: []types.RepoCorruptionLog{},
 	}
 	if diff := cmp.Diff(want, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
