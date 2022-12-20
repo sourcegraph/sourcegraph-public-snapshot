@@ -531,6 +531,12 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
 	}
 
+	symbolsMap := computeSymbolsEndpoints()
+	symbolsAddrs, err := symbolsMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
+	}
+
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
 	if err != nil {
@@ -543,6 +549,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 		Searchers:            searcherAddrs,
+		Symbols:              symbolsAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -553,6 +560,11 @@ var (
 
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
+
+	symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -573,11 +585,11 @@ var (
 func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
 		if addr := searcherAddr(os.Environ()); addr != "" {
-			if len(strings.Fields(addr)) == 0 {
-				searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-			} else {
-				searcherURLs = endpoint.New(addr)
-			}
+			searcherURLs = endpoint.New(addr)
+		} else if len(strings.Fields(searcherURL)) == 0 {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
+			searcherURLs = endpoint.New(searcherURL)
 		}
 	})
 	return searcherURLs
@@ -592,6 +604,30 @@ func searcherAddr(environ []string) string {
 	}
 
 	return searcherURL
+}
+
+func computeSymbolsEndpoints() *endpoint.Map {
+	symbolsURLsOnce.Do(func() {
+		if addr := symbolsAddr(os.Environ()); addr != "" {
+			symbolsURLs = endpoint.New(addr)
+		} else if len(strings.Fields(symbolsURL)) == 0 {
+			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
+		} else {
+			symbolsURLs = endpoint.New(symbolsURL)
+		}
+	})
+	return symbolsURLs
+}
+
+func symbolsAddr(environ []string) string {
+	if r, ok := getEnv(environ, "SYMBOLS_REPLICA_NUMBER"); ok {
+		addr, err := generateReplicasEndpoints(r, "symbols")
+		if err == nil && addr != "" {
+			return addr
+		}
+	}
+
+	return symbolsURL
 }
 
 func computeIndexedEndpoints() *endpoint.Map {

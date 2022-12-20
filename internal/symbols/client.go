@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -33,9 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
-var symbolsReplicas = env.Get("SYMBOLS_REPLICA_NUMBER", "0", "symbols service replica counts")
-var deployType = env.Get("DEPLOY_TYPE", "", "deployment type")
+// var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -48,7 +44,7 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:                 symbolsURL,
+	URL:                 "k8s+http://symbols:3184",
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -79,34 +75,9 @@ type Client struct {
 
 func (c *Client) url(repo api.RepoName) (string, error) {
 	c.endpointOnce.Do(func() {
-		if addr := symbolsAddr(c.URL); addr != "" {
-			if len(strings.Fields(addr)) == 0 {
-				c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-			} else {
-				c.endpoint = endpoint.New(addr)
-			}
-		}
+		c.endpoint = search.SymbolsURLs()
 	})
 	return c.endpoint.Get(string(repo))
-}
-
-func symbolsAddr(url string) string {
-	num, err := strconv.Atoi(symbolsReplicas)
-	if err == nil && num > 0 {
-		s := "symbols"
-		if deployType == "docker-compose" {
-			s = ""
-		}
-
-		addr := ""
-		for i := 0; i < num; i++ {
-			addr += "http://symbols-" + strconv.Itoa(i) + "." + s + ":3184 "
-		}
-
-		return addr
-	}
-
-	return url
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {

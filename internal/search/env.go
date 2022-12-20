@@ -18,6 +18,9 @@ var (
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
+
 	indexedSearchOnce sync.Once
 	indexedSearch     zoekt.Streamer
 
@@ -37,6 +40,15 @@ func SearcherURLs() *endpoint.Map {
 		})
 	})
 	return searcherURLs
+}
+
+func SymbolsURLs() *endpoint.Map {
+	symbolsURLsOnce.Do(func() {
+		symbolsURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+			return conns.Symbols
+		})
+	})
+	return symbolsURLs
 }
 
 func Indexed() zoekt.Streamer {
