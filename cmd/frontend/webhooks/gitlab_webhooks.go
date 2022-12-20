@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,10 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (wr *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (wr *WebhookRouter) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
-	ctx := actor.WithInternalActor(r.Context())
+	ctx = actor.WithInternalActor(ctx)
 
 	var eventKind struct {
 		ObjectKind string `json:"object_kind"`
@@ -81,7 +82,7 @@ func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseW
 		}
 		defer r.Body.Close()
 
-		wr.HandleGitLabWebhook(logger, w, r, urn, payload)
+		wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
 		return
 	}
 
@@ -91,5 +92,5 @@ func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseW
 		return
 	}
 
-	wr.HandleGitLabWebhook(logger, w, r, urn, payload)
+	wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
 }
