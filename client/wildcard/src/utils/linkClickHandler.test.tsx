@@ -4,7 +4,7 @@ import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import * as sinon from 'sinon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link } from '../components/Link/Link'
 
 import { createLinkClickHandler } from './linkClickHandler'
 
