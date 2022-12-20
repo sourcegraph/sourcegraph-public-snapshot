@@ -220,7 +220,7 @@ export class Driver {
          * 1. Redirect to /sign-in?returnTo=%2F
          * 2. Redirect to /site-admin/init
          */
-        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
+        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'load' })
 
         const url = new URL(this.page.url())
 
