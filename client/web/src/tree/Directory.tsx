@@ -95,13 +95,25 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                     </div>
                 )}
             </TreeLayerRowContents>
-            {props.index === MAX_TREE_ENTRIES - 1 && (
+
+            {props.index === MAX_TREE_ENTRIES - (rendersDotDot(props.entryInfo.path, props.depth) ? 0 : 1) && (
                 <TreeRowAlert
-                    variant="warning"
+                    variant="note"
+                    className="p-2"
                     style={getTreeItemOffset(props.depth)}
-                    error="Too many entries. Use search to find a specific file."
+                    error="Full list of directories is too long to display. Use search to find specific directory."
                 />
             )}
         </TreeLayerCell>
     </TreeRow>
 )
+
+// Subdirectories that are rendered at the root of the tree are rendered with
+// `..` as the first entry. Since we depend on the relative index to render the
+// "too many directories" alert, we need to account for this.
+function rendersDotDot(path: string, depth: number): boolean {
+    if (depth > 0) {
+        return false
+    }
+    return path.split('/').length >= 2
+}
