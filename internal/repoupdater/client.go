@@ -20,11 +20,21 @@ import (
 )
 
 type Client interface {
+	// RepoUpdateSchedulerInfo returns information about the state of the repo in the
+	// update scheduler.
 	RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error)
+	// RepoLookup retrieves information about the repository on repoupdater.
 	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+	// EnqueueRepoUpdate requests that the named repository be updated in the near
+	// future. It does not wait for the update.
 	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+	// EnqueueChangesetSync schedules a changeset sync that will run in the
+	// background.
 	EnqueueChangesetSync(ctx context.Context, ids []int64) error
+	// SchedulePermsSync schedules a permissions sync that will run in the
+	// background.
 	SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	// SyncExternalService requests the given external service to be synced.
 	SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
 }
 
