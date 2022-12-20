@@ -15,6 +15,7 @@ import { getStepInterval } from '../../backend/gql-backend/utils/get-step-interv
 import { generateLinkURL, InsightDataSeriesData } from '../../backend/utils/create-line-chart-content'
 
 import { LivePreviewStatus, State } from './types'
+import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
 
 export const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {
@@ -35,7 +36,7 @@ export interface SeriesWithStroke extends SearchSeriesPreviewInput {
 interface Props {
     skip: boolean
     step: Duration
-    repositories: string[]
+    repoScope: RepositoryScopeInput
     series: SeriesWithStroke[]
 }
 
@@ -52,7 +53,7 @@ interface Result<R> {
  * instead, it's calculated on the fly in query time on the backend.
  */
 export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[]> {
-    const { skip, repositories, step, series } = props
+    const { skip, repoScope, step, series } = props
     const [unit, value] = getStepInterval(step)
 
     const { data, loading, error, refetch } = useQuery<GetInsightPreviewResult, GetInsightPreviewVariables>(
@@ -67,7 +68,7 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
                         generatedFromCaptureGroups: srs.generatedFromCaptureGroups,
                         groupBy: srs.groupBy,
                     })),
-                    repositoryScope: { repositories },
+                    repositoryScope: repoScope,
                     timeScope: { stepInterval: { unit, value: +value } },
                 },
             },
@@ -79,12 +80,12 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
             return createPreviewSeriesContent({
                 response: data,
                 originalSeries: series,
-                repositories,
+                repositories: repoScope.repositories,
             })
         }
 
         return null
-    }, [data, repositories, series])
+    }, [data, repoScope, series])
 
     if (loading) {
         return { state: { status: LivePreviewStatus.Loading }, refetch }
