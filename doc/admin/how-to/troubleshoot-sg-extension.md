@@ -133,9 +133,29 @@ The ESlint extension requires the eslint.insight.repository and eslint.insight.s
 This is most likely due to the file being opened in a Sourcegraph instance that does not have access to your files. You must first configure the plugin in order to use it with your private instance. See the plugin docs for more information.
 
 #### Search-export: Can I export search results?
-1. You can export search results by enabling the [Sourcegraph search results CSV export extension](https://sourcegraph.com/extensions/sourcegraph/search-export)
+1. The latest version of Sourcegraph allows you to export search results by default. If you are on an earlier version of Sourcegraph (anything before v3.38), you can export search results by enabling the [Sourcegraph search results CSV export extension](https://sourcegraph.com/extensions/sourcegraph/search-export)
 2. Once it is enabled, you will find an `Export to CSV` button in the Search-Results page
- 
+3. If you feel limited by only exporting as a csv, you can use `src` cli for more control over the export format, as well as what you're exporting.
+
+   For example, let's say I want to view the `Change-Id` for every commit made on the public Go repo over the last week. I could do that in `src` by using the `search` command:
+   
+   `src search 'repo:^github\.com/golang/go type:commit after:"last week" Change-Id'`
+   
+   To export these results as a text file, but only the lines containing the `Change-Id` for each result:
+   
+   `src search 'repo:^github\.com/golang/go type:commit after:"last week" Change-Id' | grep 'Change-Id' >> results.txt`
+   
+   Now, `results.txt`, will contain something like this:
+   ```
+   23 results for "repo:^github\.com/golang/go type:commit
+   after:"last week" Change-Id" in 1.304s
+     Change-Id: Ia0123441633c147aa3f76ea29ed26c7722e2416c
+     Change-Id: I6789f509263a0dbf113481148665e7951aa6a989
+     Change-Id: I105c5d6c801d354467e0cefd268189c18846858e
+     Change-Id: I02f4ef8a143bb1faafe3d11ad223f36f5cc245c6
+   ```
+   [Visit the `src` cli quickstart documentation](https://docs.sourcegraph.com/cli/quickstart) to start using `src` to export search results.
+
 #### Search-export: Network Error when downloading CSV
 
 It's likely that the CSV file exceeds the browser's limit for data URI size. Users can limit the size of search match preview size through their user settings (see ["contributions"](https://sourcegraph.com/extensions/sourcegraph/search-export/-/contributions) for search-export). If decreasing the size of search match previews doesn't resolve the issue, users can decrease the amount of search results exported with the `count:` filter in their search query.
