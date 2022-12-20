@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { LinkOrSpan } from '@sourcegraph/wildcard'
+import { LinkOrSpan } from '../../Link/LinkOrSpan'
 
 import { Icon, IconType } from '../../Icon'
 
