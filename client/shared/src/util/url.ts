@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
 import { SearchMode } from '@sourcegraph/search'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
@@ -567,23 +568,38 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): string {
+export function buildGetStartedURL(cloudSignup?: boolean, authenticatedUser?: AuthenticatedUser | null): string {
     /**
      * Account sign-ups should be available for customer instances whereas
      * non customer instances like .com should direct users through our cloud
      * sign-up flow to prioritize trial-starts.
      */
-    const path = cloudSignup ? 'https://signup.sourcegraph.com' : 'https://sourcegraph.com/sign-up'
+    const path = cloudSignup ? buildCloudTrialURL(authenticatedUser) : 'https://sourcegraph.com/sign-up'
 
     const url = new URL(path)
-
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
-    }
 
     // Local sign-ups use relative URLs
     if (!cloudSignup) {
         return `${url.pathname}${url.search}`
+    }
+
+    return url.toString()
+}
+
+export const buildCloudTrialURL = (authenticatedUser: AuthenticatedUser | null | undefined, product?: string) => {
+    const url = new URL('https://signup.sourcegraph.com/')
+
+    if (product) {
+        url.searchParams.append('p', product)
+    }
+    if (authenticatedUser) {
+        if (authenticatedUser.email) {
+            url.searchParams.append('email', authenticatedUser.email)
+        }
+        if (authenticatedUser.displayName) {
+            const name = authenticatedUser.displayName.replace(' ', '_')
+            url.searchParams.append('name', name)
+        }
     }
 
     return url.toString()

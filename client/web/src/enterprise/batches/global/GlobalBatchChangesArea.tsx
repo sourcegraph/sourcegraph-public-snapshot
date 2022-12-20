@@ -73,6 +73,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                 <BatchChangeListPage
                     headingElement="h1"
                     canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
+                    authenticatedUser={authenticatedUser}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     {...props}
                     location={location}

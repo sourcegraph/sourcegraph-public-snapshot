@@ -8,6 +8,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -37,7 +38,7 @@ export interface SearchResultsInfoBarProps
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    authenticatedUser: AuthenticatedUser | null
 
     /**
      * Whether the code insights feature flag is enabled.
@@ -170,7 +171,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     <CloudCtaBanner className="mb-0" variant="outlined">
                         To search across your private repositories,{' '}
                         <Link
-                            to="https://signup.sourcegraph.com"
+                            to={buildCloudTrialURL(props.authenticatedUser)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}

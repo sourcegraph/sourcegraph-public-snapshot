@@ -8,6 +8,7 @@ import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink, Link } from '@sourcegraph/wildcard'
@@ -293,7 +294,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                             <CloudCtaBanner variant="outlined" small={true} className="ml-sm-auto mt-md-0 mt-3">
                                 To create Notebooks across your private repositories,{' '}
                                 <Link
-                                    to="https://signup.sourcegraph.com/?p=notebooks"
+                                    to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={() => telemetryService.log('ClickedOnCloudCTA')}
@@ -339,7 +340,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 )}
 
                 {selectedTab === 'getting-started' && (
-                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
+                    <NotebooksGettingStartedTab
+                        telemetryService={telemetryService}
+                        authenticatedUser={authenticatedUser}
+                    />
                 )}
             </Page>
         </div>

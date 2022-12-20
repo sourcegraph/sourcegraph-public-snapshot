@@ -6,6 +6,8 @@ import { useHistory } from 'react-router'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
@@ -21,6 +23,7 @@ export interface QueryExamplesHomepageProps extends TelemetryProps {
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
+    authenticatedUser?: AuthenticatedUser | null
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -47,6 +50,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     queryState,
     setQueryState,
     isSourcegraphDotCom = false,
+    authenticatedUser,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
@@ -129,7 +133,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         <CloudCtaBanner className="mb-5" variant={cloudCtaVariant}>
                             To search across your private repositories,{' '}
                             <Link
-                                to="https://signup.sourcegraph.com"
+                                to={buildCloudTrialURL(authenticatedUser)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={() => telemetryService.log('ClickedOnCloudCTA')}
