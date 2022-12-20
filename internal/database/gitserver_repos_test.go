@@ -375,7 +375,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -401,7 +401,7 @@ func TestGitserverReposGetByName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -441,7 +441,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 		sort.Slice(haveRepos, func(i, j int) bool {
 			return haveRepos[i].RepoID < haveRepos[j].RepoID
 		})
-		if diff := cmp.Diff(gitserverRepos[:i+1], haveRepos, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		if diff := cmp.Diff(gitserverRepos[:i+1], haveRepos, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 			t.Fatal(diff)
 		}
 	}
@@ -473,7 +473,7 @@ func TestSetCloneStatus(t *testing.T) {
 
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
 	gitserverRepo.ShardID = shardID
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -500,7 +500,7 @@ func TestSetCloneStatus(t *testing.T) {
 		ShardID:     shardID,
 		CloneStatus: types.CloneStatusCloned,
 	}
-	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -647,7 +647,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	gitserverRepo.LastError = "oops"
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -664,7 +664,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	gitserverRepo.LastError = emptyErr
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -724,7 +724,7 @@ func TestSetRepoSize(t *testing.T) {
 	gitserverRepo.RepoSizeBytes = 200
 	// If we have size, we can assume it's cloned
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -755,7 +755,7 @@ func TestSetRepoSize(t *testing.T) {
 		// If we have size, we can assume it's cloned
 		CloneStatus: types.CloneStatusCloned,
 	}
-	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -797,7 +797,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -818,7 +818,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	// Set LastError to the expected error string but without the null character, because we expect
 	// our code to work and strip it before writing to the DB.
 	gitserverRepo.LastError = "Oops"
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -831,7 +831,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -870,7 +870,7 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(gitserverRepo1, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		if diff := cmp.Diff(gitserverRepo1, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -879,7 +879,7 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -927,7 +927,7 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -952,7 +952,7 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 	}
 
 	// Check that nothing except UpdatedAt and RepoSizeBytes has been changed
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -1008,7 +1008,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(repo, reloaded, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		if diff := cmp.Diff(repo, reloaded, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLog")); diff != "" {
 			t.Fatal(diff)
 		}
 		// Separately make sure UpdatedAt has changed, though
@@ -1079,7 +1079,7 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 		CloneStatus:   types.CloneStatusNotCloned,
 		CorruptionLog: []types.RepoCorruptionLog{},
 	}
-	if diff := cmp.Diff(want, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
 	}
 
