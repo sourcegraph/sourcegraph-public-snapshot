@@ -1246,12 +1246,10 @@ func pruneIfNeeded(dir GitDir, limit int) (err error) {
 		return nil
 	}
 
-	// "--expire now" will remove all unreachable, loose objects from the store. The
-	// default setting is 2 weeks. We choose a more aggressive setting because
-	// unreachable, loose objects count towards the threshold that triggers a
-	// repack. In the worst case, IE all loose objects are unreachable, we would
-	// continuously trigger repacks until the loose objects expire.
-	cmd := exec.Command("git", "prune", "--expire", "now")
+	// "--expire" will remove all unreachable, loose objects from the store. We
+	// give a grace period of 2 weeks to avoid races with incoming reference
+	// updates, see https://github.blog/2022-12-12-highlights-from-git-2-39/.
+	cmd := exec.Command("git", "prune", "--expire", "2.weeks.ago")
 	dir.Set(cmd)
 	err = cmd.Run()
 	if err != nil {
