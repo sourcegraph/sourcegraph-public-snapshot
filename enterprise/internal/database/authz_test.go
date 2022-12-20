@@ -339,7 +339,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  int32(repo.ID),
 		Perm:    authz.Read,
-		UserIDs: toMapset(1),
+		UserIDs: toMapset(user.ID),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -364,7 +364,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Revoke all of them
 	if err := s.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
-		UserID:   1,
+		UserID:   user.ID,
 		Accounts: []*extsvc.Accounts{accounts},
 	}); err != nil {
 		t.Fatal(err)
@@ -372,7 +372,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// The user should not have any permissions now
 	err = s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
-		UserID: 1,
+		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
 	})
@@ -380,7 +380,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 	}
 
-	srpMap, err := db.SubRepoPerms().GetByUser(ctx, 1)
+	srpMap, err := db.SubRepoPerms().GetByUser(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
