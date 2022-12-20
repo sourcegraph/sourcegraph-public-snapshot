@@ -592,9 +592,11 @@ export const buildCloudTrialURL = (
 ) => {
     const url = new URL('https://signup.sourcegraph.com/')
 
+    //CTA product page, determines dynamic Cloud description
     if (product) {
         url.searchParams.append('p', product)
     }
+    //User name/email to prefill Cloud Trial form with
     if (authenticatedUser) {
         if (authenticatedUser.email) {
             url.searchParams.append('email', authenticatedUser.email)
