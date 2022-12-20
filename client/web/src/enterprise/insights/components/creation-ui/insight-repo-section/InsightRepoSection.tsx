@@ -117,7 +117,7 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     return (
         <Input
             as={RepositoriesField}
-            message="Use a full repo URL (github.com/...). Separate repositories with comas"
+            message="Use a full repo URL (github.com/...). Separate repositories with commas"
             placeholder="Example: github.com/sourcegraph/sourcegraph"
             aria-labelledby={ariaLabelledby}
             value={fieldValue}
@@ -239,12 +239,11 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 <ul>
                     <li>
                         Hint: you can use regular expressions within each of the <Code weight="bold">repo:</Code>{' '}
-                        available filters
+                        filters
                     </li>
                     <li>
-                        Data points will be automatically backfilled using the list <Code weight="bold">before:</Code>{' '}
-                        of repositories resulting from today’s search. Future data points will use the list refreshed
-                        for every snapshot.
+                        Data points will be automatically backfilled using the list of repositories resulting from
+                        today’s search. Future data points will use the list refreshed for every snapshot.
                     </li>
                 </ul>
             </InputDescription>
