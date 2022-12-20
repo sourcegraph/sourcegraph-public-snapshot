@@ -5333,4 +5333,7 @@ INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch 
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
+INSERT INTO roles VALUES (1, 'DEFAULT', NOW(), NULL, TRUE);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', NOW(), NULL, TRUE);
+
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
