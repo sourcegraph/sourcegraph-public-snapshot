@@ -226,7 +226,7 @@ func PartitionRepos(
 	// Note: We do not need to handle list.Crashes since we will fallback to
 	// unindexed search for any repository unavailable due to rollout.
 
-	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.Minimal)))
+	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	// Split based on indexed vs unindexed
 	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
