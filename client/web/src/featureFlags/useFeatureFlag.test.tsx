@@ -1,9 +1,10 @@
 import React from 'react'
 
 import { renderHook, waitFor } from '@testing-library/react'
+import delay from 'delay'
 
 import { FeatureFlagName } from './featureFlags'
-import { MockedFeatureFlagsProvider } from './FeatureFlagsProvider'
+import { MockedFeatureFlagsProvider } from './MockedFeatureFlagsProvider'
 import { useFeatureFlag } from './useFeatureFlag'
 
 describe('useFeatureFlag', () => {
@@ -15,8 +16,8 @@ describe('useFeatureFlag', () => {
     const Wrapper: React.JSXElementConstructor<{
         children: React.ReactElement
         nextOverrides?: Partial<Record<FeatureFlagName, boolean | Error>>
-        refetchInterval?: number
-    }> = ({ nextOverrides, children, refetchInterval }) => {
+        cacheTimeToLive?: number
+    }> = ({ nextOverrides, children, cacheTimeToLive }) => {
         // New `renderHook` doesn't pass any props into Wrapper component like the old one
         // so couldn't find a way to reproduce `state.setRender(...)` with custom `overrides`
         // we have to use this state together with `nextOverrides` as an alternative.
@@ -29,11 +30,11 @@ describe('useFeatureFlag', () => {
         React.useEffect(() => {
             setTimeout(() => {
                 setOverrides(current => nextOverrides ?? current)
-            }, refetchInterval)
-        }, [nextOverrides, refetchInterval])
+            }, 0)
+        }, [nextOverrides])
 
         return (
-            <MockedFeatureFlagsProvider overrides={overrides} refetchInterval={refetchInterval}>
+            <MockedFeatureFlagsProvider overrides={overrides} cacheTimeToLive={cacheTimeToLive}>
                 {children}
             </MockedFeatureFlagsProvider>
         )
@@ -42,25 +43,43 @@ describe('useFeatureFlag', () => {
     const setup = (
         initialFlagName: FeatureFlagName,
         defaultValue = false,
-        refetchInterval?: number,
+        cacheTimeToLive?: number,
         nextOverrides?: Partial<Record<FeatureFlagName, boolean | Error>>
-    ) =>
-        renderHook<
+    ) => {
+        const allResults: ReturnType<typeof useFeatureFlag>[] = []
+
+        const result = renderHook<
             ReturnType<typeof useFeatureFlag>,
             {
                 flagName: FeatureFlagName
             }
-        >(({ flagName }) => useFeatureFlag(flagName, defaultValue), {
-            wrapper: props => <Wrapper refetchInterval={refetchInterval} nextOverrides={nextOverrides} {...props} />,
-            initialProps: {
-                flagName: initialFlagName,
+        >(
+            ({ flagName }) => {
+                const result = useFeatureFlag(flagName, defaultValue)
+                allResults.push(result)
+
+                return result
             },
-        })
+            {
+                wrapper: props => (
+                    <Wrapper cacheTimeToLive={cacheTimeToLive} nextOverrides={nextOverrides} {...props} />
+                ),
+                initialProps: {
+                    flagName: initialFlagName,
+                },
+            }
+        )
+
+        return {
+            ...result,
+            allResults,
+        }
+    }
 
     it('returns [false] value correctly', async () => {
         const state = setup(DISABLED_FLAG)
         // Initial state
-        expect(state.result.current).toStrictEqual([false, 'initial', undefined])
+        expect(state.allResults[0]).toStrictEqual([false, 'initial', undefined])
 
         // Loaded state
         await waitFor(() => expect(state.result.current).toStrictEqual([false, 'loaded', undefined]))
@@ -81,7 +100,7 @@ describe('useFeatureFlag', () => {
     it('returns [true] value correctly', async () => {
         const state = setup(ENABLED_FLAG)
         // Initial state
-        expect(state.result.current).toStrictEqual([false, 'initial', undefined])
+        expect(state.allResults[0]).toStrictEqual([false, 'initial', undefined])
 
         // Loaded state
         await waitFor(() => expect(state.result.current).toStrictEqual([true, 'loaded', undefined]))
@@ -90,10 +109,11 @@ describe('useFeatureFlag', () => {
     it('updates on value change', async () => {
         const state = setup(ENABLED_FLAG, false, 100, { [ENABLED_FLAG]: false })
         // Initial state
-        expect(state.result.current).toStrictEqual([false, 'initial', undefined])
+        expect(state.allResults[0]).toStrictEqual([false, 'initial', undefined])
 
         // Loaded state
         await waitFor(() => expect(state.result.current).toStrictEqual([true, 'loaded', undefined]))
+        await delay(100)
 
         // Rerender and wait for new state
         state.rerender({ flagName: ENABLED_FLAG })
@@ -115,7 +135,6 @@ describe('useFeatureFlag', () => {
 
     it('returns "error" when no context parent', () => {
         const state = renderHook(() => useFeatureFlag(ENABLED_FLAG))
-
         expect(state.result.current).toEqual(expect.arrayContaining([false, 'error']))
     })
 
