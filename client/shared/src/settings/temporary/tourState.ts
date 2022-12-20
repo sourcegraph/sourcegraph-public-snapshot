@@ -1,3 +1,5 @@
+import { Optional } from 'utility-types'
+
 /**
  * Tour supported languages
  */
@@ -56,3 +58,11 @@ export interface TourTaskStepType {
      */
     isCompleted?: boolean
 }
+
+export interface TourState {
+    completedStepIds?: string[]
+    status?: 'closed' | 'completed'
+    language?: TourLanguage
+}
+
+export type TourListState = Optional<Record<string, TourState>>
