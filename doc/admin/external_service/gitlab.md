@@ -5,7 +5,7 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 To connect GitLab to Sourcegraph:
 
 1. Go to **Site admin > Manage code hosts > Add code host**
-2. Select **GitLab**.
+2. Select **GitLab** (for GitLab.com) or **GitLab Self-Managed**.
 3. Set **url** to the URL of your GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 4. Create a GitLab access token using this [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with repo scope, and set it to be the value of the token.
 5. Use the [Repository syncing documentation below](#repository-syncing) to select and add your preferred projects/repos to the configuration.
