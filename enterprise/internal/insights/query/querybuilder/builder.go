@@ -15,6 +15,7 @@ import (
 // in the base query. For example an input query of `repo:myrepo test` might be provided a default `archived:no`,
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
+// This also converts count:all to count:99999999.
 func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -404,4 +405,16 @@ func RepositoryScopeQuery(query string) (BasicQuery, error) {
 		modified = append(modified, basic.MapParameters(p))
 	}
 	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
+func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery) (BasicQuery, error) {
+	modifiedQuery, err := withDefaults(withCountAll(query), CodeInsightsQueryDefaults(true))
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing search query")
+	}
+	repositoryPlan, err := ParseQuery(repositoryCriteria, "literal")
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing repository filters")
+	}
+	return BasicQuery(searchquery.StringHuman(repositoryPlan.ToQ()) + " " + modifiedQuery.String()), nil
 }
