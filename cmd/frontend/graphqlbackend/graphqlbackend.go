@@ -550,7 +550,7 @@ type schemaResolver struct {
 	logger            log.Logger
 	db                database.DB
 	gitserverClient   gitserver.Client
-	repoupdaterClient *repoupdater.client
+	repoupdaterClient repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 
 	// SubResolvers are assigned using the Schema constructor.

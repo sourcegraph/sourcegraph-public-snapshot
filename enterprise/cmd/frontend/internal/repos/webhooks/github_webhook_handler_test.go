@@ -16,13 +16,14 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -38,10 +39,11 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	store := repos.NewStore(logger, db)
 	repoStore := store.RepoStore()
 	esStore := store.ExternalServiceStore()
+	repoName := "ghe.sgdev.org/milton/test"
 
 	repo := &types.Repo{
 		ID:   1,
-		Name: "ghe.sgdev.org/milton/test",
+		Name: api.RepoName(repoName),
 	}
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -110,17 +112,19 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cf := httpcli.NewExternalClientFactory()
-	opts := []httpcli.Opt{}
-	doer, err := cf.Doer(opts...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	oldClient := repoupdater.DefaultClient
+	t.Cleanup(func() { repoupdater.DefaultClient = oldClient })
 
-	repoupdater.DefaultClient = &repoupdater.client{
-		URL:        server.URL,
-		HTTPClient: doer,
-	}
+	repoClient := repoupdater.NewMockClient()
+	var enqueuedName api.RepoName
+	repoClient.EnqueueRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		enqueuedName = name
+		return &protocol.RepoUpdateResponse{
+			ID:   1,
+			Name: string(name),
+		}, nil
+	})
+	repoupdater.DefaultClient = repoClient
 
 	payload, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
 	if err != nil {
@@ -142,6 +146,9 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected status code: 200, got %v", resp.StatusCode)
 	}
+
+	// Assert that we attempted to enqueue a repo update
+	assert.Equal(t, repoName, string(enqueuedName))
 }
 
 func sign(t *testing.T, message, secret []byte) string {
