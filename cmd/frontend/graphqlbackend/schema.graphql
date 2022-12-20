@@ -3908,7 +3908,7 @@ type RepositoryContributorConnection {
     """
     Pagination information.
     """
-    pageInfo: NewPageInfo!
+    pageInfo: BidirectionalPageInfo!
 }
 
 """
@@ -4433,7 +4433,7 @@ type PageInfo {
 """
 Pagination information for bi-directional pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 """
-type NewPageInfo {
+type BidirectionalPageInfo {
     """
     When paginating backwards, the cursor to continue.
     """
