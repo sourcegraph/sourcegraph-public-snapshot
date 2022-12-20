@@ -57,9 +57,10 @@ This job periodically updates the crates.io packages on the instance by syncing 
 This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
 
 1. Insight enqueuer
-1. Insight license checker
-1. Insight backfill checker
-1. Data clean up jobs
+2. Insight backfiller
+3. Insight license checker
+4. Insight backfill checker
+5. Data clean up jobs
 
 #### `insights-query-runner-job`
 
