@@ -1603,7 +1603,7 @@
       "default": 50000
     },
     "insights.maximumSampleSize": {
-      "description": "WIP. The maximum number of data points that will be available to view for a series on an insight view. Points beyond that will be stored in a separate table and available for data export.",
+      "description": "WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
       "type": "integer",
       "group": "CodeInsights",
       "default": 90,
