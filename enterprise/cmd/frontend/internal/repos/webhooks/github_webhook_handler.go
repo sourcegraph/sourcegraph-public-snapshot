@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"net/url"
 
 	gh "github.com/google/go-github/v43/github"
 
@@ -57,10 +58,12 @@ func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 }
 
 func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
-	url := *event.Repo.URL
-	if len(url) <= 8 {
-		return "", errors.Newf("expected URL length > 8, got %v", len(url))
+	if event == nil || event.Repo == nil || event.Repo.URL == nil {
+		return "", errors.Newf("URL for repository not found")
 	}
-	repoName := url[8:] // [ https:// ] accounts for 8 chars
-	return api.RepoName(repoName), nil
+	parsed, err := url.Parse(*event.Repo.URL)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse repository URL")
+	}
+	return api.RepoName(parsed.Host + parsed.Path), nil
 }

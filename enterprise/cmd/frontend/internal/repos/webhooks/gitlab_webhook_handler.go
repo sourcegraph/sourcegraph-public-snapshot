@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/log"
 
@@ -56,10 +57,9 @@ func (g *GitLabWebhookHandler) handle(ctx context.Context, payload any) error {
 }
 
 func gitlabNameFromEvent(event *gitlabwebhooks.PushEvent) (api.RepoName, error) {
-	url := event.Project.WebURL
-	if len(url) <= 8 {
-		return "", errors.Newf("expected URL length > 8, got %v", len(url))
+	parsed, err := url.Parse(event.Project.WebURL)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing project URL")
 	}
-	repoName := url[8:] // [ https:// ] accounts for 8 chars
-	return api.RepoName(repoName), nil
+	return api.RepoName(parsed.Host + parsed.Path), nil
 }
