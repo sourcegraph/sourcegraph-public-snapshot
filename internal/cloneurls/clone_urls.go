@@ -23,7 +23,7 @@ import (
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "ReposourceCloneURLToRepoName")
+	span, ctx := ot.StartSpanFromContext(ctx, "ReposourceCloneURLToRepoName") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
@@ -102,7 +102,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 }
 
 func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService")
+	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("ExternalService.ID", svc.ID)
 	span.SetTag("ExternalService.Kind", svc.Kind)

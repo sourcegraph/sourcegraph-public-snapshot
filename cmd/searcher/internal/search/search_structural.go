@@ -392,7 +392,7 @@ type subset []string
 var all universalSet = struct{}{}
 
 func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
+	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer func() {
 		if err != nil {

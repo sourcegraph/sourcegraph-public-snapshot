@@ -34,7 +34,7 @@ const (
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List")
+	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List") //nolint:staticcheck // OT is deprecated
 	span.SetTag("registry", registry.String())
 	span.SetTag("query", query)
 	defer func() {
