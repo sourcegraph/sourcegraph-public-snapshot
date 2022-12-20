@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { Icon, IconType } from '../../Icon'
-import { LinkOrSpan } from '../../Link/LinkOrSpan/LinkOrSpan'
 
 import styles from './Breadcrumb.module.scss'
 
