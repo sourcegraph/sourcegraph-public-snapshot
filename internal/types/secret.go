@@ -24,7 +24,14 @@ import (
 // RedactedSecret is used as a placeholder for secret fields when reading external service config
 const RedactedSecret = "REDACTED"
 
-var urlChErr error = errors.New("Code host URL changed, please re-enter token.")
+type errCodeHostIdentityChanged struct {
+	identityProperty string
+	redactedProperty string
+}
+
+func (e errCodeHostIdentityChanged) Error() string {
+	return fmt.Sprintf("Property %q has been changed, please re-enter %q", e.identityProperty, e.redactedProperty)
+}
 
 // RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
 func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
@@ -145,7 +152,7 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		o := oldCfg.(*schema.GitHubConnection)
 		if es.unredactString(c.Token, o.Token, "token") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"url", "token"}
 			}
 		}
 	case *schema.GitLabConnection:
@@ -153,7 +160,7 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		if es.unredactString(c.Token, o.Token, "token") ||
 			es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"url", "token"}
 			}
 		}
 	case *schema.BitbucketServerConnection:
@@ -161,14 +168,14 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		if es.unredactString(c.Password, o.Password, "password") ||
 			es.unredactString(c.Token, o.Token, "token") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"url", "token"}
 			}
 		}
 	case *schema.BitbucketCloudConnection:
 		o := oldCfg.(*schema.BitbucketCloudConnection)
 		if es.unredactString(c.AppPassword, o.AppPassword, "appPassword") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"apiUrl", "appPassword"}
 			}
 		}
 	case *schema.AWSCodeCommitConnection:
@@ -179,14 +186,14 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		o := oldCfg.(*schema.PhabricatorConnection)
 		if es.unredactString(c.Token, o.Token, "token") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"url", "token"}
 			}
 		}
 	case *schema.PerforceConnection:
 		o := oldCfg.(*schema.PerforceConnection)
 		if es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd") {
 			if c.P4Port != o.P4Port {
-				return urlChErr
+				return errCodeHostIdentityChanged{"p4.port", "p4.passwd"}
 			}
 		}
 	case *schema.GitoliteConnection:
@@ -205,21 +212,17 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		// Nothing to unredact
 	case *schema.RubyPackagesConnection:
 		o := oldCfg.(*schema.RubyPackagesConnection)
-		if es.unredactString(c.Repository, o.Repository, "repository") {
-			if c.Repository != o.Repository {
-				return urlChErr
-			}
-		}
+		es.unredactString(c.Repository, o.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {
 			if es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials") {
 				if len(c.Maven.Repositories) != len(o.Maven.Repositories) {
-					return urlChErr
+					return errCodeHostIdentityChanged{"repositories", "credentials"}
 				}
 				for i, r := range c.Maven.Repositories {
 					if r != o.Maven.Repositories[i] {
-						return urlChErr
+						return errCodeHostIdentityChanged{"repositories", "credentials"}
 					}
 				}
 			}
@@ -228,25 +231,40 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		o := oldCfg.(*schema.PagureConnection)
 		if es.unredactString(c.Token, o.Token, "token") {
 			if c.Url != o.Url {
-				return urlChErr
+				return errCodeHostIdentityChanged{"url", "token"}
 			}
 		}
 	case *schema.NpmPackagesConnection:
 		o := oldCfg.(*schema.NpmPackagesConnection)
 		if es.unredactString(c.Credentials, o.Credentials, "credentials") {
 			if c.Registry != o.Registry {
-				return urlChErr
+				return errCodeHostIdentityChanged{"registry", "credentials"}
 			}
 		}
 	case *schema.OtherExternalServiceConnection:
 		o := oldCfg.(*schema.OtherExternalServiceConnection)
-		ch, err := es.unredactURL(c.Url, o.Url, "url")
+		err := es.unredactURL(c.Url, o.Url, "url")
 		if err != nil {
 			return err
 		}
-		if ch {
-			return urlChErr
+		oldParsed, err := url.Parse(o.Url)
+		newParsed, err := url.Parse(c.Url)
+		if err != nil {
+			return err
 		}
+		// compare URLs and see if password changed
+		pwd, ok := newParsed.User.Password()
+
+		// remove UserInfo so we can compare URLs
+		oldParsed.User = nil
+		newParsed.User = nil
+
+		if newParsed.String() != oldParsed.String() {
+			if ok && pwd == RedactedSecret {
+				return errCodeHostIdentityChanged{"url", "password"}
+			}
+		}
+
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
@@ -283,10 +301,12 @@ func (es *edits) redactString(s string, path ...any) {
 	}
 }
 
+// unredactString replaces a redacted value with a previously stored unredacted value.
+// it returns a boolean to indicate when a value has been unredacted.
 func (es *edits) unredactString(new, old string, path ...any) bool {
 	if new != "" && old != "" {
-		current, ok := unredactedString(new, old)
-		es.edit(current, path...)
+		cur, ok := unredactedString(new, old)
+		es.edit(cur, path...)
 
 		return ok
 	}
@@ -316,48 +336,50 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 			continue
 		}
 
-		redactedOldURL, err := redactedURL(oldURL)
+		parsed, err := url.Parse(oldURL)
 		if err != nil {
 			return err
 		}
 
-		m[redactedOldURL] = oldURL
+		parsed.User = nil
+		m[parsed.String()] = oldURL
 	}
 
 	for i := range new {
-		oldURL, ok := m[new[i]]
+		parsed, err := url.Parse(new[i])
+		pwd, set := parsed.User.Password()
+		fmt.Printf("%s\n", pwd)
+		parsed.User = nil
+
+		oldURL, ok := m[parsed.String()]
+
 		if !ok {
+			if set && pwd == RedactedSecret {
+				return errCodeHostIdentityChanged{"url", "password"}
+			}
 			continue
 		}
 
-		ch, err := es.unredactURL(new[i], oldURL, "urls", i)
+		err = es.unredactURL(new[i], oldURL, "urls", i)
 		if err != nil {
 			return err
-		}
-		if ch {
-			rurl, err := redactedURL(new[i])
-			if err != nil {
-				return err
-			}
-			return errors.Wrap(urlChErr, fmt.Sprintf("URL %s changed, please re-enter the password.", rurl))
 		}
 	}
 
 	return nil
 }
-
-func (es *edits) unredactURL(new, old string, path ...any) (bool, error) {
+func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
-		return false, nil
+		return nil
 	}
 
-	unredacted, ch, err := unredactedURL(new, old)
+	unredacted, err := unredactedURL(new, old)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	es.edit(unredacted, path...)
-	return ch, nil
+	return nil
 }
 
 type edit struct {
@@ -380,6 +402,8 @@ func redactedString(s string) string {
 	return ""
 }
 
+// unredactedString returns the saved value if the submitted value equals 'REDACTED'
+// and a boolean to indicate if redaction took place.
 func unredactedString(new, old string) (string, bool) {
 	if new == RedactedSecret {
 		return old, true
@@ -388,33 +412,36 @@ func unredactedString(new, old string) (string, bool) {
 }
 
 func redactedURL(rawURL string) (string, error) {
-	redacted, err := url.Parse(rawURL)
+
+	parsed, err := url.Parse(rawURL)
+
 	if err != nil {
 		return "", err
 	}
 
-	if _, ok := redacted.User.Password(); !ok {
-		return rawURL, nil
+	if _, ok := parsed.User.Password(); !ok {
+		return parsed.String(), nil
 	}
 
-	redacted.User = url.UserPassword(redacted.User.Username(), RedactedSecret)
-	return redacted.String(), nil
+	parsed.User = url.UserPassword(parsed.User.Username(), RedactedSecret)
+	return parsed.String(), nil
 }
 
-func unredactedURL(new, old string) (string, bool, error) {
+func unredactedURL(new, old string) (string, error) {
 	newURL, err := url.Parse(new)
+
 	if err != nil {
-		return new, false, err
+		return new, err
 	}
 
 	oldURL, err := url.Parse(old)
 	if err != nil {
-		return new, false, err
+		return new, err
 	}
 
 	passwd, ok := newURL.User.Password()
 	if !ok || passwd != RedactedSecret {
-		return new, false, nil
+		return new, nil
 	}
 
 	oldPasswd, _ := oldURL.User.Password()
@@ -424,6 +451,5 @@ func unredactedURL(new, old string) (string, bool, error) {
 		newURL.User = url.User(newURL.User.Username())
 	}
 
-	urlChanged := newURL.Host != oldURL.Host
-	return newURL.String(), urlChanged, nil
+	return newURL.String(), nil
 }
