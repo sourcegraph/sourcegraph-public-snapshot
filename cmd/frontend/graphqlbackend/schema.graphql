@@ -8220,13 +8220,13 @@ type BackgroundJob implements Node {
     name: String!
 
     """
-    TODO: Document me
+    The routines that run inside this job.
     """
     routines: [BackgroundRoutine!]!
 }
 
 """
-TODO: Document
+A routine that runs inside a background job.
 """
 type BackgroundRoutine {
     """
@@ -8245,12 +8245,12 @@ type BackgroundRoutine {
     description: String!
 
     """
-    TODO: Document me
+    The instances of this routine that are running or ran recently. An instance means one routine on one host.
     """
     instances: [BackgroundRoutineInstance!]!
 
     """
-    TODO: Document me
+
     """
     recentRuns: [BackgroundRoutineRecentRun!]!
 
@@ -8296,7 +8296,7 @@ type BackgroundRoutineInstance {
 }
 
 """
-TODO: Document
+A single run of the routine. A run is not the start/stop event but the actual execution of the routine handler.
 """
 type BackgroundRoutineRecentRun {
     """
@@ -8305,12 +8305,12 @@ type BackgroundRoutineRecentRun {
     at: DateTime!
 
     """
-    TODO: Document
+    The name of the host that ran the routine.
     """
     hostName: String!
 
     """
-    TODO: Document
+    The duration of the run.
     """
     durationMs: Int!
 
@@ -8336,11 +8336,16 @@ type BackgroundRoutineRunError {
 }
 
 """
-TODO: Document
+Holds statistics about a background routine.
 """
 type BackgroundRoutineStats {
     """
-    The number of times the routine ran in the last period. TODO: Describe which period that is.
+    The start of the earliest day for which we have any runs registered.
+    """
+    since: DateTime
+
+    """
+    The number of times the routine ran in the period.
     """
     runCount: Int!
 

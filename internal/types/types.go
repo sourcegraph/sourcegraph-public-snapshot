@@ -1826,11 +1826,12 @@ type BackgroundRoutineRun struct {
 
 // BackgroundRoutineRunStats contains statistics about a background routine.
 type BackgroundRoutineRunStats struct {
-	Count         int32 `json:"count"`
-	ErrorCount    int32 `json:"errorCount"`
-	MinDurationMs int32 `json:"minDurationMs"`
-	AvgDurationMs int32 `json:"avgDurationMs"`
-	MaxDurationMs int32 `json:"maxDurationMs"`
+	Since         *time.Time `json:"since"`
+	Count         int32      `json:"count"`
+	ErrorCount    int32      `json:"errorCount"`
+	MinDurationMs int32      `json:"minDurationMs"`
+	AvgDurationMs int32      `json:"avgDurationMs"`
+	MaxDurationMs int32      `json:"maxDurationMs"`
 }
 
 type BackgroundRoutineType string

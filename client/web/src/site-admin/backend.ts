@@ -310,6 +310,7 @@ export const BACKGROUND_JOBS = gql`
                         }
                     }
                     stats {
+                        since
                         runCount
                         minDurationMs
                         avgDurationMs
@@ -322,6 +323,7 @@ export const BACKGROUND_JOBS = gql`
 `
 
 export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
+export const BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {

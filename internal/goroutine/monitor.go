@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,7 +26,7 @@ type Monitorable interface {
 type RedisMonitor struct {
 	rcache   *rcache.Cache
 	logger   log.Logger
-	routines []*Monitorable
+	routines []Monitorable
 	hostName string
 }
 
@@ -46,12 +45,11 @@ type backgroundRoutineForRedis struct {
 	LastSeen    string                      `json:"lastSeen"`
 }
 
-func NewRedisMonitor(logger log.Logger) *RedisMonitor {
-	cache := rcache.NewWithTTL(keyPrefix, 604800)
-	return &RedisMonitor{rcache: cache, logger: logger, hostName: env.MyName}
+func NewRedisMonitor(logger log.Logger, hostName string, cache *rcache.Cache) *RedisMonitor {
+	return &RedisMonitor{rcache: cache, logger: logger, hostName: hostName}
 }
 
-func (m *RedisMonitor) Register(r *Monitorable) {
+func (m *RedisMonitor) Register(r Monitorable) {
 	m.routines = append(m.routines, r)
 }
 
@@ -75,11 +73,11 @@ func (m *RedisMonitor) RegistrationDone() {
 	}
 }
 
-func saveKnownJobNames(c *rcache.Cache, routines []*Monitorable) error {
+func saveKnownJobNames(c *rcache.Cache, routines []Monitorable) error {
 	// Collect all job names
 	var allJobNames []string
 	for _, routine := range routines {
-		jobName := (*routine).JobName()
+		jobName := routine.JobName()
 		if slices.Contains(allJobNames, jobName) {
 			continue
 		}
@@ -156,13 +154,13 @@ func GetKnownHostNames(c *rcache.Cache) ([]string, error) {
 	return values, nil
 }
 
-func saveKnownRoutines(c *rcache.Cache, routines []*Monitorable) error {
+func saveKnownRoutines(c *rcache.Cache, routines []Monitorable) error {
 	for _, r := range routines {
 		routine := backgroundRoutineForRedis{
-			Name:        (*r).Name(),
-			Type:        (*r).Type(),
-			JobName:     (*r).JobName(),
-			Description: (*r).Description(),
+			Name:        r.Name(),
+			Type:        r.Type(),
+			JobName:     r.JobName(),
+			Description: r.Description(),
 			LastSeen:    time.Now().Format(time.RFC3339),
 		}
 
@@ -183,17 +181,24 @@ func saveKnownRoutines(c *rcache.Cache, routines []*Monitorable) error {
 }
 
 func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutineForRedis, error) {
+	// Get all routines
 	routines, err := getKnownRoutines(c)
 	if err != nil {
 		return nil, err
 	}
 
+	// Filter by job name
 	var routinesForJob []backgroundRoutineForRedis
 	for _, routine := range routines {
 		if routine.JobName == jobName {
 			routinesForJob = append(routinesForJob, routine)
 		}
 	}
+
+	// Sort them by name
+	sort.Slice(routinesForJob, func(i, j int) bool {
+		return routinesForJob[i].Name < routinesForJob[j].Name
+	})
 
 	return routinesForJob, nil
 }
@@ -217,7 +222,7 @@ func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutineForRedis, error) {
 }
 
 func (m *RedisMonitor) LogRun(r Monitorable, duration time.Duration, runErr error) {
-	durationMs := int32(duration / time.Millisecond)
+	durationMs := int32(duration.Milliseconds())
 	err := saveRun(m.rcache, r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
 		m.logger.Error("failed to save run", log.Error(err))
@@ -242,6 +247,7 @@ func saveRun(c *rcache.Cache, routineName string, hostName string, durationMs in
 	// Create Run
 	run := types.BackgroundRoutineRun{
 		At:           time.Now(),
+		HostName:     hostName,
 		DurationMs:   durationMs,
 		ErrorMessage: errorMessage,
 		StackTrace:   stackTrace,
@@ -327,12 +333,12 @@ func saveRunStats(c *rcache.Cache, routineName string, durationMs int32, errored
 	return nil
 }
 
-func loadRunStats(c *rcache.Cache, now time.Time, dayCount int32) (types.BackgroundRoutineRunStats, error) {
+func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount int32) (types.BackgroundRoutineRunStats, error) {
 	// Get all stats
 	var stats types.BackgroundRoutineRunStats
 	for i := int32(0); i < dayCount; i++ {
 		isoDate := now.AddDate(0, 0, -int(i)).Format("2006-01-02")
-		statsRaw, found := c.Get("runStats:" + isoDate)
+		statsRaw, found := c.Get(routineName + ":runStats:" + isoDate)
 		if found {
 			var statsForDay types.BackgroundRoutineRunStats
 			err := json.Unmarshal(statsRaw, &statsForDay)
@@ -340,6 +346,13 @@ func loadRunStats(c *rcache.Cache, now time.Time, dayCount int32) (types.Backgro
 				return types.BackgroundRoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
 			}
 
+			if stats.Since == nil {
+				dayStart, err := time.Parse("2006-01-02", isoDate)
+				if err != nil {
+					return types.BackgroundRoutineRunStats{}, errors.Wrap(err, "parse day start")
+				}
+				stats.Since = &dayStart
+			}
 			stats.MinDurationMs = int32(math.Min(float64(stats.MinDurationMs), float64(statsForDay.MinDurationMs)))
 			stats.MaxDurationMs = int32(math.Max(float64(stats.MaxDurationMs), float64(statsForDay.MaxDurationMs)))
 			stats.AvgDurationMs = int32(math.Round((float64(stats.AvgDurationMs)*float64(stats.Count) + float64(statsForDay.AvgDurationMs)) / float64(stats.Count+statsForDay.Count)))
@@ -456,7 +469,7 @@ func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostN
 	}
 
 	// Collect stats
-	stats, err := loadRunStats(c, time.Now(), dayCountForStats)
+	stats, err := loadRunStats(c, routine.Name, time.Now(), dayCountForStats)
 	if err != nil {
 		return types.BackgroundRoutineInfo{}, errors.Wrap(err, "load run stats")
 	}
@@ -466,33 +479,34 @@ func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostN
 }
 
 func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string) (types.BackgroundRoutineInstanceInfo, error) {
-	var lastStart time.Time
-	var lastStop time.Time
-	var err error
+	var lastStart *time.Time
+	var lastStop *time.Time
 
 	lastStartBytes, ok := c.Get(routineName + ":" + hostName + ":" + "lastStart")
 	if ok {
-		lastStart, err = time.Parse(time.RFC3339, string(lastStartBytes))
+		t, err := time.Parse(time.RFC3339, string(lastStartBytes))
 		if err != nil {
 			return types.BackgroundRoutineInstanceInfo{}, errors.Wrap(err, "parse last start")
 		}
+		lastStart = &t
 	}
 
 	lastStopBytes, ok := c.Get(routineName + ":" + hostName + ":" + "lastStop")
 	if ok {
-		lastStop, err = time.Parse(time.RFC3339, string(lastStopBytes))
+		t, err := time.Parse(time.RFC3339, string(lastStopBytes))
 		if err != nil {
 			return types.BackgroundRoutineInstanceInfo{}, errors.Wrap(err, "parse last stop")
 		}
+		lastStop = &t
 	}
 
 	return types.BackgroundRoutineInstanceInfo{
 		HostName:      hostName,
-		LastStartedAt: &lastStart,
-		LastStoppedAt: &lastStop,
+		LastStartedAt: lastStart,
+		LastStoppedAt: lastStop,
 	}, nil
 }
 
-func GetMonitorCache() *rcache.Cache {
-	return rcache.NewWithTTL(keyPrefix, 604800)
+func GetMonitorCache(ttlSeconds int) *rcache.Cache {
+	return rcache.NewWithTTL(keyPrefix, ttlSeconds)
 }

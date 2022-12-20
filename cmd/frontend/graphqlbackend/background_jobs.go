@@ -23,27 +23,27 @@ type backgroundJobsArgs struct {
 }
 
 type BackgroundJobResolver struct {
-	jobInfo *types.BackgroundJobInfo
+	jobInfo types.BackgroundJobInfo
 }
 
 type RoutineResolver struct {
-	routine *types.BackgroundRoutineInfo
+	routine types.BackgroundRoutineInfo
 }
 
 type RoutineInstanceResolver struct {
-	instance *types.BackgroundRoutineInstanceInfo
+	instance types.BackgroundRoutineInstanceInfo
 }
 
 type RoutineRecentRunResolver struct {
-	recentRun *types.BackgroundRoutineRun
+	recentRun types.BackgroundRoutineRun
 }
 
 type RoutineRecentRunErrorResolver struct {
-	recentRun *types.BackgroundRoutineRun
+	recentRun types.BackgroundRoutineRun
 }
 
 type RoutineStatsResolver struct {
-	stats *types.BackgroundRoutineRunStats
+	stats types.BackgroundRoutineRunStats
 }
 
 // backgroundJobConnectionResolver resolves a list of access tokens.
@@ -99,11 +99,11 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := goroutine.GetBackgroundJobInfo(goroutine.GetMonitorCache(), jobName, int32(recentRunCount), dayCountForStats)
+	item, err := goroutine.GetBackgroundJobInfo(goroutine.GetMonitorCache(1), jobName, int32(recentRunCount), dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
-	return &BackgroundJobResolver{jobInfo: &item}, nil
+	return &BackgroundJobResolver{jobInfo: item}, nil
 }
 
 func (r *backgroundJobConnectionResolver) Nodes(context.Context) ([]*BackgroundJobResolver, error) {
@@ -142,14 +142,14 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqluti
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
 	r.once.Do(func() {
-		jobInfos, err := goroutine.GetBackgroundJobInfos(goroutine.GetMonitorCache(), r.after, *r.recentRunCount, dayCountForStats)
+		jobInfos, err := goroutine.GetBackgroundJobInfos(goroutine.GetMonitorCache(1), r.after, *r.recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 		}
 
 		resolvers := make([]*BackgroundJobResolver, 0, len(jobInfos))
 		for _, jobInfo := range jobInfos {
-			resolvers = append(resolvers, &BackgroundJobResolver{jobInfo: &jobInfo})
+			resolvers = append(resolvers, &BackgroundJobResolver{jobInfo: jobInfo})
 		}
 
 		r.resolvers, r.err = resolvers, nil
@@ -166,7 +166,7 @@ func (r *BackgroundJobResolver) Name() string { return r.jobInfo.Name }
 func (r *BackgroundJobResolver) Routines() []*RoutineResolver {
 	resolvers := make([]*RoutineResolver, 0, len(r.jobInfo.Routines))
 	for _, routine := range r.jobInfo.Routines {
-		resolvers = append(resolvers, &RoutineResolver{routine: &routine})
+		resolvers = append(resolvers, &RoutineResolver{routine: routine})
 	}
 	return resolvers
 }
@@ -180,7 +180,7 @@ func (r *RoutineResolver) Description() string { return r.routine.Description }
 func (r *RoutineResolver) Instances() []*RoutineInstanceResolver {
 	resolvers := make([]*RoutineInstanceResolver, 0, len(r.routine.Instances))
 	for _, routineInstance := range r.routine.Instances {
-		resolvers = append(resolvers, &RoutineInstanceResolver{instance: &routineInstance})
+		resolvers = append(resolvers, &RoutineInstanceResolver{instance: routineInstance})
 	}
 	return resolvers
 }
@@ -198,7 +198,7 @@ func (r *RoutineInstanceResolver) LastStoppedAt() *gqlutil.DateTime {
 func (r *RoutineResolver) RecentRuns() []*RoutineRecentRunResolver {
 	resolvers := make([]*RoutineRecentRunResolver, 0, len(r.routine.RecentRuns))
 	for _, recentRun := range r.routine.RecentRuns {
-		resolvers = append(resolvers, &RoutineRecentRunResolver{recentRun: &recentRun})
+		resolvers = append(resolvers, &RoutineRecentRunResolver{recentRun: recentRun})
 	}
 	return resolvers
 }
@@ -223,8 +223,10 @@ func (r *RoutineRecentRunErrorResolver) Message() string { return r.recentRun.Er
 func (r *RoutineRecentRunErrorResolver) StackTrace() string { return r.recentRun.StackTrace }
 
 func (r *RoutineResolver) Stats() *RoutineStatsResolver {
-	return &RoutineStatsResolver{stats: &r.routine.Stats}
+	return &RoutineStatsResolver{stats: r.routine.Stats}
 }
+
+func (r *RoutineStatsResolver) Since() *gqlutil.DateTime { return gqlutil.DateTimeOrNil(r.stats.Since) }
 
 func (r *RoutineStatsResolver) RunCount() int32 { return r.stats.Count }
 
