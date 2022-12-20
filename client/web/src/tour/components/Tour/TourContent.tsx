@@ -9,6 +9,7 @@ import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
+import { TourTask } from './TourTask'
 import styles from './Tour.module.scss'
 
 interface TourContentProps {
