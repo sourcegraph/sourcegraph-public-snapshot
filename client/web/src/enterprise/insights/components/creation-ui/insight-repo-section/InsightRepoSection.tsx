@@ -238,7 +238,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
             <InputDescription>
                 <ul>
                     <li>
-                        Hint: you can use regular expressions within each of the <Code weight="bold">before:</Code>{' '}
+                        Hint: you can use regular expressions within each of the <Code weight="bold">repo:</Code>{' '}
                         available filters
                     </li>
                     <li>
