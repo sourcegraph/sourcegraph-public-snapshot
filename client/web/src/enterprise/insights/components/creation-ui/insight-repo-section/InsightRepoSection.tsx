@@ -3,7 +3,7 @@ import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, use
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Code, Input, Label, InputElement, InputErrorMessage, InputDescription } from '@sourcegraph/wildcard'
 
@@ -167,6 +167,8 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
     )
 }
 
+const EMPTY_QUERY_STATA: QueryState = { query: '' }
+
 interface SmartSearchQueryRepoFieldProps {
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
     label?: string
@@ -193,11 +195,11 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
 
     const handleOnChange = (queryState: QueryState): void => {
         if (queryState.query !== value.query && !disabledValue.current) {
-            onChange(queryState)
+            onChange({ query: queryState.query, changeSource: QueryChangeSource.userInput })
         }
     }
 
-    const queryState = disabled ? { query: '' } : value
+    const queryState = disabled ? EMPTY_QUERY_STATA : value
     const LabelComponent = label ? Label : 'div'
 
     return (
@@ -240,9 +242,9 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                         available filters
                     </li>
                     <li>
-                        Datapoints will be automatically backfilled using the list <Code weight="bold">before:</Code> of
-                        repositories resulting from today’s search. Future data points will use the list refreshed for
-                        every snapshot.
+                        Data points will be automatically backfilled using the list <Code weight="bold">before:</Code>{' '}
+                        of repositories resulting from today’s search. Future data points will use the list refreshed
+                        for every snapshot.
                     </li>
                 </ul>
             </InputDescription>
@@ -261,7 +263,6 @@ const CHIP_QUERIES: SmartRepoQueryChip[] = [
     { id: '3', query: 'AND' },
     { id: '4', query: 'OR' },
     { id: '5', query: 'NOT' },
-    { id: '6', query: 'select:repo' },
     { id: '7', query: 'repo:has.path()' },
     { id: '8', query: 'repo:has.file()' },
     { id: '9', query: 'repo:has.commit.after()' },
