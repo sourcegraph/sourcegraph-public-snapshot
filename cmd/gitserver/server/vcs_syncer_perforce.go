@@ -60,23 +60,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
-		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
-		cmd = exec.CommandContext(ctx, "p4-fusion",
-			"--path", depot+"...",
-			"--client", s.FusionConfig.Client,
-			"--user", username,
-			"--src", tmpPath,
-			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
-			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-			"--port", host,
-			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
-			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
-			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
-			"--noColor", "true",
-		)
+		cmd = s.buildP4FusionCmd(ctx, depot, username, tmpPath, host)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -86,6 +70,26 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	cmd.Env = s.p4CommandEnv(host, username, password)
 
 	return cmd, nil
+}
+
+func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, host string) *exec.Cmd {
+	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+	return exec.CommandContext(ctx, "p4-fusion",
+		"--path", depot+"...",
+		"--client", s.FusionConfig.Client,
+		"--user", username,
+		"--src", src,
+		"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+		"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
+		"--port", host,
+		"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
+		"--retries", strconv.Itoa(s.FusionConfig.Retries),
+		"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+		"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+		"--noColor", "true",
+	)
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
@@ -104,22 +108,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		cmd = exec.CommandContext(ctx, "p4-fusion",
-			"--path", depot+"...",
-			"--client", s.FusionConfig.Client,
-			"--user", username,
-			"--src", root+".git",
-			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreadsFetch),
-			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-			"--port", host,
-			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
-			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
-			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
-			"--noColor", "true",
-		)
+		cmd = s.buildP4FusionCmd(ctx, depot, username, root+".git", host)
 	} else {
 		// Example: git p4 sync --max-changes 1000
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
