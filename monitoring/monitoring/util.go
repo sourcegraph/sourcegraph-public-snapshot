@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // upperFirst returns s with an uppercase first rune.
@@ -73,4 +75,26 @@ func toMarkdown(m string, forceList bool) (string, error) {
 	}
 
 	return m, nil
+}
+
+var titleExceptions = map[string]string{
+	"Github": "GitHub",
+	"Gitlab": "GitLab",
+}
+
+// Title format s with a title case, accounting for exceptions for a few brands.
+//
+// We're doing this because strings.Title is deprecated.
+func Title(s string) string {
+	t := cases.Title(language.English).String(s)
+	words := strings.Split(t, " ")
+	res := make([]string, len(words))
+	for i, w := range strings.Split(t, " ") {
+		if exception, ok := titleExceptions[w]; ok {
+			res[i] = exception
+		} else {
+			res[i] = w
+		}
+	}
+	return strings.Join(res, " ")
 }

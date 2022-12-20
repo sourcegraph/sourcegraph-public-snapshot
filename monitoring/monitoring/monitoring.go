@@ -9,8 +9,6 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/grafana/regexp"
 	"github.com/prometheus/prometheus/model/labels"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
@@ -58,9 +56,8 @@ func (c *Dashboard) validate() error {
 		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
 
-	titler := cases.Title(language.English)
-	if c.Title != titler.String(c.Title) {
-		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, titler.String(c.Title))
+	if c.Title != Title(c.Title) {
+		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
