@@ -547,7 +547,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (providerStates []syncjobs.ProviderStatus, err error) {
-	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(log.Int32("userID", userID))
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -556,11 +555,17 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return providerStates, errors.Wrap(err, "get user")
 	}
 
+	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
+		log.Object("user",
+			log.Int32("ID", userID),
+			log.String("name", user.Username)),
+	)
+
 	// We call this when there are errors communicating with external services so
 	// that we don't have the same user stuck at the front of the queue.
 	tryTouchUserPerms := func() {
 		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
-			logger.Warn("touching user permissions", log.Int32("userID", userID), log.String("username", user.Username), log.Error(err))
+			logger.Warn("touching user permissions", log.Error(err))
 		}
 	}
 
