@@ -177,14 +177,14 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:     schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
 			in:      schema.GitHubConnection{Token: RedactedSecret, Url: "https://ghe.sgdev.org"},
 			out:     schema.GitHubConnection{Token: "foobar", Url: "https://ghe.sgdev.org"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"url", "token"},
 		},
 		{
 			kind:    extsvc.KindGitLab,
 			old:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
 			in:      schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.corp.com", TokenOauthRefresh: RedactedSecret},
 			out:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com", TokenOauthRefresh: "refresh-it"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"url", "token"},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -203,14 +203,14 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				Token:    "foobar",
 				Url:      "https://bbs.corp.org",
 			},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"url", "token"},
 		},
 		{
 			kind:    extsvc.KindBitbucketCloud,
 			old:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
 			in:      schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
 			out:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"apiUrl", "appPassword"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
@@ -244,7 +244,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
 			in:      schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
 			out:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"url", "token"},
 		},
 		{
 			kind: extsvc.KindGitolite,
@@ -263,7 +263,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:     schema.PerforceConnection{P4Port: "tcp://es.ninja", P4User: "foo", P4Passwd: "bar"},
 			in:      schema.PerforceConnection{P4Port: "tcp://vr.ninja", P4User: "foo", P4Passwd: RedactedSecret},
 			out:     schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"p4.port", "p4.passwd"},
 		},
 		{
 			// Tests that we can remove a secret field and that it won't appear redacted in the output
@@ -289,7 +289,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
 			in:      schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://private-registry.npmjs.org"},
 			out:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://private-registry.npmjs.org"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"registry", "credentials"},
 		},
 		{
 			kind: extsvc.KindOther,
@@ -302,7 +302,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
 			in:      schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
 			out:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
-			wantErr: urlChErr,
+			wantErr: errCodeHostIdentityChanged{"url", "password"},
 		},
 		{
 			kind: extsvc.KindGoPackages,
@@ -351,6 +351,31 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 					"https://pypi.org/simple",
 				},
 			},
+		},
+		{
+			kind: extsvc.KindGoPackages,
+			old: schema.GoModulesConnection{
+				Dependencies: []string{"github.com/tsenart/vegeta"},
+				Urls: []string{
+					"https://user:password@athens.golang.org",
+					"https://proxy.golang.org",
+				},
+			},
+			in: schema.GoModulesConnection{
+				Dependencies: []string{"github.com/oklog/ulid"},
+				Urls: []string{
+					"https://user:REDACTED@athens.notgolang.org",
+					"https://proxy.golang.org",
+				},
+			},
+			out: schema.GoModulesConnection{
+				Dependencies: []string{"github.com/oklog/ulid"},
+				Urls: []string{
+					"https://user:password@athens.golang.org",
+					"https://proxy.golang.org",
+				},
+			},
+			wantErr: errCodeHostIdentityChanged{"url", "password"},
 		},
 		{
 			// Tests that swapping order of URLs doesn't affect correct unredaction.
