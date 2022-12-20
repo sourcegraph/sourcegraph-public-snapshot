@@ -69,9 +69,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
-
-	return body, nil
+	return body, errors.Wrap(r.Body.Close(), "closing body")
 }
 
 func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
