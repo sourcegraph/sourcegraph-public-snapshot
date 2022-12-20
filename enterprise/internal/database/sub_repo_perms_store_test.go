@@ -62,7 +62,7 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)

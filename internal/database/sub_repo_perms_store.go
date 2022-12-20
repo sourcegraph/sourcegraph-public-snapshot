@@ -26,7 +26,9 @@ type SubRepoPermsStore interface {
 }
 
 // subRepoPermsStore is a no-op placeholder for the OSS version.
-type subRepoPermsStore struct{}
+type subRepoPermsStore struct {
+	*basestore.Store
+}
 
 var SubRepoPermsWith = func(other basestore.ShareableStore) SubRepoPermsStore {
 	return &subRepoPermsStore{}
@@ -74,8 +76,5 @@ func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName
 
 // DeleteByUser deletes all rows associated with the given user
 func (s *subRepoPermsStore) DeleteByUser(ctx context.Context, userID int32) error {
-	q := sqlf.Sprintf(`
-DELETE FROM sub_repo_permissions WHERE user_id = %d
-`, userID)
-	return s.Exec(ctx, q)
+	return nil
 }
