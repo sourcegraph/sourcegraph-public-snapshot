@@ -23,7 +23,7 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
+import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -34,8 +34,8 @@ import {
     RepositoriesResult,
     RepositoryOrderBy,
     RepositoryStatsResult,
-    ExternalServicesResult,
-    ExternalServicesVariables,
+    ExternalServiceIDsAndNamesVariables,
+    ExternalServiceIDsAndNamesResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
@@ -211,10 +211,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
     }, [])
 
-    const { data, loading, error, startPolling, stopPolling } = useQuery<
-        RepositoryStatsResult,
-        RepositoryStatsVariables
-    >(REPOSITORY_STATS, {})
+    const {
+        data,
+        loading: repoStatsLoading,
+        error: repoStatsError,
+        startPolling,
+        stopPolling,
+    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -283,12 +286,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         loading: extSvcLoading,
         data: extSvcs,
         error: extSvcError,
-    } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
-        variables: {
-            first: null,
-            after: null,
-        },
-    })
+    } = useQuery<ExternalServiceIDsAndNamesResult, ExternalServiceIDsAndNamesVariables>(
+        EXTERNAL_SERVICE_IDS_AND_NAMES,
+        {}
+    )
 
     const filters = useMemo(() => {
         if (!extSvcs) {
@@ -303,6 +304,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 args: {},
             },
         ]
+
         for (const extSvc of extSvcs.externalServices.nodes) {
             values.push({
                 label: extSvc.displayName,
@@ -317,7 +319,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             id: 'codeHost',
             label: 'Code Host',
             type: 'select',
-            values: values,
+            values,
         })
         return filtersWithExternalServices
     }, [extSvcs])
@@ -331,8 +333,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
 
     const licenseInfo = window.context.licenseInfo
 
-    const combinedError = error || extSvcError
-    const combinedLoading = loading || extSvcLoading
+    const error = repoStatsError || extSvcError
+    const loading = repoStatsLoading || extSvcLoading
 
     return (
         <div className="site-admin-repositories-page">
@@ -376,8 +378,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             )}
 
             <Container className="mb-3">
-                {combinedError && !combinedLoading && <ErrorAlert error={combinedError} />}
-                {combinedLoading && !combinedError && <LoadingSpinner />}
+                {error && !loading && <ErrorAlert error={error} />}
+                {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
