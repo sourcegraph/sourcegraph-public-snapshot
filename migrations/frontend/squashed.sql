@@ -3179,7 +3179,7 @@ CREATE TABLE permission_sync_jobs (
     cancel boolean DEFAULT false NOT NULL,
     repository_id integer,
     user_id integer,
-    priority text DEFAULT 'low'::text NOT NULL,
+    high_priority boolean DEFAULT false NOT NULL,
     invalidate_caches boolean DEFAULT false NOT NULL
 );
 

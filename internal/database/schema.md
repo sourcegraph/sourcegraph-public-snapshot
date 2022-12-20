@@ -2552,7 +2552,7 @@ Stores errors that occurred while performing an out-of-band migration.
  cancel            | boolean                  |           | not null | false
  repository_id     | integer                  |           |          | 
  user_id           | integer                  |           |          | 
- priority          | text                     |           | not null | 'low'::text
+ high_priority     | boolean                  |           | not null | false
  invalidate_caches | boolean                  |           | not null | false
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)

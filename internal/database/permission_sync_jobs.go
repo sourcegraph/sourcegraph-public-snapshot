@@ -105,7 +105,7 @@ RETURNING %s
 func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
-		job.ProcessAfter,
+		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(int(job.RepositoryID)),
 		dbutil.NewNullInt(int(job.UserID)),
 		job.HighPriority,

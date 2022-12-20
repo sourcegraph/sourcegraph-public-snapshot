@@ -16356,6 +16356,19 @@
           "Comment": ""
         },
         {
+          "Name": "high_priority",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -16413,19 +16426,6 @@
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "priority",
-          "Index": 16,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "'low'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
