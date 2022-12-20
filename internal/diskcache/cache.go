@@ -147,7 +147,7 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	}
 
 	path := s.path(key)
-	trace.Log(otelog.String("key", fmt.Sprint(key)), otelog.String("path", path))
+	trace.AddEvent("TODO Domain Owner", attribute.String("key", fmt.Sprint(key)), attribute.String("path", path))
 
 	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
@@ -222,10 +222,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	urlMu.Lock()
 	defer urlMu.Unlock()
 
-	trace.Log(
-		otelog.Event("acquired url lock"),
-		otelog.Int64("urlLock.durationMs", time.Since(t).Milliseconds()),
-	)
+	trace.AddEvent("acquired url lock", attribute.Int64("urlLock.durationMs", time.Since(t).Milliseconds()))
 
 	// Since we acquired the lock we may have timed out.
 	if ctx.Err() != nil {
@@ -365,7 +362,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		}
 		err = os.Remove(path)
 		if err != nil {
-			trace.Log(otelog.Message("failed to remove disk cache entry"), otelog.String("path", path), otelog.Error(err))
+			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), attribute.String("error", err.Error()))
 			log.Printf("failed to remove %s: %s", path, err)
 			continue
 		}

@@ -95,7 +95,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 			log.Int("index", uploadState.index),
 			log.Bool("done", uploadState.done),
 			log.Object("metadata", uploadState.metadata),
-		)
+		) //nolint:staticcheck // Need to convert this to attribute.* methods, might be not so easy with metadata
 
 		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {
 			return uploadHandlerFunc(ctx, uploadState, r.Body)

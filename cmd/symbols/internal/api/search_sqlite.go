@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -84,7 +85,7 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 		if err != nil {
 			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 		}
-		trace.Log(log.String("dbFile", dbFile))
+		trace.AddEvent("databaseWriter", attribute.String("dbFile", dbFile))
 
 		var res result.Symbols
 		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {

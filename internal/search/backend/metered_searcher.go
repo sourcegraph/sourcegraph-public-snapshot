@@ -110,7 +110,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		spanContext := make(map[string]string)
 		if span := opentracing.SpanFromContext(ctx); span == nil {
 			m.log.Warn("ctx does not have a trace span associated with it")
-		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
 			newOpts := *opts
 			newOpts.SpanContext = spanContext
 			opts = &newOpts

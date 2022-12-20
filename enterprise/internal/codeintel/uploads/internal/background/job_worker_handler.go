@@ -13,6 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
@@ -206,7 +207,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
 
-	trace.Log(otlog.Bool("defaultBranch", isDefaultBranch))
+	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		directoryChildren, err := s.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
@@ -248,7 +249,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		if !revisionExists {
 			return errCommitDoesNotExist
 		}
-		trace.Log(otlog.String("commitDate", commitDate.String()))
+		trace.AddEvent("TODO Domain Owner", attribute.String("commitDate", commitDate.String()))
 
 		// We do the update here outside of the transaction started below to reduce the long blocking
 		// behavior we see when multiple uploads are being processed for the same repository and commit.
@@ -269,7 +270,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 					// safely assume that the entire index's data is in the codeintel database, as it's
 					// parsed deterministically and written atomically.
 					logger.Warn("LSIF data already exists for upload record")
-					trace.Log(otlog.Bool("rewriting", true))
+					trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
 				} else {
 					return err
 				}
@@ -284,7 +285,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 					// safely assume that the entire index's data is in the codeintel database, as it's
 					// parsed deterministically and written atomically.
 					logger.Warn("SCIP data already exists for upload record")
-					trace.Log(otlog.Bool("rewriting", true))
+					trace.AddEvent("TODO Domain Onwer", attribute.Bool("rewriting", true))
 				} else {
 					return err
 				}
@@ -304,12 +305,12 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			}
 
 			if upload.ContentType == lsifContentType {
-				trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
+				trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(groupedBundleData.Packages)))
 				// Update package and package reference data to support cross-repo queries.
 				if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
 					return errors.Wrap(err, "store.UpdatePackages")
 				}
-				trace.Log(otlog.Int("packageReferences", len(groupedBundleData.Packages)))
+				trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(groupedBundleData.Packages)))
 				if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
 					return errors.Wrap(err, "store.UpdatePackageReferences")
 				}
@@ -319,12 +320,12 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 					return err
 				}
 
-				trace.Log(otlog.Int("packages", len(packages)))
+				trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(packages)))
 				// Update package and package reference data to support cross-repo queries.
 				if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
 					return errors.Wrap(err, "store.UpdatePackages")
 				}
-				trace.Log(otlog.Int("packageReferences", len(packages)))
+				trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(packages)))
 				if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
 					return errors.Wrap(err, "store.UpdatePackageReferences")
 				}
@@ -404,7 +405,7 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, rep
 func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
-	trace.Log(otlog.String("uploadFilename", uploadFilename))
+	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))
 
 	// Pull raw uploaded data from bucket
 	rc, err := uploadStore.Get(ctx, uploadFilename)
@@ -447,31 +448,31 @@ func writeData(ctx context.Context, lsifStore lsifstore.LsifStore, upload codein
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	trace.Log(otlog.Uint32("numDocuments", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(count)))
 
 	count, err = tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	trace.Log(otlog.Uint32("numResultChunks", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numResultChunks", int64(count)))
 
 	count, err = tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	trace.Log(otlog.Uint32("numDefinitions", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDefinitions", int64(count)))
 
 	count, err = tx.WriteReferences(ctx, upload.ID, groupedBundleData.References)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	trace.Log(otlog.Uint32("numReferences", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numReferences", int64(count)))
 
 	count, err = tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteImplementations")
 	}
-	trace.Log(otlog.Uint32("numImplementations", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numImplementations", int64(count)))
 
 	return nil
 }

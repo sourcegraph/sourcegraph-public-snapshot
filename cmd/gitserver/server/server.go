@@ -1446,7 +1446,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return http.StatusBadRequest, err
 		}
-		logger.Log(req.LogFields()...)
+		logger.AddEvent("read request.body", req.SpanAttributes()...)
 
 		// Validate request parameters
 		if len(req.RepoCommits) == 0 {
