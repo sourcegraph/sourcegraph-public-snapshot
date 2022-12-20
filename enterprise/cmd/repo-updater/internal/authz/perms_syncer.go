@@ -560,7 +560,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	// that we don't have the same user stuck at the front of the queue.
 	tryTouchUserPerms := func() {
 		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
-			logger.Warn("touching user permissions", log.Int32("userID", userID), log.Error(err))
+			logger.Warn("touching user permissions", log.Int32("userID", userID), log.String("username", user.Username), log.Error(err))
 		}
 	}
 
@@ -568,7 +568,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	providerStates = results.providerStates
 	if err != nil {
 		tryTouchUserPerms()
-		return providerStates, errors.Wrap(err, "fetch user permissions via external accounts")
+		return providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %v (user id: %d)", user.Username, user.ID)
 	}
 
 	// fetch current permissions from database
@@ -596,7 +596,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	srp := s.db.SubRepoPerms()
 	for spec, perm := range results.subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
-			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %d", spec, user.ID)
+			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %v (user id: %d)", spec, user.Username, user.ID)
 		}
 	}
 
@@ -612,7 +612,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
-		return providerStates, errors.Wrap(err, "set user permissions")
+		return providerStates, errors.Wrapf(err, "set user permissions for user %v (user id: %d)", user.Username, user.ID)
 	}
 
 	logger.Debug("synced",
