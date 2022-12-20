@@ -57,7 +57,7 @@ import {
     repositoryInsertText,
 } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
@@ -124,6 +124,13 @@ type SuggestionSource<R, C extends SuggestionContext> = (
 ) => R | null | Promise<R | null>
 
 export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
+
+function mergeSources(sources: CompletionSource[]): CompletionSource {
+    return context =>
+        Promise.all(sources.map(source => Promise.resolve(source(context)))).then(results =>
+            results === null ? [] : results
+        )
+}
 
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
@@ -333,6 +340,37 @@ export function createDefaultSuggestionSources(
 ): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
     const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
+    if (options.disableSymbolCompletion !== true) {
+        sources.push(
+            // Show symbol suggestions outside of filters
+            createDefaultSource(async (context, tokens, token) => {
+                if (!token || token.type !== 'pattern') {
+                    return null
+                }
+
+                const results = await options.fetchSuggestions(
+                    getSuggestionQuery(tokens, token, suggestionTypeFromTokens(tokens, options)),
+                    context.onAbort
+                )
+                if (results.length === 0) {
+                    return null
+                }
+
+                const options2 = results
+                    .flatMap((match, index) =>
+                        completionFromSearchMatch(match, options, token, tokens, { isDefaultSource: true, index })
+                    )
+                    .filter(isDefined)
+
+                return {
+                    from: token.range.start,
+                    to: token.range.end,
+                    options: options2,
+                }
+            })
+        )
+    }
+
     if (options.disableFilterCompletion !== true) {
         sources.push(
             // Static suggestions shown if the current position is outside a
@@ -352,10 +390,14 @@ export function createDefaultSuggestionSources(
                     from = token.range.start
                 }
 
+                const suggestions = [...FILTER_SUGGESTIONS, ...FILTER_SHORTHAND_SUGGESTIONS].filter(suggestion =>
+                    token?.type === 'pattern'
+                        ? suggestion.label.toLowerCase().includes(token.value.toLowerCase())
+                        : true
+                )
                 return {
                     from,
-                    options: FILTER_SUGGESTIONS,
-                    validFor: /^-?[a-z]+$/i,
+                    options: suggestions,
                 }
             }),
             // Show static filter value suggestions
@@ -436,8 +478,11 @@ export function createDefaultSuggestionSources(
                 }
                 const filteredResults = results
                     .filter(match => match.type === resolvedFilter.definition.suggestions)
-                    .flatMap(match =>
-                        completionFromSearchMatch(match, options, token, tokens, { filterValue: token.value?.value })
+                    .flatMap((match, index) =>
+                        completionFromSearchMatch(match, options, token, tokens, {
+                            filterValue: token.value?.value,
+                            index,
+                        })
                     )
                     .filter(isDefined)
 
@@ -446,39 +491,8 @@ export function createDefaultSuggestionSources(
                 return {
                     from: token.value?.range.start ?? token.range.end,
                     to: token.value?.range.end,
-                    filter: false,
                     options: filteredResults,
                     getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
-                }
-            })
-        )
-    }
-
-    if (options.disableSymbolCompletion !== true) {
-        sources.push(
-            // Show symbol suggestions outside of filters
-            createDefaultSource(async (context, tokens, token) => {
-                if (!token || token.type !== 'pattern') {
-                    return null
-                }
-
-                const results = await options.fetchSuggestions(
-                    getSuggestionQuery(tokens, token, suggestionTypeFromTokens(tokens, options)),
-                    context.onAbort
-                )
-                if (results.length === 0) {
-                    return null
-                }
-
-                return {
-                    from: token.range.start,
-                    to: token.range.end,
-                    filter: false,
-                    options: results
-                        .flatMap(match =>
-                            completionFromSearchMatch(match, options, token, tokens, { isDefaultSource: true })
-                        )
-                        .filter(isDefined),
                 }
             })
         )
@@ -545,10 +559,13 @@ function completionFromSearchMatch(
     params?: {
         filterValue?: string
         isDefaultSource?: boolean
+        index?: number
     }
 ): CompletionWithURL[] {
     const hasNonActivePatternTokens =
         tokens.find(token => token.type === 'pattern' && !isEqual(token.range, activeToken.range)) !== undefined
+    const boost = -5
+    const starBoost = params?.index ?? 0
     switch (match.type) {
         case 'path':
             return [
@@ -564,6 +581,7 @@ function completionFromSearchMatch(
                           }),
                     apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
                     info: match.repository,
+                    boost,
                 },
             ]
         case 'repo':
@@ -577,6 +595,7 @@ function completionFromSearchMatch(
                         (params?.isDefaultSource ? 'repo:' : '') +
                         repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
                         ' ',
+                    boost: boost - starBoost * 2,
                 },
             ]
         case 'symbol':
@@ -592,6 +611,7 @@ function completionFromSearchMatch(
                         ? basename(match.path)
                         : `${startCase(symbol.kind.toLowerCase())} | ${basename(match.path)}`,
                 info: match.repository,
+                boost,
             }))
         default:
             return []
@@ -656,6 +676,22 @@ const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FIL
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters
     })
 )
+
+export const FILTER_SHORTHAND_SUGGESTIONS: Completion[] = filterTypeKeys.flatMap(filterType => {
+    if (filterType === 'repo') {
+        return []
+    }
+    const completions = FILTERS[filterType].discreteValues?.(undefined, false) ?? []
+    return completions.map<Completion>(completion => {
+        const insertText = `${filterType}:${completion.label} `.toLowerCase()
+        return {
+            label: insertText,
+            type: 'filter-shorthand',
+            insertText,
+            boost: 0,
+        }
+    })
+})
 
 /**
  * This helper function creates a function suitable for CodeMirror's 'getMatch'
