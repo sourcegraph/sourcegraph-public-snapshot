@@ -46,7 +46,7 @@ func (g *GitLabWebhookHandler) handle(ctx context.Context, _ database.DB, _ exts
 		if errcode.IsNotFound(err) {
 			return nil
 		}
-		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
+		return errors.Wrap(err, "handleGitLabWebhook: EnqueueRepoUpdate failed")
 	}
 
 	g.logger.Info("successfully updated", log.String("name", resp.Name))
