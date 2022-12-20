@@ -1355,7 +1355,7 @@ describe('Repository', () => {
                                     hasPreviousPage: false,
                                     startCursor: 'abc',
                                     endCursor: 'def',
-                                    __typename: 'NewPageInfo',
+                                    __typename: 'BidirectionalPageInfo',
                                 },
                                 __typename: 'RepositoryContributorConnection',
                             },
