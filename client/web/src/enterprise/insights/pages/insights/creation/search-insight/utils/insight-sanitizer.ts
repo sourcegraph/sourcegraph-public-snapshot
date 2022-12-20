@@ -12,8 +12,8 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     return {
         type: InsightType.SearchBased,
         title: rawInsight.title,
-        repositories: getSanitizedRepositories(rawInsight.repositories),
-        repoQuery: rawInsight.repoQuery.query,
+        repoQuery: rawInsight.repoMode === 'search-query' ? rawInsight.repoQuery.query : '',
+        repositories: rawInsight.repoMode === 'urls-list' ? getSanitizedRepositories(rawInsight.repositories) : [],
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
         dashboards: [],
