@@ -12,7 +12,7 @@ import (
 var allGenerateTargets = generateTargets{
 	{
 		// Protocol Buffer generation runs before go, as otherwise
-		// go mod tidy errors on generated protobuf go code direstories.
+		// go mod tidy errors on generated protobuf go code directories.
 		Name:   "buf",
 		Help:   "Re-generate protcol buffer bindings using buf",
 		Runner: generateProtoRunner,
