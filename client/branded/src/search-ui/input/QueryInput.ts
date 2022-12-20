@@ -48,5 +48,6 @@ export interface QueryInputProps
     ariaLabel?: string
     ariaLabelledby?: string
     ariaInvalid?: string
+    ariaBusy?: string
     tabIndex?: number
 }
