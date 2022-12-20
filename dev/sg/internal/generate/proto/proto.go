@@ -12,17 +12,14 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var dependencies = []dependency{
-	"github.com/bufbuild/buf/cmd/buf",
-	"github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc",
-	"golang.org/x/tools/cmd/goimports",
-	"google.golang.org/protobuf/cmd/protoc-gen-go",
+	"github.com/bufbuild/buf/cmd/buf@v1.11.0",
+	"github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.5.1",
+	"google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1",
 }
 
 func Generate(ctx context.Context) *generate.Report {
@@ -36,9 +33,8 @@ func Generate(ctx context.Context) *generate.Report {
 	}()
 
 	var (
-		start     = time.Now()
-		sb        strings.Builder
-		reportOut = std.NewOutput(&sb, false)
+		start = time.Now()
+		sb    strings.Builder
 	)
 
 	rootDir, err := root.RepositoryRoot()
@@ -71,11 +67,6 @@ func Generate(ctx context.Context) *generate.Report {
 		if err := runBufGenerate(ctx, gobin, &sb); err != nil {
 			return &generate.Report{Err: err}
 		}
-	}
-
-	// Run goimports -w
-	if err := golang.RunGoImports(ctx, golang.NormalOutput, reportOut, &sb); err != nil {
-		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
 	return &generate.Report{

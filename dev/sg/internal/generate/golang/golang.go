@@ -55,7 +55,7 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	}
 
 	// Run goimports -w
-	if err := RunGoImports(ctx, verbosity, reportOut, &sb); err != nil {
+	if err := runGoImports(ctx, verbosity, reportOut, &sb); err != nil {
 		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
@@ -252,7 +252,7 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 	return g.Wait()
 }
 
-func RunGoImports(ctx context.Context, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) error {
+func runGoImports(ctx context.Context, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) error {
 	if verbosity != QuietOutput {
 		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "goimports -w"))
 	}
