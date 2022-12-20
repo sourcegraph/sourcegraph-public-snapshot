@@ -8986,6 +8986,8 @@ A team member is an entity that can be associated to a team.
 """
 interface TeamMember {
     id: ID!
+    username: String!
+    displayName: String
     teams(first: Int, after: String): TeamConnection!
 }
 
@@ -9010,13 +9012,17 @@ extend type Mutation {
     will not show management functionality, but the team can still be updated through
     the UI and CLI. This is to prevent state drift from external systems that ingest
     team information into Sourcegraph.
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent.
     """
-    createTeam(name: String!, displayName: String, readonly: Boolean = false): Team!
+    createTeam(name: String!, displayName: String, readonly: Boolean = false, parentTeam: ID, parentTeamName: String): Team!
     """
     Update team updates a team. ID or Name must be specified, but not both.
     For now, this mutation can only be used to change the display name.
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent.
     """
-    updateTeam(id: ID, name: String, displayName: String!): Team!
+    updateTeam(id: ID, name: String, displayName: String!, parentTeam: ID, parentTeamName: String): Team!
     """
     Delete team deletes a team. ID or Name must be specified, but not both.
     """
