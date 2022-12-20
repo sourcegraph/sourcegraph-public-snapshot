@@ -98,8 +98,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
 
     const { enhancedThemePreference } = useTheme()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (
@@ -111,10 +109,11 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
+            interpretComments={true}
             onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
-            globbing={true}
+            globbing={false}
             height="auto"
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
@@ -126,7 +125,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             autoFocus={autoFocus}
             onBlur={onBlur}
             onEditorCreated={setEditor}
-            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            applySuggestionsOnEnter={false}
             tabIndex={tabIndex}
         />
     )
