@@ -3,8 +3,8 @@ import { MemoryRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
-import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Tour } from './Tour'
