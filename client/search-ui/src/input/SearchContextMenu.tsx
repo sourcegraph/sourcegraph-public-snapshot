@@ -9,9 +9,9 @@ import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { getDefaultSearchContextSpec, SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
     Button,
