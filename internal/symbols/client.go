@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -33,6 +34,8 @@ import (
 )
 
 var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+var symbolsReplicas = env.Get("SYMBOLS_REPLICA_NUMBER", "0", "symbols service replica counts")
+var deployType = env.Get("DEPLOY_TYPE", "", "deployment type")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -76,13 +79,34 @@ type Client struct {
 
 func (c *Client) url(repo api.RepoName) (string, error) {
 	c.endpointOnce.Do(func() {
-		if len(strings.Fields(c.URL)) == 0 {
-			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-		} else {
-			c.endpoint = endpoint.New(c.URL)
+		if addr := symbolsAddr(c.URL); addr != "" {
+			if len(strings.Fields(addr)) == 0 {
+				c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
+			} else {
+				c.endpoint = endpoint.New(addr)
+			}
 		}
 	})
 	return c.endpoint.Get(string(repo))
+}
+
+func symbolsAddr(url string) string {
+	num, err := strconv.Atoi(symbolsReplicas)
+	if err == nil && num > 0 {
+		s := "symbols"
+		if deployType == "docker-compose" {
+			s = ""
+		}
+
+		addr := ""
+		for i := 0; i < num; i++ {
+			addr += "http://symbols-" + strconv.Itoa(i) + "." + s + ":3184 "
+		}
+
+		return addr
+	}
+
+	return url
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {

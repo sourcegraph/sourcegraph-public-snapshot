@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -470,6 +471,8 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 	return nil
 }
 
+var deploymentType = env.Get("DEPLOY_TYPE", "", "deployment type")
+
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
@@ -482,6 +485,13 @@ func gitservers() *endpoint.Map {
 	gitserversOnce.Do(func() {
 		gitserversVal = endpoint.New(func() string {
 			v := os.Getenv("SRC_GIT_SERVERS")
+			r := os.Getenv("GITSERVER_REPLICA_NUMBER")
+
+			addr, err := generateReplicasEndpoints(r, "gitserver")
+			if err == nil && addr != "" {
+				return addr
+			}
+
 			if v == "" {
 				// Detect 'go test' and setup default addresses in that case.
 				p, err := os.Executable()
@@ -562,13 +572,26 @@ var (
 
 func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
+		if addr := searcherAddr(os.Environ()); addr != "" {
+			if len(strings.Fields(addr)) == 0 {
+				searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+			} else {
+				searcherURLs = endpoint.New(addr)
+			}
 		}
 	})
 	return searcherURLs
+}
+
+func searcherAddr(environ []string) string {
+	if r, ok := getEnv(environ, "SEARCHER_REPLICA_NUMBER"); ok {
+		addr, err := generateReplicasEndpoints(r, "searcher")
+		if err == nil && addr != "" {
+			return addr
+		}
+	}
+
+	return searcherURL
 }
 
 func computeIndexedEndpoints() *endpoint.Map {
@@ -581,6 +604,18 @@ func computeIndexedEndpoints() *endpoint.Map {
 }
 
 func zoektAddr(environ []string) string {
+
+	if r, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_NUMBER"); ok {
+		s := "indexed-search"
+		if deploymentType == "docker-compose" {
+			s = "zoekt-webserver"
+		}
+		addr, err := generateReplicasEndpoints(r, s)
+		if err == nil && addr != "" {
+			return addr
+		}
+	}
+
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
 		return addr
 	}
@@ -603,4 +638,47 @@ func getEnv(environ []string, key string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// Generate list of endpoints based on replica numbers and deployment type
+// Service endpoints for docker-compose deployments are different than k8s
+// docker-compose: zoekt-webserver-0:6070
+// k8s: indexed-search-0.indexed-search:6070
+func generateReplicasEndpoints(replicas string, service string) (string, error) {
+	e := ""
+	h := ""
+	p := ""
+	s := "." + service
+
+	switch service {
+	case "gitserver":
+		p = "3178"
+	case "searcher":
+		h = "http://"
+		p = "3181"
+	case "symbols":
+		h = "http://"
+		p = "3184"
+	case "indexed-search":
+		p = "6070"
+	case "zoekt-webserver":
+		p = "6070"
+	}
+
+	if deploymentType == "docker-compose" {
+		s = ""
+	}
+
+	num, err := strconv.Atoi(replicas)
+	if err != nil {
+		return "", err
+	}
+
+	if num > 0 {
+		for i := 0; i < num; i++ {
+			e += h + s + "-" + strconv.Itoa(i) + s + ":" + p + " "
+		}
+	}
+
+	return e, nil
 }
