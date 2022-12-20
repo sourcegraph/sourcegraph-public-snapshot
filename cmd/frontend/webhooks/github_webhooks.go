@@ -51,24 +51,15 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	SetExternalServiceID(r.Context(), extSvc.ID)
 
-	c, err := extSvc.Configuration(r.Context())
-	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-		return
-	}
-
-	config, ok := c.(*schema.GitHubConnection)
-	if !ok {
-		log15.Error("External service config is not a GitHub config")
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-		return
-	}
-
-	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	codeHostURN, ok, err := extSvc.BaseURL(r.Context())
 	if err != nil {
 		log15.Error("Could not parse code host URL from config", "error", err)
 		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		log15.Error("External service config is not a GitHub config with a URL")
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 

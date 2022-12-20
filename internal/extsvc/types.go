@@ -551,6 +551,53 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 	return u.String(), nil
 }
 
+func ExtractEncryptableBaseURL(ctx context.Context, kind string, config *EncryptableConfig) (CodeHostBaseURL, bool, error) {
+	parsed, err := ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return CodeHostBaseURL{}, false, errors.Wrap(err, "loading service configuration")
+	}
+
+	url, ok, err := extractURL(parsed, kind)
+	if err != nil {
+		return CodeHostBaseURL{}, false, err
+	}
+	if !ok {
+		return CodeHostBaseURL{}, false, nil
+	}
+
+	baseUrl, err := NewCodeHostBaseURL(url)
+	return baseUrl, true, err
+}
+
+func extractURL(parsed any, kind string) (string, bool, error) {
+	switch c := parsed.(type) {
+	case *schema.GitHubConnection:
+		return c.Url, true, nil
+	case *schema.BitbucketServerConnection:
+		return c.Url, true, nil
+	case *schema.BitbucketCloudConnection:
+		return c.Url, true, nil
+	case *schema.PagureConnection:
+		return c.Url, true, nil
+	case *schema.PerforceConnection:
+		return "", false, nil
+	case *schema.JVMPackagesConnection:
+		return "", false, nil
+	case *schema.NpmPackagesConnection:
+		return c.Registry, true, nil
+	case *schema.GoModulesConnection:
+		return "", false, nil
+	case *schema.PythonPackagesConnection:
+		return "", false, nil
+	case *schema.RustPackagesConnection:
+		return "", false, nil
+	case *schema.RubyPackagesConnection:
+		return "", false, nil
+	default:
+		return "", false, errors.Errorf("unable to extract URL for service kind %q", kind)
+	}
+}
+
 func ExtractEncryptableToken(ctx context.Context, config *EncryptableConfig, kind string) (string, error) {
 	parsed, err := ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {

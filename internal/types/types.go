@@ -727,6 +727,13 @@ func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) 
 	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
 }
 
+// BaseURL returns, if possible, the CodeHostbaseURL contained in the external
+// service config. If the external service can't have a URL the 2nd return
+// value is false.
+func (e *ExternalService) BaseURL(ctx context.Context) (extsvc.CodeHostBaseURL, bool, error) {
+	return extsvc.ExtractEncryptableBaseURL(ctx, e.Kind, e.Config)
+}
+
 // Clone returns a clone of the given external service.
 func (e *ExternalService) Clone() *ExternalService {
 	clone := *e
