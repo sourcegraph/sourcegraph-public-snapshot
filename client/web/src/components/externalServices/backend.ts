@@ -157,6 +157,17 @@ export const EXTERNAL_SERVICES = gql`
     ${listExternalServiceFragment}
 `
 
+export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
+    query ExternalServiceIDsAndNames {
+        externalServices {
+            nodes {
+                id
+                displayName
+            }
+        }
+    }
+`
+
 export function queryExternalServices(
     variables: ExternalServicesVariables
 ): Observable<ExternalServicesResult['externalServices']> {

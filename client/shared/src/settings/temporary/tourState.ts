@@ -1,4 +1,16 @@
 /**
+ * These types should be defined in the `web` package but because of the
+ * fact that temporary settings rely on the shared global type schema there's
+ * no way to inject web specific types into the `useTemporarySetting` hook.
+ *
+ * We need to introduce an ability to inject app specific temporary settings
+ * into the hook and split the global schema into respective packages.
+ * https://github.com/sourcegraph/sourcegraph/issues/45836
+ *
+ */
+import { Optional } from 'utility-types'
+
+/**
  * Tour supported languages
  */
 export enum TourLanguage {
@@ -56,3 +68,11 @@ export interface TourTaskStepType {
      */
     isCompleted?: boolean
 }
+
+export interface TourState {
+    completedStepIds?: string[]
+    status?: 'closed' | 'completed'
+    language?: TourLanguage
+}
+
+export type TourListState = Optional<Record<string, TourState>>

@@ -2,7 +2,7 @@ import { act } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { ProductSubscriptionFieldsOnSubscriptionPage } from '../../../graphql-operations'
 

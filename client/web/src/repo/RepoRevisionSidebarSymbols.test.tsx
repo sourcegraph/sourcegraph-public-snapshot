@@ -4,8 +4,8 @@ import { escapeRegExp } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { SymbolsResult } from '../graphql-operations'
 

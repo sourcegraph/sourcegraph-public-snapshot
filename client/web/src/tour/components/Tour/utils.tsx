@@ -1,6 +1,6 @@
 import isAbsoluteURL from 'is-absolute-url'
 
-import { TourLanguage, TourTaskStepType } from './types'
+import { TourLanguage, TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 
 /**
  * Returns a new URL w/ tour state tracking query parameters. This is used to show/hide tour task info box.

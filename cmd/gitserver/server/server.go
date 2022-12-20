@@ -106,7 +106,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
-	span, _ := ot.StartSpanFromContext(ctx, "runCommand")
+	span, _ := ot.StartSpanFromContext(ctx, "runCommand") //nolint:staticcheck // OT is deprecated
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
@@ -132,7 +132,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 // allow it to gracefully shutdown. All clients of this function should pass in a
 // command *without* a context.
 func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (exitCode int, err error) {
-	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful")
+	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful") //nolint:staticcheck // OT is deprecated
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
@@ -535,7 +535,7 @@ func (s *Server) Handler() http.Handler {
 	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject") //nolint:staticcheck // OT is deprecated
 		span.SetTag("objectName", objectName)
 		defer span.Finish()
 		return getObjectService.GetObject(ctx, repo, objectName)
@@ -1446,7 +1446,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			return http.StatusBadRequest, err
 		}
-		logger.Log(req.LogFields()...)
+		logger.AddEvent("read request.body", req.SpanAttributes()...)
 
 		// Validate request parameters
 		if len(req.RepoCommits) == 0 {
@@ -2469,7 +2469,7 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
-	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
+	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer span.Finish()
 

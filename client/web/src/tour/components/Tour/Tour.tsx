@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
+import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
-import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { useTour } from './useTour'
 import { isLanguageRequired } from './utils'
 

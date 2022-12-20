@@ -665,3 +665,52 @@ func TestWithCount(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeQueryWithRepoFilters(t *testing.T) {
+	tests := []struct {
+		repos string
+		query string
+		want  autogold.Value
+	}{
+		{
+			"repo:sourcegraph",
+			"insights",
+			autogold.Want("simple repo with simple query", BasicQuery("repo:sourcegraph fork:no archived:no patterntype:literal count:99999999 insights")),
+		},
+		{
+			"repo:sourcegraph or repo:handbook",
+			"insights",
+			autogold.Want("compound repo with simple query", BasicQuery("(repo:sourcegraph OR repo:handbook) fork:no archived:no patterntype:literal count:99999999 insights")),
+		},
+		{
+			"repo:sourcegraph",
+			"insights or todo",
+			autogold.Want("simple repo with compound query", BasicQuery("repo:sourcegraph (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+		},
+		{
+			"repo:sourcegraph or repo:has.file(content:sourcegraph)",
+			"insights or todo",
+			autogold.Want("compound repo with compound query", BasicQuery("(repo:sourcegraph OR repo:has.file(content:sourcegraph)) (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+		},
+		{
+			"repo:test or repo:handbook",
+			"insights fork:yes",
+			autogold.Want("compound repo with fork:yes query", BasicQuery("(repo:test OR repo:handbook) archived:no patterntype:literal fork:yes count:99999999 insights")),
+		},
+		{
+			"repo:regex",
+			`I\slove patterntype:regexp`,
+			autogold.Want("regexp query", BasicQuery(`repo:regex fork:no archived:no patterntype:regexp count:99999999 I\slove`)),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.want.Name(), func(t *testing.T) {
+			got, err := MakeQueryWithRepoFilters(test.repos, BasicQuery(test.query))
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}

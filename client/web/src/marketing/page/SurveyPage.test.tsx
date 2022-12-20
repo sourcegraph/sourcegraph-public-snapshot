@@ -3,8 +3,8 @@ import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { Route } from 'react-router'
 
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'

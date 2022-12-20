@@ -1,6 +1,7 @@
 import React, { HTMLAttributes } from 'react'
 
-import { Alert, AlertProps } from '../Alert'
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
+
 import { ErrorMessage } from '../ErrorMessage'
 
 export type ErrorAlertProps = {

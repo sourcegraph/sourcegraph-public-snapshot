@@ -93,7 +93,7 @@ func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int3
 			r.indexedStatsErr = err
 			return
 		}
-		r.indexedRepos = int32(len(repos.Minimal))
+		r.indexedRepos = int32(len(repos.Minimal)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		r.indexedLinesCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
 	})
 

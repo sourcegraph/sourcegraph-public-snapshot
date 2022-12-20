@@ -260,7 +260,7 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.path") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("path", path)
 

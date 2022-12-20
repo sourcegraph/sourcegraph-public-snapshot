@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +31,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
-		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
+		tr.SetAttributes(attribute.Int("resolved.len", len(page.RepoRevs)))
 
 		page.MaybeSendStats(stream)
 

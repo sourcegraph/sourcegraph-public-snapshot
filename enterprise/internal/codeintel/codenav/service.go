@@ -6,6 +6,7 @@ import (
 
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
@@ -78,7 +79,7 @@ func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, request
 	cachedUploads := requestState.GetCacheUploads()
 	for i := range adjustedUploads {
 		adjustedUpload := adjustedUploads[i]
-		trace.Log(traceLog.Int("uploadID", adjustedUpload.Upload.ID))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", adjustedUpload.Upload.ID))
 
 		// Fetch hover text from the index
 		text, rn, exists, err := s.lsifstore.GetHover(
@@ -128,10 +129,9 @@ func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, request
 	if err != nil {
 		return "", types.Range{}, false, err
 	}
-	trace.Log(
-		traceLog.Int("numMonikers", len(orderedMonikers)),
-		traceLog.String("monikers", monikersToString(orderedMonikers)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numMonikers", len(orderedMonikers)),
+		attribute.String("monikers", monikersToString(orderedMonikers)))
 
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
@@ -140,10 +140,9 @@ func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, request
 	if err != nil {
 		return "", types.Range{}, false, err
 	}
-	trace.Log(
-		traceLog.Int("numDefinitionUploads", len(uploads)),
-		traceLog.String("definitionUploads", uploadIDsToString(uploads)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numDefinitionUploads", len(uploads)),
+		attribute.String("definitionUploads", uploadIDsToString(uploads)))
 
 	// Perform the moniker search. This returns a set of locations defining one of the monikers
 	// attached to one of the source ranges.
@@ -151,7 +150,7 @@ func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, request
 	if err != nil {
 		return "", types.Range{}, false, err
 	}
-	trace.Log(traceLog.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	for i := range locations {
 		// Fetch hover text attached to a definition in the defining index
@@ -212,10 +211,9 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 			return nil, cursor, err
 		}
 	}
-	trace.Log(
-		traceLog.Int("numMonikers", len(cursor.OrderedMonikers)),
-		traceLog.String("monikers", monikersToString(cursor.OrderedMonikers)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numMonikers", len(cursor.OrderedMonikers)),
+		attribute.String("monikers", monikersToString(cursor.OrderedMonikers)))
 
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
 	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
@@ -279,7 +277,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 		}
 	}
 
-	trace.Log(traceLog.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
@@ -288,7 +286,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	if err != nil {
 		return nil, cursor, err
 	}
-	trace.Log(traceLog.Int("numReferenceLocations", len(referenceLocations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numReferenceLocations", len(referenceLocations)))
 
 	return referenceLocations, cursor, nil
 }
@@ -392,7 +390,7 @@ func (s *Service) getPageLocalLocations(ctx context.Context, getLocations getLoc
 		}
 
 		numLocations := len(locations)
-		trace.Log(traceLog.Int("pageLocalLocations.numLocations", numLocations))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("pageLocalLocations.numLocations", numLocations))
 		cursor.LocationOffset += numLocations
 
 		if cursor.LocationOffset >= totalCount {
@@ -469,7 +467,7 @@ func (s *Service) getPageRemoteLocations(
 	}
 
 	numLocations := len(locations)
-	trace.Log(traceLog.Int("pageLocalLocations.numLocations", numLocations))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("pageLocalLocations.numLocations", numLocations))
 	cursor.LocationOffset += numLocations
 
 	if cursor.LocationOffset >= totalCount {
@@ -686,20 +684,18 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 			return nil, cursor, err
 		}
 	}
-	trace.Log(
-		traceLog.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
-		traceLog.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
+		attribute.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)))
 
 	if cursor.OrderedExportMonikers == nil {
 		if cursor.OrderedExportMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, "export"); err != nil {
 			return nil, cursor, err
 		}
 	}
-	trace.Log(
-		traceLog.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
-		traceLog.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
+		attribute.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)))
 
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
 	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
@@ -728,10 +724,9 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 		if err != nil {
 			return nil, cursor, err
 		}
-		trace.Log(
-			traceLog.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
-			traceLog.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)),
-		)
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
+			attribute.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)))
 
 		definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
 		if err != nil {
@@ -758,7 +753,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 		}
 	}
 
-	trace.Log(traceLog.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all implementations
@@ -768,7 +763,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	if err != nil {
 		return nil, cursor, err
 	}
-	trace.Log(traceLog.Int("numImplementationsLocations", len(implementationLocations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numImplementationsLocations", len(implementationLocations)))
 
 	return implementationLocations, cursor, nil
 }
@@ -799,7 +794,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 	// If the definition exists within the index, it should be reachable via an LSIF graph
 	// traversal and should not require an additional moniker search in the same index.
 	for i := range visibleUploads {
-		trace.Log(traceLog.Int("uploadID", visibleUploads[i].Upload.ID))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", visibleUploads[i].Upload.ID))
 
 		locations, _, err := s.lsifstore.GetDefinitionLocations(
 			ctx,
@@ -824,10 +819,9 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(
-		traceLog.Int("numMonikers", len(orderedMonikers)),
-		traceLog.String("monikers", monikersToString(orderedMonikers)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numMonikers", len(orderedMonikers)),
+		attribute.String("monikers", monikersToString(orderedMonikers)))
 
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
@@ -836,17 +830,16 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(
-		traceLog.Int("numXrepoDefinitionUploads", len(uploads)),
-		traceLog.String("xrepoDefinitionUploads", uploadIDsToString(uploads)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numXrepoDefinitionUploads", len(uploads)),
+		attribute.String("xrepoDefinitionUploads", uploadIDsToString(uploads)))
 
 	// Perform the moniker search
 	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(traceLog.Int("numXrepoLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numXrepoLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
@@ -856,7 +849,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(traceLog.Int("numAdjustedXrepoLocations", len(adjustedLocations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numAdjustedXrepoLocations", len(adjustedLocations)))
 
 	return adjustedLocations, nil
 }
@@ -887,7 +880,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args shared.RequestArgs, r
 		a = actor.FromContext(ctx)
 	}
 	for i := range visibleUploads {
-		trace.Log(traceLog.Int("uploadID", visibleUploads[i].Upload.ID))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", visibleUploads[i].Upload.ID))
 
 		diagnostics, count, err := s.lsifstore.GetDiagnostics(
 			ctx,
@@ -925,10 +918,9 @@ func (s *Service) GetDiagnostics(ctx context.Context, args shared.RequestArgs, r
 	if len(diagnosticsAtUploads) > args.Limit {
 		diagnosticsAtUploads = diagnosticsAtUploads[:args.Limit]
 	}
-	trace.Log(
-		traceLog.Int("totalCount", totalCount),
-		traceLog.Int("numDiagnostics", len(diagnosticsAtUploads)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("totalCount", totalCount),
+		attribute.Int("numDiagnostics", len(diagnosticsAtUploads)))
 
 	return diagnosticsAtUploads, totalCount, nil
 }
@@ -1016,7 +1008,7 @@ func (s *Service) GetRanges(ctx context.Context, args shared.RequestArgs, reques
 	}
 
 	for i := range uploadsWithPath {
-		trace.Log(traceLog.Int("uploadID", uploadsWithPath[i].Upload.ID))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", uploadsWithPath[i].Upload.ID))
 
 		ranges, err := s.lsifstore.GetRanges(
 			ctx,
@@ -1041,7 +1033,7 @@ func (s *Service) GetRanges(ctx context.Context, args shared.RequestArgs, reques
 			adjustedRanges = append(adjustedRanges, adjustedRange)
 		}
 	}
-	trace.Log(traceLog.Int("numRanges", len(adjustedRanges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(adjustedRanges)))
 
 	return adjustedRanges, nil
 }
@@ -1098,7 +1090,7 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	}
 
 	for i := range adjustedUploads {
-		trace.Log(traceLog.Int("uploadID", adjustedUploads[i].Upload.ID))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		ranges, err := s.lsifstore.GetStencil(
 			ctx,
@@ -1121,7 +1113,7 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 			adjustedRanges = append(adjustedRanges, adjustedRange)
 		}
 	}
-	trace.Log(traceLog.Int("numRanges", len(adjustedRanges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(adjustedRanges)))
 
 	sortedRanges := sortRanges(adjustedRanges)
 	return dedupeRanges(sortedRanges), nil
@@ -1152,10 +1144,9 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 	}
 
 	uploadCandidates := copyDumps(candidates)
-	trace.Log(
-		traceLog.Int("numCandidates", len(candidates)),
-		traceLog.String("candidates", uploadIDsToString(uploadCandidates)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numCandidates", len(candidates)),
+		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
 
 	commitChecker := NewCommitCache(s.gitserver)
 	commitChecker.SetResolvableCommit(repositoryID, commit)
@@ -1164,10 +1155,9 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(
-		traceLog.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
-		traceLog.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
+		attribute.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)))
 
 	// Filter in-place
 	filtered := candidatesWithCommits[:0]
@@ -1188,10 +1178,9 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 
 		filtered = append(filtered, uploadCandidates[i])
 	}
-	trace.Log(
-		traceLog.Int("numFiltered", len(filtered)),
-		traceLog.String("filtered", uploadIDsToString(filtered)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numFiltered", len(filtered)),
+		attribute.String("filtered", uploadIDsToString(filtered)))
 
 	return filtered, nil
 }
