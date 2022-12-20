@@ -243,3 +243,11 @@ AND external_service_type IN (%s)
 	}
 	return exists, nil
 }
+
+// DeleteByUser deletes all rows associated with the given user
+func (s *subRepoPermsStore) DeleteByUser(ctx context.Context, userID int32) error {
+	q := sqlf.Sprintf(`
+DELETE FROM sub_repo_permissions WHERE user_id = %d
+`, userID)
+	return s.Exec(ctx, q)
+}
