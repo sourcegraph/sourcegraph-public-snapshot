@@ -183,11 +183,13 @@ importers:
       '@types/yauzl': ^2.9.2
       '@visx/annotation': ^2.10.0
       '@visx/axis': ^2.11.1
+      '@visx/event': 2.6.0
       '@visx/glyph': ^2.10.0
       '@visx/grid': ^2.10.0
       '@visx/group': ^2.10.0
       '@visx/responsive': ^2.10.0
       '@visx/scale': ^2.2.2
+      '@visx/shape': ^2.11.1
       '@visx/voronoi': ^2.10.0
       '@vscode/codicons': ^0.0.29
       '@vscode/test-electron': ^2.1.3
@@ -433,11 +435,13 @@ importers:
       '@storybook/addon-knobs': 6.4.0_d4bptrhgvdhxm3olgivncpgnqq
       '@visx/annotation': 2.10.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@visx/axis': 2.11.1_react@18.1.0
+      '@visx/event': 2.6.0
       '@visx/glyph': 2.10.0_react@18.1.0
       '@visx/grid': 2.10.0_react@18.1.0
       '@visx/group': 2.10.0_react@18.1.0
       '@visx/responsive': 2.10.0_react@18.1.0
       '@visx/scale': 2.2.2
+      '@visx/shape': 2.11.1_react@18.1.0
       '@visx/voronoi': 2.10.0_react@18.1.0
       '@vscode/codicons': 0.0.29
       '@vscode/webview-ui-toolkit': 0.9.0_react@18.1.0
