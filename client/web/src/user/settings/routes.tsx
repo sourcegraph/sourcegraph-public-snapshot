@@ -3,7 +3,6 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import { showPasswordsPage, showAccountSecurityPage } from './cloud-ga'
 import { UserSettingsAreaRoute } from './UserSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
@@ -50,12 +49,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: lazyComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
     },
     {
-        path: '/password',
-        exact: true,
-        render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
-        condition: showPasswordsPage,
-    },
-    {
         path: '/emails',
         exact: true,
         render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
@@ -70,7 +63,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/security',
         exact: true,
         render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
-        condition: showAccountSecurityPage,
     },
     {
         path: '/product-research',
