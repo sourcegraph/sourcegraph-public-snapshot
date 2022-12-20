@@ -815,7 +815,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLog")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -864,7 +864,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLog")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -938,7 +938,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We don't care exactly what the error is here
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError", "CorruptionLog")
 	// But we do care that it exists
 	if fromDB.LastError == "" {
 		t.Errorf("Expected an error when trying to clone from an invalid URL")
@@ -967,7 +967,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLog")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -1109,7 +1109,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLog")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
