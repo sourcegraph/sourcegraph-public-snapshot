@@ -312,6 +312,7 @@ export const BACKGROUND_JOBS = gql`
                     stats {
                         since
                         runCount
+                        errorCount
                         minDurationMs
                         avgDurationMs
                         maxDurationMs
