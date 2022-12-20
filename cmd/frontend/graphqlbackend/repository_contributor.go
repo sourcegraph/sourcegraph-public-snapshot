@@ -20,7 +20,7 @@ type repositoryContributorResolver struct {
 	index int
 }
 
-// gitContributorGQLID is a type used for marshaling and unmarshaling a Git commit's
+// gitContributorGQLID is a type used for marshaling and unmarshaling a Git contributor's
 // GraphQL ID.
 type gitContributorGQLID struct {
 	Repository graphql.ID `json:"r"`

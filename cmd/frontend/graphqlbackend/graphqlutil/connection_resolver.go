@@ -165,14 +165,16 @@ func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 
 		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
 
-		if !r.options.DoNotReverse {
-			// NOTE(naman): with `last` argument the items are sorted in opposite
-			// direction in the SQL query. Here we are reversing the list to return
-			// them in correct order, to reduce complexity.
-			if r.args.Last != nil {
-				for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
-					r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]
-				}
+		if r.options.DoNotReverse {
+			return
+		}
+
+		// NOTE(naman): with `last` argument the items are sorted in opposite
+		// direction in the SQL query. Here we are reversing the list to return
+		// them in correct order, to reduce complexity.
+		if r.args.Last != nil {
+			for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
+				r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]
 			}
 		}
 	})

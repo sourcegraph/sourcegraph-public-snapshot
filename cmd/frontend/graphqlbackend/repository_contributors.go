@@ -52,19 +52,15 @@ type repositoryContributorConnectionStore struct {
 }
 
 func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryContributorResolver) (*string, error) {
-	if node == nil {
-		return nil, errors.New(`node is nil`)
-	}
 	position := strconv.Itoa(node.index)
 	return &position, nil
 }
 
 func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
-	i64, err := strconv.ParseInt(cursor, 10, 32)
+	position, err := strconv.Atoi(cursor)
 	if err != nil {
 		return nil, err
 	}
-	position := int(i64)
 	return &position, nil
 }
 
