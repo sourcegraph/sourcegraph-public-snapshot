@@ -115,7 +115,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		ctx := r.Context()
 
 		// extract propagated span
-		wireContext, err := ot.GetTracer(ctx).Extract( //lint:ignore SA1019 // OT is deprecated
+		wireContext, err := ot.GetTracer(ctx).Extract( //nolint:statickcheck // OT is deprecated
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {

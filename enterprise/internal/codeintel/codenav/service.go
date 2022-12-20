@@ -1178,10 +1178,9 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 
 		filtered = append(filtered, uploadCandidates[i])
 	}
-	trace.Log(
-		traceLog.Int("numFiltered", len(filtered)),
-		traceLog.String("filtered", uploadIDsToString(filtered)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numFiltered", len(filtered)),
+		attribute.String("filtered", uploadIDsToString(filtered)))
 
 	return filtered, nil
 }
