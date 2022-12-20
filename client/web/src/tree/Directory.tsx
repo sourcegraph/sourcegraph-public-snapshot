@@ -96,7 +96,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                 )}
             </TreeLayerRowContents>
 
-            {props.index === MAX_TREE_ENTRIES - (rendersDotDot(props.entryInfo.path, props.depth) ? 0 : 1) && (
+            {props.index === getIndexForMaxEntriesTest(props.entryInfo.path, props.depth) && (
                 <TreeRowAlert
                     variant="note"
                     className="p-2"
@@ -108,12 +108,19 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
     </TreeRow>
 )
 
+// We use the index to the MAX_TREE_ENTRIESth entry to render the "too many
+// directories" error.
+//
 // Subdirectories that are rendered at the root of the tree are rendered with
-// `..` as the first entry. Since we depend on the relative index to render the
-// "too many directories" alert, we need to account for this.
-function rendersDotDot(path: string, depth: number): boolean {
+// `..` as the first entry, so we need to account for this when calculating the
+// index.
+function getIndexForMaxEntriesTest(path: string, depth: number): number {
+    let rendersDotDot = false
     if (depth > 0) {
-        return false
+        rendersDotDot = false
+    } else {
+        rendersDotDot = path.split('/').length >= 2
     }
-    return path.split('/').length >= 2
+
+    return MAX_TREE_ENTRIES - (rendersDotDot ? 0 : 1)
 }
