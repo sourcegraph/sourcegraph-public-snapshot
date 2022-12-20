@@ -1,0 +1,8 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+package(default_visibility = ["//visibility:public"])
+
+npm_package(
+    name = "extension-api-types",
+    srcs = ["package.json"] + glob(["src/**/*.d.ts"]),
+)

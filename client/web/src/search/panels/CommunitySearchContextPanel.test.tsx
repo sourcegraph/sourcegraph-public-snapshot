@@ -1,5 +1,5 @@
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 

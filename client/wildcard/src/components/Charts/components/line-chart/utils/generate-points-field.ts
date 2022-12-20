@@ -4,7 +4,11 @@ import { getDatumValue, isDatumWithValidNumber, SeriesWithData, SeriesDatum } fr
 
 const NULL_LINK = (): undefined => undefined
 
-export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]): { [seriesId: string]: Point[] } {
+interface FlatSeriesMap {
+    [seriesId: string]: Point[]
+}
+
+export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]): FlatSeriesMap {
     const starter: { [key: string]: Point[] } = {}
 
     return dataSeries.reduce((previous, series) => {
@@ -14,7 +18,7 @@ export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]):
             const datumValue = getDatumValue(datum)
 
             return {
-                id: getPointId(id, index),
+                id: datum.id,
                 seriesId: id.toString(),
                 yValue: datumValue,
                 xValue: datum.x,
@@ -25,8 +29,4 @@ export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]):
 
         return previous
     }, starter)
-}
-
-export function getPointId(seriesId: string | number, pointIndex: number): string {
-    return `${seriesId.toString()}${pointIndex}`
 }

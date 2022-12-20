@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"testing"
 	"time"
@@ -249,6 +249,48 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSCOMPUTEEXCLUDED
             )
           NoopJob)))))`),
+	}, {
+		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeLucky,
+		want: autogold.Want("repo: and rev:", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . lucky)
+    (FEELINGLUCKYSEARCH
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*))
+            (REPOSEARCH
+              (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*)
+              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
+	}, {
+		query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeLucky,
+		want: autogold.Want("repo@rev", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . lucky)
+    (FEELINGLUCKYSEARCH
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*))
+            (REPOSEARCH
+              (repoOpts.repoFilters.0 . sourcegraph/sourcegraph@*refs/heads/*)
+              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
 	}, {
 		query:      `foo @bar`,
 		protocol:   search.Streaming,

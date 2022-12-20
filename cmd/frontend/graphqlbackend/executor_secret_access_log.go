@@ -77,7 +77,11 @@ func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolv
 		return NewUserResolver(r.db, r.preloadedUser), nil
 	}
 
-	u, err := UserByIDInt32(ctx, r.db, r.log.UserID)
+	if r.log.UserID == nil {
+		return nil, nil
+	}
+
+	u, err := UserByIDInt32(ctx, r.db, *r.log.UserID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -85,6 +89,10 @@ func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolv
 		return nil, err
 	}
 	return u, nil
+}
+
+func (r *executorSecretAccessLogResolver) MachineUser() string {
+	return r.log.MachineUser
 }
 
 func (r *executorSecretAccessLogResolver) CreatedAt() gqlutil.DateTime {

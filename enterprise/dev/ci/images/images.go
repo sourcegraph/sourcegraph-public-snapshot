@@ -69,6 +69,7 @@ var DeploySourcegraphDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"blobstore",
+	"blobstore2",
 	"node-exporter",
 	"postgres-12-alpine",
 	"postgres_exporter",

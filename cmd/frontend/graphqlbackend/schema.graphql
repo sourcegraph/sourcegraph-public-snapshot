@@ -1323,6 +1323,10 @@ type Query {
         """
         failedFetch: Boolean = false
         """
+        Return repositories that are associated with the given external service.
+        """
+        externalService: ID
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1703,6 +1707,16 @@ type Query {
         """
         kind: ExternalServiceKind
     ): WebhookConnection!
+
+    """
+    List slow GraphQL requests that were recently captured (requires site-admin permissions).
+    """
+    slowRequests(
+        """
+        Opaque pagnination cursor.
+        """
+        after: String
+    ): SlowRequestConnection!
 }
 
 """
@@ -1713,6 +1727,11 @@ enum ExecutorSecretScope {
     The secret is meant to be used with Batch Changes execution.
     """
     BATCHES
+
+    """
+    The secret is meant to be used with Auto-indexing.
+    """
+    CODEINTEL
 }
 
 """
@@ -1827,8 +1846,14 @@ type ExecutorSecretAccessLog implements Node {
     executorSecret: ExecutorSecret!
     """
     The user in which name the secret has been used.
+    This is null when the access was not by a user account, or
+    when the user account was deleted.
     """
-    user: User!
+    user: User
+    """
+    True when the secret was accessed by an internal procedure.
+    """
+    machineUser: String!
     """
     The date and time when the secret has been used.
     """
@@ -3215,6 +3240,9 @@ type Repository implements Node & GenericSearchResultInterface {
         Returns the first n contributors from the list.
         """
         first: Int
+        last: Int
+        after: String
+        before: String
     ): RepositoryContributorConnection!
     """
     Whether the viewer has admin privileges on this repository.
@@ -3456,6 +3484,10 @@ type RepositoryTextSearchIndex {
     Git refs in the repository that are configured for text search indexing.
     """
     refs: [RepositoryTextSearchIndexedRef!]!
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
+    host: repositoryIndexserverHost
 }
 
 """
@@ -3497,6 +3529,16 @@ type RepositoryTextSearchIndexStatus {
     EXPERIMENTAL: The number of newlines in the other branches.
     """
     otherBranchesNewLinesCount: Int!
+}
+
+"""
+Information about the indexserver that hosts the repo's index.
+"""
+type repositoryIndexserverHost {
+    """
+    The hostname of the indexserver.
+    """
+    name: String!
 }
 
 """
@@ -3870,7 +3912,7 @@ type RepositoryContributorConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: BidirectionalPageInfo!
 }
 
 """
@@ -4379,13 +4421,35 @@ type PhabricatorRepo {
 }
 
 """
-Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+Pagination information for forward-only pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 """
 type PageInfo {
     """
     When paginating forwards, the cursor to continue.
     """
     endCursor: String
+    """
+    When paginating forwards, are there more items?
+    """
+    hasNextPage: Boolean!
+}
+
+"""
+Pagination information for bi-directional pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+"""
+type BidirectionalPageInfo {
+    """
+    When paginating backwards, the cursor to continue.
+    """
+    startCursor: String
+    """
+    When paginating forwards, the cursor to continue.
+    """
+    endCursor: String
+    """
+    When paginating backwards, are there more items?
+    """
+    hasPreviousPage: Boolean!
     """
     When paginating forwards, are there more items?
     """
@@ -7040,6 +7104,10 @@ type SiteUser {
     Total number of user's event_logs.
     """
     eventsCount: Float!
+    """
+    Whether or not the user account is locked.
+    """
+    locked: Boolean!
 }
 
 """
@@ -7757,6 +7825,17 @@ type Hover {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when disableAutoGitUpdates is
+set to true in the site configuration
+"""
+type GitUpdatesDisabled {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when repositories are being
 cloned
 """
@@ -7811,7 +7890,7 @@ type IndexingProgress {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
+union StatusMessage = GitUpdatesDisabled | CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -8444,4 +8523,74 @@ enum ExecutorCompatibility {
     Executor version is more than one version ahead of the Sourcegraph instance.
     """
     VERSION_AHEAD
+}
+
+"""
+The result for Query.slowRequests.
+"""
+type SlowRequestConnection {
+    """
+    A list of slow graphql requests logs.
+    """
+    nodes: [SlowRequest!]!
+
+    """
+    The total number of slow graphql logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A logged slow GraphQL request, captured by the backend.
+"""
+type SlowRequest {
+    """
+    The index of this request.
+    """
+    index: String!
+    """
+    The date at which this request was started.
+    """
+    start: DateTime!
+    """
+    The duration of the request.
+    """
+    duration: Float!
+    """
+    The user associated with that request, if any.
+    """
+    user: User
+    """
+    The name of the GraphQL request.
+    """
+    name: String!
+    """
+    The source from which the request originated.
+    """
+    source: String!
+    """
+    The repository referenced by the request, if any.
+    """
+    repository: Repository
+    """
+    The variables used to build the GraphQL request.
+    """
+    variables: String!
+    """
+    The errors returned if the request failed.
+    """
+    errors: [String!]!
+    """
+    The GraphQL query.
+    """
+    query: String!
+    """
+    The file path referenced by the request, if any.
+    """
+    filepath: String
 }

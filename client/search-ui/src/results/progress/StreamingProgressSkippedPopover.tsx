@@ -3,12 +3,22 @@ import React, { useCallback, useState } from 'react'
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4, Text, H3 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Icon,
+    Checkbox,
+    H4,
+    Text,
+    H3,
+    Markdown,
+    Form,
+} from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'

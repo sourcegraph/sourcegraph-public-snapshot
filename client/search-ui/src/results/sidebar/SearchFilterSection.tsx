@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState, memo, FC, ReactElement, ReactNode } from 'react'
 
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H5, Input, H3 } from '@sourcegraph/wildcard'
 
@@ -169,7 +168,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                         </H5>
                         <H5 as="span">{postHeader}</H5>
                     </header>
-                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                    <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} />
                 </CollapseHeader>
 
                 <CollapsePanel forcedRender={forcedRender}>

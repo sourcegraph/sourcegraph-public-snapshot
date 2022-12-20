@@ -1,13 +1,13 @@
-import { useCallback, useRef, useEffect, FormEvent, useState, FC } from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
 
 import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
-import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
+import { getDefaultSearchContextSpec, SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,6 +24,8 @@ import {
     ComboboxList,
     ComboboxOption,
     ComboboxOptionText,
+    Alert,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextMenu.module.scss'
@@ -58,7 +60,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const {
         authenticatedUser,
         selectedSearchContextSpec,
-        defaultSearchContextSpec,
         selectSearchContextSpec,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
@@ -157,11 +158,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         platformContext,
     ])
 
-    const reset = useCallback(() => {
-        selectSearchContextSpec(defaultSearchContextSpec)
-        onMenuClose()
-    }, [onMenuClose, defaultSearchContextSpec, selectSearchContextSpec])
-
     const handleContextSelect = useCallback(
         (context: string): void => {
             selectSearchContextSpec(context)
@@ -169,6 +165,10 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             telemetryService.log('SearchContextSelected')
         },
         [onMenuClose, selectSearchContextSpec, telemetryService]
+    )
+
+    const defaultContextExists = useObservable(
+        useMemo(() => getDefaultSearchContextSpec({ platformContext }).pipe(map(spec => !!spec)), [platformContext])
     )
 
     return (
@@ -194,24 +194,34 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 />
             </div>
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
-                {loadingState !== 'LOADING' &&
-                    searchContexts.map((context, index) => (
-                        <>
-                            {/* Separate starred and unstarred contexts */}
-                            {index > 0 && searchContexts[index - 1].viewerHasStarred && !context.viewerHasStarred && (
-                                <div className={styles.separator} />
-                            )}
-                            <SearchContextMenuItem
-                                key={context.id}
-                                spec={context.spec}
-                                description={context.description}
-                                query={context.query}
-                                isDefault={context.spec === defaultSearchContextSpec}
-                                selected={context.spec === selectedSearchContextSpec}
-                                starred={context.viewerHasStarred}
-                            />
-                        </>
-                    ))}
+                {loadingState !== 'LOADING' && (
+                    <>
+                        {defaultContextExists === false && (
+                            <Alert variant="warning" className="mx-2 mt-2">
+                                Your default search context is no longer available.
+                                <br />
+                                <Link to="/contexts">Choose a new default context.</Link>
+                            </Alert>
+                        )}
+                        {searchContexts.map((context, index) => (
+                            <>
+                                {/* Separate starred and unstarred contexts */}
+                                {index > 0 &&
+                                    searchContexts[index - 1].viewerHasStarred &&
+                                    !context.viewerHasStarred && <div className={styles.separator} />}
+                                <SearchContextMenuItem
+                                    key={context.id}
+                                    spec={context.spec}
+                                    description={context.description}
+                                    query={context.query}
+                                    isDefault={context.viewerHasAsDefault}
+                                    selected={context.spec === selectedSearchContextSpec}
+                                    starred={context.viewerHasStarred}
+                                />
+                            </>
+                        ))}
+                    </>
+                )}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>Loading search contexts...</small>
@@ -230,52 +240,40 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
 
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </ComboboxList>
-            <div className={styles.footer}>
-                {isSourcegraphDotCom ? (
-                    <>
-                        <div className="d-flex col-7 px-0 mr-auto">
-                            <Icon
-                                className={classNames('text-merged mr-1', styles.footerIcon)}
-                                size="md"
-                                aria-hidden={true}
-                                svgPath={mdiArrowRight}
-                            />
-                            <Text className="mb-0">
-                                To search across your team's private repositories,{' '}
-                                <Link
-                                    to="https://signup.sourcegraph.com/?p=context"
-                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
-                                >
-                                    try Sourcegraph Cloud
-                                </Link>
-                                .
-                            </Text>
-                        </div>
-                        <div className="d-flex flex-column align-items-end">
-                            {showSearchContextManagement && (
-                                <ButtonLink variant="link" to="/contexts" className={styles.footerButton}>
-                                    Manage contexts
-                                </ButtonLink>
-                            )}
-                            <Button variant="link" className={styles.footerButton} onClick={reset}>
-                                Reset
-                            </Button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
-                            Reset
-                        </Button>
-                        <span className="flex-grow-1" />
-                        {showSearchContextManagement && (
+            {(isSourcegraphDotCom || showSearchContextManagement) && (
+                <div className={styles.footer}>
+                    {isSourcegraphDotCom && (
+                        <>
+                            <div className="d-flex col-7 px-0">
+                                <Icon
+                                    className={classNames('text-merged mr-1', styles.footerIcon)}
+                                    size="md"
+                                    aria-hidden={true}
+                                    svgPath={mdiArrowRight}
+                                />
+                                <Text className="mb-0">
+                                    To search across your team's private repositories,{' '}
+                                    <Link
+                                        to="https://signup.sourcegraph.com/?p=context"
+                                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                    >
+                                        try Sourcegraph Cloud
+                                    </Link>
+                                    .
+                                </Text>
+                            </div>
+                        </>
+                    )}
+                    {showSearchContextManagement && (
+                        <>
+                            <div className="flex-grow-1" />
                             <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
                                 Manage contexts
                             </ButtonLink>
-                        )}
-                    </>
-                )}
-            </div>
+                        </>
+                    )}
+                </div>
+            )}
         </Combobox>
     )
 }

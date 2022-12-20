@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 )
@@ -14,14 +15,18 @@ const ScriptsPath = ".sourcegraph-executor"
 // will be run _directly_ on the host. Otherwise, the command will be run inside
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
-func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
-	// TODO - make this a non-special case
+func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
+	// TODO - remove this once src-cli is not required anymore for SSBC.
 	if spec.Image == "" {
+		env := spec.Env
+		if dockerConfigPath != "" {
+			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", dockerConfigPath))
+		}
 		return command{
 			Key:       spec.Key,
 			Command:   spec.Command,
 			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       spec.Env,
+			Env:       env,
 			Operation: spec.Operation,
 		}
 	}
@@ -34,7 +39,9 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 	return command{
 		Key: spec.Key,
 		Command: flatten(
-			"docker", "run", "--rm",
+			"docker",
+			dockerConfigFlag(dockerConfigPath),
+			"run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
@@ -61,6 +68,13 @@ func dockerResourceFlags(options ResourceOptions) []string {
 
 func dockerVolumeFlags(wd string) []string {
 	return []string{"-v", wd + ":/data"}
+}
+
+func dockerConfigFlag(dockerConfigPath string) []string {
+	if dockerConfigPath == "" {
+		return nil
+	}
+	return []string{"--config", dockerConfigPath}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {

@@ -131,12 +131,13 @@ function fuzzySearch(
 }
 
 interface ResultProps {
+    fileIndex: number
     file: HighlightedLinkProps
     isSelected: boolean
     onClickItem: () => void
 }
 
-const Result: React.FC<ResultProps> = ({ file, isSelected, onClickItem }) => {
+const Result: React.FC<ResultProps> = ({ fileIndex, file, isSelected, onClickItem }) => {
     const ref = useRef<HTMLLIElement>(null)
 
     useEffect(() => {
@@ -147,6 +148,8 @@ const Result: React.FC<ResultProps> = ({ file, isSelected, onClickItem }) => {
 
     return (
         <li
+            // This ID is required to make the `Enter` shortcut work.
+            id={fuzzyResultId(fileIndex)}
             ref={ref}
             role="option"
             aria-selected={isSelected}
@@ -190,6 +193,7 @@ function renderFuzzyResults(
         <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results" className="py-1 px-0 mb-0">
             {linksToRender.map((file, fileIndex) => (
                 <Result
+                    fileIndex={fileIndex}
                     key={file.url || file.text}
                     file={file}
                     isSelected={focusIndex === fileIndex}

@@ -26,6 +26,8 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
+
+	IndexedMock zoekt.Streamer
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -38,6 +40,9 @@ func SearcherURLs() *endpoint.Map {
 }
 
 func Indexed() zoekt.Streamer {
+	if IndexedMock != nil {
+		return IndexedMock
+	}
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -90,7 +95,7 @@ func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, str
 			return map[uint32]*zoekt.MinimalRepoListEntry{}
 		}
 
-		return resp.Minimal
+		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	}
 }
 

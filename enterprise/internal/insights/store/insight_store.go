@@ -301,7 +301,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
 	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
+		preds = append(preds, sqlf.Sprintf("((repositories IS NULL OR CARDINALITY(repositories) = 0) AND repository_criteria IS NULL)"))
 	}
 	if args.ExcludeJustInTime {
 		preds = append(preds, sqlf.Sprintf("just_in_time = false"))
@@ -400,6 +400,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.GroupBy,
 			&temp.BackfillAttempts,
 			&temp.SupportsAugmentation,
+			&temp.RepositoryCriteria,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -472,6 +473,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GroupBy,
 			&temp.BackfillAttempts,
 			&temp.SupportsAugmentation,
+			&temp.RepositoryCriteria,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -716,6 +718,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.JustInTime,
 		series.GenerationMethod,
 		series.GroupBy,
+		series.RepositoryCriteria,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -951,8 +954,8 @@ const createInsightSeriesSql = `
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method, group_by, needs_migration)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+							just_in_time, generation_method, group_by, needs_migration, repository_criteria)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
@@ -961,8 +964,8 @@ i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorde
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts, 
-i.supports_augmentation
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
+i.supports_augmentation, i.repository_criteria
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -977,7 +980,7 @@ i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapsho
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
 default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
-i.supports_augmentation
+i.supports_augmentation, i.repository_criteria
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -991,7 +994,7 @@ const getInsightDataSeriesSql = `
 SELECT id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method, repositories, group_by, backfill_attempts, supports_augmentation
+just_in_time, generation_method, repositories, group_by, backfill_attempts, supports_augmentation, repository_criteria
 FROM insight_series
 WHERE %s
 `
@@ -1017,7 +1020,9 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts, i.supports_augmentation
+	   default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
+	   i.supports_augmentation, i.repository_criteria
+
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

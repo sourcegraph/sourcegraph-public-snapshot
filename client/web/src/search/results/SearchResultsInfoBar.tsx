@@ -11,6 +11,7 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
@@ -44,9 +45,9 @@ export interface SearchResultsInfoBarProps
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
-    /** The search query and if any results were found */
+    /** The search query and results */
     query?: string
-    resultsFound: boolean
+    results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
@@ -85,19 +86,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.query]
     )
 
-    const canCreateMonitorFromQuery = useMemo(() => {
-        if (globalTypeFilter) {
-            return false
-        }
-        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
-    }, [globalTypeFilter])
+    const canCreateMonitorFromQuery = useMemo(
+        () => globalTypeFilter === 'diff' || globalTypeFilter === 'commit',
+        [globalTypeFilter]
+    )
 
-    const canCreateBatchChangeFromQuery = useMemo(() => {
-        if (!globalTypeFilter) {
-            return true
-        }
-        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
-    }, [globalTypeFilter])
+    const canCreateBatchChangeFromQuery = useMemo(
+        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
+        [globalTypeFilter]
+    )
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
@@ -226,7 +223,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         createActions={createActions}
                         createCodeMonitorAction={createCodeMonitorAction}
                         canCreateMonitor={canCreateMonitorFromQuery}
-                        resultsFound={props.resultsFound}
+                        results={props.results}
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}

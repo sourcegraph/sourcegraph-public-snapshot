@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.2.0"
+	const minimumUpgradeableVersion = "4.3.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -287,6 +287,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
+			executorsE2E(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			clusterQA(c.candidateImageTag()),

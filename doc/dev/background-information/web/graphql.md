@@ -246,3 +246,35 @@ export const PEOPLE = gql`
 This is less safe as fields could be missing from the actual queries and it makes testing harder as hard-coded results need to be casted to the whole type.
 Some components also worked around this by redeclaring the type structure with complex `Pick<T, K>` expressions.
 When you need to interface with these, consider refactoring them to use a fragment type instead.
+
+## Best-practices for paginating resources with GraphQL
+
+Every query thar returns more items than can be visible in the UI at any given point should implement a paginated response. This is important because some of our largest customers have vastly bigger amounts of data and we need to ensure that the interfaces become usable regardless of the size.
+
+For our GraphQL API we follow the [Relay-style connection spec](https://relay.dev/graphql/connections.htm) and cursor-based pagination.
+
+**Cursor-based pagination** refers to a pagination API that _does not know about relative page numbers_. Instead, every API response contains a opaque _cursor_ that we can use to load the next or previous page of data. It's important that for the front-end, this _cursor_ is never introspected. It is handled as a generic `string` that is just passed from the API response directly into the next API request.
+
+In contrast to **offset-based pagination**, this approach brings us these benefits:
+
+- Adding a new item to the collection while someone else is paginating through the collection will avoid inconsistencies (no items are showed more than once or skipped entirely).
+- We can leverage postgres indexes to find the cursor quickly and avoid having to do a sequential scan through all rows ([learn more](https://use-the-index-luke.com/no-offset)).
+
+## Pagination UI patterns at Sourcegraph
+
+We currently have two accepted pagination patterns:
+
+- **Page switcher pagination**: Here, we only show one page of data (usually in the range of ~30 items) in the view at all times. The backend needs to allow pagination in both directions (forwards _and backwards_) for this to be possible. This is the proffered pagination pattern for elements that we can fetch from the postgres database.
+
+  To implement this, you can use the following abstractions:
+
+  - React hook for data loading: [`usePageSwitcherPagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/usePageSwitcherPagination.ts)
+  - Go abstraction to build a bi-directional paginated resource: [`ConnectionResolver`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/graphqlutil/connection_resolver.go)
+  - Wildcard component for pagination UI: [`<PageSwitcher />`](https://storybook.sgdev.org/?path=/story/wildcard-pageswitcher--simple)
+
+- **Show more pagination** (a.k.a. infinite-scrolling): Items are appended to the bottom of the list for every page that is loaded. This is suited only for resources that do not bi-directional paginatoin.
+
+  We offer the following helpers for implementing a view with this pattern:
+
+  - React hook for data loading: [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts)
+  - React component "Show More" UI: [`<ShowMoreButton />`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/search/panels/ShowMoreButton.tsx)

@@ -1,6 +1,6 @@
 /* eslint-disable no-template-curly-in-string */
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightedFileResult, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
 import { SearchGraphQlOperations } from '..'
@@ -266,7 +266,7 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
 ]
 
 export const highlightFileResult: Partial<SharedGraphQlOperations> = {
-    HighlightedFile: (parameters: FetchFileParameters) => {
+    HighlightedFile: ((parameters: FetchFileParameters): HighlightedFileResult => {
         const allLines = [
             '<tr><td class="line" data-line="1"></td><td class="code"><div><span class="hl-source hl-ts"><span class="hl-meta hl-import hl-ts"><span class="hl-keyword hl-control hl-import hl-ts">import</span> <span class="hl-meta hl-block hl-ts"><span class="hl-punctuation hl-definition hl-block hl-ts">{</span> <span class="hl-variable hl-other hl-readwrite hl-alias hl-ts">index</span> <span class="hl-punctuation hl-definition hl-block hl-ts">}</span></span> <span class="hl-keyword hl-control hl-from hl-ts">from</span> <span class="hl-string hl-quoted hl-single hl-ts a11y-ignore"><span class="hl-punctuation hl-definition hl-string hl-begin hl-ts">&#39;</span>./index<span class="hl-punctuation hl-definition hl-string hl-end hl-ts">&#39;</span></span></span>\n</span></div></td></tr>',
             '<tr><td class="line" data-line="2"></td><td class="code"><div><span class="hl-source hl-ts"><span class="hl-meta hl-import hl-ts"><span class="hl-keyword hl-control hl-import hl-ts">import</span> <span class="hl-meta hl-block hl-ts"><span class="hl-punctuation hl-definition hl-block hl-ts">{</span> <span class="hl-variable hl-other hl-readwrite hl-alias hl-ts">Edge</span><span class="hl-punctuation hl-separator hl-comma hl-ts">,</span> <span class="hl-variable hl-other hl-readwrite hl-alias hl-ts">Vertex</span> <span class="hl-punctuation hl-definition hl-block hl-ts">}</span></span> <span class="hl-keyword hl-control hl-from hl-ts">from</span> <span class="hl-string hl-quoted hl-single hl-ts a11y-ignore"><span class="hl-punctuation hl-definition hl-string hl-begin hl-ts">&#39;</span>lsif-protocol<span class="hl-punctuation hl-definition hl-string hl-end hl-ts">&#39;</span></span></span>\n</span></div></td></tr>',
@@ -369,7 +369,7 @@ export const highlightFileResult: Partial<SharedGraphQlOperations> = {
                 },
             },
         }
-    },
+    }) as SharedGraphQlOperations['HighlightedFile'],
 }
 
 export const symbolSearchStreamEvents: SearchEvent[] = [

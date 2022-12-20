@@ -5,11 +5,10 @@ import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
 import { RouteComponentProps, useLocation } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'

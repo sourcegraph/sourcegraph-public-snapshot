@@ -3,9 +3,9 @@ import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -18,7 +18,6 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
-    resultsFound: true,
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,

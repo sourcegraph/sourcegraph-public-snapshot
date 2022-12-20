@@ -216,9 +216,10 @@ D. Generate the database dumps
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
+kubectl exec -it $codeinsights-db_POD_NAME -- bash -c 'pg_dump -C --username postgres postgres' > codeinsights_db.out
 ```
 
-Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
+Ensure the `sourcegraph_db.out`, `codeintel_db.out` and `codeinsights_db.out` files are moved to a safe and secure location.
 
 ### Restore Sourcegraph databases
 
@@ -228,13 +229,14 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-A. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+A. Copy the database dump files (eg. `sourcegraph_db.out`, `codeintel_db.out` and `codeinsights_db.out`) into the root of the `deploy-sourcegraph` directory
 
 B. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
+kubectl rollout restart deployment codeinsights-db
 ```
 
 C. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
@@ -242,6 +244,7 @@ C. Copy the database files into the pods by running the following command from t
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+kubectl cp codeinsights_db.out $NAMESPACE/$codeinsights-db_POD_NAME:/tmp/codeinsights_db.out
 ```
 
 D. Restore the databases
@@ -249,6 +252,7 @@ D. Restore the databases
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+kubectl exec -it $codeinsights-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username postgres -f /tmp/codeinsights_db.out postgres'
 ```
 
 E. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
@@ -286,17 +290,20 @@ B. Remove any existing volumes for the databases in the existing deployment
 ```bash
 kubectl delete pvc pgsql
 kubectl delete pvc codeintel-db
+kubectl delete pvc codeinsights-db
 kubectl delete pv $pgsql_PV_NAME --force
 kubectl delete pv $codeintel-db_PV_NAME --force
+kubectl delete pv $codeinsights-db_PV_NAME --force
 ```
 
-C. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+C. Copy the database dump files (eg. `sourcegraph_db.out`, `codeintel_db.out` and `codeinsights_db.out`) into the root of the `deploy-sourcegraph` directory
 
 D. Start the database services only
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
+kubectl rollout restart deployment codeinsights-db
 ```
 
 E. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
@@ -304,6 +311,7 @@ E. Copy the database files into the pods by running the following command from t
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+kubectl cp codeinsights_db.out $NAMESPACE/$codeinsights-db_POD_NAME:/tmp/codeinsights_db.out
 ```
 
 F. Restore the databases
@@ -311,6 +319,7 @@ F. Restore the databases
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+kubectl exec -it $codeinsights-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username postgres -f /tmp/codeinsights_db.out postgres'
 ```
 
 G. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)

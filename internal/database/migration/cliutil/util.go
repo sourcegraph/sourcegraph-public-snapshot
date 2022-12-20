@@ -42,8 +42,8 @@ func flagHelp(out *output.Output, message string, args ...any) error {
 }
 
 // setupRunner initializes and returns the runner associated witht the given schema.
-func setupRunner(ctx context.Context, factory RunnerFactory, schemaNames ...string) (Runner, error) {
-	runner, err := factory(ctx, schemaNames)
+func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
+	runner, err := factory(schemaNames)
 	if err != nil {
 		return nil, err
 	}
@@ -52,31 +52,31 @@ func setupRunner(ctx context.Context, factory RunnerFactory, schemaNames ...stri
 }
 
 // setupStore initializes and returns the store associated witht the given schema.
-func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (Runner, Store, error) {
-	runner, err := setupRunner(ctx, factory, schemaName)
+func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (Store, error) {
+	runner, err := setupRunner(factory, schemaName)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	store, err := runner.Store(ctx, schemaName)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return runner, store, nil
+	return store, nil
 }
 
 // sanitizeSchemaNames sanitizies the given string slice from the user.
-func sanitizeSchemaNames(schemaNames []string) ([]string, error) {
+func sanitizeSchemaNames(schemaNames []string) []string {
 	if len(schemaNames) == 1 && schemaNames[0] == "" {
 		schemaNames = nil
 	}
 
 	if len(schemaNames) == 1 && schemaNames[0] == "all" {
-		return schemas.SchemaNames, nil
+		return schemas.SchemaNames
 	}
 
-	return schemaNames, nil
+	return schemaNames
 }
 
 // parseTargets parses the given strings as integers.

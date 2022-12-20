@@ -1,12 +1,13 @@
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { H1, H2, Code, Text } from '@sourcegraph/wildcard'
 
 import { AlertType } from '../graphql-operations'
 
 import { GlobalAlert } from './GlobalAlert'
+
+import webStyles from '../SourcegraphWebApp.scss'
 
 const config: Meta = {
     title: 'web/GlobalAlert',

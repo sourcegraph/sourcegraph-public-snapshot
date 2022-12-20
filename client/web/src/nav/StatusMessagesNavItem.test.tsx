@@ -1,5 +1,5 @@
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { allStatusMessages, newStatusMessageMock } from './StatusMessagesNavItem.mocks'

@@ -1,5 +1,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary")
 
+# gazelle:exclude .
+
 js_binary(
     name = "generate_graphql_schema",
     data = [

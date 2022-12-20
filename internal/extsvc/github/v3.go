@@ -147,7 +147,6 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*htt
 	return c.request(ctx, req, result)
 }
 
-//nolint:unparam // Return *httpResponseState for consistency with other methods
 func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {

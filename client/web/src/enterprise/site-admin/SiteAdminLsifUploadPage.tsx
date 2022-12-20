@@ -3,9 +3,8 @@ import { FunctionComponent, useEffect, useMemo } from 'react'
 import { RouteComponentProps, Redirect } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

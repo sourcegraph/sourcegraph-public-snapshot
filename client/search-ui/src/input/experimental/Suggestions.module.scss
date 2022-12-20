@@ -1,0 +1,88 @@
+.suggestions {
+    &[role='grid'] {
+        overflow-y: auto;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [role='rowgroup'] {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem;
+
+        &:first-of-type {
+            padding-top: 0;
+        }
+
+        &:last-of-type {
+            border: none;
+        }
+
+        // group header
+        [role='presentation'] {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            padding: 0 0.5rem;
+        }
+
+        [role='row'] {
+            display: flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--border-radius);
+            font-family: var(--code-font-family);
+            font-size: 0.75rem;
+            min-height: 1.5rem;
+
+            &[aria-selected='true'] {
+                background-color: var(--subtle-bg);
+                border-radius: 4px;
+            }
+
+            &:hover {
+                background-color: var(--color-bg-2);
+                cursor: pointer;
+            }
+
+            .match {
+                font-weight: bold;
+            }
+
+            .description {
+                margin-left: 0.5rem;
+                color: var(--input-placeholder-color);
+            }
+
+            .note {
+                font-size: 0.75rem;
+                margin-left: auto;
+                color: var(--text-muted);
+                font-family: var(--font-family-base);
+            }
+        }
+    }
+}
+
+.filter-option {
+    display: flex;
+    font-family: var(--code-font-family);
+    font-size: 0.75rem;
+    color: var(--search-filter-keyword-color);
+    background-color: var(--oc-blue-0);
+    // border: 1px solid var(--oc-blue-1);
+    border-radius: 3px;
+    padding: 0;
+
+    .separator {
+        color: var(--search-filter-keyword-color);
+    }
+}
+
+.icon {
+    color: var(--icon-color);
+}

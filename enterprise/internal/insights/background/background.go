@@ -17,8 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -41,7 +43,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
-
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
 
@@ -49,26 +50,22 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, featureFlagStore),
+		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
-
-	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, observationCtx, mainAppDB, insightsDB, time.Now))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
+			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,
@@ -91,7 +88,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 					Name:      "insight_backfill_new_index_repositories_analyzed",
 					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
 				}),
-			CostAnalyzer: priority.DefaultQueryAnalyzer(),
+			CostAnalyzer:      priority.DefaultQueryAnalyzer(),
+			RepoQueryExecutor: query.NewStreamingRepoQueryExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
 		}
 
 		// Add the backfill v2 workers
@@ -152,6 +150,6 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
 		return true
 	}))
-	resetterMetrics := dbworker.NewMetrics(observationCtx, workerName)
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }

@@ -1,11 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { mdiChevronDown, mdiChevronRight, mdiSync } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -14,7 +13,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -92,7 +91,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -195,7 +194,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

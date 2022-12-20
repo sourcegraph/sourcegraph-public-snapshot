@@ -48,10 +48,14 @@ For deployment configuration, please refer to the relevant [installation guide](
 ## [Observability](observability.md)
 
 - [Monitoring guide](how-to/monitoring-guide.md)
-- [Metrics and dashboards](./observability/metrics.md)
-- [Alerting](./observability/alerting.md)
-- [Tracing](./observability/tracing.md)
-- [Logs](./observability/logs.md)
+- [Metrics and dashboards](observability/metrics.md)
+- [Alerting](observability/alerting.md)
+- [Tracing](observability/tracing.md)
+- [Logs](observability/logs.md)
+- [Outbound request log](observability/outbound-request-log.md)
+- [OpenTelemetry](observability/opentelemetry.md)
+- [Health checks](observability/health_checks.md)
+- [Troubleshooting guide](observability/troubleshooting.md)
 
 ## Features
 

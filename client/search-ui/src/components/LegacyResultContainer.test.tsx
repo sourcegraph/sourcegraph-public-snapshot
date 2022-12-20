@@ -4,12 +4,12 @@ import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { FileMatchChildren } from './FileMatchChildren'
 import { LegacyResultContainer } from './LegacyResultContainer'

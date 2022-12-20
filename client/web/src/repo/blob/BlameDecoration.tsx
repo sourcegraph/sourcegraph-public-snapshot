@@ -5,9 +5,9 @@ import { History } from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
-import { createLinkClickHandler } from '@sourcegraph/shared/src/components/utils/linkClickHandler'
 import {
     createRectangle,
+    createLinkClickHandler,
     Icon,
     Link,
     Popover,

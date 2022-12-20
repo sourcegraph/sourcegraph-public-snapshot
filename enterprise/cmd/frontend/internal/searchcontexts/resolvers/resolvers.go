@@ -283,6 +283,14 @@ func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlback
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) DefaultSearchContext(ctx context.Context) (graphqlbackend.SearchContextResolver, error) {
+	searchContext, err := r.db.SearchContexts().GetDefaultSearchContextForCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
+}
+
 func unmarshalSearchContextCursor(cursor *string) (int32, error) {
 	var after int32
 	if cursor == nil {

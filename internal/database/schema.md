@@ -51,7 +51,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  closed_at         | timestamp with time zone |           |          | 
- batch_spec_id     | bigint                   |           | not null | 
+ batch_spec_id     | bigint                   |           |          | 
  last_applier_id   | bigint                   |           |          | 
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
@@ -61,6 +61,7 @@ Indexes:
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
+    "batch_change_name_is_valid" CHECK (name ~ '^[\w.-]+$'::text)
     "batch_changes_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "batch_changes_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -1190,10 +1191,13 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 --------------------+--------------------------+-----------+----------+---------------------------------------------------------
  id                 | integer                  |           | not null | nextval('executor_secret_access_logs_id_seq'::regclass)
  executor_secret_id | integer                  |           | not null | 
- user_id            | integer                  |           | not null | 
+ user_id            | integer                  |           |          | 
  created_at         | timestamp with time zone |           | not null | now()
+ machine_user       | text                     |           | not null | ''::text
 Indexes:
     "executor_secret_access_logs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "user_id_or_machine_user" CHECK (user_id IS NULL AND machine_user <> ''::text OR user_id IS NOT NULL AND machine_user = ''::text)
 Foreign-key constraints:
     "executor_secret_access_logs_executor_secret_id_fkey" FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE
     "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -1846,6 +1850,7 @@ Stores the configuration used for code intel index jobs for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
+ requested_envvars      | text[]                   |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -2069,6 +2074,7 @@ Stores the retention policy of code intellience data for a repository.
  last_traversal_scan_at  | timestamp with time zone |           |          | 
  last_reconcile_at       | timestamp with time zone |           |          | 
  content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
+ should_reindex          | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2797,6 +2803,7 @@ Foreign-key constraints:
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  deleted_at | timestamp with time zone |           |          | 
+ readonly   | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
     "roles_name" UNIQUE CONSTRAINT, btree (name)
@@ -2809,6 +2816,8 @@ Referenced by:
 ```
 
 **name**: The uniquely identifying name of the role.
+
+**readonly**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```
@@ -3610,6 +3619,7 @@ Foreign-key constraints:
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -225,15 +226,14 @@ func PartitionRepos(
 	// Note: We do not need to handle list.Crashes since we will fallback to
 	// unindexed search for any repository unavailable due to rollout.
 
-	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
+	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
-	tr.LogFields(
-		otlog.Int("indexed.size", len(indexed.RepoRevs)),
-		otlog.Int("unindexed.size", len(unindexed)),
-	)
+	tr.SetAttributes(
+		attribute.Int("indexed.size", len(indexed.RepoRevs)),
+		attribute.Int("unindexed.size", len(unindexed)))
 
 	// Disable unindexed search
 	if useIndex == query.Only {
@@ -321,7 +321,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
+		foundResults.CompareAndSwap(false, event.FileCount != 0 || event.MatchCount != 0)
 		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, selector, c)
 	}))
 	if err != nil {
@@ -759,7 +759,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 			return nil
 		}
 	}
-	tr.LogFields(otlog.Int32("userID", userID))
+	tr.SetAttributes(attribute.Int64("userID", int64(userID)))
 
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how

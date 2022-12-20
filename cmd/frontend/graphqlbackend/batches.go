@@ -889,7 +889,7 @@ type ResolvedBatchSpecWorkspaceResolver interface {
 	OnlyFetchWorkspace() bool
 	Ignored() bool
 	Unsupported() bool
-	Repository(ctx context.Context) *RepositoryResolver
+	Repository() *RepositoryResolver
 	Branch(ctx context.Context) *GitRefResolver
 	Path() string
 	SearchResultPaths() []string
