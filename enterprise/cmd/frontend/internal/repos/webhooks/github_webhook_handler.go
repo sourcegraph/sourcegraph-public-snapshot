@@ -21,7 +21,9 @@ type GitHubWebhookHandler struct {
 }
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
-	router.Register(g.handleGitHubWebhook, extsvc.KindGitHub, "push")
+	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+		return g.handle(ctx, payload)
+	}, extsvc.KindGitHub, "push")
 }
 
 func NewGitHubWebhookHandler() *GitHubWebhookHandler {
@@ -30,7 +32,7 @@ func NewGitHubWebhookHandler() *GitHubWebhookHandler {
 	}
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
@@ -38,7 +40,7 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ databa
 
 	repoName, err := githubNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handleGitHubWebhook: get name failed")
+		return errors.Wrap(err, "handle: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -47,7 +49,7 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ databa
 		if errcode.IsNotFound(err) {
 			return nil
 		}
-		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
+		return errors.Wrap(err, "handle: EnqueueRepoUpdate failed")
 	}
 
 	g.logger.Info("successfully updated", log.String("name", resp.Name))
