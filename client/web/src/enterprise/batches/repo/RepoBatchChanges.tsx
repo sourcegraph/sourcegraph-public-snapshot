@@ -4,7 +4,6 @@ import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { authenticatedUser } from '@sourcegraph/web/src/auth'
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
@@ -78,7 +77,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted isSourcegraphDotCom={false} authenticatedUser={authenticatedUser} />}
+                emptyElement={<GettingStarted isSourcegraphDotCom={false} />}
             />
         </Container>
     )

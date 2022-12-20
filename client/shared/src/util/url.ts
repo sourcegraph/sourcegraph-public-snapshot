@@ -586,7 +586,10 @@ export function buildGetStartedURL(cloudSignup?: boolean, authenticatedUser?: Au
     return url.toString()
 }
 
-export const buildCloudTrialURL = (authenticatedUser: AuthenticatedUser | null | undefined, product?: string) => {
+export const buildCloudTrialURL = (
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'email'> | null | undefined,
+    product?: string
+) => {
     const url = new URL('https://signup.sourcegraph.com/')
 
     if (product) {
