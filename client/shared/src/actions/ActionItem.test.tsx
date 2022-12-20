@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { assertAriaEnabled } from '../../dev/aria-asserts'
 import { createBarrier } from '../api/integration-test/testHelpers'
