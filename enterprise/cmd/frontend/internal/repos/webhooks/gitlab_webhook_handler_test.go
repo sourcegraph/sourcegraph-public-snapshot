@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -39,8 +38,7 @@ func TestGitLabWebhookHandle(t *testing.T) {
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
 
-	baseURL := extsvc.CodeHostBaseURL{} // Not used, can be empty
-	if err := handler.handle(ctx, nil, baseURL, &payload); err != nil {
+	if err := handler.handle(ctx, &payload); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)
