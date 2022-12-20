@@ -3,8 +3,6 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'reac
 import { mdiClose, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../../hooks'
 import { ErrorAlert } from '../../ErrorAlert'
@@ -22,7 +20,10 @@ interface FeedbackPromptSubmitResponse {
 export type FeedbackPromptSubmitEventHandler = (text: string) => Promise<FeedbackPromptSubmitResponse>
 
 interface FeedbackPromptAuthenticatedUserProps {
-    authenticatedUser: Pick<AuthenticatedUser, 'username' | 'email'> | null
+    authenticatedUser: {
+        username: string
+        email: string
+    } | null
 }
 
 interface FeedbackPromptContentProps extends FeedbackPromptAuthenticatedUserProps {

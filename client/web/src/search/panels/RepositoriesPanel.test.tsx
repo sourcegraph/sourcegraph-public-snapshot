@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { RepositoriesPanel } from './RepositoriesPanel'
 

@@ -5,13 +5,13 @@ import sinon from 'sinon'
 
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
     CHUNK_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { FileContentSearchResult } from './FileContentSearchResult'
 
