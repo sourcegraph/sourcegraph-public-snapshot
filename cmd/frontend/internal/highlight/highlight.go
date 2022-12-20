@@ -485,7 +485,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis.
-			trace.Log(otlog.Bool(problem, true))
+			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
 			prometheusStatus = problem
 		}
 
