@@ -1,9 +1,9 @@
-import { ChangeEvent, FC, PropsWithChildren, ReactElement } from 'react'
+import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, useRef } from 'react'
 
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Code, Input, Label, InputElement, InputErrorMessage, InputDescription } from '@sourcegraph/wildcard'
 
@@ -97,15 +97,33 @@ export const SearchQueryOrRepoListSection: FC<SearchQueryOrRepoListSectionProps>
                 checked={repoMode.input.value === 'urls-list'}
                 onChange={repoMode.input.onChange}
             >
-                <Input
-                    as={RepositoriesField}
-                    message="Use a full repo URL (github.com/...). Separate repositories with comas"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    aria-labelledby="strict-list-repo"
-                    {...getDefaultInputProps(repositories)}
-                />
+                <RepositoriesURLsPicker repositories={repositories} aria-labelledby="strict-list-repo" />
             </RadioGroupSection>
         </FormGroup>
+    )
+}
+
+interface RepositoriesURLsPickerProps {
+    repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+    'aria-labelledby': string
+}
+
+function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElement {
+    const { repositories, 'aria-labelledby': ariaLabelledby } = props
+
+    const { value, disabled, ...attributes } = getDefaultInputProps(repositories)
+    const fieldValue = disabled ? '' : value
+
+    return (
+        <Input
+            as={RepositoriesField}
+            message="Use a full repo URL (github.com/...). Separate repositories with comas"
+            placeholder="Example: github.com/sourcegraph/sourcegraph"
+            aria-labelledby={ariaLabelledby}
+            value={fieldValue}
+            disabled={disabled}
+            {...attributes}
+        />
     )
 }
 
@@ -161,17 +179,25 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
 
     const { value, onChange, disabled, ...attributes } = repoQuery.input
 
+    // We have to have mutable value here for the disabled state in order to prevent
+    // any updates from the repo query field when this field is disabled, see handleOnChange
+    // callback. Mutable value is needed because codemirror doesn't update callback in a sync
+    // way and even if we have disabled: true code mirror still preserves the prev callback
+    // where we still have disabled: false in the scope.
+    const disabledValue = useMutableValue(disabled)
+
     const handleChipSuggestions = (chip: SmartRepoQueryChip): void => {
         const nextQueryValue = `${value.query} ${chip.query}`.trimStart()
         onChange({ query: nextQueryValue, hint: EditorHint.Focus })
     }
 
     const handleOnChange = (queryState: QueryState): void => {
-        if (queryState.query !== value.query) {
-            onChange({ query: queryState.query, changeSource: QueryChangeSource.userInput })
+        if (queryState.query !== value.query && !disabledValue.current) {
+            onChange(queryState)
         }
     }
 
+    const queryState = disabled ? { query: '' } : value
     const LabelComponent = label ? Label : 'div'
 
     return (
@@ -181,7 +207,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
 
                 <InputElement
                     as={MonacoField}
-                    queryState={value}
+                    queryState={queryState}
                     status={getDefaultInputStatus(repoQuery, value => value.query)}
                     placeholder="Example: repo:^github\.com/sourcegraph/sourcegraph$"
                     aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
@@ -270,4 +296,11 @@ function SmartRepoQueryChips(props: SmartRepoQueryChipsProps): ReactElement {
             ))}
         </ul>
     )
+}
+
+function useMutableValue<T>(value: T): MutableRefObject<T> {
+    const valueRef = useRef<T>(value)
+    valueRef.current = value
+
+    return valueRef
 }
