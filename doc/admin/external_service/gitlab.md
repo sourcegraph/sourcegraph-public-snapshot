@@ -12,7 +12,7 @@ To connect GitLab to Sourcegraph:
 6. You can use the action buttons above the text field to add the fields, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration) for additional fields.
 7. Click **Add repositories**.
 
-Example value:
+Example config:
 ```
 {
   "url": "https://gitlab.com",
