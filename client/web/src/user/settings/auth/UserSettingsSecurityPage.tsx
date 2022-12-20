@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
@@ -15,6 +14,7 @@ import {
     Label,
     Text,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

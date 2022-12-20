@@ -8,7 +8,6 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import {
     Button,
@@ -20,6 +19,7 @@ import {
     LoadingSpinner,
     PageHeader,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

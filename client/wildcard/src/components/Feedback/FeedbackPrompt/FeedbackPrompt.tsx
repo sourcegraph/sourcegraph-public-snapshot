@@ -3,12 +3,12 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'reac
 import { mdiClose, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../../hooks'
 import { ErrorAlert } from '../../ErrorAlert'
+import { Form } from '../../Form'
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 

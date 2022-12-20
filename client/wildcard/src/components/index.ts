@@ -9,6 +9,7 @@ export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint,
 export {
     Checkbox,
     FlexTextArea,
+    Form,
     Input,
     LoaderInput,
     RadioButton,
