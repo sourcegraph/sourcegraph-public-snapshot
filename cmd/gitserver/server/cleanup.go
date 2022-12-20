@@ -320,7 +320,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			reason = maybeCorrupt
-			s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), "git detected corruption: could not read object or pack file(s). See log for more details")
+			s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), "git detected repo corruption: could not read object or pack file(s). See log for more details")
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
