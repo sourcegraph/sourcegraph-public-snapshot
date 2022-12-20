@@ -86,7 +86,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			return nil, statusCode, err
 		}
-		trace.Log(
+		trace.Log( //nolint:staticcheck // Need to convert this to attribute.* methods, might be not so easy with metadata
 			log.Int("uploadID", uploadState.uploadID),
 			log.Int("numParts", uploadState.numParts),
 			log.Int("numUploadedParts", len(uploadState.uploadedParts)),
@@ -95,7 +95,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 			log.Int("index", uploadState.index),
 			log.Bool("done", uploadState.done),
 			log.Object("metadata", uploadState.metadata),
-		) //nolint:staticcheck // Need to convert this to attribute.* methods, might be not so easy with metadata
+		)
 
 		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {
 			return uploadHandlerFunc(ctx, uploadState, r.Body)
