@@ -1771,9 +1771,6 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	// Check stderr to see if the repo is corrupted, if it is set the corruptedAt time on the repo
-	// and emit a metric.
-	// The corrupted at time will be cleared when the repo is updated in the DB after a re-fetch/reclone
 	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
 
 	// write trailer
