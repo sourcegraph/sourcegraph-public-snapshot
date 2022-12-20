@@ -123,7 +123,7 @@ export const BlameDecoration: React.FunctionComponent<{
     const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,
-        timeout: 250,
+        timeout: 50,
         onOpen,
         onClose,
     })
