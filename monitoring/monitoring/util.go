@@ -78,8 +78,9 @@ func toMarkdown(m string, forceList bool) (string, error) {
 }
 
 var titleExceptions = map[string]string{
-	"Github": "GitHub",
-	"Gitlab": "GitLab",
+	"Github":        "GitHub",
+	"Gitlab":        "GitLab",
+	"Opentelemetry": "OpenTelemetry",
 }
 
 // Title format s with a title case, accounting for exceptions for a few brands.
