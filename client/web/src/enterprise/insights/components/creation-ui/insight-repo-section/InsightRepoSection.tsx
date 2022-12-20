@@ -5,7 +5,16 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Button, Code, Input, Label, InputElement, InputErrorMessage, InputDescription } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Code,
+    Input,
+    Label,
+    InputElement,
+    InputErrorMessage,
+    InputDescription,
+    InputStatus,
+} from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
@@ -200,6 +209,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
 
     return (
@@ -210,12 +220,13 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 <InputElement
                     as={MonacoField}
                     queryState={queryState}
-                    status={getDefaultInputStatus(repoQuery, value => value.query)}
+                    status={fieldStatus}
                     placeholder="Example: repo:^github\.com/sourcegraph/sourcegraph$"
                     aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
                     className={styles.repoInput}
                     onChange={handleOnChange}
                     disabled={disabled}
+                    aria-busy={fieldStatus === InputStatus.loading}
                     {...attributes}
                 />
 
