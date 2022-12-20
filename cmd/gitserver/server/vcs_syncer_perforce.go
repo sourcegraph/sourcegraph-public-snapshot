@@ -48,31 +48,31 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.UR
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (*exec.Cmd, error) {
-	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
+	username, password, p4port, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithTrust(ctx, host, username, password)
+	err = p4pingWithTrust(ctx, p4port, username, password)
 	if err != nil {
 		return nil, errors.Wrap(err, "ping with trust")
 	}
 
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
-		cmd = s.buildP4FusionCmd(ctx, depot, username, tmpPath, host)
+		cmd = s.buildP4FusionCmd(ctx, depot, username, tmpPath, p4port)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(host, username, password)
+	cmd.Env = s.p4CommandEnv(p4port, username, password)
 
 	return cmd, nil
 }
 
-func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, host string) *exec.Cmd {
+func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
 	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 	return exec.CommandContext(ctx, "p4-fusion",
 		"--path", depot+"...",
@@ -81,7 +81,7 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--src", src,
 		"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
 		"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-		"--port", host,
+		"--port", port,
 		"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 		"--retries", strconv.Itoa(s.FusionConfig.Retries),
 		"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
@@ -155,9 +155,9 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	return flags
 }
 
-func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []string {
+func (s *PerforceDepotSyncer) p4CommandEnv(port, username, password string) []string {
 	env := append(os.Environ(),
-		"P4PORT="+host,
+		"P4PORT="+port,
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
