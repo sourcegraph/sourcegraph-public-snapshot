@@ -485,18 +485,18 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--quiet, -q`: Suppress all output but errors from generate tasks
 
-### sg generate go
+### sg generate buf
 
-Run go generate [packages...] on the codebase.
+Re-generate protcol buffer bindings using buf.
 
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
-### sg generate buf
+### sg generate go
 
-Re-generate protcol buffer bindings using buf..
+Run go generate [packages...] on the codebase.
 
 
 Flags:
