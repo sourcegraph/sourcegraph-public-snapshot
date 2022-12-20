@@ -1,6 +1,6 @@
 # Using your own Redis server
 
-**Version requirements**: We support any version *starting from 5.0*.
+**Version requirements**: We support any version *starting from 5.0*. Redis Cluster and Redis Sentinel are not supported.
 
 Generally, there is no reason to do this as Sourcegraph only stores ephemeral cache and session data in Redis. However, if you want to use an external Redis server with Sourcegraph, you can follow the deployment specific guidance below:
 
