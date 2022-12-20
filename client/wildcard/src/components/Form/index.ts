@@ -1,5 +1,6 @@
 export * from './Checkbox'
 export * from './FlexTextArea'
+export * from './Form'
 export * from './Input'
 export * from './LoaderInput'
 export * from './RadioButton'

@@ -4,7 +4,6 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
 import {
     Button,
@@ -16,6 +15,7 @@ import {
     Input,
     Label,
     ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

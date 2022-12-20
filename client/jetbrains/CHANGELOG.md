@@ -14,6 +14,22 @@
 
 ### Security
 
+## [2.1.2]
+
+### Added
+
+- Compatibility with IntelliJ 2022.3
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [2.1.1]
 
 ### Added

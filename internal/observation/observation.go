@@ -136,7 +136,7 @@ func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 		}
 	}
 	if t.trace != nil {
-		t.trace.TagFields(fields...)
+		t.trace.TagFields(fields...) //nolint:staticcheck // Workaround until we drop OpenTracing
 	}
 }
 
@@ -425,7 +425,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.LogFields(logFields...)
+	tr.LogFields(logFields...) //nolint:staticcheck // TODO when updating the observation package
 	tr.Finish()
 }
 

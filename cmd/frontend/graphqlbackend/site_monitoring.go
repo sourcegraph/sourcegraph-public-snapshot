@@ -42,7 +42,7 @@ type siteMonitoringStatisticsResolver struct {
 
 func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
+	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts") //nolint:staticcheck // OT is deprecated
 
 	var err error
 	defer func() {

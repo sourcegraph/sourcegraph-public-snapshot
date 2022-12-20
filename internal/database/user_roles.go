@@ -58,6 +58,8 @@ type userRoleStore struct {
 	*basestore.Store
 }
 
+var _ UserRoleStore = &userRoleStore{}
+
 func UserRolesWith(other basestore.ShareableStore) UserRoleStore {
 	return &userRoleStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -74,11 +76,11 @@ func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
 const userRoleCreateQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
-	VALUES (
-		%s,
-		%s
-	)
-	RETURNING %s;
+VALUES (
+	%s,
+	%s
+)
+RETURNING %s;
 `
 
 func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error) {
@@ -105,11 +107,6 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	return rm, nil
 }
 
-const deleteUserRoleQueryFmtStr = `
-DELETE FROM user_roles
-WHERE %s;
-`
-
 type UserRoleNotFoundErr struct {
 	UserID int32
 	RoleID int32
@@ -122,6 +119,11 @@ func (e *UserRoleNotFoundErr) Error() string {
 func (e *UserRoleNotFoundErr) NotFound() bool {
 	return true
 }
+
+const deleteUserRoleQueryFmtStr = `
+DELETE FROM user_roles
+WHERE %s
+`
 
 func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) error {
 	if opts.UserID == 0 {

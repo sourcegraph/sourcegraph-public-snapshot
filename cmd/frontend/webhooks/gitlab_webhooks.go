@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,10 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (wr *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (wr *WebhookRouter) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
-	ctx := actor.WithInternalActor(r.Context())
+	ctx = actor.WithInternalActor(ctx)
 
 	var eventKind struct {
 		ObjectKind string `json:"object_kind"`
@@ -69,9 +70,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
-
-	return body, nil
+	return body, errors.Wrap(r.Body.Close(), "closing body")
 }
 
 func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
@@ -81,9 +80,12 @@ func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseW
 			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		if err := r.Body.Close(); err != nil {
+			http.Error(w, "Closing body", http.StatusInternalServerError)
+			return
+		}
 
-		wr.HandleGitLabWebhook(logger, w, r, urn, payload)
+		wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
 		return
 	}
 
@@ -93,5 +95,5 @@ func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseW
 		return
 	}
 
-	wr.HandleGitLabWebhook(logger, w, r, urn, payload)
+	wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
 }

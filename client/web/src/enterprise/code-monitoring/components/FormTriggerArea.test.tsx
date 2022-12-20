@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { FormTriggerArea } from './FormTriggerArea'
 

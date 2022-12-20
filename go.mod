@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
+	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
@@ -138,7 +138,7 @@ require (
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221216195033-42d26a0a2063
 	github.com/stretchr/testify v1.8.1
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
@@ -167,7 +167,7 @@ require (
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.3.0
-	golang.org/x/net v0.2.0
+	golang.org/x/net v0.4.0
 	golang.org/x/oauth2 v0.2.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.3.0
@@ -180,10 +180,10 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.24.3
-	k8s.io/apimachinery v0.24.3
-	k8s.io/client-go v0.24.3
-	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
+	k8s.io/api v0.25.3
+	k8s.io/apimachinery v0.25.3
+	k8s.io/client-go v0.25.3
+	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	layeh.com/gopher-luar v1.0.10
 	sigs.k8s.io/kustomize/kyaml v0.13.3
 	sigs.k8s.io/yaml v1.3.0
@@ -196,18 +196,18 @@ require (
 	github.com/cloudflare/circl v1.3.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
-	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
+	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.20.0 // indirect
+	github.com/prometheus/prometheus v0.40.5 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
-	go.opentelemetry.io/otel/metric v0.31.0 // indirect
+	go.opentelemetry.io/otel/metric v0.33.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
 
@@ -221,10 +221,9 @@ require (
 	github.com/frankban/quicktest v1.14.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
-	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
-	github.com/prometheus/prometheus v0.37.1
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
+	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/xanzy/go-gitlab v0.76.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
@@ -254,7 +253,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/aws-sdk-go v1.44.72 // indirect
+	github.com/aws/aws-sdk-go v1.44.128 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.10.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.4 // indirect
@@ -283,12 +282,12 @@ require (
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
-	github.com/docker/docker v20.10.17+incompatible // indirect
+	github.com/docker/docker v20.10.21+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.6.7 // indirect
+	github.com/envoyproxy/protoc-gen-validate v0.6.13 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
@@ -420,18 +419,18 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
-	go.mongodb.org/mongo-driver v1.10.0 // indirect
+	go.mongodb.org/mongo-driver v1.10.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.33.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.34.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.1
 	go.opentelemetry.io/proto/otlp v0.19.0
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.7.0
-	golang.org/x/term v0.2.0 // indirect
-	golang.org/x/text v0.5.0
+	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.51.0 // indirect
@@ -439,11 +438,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/klog/v2 v2.70.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect
+	k8s.io/klog/v2 v2.80.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	mvdan.cc/gofumpt v0.2.1 // indirect
-	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
 // Permanent replace directives
@@ -460,6 +459,9 @@ replace (
 	// We publish 'lib' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// We publish 'monitoring' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
 )
 
 // Temporary replace directives

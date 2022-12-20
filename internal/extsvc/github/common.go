@@ -1531,7 +1531,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

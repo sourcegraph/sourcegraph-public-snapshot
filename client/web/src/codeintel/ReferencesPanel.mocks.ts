@@ -9,8 +9,8 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
@@ -319,17 +319,6 @@ const HIGHLIGHTED_FILE_MOCK = {
     },
 }
 
-const NOOP_SETTINGS_CASCADE = {
-    subjects: null,
-    final: null,
-}
-
-const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
-    requestGraphQL: () => EMPTY,
-    urlToFile: () => '',
-    settings: of(NOOP_SETTINGS_CASCADE),
-}
-
 const NOOP_EXTENSIONS_CONTROLLER: Controller = {
     executeCommand: () => Promise.resolve(),
     registerCommand: () => new Subscription(),
@@ -355,7 +344,7 @@ export const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'exter
         subjects: null,
         final: null,
     },
-    platformContext: NOOP_PLATFORM_CONTEXT,
+    platformContext: NOOP_PLATFORM_CONTEXT as any,
     isLightTheme: false,
     fetchHighlightedFileLineRanges: args => {
         if (args.filePath === 'cmd/go-diff/go-diff.go') {

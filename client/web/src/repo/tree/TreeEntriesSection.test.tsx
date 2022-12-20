@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
 

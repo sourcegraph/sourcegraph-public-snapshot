@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Checkbox, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'

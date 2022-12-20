@@ -3,7 +3,6 @@ import React, { useCallback, useState } from 'react'
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
@@ -18,6 +17,7 @@ import {
     Text,
     H3,
     Markdown,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'

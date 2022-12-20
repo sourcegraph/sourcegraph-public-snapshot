@@ -1,6 +1,6 @@
 # Alerts reference
 
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+<!-- DO NOT EDIT: generated via: 'RELOAD=false sg run monitoring-generator' -->
 
 This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
 If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
@@ -35,7 +35,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))) >= 20)`
+Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))) >= 20)`
 
 </details>
 
@@ -69,7 +69,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (ra
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))) >= 15)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))) >= 15)`
 
 </details>
 
@@ -129,7 +129,7 @@ Generated query for warning alert: `max(((sum(increase(src_graphql_search_respon
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(status) (increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 2)`
+Generated query for warning alert: `max((sum by (status) (increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring (status) group_left () sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 2)`
 
 </details>
 
@@ -159,7 +159,7 @@ Generated query for warning alert: `max((sum by(status) (increase(src_graphql_se
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(status) (increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (status) (increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring (status) group_left () sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
 
 </details>
 
@@ -190,7 +190,7 @@ Generated query for warning alert: `max((sum by(status) (increase(src_graphql_se
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",request_name!="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",request_name!="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring (alert_type) group_left () sum(increase(src_graphql_search_response{request_name!="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
 
 </details>
 
@@ -223,7 +223,7 @@ Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphq
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="blob",route!="raw",route!~"graphql.*"}[10m])))) >= 2)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route!="blob",route!="raw",route!~"graphql.*"}[10m])))) >= 2)`
 
 </details>
 
@@ -256,7 +256,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rat
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))) >= 5)`
+Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))) >= 5)`
 
 </details>
 
@@ -291,7 +291,7 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (ra
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))) >= 20)`
+Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))) >= 20)`
 
 </details>
 
@@ -326,7 +326,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (ra
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))) >= 15)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",request_name="CodeIntelSearch",source="browser",type="Search"}[5m])))) >= 15)`
 
 </details>
 
@@ -386,7 +386,7 @@ Generated query for warning alert: `max(((sum(increase(src_graphql_search_respon
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(status) (increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser"}[5m])) * 100) >= 2)`
+Generated query for warning alert: `max((sum by (status) (increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status=~"error"}[5m])) / ignoring (status) group_left () sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser"}[5m])) * 100) >= 2)`
 
 </details>
 
@@ -416,7 +416,7 @@ Generated query for warning alert: `max((sum by(status) (increase(src_graphql_se
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(status) (increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (status) (increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) / ignoring (status) group_left () sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser",status="partial_timeout"}[5m])) * 100) >= 5)`
 
 </details>
 
@@ -447,7 +447,7 @@ Generated query for warning alert: `max((sum by(status) (increase(src_graphql_se
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out",request_name="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out",request_name="CodeIntelSearch",source="browser",status="alert"}[5m])) / ignoring (alert_type) group_left () sum(increase(src_graphql_search_response{request_name="CodeIntelSearch",source="browser"}[5m])) * 100) >= 5)`
 
 </details>
 
@@ -481,7 +481,7 @@ Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphq
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",source="other",type="Search"}[5m])))) >= 50)`
+Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",source="other",type="Search"}[5m])))) >= 50)`
 
 </details>
 
@@ -515,7 +515,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le) (ra
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",source="other",type="Search"}[5m])))) >= 40)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_graphql_field_seconds_bucket{error="false",field="results",source="other",type="Search"}[5m])))) >= 40)`
 
 </details>
 
@@ -545,7 +545,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (rat
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(status) (increase(src_graphql_search_response{source="other",status=~"error"}[5m])) / ignoring(status) group_left() sum(increase(src_graphql_search_response{source="other"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (status) (increase(src_graphql_search_response{source="other",status=~"error"}[5m])) / ignoring (status) group_left () sum(increase(src_graphql_search_response{source="other"}[5m]))) >= 2)`
 
 </details>
 
@@ -606,7 +606,7 @@ Generated query for warning alert: `max((sum(increase(src_graphql_search_respons
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",source="other",status="alert"}[5m])) / ignoring(alert_type) group_left() sum(increase(src_graphql_search_response{source="other",status="alert"}[5m]))) >= 5)`
+Generated query for warning alert: `max((sum by (alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",source="other",status="alert"}[5m])) / ignoring (alert_type) group_left () sum(increase(src_graphql_search_response{source="other",status="alert"}[5m]))) >= 5)`
 
 </details>
 
@@ -637,7 +637,7 @@ Generated query for warning alert: `max((sum by(alert_type) (increase(src_graphq
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left() sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100) >= 5)`
 
 </details>
 
@@ -668,7 +668,7 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring(code) group_left() sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
 
 </details>
 
@@ -699,7 +699,7 @@ Generated query for warning alert: `max((sum by(code) (increase(searcher_service
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100) >= 5)`
 
 </details>
 
@@ -729,7 +729,7 @@ Generated query for warning alert: `max((sum by(category) (increase(src_frontend
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le, category) (rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))) >= 20)`
+Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le, category) (rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))) >= 20)`
 
 </details>
 
@@ -759,7 +759,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by(le, cat
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_gitserver_request_duration_seconds_count{code!~"2..",job=~"(sourcegraph-)?frontend"}[5m])) / ignoring(code) group_left() sum by(category) (increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (category) (increase(src_gitserver_request_duration_seconds_count{code!~"2..",job=~"(sourcegraph-)?frontend"}[5m])) / ignoring (code) group_left () sum by (category) (increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100) >= 5)`
 
 </details>
 
@@ -790,7 +790,7 @@ Generated query for warning alert: `max((sum by(category) (increase(src_gitserve
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(owner) (observability_test_metric_warning)) >= 1)`
+Generated query for warning alert: `max((max by (owner) (observability_test_metric_warning)) >= 1)`
 
 </details>
 
@@ -821,7 +821,7 @@ Generated query for warning alert: `max((max by(owner) (observability_test_metri
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max by(owner) (observability_test_metric_critical)) >= 1)`
+Generated query for critical alert: `max((max by (owner) (observability_test_metric_critical)) >= 1)`
 
 </details>
 
@@ -890,9 +890,9 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -1116,7 +1116,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend).*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend).*"})) >= 1)`
 
 </details>
 
@@ -1146,7 +1146,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"})) >= 10000)`
 
 </details>
 
@@ -1176,7 +1176,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-frontend)"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-frontend)"})) >= 2)`
 
 </details>
 
@@ -1208,7 +1208,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (app) (up{app=~".*(frontend|sourcegraph-frontend)"}) * 100) <= 90)`
 
 </details>
 
@@ -1354,9 +1354,9 @@ Generated query for critical alert: `max((sum(rate(src_search_streaming_latency_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*",status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 5)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*",status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 5)`
 
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*",status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 10)`
+Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*",status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 10)`
 
 </details>
 
@@ -1391,9 +1391,9 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 4)`
+Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 4)`
 
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 6)`
+Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))) >= 6)`
 
 </details>
 
@@ -1464,9 +1464,9 @@ Generated query for critical alert: `min(((src_gitserver_disk_space_available / 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 50)`
+Generated query for warning alert: `max((sum by (instance, cmd) (src_gitserver_exec_running)) >= 50)`
 
-Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 100)`
+Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_exec_running)) >= 100)`
 
 </details>
 
@@ -1568,7 +1568,7 @@ Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 2
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="gitserver"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="gitserver"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))) >= 2)`
 
 </details>
 
@@ -1602,9 +1602,9 @@ Generated query for warning alert: `max((sum by(category) (increase(src_frontend
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -1764,7 +1764,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^gitserver.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^gitserver.*"})) >= 1)`
 
 </details>
 
@@ -1794,7 +1794,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*gitserver"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*gitserver"})) >= 10000)`
 
 </details>
 
@@ -1824,7 +1824,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*gitserver"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*gitserver"})) >= 2)`
 
 </details>
 
@@ -1856,7 +1856,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*gitserver"}) / count by(app) (up{app=~".*gitserver"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitserver"}) * 100) <= 90)`
 
 </details>
 
@@ -2112,7 +2112,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^github-proxy.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^github-proxy.*"})) >= 1)`
 
 </details>
 
@@ -2142,7 +2142,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*github-proxy"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*github-proxy"})) >= 10000)`
 
 </details>
 
@@ -2172,7 +2172,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*github-proxy"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*github-proxy"})) >= 2)`
 
 </details>
 
@@ -2204,7 +2204,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*github-proxy"}) / count by(app) (up{app=~".*github-proxy"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100) <= 90)`
 
 </details>
 
@@ -2234,7 +2234,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*github-proxy"}
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min((sum by(job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) or sum by(job) (pg_stat_activity_count{datname!~"template.*|cloudsqladmin",job="codeinsights-db"})) <= 5)`
+Generated query for warning alert: `min((sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) or sum by (job) (pg_stat_activity_count{datname!~"template.*|cloudsqladmin",job="codeinsights-db"})) <= 5)`
 
 </details>
 
@@ -2267,9 +2267,9 @@ Generated query for warning alert: `min((sum by(job) (pg_stat_activity_count{dat
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(job) (pg_stat_activity_count) / (sum by(job) (pg_settings_max_connections) - sum by(job) (pg_settings_superuser_reserved_connections)) * 100) >= 80)`
+Generated query for warning alert: `max((sum by (job) (pg_stat_activity_count) / (sum by (job) (pg_settings_max_connections) - sum by (job) (pg_settings_superuser_reserved_connections)) * 100) >= 80)`
 
-Generated query for critical alert: `max((sum by(job) (pg_stat_activity_count) / (sum by(job) (pg_settings_max_connections) - sum by(job) (pg_settings_superuser_reserved_connections)) * 100) >= 100)`
+Generated query for critical alert: `max((sum by (job) (pg_stat_activity_count) / (sum by (job) (pg_settings_max_connections) - sum by (job) (pg_settings_superuser_reserved_connections)) * 100) >= 100)`
 
 </details>
 
@@ -2299,7 +2299,7 @@ Generated query for critical alert: `max((sum by(job) (pg_stat_activity_count) /
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",job!="codeintel-db"}) or sum by(job) (pg_stat_activity_max_tx_duration{datname!~"template.*|cloudsqladmin",job="codeinsights-db"})) >= 0.3)`
+Generated query for warning alert: `max((sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",job!="codeintel-db"}) or sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|cloudsqladmin",job="codeinsights-db"})) >= 0.3)`
 
 </details>
 
@@ -2370,7 +2370,7 @@ Generated query for critical alert: `min((pg_up) <= 0)`
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `sum((max by(relname) (pg_invalid_index_count)) >= 1)`
+Generated query for critical alert: `sum((max by (relname) (pg_invalid_index_count)) >= 1)`
 
 </details>
 
@@ -2592,7 +2592,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^(pgsql|codeintel-db|codeinsights).*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^(pgsql|codeintel-db|codeinsights).*"})) >= 1)`
 
 </details>
 
@@ -2624,7 +2624,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) / count by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) * 100) <= 90)`
 
 </details>
 
@@ -2694,7 +2694,7 @@ Generated query for critical alert: `max((max(src_codeintel_upload_queued_durati
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="precise-code-intel-worker"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="precise-code-intel-worker"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="precise-code-intel-worker"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="precise-code-intel-worker"}[5m]))) >= 2)`
 
 </details>
 
@@ -2728,9 +2728,9 @@ Generated query for warning alert: `max((sum by(category) (increase(src_frontend
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -2954,7 +2954,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^precise-code-intel-worker.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^precise-code-intel-worker.*"})) >= 1)`
 
 </details>
 
@@ -2984,7 +2984,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*precise-code-intel-worker"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*precise-code-intel-worker"})) >= 10000)`
 
 </details>
 
@@ -3014,7 +3014,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*precise-code-intel-worker"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*precise-code-intel-worker"})) >= 2)`
 
 </details>
 
@@ -3046,7 +3046,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*precise-code-intel-worker"}) / count by(app) (up{app=~".*precise-code-intel-worker"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*precise-code-intel-worker"}) / count by (app) (up{app=~".*precise-code-intel-worker"}) * 100) <= 90)`
 
 </details>
 
@@ -3268,7 +3268,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^redis-cache.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^redis-cache.*"})) >= 1)`
 
 </details>
 
@@ -3428,7 +3428,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^redis-store.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^redis-store.*"})) >= 1)`
 
 </details>
 
@@ -3460,7 +3460,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*redis-cache"}) / count by(app) (up{app=~".*redis-cache"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-cache"}) / count by (app) (up{app=~".*redis-cache"}) * 100) <= 90)`
 
 </details>
 
@@ -3492,7 +3492,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*redis-cache"})
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*redis-store"}) / count by(app) (up{app=~".*redis-store"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-store"}) / count by (app) (up{app=~".*redis-store"}) * 100) <= 90)`
 
 </details>
 
@@ -3669,7 +3669,7 @@ Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max(src_query_runner_worker_total{job=~"^worker.*"}) > 0 and on(job) sum by(op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1) > 0)`
+Generated query for warning alert: `max((max(src_query_runner_worker_total{job=~"^worker.*"}) > 0 and on (job) sum by (op) (increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~"^worker.*",op="Dequeue"}[5m])) < 1) > 0)`
 
 </details>
 
@@ -3706,7 +3706,7 @@ Generated query for warning alert: `max((max(src_query_runner_worker_total{job=~
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="worker"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="worker"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="worker"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="worker"}[5m]))) >= 2)`
 
 </details>
 
@@ -3740,9 +3740,9 @@ Generated query for warning alert: `max((sum by(category) (increase(src_frontend
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -3966,7 +3966,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^worker.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^worker.*"})) >= 1)`
 
 </details>
 
@@ -3996,7 +3996,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*worker"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*worker"})) >= 10000)`
 
 </details>
 
@@ -4026,7 +4026,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*worker"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*worker"})) >= 2)`
 
 </details>
 
@@ -4058,7 +4058,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*worker"}) / count by(app) (up{app=~".*worker"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / count by (app) (up{app=~".*worker"}) * 100) <= 90)`
 
 </details>
 
@@ -4134,9 +4134,9 @@ with your code hosts connections or networking issues affecting communication wi
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="internal_rate_limit",reason!="invalid_npm_path"}[5m]))) > 0.5)`
+Generated query for warning alert: `max((max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="internal_rate_limit",reason!="invalid_npm_path"}[5m]))) > 0.5)`
 
-Generated query for critical alert: `max((max by(family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="internal_rate_limit",reason!="invalid_npm_path"}[5m]))) > 1)`
+Generated query for critical alert: `max((max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="internal_rate_limit",reason!="invalid_npm_path"}[5m]))) > 1)`
 
 </details>
 
@@ -4167,7 +4167,7 @@ Generated query for critical alert: `max((max by(family) (rate(src_repoupdater_s
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min((max by(family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[9h]))) <= 0)`
+Generated query for warning alert: `min((max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[9h]))) <= 0)`
 
 </details>
 
@@ -4198,7 +4198,7 @@ Generated query for warning alert: `min((max by(family) (rate(src_repoupdater_sy
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
+Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
 
 </details>
 
@@ -4229,7 +4229,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, fam
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.95, max by(le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))) >= 30)`
+Generated query for warning alert: `max((histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))) >= 30)`
 
 </details>
 
@@ -4540,7 +4540,7 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syncer_perms_gap_seconds)) >= 259200)`
+Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)) >= 259200)`
 
 </details>
 
@@ -4571,7 +4571,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syncer_stale_perms)) >= 100)`
+Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_stale_perms)) >= 100)`
 
 </details>
 
@@ -4603,7 +4603,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syncer_no_perms)) >= 100)`
+Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_no_perms)) >= 100)`
 
 </details>
 
@@ -4635,7 +4635,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syncer_outdated_perms)) >= 100)`
+Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_outdated_perms)) >= 100)`
 
 </details>
 
@@ -4666,7 +4666,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
+Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
 
 </details>
 
@@ -4730,7 +4730,7 @@ Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max by(type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))) >= 1)`
+Generated query for critical alert: `max((max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))) >= 1)`
 
 </details>
 
@@ -4886,7 +4886,7 @@ Generated query for warning alert: `max((max(src_repoupdater_errored_sync_jobs_p
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min((max by(name) (src_github_rate_limit_remaining_v2{resource="graphql"})) <= 250)`
+Generated query for warning alert: `min((max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})) <= 250)`
 
 </details>
 
@@ -4917,7 +4917,7 @@ Generated query for warning alert: `min((max by(name) (src_github_rate_limit_rem
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min((max by(name) (src_github_rate_limit_remaining_v2{resource="rest"})) <= 250)`
+Generated query for warning alert: `min((max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})) <= 250)`
 
 </details>
 
@@ -4948,7 +4948,7 @@ Generated query for warning alert: `min((max by(name) (src_github_rate_limit_rem
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min((max by(name) (src_github_rate_limit_remaining_v2{resource="search"})) <= 5)`
+Generated query for warning alert: `min((max by (name) (src_github_rate_limit_remaining_v2{resource="search"})) <= 5)`
 
 </details>
 
@@ -4979,7 +4979,7 @@ Generated query for warning alert: `min((max by(name) (src_github_rate_limit_rem
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((max by(name) (src_gitlab_rate_limit_remaining{resource="rest"})) <= 30)`
+Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})) <= 30)`
 
 </details>
 
@@ -5016,7 +5016,7 @@ Generated query for critical alert: `min((max by(name) (src_gitlab_rate_limit_re
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="repo-updater"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="repo-updater"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="repo-updater"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="repo-updater"}[5m]))) >= 2)`
 
 </details>
 
@@ -5050,9 +5050,9 @@ Generated query for warning alert: `max((sum by(category) (increase(src_frontend
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -5276,7 +5276,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^repo-updater.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^repo-updater.*"})) >= 1)`
 
 </details>
 
@@ -5306,7 +5306,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*repo-updater"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*repo-updater"})) >= 10000)`
 
 </details>
 
@@ -5336,7 +5336,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*repo-updater"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*repo-updater"})) >= 2)`
 
 </details>
 
@@ -5368,7 +5368,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*repo-updater"}) / count by(app) (up{app=~".*repo-updater"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*repo-updater"}) / count by (app) (up{app=~".*repo-updater"}) * 100) <= 90)`
 
 </details>
 
@@ -5398,7 +5398,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*repo-updater"}
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(code) (increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left() sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
 
 </details>
 
@@ -5428,7 +5428,7 @@ Generated query for warning alert: `max((sum by(code) (increase(searcher_service
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(instance) (rate(searcher_service_request_total[10m]))) >= 5)`
+Generated query for warning alert: `max((sum by (instance) (rate(searcher_service_request_total[10m]))) >= 5)`
 
 </details>
 
@@ -5462,9 +5462,9 @@ Generated query for warning alert: `max((sum by(instance) (rate(searcher_service
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -5501,7 +5501,7 @@ Generated query for critical alert: `max((sum by(app_name, db_name) (increase(sr
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="searcher"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="searcher"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="searcher"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="searcher"}[5m]))) >= 2)`
 
 </details>
 
@@ -5725,7 +5725,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^searcher.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^searcher.*"})) >= 1)`
 
 </details>
 
@@ -5755,7 +5755,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*searcher"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*searcher"})) >= 10000)`
 
 </details>
 
@@ -5785,7 +5785,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*searcher"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*searcher"})) >= 2)`
 
 </details>
 
@@ -5817,7 +5817,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*searcher"}) / count by(app) (up{app=~".*searcher"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) / count by (app) (up{app=~".*searcher"}) * 100) <= 90)`
 
 </details>
 
@@ -5851,9 +5851,9 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*searcher"}) / 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.05)`
 
-Generated query for critical alert: `max((sum by(app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by(app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
 
 </details>
 
@@ -5890,7 +5890,7 @@ Generated query for critical alert: `max((sum by(app_name, db_name) (increase(sr
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="symbols"}[5m])) / ignoring(category) group_left() sum(increase(src_frontend_internal_request_duration_seconds_count{job="symbols"}[5m]))) >= 2)`
+Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="symbols"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="symbols"}[5m]))) >= 2)`
 
 </details>
 
@@ -6114,7 +6114,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^symbols.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^symbols.*"})) >= 1)`
 
 </details>
 
@@ -6144,7 +6144,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".*symbols"})) >= 10000)`
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*symbols"})) >= 10000)`
 
 </details>
 
@@ -6174,7 +6174,7 @@ Generated query for warning alert: `max((max by(instance) (go_goroutines{job=~".
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(instance) (go_gc_duration_seconds{job=~".*symbols"})) >= 2)`
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*symbols"})) >= 2)`
 
 </details>
 
@@ -6206,7 +6206,7 @@ Generated query for warning alert: `max((max by(instance) (go_gc_duration_second
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*symbols"}) / count by(app) (up{app=~".*symbols"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*symbols"}) / count by (app) (up{app=~".*symbols"}) * 100) <= 90)`
 
 </details>
 
@@ -6430,7 +6430,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^syntect-server.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^syntect-server.*"})) >= 1)`
 
 </details>
 
@@ -6462,7 +6462,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*syntect-server"}) / count by(app) (up{app=~".*syntect-server"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*syntect-server"}) / count by (app) (up{app=~".*syntect-server"}) * 100) <= 90)`
 
 </details>
 
@@ -6559,7 +6559,7 @@ Generated query for critical alert: `max((sum(increase(get_index_options_error_t
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left() sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100) >= 5)`
+Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring (code) group_left () sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100) >= 5)`
 
 </details>
 
@@ -6889,7 +6889,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})) >= 1)`
 
 </details>
 
@@ -7049,7 +7049,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^zoekt-webserver.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})) >= 1)`
 
 </details>
 
@@ -7081,7 +7081,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*indexed-search"}) / count by(app) (up{app=~".*indexed-search"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*indexed-search"}) / count by (app) (up{app=~".*indexed-search"}) * 100) <= 90)`
 
 </details>
 
@@ -7114,7 +7114,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*indexed-search
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))) >= 30)`
+Generated query for warning alert: `max((sum by (rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))) >= 30)`
 
 </details>
 
@@ -7147,7 +7147,7 @@ Generated query for warning alert: `max((sum by(rule_group) (avg_over_time(prome
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))) > 0)`
+Generated query for warning alert: `max((sum by (rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))) > 0)`
 
 </details>
 
@@ -7180,7 +7180,7 @@ Generated query for warning alert: `max((sum by(rule_group) (rate(prometheus_rul
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))) >= 1)`
+Generated query for warning alert: `max((sum by (integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))) >= 1)`
 
 </details>
 
@@ -7212,7 +7212,7 @@ Generated query for warning alert: `max((sum by(integration) (rate(alertmanager_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))) > 0)`
+Generated query for warning alert: `max((sum by (integration) (rate(alertmanager_notifications_failed_total[1m]))) > 0)`
 
 </details>
 
@@ -7592,7 +7592,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(name) (container_oom_events_total{name=~"^prometheus.*"})) >= 1)`
+Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^prometheus.*"})) >= 1)`
 
 </details>
 
@@ -7624,7 +7624,7 @@ Generated query for warning alert: `max((max by(name) (container_oom_events_tota
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*prometheus"}) / count by(app) (up{app=~".*prometheus"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*prometheus"}) / count by (app) (up{app=~".*prometheus"}) * 100) <= 90)`
 
 </details>
 
@@ -7657,7 +7657,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*prometheus"}) 
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `min(((sum(src_executor_processor_handlers{sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
+Custom query for critical alert: `min(((sum(src_executor_processor_handlers{sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by (queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
 
 </details>
 
@@ -7721,7 +7721,7 @@ Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(sg_instance) (go_goroutines{sg_job=~".*sourcegraph-executors"})) >= 10000)`
+Generated query for warning alert: `max((max by (sg_instance) (go_goroutines{sg_job=~".*sourcegraph-executors"})) >= 10000)`
 
 </details>
 
@@ -7751,7 +7751,7 @@ Generated query for warning alert: `max((max by(sg_instance) (go_goroutines{sg_j
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max by(sg_instance) (go_gc_duration_seconds{sg_job=~".*sourcegraph-executors"})) >= 2)`
+Generated query for warning alert: `max((max by (sg_instance) (go_gc_duration_seconds{sg_job=~".*sourcegraph-executors"})) >= 2)`
 
 </details>
 
@@ -7814,7 +7814,7 @@ Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(op) (increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum by(op) (increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum by(op) (increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100) > 0)`
+Generated query for warning alert: `max((sum by (op) (increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m])) / (sum by (op) (increase(src_telemetry_job_total{job=~"^worker.*"}[5m])) + sum by (op) (increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m]))) * 100) > 0)`
 
 </details>
 
@@ -7845,7 +7845,7 @@ Generated query for warning alert: `max((sum by(op) (increase(src_telemetry_job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() src_telemetry_job_max_throughput * 100) > 90)`
+Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on () group_right () src_telemetry_job_max_throughput * 100) > 90)`
 
 </details>
 
@@ -7876,7 +7876,7 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
+Generated query for warning alert: `max((sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))) > 1)`
 
 </details>
 
@@ -7907,7 +7907,7 @@ Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
+Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))) > 1)`
 
 </details>
 
@@ -8003,7 +8003,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `min((sum by(app) (up{app=~".*otel-collector"}) / count by(app) (up{app=~".*otel-collector"}) * 100) <= 90)`
+Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100) <= 90)`
 
 </details>
 

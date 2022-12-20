@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -33,7 +34,7 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("numDocuments", len(documentData)))
+	trace.AddEvent("scanDocumentData", attribute.Int("numDocuments", len(documentData)))
 
 	totalCount := 0
 	for _, documentData := range documentData {
@@ -45,7 +46,7 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 			totalCount += len(documentData.LSIFData.Diagnostics)
 		}
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("found", attribute.Int("totalCount", totalCount))
 
 	diagnostics := make([]shared.Diagnostic, 0, limit)
 	for _, documentData := range documentData {

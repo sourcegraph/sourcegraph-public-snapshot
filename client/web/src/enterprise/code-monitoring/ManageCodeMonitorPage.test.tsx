@@ -5,16 +5,16 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+
 import {
+    FetchCodeMonitorResult,
     MonitorEditInput,
     MonitorEditTriggerInput,
     MonitorEditActionInput,
     MonitorEmailPriority,
-} from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-
-import { FetchCodeMonitorResult } from '../../graphql-operations'
+} from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
@@ -39,7 +39,6 @@ describe('ManageCodeMonitorPage', () => {
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
-        fetchUserCodeMonitors: sinon.spy(),
         updateCodeMonitor: sinon.spy(
             (
                 monitorEditInput: MonitorEditInput,

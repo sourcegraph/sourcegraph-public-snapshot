@@ -17,21 +17,24 @@ import (
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
 func NewAuthzStore(logger log.Logger, db database.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
-		logger: logger,
-		store:  Perms(logger, db, clock),
+		logger:   logger,
+		store:    Perms(logger, db, clock),
+		srpStore: database.SubRepoPermsWith(basestore.NewWithHandle(db.Handle())),
 	}
 }
 
 func NewAuthzStoreWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
-		logger: logger,
-		store:  PermsWith(logger, other, clock),
+		logger:   logger,
+		store:    PermsWith(logger, other, clock),
+		srpStore: database.SubRepoPermsWith(other),
 	}
 }
 
 type authzStore struct {
-	logger log.Logger
-	store  PermsStore
+	logger   log.Logger
+	store    PermsStore
+	srpStore database.SubRepoPermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.
@@ -176,6 +179,10 @@ func (s *authzStore) RevokeUserPermissionsList(ctx context.Context, argsList []*
 			if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
 				return errors.Wrap(err, "delete all user pending permissions")
 			}
+		}
+
+		if err = s.srpStore.DeleteByUser(ctx, args.UserID); err != nil {
+			return errors.Wrap(err, "delete all user sub-repo permissions")
 		}
 	}
 	return nil

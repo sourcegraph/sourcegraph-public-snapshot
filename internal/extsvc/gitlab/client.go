@@ -243,7 +243,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

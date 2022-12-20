@@ -7,11 +7,24 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4 } from '@sourcegraph/wildcard'
+import {
+    TextArea,
+    Button,
+    Link,
+    Select,
+    Checkbox,
+    Input,
+    Text,
+    Code,
+    H1,
+    H2,
+    H3,
+    H4,
+    Form,
+} from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
-import { Form } from '../../components/Form'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'

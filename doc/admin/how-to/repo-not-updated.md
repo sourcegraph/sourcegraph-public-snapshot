@@ -4,7 +4,7 @@ A repository on Sourcegraph that fails to be updated could have different reason
 
 ## Prerequisites
 
-This document assumes that you are a [site administrator](https://docs.sourcegraph.com/admin) and **do not** have `disableAutoGitUpdates` set to `true` in your site configuration.
+This document assumes that you are a [site admin](https://docs.sourcegraph.com/admin) and **do not** have `disableAutoGitUpdates` set to `true` in your site configuration.
 
 ## Steps to investigate
 

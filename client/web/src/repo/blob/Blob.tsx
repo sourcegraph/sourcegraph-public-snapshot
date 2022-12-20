@@ -109,7 +109,7 @@ interface CodeMirrorBlobProps {
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
