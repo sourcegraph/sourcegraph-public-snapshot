@@ -3,8 +3,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { NotificationType } from '@sourcegraph/extension-api-classes'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { NotificationItem } from './NotificationItem'
 
@@ -19,11 +19,9 @@ const notificationClassNames = {
 const onDismiss = action('onDismiss')
 
 const decorator: DecoratorFn = story => (
-    <>
-        <style>{webStyles}</style>
-        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
-    </>
+    <BrandedStory>{() => <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>}</BrandedStory>
 )
+
 const config: Meta = {
     title: 'shared/NotificationItem',
     decorators: [decorator],
