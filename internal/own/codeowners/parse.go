@@ -20,7 +20,7 @@ func Read(in io.Reader) (*codeownerspb.File, error) {
 	p := new(parsing)
 	for scanner.Scan() {
 		p.nextLine(scanner.Text())
-		if p.blank() {
+		if p.isBlank() {
 			continue
 		}
 		pattern, owners, ok := p.matchRule()
@@ -47,21 +47,32 @@ func Read(in io.Reader) (*codeownerspb.File, error) {
 	return &codeownerspb.File{Rule: rs}, nil
 }
 
+// parsing implements matching and parsing primitives for CODEOWNERS files
+// as well as keeps track of internal state as a file is being parsed.
 type parsing struct {
+	// line is the current line being parsed. CODEOWNERS files are built
+	// in such a way that for syntactic purposes, every line can be considered
+	// in isolation.
 	line string
 }
 
-// nextRule advances parsing to focus on the next line.
+// nextLine advances parsing to focus on the next line.
 // Conveniently returns the same object for chaining with `notBlank()`.
 func (p *parsing) nextLine(line string) {
 	p.line = line
 }
 
 var (
+	// rulePattern is expected to match a rule line like:
+	// `cmd/**/docs/index.md @readme-owners owner@example.com`.
+	//  ^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	// The first capturing   The second capturing group
+	// group extracts        extracts all the owners
+	// the file pattern.     separated by whitespace.
 	rulePattern = regexp.MustCompile(`^\s*(\S+)((?:\s+\S+)*)\s*$`)
 )
 
-// matchRule tries to extract a codeowners rule from current line
+// matchRule tries to extract a codeowners rule from the current line
 // and return the file pattern and one or more owners.
 // Match is indicated by the third return value being true.
 func (p *parsing) matchRule() (string, []string, bool) {
@@ -74,12 +85,10 @@ func (p *parsing) matchRule() (string, []string, bool) {
 	return filePattern, owners, true
 }
 
-func (p *parsing) blank() bool {
+// isBlank returns true if the current line has no semantically relevant
+// content. It can be blank while containing comments or whitespace.
+func (p *parsing) isBlank() bool {
 	return strings.TrimSpace(p.lineWithoutComments()) == ""
-}
-
-func (p *parsing) lineWithoutComments() string {
-	return p.line[:p.commentStartIndex()]
 }
 
 const (
@@ -87,19 +96,30 @@ const (
 	escapeCharacter = rune('\\')
 )
 
-func (p *parsing) commentStartIndex() int {
-	var esc bool
+// lineWithoutComments returns the current line with the commented part
+// stripped out.
+func (p *parsing) lineWithoutComments() string {
+	// A sensible default for index of the first byte where line-comment
+	// starts is the line lenght. When the comment is removed by slcing
+	// the string at the end, using the line-length as the index
+	// of the first character dropped, yields the original string.
+	commentStartIndex := len(p.line)
+	var esc bool // whether current character is escaped.
 	for i, c := range p.line {
+		// Unespcaped # seen - this is where the comment starts.
 		if c == commentStart && !esc {
-			return i
+			commentStartIndex = i
+			break
 		}
+		// Seeing escape character that is not being escaped itself (like \\)
+		// means the following character is escaped.
 		if c == escapeCharacter && !esc {
 			esc = true
 			continue
 		}
-		if esc {
-			esc = false
-		}
+		// Otherwise the next character is definitely not escaped.
+		esc = false
+
 	}
-	return len(p.line)
+	return p.line[:commentStartIndex]
 }
