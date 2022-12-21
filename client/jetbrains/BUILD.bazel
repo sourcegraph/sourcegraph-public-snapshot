@@ -1,0 +1,27 @@
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "webview/src/**/*.ts",
+            "webview/src/**/*.tsx",
+        ],
+        # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+        # build. This can be removed after the migration.
+        [
+            "webview/src/graphql-operations.ts",
+        ],
+    ),
+)
+
+generate_graphql_operations(
+    name = "graphql_operations",
+    srcs = [
+        "//client/jetbrains/webview:graphql_operations_files",
+    ],
+    interface_name = "JetBrainsGraphQlOperations",
+    output = "src/graphql-operations.ts",
+)

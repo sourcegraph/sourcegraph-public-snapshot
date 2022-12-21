@@ -1,6 +1,40 @@
-load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary")
 load("//dev:defs.bzl", "sass_library")
 load("//client/shared/dev:generate_schema.bzl", "generate_schema")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+
+module_style_typings(
+    name = "module_style_typings",
+)
+
+generate_graphql_operations(
+    name = "graphql_operations",
+    srcs = [
+        ":graphql_operations_files",
+    ],
+    interface_name = "SharedGraphQlOperations",
+    output = "src/graphql-operations.ts",
+)
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "src/**/*.ts",
+            "src/**/*.tsx",
+        ],
+        [
+            "src/testing/**/*.*",
+            "src/schema.ts",
+            # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+            # build. This can be removed after the migration.
+            "src/graphql-operations.ts",
+        ],
+    ),
+    visibility = ["//client/shared:__pkg__"],
+)
 
 js_run_binary(
     name = "graphql_schema",
