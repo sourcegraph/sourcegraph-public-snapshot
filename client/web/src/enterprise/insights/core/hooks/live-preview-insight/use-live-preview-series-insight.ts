@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { Duration } from 'date-fns'
 
+import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
 import { Series } from '@sourcegraph/wildcard'
 
 import {
@@ -15,7 +16,6 @@ import { getStepInterval } from '../../backend/gql-backend/utils/get-step-interv
 import { generateLinkURL, InsightDataSeriesData } from '../../backend/utils/create-line-chart-content'
 
 import { LivePreviewStatus, State } from './types'
-import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
 
 export const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {
