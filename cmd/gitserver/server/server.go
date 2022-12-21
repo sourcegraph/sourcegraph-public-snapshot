@@ -1771,7 +1771,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
+	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
@@ -1995,6 +1995,13 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 // setRepoSize calculates the size of the repo and stores it in the database.
 func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+}
+
+func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) {
+	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+		reason := "git repo corruption:" + stderr
+		s.DB.GitserverRepos().LogCorruption(ctx, repo, reason)
+	}
 }
 
 // setGitAttributes writes our global gitattributes to

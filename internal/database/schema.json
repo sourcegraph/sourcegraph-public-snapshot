@@ -10700,7 +10700,7 @@
           "Comment": "Timestamp of when repo corruption was detected"
         },
         {
-          "Name": "corruption_log",
+          "Name": "corruption_logs",
           "Index": 11,
           "TypeName": "jsonb",
           "IsNullable": false,

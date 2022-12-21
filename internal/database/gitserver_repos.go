@@ -34,7 +34,8 @@ type GitserverRepoStore interface {
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	// LogCorruption sets the corrupted at value and logs the corruption reason
+	// LogCorruption sets the corrupted at value and logs the corruption reason. Reason will be truncated if it exceeds
+	// MaxReasonSizeInMB
 	LogCorruption(ctx context.Context, name api.RepoName, reason string) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
@@ -66,6 +67,8 @@ type GitserverRepoStore interface {
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
+
+const MaxReasonSizeInMB = 1 << (10 * 2)
 
 // gitserverRepoStore is responsible for data stored in the gitserver_repos table.
 type gitserverRepoStore struct {
@@ -314,7 +317,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
     gr.corrupted_at,
-    gr.corruption_log
+    gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
@@ -346,7 +349,7 @@ SELECT
 	repo_size_bytes,
 	updated_at,
     corrupted_at,
-    corruption_log
+    corruption_logs
 FROM gitserver_repos
 WHERE repo_id = %s
 `
@@ -375,7 +378,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
     gr.corrupted_at,
-    gr.corruption_log
+    gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
@@ -398,7 +401,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
     gr.corrupted_at,
-    gr.corruption_log
+    gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
@@ -447,9 +450,9 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	}
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
 
-	err = json.Unmarshal(rawLogs, &gr.CorruptionLog)
+	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)
 	if err != nil {
-		return nil, repoName, errors.Wrap(err, "unmarshal of corruption log failed")
+		return nil, repoName, errors.Wrap(err, "unmarshal of corruption_logs failed")
 	}
 	return &gr, repoName, nil
 }
@@ -483,6 +486,7 @@ SET
 	last_error = %s,
 	shard_id = %s,
 	updated_at = NOW()
+    corrupted_at = DEFAULT
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
@@ -517,18 +521,23 @@ WHERE
 
 func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string) error {
 	row := s.QueryRow(ctx, sqlf.Sprintf(`
-SELECT corruption_log FROM gitserver_repos
+SELECT corruption_logs FROM gitserver_repos
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
     `, name))
 
 	var rawLog []byte
 	if err := row.Scan(&rawLog); err != nil {
-		return errors.Wrap(err, "could not scan corrution_log value")
+		return errors.Wrap(err, "could not scan corrution_logs value")
 	}
 	var logs []types.RepoCorruptionLog
 
 	if err := json.Unmarshal(rawLog, &logs); err != nil {
-		return errors.Wrap(err, "could not unmarshal corruption_log")
+		return errors.Wrap(err, "could not unmarshal corruption_logs")
+	}
+
+	// trim reason to 1 MB so that we don't store huge reasons and run into trouble when it gets too large
+	if len(reason) > MaxReasonSizeInMB {
+		reason = reason[:MaxReasonSizeInMB]
 	}
 
 	logs = append(logs, types.RepoCorruptionLog{Timestamp: time.Now(), Reason: reason})
@@ -539,7 +548,7 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 	}
 
 	if data, err := json.Marshal(logs); err != nil {
-		return errors.Wrap(err, "could not marshal corruption_log")
+		return errors.Wrap(err, "could not marshal corruption_logs")
 	} else {
 		rawLog = data
 	}
@@ -548,7 +557,7 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 UPDATE gitserver_repos
 SET
 	corrupted_at = NOW(),
-    corruption_log = %s,
+    corruption_logs = %s,
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
     `, rawLog, name))

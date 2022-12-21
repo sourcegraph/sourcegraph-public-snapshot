@@ -541,14 +541,14 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("Expected corruptedAt time to be set. Got zero value for time %q", fromDB.CorruptedAt)
 		}
 		// We should have one corruption log entry
-		if len(fromDB.CorruptionLog) != 1 {
-			t.Errorf("Wanted 1 Corruption log entries,  got %d entries", len(fromDB.CorruptionLog))
+		if len(fromDB.CorruptionLogs) != 1 {
+			t.Errorf("Wanted 1 Corruption log entries,  got %d entries", len(fromDB.CorruptionLogs))
 		}
-		if fromDB.CorruptionLog[0].Timestamp.IsZero() {
-			t.Errorf("Corruption Log entry expected to have non zero timestamp. Got %q", fromDB.CorruptionLog[0])
+		if fromDB.CorruptionLogs[0].Timestamp.IsZero() {
+			t.Errorf("Corruption Log entry expected to have non zero timestamp. Got %q", fromDB.CorruptionLogs[0])
 		}
-		if fromDB.CorruptionLog[0].Reason != "test" {
-			t.Errorf("Wanted Corruption Log reason %q got %q", "test", fromDB.CorruptionLog[0].Reason)
+		if fromDB.CorruptionLogs[0].Reason != "test" {
+			t.Errorf("Wanted Corruption Log reason %q got %q", "test", fromDB.CorruptionLogs[0].Reason)
 		}
 	})
 	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
@@ -603,16 +603,40 @@ func TestLogCorruption(t *testing.T) {
 		}
 
 		// We added 12 entries but we only keep 10
-		if len(fromDB.CorruptionLog) != 10 {
-			t.Errorf("expected 10 corruption log entries but got %d", len(fromDB.CorruptionLog))
+		if len(fromDB.CorruptionLogs) != 10 {
+			t.Errorf("expected 10 corruption log entries but got %d", len(fromDB.CorruptionLogs))
 		}
 
 		// Our last log entry should have "test 12" as the reason - the last element in the loop earlier
 		wanted := "test 11"
-		if fromDB.CorruptionLog[9].Reason != wanted {
-			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLog[9].Reason)
+		if fromDB.CorruptionLogs[9].Reason != wanted {
+			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLogs[9].Reason)
 		}
 
+	})
+	t.Run("large reason gets truncated", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo5",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+
+		largeReason := make([]byte, MaxReasonSizeInMB*2)
+		for i := 0; i < len(largeReason); i++ {
+			largeReason[i] = 'a'
+		}
+		t.Logf("fake large reason size: %d", len(largeReason))
+
+		logRepoCorruption(t, db, repo.Name, string(largeReason))
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to retrieve repo from db: %s", err)
+		}
+
+		if len(fromDB.CorruptionLogs[0].Reason) == len(largeReason) {
+			t.Errorf("expected reason to be truncated - got length=%d, wanted=%d", len(fromDB.CorruptionLogs[0].Reason), MaxReasonSizeInMB)
+		}
 	})
 }
 
@@ -1075,9 +1099,9 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 	}
 
 	want := &types.GitserverRepo{
-		RepoID:        repo.ID,
-		CloneStatus:   types.CloneStatusNotCloned,
-		CorruptionLog: []types.RepoCorruptionLog{},
+		RepoID:         repo.ID,
+		CloneStatus:    types.CloneStatusNotCloned,
+		CorruptionLogs: []types.RepoCorruptionLog{},
 	}
 	if diff := cmp.Diff(want, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt", "CorruptionLog")); diff != "" {
 		t.Fatal(diff)
