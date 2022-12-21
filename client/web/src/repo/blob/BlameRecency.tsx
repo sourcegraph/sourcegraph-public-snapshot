@@ -21,11 +21,12 @@ const COLORS = [
 const DARK_COLORS = COLORS.slice(0).reverse()
 
 const ONE_YEAR_AGO = Date.now() - 1000 * 60 * 60 * 24 * 365
+const THREE_YEARS_AGO = Date.now() - 3 * 1000 * 60 * 60 * 24 * 365
 
 export function useBlameRecencyColor(
     commit: Date | undefined,
     // @TODO: Pass actual repo creation date
-    creation: Date | undefined,
+    repoCreation: Date | undefined,
     // @TODO: Pass through the actual flag
     isLightTheme: boolean = false
 ): string {
@@ -35,22 +36,19 @@ export function useBlameRecencyColor(
         if (!commit) {
             return colors[0]
         }
-        if (!creation) {
-            creation = new Date(Date.now() - 3 * 1000 * 60 * 60 * 24 * 365)
-        }
 
         // We create a recency range depending on the repo creation date. If the
         // repo is newer than a year, we use the last year so that we don't have a
         // scale that is too sensible.
         const now = Date.now()
-        const start = Math.min(creation.getTime(), ONE_YEAR_AGO)
+        const start = Math.min(repoCreation ? repoCreation.getTime() : THREE_YEARS_AGO, ONE_YEAR_AGO)
 
-        // We should probably not use a linear scale here :shrug:
+        // Get a value between [0, 1] that represents the recency of the commit in a linear scale
         const recency = Math.min(Math.max((now - commit.getTime()) / (now - start), 0), 1)
 
+        // Map from the linear scale to the exponential scale
         const index = STEPS.findIndex(step => recency <= step)
-        console.log({ index })
 
         return colors[index]
-    }, [commit, creation, isLightTheme])
+    }, [commit, repoCreation, isLightTheme])
 }
