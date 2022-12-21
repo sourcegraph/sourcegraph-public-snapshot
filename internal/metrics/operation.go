@@ -111,7 +111,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(duration)
+	duration = mustRegisterIgnoreDuplicate(r, duration)
 
 	count := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -122,7 +122,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(count)
+	count = mustRegisterIgnoreDuplicate(r, count)
 
 	errors := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -133,13 +133,26 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 		},
 		options.labels,
 	)
-	r.MustRegister(errors)
+	errors = mustRegisterIgnoreDuplicate(r, errors)
 
 	return &REDMetrics{
 		Duration: duration,
 		Count:    count,
 		Errors:   errors,
 	}
+}
+
+// mustRegisterIgnoreDuplicate is like registerer.MustRegister(collector), except that it returns
+// the already registered collector with the same ID if a duplicate collector is attempted to be
+// registered.
+func mustRegisterIgnoreDuplicate[T prometheus.Collector](registerer prometheus.Registerer, collector T) T {
+	if err := registerer.Register(collector); err != nil {
+		if e, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return e.ExistingCollector.(T)
+		}
+		panic(err) // otherwise, panic (as registerer.MustRegister would)
+	}
+	return collector
 }
 
 type SingletonREDMetrics struct {
