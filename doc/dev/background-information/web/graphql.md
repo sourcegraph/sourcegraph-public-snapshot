@@ -271,10 +271,66 @@ We currently have two accepted pagination patterns:
   - React hook for data loading: [`usePageSwitcherPagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/usePageSwitcherPagination.ts)
   - Go abstraction to build a bi-directional paginated resource: [`ConnectionResolver`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/graphqlutil/connection_resolver.go)
   - Wildcard component for pagination UI: [`<PageSwitcher />`](https://storybook.sgdev.org/?path=/story/wildcard-pageswitcher--simple)
+  - Here are two example implementations: [#45705](https://github.com/sourcegraph/sourcegraph/pull/45705) for data served via Postgres, [#45070](https://github.com/sourcegraph/sourcegraph/pull/45070) for data served from git)
 
-- **Show more pagination** (a.k.a. infinite-scrolling): Items are appended to the bottom of the list for every page that is loaded. This is suited only for resources that do not bi-directional paginatoin.
+- **Show more pagination** (a.k.a. infinite-scrolling): Items are appended to the bottom of the list for every page that is loaded. This is suited only for resources that do not bi-directional pagination.
 
   We offer the following helpers for implementing a view with this pattern:
 
   - React hook for data loading: [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts)
   - React component "Show More" UI: [`<ShowMoreButton />`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/search/panels/ShowMoreButton.tsx)
+
+## Pagination in GraphQL
+
+To better understand how the cursor pattern works in GraphQL, take a look at this example query:
+
+```graphql
+query MyPaginatedQuery($first: Int, $last: Int, $after: String, $before: String) {
+  myPaginatedQuery(
+    first: $first
+    last: $last
+    before: $before
+    after: $after
+  ) {
+    nodes {
+      ...NodeFields
+    }
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+```
+
+When this query is run with `first: 10`, the first ten elements of the connection are returned and the result will look like this:
+
+```jsonc
+{
+  "data": {
+    "myPaginatedQuery": {
+      "nodes": [
+        // 10 nodes
+      ],
+      "totalCount": 100,
+      "pageInfo": {
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "startCursor": "aabbccdd",
+        "endCursor": "eeffgghh"
+      }
+    }
+  }
+}
+```
+
+You can see that this page has a next page but no previous page, which makes sense since it's the first page.
+The interesting bits are the `startCursor` and `endCursor`. These encode the first or last item of the result list in a way that the backend can efficiently query the next page.
+
+If we want to go to the next page, we can take this opaque token and set it as the `after` value of the query. The new pagination parameters would be `first: 10, after: 'eeffgghh'".
+
+This is not something you need to manually implement in the frontend though. [`usePageSwitcherPagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/usePageSwitcherPagination.ts) and [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts) already do that for you.
+
