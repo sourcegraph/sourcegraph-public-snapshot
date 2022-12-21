@@ -587,7 +587,7 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("Setting Last Changed should set corrupted at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
-	t.Run("consequative corruption logs appends", func(t *testing.T) {
+	t.Run("consecutive corruption logs appends", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
 			Name:          "github.com/sourcegraph/repo4",
 			RepoSizeBytes: 100,
