@@ -4,9 +4,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-// eslint-disable-next-line no-restricted-imports
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Code } from '@sourcegraph/wildcard'
+import { Timestamp, Code } from '@sourcegraph/wildcard'
 
 import { InfoDivider } from './InfoDivider'
 import { RepoName } from './RepoName'

@@ -14,8 +14,6 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-// eslint-disable-next-line no-restricted-imports
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import {
     createRectangle,
     Flipping,
@@ -25,6 +23,7 @@ import {
     PopoverOpenEvent,
     PopoverTrigger,
     Tooltip,
+    Timestamp,
     usePopoverContext,
 } from '@sourcegraph/wildcard'
 
