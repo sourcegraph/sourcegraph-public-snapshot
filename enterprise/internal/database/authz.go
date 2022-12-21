@@ -16,10 +16,11 @@ import (
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
 func NewAuthzStore(logger log.Logger, db database.DB, clock func() time.Time) database.AuthzStore {
+	enterpriseDB := NewEnterpriseDB(db)
 	return &authzStore{
 		logger:   logger,
-		store:    Perms(logger, db, clock),
-		srpStore: SubRepoPermsWith(basestore.NewWithHandle(db.Handle())),
+		store:    Perms(logger, enterpriseDB, clock),
+		srpStore: enterpriseDB.SubRepoPerms(),
 	}
 }
 

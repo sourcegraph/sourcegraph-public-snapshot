@@ -26,7 +26,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -58,7 +58,7 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -93,7 +93,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
