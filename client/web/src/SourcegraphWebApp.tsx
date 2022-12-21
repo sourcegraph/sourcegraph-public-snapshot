@@ -54,10 +54,6 @@ import { CodeMonitoringProps } from './codeMonitoring'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
-import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import type { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import type { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
@@ -107,10 +103,6 @@ export interface SourcegraphWebAppProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         NotebookProps,
         CodeMonitoringProps {
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]

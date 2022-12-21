@@ -71,22 +71,6 @@ var (
 		}
 		return toRegistryAPIExtension(ctx, db, x)
 	}
-
-	registryGetFeaturedExtensions = func(ctx context.Context, db database.DB) ([]*registry.Extension, error) {
-		dbExtensions, err := stores.Extensions(db).GetFeaturedExtensions(ctx)
-		if err != nil {
-			return nil, err
-		}
-		registryExtensions := []*registry.Extension{}
-		for _, x := range dbExtensions {
-			registryExtension, err := toRegistryAPIExtension(ctx, db, x)
-			if err != nil {
-				continue
-			}
-			registryExtensions = append(registryExtensions, registryExtension)
-		}
-		return registryExtensions, nil
-	}
 )
 
 func toRegistryAPIExtension(ctx context.Context, db database.DB, v *stores.Extension) (*registry.Extension, error) {
@@ -125,10 +109,6 @@ func newExtension(v *stores.Extension, manifest *string, publishedAt time.Time) 
 	return &registry.Extension{
 		UUID:        v.UUID,
 		ExtensionID: v.NonCanonicalExtensionID,
-		Publisher: registry.Publisher{
-			Name: v.Publisher.NonCanonicalName,
-			URL:  baseURL + frontendregistry.PublisherExtensionsURL(v.Publisher.UserID != 0, v.Publisher.OrgID != 0, v.Publisher.NonCanonicalName),
-		},
 		Name:        v.Name,
 		Manifest:    manifest,
 		CreatedAt:   v.CreatedAt,
@@ -199,9 +179,9 @@ func handleRegistry(db database.DB) func(w http.ResponseWriter, r *http.Request)
 		case urlPath == extensionsPath:
 			operation = "list"
 
-			query := r.URL.Query().Get("q")
-			var opt stores.ExtensionsListOptions
-			opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
+			opt := stores.ExtensionsListOptions{
+				Query: r.URL.Query().Get("q"),
+			}
 			xs, err := registryList(r.Context(), db, opt)
 			if err != nil {
 				return err
@@ -210,11 +190,7 @@ func handleRegistry(db database.DB) func(w http.ResponseWriter, r *http.Request)
 
 		case urlPath == extensionsPath+"/featured":
 			operation = "featured"
-			x, err := registryGetFeaturedExtensions(r.Context(), db)
-			if err != nil {
-				return err
-			}
-			result = x
+			result = []struct{}{}
 
 		case strings.HasPrefix(urlPath, extensionsPath+"/"):
 			var (
@@ -302,8 +278,5 @@ func init() {
 			return nil, err
 		}
 		return frontendregistry.FindRegistryExtension(xs, "extensionID", extensionID), nil
-	}
-	registryGetFeaturedExtensions = func(ctx context.Context, db database.DB) ([]*registry.Extension, error) {
-		return []*registry.Extension{}, nil
 	}
 }

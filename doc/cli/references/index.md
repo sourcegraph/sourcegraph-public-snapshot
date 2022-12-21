@@ -8,7 +8,6 @@
 * [`code-intel`](code-intel/index.md)
 * [`config`](config/index.md)
 * [`debug`](debug.md)
-* [`extensions`](extensions/index.md)
 * [`extsvc`](extsvc/index.md)
 * [`login`](login.md)
 * [`lsif`](lsif.md)

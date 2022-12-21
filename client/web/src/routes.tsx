@@ -16,7 +16,6 @@ import { getExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
@@ -161,12 +160,6 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             path: PageRoutes.Survey,
             render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
         },
-        window.context.enableLegacyExtensions
-            ? {
-                  path: PageRoutes.Extensions,
-                  render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-              }
-            : undefined,
         {
             path: PageRoutes.Help,
             render: passThroughToServer,
