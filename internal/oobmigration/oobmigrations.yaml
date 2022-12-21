@@ -96,6 +96,8 @@
   is_enterprise: true
   introduced_version_major: 4
   introduced_version_minor: 3
+  deprecated_version_major: 4
+  deprecated_version_minor: 4
 - id: 18
   team: code-insights
   component: db.insights_backfillerv2_migration
