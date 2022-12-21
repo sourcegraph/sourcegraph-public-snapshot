@@ -31,7 +31,7 @@ var (
 	GitserverAddresses  []string
 )
 
-func Init() {
+func InitGitserver() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")

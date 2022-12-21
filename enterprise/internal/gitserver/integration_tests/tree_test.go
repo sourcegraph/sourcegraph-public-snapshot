@@ -19,13 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// done in init since the go vet analysis "ctrlflow" is tripped up if this is
-// done as part of TestMain.
-func init() {
-	inttests.Init()
-}
-
 func TestReadDir_SubRepoFiltering(t *testing.T) {
+	inttests.InitGitserver()
+
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})

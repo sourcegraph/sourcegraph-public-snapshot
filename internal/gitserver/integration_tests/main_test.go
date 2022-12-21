@@ -11,6 +11,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	InitGitserver()
+
 	flag.Parse()
 
 	if !testing.Verbose() {
@@ -22,12 +24,6 @@ func TestMain(m *testing.M) {
 	_ = os.RemoveAll(root)
 
 	os.Exit(code)
-}
-
-// done in init since the go vet analysis "ctrlflow" is tripped up if this is
-// done as part of TestMain.
-func init() {
-	Init()
 }
 
 var Times = []string{
