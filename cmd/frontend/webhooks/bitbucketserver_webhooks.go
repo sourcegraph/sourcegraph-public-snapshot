@@ -52,7 +52,10 @@ func (wr *Router) handleBitbucketServerWebhook(logger log.Logger, w http.Respons
 		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
+	if err := r.Body.Close(); err != nil {
+		http.Error(w, "Closing body", http.StatusInternalServerError)
+		return
+	}
 	if secret != "" {
 		sig := r.Header.Get("X-Hub-Signature")
 		if sig == "" {
