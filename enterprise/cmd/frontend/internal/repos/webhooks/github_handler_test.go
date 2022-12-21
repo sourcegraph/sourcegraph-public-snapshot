@@ -72,7 +72,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := NewGitHubWebhookHandler()
+	handler := NewGitHubHandler()
 	router := &webhooks.GitHubWebhook{
 		WebhookRouter: &webhooks.WebhookRouter{
 			DB: db,

@@ -18,7 +18,7 @@ import (
 
 func TestGitLabWebhookHandle(t *testing.T) {
 	repoName := "gitlab.com/ryanslade/ryan-test-private"
-	handler := NewGitLabWebhookHandler()
+	handler := NewGitLabHandler()
 	data, err := os.ReadFile("testdata/gitlab-push.json")
 	if err != nil {
 		t.Fatal(err)
