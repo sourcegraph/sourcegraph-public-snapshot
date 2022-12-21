@@ -857,7 +857,7 @@ describe('CodeMirror blob view', () => {
             )
         }
 
-        it('renders a working in-document search', async () => {
+        it.skip('renders a working in-document search', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
             await driver.page.waitForSelector(blobSelector)
             // Wait for page to "settle" so that focus management works better
