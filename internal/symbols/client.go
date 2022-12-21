@@ -44,7 +44,7 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:                 "k8s+http://symbols:3184",
+	URL:                 search.SymbolsURLs().String(),
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },

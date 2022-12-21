@@ -586,10 +586,8 @@ func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
 		if addr := searcherAddr(os.Environ()); addr != "" {
 			searcherURLs = endpoint.New(addr)
-		} else if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		} else {
-			searcherURLs = endpoint.New(searcherURL)
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		}
 	})
 	return searcherURLs
@@ -610,10 +608,8 @@ func computeSymbolsEndpoints() *endpoint.Map {
 	symbolsURLsOnce.Do(func() {
 		if addr := symbolsAddr(os.Environ()); addr != "" {
 			symbolsURLs = endpoint.New(addr)
-		} else if len(strings.Fields(symbolsURL)) == 0 {
-			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
 		} else {
-			symbolsURLs = endpoint.New(symbolsURL)
+			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
 		}
 	})
 	return symbolsURLs
