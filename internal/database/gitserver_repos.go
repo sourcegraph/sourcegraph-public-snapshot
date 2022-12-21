@@ -485,7 +485,7 @@ UPDATE gitserver_repos
 SET
 	last_error = %s,
 	shard_id = %s,
-	updated_at = NOW()
+	updated_at = NOW(),
     corrupted_at = DEFAULT
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
