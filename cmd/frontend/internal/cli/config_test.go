@@ -46,6 +46,12 @@ func TestServiceConnections(t *testing.T) {
 	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
 		t.Fatal("expected non-empty service connections")
 	}
+	if sc.Zoekts == nil {
+		t.Error("Expected non-nil Zoekt service connections")
+	}
+	if sc.ZoektsIntentionallyEmpty {
+		t.Error("Expected ZoektsIntentionallyEmpty == false")
+	}
 }
 
 func TestServiceConnectionsZoektsIntentionallyEmpty(t *testing.T) {
