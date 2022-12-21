@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -18,8 +19,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
+func resetSearchServiceConnections() {
+	// The searcherURLs and indexedEndpoints package vars are computed in a sync.Once block, which
+	// makes it impossible for a test to check the behavior given various environment variable
+	// values. We work around this by resetting the sync.Once here.
+	searcherURLsOnce = sync.Once{}
+	indexedEndpointsOnce = sync.Once{}
+}
+
 func TestServiceConnections(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	resetSearchServiceConnections()
 
 	// We override the URLs so service discovery doesn't try and talk to k8s
 	oldSearcherURL := searcherURL
@@ -40,6 +50,7 @@ func TestServiceConnections(t *testing.T) {
 
 func TestServiceConnectionsZoektsIntentionallyEmpty(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	resetSearchServiceConnections()
 
 	// We override the URLs so service discovery doesn't try and talk to k8s
 	oldSearcherURL := searcherURL
