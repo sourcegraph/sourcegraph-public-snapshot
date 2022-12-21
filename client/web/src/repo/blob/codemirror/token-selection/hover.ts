@@ -200,7 +200,7 @@ const tooltipStyles = EditorView.theme({
     // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
     // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
     // ignoring the min/max width rules.
-    '.cm-tooltip': {
+    '.cm-tooltip.tmp-tooltip': {
         fontSize: '0.875rem',
         backgroundClip: 'padding-box',
         backgroundColor: 'var(--dropdown-bg)',
@@ -211,10 +211,14 @@ const tooltipStyles = EditorView.theme({
         padding: '0.5rem',
     },
 
-    '.cm-tooltip-above .cm-tooltip-arrow:before': {
+    '.cm-tooltip-above:not(.tmp-tooltip)': {
+        border: 'unset',
+    },
+
+    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:before': {
         borderTopColor: 'var(--dropdown-border-color)',
     },
-    '.cm-tooltip-above .cm-tooltip-arrow:after': {
+    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:after': {
         borderTopColor: 'var(--dropdown-bg)',
     },
 })
