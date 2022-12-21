@@ -1999,7 +1999,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) {
 	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
-		reason := "git repo corruption:" + stderr
+		reason := "git repo corruption - " + stderr
 		s.DB.GitserverRepos().LogCorruption(ctx, repo, reason)
 	}
 }

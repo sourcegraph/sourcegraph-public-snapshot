@@ -1762,8 +1762,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		stdErr := `
-        `
+		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
 		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
 
@@ -1775,7 +1774,7 @@ func TestLogIfCorrupt(t *testing.T) {
 		if len(fromDB.CorruptionLogs) != 1 {
 			t.Fatalf("got %d CorruptionLogs, wanted %d", len(fromDB.CorruptionLogs), 1)
 		}
-		if strings.Contains(fromDB.CorruptionLogs[0].Reason, stdErr) {
+		if !strings.Contains(fromDB.CorruptionLogs[0].Reason, stdErr) {
 			t.Errorf("corruption log reason does not contain git corruption output - got %q, wanted %q", fromDB.CorruptionLogs[0].Reason, stdErr)
 		}
 
