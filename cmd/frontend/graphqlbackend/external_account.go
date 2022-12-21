@@ -102,7 +102,7 @@ func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*exter
 	}
 
 	if r.account.Data != nil {
-		return NewExternalAccountDataResolver(ctx, r.account.Data, r.account.ServiceType)
+		return NewExternalAccountDataResolver(ctx, r.account)
 	}
 
 	return nil, nil

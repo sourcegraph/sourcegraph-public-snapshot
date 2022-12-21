@@ -5,32 +5,22 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 type externalAccountDataResolver struct {
 	data *extsvc.PublicAccountData
 }
 
-func NewExternalAccountDataResolver(ctx context.Context, encryptedData *encryption.JSONEncryptable[any], serviceType string) (*externalAccountDataResolver, error) {
-	data, err := publicAccountDataFromJSON(ctx, encryptedData, serviceType)
+func NewExternalAccountDataResolver(ctx context.Context, account extsvc.Account) (*externalAccountDataResolver, error) {
+	data, err := publicAccountDataFromJSON(ctx, account)
 	if err != nil {
 		return nil, err
 	}
 	return &externalAccountDataResolver{
 		data: data,
 	}, nil
-}
-
-type GitHubAccountData struct {
-	Username *string `json:"name,omitempty"`
-	Login    *string `json:"login,omitempty"`
-	URL      *string `json:"html_url,omitempty"`
-}
-
-type GitLabAccountData struct {
-	Username *string `json:"name,omitempty"`
-	Login    *string `json:"username,omitempty"`
-	URL      *string `json:"web_url,omitempty"`
 }
 
 type SAMLValues struct {
@@ -72,25 +62,30 @@ type OpenIDUserInfo struct {
 	Email *string `json:"email,omitempty"`
 }
 
-func publicAccountDataFromJSON(ctx context.Context, val *encryption.JSONEncryptable[any], serviceType string) (*extsvc.PublicAccountData, error) {
-	// should we support Gerrit or other auth types in here?
-	switch serviceType {
+func publicAccountDataFromJSON(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	switch account.ServiceType {
 	case extsvc.TypeGitHub:
-		data, err := encryption.DecryptJSON[GitHubAccountData](ctx, val)
+		data, _, err := github.GetExternalAccountData(ctx, &account.AccountData)
 		if err != nil {
 			return nil, err
 		}
-		casted := extsvc.PublicAccountData(*data)
-		return &casted, nil
+		return &extsvc.PublicAccountData{
+			Username: data.Name,
+			Login:    data.Login,
+			URL:      data.URL,
+		}, nil
 	case extsvc.TypeGitLab:
-		data, err := encryption.DecryptJSON[GitLabAccountData](ctx, val)
+		data, _, err := gitlab.GetExternalAccountData(ctx, &account.AccountData)
 		if err != nil {
 			return nil, err
 		}
-		casted := extsvc.PublicAccountData(*data)
-		return &casted, nil
+		return &extsvc.PublicAccountData{
+			Username: &data.Name,
+			Login:    &data.Username,
+			URL:      &data.WebURL,
+		}, nil
 	case "saml": //TODO: define constants for SAML and OpenID Connect service types
-		data, err := encryption.DecryptJSON[SAMLValues](ctx, val)
+		data, err := encryption.DecryptJSON[SAMLValues](ctx, account.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +109,7 @@ func publicAccountDataFromJSON(ctx context.Context, val *encryption.JSONEncrypta
 			Username: &username,
 		}, nil
 	case "openidconnect":
-		data, err := encryption.DecryptJSON[OpenIDConnectAccountData](ctx, val)
+		data, err := encryption.DecryptJSON[OpenIDConnectAccountData](ctx, account.Data)
 		if err != nil {
 			return nil, err
 		}
