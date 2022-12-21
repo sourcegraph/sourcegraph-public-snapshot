@@ -175,7 +175,11 @@ export const BlameDecoration: React.FunctionComponent<{
                                 <UserAvatar
                                     inline={true}
                                     className={styles.avatar}
-                                    user={blameHunk.author.person}
+                                    user={
+                                        blameHunk.author.person.user
+                                            ? blameHunk.author.person.user
+                                            : blameHunk.author.person
+                                    }
                                     size={16}
                                 />
                             ) : (

@@ -899,6 +899,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
                     history={props.history}
+                    isLightTheme={isLightTheme}
                 />
 
                 {groupedDecorations &&

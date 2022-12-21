@@ -42,11 +42,14 @@ export interface BlameHunk {
         person: {
             email: string
             displayName: string
+            avatarURL: string | null
             user:
                 | undefined
                 | null
                 | {
-                      username: string
+                      username: string | null
+                      displayName: string | null
+                      avatarURL: string | null
                   }
         }
     }
@@ -89,8 +92,11 @@ const fetchBlameViaGraphQL = memoizeObservable(
                                         person {
                                             email
                                             displayName
+                                            avatarURL
                                             user {
                                                 username
+                                                displayName
+                                                avatarURL
                                             }
                                         }
                                         date
@@ -185,6 +191,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                         person: {
                                             email: rawHunk.author.Email,
                                             displayName: rawHunk.author.Name,
+                                            avatarURL: null,
                                             user: null,
                                         },
                                     },
