@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,6 +31,23 @@ func init() {
 	}
 }
 
+type SubRepoPermsStore interface {
+	basestore.ShareableStore
+	With(other basestore.ShareableStore) SubRepoPermsStore
+	Transact(ctx context.Context) (SubRepoPermsStore, error)
+	Done(err error) error
+	Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error
+	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
+	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
+	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+	// GetByUserAndService gets the sub repo permissions for a user, but filters down
+	// to only repos that come from a specific external service.
+	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
+	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
+	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+	DeleteByUser(ctx context.Context, userID int32) error
+}
+
 // subRepoPermsStore is the unified interface for managing sub repository
 // permissions explicitly in the database. It is concurrency-safe and maintains
 // data consistency over sub_repo_permissions table.
@@ -39,16 +55,16 @@ type subRepoPermsStore struct {
 	*basestore.Store
 }
 
-func SubRepoPermsWith(other basestore.ShareableStore) database.SubRepoPermsStore {
+func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *subRepoPermsStore) With(other basestore.ShareableStore) database.SubRepoPermsStore {
+func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: s.Store.With(other)}
 }
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
-func (s *subRepoPermsStore) Transact(ctx context.Context) (database.SubRepoPermsStore, error) {
+func (s *subRepoPermsStore) Transact(ctx context.Context) (SubRepoPermsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &subRepoPermsStore{Store: txBase}, err
 }

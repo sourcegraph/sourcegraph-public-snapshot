@@ -19,10 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	database.SubRepoPermsWith = SubRepoPermsWith
-}
-
 func TestSubRepoPermsInsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -358,7 +354,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms are not supported")
 }
 
-func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s database.SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {
@@ -376,7 +372,7 @@ func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s databas
 	}
 }
 
-func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s database.SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {
