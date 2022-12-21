@@ -11,7 +11,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileMatchChildren } from './FileMatchChildren'
 

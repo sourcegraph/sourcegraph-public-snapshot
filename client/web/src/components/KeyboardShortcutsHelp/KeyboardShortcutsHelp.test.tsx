@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { fireEvent, screen } from '@testing-library/react'
 
 import { Shortcut, ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 

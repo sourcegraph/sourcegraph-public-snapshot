@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { RecentFilesPanel } from './RecentFilesPanel'
 

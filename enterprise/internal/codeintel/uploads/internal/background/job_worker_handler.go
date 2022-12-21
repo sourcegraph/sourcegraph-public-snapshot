@@ -101,7 +101,7 @@ func NewUploadProcessorHandler(
 	numProcessorRoutines int,
 	budgetMax int64,
 ) workerutil.Handler[codeinteltypes.Upload] {
-	operations := newOperations(observationCtx)
+	operations := newWorkerOperations(observationCtx)
 
 	return &handler{
 		store:           store,

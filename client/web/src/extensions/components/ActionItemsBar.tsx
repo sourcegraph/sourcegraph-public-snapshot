@@ -219,7 +219,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         (settings?.['perforce.codeHostToSwarmMap'] as { [codeHost: string]: string } | undefined) || {}
 
     if (!isOpen) {
-        return <div className={styles.barCollapsed} />
+        return <div className={classNames(styles.bar, styles.barCollapsed)} />
     }
 
     return (

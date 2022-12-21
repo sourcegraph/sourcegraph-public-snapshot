@@ -4,7 +4,7 @@ import * as H from 'history'
 import { NEVER } from 'rxjs'
 
 import { assertAriaEnabled } from '@sourcegraph/testing'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'

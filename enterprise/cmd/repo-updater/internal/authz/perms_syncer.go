@@ -855,8 +855,8 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	logger := s.logger.Scoped("syncPerms", "process perms sync request").With(
 		log.Object("request",
-			log.Int("type", int(request.Type)),
-			log.Int32("id", request.ID),
+			log.String("type", request.Type.String()),
+			log.Int32(request.IDFieldName(), request.ID),
 		))
 
 	defer s.queue.remove(request.Type, request.ID, true)

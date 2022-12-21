@@ -214,39 +214,50 @@ export class Driver {
         email?: string
     }): Promise<void> {
         /**
-         * Wait for redirects to complete to avoid using an outdated page URL.
-         *
-         * In case a user is not authenticated, and site-init is required, two redirects happen:
-         * 1. Redirect to /sign-in?returnTo=%2F
-         * 2. Redirect to /site-admin/init
+         * Waiting here for all redirects is not stable. We try to use the signin form first because
+         * it's the most frequent use-case. If we cannot find its selector we fall back to the signup form.
          */
-        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
+        await this.page.goto(this.sourcegraphBaseUrl)
 
-        const url = new URL(this.page.url())
-
-        if (url.pathname === '/site-admin/init') {
-            await this.page.waitForSelector('.test-signup-form')
-            if (email) {
-                await this.page.type('input[name=email]', email)
-            }
-            await this.page.type('input[name=username]', username)
-            await this.page.type('input[name=password]', password)
-            await this.page.waitForSelector('button[type=submit]:not(:disabled)')
-            // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
-            // background gql client request fetching ViewerSettings. this race condition results in the gql request
-            // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
-            // you back to the login page
-            await delay(1000)
-            await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 300000 })
-        } else if (url.pathname === '/sign-in') {
-            await this.page.waitForSelector('.test-signin-form')
+        /**
+         * In case a user is not authenticated, and site-init is NOT required, one redirect happens:
+         * 1. Redirect to /sign-in?returnTo=%2F
+         */
+        try {
+            logger.log('Trying to use the signin form...')
+            await this.page.waitForSelector('.test-signin-form', { timeout: 10000 })
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 300000 })
+        } catch (error) {
+            /**
+             * In case a user is not authenticated, and site-init is required, two redirects happen:
+             * 1. Redirect to /sign-in?returnTo=%2F
+             * 2. Redirect to /site-admin/init
+             */
+            if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
+                logger.log('Failed to use the signin form. Trying the signup form...')
+
+                await this.page.waitForSelector('.test-signup-form')
+                if (email) {
+                    await this.page.type('input[name=email]', email)
+                }
+                await this.page.type('input[name=username]', username)
+                await this.page.type('input[name=password]', password)
+                await this.page.waitForSelector('button[type=submit]:not(:disabled)')
+                // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
+                // background gql client request fetching ViewerSettings. this race condition results in the gql request
+                // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
+                // you back to the login page
+                await delay(1000)
+                await this.page.click('button[type=submit]')
+                await this.page.waitForNavigation({ timeout: 300000 })
+            } else {
+                throw error
+            }
         }
     }
 
