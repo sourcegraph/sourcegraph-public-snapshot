@@ -23,7 +23,7 @@ type GitHubWebhookHandler struct {
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
 	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handle(ctx, payload)
+		return g.handlePushEvent(ctx, payload)
 	}, extsvc.KindGitHub, "push")
 }
 
@@ -33,7 +33,7 @@ func NewGitHubWebhookHandler() *GitHubWebhookHandler {
 	}
 }
 
-func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
+func (g *GitHubWebhookHandler) handlePushEvent(ctx context.Context, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
@@ -41,7 +41,7 @@ func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 
 	repoName, err := githubNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handle: get name failed")
+		return errors.Wrap(err, "handlePushEvent: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -51,7 +51,7 @@ func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 			g.logger.Warn("GitLab push webhook received for unknown repo", log.String("repo", string(repoName)))
 			return nil
 		}
-		return errors.Wrap(err, "handle: EnqueueRepoUpdate failed")
+		return errors.Wrap(err, "handlePushEvent: EnqueueRepoUpdate failed")
 	}
 
 	g.logger.Info("successfully updated", log.String("name", resp.Name))

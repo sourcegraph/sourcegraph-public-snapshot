@@ -38,7 +38,7 @@ func TestGitLabWebhookHandle(t *testing.T) {
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
 
-	if err := handler.handle(context.Background(), &payload); err != nil {
+	if err := handler.handlePushEvent(context.Background(), &payload); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)

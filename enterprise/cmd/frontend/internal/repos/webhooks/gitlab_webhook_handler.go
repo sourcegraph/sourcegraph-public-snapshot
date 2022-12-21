@@ -22,7 +22,7 @@ type GitLabWebhookHandler struct {
 
 func (g *GitLabWebhookHandler) Register(router *webhooks.WebhookRouter) {
 	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handle(ctx, payload)
+		return g.handlePushEvent(ctx, payload)
 	}, extsvc.KindGitLab, "push")
 }
 
@@ -32,7 +32,7 @@ func NewGitLabWebhookHandler() *GitLabWebhookHandler {
 	}
 }
 
-func (g *GitLabWebhookHandler) handle(ctx context.Context, payload any) error {
+func (g *GitLabWebhookHandler) handlePushEvent(ctx context.Context, payload any) error {
 	event, ok := payload.(*gitlabwebhooks.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitLab.PushEvent, got %T", payload)
