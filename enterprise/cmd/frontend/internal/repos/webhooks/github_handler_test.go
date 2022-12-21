@@ -126,7 +126,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		HTTPClient: doer,
 	}
 
-	payload, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
+	payload, err := os.ReadFile(filepath.Join("testdata", "github-push.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
