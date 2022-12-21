@@ -44,7 +44,7 @@ func TestGitLabWebhookHandle(t *testing.T) {
 	assert.Equal(t, repoName, updateQueued)
 }
 
-func Test_gitlabNameFromEvent(t *testing.T) {
+func TestGitlabNameFromEvent(t *testing.T) {
 	tests := []struct {
 		name    string
 		event   *gitlabwebhooks.PushEvent
