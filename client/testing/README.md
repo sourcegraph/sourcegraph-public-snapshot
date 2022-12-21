@@ -1,3 +1,4 @@
 # Tools for writing tests
 
-Extracted from the `client/shared` package.
+Package-agnostic utilities for unit and integration tests.
+App or package-specific utilities should live in `client/{packageName}/src/testing`.
