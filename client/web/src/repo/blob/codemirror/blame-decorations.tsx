@@ -26,7 +26,6 @@ import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import { blobPropsFacet } from '.'
-import { completionStatus } from '@codemirror/autocomplete'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
@@ -159,7 +158,6 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 ): DecorationSet {
                     const widgets = []
                     const facetProps = view.state.facet(facet)
-                    console.log({ facetProps })
                     const { hunks, isLightTheme } = facetProps
 
                     for (const { from, to } of view.visibleRanges) {
@@ -181,7 +179,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                                 // hunk was not loaded yet.
                                 //
                                 // We mark this as rendered in `nextHunkDecorationLineRenderedAt` so that the next
-                                // startLine can be skipped if it was rendered already
+                                // startLine can be skipped if it was rendered already
                                 if (matchingHunk) {
                                     nextHunkDecorationLineRenderedAt = view.state.doc.line(matchingHunk.endLine).from
                                 }
