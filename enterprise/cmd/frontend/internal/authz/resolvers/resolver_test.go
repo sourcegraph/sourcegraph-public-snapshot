@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -294,6 +293,8 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
+	licensing.MockCheckFeatureError("")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -311,29 +312,30 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		}
 	})
 
-	licensing.MockCheckFeatureError("")
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
+	permSyncJobs := database.NewMockPermissionSyncJobStore()
+
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
 
-	r := &Resolver{
-		db: db,
-		repoupdaterClient: &fakeRepoupdaterClient{
-			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-				if len(args.RepoIDs) != 1 {
-					return errors.Errorf("RepoIDs: want 1 id but got %d", len(args.RepoIDs))
-				}
-				return nil
-			},
-		},
-	}
+	repoID := 1
+	r := &Resolver{db: db}
 	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
-		Repository: graphqlbackend.MarshalRepositoryID(1),
+		Repository: graphqlbackend.MarshalRepositoryID(api.RepoID(repoID)),
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	calls := permSyncJobs.CreateRepoSyncJobFunc.History()
+	if len(calls) != 1 {
+		t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
+	}
+	if value := calls[0].Arg1; value != int32(repoID) {
+		t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, value)
 	}
 }
 
@@ -358,51 +360,58 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
+	permSyncJobs := database.NewMockPermissionSyncJobStore()
+
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
+
+	userID := int32(1)
 
 	t.Run("queue a user", func(t *testing.T) {
-		r := &Resolver{
-			db: db,
-			repoupdaterClient: &fakeRepoupdaterClient{
-				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-					if len(args.UserIDs) != 1 {
-						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
-					}
-					return nil
-				},
-			},
-		}
+		permSyncJobs := database.NewMockPermissionSyncJobStore()
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
+
+		r := &Resolver{db: db}
 		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User: graphqlbackend.MarshalUserID(1),
+			User: graphqlbackend.MarshalUserID(userID),
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		calls := permSyncJobs.CreateUserSyncJobFunc.History()
+		if len(calls) != 1 {
+			t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
+		}
+		if value := calls[0].Arg1; value != userID {
+			t.Errorf("unexpected user ID argument. want=%d have=%d", userID, value)
 		}
 	})
 
 	t.Run("queue a user with options", func(t *testing.T) {
-		r := &Resolver{
-			db: db,
-			repoupdaterClient: &fakeRepoupdaterClient{
-				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-					if len(args.UserIDs) != 1 {
-						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
-					}
-					if !args.Options.InvalidateCaches {
-						return errors.Errorf("Options.InvalidateCaches: expected true but got false")
-					}
-					return nil
-				},
-			},
-		}
+		permSyncJobs := database.NewMockPermissionSyncJobStore()
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
+
+		r := &Resolver{db: db}
 		trueVal := true
 		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User:    graphqlbackend.MarshalUserID(1),
+			User:    graphqlbackend.MarshalUserID(userID),
 			Options: &struct{ InvalidateCaches *bool }{InvalidateCaches: &trueVal},
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		calls := permSyncJobs.CreateUserSyncJobFunc.History()
+		if len(calls) != 1 {
+			t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
+		}
+		if value := calls[0].Arg1; value != userID {
+			t.Errorf("unexpected user ID argument. want=%d have=%d", userID, value)
+		}
+		if value := calls[0].Arg2; !value.InvalidateCaches {
+			t.Error("InvalidateCaches is not set")
 		}
 	})
 }
@@ -1717,8 +1726,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	r := &Resolver{
-		db:                edb.NewEnterpriseDB(db),
-		repoupdaterClient: repoupdater.DefaultClient,
+		db: edb.NewEnterpriseDB(db),
 		syncJobsRecords: mockRecordsReader{{
 			JobID:   3,
 			JobType: "repo",

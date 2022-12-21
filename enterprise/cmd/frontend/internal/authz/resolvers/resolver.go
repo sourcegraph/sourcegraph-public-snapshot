@@ -176,7 +176,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 	}
 
 	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
-	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateRepoSyncJob(ctx, int32(repoID), jobOpts)
+	err = r.db.PermissionSyncJobs().CreateRepoSyncJob(ctx, int32(repoID), jobOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		jobOpts.InvalidateCaches = *args.Options.InvalidateCaches
 	}
 
-	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, userID, jobOpts)
+	err = r.db.PermissionSyncJobs().CreateUserSyncJob(ctx, userID, jobOpts)
 	if err != nil {
 		return nil, err
 	}

@@ -1,1 +1,1 @@
-DROP TABLE permission_sync_jobs;
+DROP TABLE IF EXISTS permission_sync_jobs;
