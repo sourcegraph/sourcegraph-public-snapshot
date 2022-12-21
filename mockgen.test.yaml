@@ -278,3 +278,11 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
   interfaces:
     - RepoStore
+- filename: enterprise/internal/insights/discovery/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+  interfaces:
+    - RepoQueryExecutor
+- filename: enterprise/internal/insights/scheduler/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler
+  interfaces:
+    - RepoQueryExecutor

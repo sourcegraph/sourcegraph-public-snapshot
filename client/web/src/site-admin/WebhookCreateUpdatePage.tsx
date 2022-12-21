@@ -5,9 +5,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'

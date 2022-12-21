@@ -246,7 +246,7 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, ur.RoleID, role.ID)
-		assert.Equal(t, ur.UserID, ur.UserID)
+		assert.Equal(t, ur.UserID, user.ID)
 	})
 }
 

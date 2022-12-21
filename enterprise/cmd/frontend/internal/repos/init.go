@@ -21,7 +21,8 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.GitHubSyncWebhook = webhooks.NewGitHubWebhookHandler()
+	enterpriseServices.GitHubSyncWebhook = webhooks.NewGitHubHandler()
+	enterpriseServices.GitLabSyncWebhook = webhooks.NewGitLabHandler()
 	enterpriseServices.WebhooksResolver = resolvers.NewWebhooksResolver(db)
 	return nil
 }

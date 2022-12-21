@@ -74,7 +74,7 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -285,7 +285,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

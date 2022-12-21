@@ -136,19 +136,20 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
 
 interface InsightSeriesIncompleteAlertProps {
     series: BackendInsightSeries<unknown>
+    className?: string
 }
 
 const dateFormatter = timeFormat('%B %d, %Y')
 
 export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps> = props => {
-    const { series } = props
+    const { series, className } = props
 
     const timeoutAlerts = series.alerts.filter(alert => alert.__typename === 'TimeoutDatapointAlert')
     const otherAlerts = series.alerts.filter(alert => alert.__typename !== 'TimeoutDatapointAlert')
 
     return (
         <Popover>
-            <PopoverTrigger as={Button} variant="icon" className={styles.alertIcon}>
+            <PopoverTrigger as={Button} variant="icon" className={classNames(className, styles.alertIcon)}>
                 <Icon
                     aria-label="Insight is in incomplete state"
                     svgPath={mdiAlertCircleOutline}

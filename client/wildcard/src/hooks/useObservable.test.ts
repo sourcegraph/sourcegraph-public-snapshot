@@ -1,5 +1,4 @@
 // causes false positive on act()
-/* eslint-disable @typescript-eslint/no-floating-promises */
 
 import { useMemo, useCallback } from 'react'
 

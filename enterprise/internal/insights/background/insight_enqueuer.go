@@ -139,7 +139,9 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	var modifiedQuery querybuilder.BasicQuery
 	var finalQuery string
 
-	if len(series.Repositories) > 0 {
+	if series.RepositoryCriteria != nil {
+		modifiedQuery, err = querybuilder.MakeQueryWithRepoFilters(*series.RepositoryCriteria, basicQuery)
+	} else if len(series.Repositories) > 0 {
 		modifiedQuery, err = querybuilder.MultiRepoQuery(basicQuery, series.Repositories, defaultQueryParams)
 	} else {
 		modifiedQuery, err = querybuilder.GlobalQuery(basicQuery, defaultQueryParams)

@@ -37,7 +37,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 		return ""
 	}
 
-	r, ok := list.Minimal[uint32(repo.ID)]
+	r, ok := list.Minimal[uint32(repo.ID)] //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	if !ok || !r.HasSymbols {
 		return ""
 	}

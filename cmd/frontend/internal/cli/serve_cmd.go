@@ -162,7 +162,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d))) //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 
@@ -301,6 +301,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		rateLimiter,
 		&httpapi.Handlers{
 			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
+			GitLabSyncWebhook:               enterprise.GitLabSyncWebhook,
 			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
 			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,

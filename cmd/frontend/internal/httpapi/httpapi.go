@@ -40,6 +40,7 @@ import (
 
 type Handlers struct {
 	GitHubSyncWebhook               webhooks.Registerer
+	GitLabSyncWebhook               webhooks.Registerer
 	PermissionsGitHubWebhook        webhooks.Registerer
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
@@ -88,8 +89,8 @@ func NewHandler(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	wh := webhooks.WebhookRouter{
-		Logger: logger.Scoped("WebhookRouter", "handling webhook requests and dispatching them to handlers"),
+	wh := webhooks.Router{
+		Logger: logger.Scoped("Router", "handling webhook requests and dispatching them to handlers"),
 		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
@@ -98,12 +99,13 @@ func NewHandler(
 	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.GitLabSyncWebhook.Register(&wh)
 	handlers.PermissionsGitHubWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
-	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
+	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
 
 	// New UUID based webhook handler
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))

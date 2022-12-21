@@ -113,8 +113,8 @@ func TestGitHubWebhooks(t *testing.T) {
 	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
-	hook := fewebhooks.GitHubWebhook{WebhookRouter: &fewebhooks.WebhookRouter{DB: db}}
-	ghWebhook.Register(hook.WebhookRouter)
+	hook := fewebhooks.GitHubWebhook{Router: &fewebhooks.Router{DB: db}}
+	ghWebhook.Register(hook.Router)
 
 	newReq := func(t *testing.T, eventType string, event any) *http.Request {
 		t.Helper()

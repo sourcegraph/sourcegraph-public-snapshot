@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -855,8 +855,8 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	logger := s.logger.Scoped("syncPerms", "process perms sync request").With(
 		log.Object("request",
-			log.Int("type", int(request.Type)),
-			log.Int32("id", request.ID),
+			log.String("type", request.Type.String()),
+			log.Int32(request.IDFieldName(), request.ID),
 		))
 
 	defer s.queue.remove(request.Type, request.ID, true)
@@ -1235,7 +1235,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.Finish()
-		tr.LogFields(otlog.Int32("id", id))
+		tr.SetAttributes(attribute.Int64("id", int64(id)))
 
 		var typLabel string
 		switch typ {

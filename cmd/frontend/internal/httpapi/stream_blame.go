@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
@@ -75,15 +74,15 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 		}
 		// Log events to trace
 		streamWriter.StatHook = func(stat streamhttp.WriterStat) {
-			fields := []otlog.Field{
-				otlog.String("streamhttp.Event", stat.Event),
-				otlog.Int("bytes", stat.Bytes),
-				otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+			attrs := []attribute.KeyValue{
+				attribute.String("streamhttp.Event", stat.Event),
+				attribute.Int("bytes", stat.Bytes),
+				attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 			}
 			if stat.Error != nil {
-				fields = append(fields, otlog.Error(stat.Error))
+				attrs = append(attrs, attribute.String("error", stat.Error.Error()))
 			}
-			tr.LogFields(fields...)
+			tr.AddEvent("write", attrs...)
 		}
 
 		requestedPath = strings.TrimPrefix(requestedPath, "/")

@@ -11,6 +11,7 @@ import (
 
 	otelog "github.com/opentracing/opentracing-go/log"
 	baselua "github.com/yuin/gopher-lua"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/lua"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
@@ -334,7 +335,7 @@ func (s *Service) resolvePaths(
 
 	start := time.Now()
 	rateLimitErr := s.limiter.Wait(ctx)
-	traceLogger.Log(otelog.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
+	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
 	if rateLimitErr != nil {
 		return nil, err
 	}
@@ -368,7 +369,7 @@ func (s *Service) resolveFileContents(
 
 	start := time.Now()
 	rateLimitErr := s.limiter.Wait(ctx)
-	traceLogger.Log(otelog.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
+	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
 	if rateLimitErr != nil {
 		return nil, err
 	}

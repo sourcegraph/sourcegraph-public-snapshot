@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -115,6 +116,13 @@ func (req BatchLogRequest) LogFields() []log.Field {
 	return []log.Field{
 		log.Int("numRepoCommits", len(req.RepoCommits)),
 		log.String("format", req.Format),
+	}
+}
+
+func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(req.RepoCommits)),
+		attribute.String("format", req.Format),
 	}
 }
 
