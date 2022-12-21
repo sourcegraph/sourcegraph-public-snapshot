@@ -1,0 +1,33 @@
+package:
+  name: p4cli
+  version: 2021.2
+  epoch: 0
+  description: "TODO"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'TODO'
+      license: 'TODO'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4
+      expected-sha256: e07613dd4ead019c3119a419083e85ec93f6d0ba5524ac498bcd767cbe278377
+      extract: false
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      cp p4 ${{targets.destdir}}/usr/local/bin/p4
