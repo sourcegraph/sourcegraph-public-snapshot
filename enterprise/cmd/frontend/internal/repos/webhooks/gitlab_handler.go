@@ -20,7 +20,7 @@ type GitLabHandler struct {
 	logger log.Logger
 }
 
-func (g *GitLabHandler) Register(router *webhooks.WebhookRouter) {
+func (g *GitLabHandler) Register(router *webhooks.Router) {
 	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		return g.handlePushEvent(ctx, payload)
 	}, extsvc.KindGitLab, "push")

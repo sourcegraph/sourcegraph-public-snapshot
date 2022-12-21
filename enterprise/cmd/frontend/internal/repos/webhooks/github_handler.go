@@ -21,7 +21,7 @@ type GitHubHandler struct {
 	logger log.Logger
 }
 
-func (g *GitHubHandler) Register(router *webhooks.WebhookRouter) {
+func (g *GitHubHandler) Register(router *webhooks.Router) {
 	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		return g.handlePushEvent(ctx, payload)
 	}, extsvc.KindGitHub, "push")

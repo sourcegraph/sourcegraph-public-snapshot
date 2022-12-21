@@ -107,7 +107,7 @@ type emptyWebhookHandler struct {
 	name string
 }
 
-func (e *emptyWebhookHandler) Register(w *webhooks.WebhookRouter) {}
+func (e *emptyWebhookHandler) Register(w *webhooks.Router) {}
 
 func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	makeNotFoundHandler(e.name)
