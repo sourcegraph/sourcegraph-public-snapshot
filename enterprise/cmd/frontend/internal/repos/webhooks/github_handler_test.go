@@ -34,7 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGitHubWebhookHandle(t *testing.T) {
+func TestGitHubHandler(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 

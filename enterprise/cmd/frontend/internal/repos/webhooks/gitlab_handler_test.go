@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestGitLabWebhookHandle(t *testing.T) {
+func TestGitLabHandler(t *testing.T) {
 	repoName := "gitlab.com/ryanslade/ryan-test-private"
 	handler := NewGitLabHandler()
 	data, err := os.ReadFile("testdata/gitlab-push.json")
