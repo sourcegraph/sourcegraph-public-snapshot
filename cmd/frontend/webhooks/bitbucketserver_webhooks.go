@@ -56,12 +56,18 @@ func (wr *Router) handleBitbucketServerWebhook(logger log.Logger, w http.Respons
 		http.Error(w, "Closing body", http.StatusInternalServerError)
 		return
 	}
+
+	sig := r.Header.Get("X-Hub-Signature")
+	eventKey := r.Header.Get("X-Event-Key")
+
+	// Special case: Even if a secret is configured, Bitbucket server test events are
+	// not signed, so we allow them through without verification.
+	if sig == "" && eventKey == "diagnostics:ping" {
+		wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
+		return
+	}
+
 	if secret != "" {
-		sig := r.Header.Get("X-Hub-Signature")
-		if sig == "" {
-			http.Error(w, "X-Hub-Signature header missing", http.StatusBadRequest)
-			return
-		}
 		if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
 			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
 			return
