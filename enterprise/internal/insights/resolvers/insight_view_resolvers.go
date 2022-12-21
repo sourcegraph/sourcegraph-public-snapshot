@@ -1284,14 +1284,11 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 
 func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
-
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
 		}
-
 		return v2HistoricFill(ctx, series, tx, scheduler)
-
 	}
 }
 
