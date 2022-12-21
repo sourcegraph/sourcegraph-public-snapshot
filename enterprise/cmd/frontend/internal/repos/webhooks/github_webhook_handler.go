@@ -60,7 +60,7 @@ func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 
 func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
 	if event == nil || event.Repo == nil || event.Repo.URL == nil {
-		return "", errors.Newf("URL for repository not found")
+		return "", errors.New("URL for repository not found")
 	}
 	parsed, err := url.Parse(*event.Repo.URL)
 	if err != nil {
