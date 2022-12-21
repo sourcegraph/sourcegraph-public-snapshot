@@ -7,12 +7,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// checkConnection will parse the rawURL and make a best effort attempt to obtain a hostname. It
-// then performs an IP lookup on that hostname and will return a non-nil error on failure.
+// checkConnection parses the rawURL and makes a best effort attempt to obtain a hostname. It then
+// performs an IP lookup on that hostname and returns a non-nil error on failure.
 //
-// At the moment this function is only limited to doing IP lookups. We may want / have to expand
-// this to support other code hosts or to add more checks (example making a test API call to verify
-// the authorization etc)
+// At the moment this function is only limited to doing IP lookups. We may want/have to expand this
+// to support other code hosts or to add more checks (for example making a test API call to verify
+// the authorization, etc).
 func checkConnection(rawURL string) error {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -26,7 +26,15 @@ func checkConnection(rawURL string) error {
 	// are present in u.Host.
 	hostname := u.Hostname()
 	if hostname == "" {
-		hostname = u.Path
+		if u.Scheme != "" {
+			// rawURL is most likely something like "sourcegraph.com:80", read from u.Scheme.
+			hostname = u.Scheme
+		} else if u.Path != "" {
+			// rawURL is most likely something like "sourcegraph.com:80", read from u.Path.
+			hostname = u.Path
+		} else {
+			return errors.Newf("unsupported url format (%q) for connection check", rawURL)
+		}
 	}
 
 	ips, err := net.LookupIP(hostname)

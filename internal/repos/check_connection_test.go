@@ -27,6 +27,12 @@ func TestCheckConnection(t *testing.T) {
 		}
 	})
 
+	t.Run("good URL with port but without protocol", func(t *testing.T) {
+		if err := checkConnection("sourcegraph.com:80"); err != nil {
+			t.Errorf("Expected nil but got error: %v", err)
+		}
+	})
+
 	t.Run("good URL with username:password", func(t *testing.T) {
 		if err := checkConnection("https://username:password@sourcegraph.com"); err != nil {
 			t.Errorf("Expected nil but got error: %v", err)
