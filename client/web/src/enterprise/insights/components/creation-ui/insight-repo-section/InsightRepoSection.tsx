@@ -1,5 +1,6 @@
-import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, useRef } from 'react'
+import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, ReactNode, useRef } from 'react'
 
+import { gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
@@ -16,6 +17,7 @@ import {
     InputStatus,
 } from '@sourcegraph/wildcard'
 
+import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
 import {
@@ -67,7 +69,7 @@ export const SmartRepoSettingSection: FC<SmartRepoSettingSectionProps> = props =
 
     return (
         <FormGroup name="insight repositories" title="Targeted repositories">
-            <SmartSearchQueryRepoField repoQuery={repoQuery} />
+            <SmartSearchQueryRepoField repoQuery={repoQuery} label="Repositories query" />
         </FormGroup>
     )
 }
@@ -89,6 +91,8 @@ export const SearchQueryOrRepoListSection: FC<SearchQueryOrRepoListSectionProps>
         >
             <RadioGroupSection
                 label="Repositories query"
+                labelContent={<RepositoriesCount repoQuery={repoQuery} />}
+                labelClassName="d-flex justify-content-between"
                 name="repoMode"
                 labelId="smart-repo-search-query"
                 value="search-query"
@@ -139,16 +143,18 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
 interface RadioGroupSectionProps {
     name: string
     label: string
+    labelContent?: ReactNode
     value: string
     checked: boolean
     labelId: string
     className?: string
+    labelClassName?: string
     contentClassName?: string
     onChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
 function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): ReactElement {
-    const { name, label, value, checked, labelId, children, onChange } = props
+    const { name, label, value, checked, labelId, labelContent, labelClassName, children, onChange } = props
 
     return (
         <div className={styles.radioGroup}>
@@ -162,8 +168,14 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
                 className={styles.radioGroupInput}
                 onChange={onChange}
             />
-            <Label htmlFor={labelId} className={styles.radioGroupLabel}>
+            <Label htmlFor={labelId} className={classNames(labelClassName, styles.radioGroupLabel)}>
                 {label}
+
+                {labelContent && (
+                    <span className={classNames('ml-auto', { [styles.radioGroupContentNonActive]: !checked })}>
+                        {labelContent}
+                    </span>
+                )}
             </Label>
             <div
                 className={classNames(styles.radioGroupContent, {
@@ -215,7 +227,12 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     return (
         <div>
             <LabelComponent className={styles.repoLabel} id="search-repo-query">
-                {label && <span className={styles.repoLabelText}>Repositories query</span>}
+                {label && (
+                    <span className={styles.repoLabelText}>
+                        Repositories query
+                        <RepositoriesCount repoQuery={repoQuery} />
+                    </span>
+                )}
 
                 <InputElement
                     as={MonacoField}
@@ -314,4 +331,38 @@ function useMutableValue<T>(value: T): MutableRefObject<T> {
     valueRef.current = value
 
     return valueRef
+}
+
+const REPOSITORIES_COUNT_GQL = gql`
+    query InsightRepositoriesCount($query: String!) {
+        previewRepositoriesFromQuery(query: $query) {
+            numberOfRepositories
+        }
+    }
+`
+
+interface RepositoriesCountProps {
+    repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
+    className?: string
+}
+
+function RepositoriesCount(props: RepositoriesCountProps): ReactElement {
+    const { repoQuery, className } = props
+
+    const query = !repoQuery.input.disabled ? repoQuery.input.value.query : ''
+
+    const { data } = useQuery<InsightRepositoriesCountResult, InsightRepositoriesCountVariables>(
+        REPOSITORIES_COUNT_GQL,
+        { skip: repoQuery.input.disabled, variables: { query } }
+    )
+
+    const repositoriesNumber = !repoQuery.input.disabled
+        ? data?.previewRepositoriesFromQuery.numberOfRepositories ?? 0
+        : 0
+
+    return (
+        <span className={classNames(className, 'text-muted font-weight-normal')}>
+            Repositories count: {repositoriesNumber}
+        </span>
+    )
 }

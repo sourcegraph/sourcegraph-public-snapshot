@@ -15,6 +15,7 @@ import {
     useRepoFields,
 } from '../../../../../components'
 import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
+import { useExperimentalFeatures } from '../../../../../../../stores'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
@@ -55,8 +56,16 @@ export interface InsightCreationForm {
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
     const { touched, initialValue = {}, onSubmit, onChange } = props
 
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
+
+    // Enforce "search-query" initial value if we're in the single search query UI mode
+    const initialValues = isSearchQueryORUrlsList
+        ? { ...INITIAL_INSIGHT_VALUES, ...initialValue }
+        : { ...INITIAL_INSIGHT_VALUES, ...initialValue, repoMode: 'search-query' as const }
+
     const form = useForm<CreateInsightFormFields>({
-        initialValues: { ...INITIAL_INSIGHT_VALUES, ...initialValue },
+        initialValues,
         onSubmit,
         onChange,
         touched,

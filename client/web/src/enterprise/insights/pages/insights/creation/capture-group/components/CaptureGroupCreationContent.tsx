@@ -2,6 +2,7 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
+import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
     CreationUiLayout,
     CreationUIForm,
@@ -42,8 +43,16 @@ interface CaptureGroupCreationContentProps {
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
     const { touched, initialValues = {}, className, children, onSubmit, onChange = noop } = props
 
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
+
+    // Enforce "search-query" initial value if we're in the single search query UI mode
+    const fixedInitialValues = isSearchQueryORUrlsList
+        ? { ...INITIAL_VALUES, ...initialValues }
+        : { ...INITIAL_VALUES, ...initialValues, repoMode: 'search-query' as const }
+
     const form = useForm<CaptureGroupFormFields>({
-        initialValues: { ...INITIAL_VALUES, ...initialValues },
+        initialValues: fixedInitialValues,
         touched,
         onSubmit,
         onChange,

@@ -5,7 +5,8 @@
 
     &-text {
         width: 100%;
-        display: block;
+        display: flex;
+        justify-content: space-between;
         margin-bottom: 0.5rem;
     }
 
@@ -90,6 +91,7 @@
 
     &-label {
         grid-area: label;
+        display: flex;
         margin: 0;
     }
 
