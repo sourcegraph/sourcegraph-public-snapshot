@@ -8,11 +8,7 @@
     "baseUrl": "./src",
     "jsx": "react-jsx",
   },
-  "references": [
-    { "path": "../branded" },
-    { "path": "../common" },
-    { "path": "../testing" },
-  ],
+  "references": [{ "path": "../branded" }, { "path": "../common" }, { "path": "../testing" }],
   "include": ["**/*", ".*"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
 }
