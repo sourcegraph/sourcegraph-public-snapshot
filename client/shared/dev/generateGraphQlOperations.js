@@ -172,7 +172,7 @@ module.exports = {
 // continues to import `generateGraphQlOperations` and generate all operations files.
 async function main(args) {
   if (args.length !== 2) {
-    throw new Error('Usage: <schemaName>')
+    throw new Error('Usage: <schemaName> <outputPath>')
   }
 
   const [interfaceNameForOperations, outputPath] = args
