@@ -48,6 +48,7 @@ func (g *GitHubWebhookHandler) handle(ctx context.Context, payload any) error {
 	if err != nil {
 		// Repo not existing on Sourcegraph is fine
 		if errcode.IsNotFound(err) {
+			g.logger.Warn("GitLab push webhook received for unknown repo", log.String("repo", string(repoName)))
 			return nil
 		}
 		return errors.Wrap(err, "handle: EnqueueRepoUpdate failed")
