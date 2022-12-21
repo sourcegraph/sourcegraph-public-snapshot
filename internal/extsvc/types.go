@@ -48,7 +48,7 @@ type AccountData struct {
 	Data     *EncryptableData
 }
 type PublicAccountData struct {
-	UserName *string `json:"username,omitempty"`
+	Username *string `json:"username,omitempty"`
 	Login    *string `json:"login,omitempty"`
 	URL      *string `json:"url,omitempty"`
 }
