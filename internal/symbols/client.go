@@ -80,8 +80,7 @@ type Client struct {
 func (c *Client) url(repo api.RepoName) (string, error) {
 	c.endpointOnce.Do(func() {
 		// compute endpoints for symbols if replicas number is provided
-		num, err := strconv.Atoi(symbolsReplicas)
-		if err == nil && num > 0 {
+		if num, err := strconv.Atoi(symbolsReplicas); err == nil && num > 0 {
 			e := ""
 			s := ".symbols"
 			// remove .symbols from endpoint for docker-compose
