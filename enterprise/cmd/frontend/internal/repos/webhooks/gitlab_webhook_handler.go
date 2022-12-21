@@ -58,6 +58,9 @@ func (g *GitLabWebhookHandler) handle(ctx context.Context, payload any) error {
 }
 
 func gitlabNameFromEvent(event *gitlabwebhooks.PushEvent) (api.RepoName, error) {
+	if event == nil {
+		return api.RepoName(""), errors.New("nil PushEvent received")
+	}
 	parsed, err := url.Parse(event.Project.WebURL)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing project URL")
