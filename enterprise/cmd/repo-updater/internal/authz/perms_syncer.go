@@ -1006,7 +1006,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
-	store := database.PermissionSyncJobsWith(logger, s.db)
+	store := s.db.PermissionSyncJobs()
 
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()

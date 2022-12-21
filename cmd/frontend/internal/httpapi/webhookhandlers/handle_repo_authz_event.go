@@ -7,8 +7,6 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -62,7 +60,6 @@ func scheduleRepoUpdate(ctx context.Context, db database.DB, repo *gh.Repository
 
 	log15.Debug("scheduleRepoUpdate: Dispatching permissions update", "repos", repo.GetFullName())
 
-	logger := log.Scoped("TODO", "horsegraph")
 	jobOpts := database.PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: opts.InvalidateCaches}
-	return database.PermissionSyncJobsWith(logger, db).CreateRepoSyncJob(ctx, int32(r.ID), jobOpts)
+	return db.PermissionSyncJobs().CreateRepoSyncJob(ctx, int32(r.ID), jobOpts)
 }

@@ -8,8 +8,6 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -74,9 +72,7 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 		return nil
 	}
 
-	logger := log.Scoped("TODO", "horsegraph")
-	store := database.PermissionSyncJobsWith(logger, db)
-
+	store := db.PermissionSyncJobs()
 	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
 	for _, acc := range accs {
 		if err := store.CreateUserSyncJob(ctx, int32(acc.UserID), jobOpts); err != nil {

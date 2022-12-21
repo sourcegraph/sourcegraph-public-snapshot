@@ -56,7 +56,7 @@ func EnterpriseInit(
 	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
-	permsJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger.Scoped("PermissionSyncJobsStore", ""), db)
+	permsJobStore := db.PermissionSyncJobs()
 	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID) error {
 		if authz.PermissionSyncingDisabled() {
 			return nil

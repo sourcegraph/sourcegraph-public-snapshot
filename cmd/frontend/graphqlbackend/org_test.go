@@ -1,11 +1,8 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -17,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -383,25 +379,14 @@ func TestAddOrganizationMember(t *testing.T) {
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
 	// mock repo updater http client
-	oldClient := repoupdater.DefaultClient.HTTPClient
-	repoupdater.DefaultClient.HTTPClient = &http.Client{
-		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte{'{', '}'})),
-			}, nil
-		}),
-	}
-
-	defer func() {
-		repoupdater.DefaultClient.HTTPClient = oldClient
-	}()
+	permSyncJobs := database.NewMockPermissionSyncJobStore()
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 

@@ -349,7 +349,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, err
 	}
 
-	permJobs := database.PermissionSyncJobsWith(r.logger, r.db)
+	permJobs := r.db.PermissionSyncJobs()
 	err = permJobs.CreateUserSyncJob(ctx, userID, database.PermissionSyncJobOpts{HighPriority: true})
 	if err != nil {
 		return nil, err
@@ -398,7 +398,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user
-	permJobs := database.PermissionSyncJobsWith(r.logger, r.db)
+	permJobs := r.db.PermissionSyncJobs()
 	err = permJobs.CreateUserSyncJob(ctx, userToInvite.ID, database.PermissionSyncJobOpts{HighPriority: true})
 	if err != nil {
 		return nil, err

@@ -126,7 +126,7 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	permsJobsStore := database.PermissionSyncJobsWith(h.logger.Scoped("PermissionSyncJobsStore", ""), db)
+	permsJobsStore := db.PermissionSyncJobs()
 	err = permsJobsStore.CreateUserSyncJob(ctx, externalAccounts[0].UserID, database.PermissionSyncJobOpts{
 		HighPriority: true,
 		// Wait 15s before sync to give GitHub time to propagate events across
@@ -148,7 +148,7 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	permsJobsStore := database.PermissionSyncJobsWith(h.logger.Scoped("PermissionSyncJobsStore", ""), db)
+	permsJobsStore := db.PermissionSyncJobs()
 	err = permsJobsStore.CreateRepoSyncJob(ctx, int32(repo.ID), database.PermissionSyncJobOpts{
 		HighPriority: true,
 		// Wait 15s before sync to give GitHub time to propagate events across
