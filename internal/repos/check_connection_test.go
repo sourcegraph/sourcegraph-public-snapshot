@@ -2,7 +2,7 @@ package repos
 
 import "testing"
 
-func TestIpLookup(t *testing.T) {
+func TestCheckConnection(t *testing.T) {
 	t.Run("bad URL", func(t *testing.T) {
 		if err := checkConnection("foo"); err == nil {
 			t.Error("Expected error but got nil")
