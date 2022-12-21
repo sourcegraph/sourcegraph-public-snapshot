@@ -235,7 +235,7 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch")
+	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

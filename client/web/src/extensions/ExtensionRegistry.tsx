@@ -4,7 +4,6 @@ import * as H from 'history'
 import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
@@ -12,7 +11,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, useEventObservable, Link, Input } from '@sourcegraph/wildcard'
+import { useLocalStorage, useEventObservable, Link, Input, Form } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {

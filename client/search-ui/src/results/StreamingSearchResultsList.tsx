@@ -8,13 +8,6 @@ import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import {
-    CommitSearchResult,
-    RepoSearchResult,
-    FileContentSearchResult,
-    FilePathSearchResult,
-    SymbolSearchResult,
-} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
@@ -33,6 +26,11 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { CommitSearchResult } from '../components/CommitSearchResult'
+import { FileContentSearchResult } from '../components/FileContentSearchResult'
+import { FilePathSearchResult } from '../components/FilePathSearchResult'
+import { RepoSearchResult } from '../components/RepoSearchResult'
+import { SymbolSearchResult } from '../components/SymbolSearchResult'
 import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'

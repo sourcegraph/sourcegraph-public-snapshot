@@ -85,7 +85,7 @@ interface HighlightedFileLineRangesProps {
 
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
         HoverThresholdProps,

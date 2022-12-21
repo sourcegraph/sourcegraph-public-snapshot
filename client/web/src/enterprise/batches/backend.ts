@@ -94,6 +94,7 @@ const PARTIAL_BATCH_WORKSPACE_FILE_FIELDS = gql`
         name
         binary
         byteSize
+        url
     }
 `
 
@@ -172,11 +173,8 @@ export const BATCH_SPEC_WORKSPACE_FILE = gql`
     ${BATCH_WORKSPACE_FILE_FIELDS}
 `
 
-const BATCH_CHANGE_FILE_BASE_URL = '/.api/files/batch-changes'
-
-export const generateFileDownloadLink = async (specId: string, fileId: string): Promise<string> => {
-    const url = `${BATCH_CHANGE_FILE_BASE_URL}/${specId}/${fileId}`
-    const file = await fetch(url, {
+export const generateFileDownloadLink = async (fileUrl: string): Promise<string> => {
+    const file = await fetch(`/.api/${fileUrl}`, {
         headers: {
             ...window.context.xhrHeaders,
         },

@@ -4,12 +4,12 @@ import { mdiClose, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { chunk, upperFirst } from 'lodash'
 
+import { TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
 import { TourTask } from './TourTask'
-import { TourTaskType } from './types'
 
 import styles from './Tour.module.scss'
 

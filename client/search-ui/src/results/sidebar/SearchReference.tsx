@@ -12,7 +12,6 @@ import {
     QueryExample,
     EditorHint,
 } from '@sourcegraph/search'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -31,6 +30,7 @@ import {
     CollapsePanel,
     Icon,
     Text,
+    Markdown,
 } from '@sourcegraph/wildcard'
 
 import sidebarStyles from './SearchFilterSection.module.scss'

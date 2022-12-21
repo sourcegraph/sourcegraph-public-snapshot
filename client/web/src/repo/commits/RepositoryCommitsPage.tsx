@@ -3,12 +3,11 @@ import React, { useEffect, useMemo } from 'react'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Code, Heading } from '@sourcegraph/wildcard'
+import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'

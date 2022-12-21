@@ -10,7 +10,6 @@ import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/co
 import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -26,6 +25,7 @@ import {
     Alert,
     H3,
     Input,
+    Markdown,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'

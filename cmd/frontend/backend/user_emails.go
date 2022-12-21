@@ -351,13 +351,9 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 
 	// Since we deleted an external account for the user we can no longer trust user
 	// based permissions, so we clear them out.
+	// This also removes the user's sub-repo permissions.
 	if err := db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
 		return errors.Wrapf(err, "revoking user permissions for user with ID %d", userID)
-	}
-
-	// We also need to delete sub-repo permissions granted to the user.
-	if err := db.SubRepoPerms().DeleteByUser(ctx, userID); err != nil {
-		return errors.Wrapf(err, "removing sub-repo permissions for user with ID %d", userID)
 	}
 
 	return nil
@@ -472,6 +468,9 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 `,
 })
 
+// triggerPermissionsSync is a helper that attempts to schedule a new permissions
+// sync for the given user. Errors are not fatal since our background permissions
+// syncer will eventually sync the user anyway, so we just log any errors.
 func triggerPermissionsSync(ctx context.Context, logger log.Logger, userID int32) {
 	if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},

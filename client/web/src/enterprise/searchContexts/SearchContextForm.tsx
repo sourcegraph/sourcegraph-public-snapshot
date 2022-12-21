@@ -5,7 +5,6 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { QueryState, SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
@@ -29,6 +28,7 @@ import {
     Link,
     Code,
     Input,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

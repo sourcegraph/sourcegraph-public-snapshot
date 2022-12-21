@@ -5,8 +5,7 @@ import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sour
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { createLinkUrl, RouterLink, Tooltip } from '@sourcegraph/wildcard'
+import { createLinkUrl, RouterLink, Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 

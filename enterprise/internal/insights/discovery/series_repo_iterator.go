@@ -3,13 +3,14 @@ package discovery
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type seriesRepoIterator struct {
-	allRepoIterator *AllReposIterator
-	repoStore       RepoStore
+	allRepoIterator   *AllReposIterator
+	repoStore         RepoStore
+	repoQueryExecutor query.RepoQueryExecutor
 }
 
 type SeriesRepoIterator interface {
@@ -22,7 +23,7 @@ func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.Insigh
 		if series.RepositoryCriteria == nil {
 			return s.allRepoIterator, nil
 		} else {
-			return nil, errors.New("search scoped repository series not implemented")
+			return NewRepoIteratorFromQuery(ctx, *series.RepositoryCriteria, s.repoQueryExecutor)
 		}
 
 	default:
@@ -30,9 +31,10 @@ func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.Insigh
 	}
 }
 
-func NewSeriesRepoIterator(allReposIterator *AllReposIterator, repoStore RepoStore) SeriesRepoIterator {
+func NewSeriesRepoIterator(allReposIterator *AllReposIterator, repoStore RepoStore, repoQueryExecutor query.RepoQueryExecutor) SeriesRepoIterator {
 	return &seriesRepoIterator{
-		allRepoIterator: allReposIterator,
-		repoStore:       repoStore,
+		allRepoIterator:   allReposIterator,
+		repoStore:         repoStore,
+		repoQueryExecutor: repoQueryExecutor,
 	}
 }

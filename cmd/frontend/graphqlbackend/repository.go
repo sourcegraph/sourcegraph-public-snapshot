@@ -188,7 +188,7 @@ type RepositoryCommitArgs struct {
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("commit", args.Rev)
 

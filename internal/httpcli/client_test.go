@@ -190,7 +190,7 @@ func TestNewCertPool(t *testing.T) {
 			certs: []string{cert},
 			assert: func(t testing.TB, cli *http.Client) {
 				pool := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
-				for _, have := range pool.Subjects() {
+				for _, have := range pool.Subjects() { //nolint:staticcheck // pool.Subjects, see https://github.com/golang/go/issues/46287
 					if bytes.Contains(have, []byte(subject)) {
 						return
 					}

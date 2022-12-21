@@ -12,7 +12,6 @@ import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 // eslint-disable-next-line no-restricted-imports
@@ -28,6 +27,8 @@ import {
     Tooltip,
     usePopoverContext,
 } from '@sourcegraph/wildcard'
+
+import { SyntaxHighlightedSearchQuery } from '../components'
 
 import styles from './SearchHistoryDropdown.module.scss'
 

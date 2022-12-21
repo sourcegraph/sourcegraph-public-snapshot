@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 
 import { FeatureFlagName } from './featureFlags'
-import { MockedFeatureFlagsProvider } from './FeatureFlagsProvider'
+import { MockedFeatureFlagsProvider } from './MockedFeatureFlagsProvider'
 import { withFeatureFlag } from './withFeatureFlag'
 
 describe('withFeatureFlag', () => {

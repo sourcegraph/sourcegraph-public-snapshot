@@ -165,9 +165,9 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                     {index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
-                            variant="warning"
+                            variant="note"
                             style={getTreeItemOffset(depth + 1)}
-                            error="Too many entries. Use search to find a specific file."
+                            error="Full list of files is too long to display. Use search to find specific file."
                         />
                     )}
                 </TreeLayerCell>

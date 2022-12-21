@@ -3,8 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link, H3, H4 } from '@sourcegraph/wildcard'
+import { Badge, Link, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import {

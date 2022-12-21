@@ -2,9 +2,8 @@ import React, { useCallback, useState } from 'react'
 
 import { useHistory } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Container, Button, Alert } from '@sourcegraph/wildcard'
+import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'

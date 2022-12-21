@@ -600,13 +600,6 @@ export class HovercardView implements TooltipView {
     }
 
     private render(root: Root, { hoverOrError, actionsOrError }: HoverData, props: BlobProps, pinned: boolean): void {
-        // (fkling) Not sure whether this check is necessary, but keeping it for now.
-        if (props.extensionsController === null) {
-            root.unmount()
-            this.root = null
-            return
-        }
-
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
