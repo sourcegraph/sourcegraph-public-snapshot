@@ -8,7 +8,7 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
