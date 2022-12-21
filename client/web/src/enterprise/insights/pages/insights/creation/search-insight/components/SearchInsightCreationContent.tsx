@@ -70,6 +70,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
     const hasFilledValue =
         values.series?.some(line => line.name !== '' || line.query !== '') ||
         values.repositories !== '' ||
+        values.repoQuery.query !== '' ||
         values.title !== ''
 
     return (

@@ -25,7 +25,7 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     title: '',
     step: 'months',
     stepValue: '2',
-    repoMode: 'urls-list',
+    repoMode: 'search-query',
     repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }

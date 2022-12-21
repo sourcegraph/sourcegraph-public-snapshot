@@ -15,6 +15,8 @@ import {
     InputErrorMessage,
     InputDescription,
     InputStatus,
+    useDebounce,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
@@ -238,7 +240,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     as={MonacoField}
                     queryState={queryState}
                     status={fieldStatus}
-                    placeholder="Example: repo:^github\.com/sourcegraph/sourcegraph$"
+                    placeholder="Example: repo:sourcegraph/*"
                     aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
                     className={styles.repoInput}
                     onChange={handleOnChange}
@@ -267,7 +269,13 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 <ul>
                     <li>
                         Hint: you can use regular expressions within each of the <Code weight="bold">repo:</Code>{' '}
-                        filters
+                        <Link
+                            to="/help/code_search/reference/queries#repository-search"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            filters
+                        </Link>
                     </li>
                     <li>
                         Data points will be automatically backfilled using the list of repositories resulting from
@@ -349,7 +357,7 @@ interface RepositoriesCountProps {
 function RepositoriesCount(props: RepositoriesCountProps): ReactElement {
     const { repoQuery, className } = props
 
-    const query = !repoQuery.input.disabled ? repoQuery.input.value.query : ''
+    const query = useDebounce(!repoQuery.input.disabled ? repoQuery.input.value.query : '', 500)
 
     const { data } = useQuery<InsightRepositoriesCountResult, InsightRepositoriesCountVariables>(
         REPOSITORIES_COUNT_GQL,

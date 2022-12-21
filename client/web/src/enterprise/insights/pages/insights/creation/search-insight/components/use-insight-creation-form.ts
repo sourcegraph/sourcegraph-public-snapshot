@@ -1,5 +1,6 @@
 import { QueryState } from '@sourcegraph/search'
 
+import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
     createDefaultEditSeries,
     EditableDataSeries,
@@ -15,7 +16,6 @@ import {
     useRepoFields,
 } from '../../../../../components'
 import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
-import { useExperimentalFeatures } from '../../../../../../../stores'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
@@ -26,7 +26,7 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     stepValue: '2',
     title: '',
     repositories: '',
-    repoMode: 'urls-list',
+    repoMode: 'search-query',
     repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }
