@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -103,17 +105,7 @@ func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*publi
 	}
 
 	if r.account.Data != nil {
-		raw, err := r.account.Data.Decrypt(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jsonValue := &JSONValue{raw}
-		// I could not find other way to convert the raw decrypted map[string]interface{} back to JSON string data
-		bytes, err := jsonValue.MarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		data, err := publicAccountDataFromJSON(bytes, r.account.ServiceType)
+		data, err := publicAccountDataFromJSON(&r.account)
 		if err != nil {
 			return nil, err
 		}
@@ -124,18 +116,6 @@ func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*publi
 	}
 
 	return nil, nil
-}
-
-type GitHubAccountData struct {
-	Username *string `json:"name,omitempty"`
-	Login    *string `json:"login,omitempty"`
-	URL      *string `json:"html_url,omitempty"`
-}
-
-type GitLabAccountData struct {
-	Username *string `json:"name,omitempty"`
-	Login    *string `json:"username,omitempty"`
-	URL      *string `json:"web_url,omitempty"`
 }
 
 type SAMLValues struct {
@@ -177,30 +157,23 @@ type OpenIDUserInfo struct {
 	Email *string `json:"email,omitempty"`
 }
 
-func publicAccountDataFromJSON(val []byte, serviceType string) (*extsvc.PublicAccountData, error) {
+func publicAccountDataFromJSON(acct *extsvc.Account) (*extsvc.PublicAccountData, error) {
+
 	// TODO: do we need Gerrit or other things in here?
-	switch serviceType {
+	switch acct.ServiceType {
 	case extsvc.TypeGitHub:
-		m := &GitHubAccountData{}
-		err := json.Unmarshal(val, &m)
-		if err != nil {
-			return nil, err
-		}
+		usr, _, _ := github.GetExternalAccountData(context.Background(), &acct.AccountData)
 		return &extsvc.PublicAccountData{
-			UserName: m.Username,
-			Login:    m.Login,
-			URL:      m.URL,
+			UserName: usr.Name,
+			Login:    usr.Login,
+			URL:      usr.URL,
 		}, nil
 	case extsvc.TypeGitLab:
-		m := &GitLabAccountData{}
-		err := json.Unmarshal(val, &m)
-		if err != nil {
-			return nil, err
-		}
+		usr, _, _ := gitlab.GetExternalAccountData(context.Background(), &acct.AccountData)
 		return &extsvc.PublicAccountData{
-			UserName: m.Username,
-			Login:    m.Login,
-			URL:      m.URL,
+			UserName: &usr.Name,
+			Login:    &usr.Username,
+			URL:      &usr.WebURL,
 		}, nil
 	case "saml": //TODO: define constants for SAML and OpenID Connect service types
 		m := &SAMLValues{}
