@@ -9,15 +9,25 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
+
+func getEnterpriseInit(logger log.Logger) func(database.DB) {
+	return func(ossDB database.DB) {
+		enterpriseDB := edb.NewEnterpriseDB(ossDB)
+
+		var err error
+		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+		if err != nil {
+			logger.Fatal("Failed to create sub-repo client", log.Error(err))
+		}
+	}
+
+}
 
 func main() {
 	liblog := log.Init(log.Resource{
@@ -31,22 +41,7 @@ func main() {
 
 	go enterprise_shared.SetAuthzProviders(observationCtx)
 
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "worker")
-	if err != nil {
-		logger.Fatal("failed to connect to frontend database", log.Error(err))
-	}
-
-	enterpriseDB := edb.NewEnterpriseDB(database.NewDB(log.Scoped("initDatabaseMemo", ""), db))
-
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
-	if err != nil {
-		logger.Fatal("Failed to create sub-repo client", log.Error(err))
-	}
-
-	if err := shared.Start(observationCtx, enterprise_shared.AdditionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
+	if err := shared.Start(observationCtx, enterprise_shared.AdditionalJobs, migrations.RegisterEnterpriseMigrators, getEnterpriseInit(logger)); err != nil {
 		logger.Fatal(err.Error())
 	}
 }
