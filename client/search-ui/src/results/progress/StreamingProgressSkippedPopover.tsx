@@ -19,9 +19,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
 
