@@ -55,6 +55,10 @@ func (wr *Router) handleBitbucketServerWebhook(logger log.Logger, w http.Respons
 	defer r.Body.Close()
 	if secret != "" {
 		sig := r.Header.Get("X-Hub-Signature")
+		if sig == "" {
+			http.Error(w, "X-Hub-Signature header missing", http.StatusBadRequest)
+			return
+		}
 		if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
 			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
 			return
