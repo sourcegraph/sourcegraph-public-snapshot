@@ -108,9 +108,6 @@ Available commands in `sg.config.yaml`:
 * loki
 * monitoring-generator
 * oss-frontend
-* oss-gitserver-0
-* oss-gitserver-1
-* oss-gitserver-template
 * oss-repo-updater
 * oss-symbols
 * oss-web: Open source version of the web app

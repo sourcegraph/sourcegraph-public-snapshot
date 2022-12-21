@@ -48,7 +48,6 @@ type SubRepoPermsStore interface {
 	DeleteByUser(ctx context.Context, userID int32) error
 }
 
-
 // subRepoPermsStore is the unified interface for managing sub repository
 // permissions explicitly in the database. It is concurrency-safe and maintains
 // data consistency over sub_repo_permissions table.

@@ -75,9 +75,7 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-type EnterpriseInit func(db database.DB)
-
-func Main(enterpriseInit EnterpriseInit) {
+func Main() {
 	ctx := context.Background()
 
 	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
@@ -127,10 +125,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	err = keyring.Init(ctx)
 	if err != nil {
 		logger.Fatal("failed to initialise keyring", log.Error(err))
-	}
-
-	if enterpriseInit != nil {
-		enterpriseInit(db)
 	}
 
 	if err != nil {

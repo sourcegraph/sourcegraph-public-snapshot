@@ -39,7 +39,7 @@ func main() {
 		logger.Fatal("failed to connect to frontend database", log.Error(err))
 	}
 
-    enterpriseDB := edb.NewEnterpriseDB(database.NewDB(log.Scoped("initDatabaseMemo", ""), db))
+	enterpriseDB := edb.NewEnterpriseDB(database.NewDB(log.Scoped("initDatabaseMemo", ""), db))
 
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
 	if err != nil {

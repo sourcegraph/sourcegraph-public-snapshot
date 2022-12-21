@@ -10,5 +10,5 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	shared.Main(nil)
+	shared.Main()
 }
