@@ -315,7 +315,7 @@ func buildFilterText(raw string) string {
 	return fmt.Sprintf("^%s$", quoted)
 }
 
-func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) {
+func AddFilter(query BasicQuery, field, value string, negated bool) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", err
@@ -327,12 +327,16 @@ func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) 
 		modified = append(modified, searchquery.Parameter{
 			Field:      field,
 			Value:      buildFilterText(value),
-			Negated:    false,
+			Negated:    negated,
 			Annotation: searchquery.Annotation{},
 		})
 		return basic.MapParameters(modified)
 	})
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
+}
+
+func addFilterSimple(query BasicQuery, field, value string) (BasicQuery, error) {
+	return AddFilter(query, field, value, false)
 }
 
 func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {

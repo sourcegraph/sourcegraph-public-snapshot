@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-enry/go-enry/v2/regex"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -79,10 +82,8 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct {
-	p              store.SeriesPoint
-	previous       *store.SeriesPoint
-	series         types.InsightViewSeries
-	appliedFilters types.InsightViewFilters
+	p                store.SeriesPoint
+	diffGenerateReqs *pointDiffReqirements
 }
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
@@ -99,41 +100,61 @@ func isNilOrEmpty(s *string) bool {
 }
 
 func (i insightsDataPointResolver) DiffQuery() (*string, error) {
-	if len(i.appliedFilters.SearchContexts) > 1 {
+	if i.diffGenerateReqs == nil {
+		return nil, nil
+	}
+	return diffQueryFunc(*i.diffGenerateReqs, i.p)
+}
+
+type pointDiffReqirements struct {
+	Previous         *store.SeriesPoint
+	Filters          types.InsightViewFilters
+	RepoList         []string
+	RepoSearch       *string
+	SearchQuery      string
+	GenerationMethod types.GenerationMethod
+}
+
+func diffQueryFunc(req pointDiffReqirements, point store.SeriesPoint) (*string, error) {
+	if len(req.Filters.SearchContexts) > 1 {
 		return nil, errors.New("invalid search context")
 	}
 
 	includeRepoFilter := ""
-	if !isNilOrEmpty(i.appliedFilters.IncludeRepoRegex) {
-		includeRepoFilter = "repo:" + *i.appliedFilters.IncludeRepoRegex
+	if !isNilOrEmpty(req.Filters.IncludeRepoRegex) {
+		includeRepoFilter = "repo:" + *req.Filters.IncludeRepoRegex
 	}
 	excludeRepoFilter := ""
-	if !isNilOrEmpty(i.appliedFilters.ExcludeRepoRegex) {
-		excludeRepoFilter = "-repo:" + *i.appliedFilters.ExcludeRepoRegex
+	if !isNilOrEmpty(req.Filters.ExcludeRepoRegex) {
+		excludeRepoFilter = "-repo:" + *req.Filters.ExcludeRepoRegex
 	}
 
 	filtersRepoScope := strings.TrimSpace(fmt.Sprintf("%s %s", includeRepoFilter, excludeRepoFilter))
 
 	searchContext := ""
-	if len(i.appliedFilters.SearchContexts) == 1 {
-		if i.appliedFilters.SearchContexts[0] != "" {
-			searchContext = "context:" + i.appliedFilters.SearchContexts[0]
+	if len(req.Filters.SearchContexts) == 1 {
+		if req.Filters.SearchContexts[0] != "" {
+			searchContext = "context:" + req.Filters.SearchContexts[0]
 		}
 	}
 	seriesRepoFilter := ""
-	if len(i.series.Repositories) > 0 {
-		seriesRepoFilter = fmt.Sprintf("^%s$", strings.Join(i.series.Repositories, "|"))
-	} else if i.series.RepositoryCriteria != nil {
-		seriesRepoFilter = *i.series.RepositoryCriteria
+	if len(req.RepoList) > 0 {
+		quoted := []string{}
+		for i := 0; i < len(req.RepoList); i++ {
+			quoted = append(quoted, regex.QuoteMeta(req.RepoList[i]))
+		}
+		seriesRepoFilter = fmt.Sprintf("repo:^(%s)$", strings.Join(quoted, "|"))
+	} else if req.RepoSearch != nil {
+		seriesRepoFilter = regex.QuoteMeta(*req.RepoSearch)
 	}
 
 	repoFilters := strings.TrimSpace(fmt.Sprintf("%s %s", filtersRepoScope, seriesRepoFilter))
 
 	afterFilter := ""
-	if i.previous != nil {
-		afterFilter = "after:" + i.previous.Time.UTC().Format(time.RFC3339)
+	if req.Previous != nil {
+		afterFilter = "after:" + req.Previous.Time.UTC().Format(time.RFC3339)
 	}
-	beforeFilter := "before:" + i.p.Time.UTC().Format(time.RFC3339)
+	beforeFilter := "before:" + point.Time.UTC().Format(time.RFC3339)
 
 	timeFilter := strings.TrimSpace(fmt.Sprintf("%s %s", beforeFilter, afterFilter))
 
@@ -141,11 +162,15 @@ func (i insightsDataPointResolver) DiffQuery() (*string, error) {
 		searchContext,
 		repoFilters,
 		timeFilter,
-		i.series.Query,
+		req.SearchQuery,
 	)
-	query = strings.TrimSpace(query)
+	plan, err := querybuilder.ParseQuery(query, "literal")
+	if err != nil {
+		return nil, err
+	}
+	newQuery := searchquery.StringHuman(plan.ToQ())
+	return &newQuery, nil
 
-	return &query, nil
 }
 
 type statusInfo struct {
@@ -277,7 +302,17 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 		if i > 0 {
 			previousPoint = &modifiedPoints[i-1]
 		}
-		pointResolver := insightsDataPointResolver{p: modifiedPoints[i], previous: previousPoint, series: p.series, appliedFilters: p.filters}
+		pointResolver := insightsDataPointResolver{
+			p: modifiedPoints[i],
+			diffGenerateReqs: &pointDiffReqirements{
+				Previous:         previousPoint,
+				Filters:          p.filters,
+				RepoList:         p.series.Repositories,
+				RepoSearch:       p.series.RepositoryCriteria,
+				SearchQuery:      p.series.Query,
+				GenerationMethod: p.series.GenerationMethod,
+			},
+		}
 		resolvers = append(resolvers, pointResolver)
 	}
 

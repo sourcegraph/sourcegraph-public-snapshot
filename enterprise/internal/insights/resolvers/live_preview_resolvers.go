@@ -47,7 +47,6 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 	}
 
 	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
-	var generatedSeries []query.GeneratedTimeSeries
 
 	// get a consistent time to use across all preview series
 	previewTime := time.Now().UTC()
@@ -66,20 +65,22 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 	if len(repos) > maxPreviewRepos {
 		return nil, errors.Newf("live preview is limited to %d repositories", maxPreviewRepos)
 	}
-
+	foundData := false
 	for _, seriesArgs := range args.Input.Series {
 
 		var series []query.GeneratedTimeSeries
 		var err error
-
+		generationMethod := types.Search
 		if seriesArgs.GeneratedFromCaptureGroups {
 			if seriesArgs.GroupBy != nil {
+				generationMethod = types.MappingCompute
 				executor := query.NewComputeExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
 				if err != nil {
 					return nil, err
 				}
 			} else {
+				generationMethod = types.SearchCompute
 				executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
 				if err != nil {
@@ -93,14 +94,18 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 				return nil, err
 			}
 		}
-		generatedSeries = append(generatedSeries, series...)
+		for i := range series {
+			foundData = foundData || len(series[i].Points) > 0
+			resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{
+				series:           &series[i],
+				repoList:         args.Input.RepositoryScope.Repositories,
+				repoSearch:       args.Input.RepositoryScope.RepositoryCriteria,
+				searchQuery:      seriesArgs.Query,
+				generationMethod: generationMethod,
+			})
+		}
 	}
 
-	foundData := false
-	for i := range generatedSeries {
-		foundData = foundData || len(generatedSeries[i].Points) > 0
-		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
-	}
 	if !foundData {
 		return nil, errors.Newf("Data for %s not found", pluralize("this repository", "these repositories", len(repos)))
 	}
@@ -116,7 +121,11 @@ func pluralize(singular, plural string, n int) string {
 }
 
 type searchInsightLivePreviewSeriesResolver struct {
-	series *query.GeneratedTimeSeries
+	series           *query.GeneratedTimeSeries
+	repoList         []string
+	repoSearch       *string
+	searchQuery      string
+	generationMethod types.GenerationMethod
 }
 
 func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]graphqlbackend.InsightsDataPointResolver, error) {
@@ -135,8 +144,16 @@ func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]
 				Value:    float64(s.series.Points[i-1].Count),
 			}
 		}
-		//TODO fix series
-		resolvers = append(resolvers, &insightsDataPointResolver{p: point, previous: previous, series: types.InsightViewSeries{}})
+		pointResolver := &insightsDataPointResolver{
+			p: point,
+			diffGenerateReqs: &pointDiffReqirements{
+				Previous:         previous,
+				RepoList:         s.repoList,
+				RepoSearch:       s.repoSearch,
+				SearchQuery:      s.searchQuery,
+				GenerationMethod: s.generationMethod,
+			}}
+		resolvers = append(resolvers, pointResolver)
 	}
 
 	return resolvers, nil
