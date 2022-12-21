@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestBitbucketServerHandler(t *testing.T) {
@@ -40,4 +41,65 @@ func TestBitbucketServerHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)
+}
+
+func TestBitbucketServerNameFromEvent(t *testing.T) {
+	mkEvent := func(name string, href string) *bitbucketserver.PushEvent {
+		return &bitbucketserver.PushEvent{
+			Repository: bitbucketserver.Repo{
+				Links: bitbucketserver.RepoLinks{
+					Clone: []bitbucketserver.Link{
+						{
+							Href: "https://blah.bb.com/sourcegraph/sourcegraph",
+							Name: name,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name    string
+		event   *bitbucketserver.PushEvent
+		want    api.RepoName
+		wantErr error
+	}{
+		{
+			name:  "valid event",
+			event: mkEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph"),
+			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+		},
+		{
+			name:  "valid event with port",
+			event: mkEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph"),
+			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+		},
+		{
+			name:  "valid event with port and .git",
+			event: mkEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph.git"),
+			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+		},
+		{
+			name:  "valid event with .git",
+			event: mkEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph.git"),
+			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+		},
+		{
+			name:    "nil event",
+			event:   nil,
+			want:    api.RepoName(""),
+			wantErr: errors.New("URL for repository not found"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := bitbucketServerNameFromEvent(tt.event)
+			if tt.wantErr != nil {
+				assert.EqualError(t, tt.wantErr, err.Error())
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
