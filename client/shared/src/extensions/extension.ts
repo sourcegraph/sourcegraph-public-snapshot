@@ -3,7 +3,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '../schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 
-import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'
+import { ExtensionManifest } from './extensionManifest'
 
 /**
  * The default fields in the {@link ConfiguredExtension} manifest (i.e., the default value of the
@@ -47,26 +47,6 @@ export interface ConfiguredRegistryExtension<
 
     /** The raw extension manifest (JSON), or null if there is none. */
     readonly rawManifest: string | null
-}
-
-type MinimalRegistryExtension = Pick<GQL.IRegistryExtension, 'extensionID' | 'id' | 'url' | 'viewerCanAdminister'> & {
-    manifest: { raw: string } | null
-}
-
-/**
- * Converts to a {@link ConfiguredRegistryExtension} value.
- *
- * @template X the extension type
- */
-export function toConfiguredRegistryExtension<X extends MinimalRegistryExtension>(
-    extension: X
-): ConfiguredRegistryExtension<X> {
-    return {
-        id: extension.extensionID,
-        manifest: extension.manifest ? parseExtensionManifestOrError(extension.manifest.raw) : null,
-        rawManifest: extension?.manifest?.raw || null,
-        registryExtension: extension,
-    }
 }
 
 /** Reports whether the given extension is enabled in the settings. */

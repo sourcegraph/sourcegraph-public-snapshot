@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -55,7 +54,7 @@ func ExtensionRegistryReadEnabled() error {
 		return nil
 	}
 
-	return ExtensionRegistryWriteEnabled()
+	return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
 }
 
 // The extensions list query (`extensionRegistry.extensions`) will be called by the native
@@ -77,16 +76,8 @@ func ExtensionRegistryListAllowedExtensions() map[string]bool {
 
 	if err != nil {
 		return codeIntelExtensions
-	} else {
-		// nil means all extensions are allowed
-		return nil
-	}
-}
-
-func ExtensionRegistryWriteEnabled() error {
-	if !conf.ExperimentalFeatures().EnableLegacyExtensions {
-		return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
 	}
 
+	// nil means all extensions are allowed
 	return nil
 }

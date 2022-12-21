@@ -225,7 +225,6 @@ describe('Search', () => {
                             extensionRegistry: {
                                 __typename: 'ExtensionRegistry',
                                 extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
                             },
                         }),
                     })

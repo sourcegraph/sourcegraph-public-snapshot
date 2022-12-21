@@ -184,12 +184,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                           ))
                         : hasEnoughTimePassed && (
                               <div className={classNames('ml-2', styles.item)}>
-                                  <small className="text-muted">
-                                      No information from extensions available.{' '}
-                                      <Link to="/extensions">
-                                          Find extensions in the Sourcegraph extension registry
-                                      </Link>
-                                  </small>
+                                  <small className="text-muted">No information from extensions available.</small>
                               </div>
                           )}
                 </div>
