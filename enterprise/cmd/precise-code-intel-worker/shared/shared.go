@@ -86,9 +86,8 @@ func Main() {
 	close(ready)
 
 	// Initialize sub-repo permissions client
-	database.SubRepoPermsWith = edb.SubRepoPermsWith
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}

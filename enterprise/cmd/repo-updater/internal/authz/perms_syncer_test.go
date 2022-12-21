@@ -304,10 +304,10 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	})
 
-	subRepoPerms := database.NewMockSubRepoPermsStore()
+	subRepoPerms := edb.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -619,9 +619,9 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
-	subRepoPerms := database.NewMockSubRepoPermsStore()
+	subRepoPerms := edb.NewMockSubRepoPermsStore()
 
-	db := database.NewMockDB()
+	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)

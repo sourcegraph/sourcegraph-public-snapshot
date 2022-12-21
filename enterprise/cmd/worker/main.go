@@ -39,9 +39,9 @@ func main() {
 		logger.Fatal("failed to connect to frontend database", log.Error(err))
 	}
 
-	database.SubRepoPermsWith = edb.SubRepoPermsWith
+    enterpriseDB := edb.NewEnterpriseDB(database.NewDB(log.Scoped("initDatabaseMemo", ""), db))
 
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
