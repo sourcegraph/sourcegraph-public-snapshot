@@ -587,7 +587,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(insightTx, r.scheduler, r.insightEnqueuer)
 
 	for _, series := range args.Input.DataSeries {
 		if err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series); err != nil {
@@ -689,7 +689,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, tx, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(tx, r.scheduler, r.insightEnqueuer)
 
 	if captureGroupInsight {
 		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, seriesFillStrategy); err != nil {
@@ -1283,7 +1283,7 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 
 type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 
-func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
+func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
