@@ -160,7 +160,7 @@ func sign(t *testing.T, message, secret []byte) string {
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }
 
-func Test_githubNameFromEvent(t *testing.T) {
+func TestGithubNameFromEvent(t *testing.T) {
 	tests := []struct {
 		name    string
 		event   *gh.PushEvent
