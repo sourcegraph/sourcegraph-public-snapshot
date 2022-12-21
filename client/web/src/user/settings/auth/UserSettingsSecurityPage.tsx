@@ -37,8 +37,7 @@ import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../bac
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
-type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
-export type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
+export type UserExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'publicAccountData'>
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
@@ -48,7 +47,7 @@ export type AccountByServiceID = Partial<Record<string, UserExternalAccount>>
 interface UserExternalAccountsResult {
     user: {
         externalAccounts: {
-            nodes: MinExternalAccount[]
+            nodes: UserExternalAccount[]
         }
     }
 }
