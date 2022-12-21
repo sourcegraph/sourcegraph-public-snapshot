@@ -106,8 +106,8 @@ func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *Permiss
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
 		dbutil.NullTimeColumn(job.ProcessAfter),
-		dbutil.NewNullInt(int(job.RepositoryID)),
-		dbutil.NewNullInt(int(job.UserID)),
+		dbutil.NewNullInt(job.RepositoryID),
+		dbutil.NewNullInt(job.UserID),
 		job.HighPriority,
 		job.InvalidateCaches,
 		sqlf.Join(PermissionSyncJobColumns, ", "),

@@ -20,7 +20,7 @@ import (
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
 func handleGitHubUserAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
-	return webhooks.Handler(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+	return webhooks.Handler(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -73,9 +73,12 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 	}
 
 	store := db.PermissionSyncJobs()
-	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
+	jobOpts := database.PermissionSyncJobOpts{
+		HighPriority:     true,
+		InvalidateCaches: opts.InvalidateCaches,
+	}
 	for _, acc := range accs {
-		if err := store.CreateUserSyncJob(ctx, int32(acc.UserID), jobOpts); err != nil {
+		if err := store.CreateUserSyncJob(ctx, acc.UserID, jobOpts); err != nil {
 			return err
 		}
 	}
