@@ -17,6 +17,7 @@
     - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
+    - SubRepoPermsStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -60,7 +61,6 @@
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
-    - SubRepoPermsStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
