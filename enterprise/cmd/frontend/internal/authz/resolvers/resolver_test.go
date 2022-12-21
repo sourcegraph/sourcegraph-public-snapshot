@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -603,14 +602,6 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
 		})
 	})
-}
-
-type fakeRepoupdaterClient struct {
-	mockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
-}
-
-func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
-	return c.mockSchedulePermsSync(ctx, args)
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
