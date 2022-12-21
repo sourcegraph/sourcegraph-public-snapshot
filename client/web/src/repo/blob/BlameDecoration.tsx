@@ -19,13 +19,13 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import { useBlameRecencyColor } from './BlameRecency'
 
 import styles from './BlameDecoration.module.scss'
-import { UserAvatar } from '../../user/UserAvatar'
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
 let closeTimeoutId: NodeJS.Timeout | null = null
@@ -144,12 +144,11 @@ export const BlameDecoration: React.FunctionComponent<{
     const displayInfo = blameHunk.displayInfo
 
     const isFirstInHunk = blameHunk?.startLine === line ?? false
-    const isLastInHunk = blameHunk?.endLine - 1 === line ?? false
 
     return (
         <div className={classNames(styles.blame)}>
             <div
-                className={classNames(styles.recency, isLastInHunk ? styles.recencyLastInHunk : null)}
+                className={classNames(styles.recency, isFirstInHunk ? styles.recencyFirstInHunk : null)}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={{ backgroundColor: recencyColor }}
             />

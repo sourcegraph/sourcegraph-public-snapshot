@@ -9,12 +9,16 @@
 }
 
 .recency {
-    height: 1.5rem;
+    // We need to overlap the border-top
+    height: calc(1.5rem + 1px);
+    top: -1px;
+    position: relative;
     flex: 0 0 5px;
 }
 
-.recency-last-in-hunk {
-    height: calc(1.5rem - 1px);
+.recency-first-in-hunk {
+    height: calc(1.5rem) !important;
+    top: 0 !important
 }
 
 .popover {
@@ -37,14 +41,12 @@
             min-height: 1rem;
             height: 1rem;
             font-size: 0.5rem;
-
-            &:hover {
-                text-decoration: none;
-            }
         }
 
         .author {
             margin: 0 0.5rem;
+            display: inline-block;
+            text-decoration: none;
         }
 
         .content, .author, .date {
