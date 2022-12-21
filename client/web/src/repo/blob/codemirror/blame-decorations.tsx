@@ -58,7 +58,7 @@ class BlameDecorationWidget extends WidgetType {
         public view: EditorView,
         public readonly hunk: BlameHunk | undefined,
         public readonly line: number,
-        // We can not access the light theme from the view props beacuse we need
+        // We can not access the light theme from the view props because we need
         // the widget to re-render when it updates.
         public readonly isLightTheme: boolean
     ) {
