@@ -3,7 +3,7 @@
  * text document decorations to CodeMirror decorations. Text document
  * decorations are provided via the {@link showGitBlameDecorations} facet.
  */
-import { Facet, RangeSet } from '@codemirror/state'
+import { Extension, Facet, RangeSet } from '@codemirror/state'
 import {
     Decoration,
     DecorationSet,
@@ -28,6 +28,8 @@ import { BlameDecoration } from '../BlameDecoration'
 import { blobPropsFacet } from '.'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
+const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
+
 const highlightedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'highlighted-line'
 })()
@@ -102,7 +104,7 @@ class BlameDecorationWidget extends WidgetType {
 /**
  * Facet to show git blame decorations.
  */
-export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
+const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     enables: facet => [
         hoveredLine,
@@ -130,18 +132,32 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                     const widgets = []
                     const hunks = view.state.facet(facet)
                     for (const { from, to } of view.visibleRanges) {
+                        let nextHunkDecorationLineRenderedAt = -1
                         for (let position = from; position <= to; ) {
                             const line = view.state.doc.lineAt(position)
                             const matchingHunk = hunks.find(
                                 hunk => line.number >= hunk.startLine && line.number < hunk.endLine
                             )
+
+                            const isStartOfHunk = matchingHunk?.startLine === line.number
+                            if (
+                                (isStartOfHunk && line.number !== 1) ||
+                                nextHunkDecorationLineRenderedAt === line.from
+                            ) {
+                                widgets.push(startOfHunkDecoration.range(line.from))
+
+                                // When we found a hunk, we already know when the next one will start even if this
+                                // hunk was not loaded yet.
+                                //
+                                // We mark this as rendered in `nextHunkDecorationLineRenderedAt` so that the next
+                                // startLine can be skipped if it was rendered already
+                                if (matchingHunk) {
+                                    nextHunkDecorationLineRenderedAt = view.state.doc.line(matchingHunk.endLine).from
+                                }
+                            }
+
                             const decoration = Decoration.widget({
-                                widget: new BlameDecorationWidget(
-                                    view,
-                                    matchingHunk,
-                                    line.number,
-                                    matchingHunk ? matchingHunk.startLine === line.number : false
-                                ),
+                                widget: new BlameDecorationWidget(view, matchingHunk, line.number),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
@@ -199,7 +215,7 @@ const blameGutterElement = new (class extends GutterMarker {
     }
 })()
 
-export const showBlameGutter = Facet.define<boolean>({
+const showBlameGutter = Facet.define<boolean>({
     combine: value => value.flat(),
     enables: [
         // Render gutter with no content only to create a column with specified background.
@@ -223,3 +239,24 @@ export const showBlameGutter = Facet.define<boolean>({
         }),
     ],
 })
+
+function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Extension {
+    return EditorView.theme({
+        '.cm-line': {
+            // When blame is
+            lineHeight: isBlameVisible ? '1.5rem' : '1rem',
+            // Avoid jumping when blame decorations are streamed in because we use
+            // a border
+            borderTop: isBlameVisible ? '1px solid transparent' : 'none',
+        },
+    })
+}
+
+export const createBlameDecorationsExtension = (
+    isBlameVisible: boolean,
+    blameHunks: BlameHunk[] | undefined
+): Extension => [
+    blameLineStyles({ isBlameVisible }),
+    isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
+    blameHunks ? showGitBlameDecorations.of(blameHunks) : [],
+]

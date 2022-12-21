@@ -1,5 +1,11 @@
 import { useMemo } from 'react'
 
+// We use an exponential scale to get more diverse colors for more recent changes.
+//
+// The values are sampled from the following function:
+//   y=0.005*1.7^x
+const STEPS = [0.008, 0.0144, 0.0245, 0.0417, 0.0709, 0.1206, 0.2051, 0.3487, 0.5929, 1]
+
 const COLORS = [
     'var(--oc-violet-0)',
     'var(--oc-violet-1)',
@@ -42,6 +48,9 @@ export function useBlameRecencyColor(
         // We should probably not use a linear scale here :shrug:
         const recency = Math.min(Math.max((now - commit.getTime()) / (now - start), 0), 1)
 
-        return colors[Math.ceil(recency * 10) - 1]
+        const index = STEPS.findIndex(step => recency <= step)
+        console.log({ index })
+
+        return colors[index]
     }, [commit, creation, isLightTheme])
 }
