@@ -97,7 +97,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         onExtendTimeout,
     } = props
 
-    const onBarHoverDebounced = useDebouncedCallback(onBarHover, 1000)
+    const onBarHoverDebounced = useDebouncedCallback(onBarHover, 300)
 
     if (loading) {
         return (
