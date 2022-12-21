@@ -21,10 +21,15 @@ tr:global(.highlighted) {
 }
 
 .wrapper {
-    height: 1rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
 
     &.visible {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: var(--blame-decoration-width);
     }
+}
+
+.line-number {
+    line-height: 1.5rem;
 }

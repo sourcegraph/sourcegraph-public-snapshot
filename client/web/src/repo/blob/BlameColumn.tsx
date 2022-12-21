@@ -75,7 +75,10 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                             cell.classList.add(styles.decoration)
 
                             // add line number cell extra horizontal padding
-                            row.querySelector('td.line')?.classList.add('px-2')
+                            const line = row.querySelector('td.line')
+                            if (line) {
+                                line.classList.add('px-2', styles.lineNumber)
+                            }
 
                             // add decorations wrapper
                             const wrapper = document.createElement('div')
