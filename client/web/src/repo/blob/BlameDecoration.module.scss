@@ -21,7 +21,7 @@
 
 .recency-first-in-hunk {
     height: calc(1.5rem) !important;
-    top: 0 !important
+    top: 0 !important;
 }
 
 .popover {
@@ -52,7 +52,9 @@
             text-decoration: none;
         }
 
-        .content, .author, .date {
+        .content,
+        .author,
+        .date {
             white-space: pre;
             color: var(--text-muted);
             font-family: var(--font-family-base);
