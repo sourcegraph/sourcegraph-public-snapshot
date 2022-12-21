@@ -16,7 +16,7 @@ import (
 func checkConnection(rawURL string) error {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return errors.Wrap(err, "connection check failed")
+		return errors.Wrap(err, "invalid or bad url for connection check")
 	}
 
 	// Best effort at finding a hostname. For example if rawURL is sourcegraph.com, then u.Host is
