@@ -45,7 +45,7 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	}
 
 	eps, err := c.Map.Endpoints()
-	if err == endpoint.IntentionallyEmpty {
+	if errors.Is(err, endpoint.IntentionallyEmpty) {
 		return nil, nil
 	}
 	if err != nil {
@@ -66,7 +66,7 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	subset := repos[:0]
 	for _, r := range repos {
 		assigned, err := c.Map.Get(string(r.Name))
-		if err == endpoint.IntentionallyEmpty {
+		if errors.Is(err, endpoint.IntentionallyEmpty) {
 			continue
 		}
 		if err != nil {

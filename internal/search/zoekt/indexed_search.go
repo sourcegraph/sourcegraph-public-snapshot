@@ -211,7 +211,7 @@ func PartitionRepos(
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	list, err := zoektStreamer.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-	if err == endpoint.IntentionallyEmpty {
+	if errors.Is(err, endpoint.IntentionallyEmpty) {
 		// If it's intentional that no Zoekt instances are configured, just treat it as no repos are
 		// indexed, not an error.
 		err = nil

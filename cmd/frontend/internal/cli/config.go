@@ -523,7 +523,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
-	zoektsIntentionallyEmpty := err == endpoint.IntentionallyEmpty
+	zoektsIntentionallyEmpty := errors.Is(err, endpoint.IntentionallyEmpty)
 	if zoektsIntentionallyEmpty {
 		err = nil
 	}

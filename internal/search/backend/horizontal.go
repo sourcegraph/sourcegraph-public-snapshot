@@ -616,7 +616,7 @@ func (s *HorizontalSearcher) String() string {
 // searchers returns the list of clients to aggregate over.
 func (s *HorizontalSearcher) searchers() (map[string]zoekt.Streamer, error) {
 	eps, err := s.Map.Endpoints()
-	if err == endpoint.IntentionallyEmpty {
+	if errors.Is(err, endpoint.IntentionallyEmpty) {
 		return map[string]zoekt.Streamer{}, nil
 	}
 	if err != nil {
