@@ -160,6 +160,27 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
+func (r *repositoryMirrorInfoResolver) CorruptedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if info.CorruptedAt.IsZero() {
+		return nil, err
+	}
+	return &gqlutil.DateTime{Time: info.CorruptedAt}, nil
+}
+
+func (r *repositoryMirrorInfoResolver) CorruptionLog(ctx context.Context) ([]types.RepoCorruptionLog, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return info.CorruptionLog, nil
+}
+
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
