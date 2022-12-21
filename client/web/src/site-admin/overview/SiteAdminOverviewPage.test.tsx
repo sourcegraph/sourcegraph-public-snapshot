@@ -2,7 +2,7 @@ import { waitFor } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
 
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteUsagePeriodFields } from '../../graphql-operations'
 

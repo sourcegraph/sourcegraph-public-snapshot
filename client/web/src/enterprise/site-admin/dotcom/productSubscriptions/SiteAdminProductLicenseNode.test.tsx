@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 

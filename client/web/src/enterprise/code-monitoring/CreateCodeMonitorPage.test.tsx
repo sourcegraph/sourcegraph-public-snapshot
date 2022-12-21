@@ -6,7 +6,7 @@ import sinon from 'sinon'
 
 import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'

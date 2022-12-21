@@ -4,7 +4,7 @@ import { NEVER } from 'rxjs'
 
 import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
