@@ -5805,6 +5805,18 @@ type ExternalAccount implements Node {
     Only site admins may query this field.
     """
     accountData: JSONValue
+    """
+    Public provider-specific data about the external account.
+    Only users that are linked to the external account and site admins
+    may query this field.
+    """
+    publicAccountData: PublicExternalAccountData
+}
+
+type PublicExternalAccountData {
+    username: String
+    login: String
+    url: String
 }
 
 """
