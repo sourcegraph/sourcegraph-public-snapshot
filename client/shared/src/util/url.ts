@@ -597,14 +597,11 @@ export const buildCloudTrialURL = (
         url.searchParams.append('p', product)
     }
     // User name/email to prefill Cloud Trial form with
-    if (authenticatedUser) {
-        if (authenticatedUser.email) {
-            url.searchParams.append('email', authenticatedUser.email)
-        }
-        if (authenticatedUser.displayName) {
-            const name = authenticatedUser.displayName.replace(' ', '_')
-            url.searchParams.append('name', name)
-        }
+    if (authenticatedUser?.email) {
+        url.searchParams.append('email', authenticatedUser.email)
+    }
+    if (authenticatedUser?.displayName) {
+        url.searchParams.append('name', authenticatedUser.displayName)
     }
 
     return url.toString()
