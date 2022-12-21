@@ -13,7 +13,12 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { GitBlameResult, GitBlameVariables } from '../../graphql-operations'
+import {
+    FirstCommitDateResult,
+    FirstCommitDateVariables,
+    GitBlameResult,
+    GitBlameVariables,
+} from '../../graphql-operations'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -65,11 +70,16 @@ const fetchBlameViaGraphQL = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<{ current: BlameHunk[] | undefined }> =>
+    }): Observable<{ current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
             gql`
                 query GitBlame($repo: String!, $rev: String!, $path: String!) {
                     repository(name: $repo) {
+                        firstEverCommit {
+                            author {
+                                date
+                            }
+                        }
                         commit(rev: $rev) {
                             blob(path: $path) {
                                 blame(startLine: 0, endLine: 0) {
@@ -102,9 +112,18 @@ const fetchBlameViaGraphQL = memoizeObservable(
             { repo: repoName, rev: revision, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => repository?.commit?.blob?.blame),
-            map(hunks => (hunks ? hunks.map(blame => addDisplayInfoForHunk(blame, sourcegraphURL)) : undefined)),
-            map(hunks => ({ current: hunks }))
+            map(({ repository }) => {
+                const hunks = repository?.commit?.blob?.blame
+                const firstCommitDate = repository?.firstEverCommit?.author?.date
+                if (hunks) {
+                    return {
+                        current: hunks.map(blame => addDisplayInfoForHunk(blame, sourcegraphURL)),
+                        firstCommitDate: firstCommitDate ? new Date(firstCommitDate) : undefined,
+                    }
+                }
+
+                return { current: undefined, firstCommitDate: undefined }
+            })
         ),
     makeRepoURI
 )
@@ -137,55 +156,85 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<{ current: BlameHunk[] | undefined }> =>
-        new Observable<{ current: BlameHunk[] | undefined }>(subscriber => {
-            const assembledHunks: BlameHunk[] = []
-            const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
-            fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'Sourcegraph',
-                    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-                },
-                onmessage(event) {
-                    if (event.event === 'hunk') {
-                        const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
-                        for (const rawHunk of rawHunks) {
-                            const hunk: Omit<BlameHunk, 'displayInfo'> = {
-                                startLine: rawHunk.startLine,
-                                endLine: rawHunk.endLine,
-                                message: rawHunk.message,
-                                rev: rawHunk.commitID,
-                                author: {
-                                    date: rawHunk.author.Date,
-                                    person: {
-                                        email: rawHunk.author.Email,
-                                        displayName: rawHunk.author.Name,
-                                        user: null,
+    }): Observable<{ current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }> =>
+        new Observable<{ current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }>(subscriber => {
+            ;(async function () {
+                // TODO: Fetch the first commit in parallel to the blame hunks.
+                const firstCommitDate = await fetchFirstCommitDate(repoName)
+
+                const assembledHunks: BlameHunk[] = []
+                const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
+                await fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'Sourcegraph',
+                        'X-Sourcegraph-Should-Trace':
+                            new URLSearchParams(window.location.search).get('trace') || 'false',
+                    },
+                    onmessage(event) {
+                        if (event.event === 'hunk') {
+                            const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
+                            for (const rawHunk of rawHunks) {
+                                const hunk: Omit<BlameHunk, 'displayInfo'> = {
+                                    startLine: rawHunk.startLine,
+                                    endLine: rawHunk.endLine,
+                                    message: rawHunk.message,
+                                    rev: rawHunk.commitID,
+                                    author: {
+                                        date: rawHunk.author.Date,
+                                        person: {
+                                            email: rawHunk.author.Email,
+                                            displayName: rawHunk.author.Name,
+                                            user: null,
+                                        },
                                     },
-                                },
-                                commit: {
-                                    url: rawHunk.commit.url,
-                                    parents: rawHunk.commit.parents ? rawHunk.commit.parents.map(oid => ({ oid })) : [],
-                                },
+                                    commit: {
+                                        url: rawHunk.commit.url,
+                                        parents: rawHunk.commit.parents
+                                            ? rawHunk.commit.parents.map(oid => ({ oid }))
+                                            : [],
+                                    },
+                                }
+                                assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
                             }
-                            assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
+                            subscriber.next({ current: assembledHunks, firstCommitDate })
                         }
-                        subscriber.next({ current: assembledHunks })
-                    }
-                },
-                onerror(event) {
-                    // eslint-disable-next-line no-console
-                    console.error(event)
-                },
-            }).then(
-                () => subscriber.complete(),
-                error => subscriber.error(error)
-            )
+                    },
+                    onerror(event) {
+                        // eslint-disable-next-line no-console
+                        console.error(event)
+                    },
+                })
+                subscriber.complete()
+            })().catch(error => subscriber.error(error))
+        })
             // Throttle the results to avoid re-rendering the blame sidebar for every hunk
-        }).pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
+            .pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
     makeRepoURI
 )
+
+async function fetchFirstCommitDate(repoName: string): Promise<Date | undefined> {
+    return requestGraphQL<FirstCommitDateResult, FirstCommitDateVariables>(
+        gql`
+            query FirstCommitDate($repo: String!) {
+                repository(name: $repo) {
+                    firstEverCommit {
+                        author {
+                            date
+                        }
+                    }
+                }
+            }
+        `,
+        { repo: repoName }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ repository }) => repository?.firstEverCommit?.author?.date),
+            map(date => (date ? new Date(date) : undefined))
+        )
+        .toPromise()
+}
 
 /**
  * Get display info shared between status bar items and text document decorations.
@@ -232,7 +281,7 @@ export const useBlameHunks = (
         enableCodeMirror: boolean
     },
     sourcegraphURL: string
-): { current: BlameHunk[] | undefined } => {
+): { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined } => {
     const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
 
     const [isBlameVisible] = useBlameVisibility()
@@ -245,12 +294,12 @@ export const useBlameHunks = (
                     ? enableCodeMirror && enableStreamingGitBlame
                         ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
                         : fetchBlameViaGraphQL({ revision, repoName, filePath, sourcegraphURL })
-                    : of({ current: undefined }),
+                    : of({ current: undefined, firstCommitDate: undefined }),
             [shouldFetchBlame, enableCodeMirror, enableStreamingGitBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 
-    return hunks || { current: undefined }
+    return hunks || { current: undefined, firstCommitDate: undefined }
 }
 
 const ONE_MONTH = 30 * 24 * 60 * 60 * 1000

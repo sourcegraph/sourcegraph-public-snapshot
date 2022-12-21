@@ -110,10 +110,12 @@ const usePopover = ({
 export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
+    firstCommitDate?: Date
     history: History
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, history, onSelect, onDeselect }) => {
+    isLightTheme: boolean
+}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, isLightTheme }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
@@ -136,7 +138,7 @@ export const BlameDecoration: React.FunctionComponent<{
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
-    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, undefined)
+    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
 
     if (!blameHunk) {
         return null

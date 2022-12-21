@@ -26,6 +26,7 @@ import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import { blobPropsFacet } from '.'
+import { completionStatus } from '@codemirror/autocomplete'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
@@ -54,9 +55,17 @@ class BlameDecorationWidget extends WidgetType {
     private reactRoot: Root | null = null
     private state: { history: History }
 
-    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined, public readonly line: number) {
+    constructor(
+        public view: EditorView,
+        public readonly hunk: BlameHunk | undefined,
+        public readonly line: number,
+        // We can not access the light theme from the view props beacuse we need
+        // the widget to re-render when it updates.
+        public readonly isLightTheme: boolean
+    ) {
         super()
-        this.state = { history: this.view.state.facet(blobPropsFacet).history }
+        const blobProps = this.view.state.facet(blobPropsFacet)
+        this.state = { history: blobProps.history }
     }
 
     /* eslint-disable-next-line id-length*/
@@ -70,6 +79,7 @@ class BlameDecorationWidget extends WidgetType {
             this.container.classList.add('blame-decoration')
 
             this.reactRoot = createRoot(this.container)
+            const blobProps = this.view.state.facet(blobPropsFacet)
             this.reactRoot.render(
                 <BlameDecoration
                     line={this.line ?? 0}
@@ -77,6 +87,8 @@ class BlameDecorationWidget extends WidgetType {
                     history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
+                    firstCommitDate={blobProps.blameHunks?.firstCommitDate}
+                    isLightTheme={this.isLightTheme}
                 />
             )
         }
@@ -104,8 +116,12 @@ class BlameDecorationWidget extends WidgetType {
 /**
  * Facet to show git blame decorations.
  */
-const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
-    combine: decorations => decorations.flat(),
+interface BlameDecorationsFacetProps {
+    hunks: BlameHunk[]
+    isLightTheme: boolean
+}
+const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDecorationsFacetProps>({
+    combine: decorations => decorations[0],
     enables: facet => [
         hoveredLine,
 
@@ -114,23 +130,38 @@ const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
             class {
                 public decorations: DecorationSet
                 private previousHunkLength = -1
+                private previousIsLightTheme = false
 
                 constructor(view: EditorView) {
                     this.decorations = this.computeDecorations(view, facet)
                 }
 
                 public update(update: ViewUpdate): void {
-                    const hunks = update.view.state.facet(facet)
+                    const facetProps = update.view.state.facet(facet)
+                    const hunks = facetProps.hunks
+                    const isLightMode = facetProps.isLightTheme
 
-                    if (update.docChanged || update.viewportChanged || this.previousHunkLength !== hunks.length) {
+                    if (
+                        update.docChanged ||
+                        update.viewportChanged ||
+                        this.previousHunkLength !== hunks.length ||
+                        this.previousIsLightTheme !== isLightMode
+                    ) {
                         this.decorations = this.computeDecorations(update.view, facet)
-                        this.previousHunkLength = update.state.facet(facet).length
+                        this.previousHunkLength = hunks.length
+                        this.previousIsLightTheme = isLightMode
                     }
                 }
 
-                private computeDecorations(view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet {
+                private computeDecorations(
+                    view: EditorView,
+                    facet: Facet<BlameDecorationsFacetProps, BlameDecorationsFacetProps>
+                ): DecorationSet {
                     const widgets = []
-                    const hunks = view.state.facet(facet)
+                    const facetProps = view.state.facet(facet)
+                    console.log({ facetProps })
+                    const { hunks, isLightTheme } = facetProps
+
                     for (const { from, to } of view.visibleRanges) {
                         let nextHunkDecorationLineRenderedAt = -1
                         for (let position = from; position <= to; ) {
@@ -157,7 +188,7 @@ const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                             }
 
                             const decoration = Decoration.widget({
-                                widget: new BlameDecorationWidget(view, matchingHunk, line.number),
+                                widget: new BlameDecorationWidget(view, matchingHunk, line.number, isLightTheme),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
@@ -182,7 +213,6 @@ const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 // 1rem is the default padding-left so we have to add it here
                 paddingLeft: 'calc(var(--blame-decoration-width) + 1rem) !important',
             },
-
             '.blame-decoration': {
                 // Remove the blame decoration from the content flow so that
                 // the tab start can be moved to the right
@@ -254,9 +284,10 @@ function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Exten
 
 export const createBlameDecorationsExtension = (
     isBlameVisible: boolean,
-    blameHunks: BlameHunk[] | undefined
+    blameHunks: BlameHunk[] | undefined,
+    isLightTheme: boolean
 ): Extension => [
     blameLineStyles({ isBlameVisible }),
     isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
-    blameHunks ? showGitBlameDecorations.of(blameHunks) : [],
+    blameHunks ? showGitBlameDecorations.of({ hunks: blameHunks, isLightTheme }) : [],
 ]

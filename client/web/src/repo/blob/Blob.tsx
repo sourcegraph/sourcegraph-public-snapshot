@@ -144,7 +144,7 @@ export interface BlobProps
     supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
-    blameHunks?: { current: BlameHunk[] | undefined }
+    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

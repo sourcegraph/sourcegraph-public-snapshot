@@ -128,8 +128,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
     const blameDecorations = useMemo(
-        () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks?.current),
-        [isBlameVisible, blameHunks]
+        () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks?.current, isLightTheme),
+        [isBlameVisible, blameHunks, isLightTheme]
     )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
