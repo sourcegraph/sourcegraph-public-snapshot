@@ -62,7 +62,7 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 
 // DoRequest is a function that uses the httpcli.Doer interface to make HTTP
 // requests and to handle "401 Unauthorized" errors. When the 401 error is due to
-// a token being expired, it will use the supplied TokenRefresher function to
+// a token being expired, it will use the supplied AuthenticatorWithRefresh to
 // update the token. If the token is updated successfully, the same request will
 // be retried exactly once.
 // autherWithRefresh should not be nil.
