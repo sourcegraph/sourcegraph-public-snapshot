@@ -70,6 +70,9 @@ const config = {
     path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
+  globals: {
+    Uint8Array: Uint8Array,
+  },
 }
 
 module.exports = config
