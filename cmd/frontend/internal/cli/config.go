@@ -487,7 +487,7 @@ func gitservers() *endpoint.Map {
 			v := os.Getenv("SRC_GIT_SERVERS")
 			r := os.Getenv("GITSERVER_REPLICA_NUMBER")
 
-			addr, err := generateReplicasEndpoints(r, "gitserver")
+			addr, err := computeEndpointsByReplicas(r, "gitserver")
 			if err == nil && addr != "" {
 				return addr
 			}
@@ -531,12 +531,6 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
 	}
 
-	symbolsMap := computeSymbolsEndpoints()
-	symbolsAddrs, err := symbolsMap.Endpoints()
-	if err != nil {
-		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
-	}
-
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
 	if err != nil {
@@ -549,7 +543,6 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 		Searchers:            searcherAddrs,
-		Symbols:              symbolsAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -560,11 +553,6 @@ var (
 
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
-
-	symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
-
-	symbolsURLsOnce sync.Once
-	symbolsURLs     *endpoint.Map
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -595,35 +583,13 @@ func computeSearcherEndpoints() *endpoint.Map {
 
 func searcherAddr(environ []string) string {
 	if r, ok := getEnv(environ, "SEARCHER_REPLICA_NUMBER"); ok {
-		addr, err := generateReplicasEndpoints(r, "searcher")
+		addr, err := computeEndpointsByReplicas(r, "searcher")
 		if err == nil && addr != "" {
 			return addr
 		}
 	}
 
 	return searcherURL
-}
-
-func computeSymbolsEndpoints() *endpoint.Map {
-	symbolsURLsOnce.Do(func() {
-		if addr := symbolsAddr(os.Environ()); addr != "" {
-			symbolsURLs = endpoint.New(addr)
-		} else {
-			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
-		}
-	})
-	return symbolsURLs
-}
-
-func symbolsAddr(environ []string) string {
-	if r, ok := getEnv(environ, "SYMBOLS_REPLICA_NUMBER"); ok {
-		addr, err := generateReplicasEndpoints(r, "symbols")
-		if err == nil && addr != "" {
-			return addr
-		}
-	}
-
-	return symbolsURL
 }
 
 func computeIndexedEndpoints() *endpoint.Map {
@@ -642,7 +608,7 @@ func zoektAddr(environ []string) string {
 		if deploymentType == "docker-compose" {
 			s = "zoekt-webserver"
 		}
-		addr, err := generateReplicasEndpoints(r, s)
+		addr, err := computeEndpointsByReplicas(r, s)
 		if err == nil && addr != "" {
 			return addr
 		}
@@ -676,7 +642,7 @@ func getEnv(environ []string, key string) (string, bool) {
 // Service endpoints for docker-compose deployments are different than k8s
 // docker-compose: zoekt-webserver-0:6070
 // k8s: indexed-search-0.indexed-search:6070
-func generateReplicasEndpoints(replicas string, service string) (string, error) {
+func computeEndpointsByReplicas(replicas string, service string) (string, error) {
 	e := ""
 	h := ""
 	p := ""
@@ -688,9 +654,6 @@ func generateReplicasEndpoints(replicas string, service string) (string, error) 
 	case "searcher":
 		h = "http://"
 		p = "3181"
-	case "symbols":
-		h = "http://"
-		p = "3184"
 	case "indexed-search":
 		p = "6070"
 	case "zoekt-webserver":
@@ -702,15 +665,13 @@ func generateReplicasEndpoints(replicas string, service string) (string, error) 
 	}
 
 	num, err := strconv.Atoi(replicas)
-	if err != nil {
-		return "", err
-	}
-
-	if num > 0 {
+	if err == nil && num > 0 {
 		for i := 0; i < num; i++ {
-			e += h + s + "-" + strconv.Itoa(i) + s + ":" + p + " "
+			e += fmt.Sprintf("%s%s-%d%s:%s ", h, service, i, s, p)
 		}
+
+		return e, nil
 	}
 
-	return e, nil
+	return "", err
 }

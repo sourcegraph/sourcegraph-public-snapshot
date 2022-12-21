@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -31,7 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+var symbolsReplicas = env.Get("SYMBOLS_REPLICA_NUMBER", "0", "symbols service replicas")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -44,7 +48,7 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:                 search.SymbolsURLs().String(),
+	URL:                 symbolsURL,
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -75,8 +79,28 @@ type Client struct {
 
 func (c *Client) url(repo api.RepoName) (string, error) {
 	c.endpointOnce.Do(func() {
-		c.endpoint = search.SymbolsURLs()
+		// compute endpoints for symbols if replicas number is provided
+		num, err := strconv.Atoi(symbolsReplicas)
+		if err == nil && num > 0 {
+			e := ""
+			s := ".symbols"
+			// remove .symbols from endpoint for docker-compose
+			if symbolsURL == "http://symbols:3184" {
+				s = ""
+			}
+			for i := 0; i < num; i++ {
+				e += fmt.Sprintf("http://symbols-%d%s:3184 ", i, s)
+			}
+			c.endpoint = endpoint.New(e)
+		} else {
+			c.endpoint = endpoint.New(c.URL)
+		}
+		// Set endpoint as empty if both env vars are empty or invalid
+		if err != nil && len(strings.Fields(c.URL)) == 0 {
+			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
+		}
 	})
+
 	return c.endpoint.Get(string(repo))
 }
 
