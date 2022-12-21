@@ -30,7 +30,6 @@ type ServiceConnections struct {
 
 	// Searchers is the addresses of searcher instances that should be talked to.
 	Searchers []string `json:"searchers"`
-
 	// Zoekts is the addresses of Zoekt instances to talk to.
 	Zoekts []string `json:"zoekts"`
 	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
