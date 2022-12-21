@@ -271,10 +271,8 @@ const showBlameGutter = Facet.define<boolean>({
 function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Extension {
     return EditorView.theme({
         '.cm-line': {
-            // When blame is
             lineHeight: isBlameVisible ? '1.5rem' : '1rem',
-            // Avoid jumping when blame decorations are streamed in because we use
-            // a border
+            // Avoid jumping when blame decorations are streamed in because we use a border
             borderTop: isBlameVisible ? '1px solid transparent' : 'none',
         },
     })
