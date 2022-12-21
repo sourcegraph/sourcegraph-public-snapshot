@@ -13,8 +13,10 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"sort"
 
 	"github.com/sourcegraph/jsonx"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -150,33 +152,39 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 	switch c := newCfg.(type) {
 	case *schema.GitHubConnection:
 		o := oldCfg.(*schema.GitHubConnection)
-		if es.unredactString(c.Token, o.Token, "token") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"url", "token"}
-			}
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
 		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
-		if es.unredactString(c.Token, o.Token, "token") ||
-			es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"url", "token"}
-			}
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
 		}
+		es.unredactString(c.Token, o.Token, "token")
+		es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
-		if es.unredactString(c.Password, o.Password, "password") ||
-			es.unredactString(c.Token, o.Token, "token") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"url", "token"}
+		var redactedProperty string
+		if c.Url != o.Url {
+			if c.Password == RedactedSecret {
+				redactedProperty = "password"
+			}
+			if c.Token == RedactedSecret {
+				redactedProperty = "token"
+			}
+
+			if redactedProperty != "" {
+				return errCodeHostIdentityChanged{"url", redactedProperty}
 			}
 		}
+		es.unredactString(c.Password, o.Password, "password")
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.BitbucketCloudConnection:
 		o := oldCfg.(*schema.BitbucketCloudConnection)
-		if es.unredactString(c.AppPassword, o.AppPassword, "appPassword") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"apiUrl", "appPassword"}
-			}
+		es.unredactString(c.AppPassword, o.AppPassword, "appPassword")
+		if c.Url != o.Url {
+			return errCodeHostIdentityChanged{"apiUrl", "appPassword"}
 		}
 	case *schema.AWSCodeCommitConnection:
 		o := oldCfg.(*schema.AWSCodeCommitConnection)
@@ -184,18 +192,16 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		es.unredactString(c.GitCredentials.Password, o.GitCredentials.Password, "gitCredentials", "password")
 	case *schema.PhabricatorConnection:
 		o := oldCfg.(*schema.PhabricatorConnection)
-		if es.unredactString(c.Token, o.Token, "token") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"url", "token"}
-			}
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
 		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.PerforceConnection:
 		o := oldCfg.(*schema.PerforceConnection)
-		if es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd") {
-			if c.P4Port != o.P4Port {
-				return errCodeHostIdentityChanged{"p4.port", "p4.passwd"}
-			}
+		if c.P4Passwd == RedactedSecret && c.P4Port != o.P4Port {
+			return errCodeHostIdentityChanged{"p4.port", "p4.passwd"}
 		}
+		es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
@@ -216,31 +222,41 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {
-			if es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials") {
-				if len(c.Maven.Repositories) != len(o.Maven.Repositories) {
+			// credentials didn't change check if repositories did
+			if c.Maven.Credentials == RedactedSecret {
+				oldRepos := o.Maven.Repositories
+				sort.Strings(oldRepos)
+
+				newRepos := c.Maven.Repositories
+				sort.Strings(newRepos)
+
+				// if we only remove a known repo, it's fine
+				if len(newRepos) < len(oldRepos) {
+					for _, r := range newRepos {
+						// we have a new repo in the list, return error
+						if !slices.Contains(oldRepos, r) {
+							return errCodeHostIdentityChanged{"repositories", "credentials"}
+						}
+					}
+				} else if !slices.Equal(oldRepos, newRepos) {
 					return errCodeHostIdentityChanged{"repositories", "credentials"}
 				}
-				for i, r := range c.Maven.Repositories {
-					if r != o.Maven.Repositories[i] {
-						return errCodeHostIdentityChanged{"repositories", "credentials"}
-					}
-				}
 			}
+
 		}
+		es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
 	case *schema.PagureConnection:
 		o := oldCfg.(*schema.PagureConnection)
-		if es.unredactString(c.Token, o.Token, "token") {
-			if c.Url != o.Url {
-				return errCodeHostIdentityChanged{"url", "token"}
-			}
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
 		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.NpmPackagesConnection:
 		o := oldCfg.(*schema.NpmPackagesConnection)
-		if es.unredactString(c.Credentials, o.Credentials, "credentials") {
-			if c.Registry != o.Registry {
-				return errCodeHostIdentityChanged{"registry", "credentials"}
-			}
+		if c.Credentials == RedactedSecret && c.Registry != o.Registry {
+			return errCodeHostIdentityChanged{"registry", "credentials"}
 		}
+		es.unredactString(c.Credentials, o.Credentials, "credentials")
 	case *schema.OtherExternalServiceConnection:
 		o := oldCfg.(*schema.OtherExternalServiceConnection)
 		err := es.unredactURL(c.Url, o.Url, "url")
@@ -304,17 +320,10 @@ func (es *edits) redactString(s string, path ...any) {
 	}
 }
 
-// unredactString replaces a redacted value with a previously stored unredacted value.
-// it returns a boolean to indicate when a value has been unredacted.
-func (es *edits) unredactString(new, old string, path ...any) bool {
+func (es *edits) unredactString(new, old string, path ...any) {
 	if new != "" && old != "" {
-		cur, ok := unredactedString(new, old)
-		es.edit(cur, path...)
-
-		return ok
+		es.edit(unredactedString(new, old), path...)
 	}
-
-	return false
 }
 
 func (es *edits) redactURL(s string, path ...any) error {
@@ -409,13 +418,11 @@ func redactedString(s string) string {
 	return ""
 }
 
-// unredactedString returns the saved value if the submitted value equals 'REDACTED'
-// and a boolean to indicate if redaction took place.
-func unredactedString(new, old string) (string, bool) {
+func unredactedString(new, old string) string {
 	if new == RedactedSecret {
-		return old, true
+		return old
 	}
-	return new, false
+	return new
 }
 
 func redactedURL(rawURL string) (string, error) {

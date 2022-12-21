@@ -206,6 +206,22 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			wantErr: errCodeHostIdentityChanged{"url", "token"},
 		},
 		{
+			kind: extsvc.KindBitbucketServer,
+			old: schema.BitbucketServerConnection{
+				Token: "foobar",
+				Url:   "https://bbs.org",
+			},
+			in: schema.BitbucketServerConnection{
+				Token: RedactedSecret,
+				Url:   "https://bbs.corp.org",
+			},
+			out: schema.BitbucketServerConnection{
+				Token: "foobar",
+				Url:   "https://bbs.corp.org",
+			},
+			wantErr: errCodeHostIdentityChanged{"url", "token"},
+		},
+		{
 			kind:    extsvc.KindBitbucketCloud,
 			old:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
 			in:      schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
@@ -283,6 +299,25 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"baz"}}},
 			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Dependencies: []string{"bar"}}},
 			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Dependencies: []string{"bar"}}},
+		},
+		{
+			kind:    extsvc.KindJVMPackages,
+			old:     schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
+			in:      schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Repositories: []string{"bar"}}},
+			out:     schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"bar"}}},
+			wantErr: errCodeHostIdentityChanged{"repositories", "credentials"},
+		},
+		{
+			kind: extsvc.KindJVMPackages,
+			old:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
+			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Repositories: []string{"baz", "foo"}}},
+			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"baz", "foo"}}},
+		},
+		{
+			kind: extsvc.KindJVMPackages,
+			old:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
+			in:   schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: RedactedSecret, Repositories: []string{"baz"}}},
+			out:  schema.JVMPackagesConnection{Maven: &schema.Maven{Credentials: "foobar", Repositories: []string{"baz"}}},
 		},
 		{
 			kind:    extsvc.KindNpmPackages,
