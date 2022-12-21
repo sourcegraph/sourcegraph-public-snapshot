@@ -1,5 +1,6 @@
 :root {
     --blame-decoration-width: 300px;
+    --blame-recency-width: 5px;
 }
 
 .blame {
@@ -10,10 +11,12 @@
 
 .recency {
     // We need to overlap the border-top
-    height: calc(1.5rem + 1px);
     top: -1px;
     position: relative;
-    flex: 0 0 5px;
+    // Using 1px for a hairline border
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    height: calc(1.5rem + 1px);
+    flex: 0 0 var(--blame-recency-width);
 }
 
 .recency-first-in-hunk {
@@ -26,8 +29,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
         display: inline-block;
-        width: calc(100% - 5px);
-        max-width: calc(var(--blame-decoration-width) - 5px);
+        width: calc(100% - var(--blame-recency-width));
+        max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
         height: 1.5rem;
 
         color: var(--body-color);
@@ -60,7 +63,6 @@
             display: inline-block;
         }
     }
-
 
     &-content {
         max-width: 348px;
