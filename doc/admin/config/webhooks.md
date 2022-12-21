@@ -12,7 +12,7 @@ See the table below for code host compatibility:
 Code host | [Batch changes](../../batch_changes/index.md) | Code push | User permissions
 --------- | :-: | :-: | :-:
 GitHub | 🟢 | 🟢 | 🟢
-GitLab | 🟢 | 🔴 | 🔴
+GitLab | 🟢 | 🟢 | 🔴
 Bitbucket Server / Datacenter | 🟢 | 🔴 | 🔴
 Bitbucket Cloud | 🟢 | 🔴 | 🔴
 
@@ -103,6 +103,10 @@ When one of these events occur, a permissions sync will trigger for the relevant
 Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
 
 **NOTE:** We currently do not support [system webhooks](https://docs.gitlab.com/ee/administration/system_hooks.html) as these provide a different set of payloads.
+
+#### Code push
+
+Follow the same steps as above, but ensure you include the `Push events` trigger.
 
 ### Bitbucket server
 

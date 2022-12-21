@@ -22,6 +22,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	enterpriseServices.GitHubSyncWebhook = webhooks.NewGitHubWebhookHandler()
+	enterpriseServices.GitLabSyncWebhook = webhooks.NewGitLabWebhookHandler()
 	enterpriseServices.WebhooksResolver = resolvers.NewWebhooksResolver(db)
 	return nil
 }
