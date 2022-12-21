@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -52,8 +51,6 @@ func EnterpriseInit(
 			server.ChangesetSyncRegistry = syncRegistry
 		}
 	}
-
-	database.SubRepoPermsWith = edb.SubRepoPermsWith
 
 	permsStore := edb.Perms(logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)

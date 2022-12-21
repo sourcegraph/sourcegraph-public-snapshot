@@ -26,7 +26,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -58,7 +58,7 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -93,7 +93,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t))))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -134,7 +134,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -182,7 +182,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -265,7 +265,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -343,7 +343,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()

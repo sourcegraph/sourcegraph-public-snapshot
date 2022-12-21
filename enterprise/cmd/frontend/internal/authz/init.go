@@ -48,8 +48,6 @@ func Init(
 		return edb.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
 
-	database.SubRepoPermsWith = edb.SubRepoPermsWith
-
 	extsvcStore := db.ExternalServices()
 
 	// TODO(nsc): use c
@@ -75,7 +73,7 @@ func Init(
 	enterpriseServices.PermissionsGitHubWebhook = webhooks.NewGitHubWebhook(log.Scoped("PermissionsGitHubWebhook", "permissions sync webhook handler for GitHub webhooks"))
 
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "Failed to createe sub-repo client")
 	}
