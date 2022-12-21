@@ -75,7 +75,9 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-func Main() {
+type EnterpriseInit func(db database.DB)
+
+func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
 
 	logging.Init()
@@ -125,6 +127,10 @@ func Main() {
 	err = keyring.Init(ctx)
 	if err != nil {
 		logger.Fatal("failed to initialise keyring", log.Error(err))
+	}
+
+	if enterpriseInit != nil {
+		enterpriseInit(db)
 	}
 
 	if err != nil {

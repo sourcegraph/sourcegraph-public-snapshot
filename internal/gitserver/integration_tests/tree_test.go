@@ -11,69 +11,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestReadDir_SubRepoFiltering(t *testing.T) {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := []string{
-		"touch file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"mkdir app",
-		"touch app/file2",
-		"git add app",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-	repo := MakeGitRepository(t, gitCommands...)
-	commitID := api.CommitID("b1c725720de2bbd0518731b4a61959797ff345f3")
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
-				},
-			},
-		},
-	})
-	defer conf.Mock(nil)
-	srpGetter := database.NewMockSubRepoPermsStore()
-	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
-		repo: {
-			Paths: []string{"/**", "-/app/**"},
-		},
-	}
-	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
-	checker, err := authz.NewSubRepoPermsClient(srpGetter)
-	if err != nil {
-		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
-	}
-
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
-	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
-	// Because we have a wildcard matcher we still allow directory visibility
-	assert.Len(t, files, 1)
-	assert.Equal(t, "file1", files[0].Name())
-	assert.False(t, files[0].IsDir())
-}
 
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
@@ -116,7 +59,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -142,7 +85,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+		client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -311,7 +254,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -374,7 +317,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
