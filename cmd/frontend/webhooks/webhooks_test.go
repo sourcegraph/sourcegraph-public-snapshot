@@ -88,15 +88,15 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	wr := WebhookRouter{Logger: logger, DB: db}
-	gwh := GitHubWebhook{WebhookRouter: &wr}
+	wr := Router{Logger: logger, DB: db}
+	gwh := GitHubWebhook{Router: &wr}
 
 	webhookMiddleware := NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gwh.WebhookRouter)))
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gwh.Router)))
 	srv := httptest.NewServer(base)
 
 	t.Run("ping event from Github returns 200", func(t *testing.T) {
@@ -124,9 +124,9 @@ func TestWebhooksHandler(t *testing.T) {
 			ObjectKind: "pipeline",
 		}
 		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]webhookEventHandlers{
+		wr.handlers = map[string]eventHandlers{
 			extsvc.KindGitLab: {
-				"pipeline": []WebhookHandler{wh.handleEvent},
+				"pipeline": []Handler{wh.handleEvent},
 			},
 		}
 		payload, err := json.Marshal(event)
@@ -186,9 +186,9 @@ func TestWebhooksHandler(t *testing.T) {
 		res := h.Sum(nil)
 
 		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]webhookEventHandlers{
+		wr.handlers = map[string]eventHandlers{
 			extsvc.KindGitHub: {
-				"member": []WebhookHandler{wh.handleEvent},
+				"member": []Handler{wh.handleEvent},
 			},
 		}
 
@@ -226,7 +226,7 @@ func TestWebhooksHandler(t *testing.T) {
 		h.Write(payload)
 		res := h.Sum(nil)
 
-		wr.handlers = map[string]webhookEventHandlers{}
+		wr.handlers = map[string]eventHandlers{}
 
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
@@ -246,9 +246,9 @@ func TestWebhooksHandler(t *testing.T) {
 		payload := []byte(`{"body": "text"}`)
 
 		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]webhookEventHandlers{
+		wr.handlers = map[string]eventHandlers{
 			extsvc.KindGitHub: {
-				"member": []WebhookHandler{wh.handleEvent},
+				"member": []Handler{wh.handleEvent},
 			},
 		}
 
@@ -294,9 +294,9 @@ func TestWebhooksHandler(t *testing.T) {
 		res := h.Sum(nil)
 
 		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]webhookEventHandlers{
+		wr.handlers = map[string]eventHandlers{
 			extsvc.KindBitbucketServer: {
-				"ping": []WebhookHandler{wh.handleEvent},
+				"ping": []Handler{wh.handleEvent},
 			},
 		}
 
@@ -351,9 +351,9 @@ func TestWebhooksHandler(t *testing.T) {
 		payload, err := json.Marshal(event)
 		require.NoError(t, err)
 		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]webhookEventHandlers{
+		wr.handlers = map[string]eventHandlers{
 			extsvc.KindBitbucketCloud: {
-				"pullrequest:comment_created": []WebhookHandler{wh.handleEvent},
+				"pullrequest:comment_created": []Handler{wh.handleEvent},
 			},
 		}
 

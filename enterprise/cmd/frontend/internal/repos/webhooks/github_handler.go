@@ -17,23 +17,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitHubWebhookHandler struct {
+type GitHubHandler struct {
 	logger log.Logger
 }
 
-func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
+func (g *GitHubHandler) Register(router *webhooks.Router) {
 	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		return g.handlePushEvent(ctx, payload)
 	}, extsvc.KindGitHub, "push")
 }
 
-func NewGitHubWebhookHandler() *GitHubWebhookHandler {
-	return &GitHubWebhookHandler{
-		logger: log.Scoped("repos.GitHubWebhookHandler", "github webhook handler"),
+func NewGitHubHandler() *GitHubHandler {
+	return &GitHubHandler{
+		logger: log.Scoped("webhooks.GitHubHandler", "github webhook handler"),
 	}
 }
 
-func (g *GitHubWebhookHandler) handlePushEvent(ctx context.Context, payload any) error {
+func (g *GitHubHandler) handlePushEvent(ctx context.Context, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)

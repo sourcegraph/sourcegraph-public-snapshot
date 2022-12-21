@@ -34,7 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGitHubWebhookHandle(t *testing.T) {
+func TestGitHubHandler(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
@@ -72,13 +72,13 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := NewGitHubWebhookHandler()
+	handler := NewGitHubHandler()
 	router := &webhooks.GitHubWebhook{
-		WebhookRouter: &webhooks.WebhookRouter{
+		Router: &webhooks.Router{
 			DB: db,
 		},
 	}
-	handler.Register(router.WebhookRouter)
+	handler.Register(router.Router)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {
