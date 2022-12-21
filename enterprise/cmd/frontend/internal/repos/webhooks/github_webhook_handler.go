@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"net/url"
 
 	gh "github.com/google/go-github/v43/github"
 
@@ -21,7 +22,9 @@ type GitHubWebhookHandler struct {
 }
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
-	router.Register(g.handleGitHubWebhook, extsvc.KindGitHub, "push")
+	router.Register(func(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, payload)
+	}, extsvc.KindGitHub, "push")
 }
 
 func NewGitHubWebhookHandler() *GitHubWebhookHandler {
@@ -30,35 +33,38 @@ func NewGitHubWebhookHandler() *GitHubWebhookHandler {
 	}
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+func (g *GitHubWebhookHandler) handlePushEvent(ctx context.Context, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
 	}
 
-	repoName, err := getNameFromEvent(event)
+	repoName, err := githubNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handleGitHubWebhook: get name failed")
+		return errors.Wrap(err, "handlePushEvent: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		// Repo not existing on Sourcegraph is fine
 		if errcode.IsNotFound(err) {
+			g.logger.Warn("GitHub push webhook received for unknown repo", log.String("repo", string(repoName)))
 			return nil
 		}
-		return errors.Wrap(err, "handleGitHubWebhook: EnqueueRepoUpdate failed")
+		return errors.Wrap(err, "handlePushEvent: EnqueueRepoUpdate failed")
 	}
 
 	g.logger.Info("successfully updated", log.String("name", resp.Name))
 	return nil
 }
 
-func getNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
-	url := *event.Repo.URL
-	if len(url) <= 8 {
-		return "", errors.Newf("expected URL length > 8, got %v", len(url))
+func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
+	if event == nil || event.Repo == nil || event.Repo.URL == nil {
+		return "", errors.New("URL for repository not found")
 	}
-	repoName := url[8:] // [ https:// ] accounts for 8 chars
-	return api.RepoName(repoName), nil
+	parsed, err := url.Parse(*event.Repo.URL)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse repository URL")
+	}
+	return api.RepoName(parsed.Host + parsed.Path), nil
 }

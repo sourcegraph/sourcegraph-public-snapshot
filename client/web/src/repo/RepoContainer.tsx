@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -423,38 +423,40 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
             )}
 
             <ErrorBoundary location={props.location}>
-                <Switch>
-                    {[
-                        '',
-                        ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
-                        '/-/blob',
-                        '/-/tree',
-                        '/-/commits',
-                        '/-/docs',
-                        '/-/branch',
-                        '/-/contributors',
-                        '/-/compare',
-                        '/-/tag',
-                        '/-/home',
-                    ].map(routePath => (
-                        <Route
-                            path={`${repoMatchURL}${routePath}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={routePath === ''}
-                            render={routeComponentProps => (
-                                <RepoRevisionContainer
-                                    {...routeComponentProps}
-                                    {...repoRevisionContainerContext}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
-                                    // must exactly match how the revision was encoded in the URL
-                                    routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                />
-                            )}
-                        />
-                    ))}
-                    {getRepoContainerContextRoutes()}
-                </Switch>
+                <Suspense fallback={null}>
+                    <Switch>
+                        {[
+                            '',
+                            ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
+                            '/-/blob',
+                            '/-/tree',
+                            '/-/commits',
+                            '/-/docs',
+                            '/-/branch',
+                            '/-/contributors',
+                            '/-/compare',
+                            '/-/tag',
+                            '/-/home',
+                        ].map(routePath => (
+                            <Route
+                                path={`${repoMatchURL}${routePath}`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={routePath === ''}
+                                render={routeComponentProps => (
+                                    <RepoRevisionContainer
+                                        {...routeComponentProps}
+                                        {...repoRevisionContainerContext}
+                                        {...childBreadcrumbSetters}
+                                        routes={props.repoRevisionContainerRoutes}
+                                        // must exactly match how the revision was encoded in the URL
+                                        routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                    />
+                                )}
+                            />
+                        ))}
+                        {getRepoContainerContextRoutes()}
+                    </Switch>
+                </Suspense>
             </ErrorBoundary>
         </div>
     )

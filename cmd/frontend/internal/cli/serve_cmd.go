@@ -301,6 +301,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		rateLimiter,
 		&httpapi.Handlers{
 			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
+			GitLabSyncWebhook:               enterprise.GitLabSyncWebhook,
 			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
 			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
