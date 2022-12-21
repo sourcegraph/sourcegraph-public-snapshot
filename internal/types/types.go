@@ -728,9 +728,9 @@ func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) 
 }
 
 // BaseURL returns, if possible, the CodeHostbaseURL contained in the external
-// service config. If the external service can't have a URL the 2nd return
-// value is false.
-func (e *ExternalService) BaseURL(ctx context.Context) (extsvc.CodeHostBaseURL, bool, error) {
+// service config. If the external service can't have a URL or doesn't have a
+// URL set, it returns an error.
+func (e *ExternalService) BaseURL(ctx context.Context) (extsvc.CodeHostBaseURL, error) {
 	return extsvc.ExtractEncryptableBaseURL(ctx, e.Kind, e.Config)
 }
 

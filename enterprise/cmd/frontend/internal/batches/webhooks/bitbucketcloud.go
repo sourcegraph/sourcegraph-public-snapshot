@@ -92,24 +92,12 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	c, err := extSvc.Configuration(ctx)
-	if err != nil {
-		h.logger.Error("Could not decode external service config", sglog.Error(err))
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-		return
-	}
-
-	config, ok := c.(*schema.BitbucketCloudConnection)
-	if !ok {
-		h.logger.Error("Could not decode external service config", sglog.Error(err))
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-		return
-	}
-
-	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	codeHostURN, err := extSvc.BaseURL(ctx)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
+		return
 	}
+
 	err = h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)

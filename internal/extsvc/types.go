@@ -551,50 +551,50 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 	return u.String(), nil
 }
 
-func ExtractEncryptableBaseURL(ctx context.Context, kind string, config *EncryptableConfig) (CodeHostBaseURL, bool, error) {
+func ExtractEncryptableBaseURL(ctx context.Context, kind string, config *EncryptableConfig) (CodeHostBaseURL, error) {
 	parsed, err := ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
-		return CodeHostBaseURL{}, false, errors.Wrap(err, "loading service configuration")
+		return CodeHostBaseURL{}, errors.Wrap(err, "loading service configuration")
 	}
 
-	url, ok, err := extractURL(parsed, kind)
+	url, err := extractURL(parsed, kind)
 	if err != nil {
-		return CodeHostBaseURL{}, false, err
+		return CodeHostBaseURL{}, err
 	}
-	if !ok {
-		return CodeHostBaseURL{}, false, nil
+	if url == "" {
+		return CodeHostBaseURL{}, errors.New("service does not have a URL")
 	}
 
 	baseUrl, err := NewCodeHostBaseURL(url)
-	return baseUrl, true, err
+	return baseUrl, err
 }
 
-func extractURL(parsed any, kind string) (string, bool, error) {
+func extractURL(parsed any, kind string) (string, error) {
 	switch c := parsed.(type) {
 	case *schema.GitHubConnection:
-		return c.Url, true, nil
+		return c.Url, nil
 	case *schema.BitbucketServerConnection:
-		return c.Url, true, nil
+		return c.Url, nil
 	case *schema.BitbucketCloudConnection:
-		return c.Url, true, nil
+		return c.Url, nil
 	case *schema.PagureConnection:
-		return c.Url, true, nil
+		return c.Url, nil
 	case *schema.PerforceConnection:
-		return "", false, nil
+		return "", nil
 	case *schema.JVMPackagesConnection:
-		return "", false, nil
+		return "", nil
 	case *schema.NpmPackagesConnection:
-		return c.Registry, true, nil
+		return c.Registry, nil
 	case *schema.GoModulesConnection:
-		return "", false, nil
+		return "", nil
 	case *schema.PythonPackagesConnection:
-		return "", false, nil
+		return "", nil
 	case *schema.RustPackagesConnection:
-		return "", false, nil
+		return "", nil
 	case *schema.RubyPackagesConnection:
-		return "", false, nil
+		return "", nil
 	default:
-		return "", false, errors.Errorf("unable to extract URL for service kind %q", kind)
+		return "", errors.Errorf("unable to extract URL for service kind %q", kind)
 	}
 }
 
