@@ -247,11 +247,13 @@ This is less safe as fields could be missing from the actual queries and it make
 Some components also worked around this by redeclaring the type structure with complex `Pick<T, K>` expressions.
 When you need to interface with these, consider refactoring them to use a fragment type instead.
 
-## Best-practices for paginating resources with GraphQL
+## Pagination in GraphQL
+
+### Best-practices for paginating resources with GraphQL
 
 Every query thar returns more items than can be visible in the UI at any given point should implement a paginated response. This is important because some of our largest customers have vastly bigger amounts of data and we need to ensure that the interfaces become usable regardless of the size.
 
-For our GraphQL API we follow the [Relay-style connection spec](https://relay.dev/graphql/connections.htm) and cursor-based pagination.
+For our GraphQL API we follow the Relay-style connection spec ([Relay spec](https://relay.dev/graphql/connections.htm), [Apollo spec](https://www.apollographql.com/docs/react/pagination/cursor-based/#relay-style-cursor-pagination)) and cursor-based pagination.
 
 **Cursor-based pagination** refers to a pagination API that _does not know about relative page numbers_. Instead, every API response contains a opaque _cursor_ that we can use to load the next or previous page of data. It's important that for the front-end, this _cursor_ is never introspected. It is handled as a generic `string` that is just passed from the API response directly into the next API request.
 
@@ -260,7 +262,7 @@ In contrast to **offset-based pagination**, this approach brings us these benefi
 - Adding a new item to the collection while someone else is paginating through the collection will avoid inconsistencies (no items are showed more than once or skipped entirely).
 - We can leverage postgres indexes to find the cursor quickly and avoid having to do a sequential scan through all rows ([learn more](https://use-the-index-luke.com/no-offset)).
 
-## Pagination UI patterns at Sourcegraph
+### Pagination UI patterns at Sourcegraph
 
 We currently have two accepted pagination patterns:
 
@@ -280,7 +282,7 @@ We currently have two accepted pagination patterns:
   - React hook for data loading: [`useShowMorePagination()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/components/FilteredConnection/hooks/useShowMorePagination.ts)
   - React component "Show More" UI: [`<ShowMoreButton />`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/search/panels/ShowMoreButton.tsx)
 
-## Pagination in GraphQL
+### Example query
 
 To better understand how the cursor pattern works in GraphQL, take a look at this example query:
 
