@@ -671,8 +671,8 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 type BlameOptions struct {
 	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
 
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
-	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
 // A Hunk is a contiguous portion of a file associated with a commit.
