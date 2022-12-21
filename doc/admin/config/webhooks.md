@@ -128,7 +128,7 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbuc
 
 #### Code push
 
-Follow the same steps as above, but ensure you include the `Push` event.
+Follow the same steps as above, but ensure you tick the `Push` option. If asked for a specific event, use `repo:refs_changed`.
 
 ### Bitbucket cloud
 
