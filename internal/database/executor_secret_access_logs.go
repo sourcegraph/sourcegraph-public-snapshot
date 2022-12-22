@@ -8,7 +8,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -16,7 +15,8 @@ import (
 type ExecutorSecretAccessLog struct {
 	ID               int64
 	ExecutorSecretID int64
-	UserID           int32
+	UserID           *int32
+	MachineUser      string
 
 	CreatedAt time.Time
 }
@@ -60,7 +60,7 @@ type ExecutorSecretAccessLogsListOpts struct {
 	ExecutorSecretID int64
 }
 
-func (opts ExecutorSecretAccessLogsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
+func (opts ExecutorSecretAccessLogsListOpts) sqlConds() *sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.ExecutorSecretID != 0 {
@@ -71,7 +71,7 @@ func (opts ExecutorSecretAccessLogsListOpts) sqlConds(ctx context.Context) (*sql
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Join(preds, "\n AND "), nil
+	return sqlf.Join(preds, "\n AND ")
 }
 
 // limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -109,15 +109,11 @@ func (s *executorSecretAccessLogStore) Transact(ctx context.Context) (ExecutorSe
 }
 
 func (s *executorSecretAccessLogStore) Create(ctx context.Context, log *ExecutorSecretAccessLog) error {
-	// Set the current actor as the creator.
-	if log.UserID == 0 {
-		log.UserID = actor.FromContext(ctx).UID
-	}
-
 	q := sqlf.Sprintf(
 		executorSecretAccessLogCreateQueryFmtstr,
 		log.ExecutorSecretID,
 		log.UserID,
+		log.MachineUser,
 		sqlf.Join(executorSecretAccessLogsColumns, ", "),
 	)
 
@@ -148,10 +144,7 @@ func (s *executorSecretAccessLogStore) GetByID(ctx context.Context, id int64) (*
 }
 
 func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
-	conds, err := opts.sqlConds(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
+	conds := opts.sqlConds()
 
 	q := sqlf.Sprintf(
 		executorSecretAccessLogsListQueryFmtstr,
@@ -187,10 +180,7 @@ func (s *executorSecretAccessLogStore) List(ctx context.Context, opts ExecutorSe
 }
 
 func (s *executorSecretAccessLogStore) Count(ctx context.Context, opts ExecutorSecretAccessLogsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx)
-	if err != nil {
-		return 0, err
-	}
+	conds := opts.sqlConds()
 
 	q := sqlf.Sprintf(
 		executorSecretAccessLogsCountQueryFmtstr,
@@ -233,12 +223,14 @@ INSERT INTO
 	executor_secret_access_logs (
 		executor_secret_id,
 		user_id,
-		created_at
+		created_at,
+		machine_user
 	)
 	VALUES (
 		%s,
 		%s,
-		NOW()
+		NOW(),
+		%s
 	)
 	RETURNING %s
 `
@@ -247,7 +239,8 @@ INSERT INTO
 // into the given ExecutorSecretAccessLog.
 func scanExecutorSecretAccessLog(log *ExecutorSecretAccessLog, s interface {
 	Scan(...any) error
-}) error {
+},
+) error {
 	return s.Scan(
 		&log.ID,
 		&log.ExecutorSecretID,

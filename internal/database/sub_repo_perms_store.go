@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,6 +30,7 @@ func init() {
 }
 
 type SubRepoPermsStore interface {
+	basestore.ShareableStore
 	With(other basestore.ShareableStore) SubRepoPermsStore
 	Transact(ctx context.Context) (SubRepoPermsStore, error)
 	Done(err error) error
@@ -41,6 +43,7 @@ type SubRepoPermsStore interface {
 	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
 	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+	DeleteByUser(ctx context.Context, userID int32) error
 }
 
 // subRepoPermsStore is the unified interface for managing sub repository
@@ -142,13 +145,20 @@ WHERE repo_id = %s
 
 // GetByUser fetches all sub repo perms for a user keyed by repo.
 func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+	enforceForSiteAdmins := conf.Get().AuthzEnforceForSiteAdmins
+
 	q := sqlf.Sprintf(`
-SELECT r.name, paths
-FROM sub_repo_permissions
-JOIN repo r on r.id = repo_id
-WHERE user_id = %s
-  AND version = %s
-`, userID, SubRepoPermsVersion)
+	SELECT r.name, paths
+	FROM sub_repo_permissions
+	JOIN repo r on r.id = repo_id
+	JOIN users u on u.id = user_id
+	WHERE user_id = %s
+	AND version = %s
+	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
+	-- we want to return zero results. This causes us to fall back to
+	-- repo level checks and allows access to all paths in all repos.
+	AND NOT (u.site_admin AND NOT %t)
+	`, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -246,4 +256,12 @@ AND external_service_type IN (%s)
 		return false, errors.Wrap(err, "querying database")
 	}
 	return exists, nil
+}
+
+// DeleteByUser deletes all rows associated with the given user
+func (s *subRepoPermsStore) DeleteByUser(ctx context.Context, userID int32) error {
+	q := sqlf.Sprintf(`
+DELETE FROM sub_repo_permissions WHERE user_id = %d
+`, userID)
+	return s.Exec(ctx, q)
 }

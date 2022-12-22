@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -24,20 +25,21 @@ type Symbol struct {
 const NULL CommitId = 0
 
 type Service struct {
-	logger               log.Logger
-	db                   *sql.DB
-	git                  GitserverClient
-	fetcher              fetcher.RepositoryFetcher
-	createParser         func() (ctags.Parser, error)
-	status               *ServiceStatus
-	repoUpdates          chan struct{}
-	maxRepos             int
-	logQueries           bool
-	repoCommitToDone     map[string]chan struct{}
-	repoCommitToDoneMu   sync.Mutex
-	indexRequestQueues   []chan indexRequest
-	symbolsCacheSize     int
-	pathSymbolsCacheSize int
+	logger                  log.Logger
+	db                      *sql.DB
+	git                     GitserverClient
+	fetcher                 fetcher.RepositoryFetcher
+	createParser            func() (ctags.Parser, error)
+	status                  *ServiceStatus
+	repoUpdates             chan struct{}
+	maxRepos                int
+	logQueries              bool
+	repoCommitToDone        map[string]chan struct{}
+	repoCommitToDoneMu      sync.Mutex
+	indexRequestQueues      []chan indexRequest
+	symbolsCacheSize        int
+	pathSymbolsCacheSize    int
+	searchLastIndexedCommit bool
 }
 
 func NewService(
@@ -51,6 +53,7 @@ func NewService(
 	indexRequestsQueueSize int,
 	symbolsCacheSize int,
 	pathSymbolsCacheSize int,
+	searchLastIndexedCommit bool,
 ) (*Service, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
@@ -60,20 +63,21 @@ func NewService(
 	logger := log.Scoped("service", "")
 
 	service := &Service{
-		logger:               logger,
-		db:                   db,
-		git:                  git,
-		fetcher:              fetcher,
-		createParser:         createParser,
-		status:               NewStatus(),
-		repoUpdates:          make(chan struct{}, 1),
-		maxRepos:             maxRepos,
-		logQueries:           logQueries,
-		repoCommitToDone:     map[string]chan struct{}{},
-		repoCommitToDoneMu:   sync.Mutex{},
-		indexRequestQueues:   indexRequestQueues,
-		symbolsCacheSize:     symbolsCacheSize,
-		pathSymbolsCacheSize: pathSymbolsCacheSize,
+		logger:                  logger,
+		db:                      db,
+		git:                     git,
+		fetcher:                 fetcher,
+		createParser:            createParser,
+		status:                  NewStatus(),
+		repoUpdates:             make(chan struct{}, 1),
+		maxRepos:                maxRepos,
+		logQueries:              logQueries,
+		repoCommitToDone:        map[string]chan struct{}{},
+		repoCommitToDoneMu:      sync.Mutex{},
+		indexRequestQueues:      indexRequestQueues,
+		symbolsCacheSize:        symbolsCacheSize,
+		pathSymbolsCacheSize:    pathSymbolsCacheSize,
+		searchLastIndexedCommit: searchLastIndexedCommit,
 	}
 
 	go service.startCleanupLoop()
@@ -86,8 +90,10 @@ func NewService(
 }
 
 func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
+	// We should use an internal actor when doing cross service calls.
+	ctx := actor.WithInternalActor(context.Background())
 	for indexRequest := range indexRequestQueue {
-		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
+		err := s.Index(ctx, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)

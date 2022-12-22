@@ -28,6 +28,8 @@
 
 .legend-item {
     width: 6rem;
+    flex-shrink: 0;
+    margin-right: 0.5rem;
 }
 
 .capture-group {

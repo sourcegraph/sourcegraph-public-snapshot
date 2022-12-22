@@ -101,6 +101,7 @@ export const DrillDownFiltersPopover: FC<DrillDownFiltersPopoverProps> = props =
                 constraintPadding={POPOVER_CONTAINER_PADDING}
                 aria-label="Drill-down filters panel"
                 className={classNames(styles.popover, STEP_STYLES[step])}
+                onKeyDown={event => event.stopPropagation()}
             >
                 {step === DrillDownFiltersStep.Filters && (
                     <DrillDownInsightFilters

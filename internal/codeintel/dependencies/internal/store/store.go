@@ -7,9 +7,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -31,7 +30,7 @@ type store struct {
 }
 
 // New returns a new store.
-func New(db database.DB, op *observation.Context) *store {
+func New(op *observation.Context, db database.DB) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(op),

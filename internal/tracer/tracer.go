@@ -131,6 +131,8 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	case Jaeger:
 		exporter, err = exporters.NewJaegerExporter()
 
+	case None:
+
 	default:
 		err = errors.Newf("unknown tracer type %q", opts.TracerType)
 	}

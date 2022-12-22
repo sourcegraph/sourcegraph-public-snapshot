@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -72,7 +73,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 				Title:         "old title",
 				Body:          "old body",
-				CommitDiff:    "old diff",
+				CommitDiff:    []byte("old diff"),
 				CommitMessage: "old message",
 			},
 

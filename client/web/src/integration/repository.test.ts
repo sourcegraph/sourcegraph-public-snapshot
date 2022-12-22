@@ -46,7 +46,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
-            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         },
     }),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
@@ -100,6 +100,7 @@ describe('Repository', () => {
                             ancestors: {
                                 nodes: [
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID1',
                                         oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                         abbreviatedOID: '15c2290',
@@ -107,6 +108,7 @@ describe('Repository', () => {
                                         subject: 'update LSIF indexing CI workflow',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'garo (they/them)',
@@ -117,6 +119,7 @@ describe('Repository', () => {
                                             date: '2020-04-29T18:40:54Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'GitHub',
@@ -130,22 +133,19 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                             {
                                                 oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                                 abbreviatedOID: '9e615b1',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
                                         url: commitUrl,
                                         canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -155,6 +155,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID2',
                                         oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         abbreviatedOID: '9e615b1',
@@ -162,6 +163,7 @@ describe('Repository', () => {
                                         subject: 'LSIF Indexing Campaign',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
@@ -172,6 +174,7 @@ describe('Repository', () => {
                                             date: '2020-04-29T16:57:20Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
@@ -185,18 +188,15 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         canonicalURL:
                                             '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -206,15 +206,16 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitCommit',
                                         id: 'CommitID3',
                                         oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         abbreviatedOID: '96c4efa',
                                         message:
                                             'Produce LSIF data for each commit for fast/precise code nav (#35)\n\n* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml\r',
                                         subject: 'Produce LSIF data for each commit for fast/precise code nav (#35)',
-                                        body:
-                                            '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
+                                        body: '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Quinn Slack',
@@ -230,6 +231,7 @@ describe('Repository', () => {
                                             date: '2019-12-22T04:34:38Z',
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
                                                 avatarURL: '',
                                                 name: 'GitHub',
@@ -243,18 +245,15 @@ describe('Repository', () => {
                                             {
                                                 oid: 'cee7209801bf50cee868f8e0696ba0b76ae21792',
                                                 abbreviatedOID: 'cee7209',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
+                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         canonicalURL:
                                             '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
@@ -264,7 +263,7 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: 'abc' },
                             },
                         },
                     },
@@ -281,7 +280,9 @@ describe('Repository', () => {
                             subject: 'update LSIF indexing CI workflow',
                             body: null,
                             author: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'garo (they/them)',
                                     email: 'gbrik@users.noreply.github.com',
@@ -291,7 +292,9 @@ describe('Repository', () => {
                                 date: '2020-04-29T18:40:54Z',
                             },
                             committer: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'GitHub',
                                     email: 'noreply@github.com',
@@ -302,28 +305,29 @@ describe('Repository', () => {
                             },
                             parents: [
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                     abbreviatedOID: '96c4efa',
-                                    url:
-                                        '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
+                                    url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                 },
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                     abbreviatedOID: '9e615b1',
-                                    url:
-                                        '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
+                                    url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
                             url: commitUrl,
                             canonicalURL: commitUrl,
                             externalURLs: [
                                 {
-                                    url:
-                                        'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                    __typename: 'ExternalLink',
+                                    url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                     serviceKind: ExternalServiceKind.GITHUB,
                                 },
                             ],
                             tree: {
+                                __typename: 'GitTree',
                                 canonicalURL:
                                     '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             },
@@ -332,6 +336,7 @@ describe('Repository', () => {
                 }),
                 RepositoryComparisonDiff: () => ({
                     node: {
+                        __typename: 'Repository',
                         comparison: {
                             fileDiffs: {
                                 nodes: [
@@ -343,8 +348,7 @@ describe('Repository', () => {
                                         newPath: '.github/workflows/lsif.yml',
                                         mostRelevantFile: {
                                             __typename: 'GitBlob',
-                                            url:
-                                                '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81/-/blob/.github/workflows/lsif.yml',
+                                            url: '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81/-/blob/.github/workflows/lsif.yml',
                                         },
                                         hunks: [
                                             {
@@ -357,13 +361,11 @@ describe('Repository', () => {
                                                     lines: [
                                                         {
                                                             kind: DiffHunkLineType.DELETED,
-                                                            html:
-                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
+                                                            html: '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
                                                         {
                                                             kind: DiffHunkLineType.ADDED,
-                                                            html:
-                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
+                                                            html: '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
                                                     ],
                                                 },
@@ -475,8 +477,7 @@ describe('Repository', () => {
                                         name: fileName,
                                         path: filePath,
                                         isDirectory: false,
-                                        url:
-                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                        url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
                                         submodule: null,
                                         isSingleChild: false,
                                     },
@@ -515,7 +516,7 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
-                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+                "/Geoffrey's random queries.32r242442bf/% token.4288249258.sql",
             ])
 
             {
@@ -632,22 +633,24 @@ describe('Repository', () => {
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
-                        __typename: 'GitCommit',
+                        __typename: 'Repository',
                         commit: {
                             __typename: 'GitCommit',
                             ancestors: {
                                 __typename: 'GitCommitConnection',
                                 nodes: [
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
                                         oid: '284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         abbreviatedOID: '284aba0',
                                         message: 'sg: create a test command to run e2e tests locally (#34627)\n',
                                         subject: 'sg: create a test command to run e2e tests locally (#34627)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Jean-Hadrien Chabran',
                                                 email: 'jr9@gmail.com',
@@ -657,7 +660,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'noreply@yahoo.com',
@@ -670,19 +675,16 @@ describe('Repository', () => {
                                             {
                                                 oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                                 abbreviatedOID: 'a2d1fd4',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -691,17 +693,18 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
                                         oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         abbreviatedOID: 'a2d1fd4',
                                         message:
                                             'Wildcard V2: <Checkbox /> migration (#34324)\n\nCo-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         subject: 'Wildcard V2: <Checkbox /> migration (#34324)',
-                                        body:
-                                            'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
+                                        body: 'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitStart-SourceGraph',
                                                 email: '89894075h@facebook.net',
@@ -711,7 +714,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'google@yahoo.com',
@@ -724,19 +729,16 @@ describe('Repository', () => {
                                             {
                                                 oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                                 abbreviatedOID: '3a163b9',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -745,15 +747,17 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
+                                        __typename: 'GitCommit',
+                                        id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
                                         oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         abbreviatedOID: '3a163b9',
                                         message: 'web: ban `reactstrap` imports (#34881)\n',
                                         subject: 'web: ban `reactstrap` imports (#34881)',
                                         body: null,
                                         author: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'Valery Bugakov',
                                                 email: 'user23@gmail.com',
@@ -763,7 +767,9 @@ describe('Repository', () => {
                                             date: subDays(now, 5).toISOString(),
                                         },
                                         committer: {
+                                            __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 avatarURL: null,
                                                 name: 'GitHub',
                                                 email: 'user43@gmail.com',
@@ -776,19 +782,16 @@ describe('Repository', () => {
                                             {
                                                 oid: 'e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                                 abbreviatedOID: 'e2e91f0',
-                                                url:
-                                                    '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
+                                                url: '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        url: '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         canonicalURL:
                                             '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         externalURLs: [
                                             {
-                                                url:
-                                                    'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
-                                                serviceKind: 'GITHUB',
+                                                url: 'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -800,6 +803,7 @@ describe('Repository', () => {
                                 pageInfo: {
                                     __typename: 'PageInfo',
                                     hasNextPage: true,
+                                    endCursor: 'abc',
                                 },
                             },
                         },
@@ -819,6 +823,7 @@ describe('Repository', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
+            await driver.page.waitForSelector('.list-group-item', { visible: true })
             await percySnapshotWithVariants(driver.page, 'Repository commits page')
             await accessibilityAudit(driver.page)
         })
@@ -1127,9 +1132,11 @@ describe('Repository', () => {
 
             // Expand directory. we want to trigger "noopRowClick" handler in order to not navigate to new tree page
             await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-sidebar-file-decorable')]
-                    .find(directory => directory.textContent?.includes('doubly-nested'))
-                    ?.querySelector('.test-tree-noop-link') as HTMLAnchorElement | undefined)?.click()
+                (
+                    [...document.querySelectorAll('.test-sidebar-file-decorable')]
+                        .find(directory => directory.textContent?.includes('doubly-nested'))
+                        ?.querySelector('.test-tree-noop-link') as HTMLAnchorElement | undefined
+                )?.click()
             )
 
             // Wait for file decorations to be sent from extension host
@@ -1179,9 +1186,11 @@ describe('Repository', () => {
             }
 
             await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
-                    name?.textContent?.includes('nested')
-                ) as HTMLAnchorElement | undefined)?.click()
+                (
+                    [...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                        name?.textContent?.includes('nested')
+                    ) as HTMLAnchorElement | undefined
+                )?.click()
             )
 
             // Wait for decorations
@@ -1213,9 +1222,11 @@ describe('Repository', () => {
             )
 
             await driver.page.evaluate(() =>
-                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
-                    name?.textContent?.includes('doubly-nested')
-                ) as HTMLAnchorElement | undefined)?.click()
+                (
+                    [...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                        name?.textContent?.includes('doubly-nested')
+                    ) as HTMLAnchorElement | undefined
+                )?.click()
             )
 
             // Wait for new tree page
@@ -1339,7 +1350,13 @@ describe('Repository', () => {
                                     },
                                 ],
                                 totalCount: 3,
-                                pageInfo: { hasNextPage: false },
+                                pageInfo: {
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                    startCursor: 'abc',
+                                    endCursor: 'def',
+                                    __typename: 'BidirectionalPageInfo',
+                                },
                                 __typename: 'RepositoryContributorConnection',
                             },
                             __typename: 'Repository',
@@ -1670,6 +1687,7 @@ describe('Repository', () => {
                     }),
                     RepositoryComparisonDiff: () => ({
                         node: {
+                            __typename: 'Repository',
                             comparison: {
                                 fileDiffs: {
                                     nodes: [
@@ -1693,18 +1711,15 @@ describe('Repository', () => {
                                                         lines: [
                                                             {
                                                                 kind: DiffHunkLineType.UNCHANGED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                             {
                                                                 kind: DiffHunkLineType.DELETED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                             {
                                                                 kind: DiffHunkLineType.ADDED,
-                                                                html:
-                                                                    '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
+                                                                html: '\u003Cdiv\u003E\u003Cspan class="hl-text hl-html hl-markdown"\u003E[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)\n\u003C/span\u003E\u003C/div\u003E',
                                                             },
                                                         ],
                                                     },

@@ -5,8 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -32,6 +31,7 @@ interface SignInPageProps {
         | 'resetPasswordEnabled'
         | 'experimentalFeatures'
     >
+    isSourcegraphDotCom: boolean
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
@@ -41,12 +41,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const [error, setError] = useState<Error | null>(null)
 
     const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
-
-    const showSourcegraphOperatorLogin =
-        !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
-
-    const isSourcegraphOperatorProvider = (provider: AuthProvider): boolean =>
-        provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee'
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
@@ -58,9 +52,21 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         provider => provider.isBuiltin
     )
 
-    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(
-        provider => showSourcegraphOperatorLogin || !isSourcegraphOperatorProvider(provider)
-    )
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
+        if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
+            return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+
+        // Hide the Sourcegraph Operator authentication provider by default because it is
+        // not useful to customer users and may even cause confusion.
+        if (provider.serviceType === 'sourcegraph-operator') {
+            return new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+        return true
+    }
+
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
@@ -69,7 +75,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
+                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
                 <div
                     className={classNames(
                         'test-signin-form rounded p-4 my-3',
@@ -108,7 +114,19 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph? <Link to="https://signup.sourcegraph.com">Sign up</Link>
+                        New to Sourcegraph?{' '}
+                        {props.isSourcegraphDotCom ? (
+                            <Link
+                                to="https://signup.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            >
+                                Sign up
+                            </Link>
+                        ) : (
+                            <Link to="/sign-up">Sign up</Link>
+                        )}
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

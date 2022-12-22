@@ -84,6 +84,8 @@ func Frontend() *monitoring.Dashboard {
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
 							`,
+
+							MultiInstance: true,
 						},
 					},
 					{
@@ -688,12 +690,12 @@ func Frontend() *monitoring.Dashboard {
 				},
 			},
 			{
-				Title:  "Emails",
+				Title:  "Email delivery",
 				Hidden: true,
 				Rows: []monitoring.Row{{
 					{
 						Name:        "email_delivery_failures",
-						Description: "emails delivery failures every 30 minutes",
+						Description: "email delivery failures every 30 minutes",
 						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
 						Panel:       monitoring.Panel().LegendFormat("failures"),
 						Warning:     monitoring.Alert().GreaterOrEqual(1),
@@ -706,19 +708,38 @@ func Frontend() *monitoring.Dashboard {
 							- Check your SMTP provider for more detailed error messages.
 						`,
 					},
+				}, {
 					{
-						Name:        "email_deliveries",
-						Description: "emails delivered per minute",
-						Query:       `sum by (source) (increase(src_email_send{success="true"}[1m]))`,
-						Panel:       monitoring.Panel().LegendFormat("{{source}}"),
+						Name:        "email_deliveries_total",
+						Description: "total emails successfully delivered every 30 minutes",
+						Query:       `sum (increase(src_email_send{success="true"}[30m]))`,
+						Panel:       monitoring.Panel().LegendFormat("emails"),
 						NoAlert:     true, // this is a purely informational panel
 
 						Owner:          monitoring.ObservableOwnerDevOps,
-						Interpretation: "Emails successfully delivered by source.",
+						Interpretation: "Total emails successfully delivered.",
+
+						// use to observe behaviour of email usage across instances
+						MultiInstance: true,
+					},
+					{
+						Name:        "email_deliveries_by_source",
+						Description: "emails successfully delivered every 30 minutes by source",
+						Query:       `sum by (email_source) (increase(src_email_send{success="true"}[30m]))`,
+						Panel: monitoring.Panel().LegendFormat("{{email_source}}").
+							With(monitoring.PanelOptions.LegendOnRight()),
+						NoAlert: true, // this is a purely informational panel
+
+						Owner:          monitoring.ObservableOwnerDevOps,
+						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
+
+						// use to observe behaviour of email usage across instances.
+						// cardinality is 2-4, but it is useful to be able to see the
+						// breakdown regardless across instances.
+						MultiInstance: true,
 					},
 				}},
 			},
-
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
 				Hidden: true,
@@ -932,6 +953,28 @@ func Frontend() *monitoring.Dashboard {
 							Panel:          monitoring.Panel().LegendFormat("{{status}}"),
 							Owner:          monitoring.ObservableOwnerSearch,
 							Interpretation: `The rate of unsuccessful sentinel queries, broken down by failure type.`,
+						},
+					},
+				},
+			},
+			{
+				Title:  "Incoming webhooks",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "p95_time_to_handle_incoming_webhooks",
+							Description: "p95 time to handle incoming webhooks",
+							Query:       "histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~\"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks\"}[5m])) by (le, route))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
+							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Interpretation: `
+							p95 response time to incoming webhook requests from code hosts.
+
+							Increases in response time can point to too much load on the database to keep up with the incoming requests.
+
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)`,
 						},
 					},
 				},

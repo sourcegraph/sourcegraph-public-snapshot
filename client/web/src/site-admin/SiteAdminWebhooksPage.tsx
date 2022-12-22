@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { mdiMapSearch, mdiPlus } from '@mdi/js'
-import classNames from 'classnames'
+import { mdiCog, mdiMapSearch, mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -18,16 +17,15 @@ import {
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 
-import { useWebhooksConnection } from './backend'
+import { useWebhooksConnection, useWebhookPageHeader } from './backend'
 import { WebhookNode } from './WebhookNode'
+import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     telemetryService,
 }) => {
     useEffect(() => {
@@ -35,34 +33,47 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
     }, [telemetryService])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
+    const headerTotals = useWebhookPageHeader()
     return (
         <div className="site-admin-webhooks-page">
-            <PageTitle title="Webhook receivers" />
+            <PageTitle title="Incoming webhooks" />
             <PageHeader
-                path={[{ text: 'Webhook receivers' }]}
+                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Incoming webhooks' }]}
                 headingElement="h2"
-                description="All configured webhooks receivers"
+                description="All configured incoming webhooks"
                 className="mb-3"
                 actions={
-                    <ButtonLink className="test-create-webhook" variant="primary">
+                    <ButtonLink to="/site-admin/webhooks/create" className="test-create-webhook" variant="primary">
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
                     </ButtonLink>
                 }
             />
 
             <Container>
+                {!headerTotals.loading && (
+                    <div className={styles.grid}>
+                        <PerformanceGauge
+                            count={headerTotals.totalErrors}
+                            countClassName={headerTotals.totalErrors > 0 ? 'text-danger' : ''}
+                            label="error"
+                        />
+                        <PerformanceGauge
+                            count={headerTotals.totalNoEvents}
+                            countClassName={headerTotals.totalNoEvents > 0 ? 'text-warning' : ''}
+                            label="no event"
+                        />
+                    </div>
+                )}
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     {connection && connection.nodes?.length > 0 && <Header />}
-                    <ConnectionList
-                        as="ul"
-                        className={classNames(styles.webhooksGrid, 'list-group')}
-                        aria-label="Webhooks"
-                    >
+                    <ConnectionList as="ul" className="list-group" aria-label="Webhooks">
                         {connection?.nodes?.map(node => (
                             <WebhookNode
                                 key={node.id}
+                                name={node.name}
+                                id={node.id}
                                 codeHostKind={node.codeHostKind}
                                 codeHostURN={node.codeHostURN}
                             />
@@ -90,10 +101,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
 }
 
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <div className={styles.webhooksGrid}>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Receiver</H5>
-        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Actions</H5>
-    </div>
+    <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Webhook</H5>
 )
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (

@@ -191,7 +191,7 @@ describe('Core functionality regression test suite', () => {
         })
         await delay(2000)
         const currentUsernameQuery = gql`
-            query {
+            query CurrentUsername {
                 currentUser {
                     username
                 }

@@ -170,10 +170,10 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
     }, [isAdminAnalyticsDisabled, props.sideBarGroups])
 
-    const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
-        isAdminAnalyticsDisabled,
-        props.routes,
-    ])
+    const routes = useMemo(
+        () => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes),
+        [isAdminAnalyticsDisabled, props.routes]
+    )
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -201,9 +201,9 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <div className="d-flex my-3" ref={reference}>
+            <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
-                    className={classNames('flex-0 mr-3', styles.sidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

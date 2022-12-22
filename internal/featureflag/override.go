@@ -27,6 +27,11 @@ func requestOverrides(r *http.Request) (flags map[string]bool, ok bool) {
 		return nil, false
 	}
 
+	// We use this to make it convenient to specify multiple feature flag
+	// overrides in many different ways. eg a user doesn't have to do multiple
+	// &feat= query params, instead they could separate by space and comma.
+	values = flatMapValues(values)
+
 	flags = make(map[string]bool, len(values))
 	for _, k := range values {
 		// flags starting with "-" override to false
@@ -75,4 +80,16 @@ func (s *overrideStore) override(flags map[string]bool, err error) (map[string]b
 	}
 
 	return override, nil
+}
+
+// flatMapValues splits each string in vs by space and commas, then returns
+// the flattened result.
+func flatMapValues(vs []string) []string {
+	var flattened []string
+	for _, v := range vs {
+		flattened = append(flattened, strings.FieldsFunc(v, func(r rune) bool {
+			return r == ' ' || r == ','
+		})...)
+	}
+	return flattened
 }

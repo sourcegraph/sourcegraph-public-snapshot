@@ -5,6 +5,7 @@ import {
     DEPRECATED_API_USAGE_BY_TEAM,
     LINTER_OVERRIDES,
     LOG_4_J_INCIDENT_INSIGHT,
+    OPENSSL_PYTHON,
     REPOS_WITH_CI_SYSTEM,
 } from '../../../getting-started/components/code-insights-examples/examples'
 import {
@@ -41,6 +42,11 @@ export const EXAMPLES: Example[] = [
         type: InsightType.SearchBased,
         content: LOG_4_J_INCIDENT_INSIGHT,
         description: 'Ensure removal of security vulnerabilities',
+    },
+    {
+        type: InsightType.SearchBased,
+        content: OPENSSL_PYTHON,
+        description: 'Find vulnerable OpenSSL versions in the Python Ecosystem',
     },
     {
         type: InsightType.SearchBased,

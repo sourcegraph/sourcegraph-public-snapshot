@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,15 +17,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
@@ -43,12 +42,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
 
 	// Create basic metrics for recording information about background jobs.
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "insights background jobs"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
+	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
 
@@ -56,28 +50,24 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, featureFlagStore, observationContext),
+		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
-
-	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB, time.Now, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
+			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
 			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 12,
+			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,
 			HistoricRateLimiter:     historicRateLimiter,
 		}
@@ -87,7 +77,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			InsightStore:   insightsStore,
 			RepoStore:      mainAppDB.Repos(),
 			BackfillRunner: backfillRunner,
-			ObsContext:     observationContext,
+			ObservationCtx: observationCtx,
 			AllRepoIterator: discovery.NewAllReposIterator(
 				mainAppDB.Repos(),
 				time.Now,
@@ -98,7 +88,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 					Name:      "insight_backfill_new_index_repositories_analyzed",
 					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
 				}),
-			CostAnalyzer: priority.DefaultQueryAnalyzer(),
+			CostAnalyzer:      priority.DefaultQueryAnalyzer(),
+			RepoQueryExecutor: query.NewStreamingRepoQueryExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
 		}
 
 		// Add the backfill v2 workers
@@ -106,7 +97,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		routines = append(routines, monitor.Routines()...)
 
 		// Add the backfiller v1 workers
-		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore, observationContext))
+		routines = append(routines, newInsightHistoricalEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore))
 	}
 
 	routines = append(
@@ -132,14 +123,10 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	repoStore := mainAppDB.Repos()
 
 	// Create basic metrics for recording information about background jobs.
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "background query runner job"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
+	observationCtx := observation.NewContext(logger.Scoped("background", "background query runner job"))
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationCtx, "query_runner_worker")
 
-	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+	workerStore := queryrunner.CreateDBWorkerStore(observationCtx, workerBaseStore)
 	seachQueryLimiter := limiter.SearchQueryRate()
 
 	return []goroutine.BackgroundRoutine{
@@ -147,7 +134,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 		// results to the insights DB.
 		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, seachQueryLimiter),
 		queryrunner.NewResetter(ctx, logger.Scoped("queryrunner.Resetter", ""), workerStore, queryRunnerResetterMetrics),
-		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
+		queryrunner.NewCleaner(ctx, observationCtx, workerBaseStore),
 	}
 }
 
@@ -159,8 +146,10 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 //
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
-func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
-	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
+func newWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
+	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
+		return true
+	}))
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }

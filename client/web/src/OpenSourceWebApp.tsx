@@ -1,9 +1,5 @@
 import React from 'react'
 
-import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
-import { extensionAreaRoutes } from './extensions/extension/routes'
-import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
-import { extensionsAreaRoutes } from './extensions/routes'
 import './SourcegraphWebApp.scss'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
@@ -27,12 +23,6 @@ import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 // For more info see: https://docs.sourcegraph.com/admin/subscriptions#paid-subscriptions-for-sourcegraph-enterprise
 export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
-        extensionAreaRoutes={extensionAreaRoutes}
-        extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
-        extensionsAreaRoutes={window.context.enableLegacyExtensions ? extensionsAreaRoutes : undefined}
-        extensionsAreaHeaderActionButtons={
-            window.context.enableLegacyExtensions ? extensionsAreaHeaderActionButtons : undefined
-        }
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
         siteAdminOverviewComponents={siteAdminOverviewComponents}

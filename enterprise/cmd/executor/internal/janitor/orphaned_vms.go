@@ -19,8 +19,10 @@ type orphanedVMJanitor struct {
 	metrics *metrics
 }
 
-var _ goroutine.Handler = &orphanedVMJanitor{}
-var _ goroutine.ErrorHandler = &orphanedVMJanitor{}
+var (
+	_ goroutine.Handler      = &orphanedVMJanitor{}
+	_ goroutine.ErrorHandler = &orphanedVMJanitor{}
+)
 
 // NewOrphanedVMJanitor returns a background routine that periodically removes all VMs
 // on the host that are not known by the worker running within this executor instance.
@@ -30,11 +32,13 @@ func NewOrphanedVMJanitor(
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, newOrphanedVMJanitor(
-		prefix,
-		names,
-		metrics,
-	))
+	return goroutine.NewPeriodicGoroutine(context.Background(), "executors.orphaned-vm-janitor", "deletes VMs from a previous executor instance",
+		interval, newOrphanedVMJanitor(
+			prefix,
+			names,
+			metrics,
+		),
+	)
 }
 
 func newOrphanedVMJanitor(

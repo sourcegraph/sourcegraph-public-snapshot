@@ -5,11 +5,11 @@ import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
+import { validate as validateUUID } from 'uuid'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { LoadingSpinner, useObservable, Link, H2 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, H2, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
@@ -41,6 +41,9 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     _queryProductSubscription = queryProductSubscription,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
+
+    const isValidUUID = validateUUID(subscriptionUUID)
+    const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     /**
      * The product subscription, or loading, or an error.
@@ -74,8 +77,8 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+            ) : !isValidUUID || isErrorLike(productSubscription) ? (
+                <ErrorAlert className="my-2" error={validationError || productSubscription} />
             ) : (
                 <>
                     <H2>Subscription {productSubscription.name}</H2>

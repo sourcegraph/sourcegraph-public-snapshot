@@ -50,7 +50,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 
-		_, store, err := setupStore(ctx, factory, schemaName)
+		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}

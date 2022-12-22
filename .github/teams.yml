@@ -1,11 +1,10 @@
-team/frontend-platform:
-  - '@alicjasuska'
+team/code-exploration:
   - '@umpox'
   - '@valerybugakov'
   - '@lrhacker'
+  - '@philipp-spiess'
 
 team/iam:
-  - '@unknwon'
   - '@jplahn'
   - '@miveronese'
   - '@ryphil'
@@ -13,3 +12,9 @@ team/iam:
   - '@quinnkeast'
   - '@pjlast'
   - '@kopancek'
+
+team/growth:
+  - '@unknwon'
+  - '@rafax'
+  - '@erzhtor'
+  - '@malomarrec'

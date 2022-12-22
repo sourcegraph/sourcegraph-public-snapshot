@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -38,7 +39,7 @@ import (
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(ctx context.Context, db DB) error
+	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
@@ -52,12 +53,12 @@ var (
 //
 // For a detailed overview of the schema, see schema.md.
 type UserStore interface {
+	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
-	CreateInTransaction(context.Context, NewUser) (*types.User, error)
+	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
-	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
 	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
@@ -86,7 +87,6 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UserAllowedExternalServices(context.Context, int32) (conf.ExternalServiceMode, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -201,7 +201,6 @@ type NewUser struct {
 
 	// TosAccepted is whether the user is created with the terms of service accepted already.
 	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
-
 }
 
 // Create creates a new user in the database.
@@ -227,7 +226,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	newUser, err = tx.CreateInTransaction(ctx, info)
+	newUser, err = tx.CreateInTransaction(ctx, info, nil)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(u.logger, u), newUser, "")
 	}
@@ -242,7 +241,7 @@ func CheckPassword(pw string) error {
 // CreateInTransaction is like Create, except it is expected to be run from within a
 // transaction. It must execute in a transaction because the post-user-creation
 // hooks must run atomically with the user creation.
-func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec *extsvc.AccountSpec) (newUser *types.User, err error) {
 	if !u.InTransaction() {
 		return nil, errors.New("must run within a transaction")
 	}
@@ -294,7 +293,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store)); err != nil {
+		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store), spec); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -568,6 +567,10 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 
 // HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -811,7 +814,14 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
-	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
+	// Filter out users with a known Sourcegraph admin username
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
+	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 
 	*LimitOffset
 }
@@ -863,6 +873,7 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+
 const listUsersInactiveCond = `
 (NOT EXISTS (
 	SELECT 1 FROM event_logs
@@ -872,6 +883,7 @@ const listUsersInactiveCond = `
 		timestamp >= %s
 ))
 `
+
 const orgMembershipCond = `
 EXISTS (
 	SELECT 1
@@ -886,7 +898,15 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+		items := []*sqlf.Query{
+			sqlf.Sprintf("username ILIKE %s", query),
+			sqlf.Sprintf("display_name ILIKE %s", query),
+		}
+		// Query looks like an ID
+		if id, ok := maybeQueryIsID(opt.Query); ok {
+			items = append(items, sqlf.Sprintf("id = %d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {
@@ -924,6 +944,8 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	// This method of filtering is imperfect and may still incur false positives, but
 	// the two together should help prevent that in the majority of cases, and we
 	// acknowledge this risk as we would prefer to undercount rather than overcount.
+	//
+	// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 	if opt.ExcludeSourcegraphAdmins {
 		conds = append(conds, sqlf.Sprintf(`
 -- The user does not...
@@ -941,7 +963,17 @@ NOT(
 			AND user_emails.email ILIKE '%%@sourcegraph.com')
 )
 `))
+	}
 
+	if opt.ExcludeSourcegraphOperators {
+		conds = append(conds, sqlf.Sprintf(`
+NOT EXISTS (
+	SELECT FROM user_external_accounts
+	WHERE
+		service_type = 'sourcegraph-operator'
+	AND user_id = u.id
+)
+`))
 	}
 	return conds
 }
@@ -1124,7 +1156,6 @@ WHERE id=%s
       AND expired_at IS NULL
     )
 `, passwd, id, id))
-
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}
@@ -1277,45 +1308,6 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 		tagMap[t] = true
 	}
 	return tagMap, nil
-}
-
-// UserAllowedExternalServices returns whether the supplied user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	// If site level already allows all code then no need to check user
-	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
-		return siteMode, nil
-	}
-
-	tags, err := u.Tags(ctx, userID)
-	if err != nil {
-		return siteMode, err
-	}
-
-	// The user may have a tag that opts them in
-	if tags[TagAllowUserExternalServicePrivate] {
-		return conf.ExternalServiceModeAll, nil
-	}
-	if tags[TagAllowUserExternalServicePublic] {
-		return conf.ExternalServiceModePublic, nil
-	}
-
-	return siteMode, nil
-}
-
-// CurrentUserAllowedExternalServices returns whether the current user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

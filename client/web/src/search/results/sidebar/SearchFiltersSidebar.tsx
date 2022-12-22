@@ -107,7 +107,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
-                    header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    header="Group results by"
+                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
                     // SearchAggregations content contains component that makes a few API network requests
                     // in order to prevent these calls if this section is collapsed we turn off force render
                     // for collapse section component
@@ -198,15 +199,12 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
 )
 
 const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
-    <>
-        Group results by
-        <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
-            <Icon
-                aria-label="Info icon about aggregation run"
-                size="md"
-                svgPath={mdiInformationOutline}
-                onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
-            />
-        </Tooltip>
-    </>
+    <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
+        <Icon
+            aria-label="(Aggregation is based on results with no count limitation (count:all).)"
+            size="md"
+            svgPath={mdiInformationOutline}
+            onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+        />
+    </Tooltip>
 )

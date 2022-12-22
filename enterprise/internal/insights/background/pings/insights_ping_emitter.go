@@ -25,8 +25,10 @@ func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights e
 		insightsDb: insights,
 	}
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_pings_emitter", e.emit))
+	return goroutine.NewPeriodicGoroutine(
+		ctx, "insights.pings_emitter", "emits enterprise telemetry pings",
+		interval, goroutine.HandlerFunc(e.emit),
+	)
 }
 
 type InsightsPingEmitter struct {
@@ -39,7 +41,7 @@ func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 	e.logger.Info("Emitting Code Insights Pings")
 
 	type emitter func(ctx context.Context) error
-	var emitters = map[string]emitter{
+	emitters := map[string]emitter{
 		"emitInsightTotalCounts":      e.emitInsightTotalCounts,
 		"emitIntervalCounts":          e.emitIntervalCounts,
 		"emitOrgVisibleInsightCounts": e.emitOrgVisibleInsightCounts,

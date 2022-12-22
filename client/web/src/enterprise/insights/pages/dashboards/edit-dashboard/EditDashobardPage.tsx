@@ -4,16 +4,12 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router'
 
-import { asError } from '@sourcegraph/common'
-import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsIcon } from '../../../components'
-import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
+import { CodeInsightsIcon, CodeInsightsPage, SubmissionErrors } from '../../../components'
 import {
     CodeInsightsBackendContext,
     CustomInsightDashboard,
@@ -31,14 +27,13 @@ import styles from './EditDashboardPage.module.scss'
 
 interface EditDashboardPageProps {
     dashboardId: string
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
 /**
  * Displays the edit (configure) dashboard page.
  */
 export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<EditDashboardPageProps>> = props => {
-    const { dashboardId, authenticatedUser } = props
+    const { dashboardId } = props
     const history = useHistory()
 
     const { getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
@@ -55,21 +50,7 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
 
     // In case if we got null that means we couldn't find this dashboard
     if (dashboard === null || isVirtualDashboard(dashboard)) {
-        return (
-            <HeroPage
-                icon={MapSearchIcon}
-                title="Oops, we couldn't find the dashboard"
-                subtitle={
-                    <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID:
-                        <Badge variant="secondary" as="code">
-                            {dashboardId}
-                        </Badge>{' '}
-                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
-                    </span>
-                }
-            />
-        )
+        return <HeroPage icon={MapSearchIcon} title="Oops, we couldn't find the dashboard" />
     }
 
     const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<SubmissionErrors> => {
@@ -83,22 +64,17 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
             throw new Error('You have to specify a dashboard visibility')
         }
 
-        try {
-            const updatedDashboard = await updateDashboard({
-                id: dashboard.id,
-                nextDashboardInput: {
-                    name,
-                    owners: [owner],
-                },
-            }).toPromise()
+        const updatedDashboard = await updateDashboard({
+            id: dashboard.id,
+            nextDashboardInput: {
+                name,
+                owners: [owner],
+            },
+        }).toPromise()
 
-            history.push(`/insights/dashboards/${updatedDashboard.id}`)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        history.push(`/insights/dashboards/${updatedDashboard.id}`)
     }
+
     const handleCancel = (): void => history.goBack()
 
     return (

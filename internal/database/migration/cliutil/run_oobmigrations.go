@@ -44,7 +44,7 @@ func RunOutOfBandMigrations(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		r, err := runnerFactory(ctx, schemas.SchemaNames)
+		r, err := runnerFactory(schemas.SchemaNames)
 		if err != nil {
 			return err
 		}
@@ -246,5 +246,5 @@ func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*base
 		return nil, err
 	}
 
-	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
+	return basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), shareableStore, sql.TxOptions{})), nil
 }

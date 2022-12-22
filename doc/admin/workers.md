@@ -54,12 +54,18 @@ This job periodically updates the crates.io packages on the instance by syncing 
 
 #### `insights-job`
 
-This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
-1. Commit indexer
-2. Background query executor
-3. Historical data recorder
-4. Data clean up jobs
-5. Settings file insight definition migrations
+This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+
+1. Insight enqueuer
+2. Insight backfiller
+3. Insight license checker
+4. Insight backfill checker
+5. Data clean up jobs
+
+#### `insights-query-runner-job`
+
+This job is responsible for processing and running record and snapshot points for Code Insights. Such points are filled by running global searches. 
+This job was split from the other Code Insights background processes so that it could benefit from horizontal scaling. 
 
 #### `webhook-log-janitor`
 
@@ -118,6 +124,10 @@ This job bulk encrypts existing data in the database when an encryption key is i
 #### `zoekt-repos-updater`
 
 This job periodically fetches the list of indexed repositories from Zoekt shards and updates the indexing status accordingly in the `zoekt_repos` table.
+
+#### `auth-sourcegraph-operator-cleaner`
+
+This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
 
 ## Deploying workers
 

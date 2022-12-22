@@ -43,14 +43,14 @@ func ExampleBackgroundRoutine() {
 }
 
 func ExamplePeriodicGoroutine() {
-	h := NewHandlerWithErrorMessage("example background routine", func(ctx context.Context) error {
+	h := HandlerFunc(func(ctx context.Context) error {
 		fmt.Println("Hello from the background!")
 		return nil
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	r := NewPeriodicGoroutine(ctx, 200*time.Millisecond, h)
+	r := NewPeriodicGoroutine(ctx, "example.background", "example background routine", 200*time.Millisecond, h)
 
 	go MonitorBackgroundRoutines(ctx, r)
 

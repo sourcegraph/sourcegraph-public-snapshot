@@ -11,8 +11,10 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,7 +22,7 @@ import (
 )
 
 type GitHubWebhook struct {
-	*WebhookRouter
+	*Router
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +39,13 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	extSvc, err := h.getExternalService(r, body)
 	if err != nil {
 		log15.Error("Could not find valid external service for webhook", "error", err)
-		http.Error(w, "External service not found", http.StatusInternalServerError)
+
+		if errcode.IsNotFound(err) {
+			http.Error(w, "External service not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Error validating payload", http.StatusBadRequest)
 		return
 	}
 
@@ -85,13 +93,11 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
 		logger.Error("Error handling github webhook event", log.Error(err))
-		switch err.(type) {
-		case eventTypeNotFoundError:
+		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

@@ -8,10 +8,9 @@ import sanitizeHtml from 'sanitize-html'
 
 import { highlightNode, logger } from '@sourcegraph/common'
 import { highlightCode } from '@sourcegraph/search'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { LoadingSpinner, Link, Code } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 
@@ -81,13 +80,8 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             {item.repoLastFetched && (
                 <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
             )}
-            {highlightedCommitContent !== undefined ? (
-                <Link
-                    key={item.url}
-                    to={item.url}
-                    className={searchResultStyles.searchResultMatch}
-                    {...openInNewTabProps}
-                >
+            <Link key={item.url} to={item.url} className={searchResultStyles.searchResultMatch} {...openInNewTabProps}>
+                {highlightedCommitContent !== undefined ? (
                     <Code>
                         <Markdown
                             ref={containerElement}
@@ -96,25 +90,25 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                             dangerousInnerHTML={highlightedCommitContent}
                         />
                     </Code>
-                </Link>
-            ) : (
-                <>
-                    <LoadingSpinner className={styles.loader} />
-                    <table>
-                        <tbody>
-                            {range(numLines).map(index => (
-                                <tr key={`${item.url}#${index}`}>
-                                    {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                    <td className={styles.lineHidden}>
-                                        <Code>{index}</Code>
-                                    </td>
-                                    <td className="code"> </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </>
-            )}
+                ) : (
+                    <>
+                        <LoadingSpinner className={styles.loader} />
+                        <table>
+                            <tbody>
+                                {range(numLines).map(index => (
+                                    <tr key={`${item.url}#${index}`}>
+                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                        <td className={styles.lineHidden}>
+                                            <Code>{index}</Code>
+                                        </td>
+                                        <td className="code"> </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </>
+                )}
+            </Link>
         </div>
     )
 }

@@ -50,30 +50,19 @@ Currently available in the following hosts:
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-### [Docker Compose](docker-compose/index.md)
+### [Single-machine install-script](single-node/script.md) 
 
-We recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format.
-
-Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
-
-Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
-
-<div class="getting-started">
-  <a class="btn btn-secondary text-center" href="./docker-compose/aws"><span>AWS</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/azure"><span>Azure</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/digitalocean"><span>DigitalOcean</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/google_cloud"><span>Google Cloud</span></a>
-</div>
+Quickly install Sourcegraph onto a single Linux machine using our install script.
 
 ### [Kubernetes](kubernetes/index.md) or [Kubernetes with Helm](kubernetes/helm.md)
 
-Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option.
+Kubernetes is recommended for non-standard deployments where our Machine Images or install-script is not a viable option.
 
-This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
 
 Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
 
-If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
 
 ---
 
@@ -111,7 +100,7 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 - A second PostgreSQL instance for storing large-volume code graph data.
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
-- A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._
+- A `sourcegraph/blobstore` instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._
 - A [Jaeger](https://www.jaegertracing.io/) instance for end-to-end distributed tracing.
 
 > NOTE: As a best practice, configure your Sourcegraph instance to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease hosting costs as persistent volumes are often more expensive than object storage space.
@@ -123,7 +112,7 @@ See the following guides to use an external or managed version of each service t
 - [PostgreSQL Guide](../postgres.md)
 - See [Using your PostgreSQL server](../external_services/postgres.md) to replace the bundled PostgreSQL instances.
 - See [Using your Redis server](../external_services/redis.md) to replace the bundled Redis instances.
-- See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled MinIO instance.
+- See [Using a managed object storage service (S3 or GCS)](../external_services/object_storage.md) to replace the bundled blobstore instance.
 - See [Using an external Jaeger instance](../observability/tracing.md#use-an-external-jaeger-instance) in our [tracing documentation](../observability/tracing.md) to replace the bundled Jaeger instance.Use-an-external-Jaeger-instance
 
 > NOTE: Using Sourcegraph with an external service is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.

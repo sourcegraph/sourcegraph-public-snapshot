@@ -5,7 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -22,9 +22,10 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
+import { eventLogger } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
+import { parseBrowserRepoURL } from '../util/url'
 
-import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
@@ -120,7 +121,7 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevision: ResolvedRevision | undefined
 }
 
-const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
+export const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionBreadcrumbProps>
 > = ({ revision, resolvedRevision, repoName, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
@@ -207,6 +208,8 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
 
     const resolvedRevision = props.resolvedRevision
 
+    const { repoName, filePath } = parseBrowserRepoURL(location.pathname)
+
     return (
         <>
             <RepoRevisionWrapper className="pl-3">
@@ -233,7 +236,13 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                     id="copy-path"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <CopyPathAction key="copy-path" />}
+                    {() => (
+                        <CopyPathAction
+                            telemetryService={eventLogger}
+                            filePath={filePath || repoName}
+                            key="copy-path"
+                        />
+                    )}
                 </RepoHeaderContributionPortal>
                 {resolvedRevision && (
                     <RepoHeaderContributionPortal

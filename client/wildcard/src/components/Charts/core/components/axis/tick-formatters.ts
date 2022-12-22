@@ -1,7 +1,6 @@
 import { getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { format } from 'd3-format'
-import { timeFormat } from 'd3-time-format'
 
 const SI_PREFIX_FORMATTER = format('~s')
 
@@ -13,21 +12,6 @@ export function formatYTick(number: number): string {
 
     return SI_PREFIX_FORMATTER(number)
 }
-
-/**
- * Returns a formatted time text. It's used primary for X axis tick's text nodes.
- * Number of month day + short name of month.
- *
- * Example: 01 Jan, 12 Feb, ...
- */
-export const formatDateTick = timeFormat('%d %b')
-
-/**
- * Returns a formatted date text for points aria labels.
- *
- * Example: 2021 January 21 Thursday
- */
-export const formatXLabel = timeFormat('%d %B %A')
 
 const MINIMUM_NUMBER_OF_TICKS = 2
 

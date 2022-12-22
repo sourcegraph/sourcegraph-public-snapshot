@@ -7,7 +7,6 @@ import { subtypeOf } from '@sourcegraph/common'
 import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -24,7 +23,7 @@ import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './C
 import { temporal } from './Temporal'
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+    useExperimentalFeatures.setState({ showSearchContext: true })
     return <Story />
 }
 
@@ -111,6 +110,8 @@ const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const commonProps = () =>
@@ -129,13 +130,11 @@ const commonProps = () =>
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,

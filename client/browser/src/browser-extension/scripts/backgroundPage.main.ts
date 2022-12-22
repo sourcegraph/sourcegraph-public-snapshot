@@ -262,10 +262,12 @@ async function main(): Promise<void> {
         }
 
         // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
-        return (handlers[method] as (
-            payload: any,
-            sender?: browser.runtime.MessageSender
-        ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
+        return (
+            handlers[method] as (
+                payload: any,
+                sender?: browser.runtime.MessageSender
+            ) => ReturnType<BackgroundPageApi[typeof method]>
+        )(message.payload, sender)
     })
 
     await browser.runtime.setUninstallURL(

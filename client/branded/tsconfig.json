@@ -6,7 +6,7 @@
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "*"],
+      "*": ["../observability-client/src/types/*", "src/types/*", "*"],
     },
     "rootDir": ".",
     "outDir": "./out",

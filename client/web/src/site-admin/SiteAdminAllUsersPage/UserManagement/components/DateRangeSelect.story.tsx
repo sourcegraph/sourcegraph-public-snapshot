@@ -2,9 +2,10 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { startOfDay, subDays } from 'date-fns'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { DateRangeSelect } from './DateRangeSelect'
+
+import webStyles from '../../../../SourcegraphWebApp.scss'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>

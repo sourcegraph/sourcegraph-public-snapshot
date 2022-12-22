@@ -24,15 +24,6 @@ func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
 const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
 
 func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
@@ -41,7 +32,6 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	if err != nil {
 		return nil, err
 	}
-	noOpAnyChar(re)
 
 	// OptimizeRegexp currently only converts capture groups into non-capture
 	// groups (faster for stdlib regexp to execute).
@@ -72,7 +62,7 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 
 	spanContext = make(map[string]string)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
-		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
 			log15.Warn("Error injecting span context into map: %s", err)
 			return true, nil
 		}
@@ -113,15 +103,36 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		searchOpts.DebugScore = true
 	}
 
-	if limit := int(o.FileMatchLimit); o.Features.Ranking && limit < 1000 {
-		// It is hard to think up general stats here based on limit. So
-		// instead we only run the ranking code path if the limit is
-		// reasonably small. This is fine while we experiment.
+	if o.Features.Ranking {
+		limit := int(o.FileMatchLimit)
+
+		// Tell each zoekt replica to not send back more than limit results.
+		searchOpts.MaxDocDisplayCount = limit
+
+		// These are reasonable default amounts of work to do per shard and
+		// replica respectively.
 		searchOpts.ShardMaxMatchCount = 10_000
 		searchOpts.TotalMaxMatchCount = 100_000
-		searchOpts.MaxDocDisplayCount = limit
+
+		// If we are searching for large limits, raise the amount of work we
+		// are willing to do per shard and zoekt replica respectively.
+		if limit > searchOpts.ShardMaxMatchCount {
+			searchOpts.ShardMaxMatchCount = limit
+		}
+		if limit > searchOpts.TotalMaxMatchCount {
+			searchOpts.TotalMaxMatchCount = limit
+		}
+
+		// This enables our stream based ranking were we wait upto 500ms to
+		// collect results before ranking.
 		searchOpts.FlushWallTime = 500 * time.Millisecond
+
+		// This enables the use of PageRank scores if they are available.
 		searchOpts.UseDocumentRanks = true
+
+		// This damps the impact of document ranks on the final ranking.
+		searchOpts.RanksDampingFactor = 0.5
+
 		return searchOpts
 	}
 

@@ -95,7 +95,7 @@ type UIPosition = UIPositionSpec['position']
 /**
  * Hover information received from a hover source.
  */
-type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
+export type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
 
 /**
  * A {@link Hovercard} represent a currently visible hovercard.
@@ -550,7 +550,7 @@ const dummyOverlayPosition = { left: 0, bottom: 0 }
  * data source and the component props, and updates the component as it receives
  * changes.
  */
-class HovercardView implements TooltipView {
+export class HovercardView implements TooltipView {
     public dom: HTMLElement
     private root: Root | null = null
     private nextContainer = new Subject<HTMLElement>()
@@ -600,13 +600,6 @@ class HovercardView implements TooltipView {
     }
 
     private render(root: Root, { hoverOrError, actionsOrError }: HoverData, props: BlobProps, pinned: boolean): void {
-        // (fkling) Not sure whether this check is necessary, but keeping it for now.
-        if (props.extensionsController === null) {
-            root.unmount()
-            this.root = null
-            return
-        }
-
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,

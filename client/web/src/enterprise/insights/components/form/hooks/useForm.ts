@@ -15,12 +15,14 @@ import {
 import { debounce, DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
+import { asError } from '@sourcegraph/common'
+
 import { useDistinctValue } from '../../../hooks'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
 
-export type SubmissionErrors = Record<string, any> | undefined
+export type SubmissionErrors = Record<string, any> | undefined | void
 export type SubmissionResult = SubmissionErrors | Promise<SubmissionErrors> | void
 
 export interface FormChangeEvent<FormValues> {
@@ -54,6 +56,7 @@ interface UseFormProps<FormValues extends object> {
 
     /**
      * It fires whenever a user is changing some form field value through typing.
+     *
      * @param values - aggregated all fields form values
      */
     onPureValueChange?: (values: FormValues) => void
@@ -295,14 +298,23 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             if (!hasInvalidField) {
                 setSubmitting(true)
 
-                const submitResult = await onSubmitReference.current?.(values)
+                try {
+                    const submitResult = await onSubmitReference.current?.(values)
 
-                // Check isUnmounted state to prevent calling setState on
-                // unmounted components.
-                if (!isUnmounted.current) {
-                    setSubmitting(false)
-                    // eslint-disable-next-line no-unused-expressions
-                    submitResult && setSubmitErrors(submitResult)
+                    if (!isUnmounted.current) {
+                        // eslint-disable-next-line no-unused-expressions
+                        submitResult && setSubmitErrors(submitResult)
+                    }
+                } catch (error) {
+                    // Check isUnmounted state to prevent calling setState on
+                    // unmounted components.
+                    if (!isUnmounted.current) {
+                        setSubmitErrors({ [FORM_ERROR]: asError(error) })
+                    }
+                } finally {
+                    if (!isUnmounted.current) {
+                        setSubmitting(false)
+                    }
                 }
             } else {
                 const formElement = formElementReference.current ?? (event.target as Element)

@@ -16,7 +16,6 @@ import { getExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
@@ -65,114 +64,114 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = ([
-    {
-        path: PageRoutes.Index,
-        render: () => <Redirect to={PageRoutes.Search} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.Search,
-        render: props => <SearchPageWrapper {...props} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.SearchConsole,
-        render: props => {
-            const { showMultilineSearchConsole } = getExperimentalFeatures()
-
-            return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
+export const routes: readonly LayoutRouteProps<any>[] = (
+    [
+        {
+            path: PageRoutes.Index,
+            render: () => <Redirect to={PageRoutes.Search} />,
+            exact: true,
         },
-        exact: true,
-    },
-    {
-        path: PageRoutes.SignIn,
-        render: props => <SignInPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.SignUp,
-        render: props => <SignUpPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.UnlockAccount,
-        render: props => <UnlockAccountPage {...props} context={window.context} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.Welcome,
-        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-        render: props => <Redirect to={PageRoutes.Search} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.InstallGitHubAppSuccess,
-        render: () => <InstallGitHubAppSuccessPage />,
-    },
-    {
-        path: PageRoutes.Settings,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
-    },
-    {
-        path: PageRoutes.User,
-        render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
-    },
-    {
-        path: PageRoutes.Organizations,
-        render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
-    },
-    {
-        path: PageRoutes.SiteAdminInit,
-        exact: true,
-        render: props => <SiteInitPage {...props} context={window.context} />,
-    },
-    {
-        path: PageRoutes.SiteAdmin,
-        render: props => (
-            <SiteAdminArea
-                {...props}
-                routes={props.siteAdminAreaRoutes}
-                sideBarGroups={props.siteAdminSideBarGroups}
-                overviewComponents={props.siteAdminOverviewComponents}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.PasswordReset,
-        render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
-        exact: true,
-    },
-    {
-        path: PageRoutes.ApiConsole,
-        render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
-        exact: true,
-    },
-    {
-        path: PageRoutes.UserArea,
-        render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
-    },
-    {
-        path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
-    },
-    window.context.enableLegacyExtensions
-        ? {
-              path: PageRoutes.Extensions,
-              render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-          }
-        : undefined,
-    {
-        path: PageRoutes.Help,
-        render: passThroughToServer,
-    },
-    {
-        path: PageRoutes.Debug,
-        render: passThroughToServer,
-    },
-    ...communitySearchContextsRoutes,
-    {
-        path: PageRoutes.RepoContainer,
-        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
-    },
-] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]
+        {
+            path: PageRoutes.Search,
+            render: props => <SearchPageWrapper {...props} />,
+            exact: true,
+        },
+        {
+            path: PageRoutes.SearchConsole,
+            render: props => {
+                const { showMultilineSearchConsole } = getExperimentalFeatures()
+
+                return showMultilineSearchConsole ? (
+                    <SearchConsolePage {...props} />
+                ) : (
+                    <Redirect to={PageRoutes.Search} />
+                )
+            },
+            exact: true,
+        },
+        {
+            path: PageRoutes.SignIn,
+            render: props => <SignInPage {...props} context={window.context} />,
+            exact: true,
+        },
+        {
+            path: PageRoutes.SignUp,
+            render: props => <SignUpPage {...props} context={window.context} />,
+            exact: true,
+        },
+        {
+            path: PageRoutes.UnlockAccount,
+            render: props => <UnlockAccountPage {...props} context={window.context} />,
+            exact: true,
+        },
+        {
+            path: PageRoutes.Welcome,
+            // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
+            render: props => <Redirect to={PageRoutes.Search} />,
+            exact: true,
+        },
+        {
+            path: PageRoutes.InstallGitHubAppSuccess,
+            render: () => <InstallGitHubAppSuccessPage />,
+        },
+        {
+            path: PageRoutes.Settings,
+            render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
+        },
+        {
+            path: PageRoutes.User,
+            render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
+        },
+        {
+            path: PageRoutes.Organizations,
+            render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
+        },
+        {
+            path: PageRoutes.SiteAdminInit,
+            exact: true,
+            render: props => <SiteInitPage {...props} context={window.context} />,
+        },
+        {
+            path: PageRoutes.SiteAdmin,
+            render: props => (
+                <SiteAdminArea
+                    {...props}
+                    routes={props.siteAdminAreaRoutes}
+                    sideBarGroups={props.siteAdminSideBarGroups}
+                    overviewComponents={props.siteAdminOverviewComponents}
+                />
+            ),
+        },
+        {
+            path: PageRoutes.PasswordReset,
+            render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
+            exact: true,
+        },
+        {
+            path: PageRoutes.ApiConsole,
+            render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
+            exact: true,
+        },
+        {
+            path: PageRoutes.UserArea,
+            render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
+        },
+        {
+            path: PageRoutes.Survey,
+            render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
+        },
+        {
+            path: PageRoutes.Help,
+            render: passThroughToServer,
+        },
+        {
+            path: PageRoutes.Debug,
+            render: passThroughToServer,
+        },
+        ...communitySearchContextsRoutes,
+        {
+            path: PageRoutes.RepoContainer,
+            render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+        },
+    ] as readonly (LayoutRouteProps<any> | undefined)[]
+).filter(Boolean) as readonly LayoutRouteProps<any>[]

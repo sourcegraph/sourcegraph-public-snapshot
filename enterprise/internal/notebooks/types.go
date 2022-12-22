@@ -11,7 +11,6 @@ const (
 	NotebookMarkdownBlockType NotebookBlockType = "md"
 	NotebookFileBlockType     NotebookBlockType = "file"
 	NotebookSymbolBlockType   NotebookBlockType = "symbol"
-	NotebookComputeBlockType  NotebookBlockType = "compute"
 )
 
 type NotebookQueryBlockInput struct {
@@ -47,10 +46,6 @@ type NotebookSymbolBlockInput struct {
 	SymbolKind          string  `json:"symbolKind"`
 }
 
-type NotebookComputeBlockInput struct {
-	Value string `json:"value"`
-}
-
 type NotebookBlock struct {
 	ID            string                      `json:"id"`
 	Type          NotebookBlockType           `json:"type"`
@@ -58,7 +53,6 @@ type NotebookBlock struct {
 	MarkdownInput *NotebookMarkdownBlockInput `json:"markdownInput,omitempty"`
 	FileInput     *NotebookFileBlockInput     `json:"fileInput,omitempty"`
 	SymbolInput   *NotebookSymbolBlockInput   `json:"symbolInput,omitempty"`
-	ComputeInput  *NotebookComputeBlockInput  `json:"computeInput,omitempty"`
 }
 
 type NotebookBlocks []NotebookBlock

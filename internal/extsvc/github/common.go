@@ -1510,23 +1510,13 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	var autherWithRefresh auth.AuthenticatorWithRefresh
-	if auther != nil {
-		var ok bool
-		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
-		// Check if we should pre-emptively refresh
-		if ok && autherWithRefresh.NeedsRefresh() {
-			autherWithRefresh.Refresh(ctx, httpClient)
-		}
-		if err := auther.Authenticate(req); err != nil {
-			return nil, errors.Wrap(err, "authenticating request")
-		}
-	}
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -1538,16 +1528,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		span.Finish()
 	}()
 
-	if autherWithRefresh != nil {
-		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
-		if err != nil {
-			return nil, errors.Wrap(err, "do request with refresh and retry")
-		}
-	} else {
-		resp, err = httpClient.Do(req.WithContext(ctx))
-		if err != nil {
-			return nil, err
-		}
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
+	if err != nil {
+		return nil, errors.Wrap(err, "request failed")
 	}
 	defer resp.Body.Close()
 
@@ -1891,21 +1874,17 @@ type restTopicsResponse struct {
 
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		var u github.User
-		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
+		usr, err = encryption.DecryptJSON[github.User](ctx, data.Data)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		usr = &u
 	}
 
 	if data.AuthData != nil {
-		var t oauth2.Token
-		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		tok = &t
 	}
 
 	return usr, tok, nil

@@ -1,10 +1,9 @@
 import React, { ReactNode } from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Alert, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 

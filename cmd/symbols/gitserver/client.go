@@ -48,10 +48,10 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
 		innerClient: gitserver.NewClient(db),
-		operations:  newOperations(observationContext),
+		operations:  newOperations(observationCtx),
 	}
 }
 

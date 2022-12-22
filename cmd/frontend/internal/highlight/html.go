@@ -228,10 +228,10 @@ func newHtmlRow(row int32, includeLineNumbers bool) (htmlRow, htmlCode *html.Nod
 	tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 
 	if includeLineNumbers {
-		thLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Thead, Data: atom.Thead.String()}
-		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
-		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
-		tr.AppendChild(thLineNumber)
+		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
+		tr.AppendChild(tdLineNumber)
 	}
 
 	codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}

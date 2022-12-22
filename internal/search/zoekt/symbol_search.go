@@ -6,6 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -45,7 +46,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 
 	err = zoektSearch(ctx, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 	if err != nil {
-		tr.LogFields(log.Error(err))
+		tr.SetAttributes(attribute.String("error", err.Error()))
 		// Only record error if we haven't timed out.
 		if ctx.Err() == nil {
 			cancel()
@@ -102,7 +103,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	// always search for symbols in indexed repositories when searching the repo universe.
 	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, nil, stream)
 	if err != nil {
-		tr.LogFields(log.Error(err))
+		tr.SetAttributes(attribute.String("error", err.Error()))
 		// Only record error if we haven't timed out.
 		if ctx.Err() == nil {
 			return nil, err

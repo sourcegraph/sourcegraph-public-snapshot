@@ -8,13 +8,14 @@ mkdir -p .bin
 
 version="1.50.1"
 suffix="${version}-$(go env GOOS)-$(go env GOARCH)"
-target="$PWD/.bin/golangci-lint-${suffix}"
+name="golangci-lint-${suffix}"
+target="$PWD/.bin/${name}"
+url="https://github.com/golangci/golangci-lint/releases/download/v$version/golangci-lint-$suffix.tar.gz"
 
 if [ ! -f "${target}" ]; then
-  # Workaround for https://github.com/golangci/golangci-lint/issues/2374
   echo "installing golangci-lint" 1>&2
-  go install "github.com/golangci/golangci-lint/cmd/golangci-lint@v${version}" 1>&2
-  mv "$(which golangci-lint)" "${target}"
+  curl -sS -L -f "${url}" | tar -xz --to-stdout "${name}/golangci-lint" >"${target}.tmp"
+  mv "${target}.tmp" "${target}"
 fi
 
 chmod +x "${target}"

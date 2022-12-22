@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
+import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
-import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { useTour } from './useTour'
 import { isLanguageRequired } from './utils'
 
@@ -17,9 +17,15 @@ export type TourProps = TelemetryProps & {
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
-        const { completedStepIds = [], language, status, setLanguage, setStepCompleted, setStatus, restart } = useTour(
-            tourId
-        )
+        const {
+            completedStepIds = [],
+            language,
+            status,
+            setLanguage,
+            setStepCompleted,
+            setStatus,
+            restart,
+        } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
                 telemetryService.log(

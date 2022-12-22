@@ -79,18 +79,6 @@ Hello world example in go`, typeFile},
 		"", // trailing null
 	}, "\x00")
 
-	pattern := protocol.PatternInfo{Pattern: "world"}
-	wantRaw := `
-added.md:1:1:
-hello world I am added
-changed.go:6:6:
-	fmt.Println("Hello world")
-unchanged.md:1:1:
-# Hello World
-unchanged.md:3:3:
-Hello world example in go
-`
-
 	s := newStore(t, files)
 
 	// explictly remove FetchTar since we should only be using FetchTarByPath
@@ -135,25 +123,107 @@ Hello world example in go
 	})
 	defer ts.Close()
 
-	req := protocol.Request{
-		Repo:         "foo",
-		RepoID:       123,
-		URL:          "u",
-		Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-		PatternInfo:  pattern,
-		FetchTimeout: fetchTimeoutForCI(t),
-		FeatHybrid:   true,
-	}
-	m, err := doSearch(ts.URL, &req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cases := []struct {
+		Name    string
+		Pattern protocol.PatternInfo
+		Want    string
+	}{{
+		Name:    "all",
+		Pattern: protocol.PatternInfo{Pattern: "world"},
+		Want: `
+added.md:1:1:
+hello world I am added
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
+# Hello World
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "added",
+		Pattern: protocol.PatternInfo{
+			Pattern:         "world",
+			IncludePatterns: []string{"added"},
+		},
+		Want: `
+added.md:1:1:
+hello world I am added
+`,
+	}, {
+		Name: "path-include",
+		Pattern: protocol.PatternInfo{
+			IncludePatterns: []string{"^added"},
+		},
+		Want: `
+added.md
+`,
+	}, {
+		Name: "path-exclude-added",
+		Pattern: protocol.PatternInfo{
+			ExcludePattern: "added",
+		},
+		Want: `
+changed.go
+unchanged.md
+`,
+	}, {
+		Name: "path-exclude-unchanged",
+		Pattern: protocol.PatternInfo{
+			ExcludePattern: "unchanged",
+		},
+		Want: `
+added.md
+changed.go
+`,
+	}, {
+		Name: "path-all",
+		Pattern: protocol.PatternInfo{
+			IncludePatterns: []string{"."},
+		},
+		Want: `
+added.md
+changed.go
+unchanged.md
+`,
+	}, {
+		Name: "pattern-path",
+		Pattern: protocol.PatternInfo{
+			Pattern:               "go",
+			PatternMatchesContent: true,
+			PatternMatchesPath:    true,
+		},
+		Want: `
+changed.go
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}}
 
-	sort.Sort(sortByPath(m))
-	got := strings.TrimSpace(toString(m))
-	want := strings.TrimSpace(wantRaw)
-	if d := cmp.Diff(want, got); d != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", d)
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := protocol.Request{
+				Repo:         "foo",
+				RepoID:       123,
+				URL:          "u",
+				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				PatternInfo:  tc.Pattern,
+				FetchTimeout: fetchTimeoutForCI(t),
+				FeatHybrid:   true,
+			}
+
+			m, err := doSearch(ts.URL, &req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			sort.Sort(sortByPath(m))
+			got := strings.TrimSpace(toString(m))
+			want := strings.TrimSpace(tc.Want)
+			if d := cmp.Diff(want, got); d != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			}
+		})
 	}
 }
 

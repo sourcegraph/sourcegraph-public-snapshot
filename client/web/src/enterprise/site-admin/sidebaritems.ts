@@ -1,6 +1,6 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -8,7 +8,7 @@ import {
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     overviewGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -27,25 +27,22 @@ const configurationGroup: SiteAdminSideBarGroup = {
 
 const maintenanceGroup: SiteAdminSideBarGroup = {
     ...ossMaintenanceGroup,
-    items: [
-        ...ossMaintenanceGroup.items,
-        {
-            to: '/site-admin/executors',
-            label: 'Executors',
-            condition: () => Boolean(window.context?.executorsEnabled),
-        },
-    ],
 }
 
-const extensionsGroup: SiteAdminSideBarGroup = {
+const executorsGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Extensions',
-        icon: PuzzleOutlineIcon,
+        label: 'Executors',
+        icon: PackageVariantIcon,
     },
+    condition: () => Boolean(window.context?.executorsEnabled),
     items: [
         {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
+            to: '/site-admin/executors',
+            label: 'Instances',
+        },
+        {
+            to: '/site-admin/executors/secrets',
+            label: 'Secrets',
         },
     ],
 }
@@ -119,14 +116,25 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        ...ossRepositoriesGroup.items,
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/webhooks',
+        },
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     overviewGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
     usersGroup,
+    executorsGroup,
     maintenanceGroup,
-    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,

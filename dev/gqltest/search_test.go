@@ -593,7 +593,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$ runtime(.|\n)*BYTES_TO_GIGABYTES index:only patterntype:regexp type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
@@ -1568,8 +1568,11 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultFirstPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
 	}
-	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
-		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	if resultFirstPage.Nodes[0].Spec != "global" {
+		t.Fatalf("expected first page first search context spec to be global, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+	if resultFirstPage.Nodes[1].Spec != "SearchContext9" {
+		t.Fatalf("expected first page second search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[1].Spec)
 	}
 
 	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
@@ -1582,7 +1585,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultSecondPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
 	}
-	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
-		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	if resultSecondPage.Nodes[0].Spec != "SearchContext5" {
+		t.Fatalf("expected second page search context spec to be SearchContext5, got %s", resultSecondPage.Nodes[0].Spec)
 	}
 }

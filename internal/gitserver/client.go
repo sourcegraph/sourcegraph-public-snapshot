@@ -25,7 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -93,8 +94,9 @@ func NewClient(db database.DB) Client {
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
-		logger: sglog.Scoped("NewTestClient", "Test New client"),
+		logger: logger,
 		addrs: func() []string {
 			return addrs
 		},
@@ -106,7 +108,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
-		operations: newOperations(&observation.TestContext),
+		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
 
@@ -219,6 +221,10 @@ type RawBatchLogResult struct {
 }
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
+type HunkReader interface {
+	Read() (hunks []*Hunk, done bool, err error)
+}
+
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
@@ -233,6 +239,8 @@ type Client interface {
 
 	// BlameFile returns Git blame information about a file.
 	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
+
+	StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error)
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -597,7 +605,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -647,7 +655,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
@@ -709,7 +717,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -798,7 +806,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 		defer resp.Body.Close()
-		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
+		logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
 			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
@@ -808,7 +816,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return err
 		}
-		logger.Log(log.Int("numResults", len(response.Results)))
+		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 
 		for _, result := range response.Results {
 			var err error
@@ -1143,23 +1151,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
-	// signature prevents us from doing that.
-	//
-	// We should consolidate into a single method for creating requests so that we are
-	// setting all the required properties like headers, trace spans in a central place.
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.userAgent)
-
-	// Set header so that the server knows the request is from us.
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1238,17 +1230,24 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver instance based on the address in the uri argument.
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
 //
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -1285,28 +1284,41 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
+	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
+			Repo:         req.Repo,
+			BaseCommit:   req.BaseCommit,
+			Patch:        string(req.Patch),
+			TargetRef:    req.TargetRef,
+			UniqueRef:    req.UniqueRef,
+			CommitInfo:   req.CommitInfo,
+			Push:         req.Push,
+			GitApplyArgs: req.GitApplyArgs,
+		})
+		if err != nil {
+			return "", err
 		}
+		defer resp.Body.Close()
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
 	var res protocol.CreateCommitFromPatchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.Unmarshal(body, &res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
 		}
 	}
 

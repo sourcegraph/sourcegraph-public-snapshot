@@ -4,9 +4,8 @@ import { mdiSourceRepository } from '@mdi/js'
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
 

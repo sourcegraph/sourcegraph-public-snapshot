@@ -13,7 +13,7 @@ import { positionToOffset } from './utils'
  * server with a lineIndex map (implemented as array), for fast lookup by line
  * number, with minimal additional impact on memory (e.g. garbage collection).
  */
-interface HighlightIndex {
+export interface HighlightIndex {
     occurrences: Occurrence[]
     lineIndex: (number | undefined)[]
 }
@@ -23,7 +23,7 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(info: BlobInfo): HighlightIndex {
+export function createHighlightTable(info: BlobInfo): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
     if (!info.lsif) {
@@ -38,7 +38,7 @@ function createHighlightTable(info: BlobInfo): HighlightIndex {
             const current = occurrences[index]
 
             if (previousEndline !== current.range.start.line) {
-                // Only use the current index if there isn't already an occurence on
+                // Only use the current index if there isn't already an occurrence on
                 // the current line.
                 lineIndex[current.range.start.line] = index
             }
@@ -101,9 +101,9 @@ class SyntaxHighlightManager implements PluginValue {
 
                 for (let index = startIndex; index < occurrences.length; index++) {
                     const occurrence = occurrences[index]
-                    const occurenceStartLine = occurrence.range.start.line + 1
+                    const occurrenceStartLine = occurrence.range.start.line + 1
 
-                    if (occurenceStartLine > toLine.number) {
+                    if (occurrenceStartLine > toLine.number) {
                         break
                     }
 
@@ -112,13 +112,13 @@ class SyntaxHighlightManager implements PluginValue {
                     }
 
                     // Fetch new line information if necessary
-                    if (line.number !== occurenceStartLine) {
+                    if (line.number !== occurrenceStartLine) {
                         // If the next occurrence doesn't map to a valid
                         // document position, stop
-                        if (occurenceStartLine > textDocument.lines) {
+                        if (occurrenceStartLine > textDocument.lines) {
                             break
                         }
-                        line = textDocument.line(occurenceStartLine)
+                        line = textDocument.line(occurrenceStartLine)
                     }
 
                     const from = Math.min(line.from + occurrence.range.start.character, line.to)

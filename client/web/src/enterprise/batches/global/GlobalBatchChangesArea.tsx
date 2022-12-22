@@ -3,9 +3,7 @@ import React from 'react'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -20,8 +18,6 @@ import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPa
 import { TabName } from '../detail/BatchChangeDetailsTabs'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
-
-import type { DotcomGettingStartedPageProps } from './DotcomGettingStartedPage'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -47,17 +43,8 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     () => import('../close/BatchChangeClosePage'),
     'BatchChangeClosePage'
 )
-const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
-    () => import('./DotcomGettingStartedPage'),
-    'DotcomGettingStartedPage'
-)
-interface Props<RouteProps extends {} = {}>
-    extends RouteComponentProps<RouteProps>,
-        ThemeProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        PlatformContextProps,
-        SettingsCascadeProps {
+
+interface Props extends RouteComponentProps, ThemeProps, TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -65,37 +52,47 @@ interface Props<RouteProps extends {} = {}>
 /**
  * The global batch changes area.
  */
-export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
+export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    match,
+    location,
+    authenticatedUser,
+    isSourcegraphDotCom,
+    ...props
+}) => (
     <div className="w-100">
-        {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
+        <Switch>
+            <Route path={match.url} exact={true}>
+                <BatchChangeListPage
+                    headingElement="h1"
+                    canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                    {...props}
+                    location={location}
+                />
+            </Route>
+            {!isSourcegraphDotCom && (
+                <Route path={`${match.url}/create`} exact={true}>
+                    <AuthenticatedCreateBatchChangePage
+                        {...props}
+                        headingElement="h1"
+                        authenticatedUser={authenticatedUser}
+                    />
+                </Route>
+            )}
+            <Route component={NotFoundPage} key="hardcoded-key" />
+        </Switch>
     </div>
 )
+
+const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
+    CreateBatchChangePageProps & { authenticatedUser: AuthenticatedUser }
+>(props => <CreateBatchChangePage {...props} authenticatedUser={props.authenticatedUser} />)
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
 
-interface AuthenticatedProps extends Props {
-    authenticatedUser: AuthenticatedUser
-}
-
-export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <Switch>
-        <Route
-            render={props => <BatchChangeListPage headingElement="h1" canCreate={true} {...outerProps} {...props} />}
-            path={match.url}
-            exact={true}
-        />
-        <Route
-            path={`${match.url}/create`}
-            render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
-            exact={true}
-        />
-        <Route component={NotFoundPage} key="hardcoded-key" />
-    </Switch>
-))
-
-export interface NamespaceBatchChangesAreaProps<RouteProps = {}> extends Props<RouteProps> {
+export interface NamespaceBatchChangesAreaProps extends Props {
     namespaceID: Scalars['ID']
 }
 

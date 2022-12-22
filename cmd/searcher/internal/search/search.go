@@ -155,7 +155,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.StringSlice("languages", p.Languages),
 		attribute.Bool("isWordMatch", p.IsWordMatch),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
-		attribute.Bool("pathPatternsAreRegExps", p.PathPatternsAreRegExps),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
@@ -236,16 +235,21 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	hybrid := !p.IsStructuralPat && p.FeatHybrid
 	if hybrid {
-		unsearched, ok, err := s.hybrid(ctx, p, sender)
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+		)
+
+		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			s.Log.Error("hybrid search failed",
+			logger.Error("hybrid search failed",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)),
 				log.Error(err))
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+			logger.Debug("hybrid search is falling back to normal unindexed search",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)))
 		} else {

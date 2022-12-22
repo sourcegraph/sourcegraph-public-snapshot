@@ -19,9 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -70,9 +68,10 @@ type UserResolver struct {
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
-		log.Object("repo",
-			log.String("user", user.Username))),
+	return &UserResolver{
+		db:     db,
+		user:   user,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 	}
 }
 
@@ -360,7 +359,8 @@ func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoReso
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -375,7 +375,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "updated the password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password update", "error", err)
 		}
 	}
@@ -384,7 +384,8 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -399,7 +400,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "created a password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
@@ -510,31 +511,4 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
-}
-
-func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error) {
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	repos, err := r.db.UserPublicRepos().ListByUser(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	gsClient := gitserver.NewClient(r.db)
-	var out []*RepositoryResolver
-	for _, repo := range repos {
-		out = append(out, &RepositoryResolver{
-			logger: r.logger,
-			RepoMatch: result.RepoMatch{
-				ID:   repo.RepoID,
-				Name: api.RepoName(repo.RepoURI),
-			},
-			db:              r.db,
-			gitserverClient: gsClient,
-			innerRepo: &types.Repo{
-				ID: repo.RepoID,
-			},
-		})
-	}
-	return out, nil
 }

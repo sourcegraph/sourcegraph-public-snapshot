@@ -83,7 +83,7 @@ describe('Backend insight drill down filters', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
@@ -133,7 +133,7 @@ describe('Backend insight drill down filters', () => {
 
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
         const insightWithFilters: InsightViewNode = {
-            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
+            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
             appliedFilters: {
                 __typename: 'InsightViewFilters',
                 searchContexts: [],
@@ -174,17 +174,17 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
-                CreateSearchBasedInsight: () => ({
+                SaveInsightAsNewView: () => ({
                     __typename: 'Mutation',
-                    createLineChartSearchInsight: {
+                    saveInsightAsNewView: {
                         __typename: 'InsightViewPayload',
-                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
+                        view: createJITMigrationToGQLInsightMetadataFixture({ id: 'view_2', type: 'calculated' }),
                     },
                 }),
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Active filters"]')
@@ -206,43 +206,11 @@ describe('Backend insight drill down filters', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'CreateSearchBasedInsight')
+        }, 'SaveInsightAsNewView')
 
         assert.deepStrictEqual(variables.input, {
-            dataSeries: [
-                {
-                    query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-                    options: {
-                        label: 'Imports of old GQL.* types',
-                        lineColor: 'var(--oc-red-7)',
-                    },
-                    repositoryScope: {
-                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                    },
-                    timeScope: {
-                        stepInterval: {
-                            unit: 'WEEK',
-                            value: 6,
-                        },
-                    },
-                },
-                {
-                    query: "patternType:regexp case:yes /graphql-operations'",
-                    options: {
-                        label: 'Imports of new graphql-operations types',
-                        lineColor: 'var(--oc-blue-7)',
-                    },
-                    repositoryScope: {
-                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                    },
-                    timeScope: {
-                        stepInterval: {
-                            unit: 'WEEK',
-                            value: 6,
-                        },
-                    },
-                },
-            ],
+            insightViewId: 'view_1',
+            dashboard: null,
             options: {
                 title: 'Insight with filters',
             },

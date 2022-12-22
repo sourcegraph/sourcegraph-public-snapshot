@@ -7,10 +7,6 @@ import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
 import { useCodeIntel } from './codeintel/useCodeIntel'
-import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
-import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
-import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
-import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
@@ -30,12 +26,6 @@ import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems
 
 export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
-        extensionAreaRoutes={enterpriseExtensionAreaRoutes}
-        extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={window.context.enableLegacyExtensions ? enterpriseExtensionsAreaRoutes : undefined}
-        extensionsAreaHeaderActionButtons={
-            window.context.enableLegacyExtensions ? enterpriseExtensionsAreaHeaderActionButtons : undefined
-        }
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}

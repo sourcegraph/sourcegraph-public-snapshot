@@ -6,6 +6,7 @@ import { useDarkMode } from 'storybook-dark-mode'
 
 import { SymbolKind } from '@sourcegraph/search'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { applyTheme } from '..'
@@ -63,6 +64,8 @@ export const JetBrainsSearchResultListStory: Story = () => {
             message: 'Commit message',
             authorName: 'Test User',
             authorDate: AUTHOR_DATE,
+            committerName: 'Test User',
+            committerDate: AUTHOR_DATE,
             repoStars: 3,
             content: '',
             // Array of [line, character, length] triplets
@@ -113,6 +116,7 @@ export const JetBrainsSearchResultListStory: Story = () => {
                         onPreviewChange={async () => {}}
                         onPreviewClear={async () => {}}
                         onOpen={async () => {}}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
                     />
                 </div>
             </div>

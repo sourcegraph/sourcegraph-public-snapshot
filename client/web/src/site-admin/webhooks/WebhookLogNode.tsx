@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { format } from 'date-fns'
 
@@ -15,6 +15,7 @@ import styles from './WebhookLogNode.module.scss'
 
 export interface Props {
     node: WebhookLogFields
+    doNotShowExternalService?: boolean
 
     // For storybook purposes only:
     initiallyExpanded?: boolean
@@ -22,6 +23,7 @@ export interface Props {
 }
 
 export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    doNotShowExternalService = false,
     initiallyExpanded,
     initialTabIndex,
     node: { externalService, receivedAt, request, response, statusCode },
@@ -38,22 +40,23 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleExpanded}
                 >
-                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
                 </Button>
             </span>
             <span className={styles.statusCode}>
                 <StatusCode code={statusCode} />
             </span>
             <span>
-                {externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>}
+                {!doNotShowExternalService &&
+                    (externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>)}
             </span>
             <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
             <span className={styles.smDetailsButton}>
                 <Button onClick={toggleExpanded} outline={true} variant="secondary">
                     {isExpanded ? (
-                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                     ) : (
-                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     )}{' '}
                     {isExpanded ? 'Hide' : 'Show'} details
                 </Button>

@@ -255,3 +255,37 @@ func TestEnvironment_Resolve(t *testing.T) {
 		}
 	})
 }
+
+func TestEnvironment_OuterVars(t *testing.T) {
+	for name, tc := range map[string]struct {
+		in   Environment
+		want []string
+	}{
+		"no variables": {
+			in:   Environment{},
+			want: []string{},
+		},
+		"static variables": {
+			in: Environment{vars: []variable{
+				{name: "foo", value: stringPtr("bar")},
+				{name: "quux", value: stringPtr("baz")},
+			}},
+			want: []string{},
+		},
+		"dynamic variables and static mixed": {
+			in: Environment{vars: []variable{
+				{name: "foo", value: stringPtr("bar")},
+				{name: "quux", value: nil},
+			}},
+			want: []string{"quux"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := tc.in.OuterVars()
+
+			if diff := cmp.Diff(have, tc.want); diff != "" {
+				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}

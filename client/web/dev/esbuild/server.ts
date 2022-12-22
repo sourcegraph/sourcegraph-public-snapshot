@@ -23,10 +23,11 @@ export const esbuildDevelopmentServer = async (
     await buildMonaco(STATIC_ASSETS_PATH)
 
     // Start esbuild's server on a random local port.
-    const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
-        { host: 'localhost', servedir: STATIC_ASSETS_PATH },
-        BUILD_OPTIONS
-    )
+    const {
+        host: esbuildHost,
+        port: esbuildPort,
+        wait: esbuildStopped,
+    } = await serve({ host: 'localhost', servedir: STATIC_ASSETS_PATH }, BUILD_OPTIONS)
 
     // Start a proxy at :3080. Asset requests (underneath /.assets/) go to esbuild; all other
     // requests go to the upstream.
@@ -36,10 +37,12 @@ export const esbuildDevelopmentServer = async (
         createProxyMiddleware({
             target: { protocol: 'http:', host: esbuildHost, port: esbuildPort },
             pathRewrite: { [`^${assetPathPrefix}`]: '' },
-            onProxyRes: (proxyResponse, request) => {
+            onProxyRes: (proxyResponse, request, response) => {
                 // Cache chunks because their filename includes a hash of the content.
                 const isCacheableChunk = path.basename(request.url).startsWith('chunk-')
-                proxyResponse.headers['Cache-Control'] = isCacheableChunk ? 'max-age=3600' : 'no-cache'
+                if (isCacheableChunk) {
+                    response.setHeader('Cache-Control', 'max-age=3600')
+                }
             },
             logLevel: 'error',
         })

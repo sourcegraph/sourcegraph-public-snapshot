@@ -19,21 +19,21 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 29 Dec 2021 02:28:07 GMT
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@9KC48Ux148x17313342x0'
+      - '@1KBB873x1070x1023881x1'
       X-Asessionid:
-      - 1l2rt0u
+      - pgcmqf
       X-Auserid:
-      - "203"
+      - "1"
       X-Ausername:
-      - aharvey
+      - milton
       X-Content-Type-Options:
       - nosniff
     status: 200 OK
@@ -57,21 +57,21 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 29 Dec 2021 02:28:07 GMT
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@9KC48Ux148x17313343x0'
+      - '@1KBB873x1070x1023883x1'
       X-Asessionid:
-      - ldhw5j
+      - dpf8zg
       X-Auserid:
-      - "203"
+      - "1"
       X-Ausername:
-      - aharvey
+      - milton
       X-Content-Type-Options:
       - nosniff
     status: 200 OK
@@ -83,10 +83,14 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~aharvey/repos/go
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~milton/repos/BAT-vcr-fork-test-repo
     method: GET
   response:
-    body: '{"errors":[{"context":null,"message":"Repository ~aharvey/go does not exist.","exceptionName":"com.atlassian.bitbucket.repository.NoSuchRepositoryException"}]}'
+    body: '{"slug":"bat-vcr-fork-test-repo","id":24385,"name":"BAT-vcr-fork-test-repo","description":"This
+      repo is intended to be used for recording batch changes VCR tests","hierarchyId":"0e8e237d3bcf0c1a6dc4","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"origin":{"slug":"vcr-fork-test-repo","id":24373,"name":"vcr-fork-test-repo","description":"This
+      repo is intended to be used for recording batch changes VCR tests","hierarchyId":"0e8e237d3bcf0c1a6dc4","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"BAT","id":183,"name":"batch-changes-testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/bat/vcr-fork-test-repo.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/bat/vcr-fork-test-repo.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT/repos/vcr-fork-test-repo/browse"}]}},"project":{"key":"~MILTON","id":2,"name":"milton
+      woof","type":"PERSONAL","owner":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/~milton/bat-vcr-fork-test-repo.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/~milton/bat-vcr-fork-test-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/users/milton/repos/bat-vcr-fork-test-repo/browse"}]}}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -94,66 +98,23 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 29 Dec 2021 02:28:07 GMT
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@9KC48Ux148x17313344x0'
+      - '@1KBB873x1070x1023884x1'
       X-Asessionid:
-      - zadtf6
+      - 4k4i17
       X-Auserid:
-      - "203"
+      - "1"
       X-Ausername:
-      - aharvey
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: 404 Not Found
-    code: 404
-    duration: ""
-- request:
-    body: |
-      {}
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SGDEMO/repos/go
-    method: POST
-  response:
-    body: '{"slug":"go","id":10153,"name":"go","hierarchyId":"d501682e55fecfa03127","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"origin":{"slug":"go","id":10060,"name":"go","hierarchyId":"d501682e55fecfa03127","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
-      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sgdemo/go.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/go.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/go/browse"}]}},"project":{"key":"~AHARVEY","id":63,"name":"Adam
-      Harvey","type":"PERSONAL","owner":{"name":"aharvey","emailAddress":"aharvey@sourcegraph.com","id":203,"displayName":"Adam
-      Harvey","active":true,"slug":"aharvey","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/aharvey"}]}},"links":{"self":[{"href":"https://bitbucket.sgdev.org/users/aharvey"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/~aharvey/go.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/~aharvey/go.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/users/aharvey/repos/go/browse"}]}}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Wed, 29 Dec 2021 02:28:07 GMT
-      Location:
-      - https://bitbucket.sgdev.org/rest/api/1.0/projects/~AHARVEY/repos/go
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@9KC48Ux148x17313345x0'
-      X-Asessionid:
-      - 1i9dv5r
-      X-Auserid:
-      - "203"
-      X-Ausername:
-      - aharvey
-      X-Content-Type-Options:
-      - nosniff
-    status: 201 Created
-    code: 201
+    status: 200 OK
+    code: 200
     duration: ""

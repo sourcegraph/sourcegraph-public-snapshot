@@ -62,7 +62,6 @@
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserPublicRepoStore
     - UserStore
     - WebhookStore
     - WebhookLogStore
@@ -103,3 +102,8 @@
   interfaces:
     - Store
     - DistributedStore
+- filename: cmd/frontend/backend/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
+  interfaces:
+    - UserEmailsService
+    - ReposService

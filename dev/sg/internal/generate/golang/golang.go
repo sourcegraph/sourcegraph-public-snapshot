@@ -173,7 +173,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 // For debugging
 const showTimings = false
 
-func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, _ *std.Output, _ io.Writer) (err error) {
 	var (
 		done     = 0.0
 		total    = float64(len(pkgPaths))
@@ -223,12 +223,14 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 		pkgPath := pkgPath
 
 		g.Go(func(ctx context.Context) error {
+			file := filepath.Base(pkgPath) // *.go
+			directory := filepath.Dir(pkgPath)
 			if verbosity == VerboseOutput {
-				progress.Writef("Generating %s...", pkgPath)
+				progress.Writef("Generating %s (%s)...", directory, file)
 			}
 
 			start := time.Now()
-			if err := root.Run(run.Cmd(ctx, "go", "generate", pkgPath)).Wait(); err != nil {
+			if err := root.Run(run.Cmd(ctx, "go", "generate", file), directory).Wait(); err != nil {
 				return err
 			}
 			duration := time.Since(start)

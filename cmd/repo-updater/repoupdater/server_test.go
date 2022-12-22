@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -645,10 +646,10 @@ func TestServer_RepoLookup(t *testing.T) {
 			clock := clock
 			logger := logtest.Scoped(t)
 			syncer := &repos.Syncer{
-				Logger:  logger,
 				Now:     clock.Now,
 				Store:   store,
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
+				ObsvCtx: observation.TestContextTB(t),
 			}
 
 			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
@@ -861,6 +862,10 @@ func (t testSource) ListRepos(ctx context.Context, results chan repos.SourceResu
 }
 
 func (t testSource) ExternalServices() types.ExternalServices {
+	return nil
+}
+
+func (t testSource) CheckConnection(ctx context.Context) error {
 	return nil
 }
 

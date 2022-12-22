@@ -1,0 +1,47 @@
+.list,
+.label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
+    margin-bottom: 0.625rem;
+}
+
+.list {
+    list-style: none;
+}
+
+.button {
+    min-width: 2rem;
+    padding: 0.25rem 0.5rem;
+
+    &:focus,
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+.next-button,
+.previous-button {
+    min-width: 4.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.next-button-icon,
+.previous-button-icon {
+    flex-grow: 0;
+}
+
+.next-button-label,
+.previous-button-label {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.first-page-button,
+.last-page-button {
+    fill: currentColor !important;
+}

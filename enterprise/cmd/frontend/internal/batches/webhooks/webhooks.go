@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -21,9 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type Webhook struct {
+type webhook struct {
 	Store           *store.Store
 	gitserverClient gitserver.Client
+	logger          sglog.Logger
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -35,7 +38,7 @@ type PR struct {
 	RepoExternalID string
 }
 
-func (h Webhook) getRepoForPR(
+func (h webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
@@ -64,7 +67,7 @@ func (h Webhook) getRepoForPR(
 func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (extsvc.CodeHostBaseURL, error) {
 	c, err := extSvc.Configuration(ctx)
 	if err != nil {
-		return extsvc.CodeHostBaseURL{}, errors.Wrap(err, "Failed to get external service config")
+		return extsvc.CodeHostBaseURL{}, errors.Wrap(err, "failed to get external service config")
 	}
 
 	var serviceID string
@@ -79,7 +82,7 @@ func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService
 		serviceID = c.Url
 	}
 	if serviceID == "" {
-		return extsvc.CodeHostBaseURL{}, errors.New("could not determine service id")
+		return extsvc.CodeHostBaseURL{}, errors.Errorf("could not determine service id for external service %d", extSvc.ID)
 	}
 
 	return extsvc.NewCodeHostBaseURL(serviceID)
@@ -89,7 +92,7 @@ type keyer interface {
 	Key() string
 }
 
-func (h Webhook) upsertChangesetEvent(
+func (h webhook) upsertChangesetEvent(
 	ctx context.Context,
 	externalServiceID extsvc.CodeHostBaseURL,
 	pr PR,

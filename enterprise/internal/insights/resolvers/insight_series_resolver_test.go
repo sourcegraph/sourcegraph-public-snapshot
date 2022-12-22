@@ -31,7 +31,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 		insightStore := store.NewInsightStore(insightsDB)
@@ -95,7 +95,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("insights[0][0].Points", []graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
-
 	})
 }
 
@@ -110,8 +109,14 @@ func fakeBackfillGetter(backfills []scheduler.SeriesBackfill, err error) GetSeri
 		return backfills, err
 	}
 }
-func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 
+func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
+	return func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
+		return nil, nil
+	}
+}
+
+func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 	type isLoadingTestCase struct {
 		backfills    []scheduler.SeriesBackfill
 		backfillsErr error
@@ -193,7 +198,7 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			statusGetter := fakeStatusGetter(&tc.queueStatus, tc.queueErr)
 			backfillGetter := fakeBackfillGetter(tc.backfills, tc.backfillsErr)
-			statusResolver := newStatusResolver(statusGetter, backfillGetter, tc.series)
+			statusResolver := newStatusResolver(statusGetter, backfillGetter, fakeIncompleteGetter(), tc.series)
 			loading, err := statusResolver.IsLoadingData(context.Background())
 			var loadingResult bool
 			if loading != nil {
@@ -207,5 +212,61 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 			tc.want.Equal(t, fmt.Sprintf("loading:%t error:%s", loadingResult, errMsg))
 		})
 	}
+}
 
+func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
+	// Setup the GraphQL resolver.
+	ctx := actor.WithInternalActor(context.Background())
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	insightStore := store.NewInsightStore(insightsDB)
+	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
+
+	base := baseInsightResolver{
+		insightStore:    insightStore,
+		timeSeriesStore: tss,
+		insightsDB:      insightsDB,
+		postgresDB:      postgres,
+	}
+
+	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "asdf",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	require.NoError(t, err)
+
+	repo := 5
+	addFakeIncomplete := func(in time.Time) {
+		err = tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+			SeriesID: series.ID,
+			RepoID:   &repo,
+			Reason:   store.ReasonTimeout,
+			Time:     in,
+		})
+		require.NoError(t, err)
+	}
+
+	resolver := NewStatusResolver(&base, types.InsightViewSeries{InsightSeriesID: series.ID})
+
+	addFakeIncomplete(now)
+	addFakeIncomplete(now)
+	addFakeIncomplete(now.AddDate(0, 0, 1))
+
+	stringify := func(input []graphqlbackend.IncompleteDatapointAlert) (res []string) {
+		for _, in := range input {
+			res = append(res, in.Time().String())
+		}
+		return res
+	}
+
+	t.Run("as timeout", func(t *testing.T) {
+		got, err := resolver.IncompleteDatapoints(ctx)
+		require.NoError(t, err)
+		autogold.Want("as timeout", []string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
+	})
 }
