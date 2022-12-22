@@ -41,7 +41,7 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 
 	repoName, err := bitbucketServerNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handleGitLabWebhook: get name failed")
+		return errors.Wrap(err, "handlePushEvent: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
