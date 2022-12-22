@@ -68,10 +68,10 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
+			authz.DefaultSubRepoPermsChecker,
 			api.RepoName(r.commit.Repository().Name()),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
-			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 
