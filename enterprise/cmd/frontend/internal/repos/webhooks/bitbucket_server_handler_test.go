@@ -44,7 +44,7 @@ func TestBitbucketServerHandler(t *testing.T) {
 }
 
 func TestBitbucketServerNameFromEvent(t *testing.T) {
-	mkEvent := func(name string, href string) *bitbucketserver.PushEvent {
+	makeEvent := func(name string, href string) *bitbucketserver.PushEvent {
 		return &bitbucketserver.PushEvent{
 			Repository: bitbucketserver.Repo{
 				Links: bitbucketserver.RepoLinks{
@@ -67,22 +67,22 @@ func TestBitbucketServerNameFromEvent(t *testing.T) {
 	}{
 		{
 			name:  "valid event",
-			event: mkEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph"),
+			event: makeEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph"),
 			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
 		},
 		{
 			name:  "valid event with port",
-			event: mkEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph"),
+			event: makeEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph"),
 			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
 		},
 		{
 			name:  "valid event with port and .git",
-			event: mkEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph.git"),
+			event: makeEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph.git"),
 			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
 		},
 		{
 			name:  "valid event with .git",
-			event: mkEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph.git"),
+			event: makeEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph.git"),
 			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
 		},
 		{
