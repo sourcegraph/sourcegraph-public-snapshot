@@ -16,6 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -241,7 +242,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 // used for authentication, it will try to refresh the token and retry the same
 // request when the token has expired.
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	var responseStatus string
+	var resp *http.Response
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
@@ -249,8 +250,8 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		if err != nil {
 			span.SetTag("error", err.Error())
 		}
-		if responseStatus != "" {
-			span.SetTag("status", responseStatus)
+		if resp != nil {
+			span.SetTag("status", resp.Status)
 		}
 		span.Finish()
 	}()
@@ -267,60 +268,24 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	var code int
-	var header http.Header
-	var body []byte
-
-	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
-	if ok {
-		// Pre-emptively check for refresh
-		if oauthAuther.NeedsRefresh() {
-			// NOTE: This is a best-effort attempt, so we do not care about the returned error.
-			_ = oauthAuther.Refresh(ctx, c.httpClient)
-		}
-		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
-		if err != nil {
-			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
-		}
-		code = resp.StatusCode
-		header = resp.Header
-
-		body, err = io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		if err != nil {
-			return nil, code, errors.Wrap(err, "read response body")
-		}
-	} else {
-		if c.Auth != nil {
-			if err := c.Auth.Authenticate(req); err != nil {
-				return nil, 0, errors.Wrap(err, "authenticating request")
-			}
-		}
-
-		resp, err := c.httpClient.Do(req.WithContext(ctx))
-		if err != nil {
-			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request")
-		}
-		defer func() { _ = resp.Body.Close() }()
-
-		code = resp.StatusCode
-		header = resp.Header
-
-		body, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, code, errors.Wrap(err, "read response body")
-		}
-	}
-	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", code)
-
-	if code < 200 || code >= 400 {
-		err := NewHTTPError(code, body)
-		return nil, code, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth)
+	if err != nil {
+		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+		return nil, 0, errors.Wrap(err, "request failed")
 	}
 
-	return header, code, json.Unmarshal(body, result)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, errors.Wrap(err, "read response body")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		err := NewHTTPError(resp.StatusCode, body)
+		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+	}
+
+	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
