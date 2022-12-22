@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/xanzy/go-gitlab"
@@ -134,7 +135,13 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 		Name:        gitlab.String(name),
 		NamespaceID: &group.ID,
 	})
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), "has already been taken") {
+		// state does not match reality, get existing repo
+		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Name, name), &gitlab.GetProjectOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
 	}
 

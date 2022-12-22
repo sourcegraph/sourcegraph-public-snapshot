@@ -406,7 +406,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Codes: 
   - [WeeklyGroupResultsAggregationModeClicked](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeClicked%7CGroupAggregationModeClicked&patternType=regexp)
   - [WeeklyGroupResultsAggregationModeDisabledHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsAggregationModeDisabledHover%7CGroupAggregationModeDisabledHover&patternType=regexp)
-- **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+- **Version added:** 4.0 ([#40997](https://github.com/sourcegraph/sourcegraph/pull/40997))
 
 ### Aggregation chart clicks and hovers 
 

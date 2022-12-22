@@ -77,7 +77,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
-    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', false)
+    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)

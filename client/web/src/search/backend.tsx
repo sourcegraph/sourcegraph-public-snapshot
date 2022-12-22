@@ -16,10 +16,13 @@ import {
     UpdateSavedSearchVariables,
     Scalars,
     SavedSearchFields,
+    ReposByQueryResult,
+    savedSearchesResult,
+    SavedSearchResult,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
-    return queryGraphQL(
+    return queryGraphQL<ReposByQueryResult>(
         gql`
             query ReposByQuery($query: String!) {
                 search(query: $query) {
@@ -60,7 +63,7 @@ const savedSearchFragment = gql`
 `
 
 export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
-    return queryGraphQL(gql`
+    return queryGraphQL<savedSearchesResult>(gql`
         query savedSearches {
             savedSearches {
                 ...SavedSearchFields
@@ -78,7 +81,7 @@ export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
 }
 
 export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
-    return queryGraphQL(
+    return queryGraphQL<SavedSearchResult>(
         gql`
             query SavedSearch($id: ID!) {
                 node(id: $id) {

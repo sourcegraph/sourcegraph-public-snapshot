@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, H2 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -15,7 +14,7 @@ import { MAX_CHANGESETS_COUNT } from './backend'
 
 import styles from './BatchChangeNode.module.scss'
 
-export interface BatchChangeNodeProps extends ThemeProps {
+export interface BatchChangeNodeProps {
     node: RepoBatchChange
     viewerCanAdminister: boolean
     history: H.History

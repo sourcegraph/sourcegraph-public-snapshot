@@ -85,7 +85,6 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                             isLightTheme={isLightTheme}
                                             settingsCascade={EMPTY_SETTINGS_CASCADE}
                                             platformContext={platformContext}
-                                            extensionsController={extensionsController}
                                         />
                                     )}
                                 />

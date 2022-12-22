@@ -1,10 +1,13 @@
 import {
     InsightViewNode,
+    InsightDataNode,
     SeriesDisplayOptionsInput,
     SeriesSortDirection,
     SeriesSortMode,
     SeriesSortOptionsInput,
 } from '../../../../../graphql-operations'
+
+export type IncompleteDatapointAlert = InsightDataNode['dataSeries'][number]['status']['incompleteDatapoints'][number]
 
 export enum InsightExecutionType {
     /**

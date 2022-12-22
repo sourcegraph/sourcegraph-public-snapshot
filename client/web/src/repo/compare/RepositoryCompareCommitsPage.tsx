@@ -25,7 +25,7 @@ function queryRepositoryComparisonCommits(args: {
     first?: number
     path?: string
 }): Observable<RepositoryComparisonRepository['comparison']['commits']> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryComparisonCommitsResult>(
         gql`
             query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int, $path: String) {
                 node(id: $repo) {

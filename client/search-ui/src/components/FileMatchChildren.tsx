@@ -1,12 +1,10 @@
-import React, { useCallback, useMemo, KeyboardEvent, MouseEvent } from 'react'
+import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
@@ -14,16 +12,12 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
-import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
@@ -37,8 +31,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
@@ -51,7 +43,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final.experimentalFeatures?.enableLazyFileResultSyntaxHighlighting
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
 
     const fetchFileRangeMatches = useCallback(
         (args: { format?: HighlightResponseFormat; ranges: HighlightLineRange[] }): Observable<string[][]> =>
@@ -122,20 +114,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         )
     }
 
-    const codeIntelViewerUpdatesProps = useMemo(
-        () =>
-            grouped && result.type === 'content' && extensionsController
-                ? {
-                      extensionsController,
-                      repositoryName: result.repository,
-                      filePath: result.path,
-                      revision: result.commit,
-                  }
-                : undefined,
-        [extensionsController, result, grouped]
-    )
-    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
-
     const history = useHistory()
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void =>
@@ -158,7 +136,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>
-                    {grouped.map((group, index) => (
+                    {grouped.map(group => (
                         <div
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
@@ -194,8 +172,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                             : undefined
                                     }
                                     blobLines={group.blobLines}
-                                    viewerUpdates={viewerUpdates}
-                                    hoverifier={props.hoverifier}
                                     onCopy={logEventOnCopy}
                                 />
                             </div>
