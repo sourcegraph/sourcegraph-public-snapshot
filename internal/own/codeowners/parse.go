@@ -23,11 +23,17 @@ func Read(in io.Reader) (*codeownerspb.File, error) {
 		if p.isBlank() {
 			continue
 		}
+		if p.matchSection() {
+			continue
+		}
 		pattern, owners, ok := p.matchRule()
 		if !ok {
 			return nil, fmt.Errorf("failed to match rule: %s", p.line)
 		}
-		r := codeownerspb.Rule{Pattern: pattern}
+		r := codeownerspb.Rule{
+			Pattern:     pattern,
+			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
+		}
 		for _, ownerText := range owners {
 			var o codeownerspb.Owner
 			if strings.HasPrefix(ownerText, "@") {
@@ -54,6 +60,8 @@ type parsing struct {
 	// in such a way that for syntactic purposes, every line can be considered
 	// in isolation.
 	line string
+	// The most recently defined section, or "" if none.
+	section string
 }
 
 // nextLine advances parsing to focus on the next line.
@@ -62,15 +70,15 @@ func (p *parsing) nextLine(line string) {
 	p.line = line
 }
 
-var (
-	// rulePattern is expected to match a rule line like:
-	// `cmd/**/docs/index.md @readme-owners owner@example.com`.
-	//  ^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-	// The first capturing   The second capturing group
-	// group extracts        extracts all the owners
-	// the file pattern.     separated by whitespace.
-	rulePattern = regexp.MustCompile(`^\s*(\S+)((?:\s+\S+)*)\s*$`)
-)
+// rulePattern is expected to match a rule line like:
+// `cmd/**/docs/index.md @readme-owners owner@example.com`.
+//
+//	^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//
+// The first capturing   The second capturing group
+// group extracts        extracts all the owners
+// the file pattern.     separated by whitespace.
+var rulePattern = regexp.MustCompile(`^\s*(\S+)((?:\s+\S+)*)\s*$`)
 
 // matchRule tries to extract a codeowners rule from the current line
 // and return the file pattern and one or more owners.
@@ -83,6 +91,18 @@ func (p *parsing) matchRule() (string, []string, bool) {
 	filePattern := match[1]
 	owners := strings.Fields(match[2])
 	return filePattern, owners, true
+}
+
+var sectionPattern = regexp.MustCompile(`^\s*\[([^\]]+)\]\s*$`)
+
+// matchSection tries to extract a section which looks like `[section name]`.
+func (p *parsing) matchSection() bool {
+	match := sectionPattern.FindStringSubmatch(p.lineWithoutComments())
+	if len(match) != 2 {
+		return false
+	}
+	p.section = match[1]
+	return true
 }
 
 // isBlank returns true if the current line has no semantically relevant
