@@ -1,10 +1,57 @@
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+
+export const analyticsGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Analytics',
+        icon: ChartLineVariantIcon,
+    },
+    items: [
+        {
+            label: 'Overview',
+            to: '/site-admin/',
+            exact: true,
+        },
+        {
+            label: 'Search',
+            to: '/site-admin/analytics/search',
+        },
+        {
+            label: 'Code navigation',
+            to: '/site-admin/analytics/code-intel',
+        },
+        {
+            label: 'Users',
+            to: '/site-admin/analytics/users',
+        },
+        {
+            label: 'Insights',
+            to: '/site-admin/analytics/code-insights',
+        },
+        {
+            label: 'Batch changes',
+            to: '/site-admin/analytics/batch-changes',
+        },
+        {
+            label: 'Notebooks',
+            to: '/site-admin/analytics/notebooks',
+        },
+        {
+            label: 'Extensions',
+            to: '/site-admin/analytics/extensions',
+        },
+        {
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
+        },
+    ],
+}
 
 export const configurationGroup: SiteAdminSideBarGroup = {
     header: {
@@ -133,6 +180,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     usersGroup,

@@ -5,6 +5,7 @@ import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
+    analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
@@ -127,6 +128,7 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
