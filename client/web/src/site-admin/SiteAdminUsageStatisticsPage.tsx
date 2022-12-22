@@ -5,6 +5,7 @@ import format from 'date-fns/format'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, H2, H3, Tooltip, Button, AnchorLink, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,6 @@ import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
-import { Timestamp } from '../components/time/Timestamp'
 import { CustomersResult, SiteUsageStatisticsResult, UserUsageStatisticsResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 

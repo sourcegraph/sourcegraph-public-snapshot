@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -23,7 +24,6 @@ import {
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import {
     SurveyResponseAggregateFields,
     SurveyResponseFields,

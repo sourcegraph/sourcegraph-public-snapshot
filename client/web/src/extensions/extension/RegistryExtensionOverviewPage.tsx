@@ -6,13 +6,13 @@ import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Button, Link, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from '../icons'
 
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'

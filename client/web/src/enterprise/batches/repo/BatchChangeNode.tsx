@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, H2 } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { ChangesetNode } from '../detail/changesets/ChangesetNode'
