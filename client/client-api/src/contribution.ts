@@ -3,12 +3,6 @@ import { Primitive } from 'utility-types'
 import { KeyPath } from '@sourcegraph/shared/src/api/client/services/settings'
 import { Expression, TemplateExpression } from '@sourcegraph/template-parser'
 
-// NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
-// extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).
-//
-// The available tools for automatically generating the JSON Schema from this file add more complexity than it's
-// worth.
-
 /**
  * The given contribution type as it's specified in a package.json (expressions as strings)
  */

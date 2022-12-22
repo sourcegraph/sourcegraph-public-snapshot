@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The extension registry no longer supports browsing, creating, or updating legacy extensions. Existing extensions may still be enabled or disabled in user settings and may be listed via the API. (The extension API was deprecated in 2022-09 but is still available if the `enableLegacyExtensions` site config experimental features flag is enabled.)
 
 ## 4.3.0
 

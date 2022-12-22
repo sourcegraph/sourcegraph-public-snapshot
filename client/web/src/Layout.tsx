@@ -31,10 +31,6 @@ import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
-import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import type { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import type { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
@@ -80,10 +76,6 @@ export interface LayoutProps
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps {
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
