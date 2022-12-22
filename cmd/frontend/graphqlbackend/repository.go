@@ -218,7 +218,7 @@ func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitRes
 		return nil, err
 	}
 
-	commit, err := r.gitserverClient.FirstEverCommit(ctx, repo.Name, authz.DefaultSubRepoPermsChecker)
+	commit, err := r.gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
