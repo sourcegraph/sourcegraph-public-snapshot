@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { History } from 'history'
+import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
@@ -26,7 +27,6 @@ import { BlameHunk } from '../blame/useBlameHunks'
 import { useBlameRecencyColor } from './BlameRecency'
 
 import styles from './BlameDecoration.module.scss'
-import { truncate } from 'lodash'
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
 let closeTimeoutId: NodeJS.Timeout | null = null
