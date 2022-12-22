@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/zoekt"
 )
 
 func TestReposSubset(t *testing.T) {
@@ -177,6 +178,11 @@ func TestFindEndpoint(t *testing.T) {
 		hostname:  "foo.internal",
 		endpoints: []string{"foo.internal:80", "bar.internal:80"},
 		want:      "foo.internal:80",
+	}, {
+		name:      "exact without hostname",
+		hostname:  "foo",
+		endpoints: []string{"indexed-search:6070"},
+		want:      "indexed-search:6070",
 	}}
 
 	for _, tc := range cases {

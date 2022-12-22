@@ -471,8 +471,6 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 	return nil
 }
 
-var deploymentType = env.Get("DEPLOY_TYPE", "", "deployment type")
-
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once

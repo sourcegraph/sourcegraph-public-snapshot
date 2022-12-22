@@ -107,7 +107,11 @@ func findEndpoint(eps []string, hostname string) (string, error) {
 	// Given this looser matching, we ensure we don't match more than one
 	// endpoint.
 	endpoint := ""
+	stateful_endpoint := "indexed-search:6070"
 	for _, ep := range eps {
+		if ep == stateful_endpoint {
+			endpoint = stateful_endpoint
+		}
 		if !strings.HasPrefix(ep, hostname) {
 			continue
 		}

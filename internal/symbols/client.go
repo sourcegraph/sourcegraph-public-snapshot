@@ -35,7 +35,7 @@ import (
 )
 
 var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
-var symbolsReplicas = env.Get("SYMBOLS_REPLICA_COUNT", "0", "symbols service replicas")
+var symbolsReplicas = env.Get("SYMBOLS_REPLICA_COUNT", "", "symbols service replicas")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -78,21 +78,20 @@ type Client struct {
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
+	// Compute endpoints based on the provided env vars
 	c.endpointOnce.Do(func() {
-		if symbolsReplicas == "" || c.URL == "" {
+		e := ""
+		num, err := strconv.Atoi(symbolsReplicas)
+		if err == nil {
+			for i := 0; i < num; i++ {
+				e += fmt.Sprintf(" http://symbols-%d:3184", i)
+			}
+		} else {
+			e = c.URL
+		}
+		if e == "" {
 			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
 			return
-		}
-
-		num, err := strconv.Atoi(symbolsReplicas)
-		if err != nil || num <= 0 {
-			c.endpoint = endpoint.Empty(errors.New("invalid replica count for symbols"))
-			return
-		}
-
-		e := c.URL
-		for i := 0; i < num; i++ {
-			e += fmt.Sprintf(" http://symbols-%d:3184", i)
 		}
 
 		c.endpoint = endpoint.New(e)
