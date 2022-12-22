@@ -143,7 +143,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
 	}

@@ -45,7 +45,7 @@ func (g *GitLabHandler) handlePushEvent(ctx context.Context, payload any) error 
 		return errors.Wrap(err, "getting clone URL from event")
 	}
 	fmt.Println("cloneURL:", cloneURL)
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, g.db, cloneURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, g.db, cloneURL)
 	if err != nil {
 		return errors.Wrap(err, "getting repo name from clone URL")
 	}

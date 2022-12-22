@@ -43,7 +43,7 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 	if err != nil {
 		return errors.Wrap(err, "getting clone URL from event")
 	}
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, g.db, cloneURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, g.db, cloneURL)
 	if err != nil {
 		return errors.Wrap(err, "getting repo name from clone URL")
 	}
