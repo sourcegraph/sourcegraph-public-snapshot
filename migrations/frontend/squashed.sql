@@ -1668,6 +1668,13 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
+CREATE TABLE codeowners_head (
+    repo_id integer NOT NULL,
+    proto bytea NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -4085,6 +4092,9 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeowners_head
+    ADD CONSTRAINT codeowners_head_pkey PRIMARY KEY (repo_id);
+
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
 
@@ -4960,6 +4970,9 @@ ALTER TABLE ONLY cm_webhooks
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY codeowners_head
+    ADD CONSTRAINT codeowners_head_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;

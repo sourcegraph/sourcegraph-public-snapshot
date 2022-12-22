@@ -6826,6 +6826,9 @@ type MockEnterpriseDB struct {
 	// CodeMonitorsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeMonitors.
 	CodeMonitorsFunc *EnterpriseDBCodeMonitorsFunc
+	// CodeownersFunc is an instance of a mock function object controlling
+	// the behavior of the method Codeowners.
+	CodeownersFunc *EnterpriseDBCodeownersFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *EnterpriseDBConfFunc
@@ -6978,6 +6981,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: func() (r0 CodeMonitorStore) {
+				return
+			},
+		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: func() (r0 database.CodeownersStore) {
 				return
 			},
 		},
@@ -7223,6 +7231,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.CodeMonitors")
 			},
 		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: func() database.CodeownersStore {
+				panic("unexpected invocation of MockEnterpriseDB.Codeowners")
+			},
+		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: func() database.ConfStore {
 				panic("unexpected invocation of MockEnterpriseDB.Conf")
@@ -7457,6 +7470,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: i.CodeMonitors,
+		},
+		CodeownersFunc: &EnterpriseDBCodeownersFunc{
+			defaultHook: i.Codeowners,
 		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: i.Conf,
@@ -7986,6 +8002,105 @@ func (c EnterpriseDBCodeMonitorsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBCodeMonitorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBCodeownersFunc describes the behavior when the Codeowners
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBCodeownersFunc struct {
+	defaultHook func() database.CodeownersStore
+	hooks       []func() database.CodeownersStore
+	history     []EnterpriseDBCodeownersFuncCall
+	mutex       sync.Mutex
+}
+
+// Codeowners delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Codeowners() database.CodeownersStore {
+	r0 := m.CodeownersFunc.nextHook()()
+	m.CodeownersFunc.appendCall(EnterpriseDBCodeownersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Codeowners method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBCodeownersFunc) SetDefaultHook(hook func() database.CodeownersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Codeowners method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBCodeownersFunc) PushHook(hook func() database.CodeownersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBCodeownersFunc) SetDefaultReturn(r0 database.CodeownersStore) {
+	f.SetDefaultHook(func() database.CodeownersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBCodeownersFunc) PushReturn(r0 database.CodeownersStore) {
+	f.PushHook(func() database.CodeownersStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBCodeownersFunc) nextHook() func() database.CodeownersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBCodeownersFunc) appendCall(r0 EnterpriseDBCodeownersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBCodeownersFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBCodeownersFunc) History() []EnterpriseDBCodeownersFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBCodeownersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBCodeownersFuncCall is an object that describes an invocation
+// of method Codeowners on an instance of MockEnterpriseDB.
+type EnterpriseDBCodeownersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.CodeownersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBCodeownersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBCodeownersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

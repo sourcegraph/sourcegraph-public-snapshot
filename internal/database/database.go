@@ -23,6 +23,7 @@ type DB interface {
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
+	Codeowners() CodeownersStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
@@ -115,6 +116,10 @@ func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
 
 func (d *db) Authz() AuthzStore {
 	return AuthzWith(d.Store)
+}
+
+func (d *db) Codeowners() CodeownersStore {
+	return &codeownersStore{Store: basestore.NewWithHandle(d.Handle())}
 }
 
 func (d *db) Conf() ConfStore {
