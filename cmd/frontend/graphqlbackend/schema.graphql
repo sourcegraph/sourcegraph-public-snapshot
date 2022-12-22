@@ -3081,6 +3081,10 @@ type Repository implements Node & GenericSearchResultInterface {
         inputRevspec: String
     ): GitCommit
     """
+    The first commit inside the repo
+    """
+    firstEverCommit: GitCommit
+    """
     Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
     some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
     maintained by the Sourcegraph site (not the other way around).

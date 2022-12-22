@@ -139,7 +139,7 @@ export interface BlobProps
     supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
-    blameHunks?: { current: BlameHunk[] | undefined }
+    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -829,6 +829,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
                     history={props.history}
+                    isLightTheme={isLightTheme}
                 />
 
                 {groupedDecorations &&
