@@ -17,7 +17,14 @@ import (
 
 func TestGitLabHandler(t *testing.T) {
 	repoName := "gitlab.com/ryanslade/ryan-test-private"
+
 	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return api.RepoName(repoName), nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
 	handler := NewGitLabHandler(db)
 	data, err := os.ReadFile("testdata/gitlab-push.json")
 	if err != nil {
