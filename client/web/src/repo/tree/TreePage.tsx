@@ -79,6 +79,7 @@ interface Props
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     match: RepositoryFileTreePageProps['match']
     isSourcegraphDotCom: boolean
+    className?: string
 }
 
 export const treePageRepositoryFragment = gql`
@@ -105,6 +106,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     useActionItemsBar,
     match,
     isSourcegraphDotCom,
+    className,
     ...props
 }) => {
     useEffect(() => {
@@ -309,7 +311,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     )
 
     return (
-        <div className={styles.treePage}>
+        <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
                 {!showPageTitle && <PageTitle title={getPageTitle()} />}
                 {treeOrError === undefined || repo === undefined ? (

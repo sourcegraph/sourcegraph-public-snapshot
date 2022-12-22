@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
-import { distinctUntilKeyChanged, filter, first, map, switchMap, tap } from 'rxjs/operators'
+import { filter, first, map, switchMap, tap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
@@ -15,7 +15,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
@@ -53,7 +52,6 @@ export interface FileHunksProps extends ThemeProps {
     lineNumbers: boolean
 
     className: string
-    location: H.Location
     history: H.History
     /** Reflect selected line in url */
     persistLines?: boolean
@@ -67,7 +65,6 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
     hunks,
     isLightTheme,
     lineNumbers,
-    location,
     extensionInfo,
     persistLines,
     diffMode,
@@ -140,30 +137,6 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
         [extensionInfoChanges]
     )
 
-    const getHeadStatusBarItems = useCallback(
-        () =>
-            baseAndHeadViewerIds.pipe(
-                distinctUntilKeyChanged('headViewerId'),
-                switchMap(({ headViewerId, extensionHostAPI }) =>
-                    headViewerId ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(headViewerId)) : of(null)
-                ),
-                map(statusBarItems => statusBarItems || [])
-            ),
-        [baseAndHeadViewerIds]
-    )
-
-    const getBaseStatusBarItems = useCallback(
-        () =>
-            baseAndHeadViewerIds.pipe(
-                distinctUntilKeyChanged('baseViewerId'),
-                switchMap(({ baseViewerId, extensionHostAPI }) =>
-                    baseViewerId ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(baseViewerId)) : of(null)
-                ),
-                map(statusBarItems => statusBarItems || [])
-            ),
-        [baseAndHeadViewerIds]
-    )
-
     // Listen for line decorations from extensions
     useObservable(
         useMemo(
@@ -227,41 +200,6 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
 
     return (
         <div className={styles.body}>
-            {extensionInfo && (
-                <div className={classNames('w-100', isSplitMode && 'd-flex ')}>
-                    {/* Always render base status bar even though it isn't displayed in unified mode
-                    in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
-                    mode switch, which noticeably decreases status bar performance. */}
-                    {extensionInfo.extensionsController !== null && window.context.enableLegacyExtensions ? (
-                        <>
-                            <StatusBar
-                                getStatusBarItems={getBaseStatusBarItems}
-                                className={classNames(
-                                    isSplitMode && 'flex-1 w-50',
-                                    'border-bottom border-top-0',
-                                    styles.statusBar
-                                )}
-                                statusBarItemClassName="mx-0"
-                                extensionsController={extensionInfo.extensionsController}
-                                location={location}
-                                badgeText="BASE"
-                            />
-                            <StatusBar
-                                getStatusBarItems={getHeadStatusBarItems}
-                                className={classNames(
-                                    isSplitMode && 'w-50',
-                                    'flex-1 border-bottom border-top-0',
-                                    styles.statusBar
-                                )}
-                                statusBarItemClassName="mx-0"
-                                extensionsController={extensionInfo.extensionsController}
-                                location={location}
-                                badgeText="HEAD"
-                            />
-                        </>
-                    ) : null}
-                </div>
-            )}
             <div className={classNames(styles.fileDiffHunks, className)} ref={nextBlobElement}>
                 {hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
