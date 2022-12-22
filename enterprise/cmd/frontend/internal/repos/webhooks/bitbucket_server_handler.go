@@ -60,7 +60,7 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 
 func bitbucketServerNameFromEvent(event *bitbucketserver.PushEvent) (api.RepoName, error) {
 	if event == nil {
-		return "", errors.New("URL for repository not found")
+		return "", errors.New("nil PushEvent received")
 	}
 	for _, link := range event.Repository.Links.Clone {
 		// The ssh link is the closest to our repo name
