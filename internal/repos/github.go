@@ -440,7 +440,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 				if page == 1 {
 					var e *github.APIError
 					if errors.As(err, &e) && e.Code == 404 {
-						oerr = errors.Errorf("organisation %q not found", org)
+						oerr = errors.Errorf("organisation %q (specified in configuration) not found", org)
 						err = nil
 					}
 				}
