@@ -22,6 +22,7 @@ import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -68,6 +69,10 @@ interface State {
      * The data, loading, or an error.
      */
     dataOrError: typeof LOADING | SettingsData | ErrorLike
+}
+
+interface SettingsSubjects {
+    subjects: SettingsSubject[]
 }
 
 /**
@@ -188,7 +193,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsSubject[] }): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: SettingsSubjects): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
@@ -220,8 +225,8 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsSubject[] }> {
-    return queryGraphQL(
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<SettingsSubjects> {
+    return queryGraphQL<SettingsCascadeResult>(
         gql`
             query SettingsCascade($subject: ID!) {
                 settingsSubject(id: $subject) {
@@ -242,7 +247,7 @@ function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: Se
             if (!data || !data.settingsSubject) {
                 throw createAggregateError(errors)
             }
-            return data.settingsSubject.settingsCascade
+            return data.settingsSubject.settingsCascade as SettingsSubjects
         })
     )
 }
