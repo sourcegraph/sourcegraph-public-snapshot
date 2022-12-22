@@ -2,10 +2,12 @@ package codeowners
 
 import (
 	"bufio"
-	"fmt"
 	"io"
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
@@ -34,7 +36,7 @@ func Read(in io.Reader) (*codeownerspb.File, error) {
 		}
 		pattern, owners, ok := p.matchRule()
 		if !ok {
-			return nil, fmt.Errorf("failed to match rule: %s", p.line)
+			return nil, errors.Errorf("failed to match rule: %s", p.line)
 		}
 		// Need to handle this error once, codeownerspb.File supports
 		// error metadata.
