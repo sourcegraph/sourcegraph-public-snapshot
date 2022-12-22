@@ -6,7 +6,6 @@ import { Router } from 'react-router'
 import { spy, stub, assert } from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { IEmptyResponse } from '@sourcegraph/shared/src/schema'
 import {
     mockAuthenticatedUser,
     mockFetchSearchContexts,
@@ -14,6 +13,8 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
+
+import { setDefaultSearchContextResult } from '../../graphql-operations'
 
 import { SET_DEFAULT_SEARCH_CONTEXT_MUTATION } from './hooks/useDefaultContext'
 import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
@@ -48,7 +49,7 @@ describe('SearchContextsList', () => {
         })
 
         it('saves default context and updates list', () => {
-            const mockSetDefault: MockedResponse<IEmptyResponse> = {
+            const mockSetDefault: MockedResponse<setDefaultSearchContextResult['setDefaultSearchContext']> = {
                 request: {
                     query: getDocumentNode(SET_DEFAULT_SEARCH_CONTEXT_MUTATION),
                 },

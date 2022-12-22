@@ -13,7 +13,7 @@ import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade, SettingsSubject, SubjectSettingsContents } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
     RepoFile,
@@ -101,13 +101,13 @@ function toPrettyWebBlobURL(
 }
 
 function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): {
-    subjects: (SettingsSubject & SubjectSettingsContents)[]
+    subjects: SettingsSubject[]
 } {
     if (!data?.viewerSettings) {
         throw createAggregateError(errors)
     }
 
-    return data.viewerSettings as { subjects: (SettingsSubject & SubjectSettingsContents)[] }
+    return data.viewerSettings
 }
 
 /**

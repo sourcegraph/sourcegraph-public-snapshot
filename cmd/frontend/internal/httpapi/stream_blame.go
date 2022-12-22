@@ -116,7 +116,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				if p, ok := parentsCache[h.CommitID]; ok {
 					parents = p
 				} else {
-					c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+					c, err := gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
 					if err != nil {
 						tr.SetError(err)
 						http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)

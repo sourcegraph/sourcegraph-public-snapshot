@@ -46,11 +46,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
-                <Link
-                    to={getCommitMatchUrl(result)}
-                    data-selectable-search-result="true"
-                    data-selectable-search-result-header-link="true"
-                >
+                <Link to={getCommitMatchUrl(result)} data-selectable-search-result="true">
                     {result.message.split('\n', 1)[0]}
                 </Link>
             </span>

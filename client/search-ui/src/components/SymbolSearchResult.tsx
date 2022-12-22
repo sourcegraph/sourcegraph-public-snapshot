@@ -64,7 +64,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         : undefined
                 }
                 className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
-                isKeyboardSelectable={true}
             />
             <CopyPathAction
                 filePath={result.path}

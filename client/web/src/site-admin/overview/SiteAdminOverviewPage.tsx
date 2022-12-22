@@ -13,7 +13,7 @@ import { LoadingSpinner, useObservable, Button, Link, Icon, H3, Heading, ErrorAl
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
 import { PageTitle } from '../../components/PageTitle'
-import { Scalars, WAUsResult } from '../../graphql-operations'
+import { OverviewResult, Scalars, WAUsResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SiteUsagePeriodFragment } from '../backend'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
@@ -54,7 +54,7 @@ const fetchOverview = (): Observable<{
         averageScore: number
     }
 }> =>
-    queryGraphQL(gql`
+    queryGraphQL<OverviewResult>(gql`
         query Overview {
             repositories {
                 totalCount(precise: true)
@@ -86,7 +86,7 @@ const fetchOverview = (): Observable<{
     )
 
 const fetchWeeklyActiveUsers = (): Observable<WAUsResult['site']['usageStatistics']> =>
-    queryGraphQL(gql`
+    queryGraphQL<WAUsResult>(gql`
         query WAUs {
             site {
                 usageStatistics {

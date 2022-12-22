@@ -91,12 +91,12 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
 
-// gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
+// gitCommitGQLID is a type used for marshaling and unmarshalling a Git commit's
 // GraphQL ID.
 type gitCommitGQLID struct {
 	Repository graphql.ID  `json:"r"`

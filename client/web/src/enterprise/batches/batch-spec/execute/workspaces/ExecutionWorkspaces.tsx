@@ -93,7 +93,6 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildr
                                 {selectedWorkspaceID ? (
                                     <WorkspaceDetails
                                         id={selectedWorkspaceID}
-                                        isLightTheme={isLightTheme}
                                         deselectWorkspace={deselectWorkspace}
                                         queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
                                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

@@ -5,7 +5,6 @@ import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -244,13 +243,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
                                 Insights
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {enableLegacyExtensions && (
-                        <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
-                                Extensions
                             </NavLink>
                         </NavItem>
                     )}

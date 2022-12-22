@@ -37,6 +37,10 @@ export const currentAuthStateQuery = gql`
                 email
                 verified
             }
+            latestSettings {
+                id
+                contents
+            }
         }
     }
 `
