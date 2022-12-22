@@ -88,6 +88,7 @@ class BlameDecorationWidget extends WidgetType {
                     onDeselect={this.deselectRow}
                     firstCommitDate={this.firstCommitDate}
                     isLightTheme={this.isLightTheme}
+                    hideRecency={false}
                 />
             )
         }

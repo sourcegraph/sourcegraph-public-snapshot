@@ -26,6 +26,7 @@ import { BlameHunk } from '../blame/useBlameHunks'
 import { useBlameRecencyColor } from './BlameRecency'
 
 import styles from './BlameDecoration.module.scss'
+import { truncate } from 'lodash'
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
 let closeTimeoutId: NodeJS.Timeout | null = null
@@ -115,7 +116,8 @@ export const BlameDecoration: React.FunctionComponent<{
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
     isLightTheme: boolean
-}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, isLightTheme }) => {
+    hideRecency: boolean
+}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, isLightTheme, hideRecency }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
@@ -149,11 +151,13 @@ export const BlameDecoration: React.FunctionComponent<{
 
     return (
         <div className={classNames(styles.blame)}>
-            <div
-                className={classNames(styles.recency, isFirstInHunk ? styles.recencyFirstInHunk : null)}
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{ backgroundColor: firstCommitDate ? recencyColor : 'transparent' }}
-            />
+            {hideRecency ? null : (
+                <div
+                    className={classNames(styles.recency, isFirstInHunk ? styles.recencyFirstInHunk : null)}
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ backgroundColor: firstCommitDate ? recencyColor : 'transparent' }}
+                />
+            )}
             {isFirstInHunk ? (
                 <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>
                     <PopoverTrigger
@@ -167,28 +171,38 @@ export const BlameDecoration: React.FunctionComponent<{
                         onMouseEnter={openWithTimeout}
                         onMouseLeave={closeWithTimeout}
                     >
-                        <span className={styles.date} data-line-decoration-attachment-content={true}>
-                            {displayInfo.dateString}
-                        </span>
-                        <span className={styles.author} data-line-decoration-attachment-content={true}>
-                            {blameHunk.author.person ? (
-                                <UserAvatar
-                                    inline={true}
-                                    className={styles.avatar}
-                                    user={
-                                        blameHunk.author.person.user
-                                            ? blameHunk.author.person.user
-                                            : blameHunk.author.person
-                                    }
-                                    size={16}
-                                />
-                            ) : (
-                                `${displayInfo.username}${displayInfo.displayName}`
-                            )}
-                        </span>
-                        <span className={styles.content} data-line-decoration-attachment-content={true}>
-                            {displayInfo.message}
-                        </span>
+                        {hideRecency ? (
+                            <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                {`${displayInfo.dateString} • ${displayInfo.username}${
+                                    displayInfo.displayName
+                                } [${truncate(displayInfo.message, { length: 45 })}]`}
+                            </span>
+                        ) : (
+                            <>
+                                <span className={styles.date} data-line-decoration-attachment-content={true}>
+                                    {displayInfo.dateString}
+                                </span>
+                                <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                    {blameHunk.author.person ? (
+                                        <UserAvatar
+                                            inline={true}
+                                            className={styles.avatar}
+                                            user={
+                                                blameHunk.author.person.user
+                                                    ? blameHunk.author.person.user
+                                                    : blameHunk.author.person
+                                            }
+                                            size={16}
+                                        />
+                                    ) : (
+                                        `${displayInfo.username}${displayInfo.displayName}`
+                                    )}
+                                </span>
+                                <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                    {displayInfo.message}
+                                </span>
+                            </>
+                        )}
                     </PopoverTrigger>
 
                     <PopoverContent

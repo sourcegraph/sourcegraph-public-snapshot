@@ -75,13 +75,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                             cell.classList.add(styles.decoration)
 
                             // add line number cell extra horizontal padding
-                            const line = row.querySelector('td.line')
-                            if (line) {
-                                line.classList.add('px-2', styles.lineNumber)
-                                if (isBlameVisible) {
-                                    line.classList.add(styles.visible)
-                                }
-                            }
+                            row.querySelector('td.line')?.classList.add('px-2')
 
                             // add decorations wrapper
                             const wrapper = document.createElement('div')
@@ -137,6 +131,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                             onDeselect={deselectRow}
                             firstCommitDate={blameHunks?.firstCommitDate}
                             isLightTheme={isLightTheme}
+                            hideRecency={true}
                         />,
                         // The classname can contain a +, so we would either need to escape it (boo!),
                         // or just use getElementsByClassName.
