@@ -122,7 +122,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientKey,
-				AccountID:   bbUser.Uuid,
+				AccountID:   bbUser.AccountId,
 			},
 			ExternalAccountData: data,
 			CreateIfNotExist:    signupAllowed,

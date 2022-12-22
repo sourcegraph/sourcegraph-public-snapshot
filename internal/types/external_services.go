@@ -10,6 +10,12 @@ type BitbucketServerConnection struct {
 	*schema.BitbucketServerConnection
 }
 
+type BitbucketCloudConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.BitbucketCloudConnection
+}
+
 type GitHubConnection struct {
 	// The unique resource identifier of the external service.
 	URN string
