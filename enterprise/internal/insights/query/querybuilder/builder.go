@@ -7,7 +7,6 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -139,7 +138,6 @@ type PointDiffQueryInfo struct {
 	RepoList           []string
 	RepoSearch         *string
 	SearchQuery        BasicQuery
-	GenerationMethod   types.GenerationMethod
 }
 
 func PointDiffQuery(diffInfo PointDiffQueryInfo) (BasicQuery, error) {

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -70,17 +71,14 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 
 		var series []query.GeneratedTimeSeries
 		var err error
-		generationMethod := types.Search
 		if seriesArgs.GeneratedFromCaptureGroups {
 			if seriesArgs.GroupBy != nil {
-				generationMethod = types.MappingCompute
 				executor := query.NewComputeExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
 				if err != nil {
 					return nil, err
 				}
 			} else {
-				generationMethod = types.SearchCompute
 				executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
 				series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
 				if err != nil {
@@ -96,12 +94,23 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		}
 		for i := range series {
 			foundData = foundData || len(series[i].Points) > 0
+			// Replacing capture group values if present
+			// Ignoring errors so it falls back to the entered query
+			seriesQuery := seriesArgs.Query
+			if seriesArgs.GeneratedFromCaptureGroups && len(series[i].Points) > 0 {
+				replacer, _ := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(seriesQuery), searchquery.SearchTypeRegex)
+				if replacer != nil {
+					replaced, err := replacer.Replace(series[i].Label)
+					if err == nil {
+						seriesQuery = replaced.String()
+					}
+				}
+			}
 			resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{
-				series:           &series[i],
-				repoList:         args.Input.RepositoryScope.Repositories,
-				repoSearch:       args.Input.RepositoryScope.RepositoryCriteria,
-				searchQuery:      seriesArgs.Query,
-				generationMethod: generationMethod,
+				series:      &series[i],
+				repoList:    args.Input.RepositoryScope.Repositories,
+				repoSearch:  args.Input.RepositoryScope.RepositoryCriteria,
+				searchQuery: seriesQuery,
 			})
 		}
 	}
@@ -121,11 +130,10 @@ func pluralize(singular, plural string, n int) string {
 }
 
 type searchInsightLivePreviewSeriesResolver struct {
-	series           *query.GeneratedTimeSeries
-	repoList         []string
-	repoSearch       *string
-	searchQuery      string
-	generationMethod types.GenerationMethod
+	series      *query.GeneratedTimeSeries
+	repoList    []string
+	repoSearch  *string
+	searchQuery string
 }
 
 func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]graphqlbackend.InsightsDataPointResolver, error) {
@@ -143,12 +151,11 @@ func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]
 		pointResolver := &insightsDataPointResolver{
 			p: point,
 			diffInfo: &querybuilder.PointDiffQueryInfo{
-				After:            after,
-				Before:           point.Time,
-				RepoList:         s.repoList,
-				RepoSearch:       s.repoSearch,
-				SearchQuery:      querybuilder.BasicQuery(s.searchQuery),
-				GenerationMethod: s.generationMethod,
+				After:       after,
+				Before:      point.Time,
+				RepoList:    s.repoList,
+				RepoSearch:  s.repoSearch,
+				SearchQuery: querybuilder.BasicQuery(s.searchQuery),
 			}}
 		resolvers = append(resolvers, pointResolver)
 	}

@@ -271,7 +271,6 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 				RepoList:           p.series.Repositories,
 				RepoSearch:         p.series.RepositoryCriteria,
 				SearchQuery:        querybuilder.BasicQuery(query),
-				GenerationMethod:   p.series.GenerationMethod,
 			},
 		}
 		resolvers = append(resolvers, pointResolver)
