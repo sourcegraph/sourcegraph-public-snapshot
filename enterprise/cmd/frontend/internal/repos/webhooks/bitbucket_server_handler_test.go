@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -17,7 +18,8 @@ import (
 
 func TestBitbucketServerHandler(t *testing.T) {
 	repoName := "bitbucket.sgdev.org/private/test-2020-06-01"
-	handler := NewBitbucketServerHandler()
+	db := database.NewMockDB()
+	handler := NewBitbucketServerHandler(db)
 	data, err := os.ReadFile("testdata/bitbucket-server-push.json")
 	if err != nil {
 		t.Fatal(err)

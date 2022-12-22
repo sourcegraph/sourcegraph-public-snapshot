@@ -52,9 +52,9 @@ func TestGitHubHandler(t *testing.T) {
 	}
 
 	conn := schema.GitHubConnection{
-		Url:      "https://github.com",
+		Url:      "https://ghe.sgdev.org",
 		Token:    "token",
-		Repos:    []string{"owner/name"},
+		Repos:    []string{"milton/test"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
@@ -72,7 +72,7 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := NewGitHubHandler()
+	handler := NewGitHubHandler(db)
 	router := &webhooks.GitHubWebhook{
 		Router: &webhooks.Router{
 			DB: db,

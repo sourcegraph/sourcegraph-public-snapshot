@@ -48,6 +48,9 @@ func (g *GitHubHandler) handlePushEvent(ctx context.Context, payload any) error 
 	if err != nil {
 		return errors.Wrap(err, "getting repo name from clone URL")
 	}
+	if repoName == "" {
+		return errors.New("could not determine repo from CloneURL")
+	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
