@@ -121,7 +121,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
 
     const {
         batchSpecID: specID,
-        isLightTheme,
         expandChangesetDescriptions,
         queryChangesetApplyPreview,
         queryChangesetSpecFileDiffs,
@@ -202,7 +201,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
-                        isLightTheme={isLightTheme}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}

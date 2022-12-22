@@ -397,7 +397,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                     <RepositoryCompareArea
                                                         repo={repo}
                                                         match={match}
-                                                        settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
                                                         location={location}
                                                         {...props}

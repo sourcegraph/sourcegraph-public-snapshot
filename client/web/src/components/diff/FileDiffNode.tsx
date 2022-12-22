@@ -4,10 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import prettyBytes from 'pretty-bytes'
-import { Observable } from 'rxjs'
 
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
@@ -15,21 +12,15 @@ import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { dirname } from '../../util/path'
 
 import { DiffStat, DiffStatSquares } from './DiffStat'
-import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
 
 import styles from './FileDiffNode.module.scss'
 
-export interface FileDiffNodeProps extends ThemeProps {
+export interface FileDiffNodeProps {
     node: FileDiffFields
     lineNumbers: boolean
     className?: string
     location: H.Location
-    history: H.History
-
-    extensionInfo?: ExtensionInfo<{
-        observeViewerId?: (uri: string) => Observable<ViewerId | undefined>
-    }>
 
     /** Reflect selected line in url */
     persistLines?: boolean
@@ -38,13 +29,10 @@ export interface FileDiffNodeProps extends ThemeProps {
 
 /** A file diff. */
 export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileDiffNodeProps>> = ({
-    history,
-    isLightTheme,
     lineNumbers,
     location,
     node,
     className,
-    extensionInfo,
     persistLines,
     diffMode = 'unified',
 }) => {
@@ -158,24 +146,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         <FileDiffHunks
                             className={styles.hunks}
                             fileDiffAnchor={anchor}
-                            history={history}
-                            isLightTheme={isLightTheme}
                             persistLines={persistLines}
-                            extensionInfo={
-                                extensionInfo && {
-                                    extensionsController: extensionInfo.extensionsController,
-                                    observeViewerId: extensionInfo.observeViewerId,
-                                    hoverifier: extensionInfo.hoverifier,
-                                    base: {
-                                        ...extensionInfo.base,
-                                        filePath: node.oldPath,
-                                    },
-                                    head: {
-                                        ...extensionInfo.head,
-                                        filePath: node.newPath,
-                                    },
-                                }
-                            }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
                             diffMode={diffMode}

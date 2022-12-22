@@ -1,25 +1,22 @@
-import * as React from 'react'
+import React, { useCallback } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
-import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../components/diff/FileDiffNode'
-import { ConnectionQueryArguments } from '../../components/FilteredConnection'
-import { RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables } from '../../graphql-operations'
+import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
+import { ConnectionQueryArguments, FilteredConnection } from '../../components/FilteredConnection'
+import {
+    RepositoryComparisonDiffResult,
+    RepositoryComparisonDiffVariables,
+    FileDiffFields,
+} from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
@@ -86,12 +83,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface RepositoryCompareDiffPageProps
-    extends RepositoryCompareAreaPageProps,
-        RouteComponentProps<{}>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        ThemeProps {
+interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 
@@ -100,58 +92,42 @@ interface RepositoryCompareDiffPageProps
 
     /** An optional path of a specific file to compare */
     path: string | null
-
-    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
 /** A page with the file diffs in the comparison. */
-export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
-    public render(): JSX.Element | null {
-        const { extensionsController } = this.props
-        return (
-            <div className="repository-compare-page">
-                <FileDiffConnection
-                    listClassName="list-group list-group-flush test-file-diff-connection"
-                    noun="changed file"
-                    pluralNoun="changed files"
-                    queryConnection={this.queryDiffs}
-                    nodeComponent={FileDiffNode}
-                    nodeComponentProps={
-                        extensionsController !== null
-                            ? {
-                                  ...this.props,
-                                  extensionInfo: {
-                                      base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
-                                      head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
-                                      hoverifier: this.props.hoverifier,
-                                      extensionsController,
-                                  },
-                                  lineNumbers: true,
-                              }
-                            : undefined
-                    }
-                    defaultFirst={15}
-                    hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
-                    cursorPaging={true}
-                />
-            </div>
-        )
-    }
+export const RepositoryCompareDiffPage: React.FunctionComponent<RepositoryCompareDiffPageProps> = props => {
+    const queryDiffs = useCallback(
+        (args: ConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
+            queryRepositoryComparisonFileDiffs({
+                first: args.first ?? null,
+                after: args.after ?? null,
+                repo: props.repo.id,
+                base: props.base.commitID,
+                head: props.head.commitID,
+                // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+                // enforce that, even though the GraphQL query is able to support any number of paths
+                paths: props.path ? [props.path] : [],
+            }),
+        [props.base.commitID, props.head.commitID, props.path, props.repo.id]
+    )
 
-    private queryDiffs = (
-        args: ConnectionQueryArguments
-    ): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
-        queryRepositoryComparisonFileDiffs({
-            first: args.first ?? null,
-            after: args.after ?? null,
-            repo: this.props.repo.id,
-            base: this.props.base.commitID,
-            head: this.props.head.commitID,
-            // All of our user journeys are designed for just a single file path, so the component APIs are set up to
-            // enforce that, even though the GraphQL query is able to support any number of paths
-            paths: this.props.path ? [this.props.path] : [],
-        })
+    return (
+        <div className="repository-compare-page">
+            <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
+                listClassName="list-group list-group-flush test-file-diff-connection"
+                noun="changed file"
+                pluralNoun="changed files"
+                queryConnection={queryDiffs}
+                nodeComponent={FileDiffNode}
+                nodeComponentProps={{ ...props, lineNumbers: true }}
+                defaultFirst={15}
+                hideSearch={true}
+                noSummaryIfAllNodesVisible={true}
+                withCenteredSummary={true}
+                history={props.history}
+                location={props.location}
+                cursorPaging={true}
+            />
+        </div>
+    )
 }

@@ -6,16 +6,11 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { ContentMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -71,10 +66,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
      */
     openInNewTab?: boolean
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
-
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
-
     index: number
 }
 
@@ -94,8 +85,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     allExpanded,
     showAllMatches,
     openInNewTab,
-    extensionsController,
-    hoverifier,
     telemetryService,
     fetchHighlightedFileLineRanges,
     onSelect,
@@ -277,8 +266,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
                     openInNewTab={openInNewTab}
-                    extensionsController={extensionsController}
-                    hoverifier={hoverifier}
                 />
                 {collapsible && (
                     <button
