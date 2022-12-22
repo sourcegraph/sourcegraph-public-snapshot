@@ -4,17 +4,12 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
@@ -57,8 +52,6 @@ export interface StreamingSearchResultsListProps
     /** Available to web app through JS Context */
     assetsRoot?: string
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     /**
      * Latest run query. Resets scroll visibility state when changed.
      * For example, `location.search` on web.
@@ -95,8 +88,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     showSearchContext,
     assetsRoot,
     platformContext,
-    extensionsController,
-    hoverifier,
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
@@ -177,8 +168,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                         repoDisplayName={displayRepoName(result.repository)}
                                         settingsCascade={settingsCascade}
-                                        extensionsController={extensionsController}
-                                        hoverifier={hoverifier}
                                         openInNewTab={openMatchesInNewTab}
                                         containerClassName={resultClassName}
                                     />
@@ -253,8 +242,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
-            extensionsController,
-            hoverifier,
             openMatchesInNewTab,
             resultClassName,
             platformContext,

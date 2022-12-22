@@ -9,7 +9,6 @@ import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -58,12 +57,8 @@ interface NotebookPageProps
         SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
-        >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     fetchNotebook?: typeof _fetchNotebook
@@ -98,7 +93,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     showSearchContext,
     settingsCascade,
     platformContext,
-    extensionsController,
     match,
 }) => {
     useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
@@ -328,7 +322,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 showSearchContext={showSearchContext}
                                 settingsCascade={settingsCascade}
                                 platformContext={platformContext}
-                                extensionsController={extensionsController}
                                 outlineContainerElement={outlineContainerElement.current}
                             />
                         </>
