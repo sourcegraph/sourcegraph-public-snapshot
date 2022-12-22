@@ -485,10 +485,9 @@ func gitservers() *endpoint.Map {
 	gitserversOnce.Do(func() {
 		gitserversVal = endpoint.New(func() string {
 			v := os.Getenv("SRC_GIT_SERVERS")
-			r := os.Getenv("GITSERVER_REPLICA_NUMBER")
+			r := os.Getenv("GITSERVER_REPLICA_COUNT")
 
-			addr, err := computeEndpointsByReplicas(r, "gitserver")
-			if err == nil && addr != "" {
+			if addr, ok := computeEndpointsByReplicas(r, "gitserver"); ok {
 				return addr
 			}
 
@@ -582,9 +581,8 @@ func computeSearcherEndpoints() *endpoint.Map {
 }
 
 func searcherAddr(environ []string) string {
-	if r, ok := getEnv(environ, "SEARCHER_REPLICA_NUMBER"); ok {
-		addr, err := computeEndpointsByReplicas(r, "searcher")
-		if err == nil && addr != "" {
+	if r, ok := getEnv(environ, "SEARCHER_REPLICA_COUNT"); ok {
+		if addr, ok := computeEndpointsByReplicas(r, "searcher"); ok {
 			return addr
 		}
 	}
@@ -603,13 +601,8 @@ func computeIndexedEndpoints() *endpoint.Map {
 
 func zoektAddr(environ []string) string {
 
-	if r, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_NUMBER"); ok {
-		s := "indexed-search"
-		if deploymentType == "docker-compose" {
-			s = "zoekt-webserver"
-		}
-		addr, err := computeEndpointsByReplicas(r, s)
-		if err == nil && addr != "" {
+	if r, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_COUNT"); ok {
+		if addr, ok := computeEndpointsByReplicas(r, "zoekt-webserver"); ok {
 			return addr
 		}
 	}
@@ -638,16 +631,16 @@ func getEnv(environ []string, key string) (string, bool) {
 	return "", false
 }
 
-// Generate list of endpoints based on replica numbers and deployment type
-// Service endpoints for docker-compose deployments are different than k8s
-// docker-compose: zoekt-webserver-0:6070
-// k8s: indexed-search-0.indexed-search:6070
-func computeEndpointsByReplicas(replicas string, service string) (string, error) {
+// Generate list of endpoints based on replica numbers provided
+func computeEndpointsByReplicas(replicas string, service string) (string, bool) {
+	num, err := strconv.Atoi(replicas)
+	if err != nil || num < 1 {
+		return "", false
+	}
+
 	e := ""
 	h := ""
 	p := ""
-	s := "." + service
-
 	switch service {
 	case "gitserver":
 		p = "3178"
@@ -656,22 +649,13 @@ func computeEndpointsByReplicas(replicas string, service string) (string, error)
 		p = "3181"
 	case "indexed-search":
 		p = "6070"
-	case "zoekt-webserver":
-		p = "6070"
+	default:
+		return "", false
 	}
 
-	if deploymentType == "docker-compose" {
-		s = ""
+	for i := 0; i < num; i++ {
+		e += fmt.Sprintf("%s%s-%d:%s ", h, service, i, p)
 	}
 
-	num, err := strconv.Atoi(replicas)
-	if err == nil && num > 0 {
-		for i := 0; i < num; i++ {
-			e += fmt.Sprintf("%s%s-%d%s:%s ", h, service, i, s, p)
-		}
-
-		return e, nil
-	}
-
-	return "", err
+	return e, true
 }

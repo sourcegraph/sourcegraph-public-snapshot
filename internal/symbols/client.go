@@ -35,7 +35,7 @@ import (
 )
 
 var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
-var symbolsReplicas = env.Get("SYMBOLS_REPLICA_NUMBER", "0", "symbols service replicas")
+var symbolsReplicas = env.Get("SYMBOLS_REPLICA_COUNT", "0", "symbols service replicas")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -79,25 +79,23 @@ type Client struct {
 
 func (c *Client) url(repo api.RepoName) (string, error) {
 	c.endpointOnce.Do(func() {
-		// compute endpoints for symbols if replicas number is provided
-		if num, err := strconv.Atoi(symbolsReplicas); err == nil && num > 0 {
-			e := ""
-			s := ".symbols"
-			// remove .symbols from endpoint for docker-compose
-			if symbolsURL == "http://symbols:3184" {
-				s = ""
-			}
-			for i := 0; i < num; i++ {
-				e += fmt.Sprintf("http://symbols-%d%s:3184 ", i, s)
-			}
-			c.endpoint = endpoint.New(e)
-		} else {
-			c.endpoint = endpoint.New(c.URL)
-		}
-		// Set endpoint as empty if both env vars are empty or invalid
-		if err != nil && len(strings.Fields(c.URL)) == 0 {
+		if symbolsReplicas == "" || c.URL == "" {
 			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
+			return
 		}
+
+		num, err := strconv.Atoi(symbolsReplicas)
+		if err != nil || num <= 0 {
+			c.endpoint = endpoint.Empty(errors.New("invalid replica count for symbols"))
+			return
+		}
+
+		e := c.URL
+		for i := 0; i < num; i++ {
+			e += fmt.Sprintf(" http://symbols-%d:3184", i)
+		}
+
+		c.endpoint = endpoint.New(e)
 	})
 
 	return c.endpoint.Get(string(repo))
