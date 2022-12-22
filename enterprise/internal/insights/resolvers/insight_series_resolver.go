@@ -80,7 +80,7 @@ var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct {
 	p        store.SeriesPoint
-	diffInfo *querybuilder.PointDiffQueryInfo
+	diffInfo *querybuilder.PointDiffQueryOpts
 }
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
@@ -263,7 +263,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 
 		pointResolver := insightsDataPointResolver{
 			p: modifiedPoints[i],
-			diffInfo: &querybuilder.PointDiffQueryInfo{
+			diffInfo: &querybuilder.PointDiffQueryOpts{
 				After:              after,
 				Before:             modifiedPoints[i].Time,
 				FilterRepoIncludes: filterRepoIncludes,

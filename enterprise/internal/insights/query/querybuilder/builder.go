@@ -130,7 +130,7 @@ func forRepos(query BasicQuery, repos []string) BasicQuery {
 	return BasicQuery(fmt.Sprintf("%s repo:^(%s)$", query, (strings.Join(escapedRepos, "|"))))
 }
 
-type PointDiffQueryInfo struct {
+type PointDiffQueryOpts struct {
 	Before             time.Time
 	After              *time.Time
 	FilterRepoIncludes []string // Includes repos included from a selected context
@@ -140,7 +140,7 @@ type PointDiffQueryInfo struct {
 	SearchQuery        BasicQuery
 }
 
-func PointDiffQuery(diffInfo PointDiffQueryInfo) (BasicQuery, error) {
+func PointDiffQuery(diffInfo PointDiffQueryOpts) (BasicQuery, error) {
 
 	query := diffInfo.SearchQuery.String()
 

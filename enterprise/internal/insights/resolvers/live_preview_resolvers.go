@@ -150,7 +150,7 @@ func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]
 		}
 		pointResolver := &insightsDataPointResolver{
 			p: point,
-			diffInfo: &querybuilder.PointDiffQueryInfo{
+			diffInfo: &querybuilder.PointDiffQueryOpts{
 				After:       after,
 				Before:      point.Time,
 				RepoList:    s.repoList,
