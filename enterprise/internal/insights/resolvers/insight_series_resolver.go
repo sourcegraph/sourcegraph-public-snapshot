@@ -242,11 +242,25 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
 	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
 
+	// Replacing capture group values if present
+	// Ignoring errors so it falls back to the entered query
+	query := p.series.Query
+	if p.series.GeneratedFromCaptureGroups && len(modifiedPoints) > 0 {
+		replacer, _ := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(query), searchquery.SearchTypeRegex)
+		if replacer != nil {
+			replaced, err := replacer.Replace(*modifiedPoints[0].Capture)
+			if err == nil {
+				query = replaced.String()
+			}
+		}
+	}
+
 	for i := 0; i < len(modifiedPoints); i++ {
 		var after *time.Time
 		if i > 0 {
 			after = &modifiedPoints[i-1].Time
 		}
+
 		pointResolver := insightsDataPointResolver{
 			p: modifiedPoints[i],
 			diffInfo: &querybuilder.PointDiffQueryInfo{
@@ -256,7 +270,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 				FilterRepoExcludes: filterRepoExcludes,
 				RepoList:           p.series.Repositories,
 				RepoSearch:         p.series.RepositoryCriteria,
-				SearchQuery:        querybuilder.BasicQuery(p.series.Query),
+				SearchQuery:        querybuilder.BasicQuery(query),
 				GenerationMethod:   p.series.GenerationMethod,
 			},
 		}
