@@ -7,7 +7,15 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
  */
 
 export interface AuthProvider {
-    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'sourcegraph-operator' | 'saml' | 'builtin'
+    serviceType:
+        | 'github'
+        | 'gitlab'
+        | 'bitbucketCloud'
+        | 'http-header'
+        | 'openidconnect'
+        | 'sourcegraph-operator'
+        | 'saml'
+        | 'builtin'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
