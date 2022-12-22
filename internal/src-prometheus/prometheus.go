@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/inconshreveable/log15"
 
@@ -160,7 +161,7 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// not accessible in this deployment. Treat deadline exceeded as an indicator as well.
 	//
 	// See https://github.com/golang/go/issues/9424
-	if errors.IsAny(err, context.DeadlineExceeded, syscall.ECONNREFUSED, syscall.EHOSTUNREACH) {
+	if errors.IsAny(err, context.DeadlineExceeded, unix.ECONNREFUSED, unix.EHOSTUNREACH) {
 		err = ErrPrometheusUnavailable
 	}
 

@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -82,21 +83,21 @@ func isPidAlive(pid int32) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	err = proc.Signal(syscall.Signal(0))
+	err = proc.Signal(unix.Signal(0))
 	if err == nil {
 		return true, nil
 	}
 	if err.Error() == "os: process already finished" {
 		return false, nil
 	}
-	errno, ok := err.(syscall.Errno)
+	errno, ok := err.(unix.Errno)
 	if !ok {
 		return false, err
 	}
 	switch errno {
-	case syscall.ESRCH:
+	case unix.ESRCH:
 		return false, nil
-	case syscall.EPERM:
+	case unix.EPERM:
 		return true, nil
 	}
 	return false, err

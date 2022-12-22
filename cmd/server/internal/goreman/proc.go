@@ -5,8 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -74,7 +75,7 @@ func startProc(proc string) error {
 			switch procDiedAction {
 			case Shutdown:
 				log.Printf("%s died. Shutting down...", proc)
-				signals <- syscall.SIGINT
+				signals <- unix.SIGINT
 			case Ignore:
 				log.Printf("%s died.", proc)
 			default:
@@ -99,9 +100,9 @@ func waitProcs() error {
 	waitProcsOnce.Do(func() {
 		go func() {
 			wg.Wait()
-			signals <- syscall.SIGINT
+			signals <- unix.SIGINT
 		}()
-		signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+		signal.Notify(signals, unix.SIGTERM, unix.SIGINT, unix.SIGHUP)
 		<-signals
 
 		stopped := make(chan struct{})
@@ -112,7 +113,7 @@ func waitProcs() error {
 
 		// New signal chan to avoid built up buffered signals
 		sc2 := make(chan os.Signal, 10)
-		signal.Notify(sc2, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+		signal.Notify(sc2, unix.SIGTERM, unix.SIGINT, unix.SIGHUP)
 
 		select {
 		case <-sc2:

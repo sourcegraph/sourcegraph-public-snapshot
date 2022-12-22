@@ -4,8 +4,9 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -124,7 +125,7 @@ func connectToFrontend(logger log.Logger, queueStore *queue.Client, options Opti
 	defer ticker.Stop()
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signals, unix.SIGHUP, unix.SIGINT, unix.SIGTERM)
 	defer signal.Stop(signals)
 
 	for {

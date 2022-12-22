@@ -15,8 +15,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -678,8 +679,8 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var statFS syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
+	var statFS unix.Statfs_t
+	if err := unix.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
 	free := statFS.Bavail * uint64(statFS.Bsize)
@@ -687,8 +688,8 @@ func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var statFS syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
+	var statFS unix.Statfs_t
+	if err := unix.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
 	free := statFS.Blocks * uint64(statFS.Bsize)
@@ -1400,7 +1401,7 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 	if err != nil {
 		// Exit code 1 means the key is not set.
 		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+		if errors.As(err, &e) && e.Sys().(unix.WaitStatus).ExitStatus() == 1 {
 			return "", nil
 		}
 		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
@@ -1425,7 +1426,7 @@ func gitConfigUnset(dir GitDir, key string) error {
 	if err != nil {
 		// Exit code 5 means the key is not set.
 		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+		if errors.As(err, &e) && e.Sys().(unix.WaitStatus).ExitStatus() == 5 {
 			return nil
 		}
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s", key)

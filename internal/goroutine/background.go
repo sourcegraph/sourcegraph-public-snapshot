@@ -5,8 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -52,7 +53,7 @@ type WaitableBackgroundRoutine interface {
 // immediately.
 func MonitorBackgroundRoutines(ctx context.Context, routines ...BackgroundRoutine) {
 	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signals, unix.SIGHUP, unix.SIGINT, unix.SIGTERM)
 	monitorBackgroundRoutines(ctx, signals, routines...)
 }
 

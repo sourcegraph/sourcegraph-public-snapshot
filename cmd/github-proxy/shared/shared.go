@@ -12,8 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/handlers"
@@ -114,7 +115,7 @@ func Main() {
 
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+		signal.Notify(c, unix.SIGINT, unix.SIGHUP, unix.SIGTERM)
 		<-c
 
 		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)

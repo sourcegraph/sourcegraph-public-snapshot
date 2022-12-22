@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/log"
 
@@ -115,7 +116,7 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	err := cmd.Run()
 	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+		exitStatus = cmd.ProcessState.Sys().(unix.WaitStatus).ExitStatus()
 	}
 	l.exitStatus = exitStatus
 

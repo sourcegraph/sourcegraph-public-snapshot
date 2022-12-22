@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // spawn command that specified as proc. Returns true if it stopped due to
@@ -24,7 +25,7 @@ func spawnProc(proc string) bool {
 	cmd.Stdin = nil
 	cmd.Stdout = logger
 	cmd.Stderr = logger
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &unix.SysProcAttr{Setpgid: true}
 
 	err := cmd.Start()
 	if err != nil {
@@ -51,7 +52,7 @@ func terminateProc(proc string) error {
 		return nil
 	}
 
-	pgid, err := syscall.Getpgid(p.Pid)
+	pgid, err := unix.Getpgid(p.Pid)
 	if err != nil {
 		return err
 	}
@@ -68,5 +69,5 @@ func terminateProc(proc string) error {
 	}
 	// We use SIGINT to get a faster shutdown. For example postgresql does a
 	// fast shutdown with this signal.
-	return target.Signal(syscall.SIGINT)
+	return target.Signal(unix.SIGINT)
 }

@@ -8,8 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 	"testing"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/hexops/autogold"
 
@@ -239,7 +240,7 @@ func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error
 	rawArgs := rawArgs(args)
 	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
 	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &unix.SysProcAttr{Setpgid: true}
 
 	if content, ok := args.Input.(FileContent); ok {
 		cmd.Stdin = bytes.NewReader(content)

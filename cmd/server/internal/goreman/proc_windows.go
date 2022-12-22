@@ -2,8 +2,8 @@ package goreman
 
 import (
 	"fmt"
+	"golang.org/x/sys/windows"
 	"os/exec"
-	"syscall"
 )
 
 // spawn command that specified as proc.
@@ -15,8 +15,8 @@ func spawnProc(proc string) bool {
 	cmd.Stdin = nil
 	cmd.Stdout = logger
 	cmd.Stderr = logger
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CREATE_UNICODE_ENVIRONMENT | 0x00000200,
+	cmd.SysProcAttr = &windows.SysProcAttr{
+		CreationFlags: windows.CREATE_UNICODE_ENVIRONMENT | 0x00000200,
 	}
 
 	fmt.Fprintf(logger, "Starting %s on port %d\n", proc, procs[proc].port)
@@ -39,7 +39,7 @@ func spawnProc(proc string) bool {
 }
 
 func terminateProc(proc string) error {
-	dll, err := syscall.LoadDLL("kernel32.dll")
+	dll, err := windows.LoadDLL("kernel32.dll")
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func terminateProc(proc string) error {
 	if err != nil {
 		return err
 	}
-	r1, _, err = f.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
+	r1, _, err = f.Call(windows.CTRL_BREAK_EVENT, uintptr(pid))
 	if r1 == 0 {
 		return err
 	}

@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
@@ -127,7 +128,7 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, unix.SIGTERM)
 	go func() {
 		<-c
 		pruneKeys()

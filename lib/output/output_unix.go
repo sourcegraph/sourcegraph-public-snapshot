@@ -7,7 +7,8 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func init() {
@@ -41,7 +42,7 @@ func init() {
 			// do this synchronously before spawning the goroutine that will
 			// actually listen to the channel.
 			c := make(chan os.Signal, 1)
-			signal.Notify(c, syscall.SIGWINCH)
+			signal.Notify(c, unix.SIGWINCH)
 
 			go func() {
 				for {

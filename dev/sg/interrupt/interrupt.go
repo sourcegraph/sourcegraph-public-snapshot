@@ -4,7 +4,8 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 var hooks []func()
@@ -22,7 +23,7 @@ func Register(hook func()) {
 // before exiting with status 1.
 func Listen() {
 	interrupt := make(chan os.Signal, 2)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(interrupt, os.Interrupt, unix.SIGTERM, unix.SIGINT)
 	go func() {
 		<-interrupt
 

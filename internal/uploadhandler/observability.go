@@ -2,7 +2,8 @@ package uploadhandler
 
 import (
 	"fmt"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,8 +32,8 @@ func NewOperations(observationCtx *observation.Context, prefix string) *Operatio
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				var errno syscall.Errno
-				if errors.As(err, &errno) && errno == syscall.ECONNREFUSED {
+				var errno unix.Errno
+				if errors.As(err, &errno) && errno == unix.ECONNREFUSED {
 					return observation.EmitForDefault ^ observation.EmitForSentry
 				}
 				return observation.EmitForDefault

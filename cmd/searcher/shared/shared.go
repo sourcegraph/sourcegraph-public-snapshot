@@ -12,8 +12,9 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"golang.org/x/sync/errgroup"
 
@@ -70,7 +71,7 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	signal.Notify(c, unix.SIGINT, unix.SIGHUP, unix.SIGTERM)
 
 	// Once we receive one of the signals from above, continues with the shutdown
 	// process.

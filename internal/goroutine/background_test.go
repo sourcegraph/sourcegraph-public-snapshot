@@ -3,8 +3,9 @@ package goroutine
 import (
 	"context"
 	"os"
-	"syscall"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 // Make the exiter a no-op in tests
@@ -24,7 +25,7 @@ func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
 		monitorBackgroundRoutines(context.Background(), signals, r1, r2, r3)
 	}()
 
-	signals <- syscall.SIGINT
+	signals <- unix.SIGINT
 	<-unblocked
 
 	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {

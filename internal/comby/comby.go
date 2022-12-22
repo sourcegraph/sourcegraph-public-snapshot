@@ -11,7 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/inconshreveable/log15"
 
@@ -175,7 +176,7 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 
 	cmd = exec.CommandContext(ctx, combyPath, rawArgs...)
 	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &unix.SysProcAttr{Setpgid: true}
 
 	stdin, err = cmd.StdinPipe()
 	if err != nil {

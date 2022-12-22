@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -191,8 +192,8 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	var stat syscall.Statfs_t
-	_ = syscall.Statfs(c.path, &stat)
+	var stat unix.Statfs_t
+	_ = unix.Statfs(c.path, &stat)
 	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(stat.Bavail*uint64(stat.Bsize)))
 	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(stat.Blocks*uint64(stat.Bsize)))
 }

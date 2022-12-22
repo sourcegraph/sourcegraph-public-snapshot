@@ -22,8 +22,9 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -122,7 +123,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	err = cmd.Run()
 	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+		exitStatus = cmd.ProcessState.Sys().(unix.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
 }
@@ -165,7 +166,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 	case <-ctx.Done():
 		logger.Debug("context cancelled, sending SIGINT")
 		// Attempt to send SIGINT
-		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+		if err := cmd.Process.Signal(unix.SIGINT); err != nil {
 			logger.Warn("Sending SIGINT to command", log.Error(err))
 			if err := cmd.Process.Kill(); err != nil {
 				logger.Warn("killing process", log.Error(err))
@@ -1207,7 +1208,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		if !errors.Is(writeErr, syscall.EPIPE) {
+		if !errors.Is(writeErr, unix.EPIPE) {
 			logger.Error("failed to send done event", log.Error(writeErr))
 		}
 	}
@@ -2820,7 +2821,7 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 		// Ignore the failure for an empty repository: show-ref fails with
 		// empty output and an exit code of 1
 		var e *exec.ExitError
-		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
+		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(unix.WaitStatus).ExitStatus() != 1 {
 			return nil, err
 		}
 	}

@@ -9,7 +9,6 @@ import (
 	"os"
 	"sort"
 	"sync"
-	"syscall"
 
 	"golang.org/x/sys/unix"
 
@@ -127,11 +126,11 @@ func readZipFile(path string) (*zipFile, error) {
 	}
 
 	// mmap file
-	zf.Data, err = unix.Mmap(int(f.Fd()), 0, int(fi.Size()), syscall.PROT_READ, syscall.MAP_SHARED)
+	zf.Data, err = unix.Mmap(int(f.Fd()), 0, int(fi.Size()), unix.PROT_READ, unix.MAP_SHARED)
 	if err != nil {
 		return nil, err
 	}
-	if err := unix.Madvise(zf.Data, syscall.MADV_SEQUENTIAL); err != nil {
+	if err := unix.Madvise(zf.Data, unix.MADV_SEQUENTIAL); err != nil {
 		// best effort at optimization, so only log failures here
 		log.Printf("failed to madvise for %q: %v", path, err)
 	}

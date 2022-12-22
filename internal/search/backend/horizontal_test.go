@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -246,7 +247,7 @@ func TestZoektRolloutErrors(t *testing.T) {
 					Addr: fakeAddr("10.164.42.39:6070"),
 					Err: &os.SyscallError{
 						Syscall: "read",
-						Err:     syscall.EINTR,
+						Err:     unix.EINTR,
 					},
 				}
 				client = &FakeSearcher{

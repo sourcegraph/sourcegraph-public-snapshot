@@ -1,7 +1,7 @@
 package main
 
 import (
-	"syscall"
+	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -12,7 +12,7 @@ import (
 // Something to consider for later. That's why the code lives in a separate place though.
 
 func MaxMemoryInKB(usage any) (int64, error) {
-	sysUsage, ok := usage.(*syscall.Rusage)
+	sysUsage, ok := usage.(*unix.Rusage)
 
 	if !ok {
 		return -1, errors.New("Could not convert usage")

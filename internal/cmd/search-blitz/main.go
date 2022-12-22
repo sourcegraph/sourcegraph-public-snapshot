@@ -11,8 +11,9 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -212,7 +213,7 @@ func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signals, unix.SIGINT, unix.SIGTERM)
 
 	go func() {
 		i := 0
@@ -228,7 +229,7 @@ func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
 
 	return ctx, func() {
 		cancel()
-		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
+		signal.Reset(unix.SIGINT, unix.SIGTERM)
 		close(signals)
 	}
 }

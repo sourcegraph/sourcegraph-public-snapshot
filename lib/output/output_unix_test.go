@@ -5,9 +5,10 @@ package output
 
 import (
 	"os"
-	"syscall"
 	"testing"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -62,7 +63,7 @@ func TestCapabilityWatcher(t *testing.T) {
 		select {
 		// Raise SIGWINCH when the ticker ticks.
 		case <-ticker.C:
-			if err := proc.Signal(syscall.SIGWINCH); err != nil {
+			if err := proc.Signal(unix.SIGWINCH); err != nil {
 				t.Fatal(err)
 			}
 
