@@ -2,12 +2,7 @@ import React from 'react'
 
 import * as H from 'history'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ChangesetFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../detail/backend'
@@ -22,9 +17,6 @@ export interface ChangesetCloseNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
     willClose: boolean
 }

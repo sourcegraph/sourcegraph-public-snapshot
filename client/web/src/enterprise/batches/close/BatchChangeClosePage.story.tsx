@@ -281,7 +281,6 @@ export const Overview: Story = args => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
                     platformContext={{} as any}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
@@ -322,7 +321,6 @@ export const NoOpenChangesets: Story = () => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
                     platformContext={{} as any}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />

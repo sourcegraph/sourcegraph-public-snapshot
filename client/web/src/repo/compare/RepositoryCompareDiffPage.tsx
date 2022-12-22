@@ -4,15 +4,10 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
@@ -90,7 +85,6 @@ interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
         ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
@@ -100,14 +94,11 @@ interface RepositoryCompareDiffPageProps
 
     /** An optional path of a specific file to compare */
     path: string | null
-
-    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
 /** A page with the file diffs in the comparison. */
 export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
-        const { extensionsController } = this.props
         return (
             <div className="repository-compare-page">
                 <FileDiffConnection
@@ -116,20 +107,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     pluralNoun="changed files"
                     queryConnection={this.queryDiffs}
                     nodeComponent={FileDiffNode}
-                    nodeComponentProps={
-                        extensionsController !== null
-                            ? {
-                                  ...this.props,
-                                  extensionInfo: {
-                                      base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
-                                      head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
-                                      hoverifier: this.props.hoverifier,
-                                      extensionsController,
-                                  },
-                                  lineNumbers: true,
-                              }
-                            : undefined
-                    }
                     defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}

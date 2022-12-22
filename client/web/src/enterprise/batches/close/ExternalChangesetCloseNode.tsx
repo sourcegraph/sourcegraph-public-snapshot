@@ -4,12 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
@@ -30,9 +25,6 @@ export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
@@ -46,7 +38,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
     isLightTheme,
     history,
     location,
-    extensionInfo,
     queryExternalChangesetWithFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
@@ -121,7 +112,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                         location={location}
                         repositoryID={node.repository.id}
                         repositoryName={node.repository.name}
-                        extensionInfo={extensionInfo}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     />
                 </div>

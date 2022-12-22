@@ -80,7 +80,6 @@ export const ListOfChangesets: Story = args => (
                     {...props}
                     refetchBatchChange={noop}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    extensionsController={undefined as any}
                     platformContext={undefined as any}
                     batchChangeID="batchid"
                     viewerCanAdminister={args.viewerCanAdminister}
@@ -103,7 +102,6 @@ export const ListOfExpandedChangesets: Story = args => (
                     {...props}
                     refetchBatchChange={noop}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    extensionsController={undefined as any}
                     platformContext={undefined as any}
                     batchChangeID="batchid"
                     viewerCanAdminister={args.viewerCanAdminister}
@@ -130,7 +128,6 @@ export const DraftWithoutChangesets: Story = args => {
                         {...props}
                         refetchBatchChange={noop}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                        extensionsController={undefined as any}
                         platformContext={undefined as any}
                         batchChangeID="batchid"
                         viewerCanAdminister={true}

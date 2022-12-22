@@ -149,7 +149,6 @@ const Template: Story<{
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
-                        extensionsController={{} as any}
                         platformContext={{} as any}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                     />
@@ -269,7 +268,6 @@ export const EmptyChangesets: Story = args => {
                         batchChangeName="awesome-batch-change"
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
-                        extensionsController={{} as any}
                         platformContext={{} as any}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                         {...args}

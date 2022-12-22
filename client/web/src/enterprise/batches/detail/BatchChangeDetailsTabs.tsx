@@ -4,7 +4,6 @@ import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiM
 import * as H from 'history'
 import { useHistory, useLocation } from 'react-router'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -61,7 +60,6 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
 export interface BatchChangeDetailsProps
     extends ThemeProps,
-        ExtensionsControllerProps,
         PlatformContextProps,
         TelemetryProps {
     history: H.History
@@ -82,7 +80,6 @@ interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsC
 
 export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeDetailsTabsProps>> = ({
     batchChange,
-    extensionsController,
     isLightTheme,
     platformContext,
     settingsCascade,
@@ -240,7 +237,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         history={history}
                         location={location}
                         isLightTheme={isLightTheme}
-                        extensionsController={extensionsController}
                         platformContext={platformContext}
                         telemetryService={telemetryService}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
@@ -292,7 +288,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         history={history}
                         location={location}
                         isLightTheme={isLightTheme}
-                        extensionsController={extensionsController}
                         platformContext={platformContext}
                         telemetryService={telemetryService}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}

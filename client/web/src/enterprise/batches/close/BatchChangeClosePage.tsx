@@ -5,7 +5,6 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,7 +30,6 @@ export interface BatchChangeClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
         SettingsCascadeProps {
     /**
      * The namespace ID.
@@ -59,7 +57,6 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
     batchChangeName,
     history,
     location,
-    extensionsController,
     isLightTheme,
     platformContext,
     telemetryService,
@@ -145,7 +142,6 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
                 history={history}
                 location={location}
                 viewerCanAdminister={batchChange.viewerCanAdminister}
-                extensionsController={extensionsController}
                 isLightTheme={isLightTheme}
                 platformContext={platformContext}
                 telemetryService={telemetryService}

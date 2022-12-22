@@ -4,9 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import prettyBytes from 'pretty-bytes'
-import { Observable } from 'rxjs'
 
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
@@ -15,7 +13,6 @@ import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { dirname } from '../../util/path'
 
 import { DiffStat, DiffStatSquares } from './DiffStat'
-import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
 
 import styles from './FileDiffNode.module.scss'
@@ -26,10 +23,6 @@ export interface FileDiffNodeProps extends ThemeProps {
     className?: string
     location: H.Location
     history: H.History
-
-    extensionInfo?: ExtensionInfo<{
-        observeViewerId?: (uri: string) => Observable<ViewerId | undefined>
-    }>
 
     /** Reflect selected line in url */
     persistLines?: boolean
@@ -44,7 +37,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
     location,
     node,
     className,
-    extensionInfo,
     persistLines,
     diffMode = 'unified',
 }) => {
@@ -162,21 +154,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             isLightTheme={isLightTheme}
                             location={location}
                             persistLines={persistLines}
-                            extensionInfo={
-                                extensionInfo && {
-                                    extensionsController: extensionInfo.extensionsController,
-                                    observeViewerId: extensionInfo.observeViewerId,
-                                    hoverifier: extensionInfo.hoverifier,
-                                    base: {
-                                        ...extensionInfo.base,
-                                        filePath: node.oldPath,
-                                    },
-                                    head: {
-                                        ...extensionInfo.head,
-                                        filePath: node.newPath,
-                                    },
-                                }
-                            }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
                             diffMode={diffMode}

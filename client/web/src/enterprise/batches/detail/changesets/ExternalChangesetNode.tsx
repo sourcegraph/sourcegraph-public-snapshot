@@ -5,14 +5,9 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
@@ -41,9 +36,6 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     }
     history: H.History
     location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
@@ -57,7 +49,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
     isLightTheme,
     history,
     location,
-    extensionInfo,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
@@ -228,7 +219,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                             location={location}
                             repositoryID={node.repository.id}
                             repositoryName={node.repository.name}
-                            extensionInfo={extensionInfo}
                             queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                             updateOnChange={node.updatedAt}
                         />
