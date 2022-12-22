@@ -29,7 +29,9 @@ type PipelineEvent struct {
 // PushEvent represents a push to a repository.
 // https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#push-events
 type PushEvent struct {
-	EventCommon
+	Repository struct {
+		GitSSHURL string `json:"git_ssh_url,omitempty"`
+	} `json:"repository"`
 }
 
 var ErrObjectKindUnknown = errors.New("unknown object kind")

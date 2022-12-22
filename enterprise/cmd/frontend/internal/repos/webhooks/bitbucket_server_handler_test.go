@@ -84,7 +84,7 @@ func TestBitbucketServerNameFromEvent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := bitbucketServerNameFromEvent(tt.event)
+			got, err := bitbucketServerCloneURLFromEvent(tt.event)
 			if tt.wantErr != nil {
 				assert.EqualError(t, tt.wantErr, err.Error())
 				return
