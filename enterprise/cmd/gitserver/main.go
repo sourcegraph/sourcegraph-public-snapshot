@@ -1,8 +1,8 @@
-// gitserver is the gitserver server.
-package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
+package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
+	enterprise_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -10,5 +10,5 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	shared.Main(nil)
+	shared.Main(enterprise_shared.EnterpriseInit)
 }
