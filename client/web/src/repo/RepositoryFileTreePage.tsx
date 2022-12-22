@@ -13,7 +13,6 @@ import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
-import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
@@ -93,9 +92,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
             />
             {!hideRepoRevisionContent && (
-                // Add `.blob-status-bar__container` because this is the
-                // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                <BlobStatusBarContainer>
+                <>
                     <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={location}>
                         {objectType === 'blob' ? (
@@ -133,7 +130,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                             <LoadingSpinner />
                         )}
                     </ErrorBoundary>
-                </BlobStatusBarContainer>
+                </>
             )}
         </>
     )

@@ -20,7 +20,6 @@ import {
 import {
     catchError,
     concatMap,
-    distinctUntilChanged,
     filter,
     first,
     map,
@@ -28,7 +27,6 @@ import {
     pairwise,
     switchMap,
     tap,
-    throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
@@ -47,7 +45,6 @@ import {
     isErrorLike,
     isDefined,
     property,
-    observeResize,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     toPositionOrRangeQueryParameter,
@@ -86,7 +83,6 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
-import { StatusBar } from '../../extensions/components/StatusBar'
 import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -124,7 +120,6 @@ export interface BlobProps
     'data-testid'?: string
 
     // Experimental reference panel
-    disableStatusBar: boolean
     disableDecorations: boolean
     // When navigateToLineOnAnyClick=true, the code intel popover is disabled
     // and clicking on any line should navigate to that specific line.
@@ -202,9 +197,6 @@ const domFunctions = {
         return parseInt(numberCell.dataset.line, 10)
     },
 }
-
-const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
-const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
 /**
  * Renders a code view augmented by Sourcegraph extensions
@@ -708,68 +700,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
 
-    // Status bar
-    const getStatusBarItems = useCallback(
-        () =>
-            viewerUpdates.pipe(
-                switchMap(viewerData => {
-                    if (!viewerData) {
-                        return of('loading' as const)
-                    }
-
-                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
-                })
-            ),
-        [viewerUpdates]
-    )
-
-    const statusBarElements = useMemo(() => new ReplaySubject<HTMLDivElement | null>(1), [])
-    const nextStatusBarElement = useCallback(
-        (statusBarElement: HTMLDivElement | null) => statusBarElements.next(statusBarElement),
-        [statusBarElements]
-    )
-
-    // Floating status bar: add scrollbar size with "base" gaps to achieve
-    // our desired gap between the scrollbar and status bar
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([blobElements, statusBarElements]).pipe(
-                    switchMap(([blobElement, statusBarElement]) => {
-                        if (!(blobElement && statusBarElement)) {
-                            return EMPTY
-                        }
-
-                        // ResizeObserver doesn't reliably fire when navigating between documents
-                        // in Firefox, so recalculate on blobInfoChanges as well.
-                        return merge(observeResize(blobElement), blobInfoChanges).pipe(
-                            // Throttle reflow without losing final value.
-                            throttleTime(100, undefined, { leading: true, trailing: true }),
-                            map(() => {
-                                // Read
-                                const blobRightScrollbarWidth = blobElement.offsetWidth - blobElement.clientWidth
-                                const blobBottomScollbarHeight = blobElement.offsetHeight - blobElement.clientHeight
-
-                                return { blobRightScrollbarWidth, blobBottomScollbarHeight }
-                            }),
-                            distinctUntilChanged((a, b) => isEqual(a, b)),
-                            tap(({ blobRightScrollbarWidth, blobBottomScollbarHeight }) => {
-                                // Write
-                                statusBarElement.style.right = `calc(var(${STATUS_BAR_HORIZONTAL_GAP_VAR}) + ${blobRightScrollbarWidth}px)`
-                                statusBarElement.style.bottom = `calc(var(${STATUS_BAR_VERTICAL_GAP_VAR}) + ${blobBottomScollbarHeight}px)`
-
-                                // Maintain an equal gap with the left side of the container when the status bar is overflowing.
-                                statusBarElement.style.maxWidth = `calc(100% - ((2 * var(${STATUS_BAR_HORIZONTAL_GAP_VAR})) + ${blobRightScrollbarWidth}px))`
-                            })
-                        )
-                    }),
-                    mapTo(undefined),
-                    catchError(() => EMPTY)
-                ),
-            [blobElements, statusBarElements, blobInfoChanges]
-        )
-    )
-
     const pinOptions = useMemo<PinOptions>(
         () => ({
             showCloseButton: true,
@@ -919,18 +849,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         })
                         .toArray()}
             </div>
-            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
-                <StatusBar
-                    getStatusBarItems={getStatusBarItems}
-                    extensionsController={extensionsController}
-                    uri={toURIWithPath(blobInfo)}
-                    location={location}
-                    className={styles.blobStatusBarBody}
-                    statusBarRef={nextStatusBarElement}
-                    hideWhileInitializing={true}
-                    isBlobPage={true}
-                />
-            )}
         </>
     )
 }
