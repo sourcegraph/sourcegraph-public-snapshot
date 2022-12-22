@@ -100,6 +100,8 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 as={LineChartLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
+                repoMode={repoMode.meta.value}
+                repoQuery={repoQuery.meta.value.query}
                 series={seriesToPreview(series.input.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
