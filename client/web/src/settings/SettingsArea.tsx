@@ -71,6 +71,10 @@ interface State {
     dataOrError: typeof LOADING | SettingsData | ErrorLike
 }
 
+interface SettingsSubjects {
+    subjects: SettingsSubject[]
+}
+
 /**
  * A settings area with a top-level JSON editor and sub-pages for editing nested settings values.
  */
@@ -189,7 +193,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsSubject[] }): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: SettingsSubjects): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
@@ -221,78 +225,20 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsSubject[] }> {
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<SettingsSubjects> {
     return queryGraphQL<SettingsCascadeResult>(
         gql`
             query SettingsCascade($subject: ID!) {
                 settingsSubject(id: $subject) {
                     settingsCascade {
-                        ...SettingsCascadeFields
+                        subjects {
+                            latestSettings {
+                                id
+                                contents
+                            }
+                        }
                     }
                 }
-            }
-            fragment SettingsCascadeFields on SettingsCascade {
-                subjects {
-                    __typename
-                    ...OrgSettingFields
-                    ...UserSettingFields
-                    ...SiteSettingFields
-                    ...DefaultSettingFields
-                }
-                final
-            }
-
-            fragment OrgSettingFields on Org {
-                __typename
-                latestSettings {
-                    id
-                    contents
-                }
-                id
-                settingsURL
-                viewerCanAdminister
-
-                name
-                displayName
-            }
-
-            fragment UserSettingFields on User {
-                __typename
-                latestSettings {
-                    id
-                    contents
-                }
-                id
-                settingsURL
-                viewerCanAdminister
-
-                username
-                displayName
-            }
-
-            fragment SiteSettingFields on Site {
-                __typename
-                latestSettings {
-                    id
-                    contents
-                }
-                id
-                settingsURL
-                viewerCanAdminister
-
-                siteID
-                allowSiteSettingsEdits
-            }
-
-            fragment DefaultSettingFields on DefaultSettings {
-                __typename
-                latestSettings {
-                    id
-                    contents
-                }
-                id
-                settingsURL
-                viewerCanAdminister
             }
         `,
         { subject }
@@ -301,7 +247,7 @@ function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: Se
             if (!data || !data.settingsSubject) {
                 throw createAggregateError(errors)
             }
-            return data.settingsSubject.settingsCascade
+            return data.settingsSubject.settingsCascade as SettingsSubjects
         })
     )
 }

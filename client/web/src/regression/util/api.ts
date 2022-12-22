@@ -41,7 +41,6 @@ import {
     ResolveRevResult,
     ResolveRevVariables,
     OrganizationsVariables,
-    SettingsCascadeFields,
     addExternalServiceVariables,
     SearchResult,
     SearchVariables,
@@ -504,7 +503,7 @@ export async function setUserEmailVerified(
  */
 export function getViewerSettings({
     requestGraphQL,
-}: Pick<PlatformContext, 'requestGraphQL'>): Promise<SettingsCascadeFields> {
+}: Pick<PlatformContext, 'requestGraphQL'>): Promise<ViewerSettingsResult['viewerSettings']> {
     return requestGraphQL<ViewerSettingsResult, ViewerSettingsVariables>({
         request: viewerSettingsQuery,
         variables: {},
