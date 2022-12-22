@@ -386,3 +386,114 @@ func TestParseTwoHandles(t *testing.T) {
 	}}
 	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
 }
+
+func TestParsePathWithSpaces(t *testing.T) {
+	got, err := codeowners.Parse(`path\ with\ spaces/* @space-owner`)
+	require.NoError(t, err)
+	want := []*codeownerspb.Rule{{
+		Pattern: "path with spaces/*",
+		Owner: []*codeownerspb.Owner{
+			{Handle: "space-owner"},
+		},
+	}}
+	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+}
+
+func TestParseSection(t *testing.T) {
+	got, err := codeowners.Parse(
+		`[PM]
+		own/codeowners/* @own-pms`)
+	require.NoError(t, err)
+	want := []*codeownerspb.Rule{{
+		Pattern:     "own/codeowners/*",
+		SectionName: "pm",
+		Owner: []*codeownerspb.Owner{
+			{Handle: "own-pms"},
+		},
+	}}
+	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+}
+
+func TestParseManySections(t *testing.T) {
+	got, err := codeowners.Parse(
+		`own/codeowners/* @own-eng
+		[PM]
+		own/codeowners/* @own-pms
+		[docs]
+		own/**/*.md @own-docs`)
+	require.NoError(t, err)
+	want := []*codeownerspb.Rule{
+		{
+			Pattern: "own/codeowners/*",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-eng"},
+			},
+		},
+		{
+			Pattern:     "own/codeowners/*",
+			SectionName: "pm",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-pms"},
+			},
+		},
+		{
+			Pattern:     "own/**/*.md",
+			SectionName: "docs",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-docs"},
+			},
+		},
+	}
+	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+}
+
+func TestParseEmptyString(t *testing.T) {
+	got, err := codeowners.Parse("")
+	require.NoError(t, err)
+	assert.Equal(t, &codeownerspb.File{}, got)
+}
+
+func TestParseBlankString(t *testing.T) {
+	got, err := codeowners.Parse("  ")
+	require.NoError(t, err)
+	assert.Equal(t, &codeownerspb.File{}, got)
+}
+
+func TestParseComment(t *testing.T) {
+	got, err := codeowners.Parse(" # This is a comment ")
+	require.NoError(t, err)
+	assert.Equal(t, &codeownerspb.File{}, got)
+}
+
+func TestParseRuleWithComment(t *testing.T) {
+	got, err := codeowners.Parse(`/escaped\#/is/pattern @and-then # Inline comment`)
+	require.NoError(t, err)
+	want := []*codeownerspb.Rule{
+		{
+			Pattern: "/escaped#/is/pattern",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "and-then"},
+			},
+		},
+	}
+	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+}
+
+// Note: Should a # within [Section name] not be treated as a comment-start
+// even if it is not escaped?
+func TestParseSectionWithComment(t *testing.T) {
+	got, err := codeowners.Parse(
+		`[Section] # Inline comment
+		/pattern @owner`)
+	require.NoError(t, err)
+	want := []*codeownerspb.Rule{
+		{
+			Pattern:     "/pattern",
+			SectionName: "section",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "owner"},
+			},
+		},
+	}
+	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+}

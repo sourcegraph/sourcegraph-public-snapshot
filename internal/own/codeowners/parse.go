@@ -10,10 +10,16 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
+// Parse parses CODEOWNERS file given as string and returns the proto
+// representation of all rules within. The rules are in the same order
+// as in the file, since this matters for evaluation.
 func Parse(in string) (*codeownerspb.File, error) {
 	return Read(strings.NewReader(in))
 }
 
+// Read parses CODEOWNERS file given as a Reader and returns the proto
+// representation of all rules within. The rules are in the same order
+// as in the file, since this matters for evaluation.
 func Read(in io.Reader) (*codeownerspb.File, error) {
 	scanner := bufio.NewScanner(in)
 	var rs []*codeownerspb.Rule
@@ -89,6 +95,12 @@ var rulePattern = regexp.MustCompile(`^\s*((?:\\.|\S)+)((?:\s+\S+)*)\s*$`)
 // matchRule tries to extract a codeowners rule from the current line
 // and return the file pattern and one or more owners.
 // Match is indicated by the third return value being true.
+//
+// Note: Need to check if a line matches a section using `matchSection`
+// before matching a rule with this method, as `matchRule` will actually
+// match a section line. This is because `matchRule` does not verify
+// whether a pattern is a valid pattern. A line like "[documentation]"
+// would be considered a pattern without owners (which is supported).
 func (p *parsing) matchRule() (string, []string, bool) {
 	match := rulePattern.FindStringSubmatch(p.lineWithoutComments())
 	if len(match) != 3 {
