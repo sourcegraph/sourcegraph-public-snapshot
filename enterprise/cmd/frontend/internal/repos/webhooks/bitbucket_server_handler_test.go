@@ -50,7 +50,7 @@ func TestBitbucketServerNameFromEvent(t *testing.T) {
 				Links: bitbucketserver.RepoLinks{
 					Clone: []bitbucketserver.Link{
 						{
-							Href: "https://blah.bb.com/sourcegraph/sourcegraph",
+							Href: href,
 							Name: name,
 						},
 					},
@@ -67,29 +67,19 @@ func TestBitbucketServerNameFromEvent(t *testing.T) {
 	}{
 		{
 			name:  "valid event",
-			event: makeEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph"),
-			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+			event: makeEvent("ssh", "ssh://git@bitbucket.sgdev.org/private/test-2020-06-01"),
+			want:  api.RepoName("bitbucket.sgdev.org/private/test-2020-06-01"),
 		},
 		{
 			name:  "valid event with port",
-			event: makeEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph"),
-			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
-		},
-		{
-			name:  "valid event with port and .git",
-			event: makeEvent("ssh", "https://blah.bb.com:8080/sourcegraph/sourcegraph.git"),
-			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
-		},
-		{
-			name:  "valid event with .git",
-			event: makeEvent("ssh", "https://blah.bb.com/sourcegraph/sourcegraph.git"),
-			want:  api.RepoName("blah.bb.com/sourcegraph/sourcegraph"),
+			event: makeEvent("ssh", "ssh://git@bitbucket.sgdev.org:7999/private/test-2020-06-01.git"),
+			want:  api.RepoName("bitbucket.sgdev.org/private/test-2020-06-01"),
 		},
 		{
 			name:    "nil event",
 			event:   nil,
 			want:    api.RepoName(""),
-			wantErr: errors.New("URL for repository not found"),
+			wantErr: errors.New("nil PushEvent received"),
 		},
 	}
 	for _, tt := range tests {
