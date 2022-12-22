@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+import subYears from 'date-fns/subYears'
+
 // We use an exponential scale to get more diverse colors for more recent changes.
 //
 // The values are sampled from the following function:
@@ -20,8 +22,8 @@ const COLORS = [
 ]
 const LIGHT_COLORS = COLORS.slice(0).reverse()
 
-const ONE_YEAR_AGO = Date.now() - 1000 * 60 * 60 * 24 * 365
-const THREE_YEARS_AGO = Date.now() - 3 * 1000 * 60 * 60 * 24 * 365
+const ONE_YEAR_AGO = subYears(Date.now(), 1).getTime()
+const THREE_YEARS_AGO = subYears(Date.now(), 3).getTime()
 
 export function useBlameRecencyColor(
     commit: Date | undefined,

@@ -152,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<{
             <div
                 className={classNames(styles.recency, isFirstInHunk ? styles.recencyFirstInHunk : null)}
                 // eslint-disable-next-line react/forbid-dom-props
-                style={{ backgroundColor: recencyColor }}
+                style={{ backgroundColor: firstCommitDate ? recencyColor : 'transparent' }}
             />
             {isFirstInHunk ? (
                 <Popover isOpen={isOpen} onOpenChange={onPopoverOpenChange} key={id}>

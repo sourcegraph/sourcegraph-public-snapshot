@@ -151,6 +151,19 @@ interface RawStreamHunk {
     message: string
 }
 
+/**
+ * Calculating blame hunks on the backend is an expensive operation that gets
+ * slower the larger the file and the longer the commit history.
+ *
+ * To reduce the backend pressure and improve the experience, this fetch
+ * implementation uses a SSE stream to load the blame hunks in chunks.
+ *
+ * It is controlled via the `enable-streaming-git-blame` feature flag and is
+ * currently not enabled by default.
+ *
+ * Since we also need the first commit date for the blame recency calculations,
+ * this implementation uses Promise.all() to load both data sources in parallel.
+ */
 const fetchBlameViaStreaming = memoizeObservable(
     ({
         repoName,
@@ -164,13 +177,17 @@ const fetchBlameViaStreaming = memoizeObservable(
         sourcegraphURL: string
     }): Observable<{ current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }> =>
         new Observable<{ current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }>(subscriber => {
-            ;(async function () {
-                // TODO: Fetch the first commit in parallel to the blame hunks.
-                const firstCommitDate = await fetchFirstCommitDate(repoName)
+            let didEmitFirstCommitDate = false
+            let firstCommitDate: Date | undefined
 
-                const assembledHunks: BlameHunk[] = []
-                const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
-                await fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
+            const assembledHunks: BlameHunk[] = []
+            const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
+
+            Promise.all([
+                fetchFirstCommitDate(repoName).then(date => {
+                    firstCommitDate = date
+                }),
+                fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'Sourcegraph',
@@ -204,6 +221,9 @@ const fetchBlameViaStreaming = memoizeObservable(
                                 }
                                 assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
                             }
+                            if (firstCommitDate !== undefined) {
+                                didEmitFirstCommitDate = true
+                            }
                             subscriber.next({ current: assembledHunks, firstCommitDate })
                         }
                     },
@@ -211,9 +231,18 @@ const fetchBlameViaStreaming = memoizeObservable(
                         // eslint-disable-next-line no-console
                         console.error(event)
                     },
-                })
-                subscriber.complete()
-            })().catch(error => subscriber.error(error))
+                }),
+            ]).then(
+                () => {
+                    // This case can happen when the event source yields before the commit date is resolved
+                    if (!didEmitFirstCommitDate) {
+                        subscriber.next({ current: assembledHunks, firstCommitDate })
+                    }
+
+                    subscriber.complete()
+                },
+                error => subscriber.error(error)
+            )
         })
             // Throttle the results to avoid re-rendering the blame sidebar for every hunk
             .pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
