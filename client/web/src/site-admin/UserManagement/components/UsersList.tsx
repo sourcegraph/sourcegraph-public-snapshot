@@ -39,8 +39,8 @@ import {
     SiteUserOrderBy,
     UsersManagementUsersListResult,
     UsersManagementUsersListVariables,
-} from '../../../../graphql-operations'
-import { useURLSyncedState } from '../../../../hooks'
+} from '../../../graphql-operations'
+import { useURLSyncedState } from '../../../hooks'
 import { USERS_MANAGEMENT_USERS_LIST } from '../queries'
 
 import { Table } from './Table'

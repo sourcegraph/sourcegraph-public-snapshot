@@ -6,9 +6,9 @@ import { RouteComponentProps } from 'react-router'
 import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
-import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { ValueLegendList, ValueLegendListProps } from '../../analytics/components/ValueLegendList'
+import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
 import { UsersList } from './components/UsersList'
 import { USERS_MANAGEMENT_SUMMARY } from './queries'

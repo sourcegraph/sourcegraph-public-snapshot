@@ -5,7 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 
 import { DateRangeSelect } from './DateRangeSelect'
 
-import webStyles from '../../../../SourcegraphWebApp.scss'
+import webStyles from '../../../SourcegraphWebApp.scss'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
