@@ -69,7 +69,7 @@ export function useSaveInsightAsNewView(props: useSaveInsightAsNewViewProps): Us
                     return
                 }
 
-                searchInsightCreationOptimisticUpdate(cache, data.saveInsightAsNewView.view, dashboard)
+                searchInsightCreationOptimisticUpdate(cache, data.saveInsightAsNewView.view, dashboard?.id ?? null)
             },
         }
     )
