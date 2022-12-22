@@ -2,11 +2,8 @@ import { useContext } from 'react'
 
 import { useHistory } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
-
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
+import { SubmissionErrors } from '../../../../components'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
@@ -24,30 +21,22 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
     const { updateInsight } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
-    const { dashboardId = ALL_INSIGHTS_DASHBOARD.id, insight } = useQueryParameters(['dashboardId', 'insight'])
-    const redirectUrl = insight ? `/insights/insight/${insight}` : `/insights/dashboards/${dashboardId}`
+    const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
+    const redirectUrl = getReturnToLink(insight, dashboardId)
 
     const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
         if (!id) {
             return
         }
 
-        try {
-            await updateInsight({
-                insightId: id,
-                nextInsightData: newInsight,
-            }).toPromise()
+        await updateInsight({
+            insightId: id,
+            nextInsightData: newInsight,
+        }).toPromise()
 
-            const insightType = getTrackingTypeByInsightType(newInsight.type)
-
-            eventLogger.log('InsightEdit', { insightType }, { insightType })
-
-            history.push(redirectUrl)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        const insightType = getTrackingTypeByInsightType(newInsight.type)
+        eventLogger.log('InsightEdit', { insightType }, { insightType })
+        history.push(redirectUrl)
     }
 
     const handleCancel = (): void => {
@@ -55,4 +44,16 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
     }
 
     return { handleSubmit, handleCancel }
+}
+
+function getReturnToLink(insightId: string | undefined, dashboardId: string | undefined): string {
+    if (insightId) {
+        return `/insights/insight/${insightId}`
+    }
+
+    if (dashboardId) {
+        return `/insights/dashboards/${dashboardId}`
+    }
+
+    return '/insights/all'
 }

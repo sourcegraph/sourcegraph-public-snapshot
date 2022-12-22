@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"text/template"
 
@@ -20,7 +21,7 @@ var homeJsonTmpl string
 
 // Home is the definition for the home dashboard. It is provided as raw JSON because it
 // is defined outside of the monitoring generator.
-func Home(injectLabelMatchers []*labels.Matcher) ([]byte, error) {
+func Home(folder string, injectLabelMatchers []*labels.Matcher) ([]byte, error) {
 	// Build template variables
 	vars := map[string]string{
 		"WarningAlertsExpr":       "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"warning\"}))",
@@ -31,11 +32,18 @@ func Home(injectLabelMatchers []*labels.Matcher) ([]byte, error) {
 	}
 	for k, v := range vars {
 		var err error
-		vars[k], err = promql.Inject(v, injectLabelMatchers, nil)
+		vars[k], err = promql.InjectMatchers(v, injectLabelMatchers, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, k)
 		}
 	}
+
+	// Add static vars
+	uid := "overview"
+	if folder != "" {
+		uid = fmt.Sprintf("%s-%s", folder, uid)
+	}
+	vars["UID"] = uid
 
 	// Build and execute template
 	tmpl, err := template.New("").Funcs(template.FuncMap{

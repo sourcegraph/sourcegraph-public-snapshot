@@ -41,16 +41,21 @@ Administration is usually handled by site administrators are the admins responsi
 - [Repository permissions](repo/permissions.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
+- [Configure incoming webhooks](config/webhooks.md)
 
 For deployment configuration, please refer to the relevant [installation guide](deploy/index.md).
 
 ## [Observability](observability.md)
 
 - [Monitoring guide](how-to/monitoring-guide.md)
-- [Metrics and dashboards](./observability/metrics.md)
-- [Alerting](./observability/alerting.md)
-- [Tracing](./observability/tracing.md)
-- [Logs](./observability/logs.md)
+- [Metrics and dashboards](observability/metrics.md)
+- [Alerting](observability/alerting.md)
+- [Tracing](observability/tracing.md)
+- [Logs](observability/logs.md)
+- [Outbound request log](observability/outbound-request-log.md)
+- [OpenTelemetry](observability/opentelemetry.md)
+- [Health checks](observability/health_checks.md)
+- [Troubleshooting guide](observability/troubleshooting.md)
 
 ## Features
 
@@ -62,7 +67,6 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)
 - [Search](search.md)
-- [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
 - [Audit logs](audit_log.md)

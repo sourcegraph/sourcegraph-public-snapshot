@@ -1,8 +1,7 @@
-import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 
-import { FetchFileParameters, HighlightRange } from '@sourcegraph/search-ui'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { HighlightRange } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -48,10 +47,6 @@ export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[]
     type: 'file'
 }
 
-export interface ComputeBlock extends BaseBlock<string, string> {
-    type: 'compute'
-}
-
 export interface SymbolBlockInput {
     repositoryName: string
     revision: string
@@ -76,27 +71,24 @@ export interface SymbolBlock extends BaseBlock<SymbolBlockInput, Observable<Symb
     type: 'symbol'
 }
 
-export type Block = QueryBlock | MarkdownBlock | FileBlock | ComputeBlock | SymbolBlock
+export type Block = QueryBlock | MarkdownBlock | FileBlock | SymbolBlock
 
 export type BlockInput =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
-    | Pick<ComputeBlock, 'type' | 'input'>
     | Pick<SymbolBlock, 'type' | 'input'>
 
 export type BlockInit =
     | Omit<FileBlock, 'output'>
     | Omit<MarkdownBlock, 'output'>
     | Omit<QueryBlock, 'output'>
-    | Omit<ComputeBlock, 'output'>
     | Omit<SymbolBlock, 'output'>
 
 export type SerializableBlock =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
-    | Pick<ComputeBlock, 'type' | 'input'>
     | Pick<SymbolBlock, 'type' | 'input' | 'output'>
 
 export type BlockDirection = 'up' | 'down'
@@ -117,8 +109,6 @@ export interface BlockProps<T extends Block = Block> {
 }
 
 export interface BlockDependencies {
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null
-    enableGoImportsSearchQueryTransform: undefined | boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 

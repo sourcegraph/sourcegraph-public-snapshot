@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
     Position,
     Menu,
@@ -21,17 +22,17 @@ import {
 import { AuthenticatedUser } from '../../auth'
 
 import { CreateAction } from './createActions'
-import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
+import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
 interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query?: string
+    results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
     createCodeMonitorAction: CreateAction | null
     canCreateMonitor: boolean
-    resultsFound: boolean
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
@@ -39,18 +40,21 @@ interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformCo
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
     query = '',
-    patternType,
+    results,
     sourcegraphURL,
     authenticatedUser,
     createActions,
     createCodeMonitorAction,
     canCreateMonitor,
-    resultsFound,
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
 }) => {
-    const [requestSearchResultsExport] = useExportSearchResultsQuery({ query, patternType, sourcegraphURL })
+    const resultsFound = results ? results.results.length > 0 : false
+    const downloadResults = useCallback(
+        () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
+        [results, sourcegraphURL, query]
+    )
 
     return (
         <Menu>
@@ -77,7 +81,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                <MenuItem onSelect={requestSearchResultsExport}>
+                                <MenuItem onSelect={downloadResults}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                                     Export results
                                 </MenuItem>

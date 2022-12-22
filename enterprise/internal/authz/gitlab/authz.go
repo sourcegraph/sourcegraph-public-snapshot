@@ -126,7 +126,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	return newOAuthProvider(op, nil, nil)
+	return newOAuthProvider(op, nil)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.

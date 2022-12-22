@@ -10,7 +10,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../components/WebStory'
 import { WebhookFields } from '../graphql-operations'
 
-import { WEBHOOKS } from './backend'
+import { WEBHOOKS, WEBHOOK_PAGE_HEADER } from './backend'
 import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -44,6 +44,24 @@ export const NoWebhooksFound: Story = () => (
                                     },
                                 },
                             },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                        {
+                            request: {
+                                query: getDocumentNode(WEBHOOK_PAGE_HEADER),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    webhooks: {
+                                        nodes: [],
+                                    },
+                                    webhookLogs: {
+                                        totalCount: 0,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
                         },
                     ])
                 }
@@ -77,15 +95,29 @@ export const FiveWebhooksFound: Story = () => (
                                     webhooks: {
                                         nodes: [
                                             createWebhookMock(
+                                                'Bitbucket Cloud commit webhook',
                                                 ExternalServiceKind.BITBUCKETCLOUD,
-                                                'bitbucket.com/repo1'
+                                                'https://bitbucket.com/'
                                             ),
-                                            createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1'),
-                                            createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo2'),
-                                            createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo3'),
                                             createWebhookMock(
+                                                'Github.com commit webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Github.com PR push webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Github.com PR creation webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Bitbucket Cloud PR webhook',
                                                 ExternalServiceKind.BITBUCKETCLOUD,
-                                                'bitbucket.com/repo2'
+                                                'https://bitbucket.com/'
                                             ),
                                         ],
                                         totalCount: 5,
@@ -95,6 +127,50 @@ export const FiveWebhooksFound: Story = () => (
                                     },
                                 },
                             },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                        {
+                            request: {
+                                query: getDocumentNode(WEBHOOK_PAGE_HEADER),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    webhooks: {
+                                        nodes: [
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 2,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 0,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 1,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 0,
+                                                },
+                                            },
+                                            {
+                                                webhookLogs: {
+                                                    totalCount: 2,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    webhookLogs: {
+                                        totalCount: 5,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
                         },
                     ])
                 }
@@ -112,16 +188,25 @@ export const FiveWebhooksFound: Story = () => (
 
 FiveWebhooksFound.storyName = '5 webhooks found'
 
-function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookFields {
+function createWebhookMock(name: string, kind: ExternalServiceKind, urn: string): WebhookFields {
     return {
         __typename: 'Webhook',
         createdAt: '',
         id: `webhook-${urn}`,
+        name,
         secret: null,
         updatedAt: '',
         url: '',
         uuid: '',
         codeHostKind: kind,
         codeHostURN: urn,
+        createdBy: {
+            username: 'alice',
+            url: 'users/alice',
+        },
+        updatedBy: {
+            username: 'alice',
+            url: 'users/alice',
+        },
     }
 }

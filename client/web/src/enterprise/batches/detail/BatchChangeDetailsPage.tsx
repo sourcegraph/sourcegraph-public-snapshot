@@ -3,15 +3,15 @@ import React, { useEffect, useMemo } from 'react'
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -26,7 +26,6 @@ import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
-import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
@@ -54,15 +53,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const {
-        namespaceID,
-        batchChangeName,
-        history,
-        location,
-        telemetryService,
-        authenticatedUser,
-        deleteBatchChange,
-    } = props
+    const { namespaceID, batchChangeName, history, location, telemetryService, authenticatedUser, deleteBatchChange } =
+        props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -123,11 +115,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
             )}
             <PageHeader
                 byline={
-                    <BatchChangeInfoByline
+                    <CreatedByAndUpdatedByInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                        lastApplier={batchChange.lastApplier}
+                        createdBy={batchChange.creator}
+                        updatedAt={batchChange.lastAppliedAt}
+                        updatedBy={batchChange.lastApplier}
                     />
                 }
                 actions={
@@ -154,13 +146,13 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <MissingCredentialsAlert
                     authenticatedUser={authenticatedUser}
                     viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
                 />
             )}
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             )}
             <ActiveExecutionNotice
@@ -169,7 +161,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 className="mb-3"
             />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
-            {batchChange.viewerCanAdminister && (
+            {batchChange.closedAt === null && batchChange.viewerCanAdminister && (
                 <UnpublishedNotice
                     unpublished={batchChange.changesetsStats.unpublished}
                     total={batchChange.changesetsStats.total}
@@ -177,7 +169,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice history={history} location={location} />
-            <WebhookAlert batchChange={batchChange} />
+            {batchChange.currentSpec && (
+                <WebhookAlert
+                    batchChangeID={batchChange.id}
+                    codeHostsWithoutWebhooks={batchChange.currentSpec.codeHostsWithoutWebhooks}
+                />
+            )}
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

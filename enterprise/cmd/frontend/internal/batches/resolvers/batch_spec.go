@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -330,6 +331,13 @@ func (r *batchSpecResolver) AllowUnsupported() *bool {
 func (r *batchSpecResolver) AllowIgnored() *bool {
 	if r.batchSpec.CreatedFromRaw {
 		return &r.batchSpec.AllowIgnored
+	}
+	return nil
+}
+
+func (r *batchSpecResolver) NoCache() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.NoCache
 	}
 	return nil
 }

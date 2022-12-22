@@ -73,12 +73,22 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             }
 
             fragment BlobFileFields on File2 {
+                __typename
                 content
                 richHTML
                 highlight(disableTimeout: $disableTimeout, format: $format) {
                     aborted
                     html @include(if: $html)
                     lsif
+                }
+                ... on GitBlob {
+                    lfs {
+                        byteSize
+                    }
+                    externalURLs {
+                        url
+                        serviceKind
+                    }
                 }
             }
         `,

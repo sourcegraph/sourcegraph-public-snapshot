@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/hexops/autogold"
 	"golang.org/x/time/rate"
 
@@ -15,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -27,7 +28,7 @@ import (
 )
 
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
@@ -37,7 +38,7 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 				RecordTime:  &recordDate,
 			})
 		}
-		return ctx, &req, jobs, nil
+		return &req, jobs, nil
 	}
 }
 
@@ -60,13 +61,13 @@ func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.
 	}
 }
 
-func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for _, job := range jobs {
 		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
 		points = append(points, newPoints...)
 	}
-	return ctx, reqContext, points, nil
+	return reqContext, points, nil
 }
 
 type testRunCounts struct {
@@ -87,7 +88,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			got := testRunCounts{}
-			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error) {
+			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
 				for _, p := range points {
 					got.resultCount++
 					got.totalCount += int(p.Point.Value)
@@ -95,7 +96,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 				return reqContext, nil
 			}
 
-			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister)
+			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister, glock.NewMockClock())
 			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 			tc.want.Equal(t, got)
 		})
@@ -104,20 +105,20 @@ func TestBackfillStepsConnected(t *testing.T) {
 
 type fakeCommitClient struct {
 	firstCommit   func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
+	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
 func (f *fakeCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	return f.firstCommit(ctx, repoName)
 }
-func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
-	return f.recentCommits(ctx, repoName, target)
+func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+	return f.recentCommits(ctx, repoName, target, revision)
 }
 
 func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) GitCommitClient {
 	return &fakeCommitClient{
 		firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) { return first, nil },
-		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 			return recents, nil
 		},
 	}
@@ -140,15 +141,18 @@ func TestMakeSearchJobs(t *testing.T) {
 		SampleIntervalValue: 1,
 	}
 	// All the series in this test reuse the same time data, so we will reuse these frames across all request objects.
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Hour*24))
+	}, series.CreatedAt.Truncate(time.Minute))
+
+	t.Log(fmt.Sprintf("frames: %v", frames))
+	t.Log(fmt.Sprintf("first: %v", createdDate.Add(-1*threeWeeks)))
 
 	backfillReq := &BackfillRequest{
-		Series: series,
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Series:      series,
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqInvalidQuery := &BackfillRequest{
@@ -160,8 +164,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqRepoQuery := &BackfillRequest{
@@ -173,17 +177,17 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Frames: frames,
-		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SampleTimes: frames,
+		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)
 	// used to simulate a single call to recent commits failing
-	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 		var called *int
 		called = new(int)
 		var mu sync.Mutex
-		return func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+		return func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if *called >= times {
@@ -203,45 +207,47 @@ func TestMakeSearchJobs(t *testing.T) {
 	}{
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1,
 			want: autogold.Want("Base case single worker", []string{
-				"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-28T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-21T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-14T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 				"error occurred: false",
 			})},
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, want: autogold.Want("Base case multiple workers", []string{
-			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-02-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-02-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-02-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-02-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-28T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-21T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-14T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"error occurred: false",
 		})},
 		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit during backfill period", []string{
-			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"error occurred: false",
 		})},
 		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 5, want: autogold.Want("First commit during backfill period multiple workers", []string{
-			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"error occurred: false",
 		})},
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1, canceled: true, want: autogold.Want("Canceled case single worker", []string{"error occurred: true"})},
@@ -254,7 +260,7 @@ func TestMakeSearchJobs(t *testing.T) {
 		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit error", []string{"error occurred: true"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-				return nil, discovery.EmptyRepoErr
+				return nil, gitserver.EmptyRepoErr
 			},
 			recentCommits: basicCommitClient.RecentCommits,
 		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Empty repo", []string{"error occurred: false"})},
@@ -279,7 +285,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
-			_, _, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
+			_, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
 			got := []string{}
 			// sorted jobs to make test stable
 			sort.SliceStable(jobs, func(i, j int) bool {
@@ -328,7 +334,6 @@ func TestMakeRunSearch(t *testing.T) {
 		workers     int
 		cancled     bool
 		handlers    map[types.GenerationMethod]queryrunner.InsightsHandler
-		incomingErr error
 		jobs        []*queryrunner.SearchJob
 		want        autogold.Value
 	}{
@@ -364,15 +369,7 @@ func TestMakeRunSearch(t *testing.T) {
 			handlers:    defaultHandlers,
 			cancled:     true,
 			jobs:        jobs,
-			want:        autogold.Want("canceled context", []string{"error occurred: false"}),
-		},
-		{
-			backfillReq: backfillReq,
-			workers:     1,
-			handlers:    defaultHandlers,
-			incomingErr: errors.New("earlier error"),
-			jobs:        jobs,
-			want:        autogold.Want("incoming error", []string{"error occurred: true"}),
+			want:        autogold.Want("canceled context", []string{"error occurred: true"}),
 		},
 		{
 			backfillReq: backfillReq,
@@ -398,9 +395,9 @@ func TestMakeRunSearch(t *testing.T) {
 				cancel()
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
-			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
+			searchFunc := makeRunSearchFunc(tc.handlers, tc.workers, unlimitedLimiter)
 
-			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
+			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs)
 
 			got := []string{}
 			// sorted points to make test stable

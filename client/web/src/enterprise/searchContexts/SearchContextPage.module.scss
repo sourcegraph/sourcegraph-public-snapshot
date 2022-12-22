@@ -3,12 +3,6 @@
         word-break: break-all;
     }
 
-    &__private-badge {
-        font-size: 0.625rem;
-        position: relative;
-        bottom: 0.25rem;
-    }
-
     &__repo-revs-row {
         border-bottom: 1px solid var(--border-color-2);
         padding-top: 0.75rem;
@@ -30,4 +24,23 @@
             }
         }
     }
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.badge-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.25rem;
 }

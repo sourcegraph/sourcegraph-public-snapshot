@@ -1,6 +1,7 @@
 import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
 
@@ -19,7 +20,7 @@ import {
 
 import styles from './SearchResultList.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
@@ -31,6 +32,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     onPreviewChange,
     onPreviewClear,
     onOpen,
+    settingsCascade,
 }) => {
     const scrollViewReference = createRef<HTMLDivElement>()
     const [selectedResultId, setSelectedResultId] = useState<null | string>(null)
@@ -194,6 +196,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
                                 openResult={openResult}
+                                settingsCascade={settingsCascade}
                             />
                         )
                     case 'symbol':
@@ -204,6 +207,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
                                 openResult={openResult}
+                                settingsCascade={settingsCascade}
                             />
                         )
                     case 'repo':

@@ -159,6 +159,7 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  needs_migration               | boolean                     |           |          | 
  backfill_completed_at         | timestamp without time zone |           |          | 
  supports_augmentation         | boolean                     |           | not null | true
+ repository_criteria           | text                        |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -168,6 +169,7 @@ Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_incomplete_points" CONSTRAINT "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```
@@ -192,6 +194,8 @@ Data series that comprise code insights.
 
 **query**: Query string that generates this series
 
+**repository_criteria**: The search criteria used to determine the repositories that are included in this series.
+
 **series_id**: Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.
 
 # Table "public.insight_series_backfill"
@@ -209,6 +213,23 @@ Foreign-key constraints:
     "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 Referenced by:
     TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
+
+# Table "public.insight_series_incomplete_points"
+```
+  Column   |            Type             | Collation | Nullable |                           Default                            
+-----------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id        | integer                     |           | not null | nextval('insight_series_incomplete_points_id_seq'::regclass)
+ series_id | integer                     |           | not null | 
+ reason    | text                        |           | not null | 
+ time      | timestamp without time zone |           | not null | 
+ repo_id   | integer                     |           |          | 
+Indexes:
+    "insight_series_incomplete_points_pk" PRIMARY KEY, btree (id)
+    "insight_series_incomplete_points_unique_idx" UNIQUE, btree (series_id, reason, "time", repo_id)
+Foreign-key constraints:
+    "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
 

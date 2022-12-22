@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"reflect"
 	"strconv"
 	"testing"
@@ -139,9 +140,14 @@ func TestCache_multi(t *testing.T) {
 	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
+
+	c.DeleteMulti("k1", "k2")
+	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
+		t.Errorf("Expected %v, but got %v", exp, got)
+	}
 }
 
-func TestCache_deleteKeysWithPrefix(t *testing.T) {
+func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
 	// decrease the deleteBatchSize
@@ -167,7 +173,7 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := deleteKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}
@@ -186,7 +192,7 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 func TestCache_Increase(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix:", 1)
+	c := NewWithTTL("some_prefix", 1)
 	c.Increase("a")
 
 	got, ok := c.Get("a")
@@ -200,6 +206,81 @@ func TestCache_Increase(t *testing.T) {
 		_, ok = c.Get("a")
 		return !ok
 	}, 5*time.Second, 50*time.Millisecond, "rcache.increase did not respect expiration")
+}
+
+func TestCache_KeyTTL(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+	c.Set("a", []byte("b"))
+
+	ttl, ok := c.KeyTTL("a")
+	assert.True(t, ok)
+	assert.Equal(t, 1, ttl)
+
+	time.Sleep(time.Second)
+
+	// now wait upto another 5s. We do this because timing is hard.
+	assert.Eventually(t, func() bool {
+		_, ok = c.KeyTTL("a")
+		return !ok
+	}, 5*time.Second, 50*time.Millisecond, "rcache.ketttl did not respect expiration")
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid TTL
+	_, ok = c.KeyTTL("c")
+	if ok {
+		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
+	}
+}
+
+func TestCache_SetWithTTL(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 60)
+	c.SetWithTTL("a", []byte("b"), 30)
+	b, ok := c.Get("a")
+	if !ok {
+		t.Fatal("Expect to get a after setting")
+	}
+	if string(b) != "b" {
+		t.Fatalf("got %v, want %v", string(b), "b")
+	}
+	ttl, ok := c.KeyTTL("a")
+	if !ok {
+		t.Fatal("Expect to be able to read ttl after setting")
+	}
+	if ttl > 30 {
+		t.Fatalf("ttl got %v, want %v", ttl, 30)
+	}
+
+	c.Delete("a")
+	_, ok = c.Get("a")
+	if ok {
+		t.Fatal("Get after delete should have found nothing")
+	}
+
+	c.SetWithTTL("c", []byte("d"), 0) // invalid operation
+	_, ok = c.Get("c")
+	if ok {
+		t.Fatal("SetWithTTL should not create a key with invalid expiry")
+	}
+}
+
+func TestCache_ListKeys(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+	c.SetMulti(
+		[2]string{"foobar", "123"},
+		[2]string{"bazbar", "456"},
+		[2]string{"barfoo", "234"},
+	)
+
+	keys, err := c.ListKeys(context.Background())
+	assert.NoError(t, err)
+	for _, k := range []string{"foobar", "bazbar", "barfoo"} {
+		assert.Contains(t, keys, k)
+	}
 }
 
 func bytes(s ...string) [][]byte {

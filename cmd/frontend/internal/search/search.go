@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -70,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -92,11 +93,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if err != nil {
 		return err
 	}
-	tr.TagFields(
-		otlog.String("query", args.Query),
-		otlog.String("version", args.Version),
-		otlog.String("pattern_type", args.PatternType),
-		otlog.Int("search_mode", args.SearchMode),
+	tr.SetAttributes(
+		attribute.String("query", args.Query),
+		attribute.String("version", args.Version),
+		attribute.String("pattern_type", args.PatternType),
+		attribute.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -141,17 +142,9 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
-	var wgLogLatency sync.WaitGroup
-	defer wgLogLatency.Wait()
 	logLatency := func() {
-		wgLogLatency.Add(1)
-		go func() {
-			defer wgLogLatency.Done()
-			metricLatency.WithLabelValues(string(GuessSource(r))).
-				Observe(time.Since(start).Seconds())
-
-			graphqlbackend.LogSearchLatency(ctx, h.db, inputs, int32(time.Since(start).Milliseconds()))
-		}()
+		metricLatency.WithLabelValues(string(GuessSource(r))).
+			Observe(time.Since(start).Seconds())
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -334,6 +327,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 		pathEvent.Branches = []string{*fm.InputRev}
 	}
 
+	if fm.Debug != nil {
+		pathEvent.Debug = *fm.Debug
+	}
+
 	return pathEvent
 }
 
@@ -495,18 +492,20 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	commitEvent := &streamhttp.EventCommitMatch{
-		Type:         streamhttp.CommitMatchType,
-		Label:        commit.Label(),
-		URL:          commit.URL().String(),
-		Detail:       commit.Detail(),
-		Repository:   string(commit.Repo.Name),
-		RepositoryID: int32(commit.Repo.ID),
-		OID:          string(commit.Commit.ID),
-		Message:      string(commit.Commit.Message),
-		AuthorName:   commit.Commit.Author.Name,
-		AuthorDate:   commit.Commit.Author.Date,
-		Content:      hls.Value,
-		Ranges:       ranges,
+		Type:          streamhttp.CommitMatchType,
+		Label:         commit.Label(),
+		URL:           commit.URL().String(),
+		Detail:        commit.Detail(),
+		Repository:    string(commit.Repo.Name),
+		RepositoryID:  int32(commit.Repo.ID),
+		OID:           string(commit.Commit.ID),
+		Message:       string(commit.Commit.Message),
+		AuthorName:    commit.Commit.Author.Name,
+		AuthorDate:    commit.Commit.Author.Date,
+		CommitterName: commit.Commit.Committer.Name,
+		CommitterDate: commit.Commit.Committer.Date,
+		Content:       hls.Value,
+		Ranges:        ranges,
 	}
 
 	if r, ok := repoCache[commit.Repo.ID]; ok {

@@ -10,7 +10,6 @@ import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/e
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
-import { createStatusBarItemType } from './api/codeEditor'
 import { proxySubscribable } from './api/common'
 import { createDecorationType } from './api/decorations'
 import { DocumentHighlightKind } from './api/documentHighlights'
@@ -46,9 +45,7 @@ export function createExtensionAPIFactory(
     state: ExtensionHostState,
     clientAPI: Remote<ClientAPI>,
     initData: Pick<InitData, 'clientApplication' | 'sourcegraphURL'>
-): (
-    extensionID: string
-) => typeof sourcegraph & {
+): (extensionID: string) => typeof sourcegraph & {
     // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
     // noops with a log message), to avoid completely breaking extensions that use them.
     languages: {
@@ -242,7 +239,6 @@ export function createExtensionAPIFactory(
             }
         },
         createDecorationType,
-        createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
     }

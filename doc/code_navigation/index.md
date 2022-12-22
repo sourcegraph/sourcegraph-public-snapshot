@@ -124,10 +124,7 @@ Code navigation is made up of multiple features that build on top of each other:
 
 Here's how you go from search-based code navigation to **automatically-updating, precise code navigation across multiple repositories and dependencies**:
 
-1. Navigate code with [search-based code navigation](explanations/search_based_code_navigation.md) and [Sourcegraph extensions](../../../extensions/index.md).
-
-    Included in a standard Sourcegraph installation and works out of the box on the instances connected to the Internet.
-    To see how to enable code navigation on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
+1. Navigate code with [search-based code navigation](explanations/search_based_code_navigation.md).
 1. Start using [precise code navigation](explanations/precise_code_navigation.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
@@ -170,7 +167,6 @@ Once setup, code navigation is available for use across popular development tool
 
 - General
   - [Configure data retention policies](how-to/configure_data_retention.md)
-  - [Enable code navigation on the air-gapped instances](how-to/enable_code_intel_on_air_gapped_instances.md)
 
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)

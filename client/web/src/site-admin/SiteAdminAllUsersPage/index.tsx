@@ -7,9 +7,8 @@ import { RouteComponentProps } from 'react-router'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, logger } from '@sourcegraph/common'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CopyableText } from '../../components/CopyableText'

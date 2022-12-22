@@ -82,8 +82,8 @@ type Store struct {
 	// Log is the Logger to use.
 	Log log.Logger
 
-	// ObservationContext is used to configure observability in diskcache.
-	ObservationContext *observation.Context
+	// ObservationCtx is used to configure observability in diskcache.
+	ObservationCtx *observation.Context
 
 	// once protects Start
 	once sync.Once
@@ -115,14 +115,14 @@ func (s *Store) Start() {
 		s.cache = diskcache.NewStore(s.Path, "store",
 			diskcache.WithBackgroundTimeout(10*time.Minute),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
-			diskcache.WithObservationContext(s.ObservationContext),
+			diskcache.WithobservationCtx(s.ObservationCtx),
 		)
-		_ = os.MkdirAll(s.Path, 0700)
+		_ = os.MkdirAll(s.Path, 0o700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
 		m := mountinfo.NewCollector(s.Log, o, map[string]string{"cacheDir": s.Path})
-		s.ObservationContext.Registerer.MustRegister(m)
+		s.ObservationCtx.Registerer.MustRegister(m)
 
 		go s.watchAndEvict()
 		go s.watchConfig()
@@ -136,7 +136,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	var cacheHit bool
 	start := time.Now()
@@ -235,7 +235,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)

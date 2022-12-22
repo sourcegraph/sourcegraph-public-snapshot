@@ -35,7 +35,7 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
-var (
+const (
 	frequencyQuery = `
 	WITH user_days_used AS (
         SELECT
@@ -136,7 +136,7 @@ func (n *UsersFrequencyNode) Frequency() float64 { return n.Data.Frequency }
 
 func (n *UsersFrequencyNode) Percentage() float64 { return n.Data.Percentage }
 
-var (
+const (
 	mauQuery = `
 	SELECT
 		TO_CHAR(timestamp, 'YYYY-MM') AS date,

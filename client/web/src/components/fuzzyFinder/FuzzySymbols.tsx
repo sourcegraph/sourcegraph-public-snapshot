@@ -3,7 +3,8 @@ import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graph
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -48,7 +49,8 @@ export class FuzzySymbols extends FuzzyQuery {
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
-        private readonly isGlobalSymbols: boolean
+        private readonly isGlobalSymbols: boolean,
+        private readonly settingsCascade: SettingsCascadeOrError
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -63,10 +65,14 @@ export class FuzzySymbols extends FuzzyQuery {
         }
 
         const repositoryText = `${repositoryName}/`
+        const symbolKindTags =
+            isSettingsValid(this.settingsCascade) && this.settingsCascade.final.experimentalFeatures?.symbolKindTags
         return values.map(({ text, url, symbolKind }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            icon: symbolKind ? <SymbolTag className="fuzzy-repos-result-icon" kind={symbolKind} /> : undefined,
+            icon: symbolKind ? (
+                <SymbolKind kind={symbolKind} className="mr-1" symbolKindTags={symbolKindTags} />
+            ) : undefined,
         }))
     }
 

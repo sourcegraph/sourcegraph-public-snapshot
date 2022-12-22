@@ -11,12 +11,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerObservability) *workerutil.Worker {
+func NewWorker(ctx context.Context, handler workerutil.Handler[*Job], workerStore workerstore.Store[*Job], metrics workerutil.WorkerObservability) *workerutil.Worker[*Job] {
 	options := workerutil.WorkerOptions{
 		Name:              "webhook_build_worker",
 		NumHandlers:       3,
@@ -28,7 +29,9 @@ func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore work
 	return dbworker.NewWorker(ctx, workerStore, handler, options)
 }
 
-func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore.Store[*Job], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*Job] {
+	logger = logger.Scoped("webhookworker.Resetter", "")
+
 	options := dbworker.ResetterOptions{
 		Name:     "webhook_build_resetter",
 		Interval: 1 * time.Minute,
@@ -38,8 +41,10 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateWorkerStore(logger log.Logger, dbHandle basestore.TransactableHandle) workerstore.Store {
-	return workerstore.New(logger, dbHandle, workerstore.Options{
+func CreateWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) workerstore.Store[*Job] {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("webhookworker.WorkerStore", ""), observationCtx)
+
+	return workerstore.New(observationCtx, dbHandle, workerstore.Options[*Job]{
 		Name:              "webhook_build_worker_store",
 		TableName:         "webhook_build_jobs",
 		Scan:              workerstore.BuildWorkerScan(scanWebhookBuildJob),

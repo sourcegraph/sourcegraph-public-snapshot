@@ -13,22 +13,19 @@ import { CodeHost } from '../CodeHost'
 import styles from './WebhookAlert.module.scss'
 
 export interface Props {
-    batchChange: Pick<BatchChangeFields, 'id' | 'currentSpec'>
+    batchChangeID: BatchChangeFields['id']
+    codeHostsWithoutWebhooks: NonNullable<BatchChangeFields['currentSpec']>['codeHostsWithoutWebhooks']
 
     // isSiteAdmin is only here for storybook purposes.
     isSiteAdmin?: boolean
 }
 
 export const WebhookAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    batchChange: {
-        id,
-        currentSpec: {
-            codeHostsWithoutWebhooks: {
-                nodes,
-                pageInfo: { hasNextPage },
-                totalCount,
-            },
-        },
+    batchChangeID: id,
+    codeHostsWithoutWebhooks: {
+        nodes,
+        pageInfo: { hasNextPage },
+        totalCount,
     },
     isSiteAdmin,
 }) => {

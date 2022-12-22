@@ -2,7 +2,7 @@ import * as H from 'history'
 
 import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 
-import { CaseSensitivityProps, SearchContextProps, SearchPatternTypeProps } from '.'
+import { CaseSensitivityProps, SearchContextProps, SearchMode, SearchPatternTypeProps } from '.'
 
 export enum QueryChangeSource {
     /**
@@ -64,8 +64,7 @@ export interface SubmitSearchParameters
         | 'communitySearchContextPage'
         | 'excludedResults'
         | 'smartSearchDisabled'
-    searchParameters?: { key: string; value: string }[]
-    addRecentSearch?: (query: string) => void
+    searchMode?: SearchMode
 }
 
 export interface SubmitSearchProps {

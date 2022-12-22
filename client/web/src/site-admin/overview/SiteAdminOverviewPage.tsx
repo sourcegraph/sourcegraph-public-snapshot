@@ -5,11 +5,10 @@ import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, asError, isErrorLike, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link, Icon, H3, Heading } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon, H3, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'

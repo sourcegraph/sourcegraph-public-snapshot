@@ -11,6 +11,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -33,10 +34,11 @@ type crateSyncerJob struct {
 	operations      *operations
 }
 
-func NewCrateSyncer(dependenciesSvc DependenciesService,
+func NewCrateSyncer(
+	observationCtx *observation.Context,
+	dependenciesSvc DependenciesService,
 	gitClient GitserverClient,
 	extSvcStore ExternalServiceStore,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
@@ -56,12 +58,17 @@ func NewCrateSyncer(dependenciesSvc DependenciesService,
 		dependenciesSvc: dependenciesSvc,
 		gitClient:       gitClient,
 		extSvcStore:     extSvcStore,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return job.handleCrateSyncer(ctx, interval)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			return job.handleCrateSyncer(ctx, interval)
+		}),
+	)
 }
 
 func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
@@ -85,7 +92,11 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	}
 
 	repoName := api.RepoName(config.IndexRepositoryName)
-	update, err := b.gitClient.RequestRepoUpdate(ctx, repoName, interval)
+
+	// We should use an internal actor when doing cross service calls.
+	clientCtx := actor.WithInternalActor(ctx)
+
+	update, err := b.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
 	if err != nil {
 		return err
 	}
@@ -93,7 +104,7 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
 	reader, err := b.gitClient.ArchiveReader(
-		ctx,
+		clientCtx,
 		nil,
 		repoName,
 		gitserver.ArchiveOptions{

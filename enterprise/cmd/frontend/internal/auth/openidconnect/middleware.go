@@ -2,6 +2,7 @@
 package openidconnect
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -91,10 +93,12 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	}
 
 	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
-	// anything else anyway; there's no point in showing them a signin screen with just a single
-	// signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
+	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+	//
+	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
+	ps := providers.Providers()
+	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
+	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
@@ -134,8 +138,28 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
+				arg, _ := json.Marshal(struct {
+					SafeErrorMsg string `json:"safe_error_msg"`
+				}{
+					SafeErrorMsg: safeErrMsg,
+				})
+				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
+					Name:            database.SecurityEventOIDCLoginFailed,
+					URL:             r.URL.Path,                                   // Don't log OIDC query params
+					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
+					Source:          "BACKEND",
+					Timestamp:       time.Now(),
+					Argument:        arg,
+				})
 				return
 			}
+			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
+				Name:      database.SecurityEventOIDCLoginSucceeded,
+				URL:       r.URL.Path, // Don't log OIDC query params
+				UserID:    uint32(result.User.ID),
+				Source:    "BACKEND",
+				Timestamp: time.Now(),
+			})
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
@@ -238,7 +262,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(r.Context(), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -279,7 +303,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(r.Context(), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternalClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),

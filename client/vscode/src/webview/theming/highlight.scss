@@ -8,8 +8,8 @@
 // corresponding CSS variables for classes that the defaults do not.
 .sourcegraph-extension.theme-light,
 .sourcegraph-extension.theme-dark {
-    th.line,
-    th.line::before {
+    td.line,
+    td.line::before {
         color: var(--vscode-editorLineNumber-foreground);
     }
 

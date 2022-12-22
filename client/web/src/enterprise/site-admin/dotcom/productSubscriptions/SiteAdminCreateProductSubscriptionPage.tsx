@@ -6,10 +6,9 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, useEventObservable, Link, Alert, Icon, H2 } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'

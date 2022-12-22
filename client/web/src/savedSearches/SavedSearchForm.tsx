@@ -3,8 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { QueryState, SearchPatternType } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,6 +17,8 @@ import {
     Input,
     Code,
     Label,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -63,15 +63,15 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (
-        key: keyof SavedQueryFields
-    ): React.FormEventHandler<HTMLInputElement> => event => {
-        const { value, checked, type } = event.currentTarget
-        setValues(values => ({
-            ...values,
-            [key]: type === 'checkbox' ? checked : value,
-        }))
-    }
+    const createInputChangeHandler =
+        (key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> =>
+        event => {
+            const { value, checked, type } = event.currentTarget
+            setValues(values => ({
+                ...values,
+                [key]: type === 'checkbox' ? checked : value,
+            }))
+        }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()

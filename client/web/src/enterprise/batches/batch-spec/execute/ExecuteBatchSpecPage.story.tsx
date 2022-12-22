@@ -5,10 +5,9 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { WebStory } from '../../../../components/WebStory'
 import {
     BatchSpecExecutionFields,
@@ -17,7 +16,6 @@ import {
     BatchSpecWorkspaceState,
     VisibleBatchSpecWorkspaceFields,
 } from '../../../../graphql-operations'
-import { mockAuthenticatedUser } from '../../../code-monitoring/testing/util'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
 import {
     COMPLETED_BATCH_SPEC,
@@ -57,33 +55,22 @@ const config: Meta = {
 
 export default config
 
-const FIXTURE_ORG: OrgSettingFields = {
+const MOCK_ORGANIZATION = {
     __typename: 'Org',
-    name: 'sourcegraph',
-    displayName: 'Sourcegraph',
-    id: 'a',
-    viewerCanAdminister: true,
-    settingsURL: null,
-    latestSettings: null,
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
 }
 
-const FIXTURE_USER: UserSettingFields = {
+const mockAuthenticatedUser = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
-    viewerCanAdminister: true,
-    settingsURL: null,
-    latestSettings: null,
-}
-
-const SETTINGS_CASCADE = {
-    ...EMPTY_SETTINGS_CASCADE,
-    subjects: [
-        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-    ],
-}
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
 
 const COMMON_MOCKS: MockedResponses = [
     {
@@ -116,11 +103,11 @@ const buildMocks = (batchSpec: BatchSpecExecutionFields): MockedResponses => [
     },
 ]
 
-const buildWorkspacesQuery = (
-    workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>
-): typeof _queryWorkspacesList =>
+const buildWorkspacesQuery =
+    (workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>): typeof _queryWorkspacesList =>
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    () => of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
+    () =>
+        of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
 
 // A true executing batch spec wouldn't have a finishedAt set, but we need to have one so
 // that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
@@ -140,7 +127,6 @@ export const Executing: Story = () => (
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
                     queryWorkspacesList={buildWorkspacesQuery()}
                 />
             </MockedTestProvider>
@@ -194,7 +180,6 @@ export const ExecuteWithAWorkspaceSelected: Story = () => (
                         batchSpecID="spec1234"
                         batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                         authenticatedUser={mockAuthenticatedUser}
-                        settingsCascade={SETTINGS_CASCADE}
                         match={{
                             isExact: false,
                             params: { batchChangeName: 'my-batch-change', batchSpecID: 'spec1234' },
@@ -222,7 +207,6 @@ export const Completed: Story = () => (
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.COMPLETED })}
                 />
             </MockedTestProvider>
@@ -241,7 +225,6 @@ export const CompletedWithErrors: Story = () => (
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
                     queryWorkspacesList={buildWorkspacesQuery({ state: BatchSpecWorkspaceState.FAILED })}
                 />
             </MockedTestProvider>
@@ -262,7 +245,6 @@ export const LocallyExecutedSpec: Story = () => (
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
                 />
             </MockedTestProvider>
         )}

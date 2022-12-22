@@ -12,7 +12,6 @@ import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
-import { StatusBarItemWithKey } from './extension/api/codeEditor'
 import { ProxySubscribable } from './extension/api/common'
 import {
     FileDecorationsByPath,
@@ -168,7 +167,6 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<ViewProviderResult[]>
 
     getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
-    getStatusBarItems: (viewerId: ViewerId) => ProxySubscribable<StatusBarItemWithKey[]>
 
     // Content
     getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>

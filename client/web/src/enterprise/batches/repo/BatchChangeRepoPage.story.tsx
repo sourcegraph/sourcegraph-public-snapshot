@@ -55,14 +55,16 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
         },
     })
 
-const queryRepoBatchChanges = (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges => () =>
-    of({
-        batchChanges: {
-            totalCount: Object.values(nodes).length,
-            nodes: Object.values(nodes),
-            pageInfo: { endCursor: null, hasNextPage: false },
-        },
-    })
+const queryRepoBatchChanges =
+    (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges =>
+    () =>
+        of({
+            batchChanges: {
+                totalCount: Object.values(nodes).length,
+                nodes: Object.values(nodes),
+                pageInfo: { endCursor: null, hasNextPage: false },
+            },
+        })
 
 const queryList = queryRepoBatchChanges(NODES)
 const queryNone = queryRepoBatchChanges([])

@@ -21,9 +21,10 @@ export function buildRepoBaseNameAndPath(
     externalServiceType: string | undefined,
     filePath: string | undefined
 ): string {
-    const bareRepoNamePieces = repoName
-        .split('/')
-        .slice(serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase()) ? 2 : 1)
+    const pathPieces = repoName.split('/')
+    const shouldCutOffTwoPieces =
+        pathPieces.length > 2 && serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase())
+    const bareRepoNamePieces = pathPieces.slice(shouldCutOffTwoPieces ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 

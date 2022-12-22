@@ -73,6 +73,10 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
+### Fine-grained personal access tokens
+
+GitHub's fine-grained personal access tokens are not yet supported.
+
 ## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
@@ -112,40 +116,9 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 
 ## Webhooks
 
-The `webhooks` setting allows specifying the organization webhook secrets necessary to authenticate incoming webhook requests to `/.api/github-webhooks`.
+Using the `webhooks` property on the external service has been deprecated.
 
-```json
-"webhooks": [
-  {"org": "your_org", "secret": "verylongrandomsecret"}
-]
-```
-
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between GitHub and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
-1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
-1. Click **Update configuration**.
-1. Copy the webhook URL displayed below the **Update configuration** button.
-1. On GitHub, go to the settings page of your organization. From there, click **Settings**, then **Webhooks**, then **Add webhook**.
-1. Fill in the webhook form:
-   * **Payload URL**: the URL you copied above from Sourcegraph.
-   * **Content type**: this must be set to `application/json`.
-   * **Secret**: the secret token you configured Sourcegraph to use above.
-   * **Which events**: select **Let me select individual events**, and then enable:
-     - Issue comments
-     - Pull requests
-     - Pull request reviews
-     - Pull request review comments
-     - Check runs
-     - Check suites
-     - Statuses
-   * **Active**: ensure this is enabled.
-1. Click **Add webhook**.
-1. Confirm that the new webhook is listed.
-
-Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.
 
 ## Configuration
 

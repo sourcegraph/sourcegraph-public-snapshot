@@ -23,7 +23,7 @@ func Containers() *monitoring.Dashboard {
 		// - review what's changed in the commits
 		// - check if the commit contains changes to the container name query in each dashboard definition
 		// - update this container name query accordingly
-		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger)")
+		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger)")
 	)
 
 	return &monitoring.Dashboard{

@@ -1,10 +1,11 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 :root {
-    /* Map out CSS variables to the theme-aware GitHub ones */
-    --body-bg: var(--color-bg-canvas);
-    --border-color: var(--color-border-primary);
-    --secondary: var(--color-auto-gray-2);
+    // Map out CSS variables to the theme-aware GitHub ones
+    // Latest variable, backwards compat (GitHub Enterprise) fallback, last-resort fallback to Sourcegraph color (in case GitHub changes its variables again)
+    --body-bg: var(--color-canvas-default, var(--color-bg-canvas, var(--white)));
+    --border-color: var(--color-border-default, var(--color-border-primary, var(--secondary)));
+    --secondary: var(--color-btn-bg, var(--color-auto-gray-2), var(--gray-06));
 }
 
 [data-color-mode='dark'] {
@@ -19,7 +20,7 @@
 
 .command-palette-popover {
     --dropdown-bg: var(--body-bg);
-    --dropdown-border-color: var(--color-border-default);
+    --dropdown-border-color: var(--border-color);
     --popover-border-radius: 6px;
 }
 

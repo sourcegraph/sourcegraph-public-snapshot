@@ -13,6 +13,15 @@ function buildSettings(props: EditorSettings = {}): EditorSettings {
 }
 
 describe('buildRepoBaseNameAndPath tests', () => {
+    it('builds the correct string for "repositoryPathPattern": "{nameWithOwner}" config', () => {
+        const url = 'https://sourcegraph.com/sourcegraph/sourcegraph/-/blob/tsconfig.json'
+        const { repoName, filePath } = parseBrowserRepoURL(url)
+
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.GITHUB, filePath)
+
+        expect(result).toEqual('sourcegraph/tsconfig.json')
+    })
+
     it('builds the correct string for GitHub URLs', () => {
         const url = 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/tsconfig.json'
         const { repoName, filePath } = parseBrowserRepoURL(url)

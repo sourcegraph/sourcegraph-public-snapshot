@@ -24,7 +24,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	defer func() {
 		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
@@ -91,7 +91,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(true)
-		err = checkAndEnforceLicense(ctx, insightsDB)
+		err = checkAndEnforceLicense(ctx, insightsDB, logger)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,7 +110,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, insightsDB)
+		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)
@@ -122,7 +122,6 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("NumFrozen", lamDashboardCount).Equal(t, 1)
-
 	})
 	t.Run("Does nothing if there is no license and insights are already frozen", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
@@ -132,7 +131,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, insightsDB)
+		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)

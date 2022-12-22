@@ -4,7 +4,19 @@
  * decorations are provided via the {@link showGitBlameDecorations} facet.
  */
 import { Facet, RangeSet } from '@codemirror/state'
-import { Decoration, EditorView, gutter, gutterLineClass, GutterMarker } from '@codemirror/view'
+import {
+    Decoration,
+    DecorationSet,
+    EditorView,
+    gutter,
+    gutterLineClass,
+    GutterMarker,
+    gutters,
+    ViewPlugin,
+    ViewUpdate,
+    WidgetType,
+} from '@codemirror/view'
+import { History } from 'history'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 
@@ -13,7 +25,7 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
-import blameColumnStyles from '../BlameColumn.module.scss'
+import { blobPropsFacet } from '.'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const highlightedLineGutterMarker = new (class extends GutterMarker {
@@ -35,50 +47,32 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
     }),
 ])
 
-/**
- * Used to find the blame decoration(s) with the longest text,
- * so that they can be used as gutter spacer.
- */
-const longestColumnDecorations = (hunks?: BlameHunk[]): BlameHunk | undefined =>
-    hunks?.reduce((acc, hunk) => {
-        if (!acc || hunk.displayInfo.message.length > acc.displayInfo.message.length) {
-            return hunk
-        }
-        return acc
-    }, undefined as BlameHunk | undefined)
-
-/**
- * Widget class for rendering column git blame text document decorations inside CodeMirror.
- */
-class BlameDecoratorMarker extends GutterMarker {
+class BlameDecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
+    private state: { history: History }
 
-    constructor(
-        public view: EditorView,
-        public readonly hunk: BlameHunk | undefined,
-        private isSpacer: boolean = false
-    ) {
+    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined, public readonly line: number) {
         super()
+        this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
 
     /* eslint-disable-next-line id-length*/
-    public eq(other: BlameDecoratorMarker): boolean {
+    public eq(other: BlameDecorationWidget): boolean {
         return isEqual(this.hunk, other.hunk)
     }
 
     public toDOM(): HTMLElement {
         if (!this.container) {
             this.container = document.createElement('span')
+            this.container.classList.add('blame-decoration')
+
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <BlameDecoration
-                    /* line has to be set to 0 if this marker is used as spacer,
-                     * otherwise the popover will be rendered twice when
-                     * hovering over the line associated with this hunk
-                     */
-                    line={this.isSpacer ? 0 : this.hunk?.startLine ?? 0}
+                    line={this.hunk?.startLine ?? 0}
                     blameHunk={this.hunk}
+                    history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
@@ -111,32 +105,114 @@ class BlameDecoratorMarker extends GutterMarker {
 export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     enables: facet => [
-        gutter({
-            class: blameColumnStyles.decoration,
-            lineMarker: (view, lineBlock) => {
-                const hunks = view.state.facet(facet)
-                if (!hunks) {
-                    // This shouldn't be possible but just in case
-                    return null
-                }
-                const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
-                const hunk = hunks.find(hunk => hunk.startLine === lineNumber)
-                if (!hunk) {
-                    return null
-                }
-                return new BlameDecoratorMarker(view, hunk)
-            },
-            // Without a spacer the whole gutter flickers when the
-            // decorations for the visible lines are re-rendered
-            // TODO: update spacer when decorations change
-            initialSpacer: view => {
-                const hunk = longestColumnDecorations(view.state.facet(facet))
-                return new BlameDecoratorMarker(view, hunk, true)
-            },
-            // Markers need to be updated when theme changes
-            lineMarkerChange: update =>
-                update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
-        }),
         hoveredLine,
+
+        // Render blame hunks as line decorations.
+        ViewPlugin.fromClass(
+            class {
+                public decorations: DecorationSet
+                private previousHunkLength = -1
+
+                constructor(view: EditorView) {
+                    this.decorations = this.computeDecorations(view, facet)
+                }
+
+                public update(update: ViewUpdate): void {
+                    const hunks = update.view.state.facet(facet)
+
+                    if (update.docChanged || update.viewportChanged || this.previousHunkLength !== hunks.length) {
+                        this.decorations = this.computeDecorations(update.view, facet)
+                        this.previousHunkLength = update.state.facet(facet).length
+                    }
+                }
+
+                private computeDecorations(view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet {
+                    const widgets = []
+                    const hunks = view.state.facet(facet)
+                    for (const { from, to } of view.visibleRanges) {
+                        for (let position = from; position <= to; ) {
+                            const line = view.state.doc.lineAt(position)
+                            const matchingHunk = hunks.find(hunk => hunk.startLine === line.number)
+                            const decoration = Decoration.widget({
+                                widget: new BlameDecorationWidget(view, matchingHunk, line.number),
+                            })
+                            widgets.push(decoration.range(line.from))
+                            position = line.to + 1
+                        }
+                    }
+                    return Decoration.set(widgets)
+                }
+            },
+            {
+                decorations: ({ decorations }) => decorations,
+            }
+        ),
+        EditorView.theme({
+            '.cm-line': {
+                // Position relative so that the blame-decoration inside can be
+                // aligned to the start of the line
+                position: 'relative',
+                // Move the start of the line to after the blame decoration.
+                // This is necessary because the start of the line is used for
+                // aligning tab characters.
+                //
+                // 1rem is the default padding-left so we have to add it here
+                paddingLeft: 'calc(var(--blame-decoration-width) + 1rem) !important',
+            },
+
+            '.blame-decoration': {
+                // Remove the blame decoration from the content flow so that
+                // the tab start can be moved to the right
+                position: 'absolute',
+                left: '0',
+
+                display: 'inline-block',
+                background: 'var(--body-bg)',
+                verticalAlign: 'bottom',
+                width: 'var(--blame-decoration-width)',
+            },
+
+            '.selected-line .blame-decoration, .highlighted-line .blame-decoration': {
+                background: 'inherit',
+            },
+
+            '.cm-content': {
+                // Make .cm-content overflow .blame-gutter
+                marginLeft: 'calc(var(--blame-decoration-width) * -1)',
+                // override default .cm-gutters z-index 200
+                zIndex: 201,
+            },
+        }),
+    ],
+})
+
+const blameGutterElement = new (class extends GutterMarker {
+    public toDOM(): HTMLElement {
+        return document.createElement('div')
+    }
+})()
+
+export const showBlameGutter = Facet.define<boolean>({
+    combine: value => value.flat(),
+    enables: [
+        // Render gutter with no content only to create a column with specified background.
+        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
+        // to achieve column-like view of inline blame decorations.
+        gutter({
+            class: 'blame-gutter',
+            lineMarker: () => blameGutterElement,
+            initialSpacer: () => blameGutterElement,
+        }),
+
+        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
+        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
+        gutters({ fixed: false }),
+
+        EditorView.theme({
+            '.blame-gutter': {
+                background: 'var(--body-bg)',
+                width: 'var(--blame-decoration-width)',
+            },
+        }),
     ],
 })

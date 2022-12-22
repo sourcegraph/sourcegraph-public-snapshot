@@ -57,7 +57,7 @@ describe('[Code Insight] Dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
 
         await driver.page.waitForSelector('[aria-label="Add dashboard"]')
         await driver.page.click('[aria-label="Add dashboard"]')

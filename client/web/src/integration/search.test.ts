@@ -221,13 +221,6 @@ describe('Search', () => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                        RegistryExtensions: () => ({
-                            extensionRegistry: {
-                                __typename: 'ExtensionRegistry',
-                                extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
-                            },
-                        }),
                     })
                 })
 
@@ -278,15 +271,19 @@ describe('Search', () => {
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-case-sensitivity-toggle')
                     await driver.page.click('aria/Search[role="button"]')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&case=yes')
+                    await driver.assertWindowLocation(
+                        '/search?q=context:global+test&patternType=standard&case=yes&sm=1'
+                    )
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes')
+                    await driver.page.goto(
+                        driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes&sm=1'
+                    )
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=1')
                 })
             })
         })
@@ -310,7 +307,7 @@ describe('Search', () => {
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-structural-search-toggle')
                     await driver.page.click('aria/Search[role="button"]')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=1')
                 })
 
                 test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -319,7 +316,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=0')
                 })
 
                 test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
@@ -327,7 +324,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
                 })
             })
         })
@@ -342,7 +339,7 @@ describe('Search', () => {
 
             await driver.page.waitForSelector('.test-search-button', { visible: true })
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
+            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp&sm=0')
         })
     })
 
@@ -384,7 +381,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-search-result', { visible: true })
 
             const results = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-search-result-label')].map(label =>
+                [...document.querySelectorAll('[data-testid="result-container-header"]')].map(label =>
                     (label.textContent || '').trim()
                 )
             )
@@ -486,7 +483,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.test-file-match-children-item', {
+            await driver.page.waitForSelector('[data-testid="symbol-search-result"]', {
                 visible: true,
             })
 
@@ -558,7 +555,7 @@ describe('Search', () => {
                 driver.page.waitForNavigation(),
                 driver.page.click('[data-testid="search-type-submit"]'),
             ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard')
+            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard&sm=0')
         })
     })
 })

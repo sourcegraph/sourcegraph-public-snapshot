@@ -4,10 +4,35 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 
 To connect GitLab to Sourcegraph:
 
-1. Go to **Site admin > Manage code hosts > Add repositories**
-2. Select **GitLab**.
-3. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-4. Press **Add repositories**.
+1. Go to **Site admin > Manage code hosts > Add code host**
+2. Select **GitLab** (for GitLab.com) or **GitLab Self-Managed**.
+3. Set **url** to the URL of your GitLab instance, such as https://gitlab.example.com or https://gitlab.com (for GitLab.com).
+4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with repo scope, and set it to be the value of the token.
+5. Use the [Repository syncing documentation below](#repository-syncing) to select and add your preferred projects/repos to the configuration.
+6. You can use the action buttons above the text field to add the fields, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration) for additional fields.
+7. Click **Add repositories**.
+
+Example config:
+```
+{
+  "url": "https://gitlab.com",
+  "token": "<access token>",
+  "projectQuery": [
+    "groups/mygroup/projects",
+    "projects?membership=true&archived=no",
+    "?search=<search query>",
+    "?membership=true\u0026search=foo"
+ ],
+ "projects": [
+  {
+     "name": "group/name"
+  },
+  {
+      "id": 42
+  }
+ ]
+}
+```
 
 ## Supported versions
 
@@ -98,33 +123,8 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 | [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` or `read_api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
 | Batch Changes requests | `api` or `read_api`, `read_repository`, `write_repository` | [Batch Changes](../../batch_changes/index.md) require write access to push commits and create, update and close merge requests on GitLab repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details. |
 
-## Webhook setup
+## Webhooks
 
-The `webhooks` setting allows specifying the webhook secrets necessary to authenticate incoming webhook requests to `/.api/gitlab-webhooks`.
+Using the `webhooks` property on the external service has been deprecated.
 
-```json
-"webhooks": [
-  {"secret": "verylongrandomsecret"}
-]
-```
-
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between GitLab and Sourcegraph and make it more efficient.
-
-To set up webhooks:
-
-1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitLab configuration.
-1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"secret": "verylongrandomsecret"}]`
-1. Click **Update repositories**.
-1. Copy the webhook URL displayed below the **Update repositories** button.
-1. On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
-1. Fill in the webhook form:
-   * **URL**: the URL you copied above from Sourcegraph.
-   * **Secret token**: the secret token you configured Sourcegraph to use above.
-   * **Trigger**: select **Merge request events** and **Pipeline events**.
-   * **Enable SSL verification**: ensure this is enabled if you have configured SSL with a valid certificate in your Sourcegraph instance.
-1. Click **Add webhook**.
-1. Confirm that the new webhook is listed below **Project Hooks**.
-
-Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
-
-**NOTE:** We currently do not support [system webhooks](https://docs.gitlab.com/ee/administration/system_hooks.html) as these provide a different set of payloads.
+Please consult [this page](../config/webhooks.md) in order to configure webhooks.

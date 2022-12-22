@@ -113,7 +113,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     }
 
     return (
-        <article className="pt-2">
+        <div className="pt-2">
             <AggregationModeControls
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
@@ -154,7 +154,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                     </footer>
                 </>
             )}
-        </article>
+        </div>
     )
 })
 

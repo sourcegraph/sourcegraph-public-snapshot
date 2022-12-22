@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 // mockPolicyOpts configurable options for the mock password policy
@@ -144,12 +145,19 @@ func TestAddrValidation(t *testing.T) {
 		{"sourcegraph.com", true},
 		{"sourcegraph.com:443", true},
 		{"sourcegraph.com:-baz", false},
+		{"git123@sourcegraph.com", true},
+		{"git123@127.0.0.1:80", true},
+		{"git123@git456@sourcegraph.com", false},
+		{"git-123@sourcegraph.com", false},
+		{"git-123@sourcegraph.com:foo", false},
+		{"git@sourcegraph.com", true},
+		{"thissubdomaindoesnotexist.sourcegraph.com", false},
 	}
 
-	t.Run("correctly validates addresses", func(t *testing.T) {
-		for _, a := range addrTests {
+	for _, a := range addrTests {
+		t.Run(a.addr, func(t *testing.T) {
 			assert.True(t, ValidateRemoteAddr(a.addr) == a.pass)
-		}
-	})
+		})
+	}
 
 }

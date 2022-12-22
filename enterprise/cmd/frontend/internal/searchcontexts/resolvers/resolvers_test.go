@@ -33,7 +33,6 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
 
 		orgs := database.NewMockOrgStore()
-		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{}, nil)
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -61,51 +60,7 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 			}
 		}
 
-		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
 		mockrequire.Called(t, users.GetByIDFunc)
-	})
-
-	t.Run("Auto defined search contexts for user where 1 organization has repository connected", func(t *testing.T) {
-		key := int32(1)
-		username := "alice"
-		orgID := int32(42)
-		orgName := "acme"
-		orgDisplayName := "ACME Company"
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		users := database.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
-		orgs := database.NewMockOrgStore()
-		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{{
-			ID:          orgID,
-			Name:        orgName,
-			DisplayName: &orgDisplayName,
-		}}, nil)
-
-		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-
-		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []graphqlbackend.SearchContextResolver{
-			&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
-			&searchContextResolver{sc: searchcontexts.GetUserSearchContext(key, username), db: db},
-			&searchContextResolver{sc: searchcontexts.GetOrganizationSearchContext(orgID, orgName, orgDisplayName), db: db},
-		}
-		if !reflect.DeepEqual(searchContexts, want) {
-			t.Fatalf("got %+v, want %+v", searchContexts, want)
-		}
-
-		mockrequire.Called(t, users.GetByIDFunc)
-		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
 	})
 }
 
@@ -169,5 +124,81 @@ func TestSearchContexts(t *testing.T) {
 			mockrequire.Called(t, sc.CountSearchContextsFunc)
 			mockrequire.Called(t, sc.ListSearchContextsFunc)
 		})
+	}
+}
+
+func TestSearchContextsStarDefaultPermissions(t *testing.T) {
+	t.Parallel()
+
+	userID := int32(1)
+	graphqlUserID := graphqlbackend.MarshalUserID(userID)
+	username := "alice"
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: userID})
+
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, Username: username}, nil)
+
+	searchContextSpec := "test"
+	graphqlSearchContextID := marshalSearchContextID(searchContextSpec)
+
+	sc := database.NewMockSearchContextsStore()
+	sc.GetSearchContextFunc.SetDefaultReturn(&types.SearchContext{ID: 0, Name: searchContextSpec}, nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SearchContextsFunc.SetDefaultReturn(sc)
+
+	// User not admin, trying to set things for themselves
+	_, err := (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
+	}
+
+	// User not admin, trying to set things for another user
+	graphqlUserID2 := graphqlbackend.MarshalUserID(int32(2))
+	unauthorizedError := "must be authenticated as the authorized user or site admin"
+
+	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err.Error() != unauthorizedError {
+		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
+	}
+	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err.Error() != unauthorizedError {
+		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
+	}
+	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err.Error() != unauthorizedError {
+		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
+	}
+
+	// User is admin, trying to set things for another user
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username, SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: username, SiteAdmin: true}, nil)
+
+	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
 	}
 }

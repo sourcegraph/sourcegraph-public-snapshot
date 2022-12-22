@@ -7,8 +7,6 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,6 +25,8 @@ import {
     Label,
     H3,
     Text,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
@@ -94,15 +94,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     )
 
     // Set up mutations for creation or management of this feature flag.
-    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
-        CREATE_FEATURE_FLAG_MUTATION
-    )
-    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] = useMutation(
-        UPDATE_FEATURE_FLAG_MUTATION
-    )
-    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] = useMutation(
-        DELETE_FEATURE_FLAG_MUTATION
-    )
+    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] =
+        useMutation(CREATE_FEATURE_FLAG_MUTATION)
+    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] =
+        useMutation(UPDATE_FEATURE_FLAG_MUTATION)
+    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] =
+        useMutation(DELETE_FEATURE_FLAG_MUTATION)
 
     // Create the main form fields and action buttons based on the state of the page.
     let body: React.ReactElement
@@ -292,10 +289,10 @@ const AddFeatureFlagOverride: FunctionComponent<
     const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
     const [namespaceID, setNamespaceID] = useState<number | string>('')
 
-    const getBase64Namespace = useCallback((): string => btoa(`${overrideType}:${namespaceID}`), [
-        namespaceID,
-        overrideType,
-    ])
+    const getBase64Namespace = useCallback(
+        (): string => btoa(`${overrideType}:${namespaceID}`),
+        [namespaceID, overrideType]
+    )
 
     const [addOverride, { loading, error, reset }] = useMutation<
         CreateFeatureFlagOverrideResult,
@@ -770,10 +767,10 @@ const ReferencesCollapsible: React.FunctionComponent<
     }>
 > = ({ flagName, productGitVersion }) => {
     const references = useObservable(
-        useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
-            flagName,
-            productGitVersion,
-        ])
+        useMemo(
+            () => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])),
+            [flagName, productGitVersion]
+        )
     )
     if (references === undefined || references.length === 0) {
         return <></>

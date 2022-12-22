@@ -3,9 +3,9 @@
 import { Observable } from 'rxjs'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 import { PlatformContext } from '../../platform/context'
+import { Settings, SettingsCascade } from '../../settings/settings'
 
 export interface Unsubscribable {
     unsubscribe(): void
@@ -212,32 +212,6 @@ export interface DecorationAttachmentRenderOptions extends ThemableDecorationAtt
  * {@link sourcegraph.app.createDecorationType}
  */
 export interface TextDocumentDecorationType {
-    /** An opaque identifier. */
-    readonly key: string
-}
-
-/**
- * A text element displayed in an editor's status bar.
- * A status bar item can display tooltips on hover and execute commands on click
- */
-export interface StatusBarItem {
-    /** The text to display in the status bar */
-    text: string
-
-    /** Tooltip text to display when hovering over the status bar item. */
-    tooltip?: string
-
-    /** The id of and arguments to a command to execute when the status bar item is clicked */
-    command?: { id: string; args?: any[] }
-}
-
-/**
- * Represents a handle to a status bar item.
- *
- * To get an instance of {@link StatusBarItemType}, use
- * {@link sourcegraph.app.createStatusBarItemType}
- */
-export interface StatusBarItemType {
     /** An opaque identifier. */
     readonly key: string
 }

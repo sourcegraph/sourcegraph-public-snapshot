@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
@@ -101,8 +101,13 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				EnvVars: []string{"INJECT_LABEL_MATCHERS"},
 				Usage:   "Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.",
 			},
+			&cli.StringSliceFlag{
+				Name:    "multi-instance-groupings",
+				EnvVars: []string{"MULTI_INSTANCE_GROUPINGS"},
+				Usage:   "If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.",
+			},
 		},
-		BashComplete: cliutil.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteOptions(func() (options []string) {
 			return definitions.Default().Names()
 		}),
 		Action: func(c *cli.Context) error {
@@ -190,6 +195,8 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 					}
 					return matchers
 				}(),
+
+				MultiInstanceDashboardGroupings: c.StringSlice("multi-instance-groupings"),
 			}
 
 			// If 'all.dir' is set, override all other '*.dir' flags and ignore expansion

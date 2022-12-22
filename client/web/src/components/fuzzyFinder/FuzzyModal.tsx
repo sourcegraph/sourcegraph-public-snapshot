@@ -1,6 +1,7 @@
 import React, {
     useState,
     useEffect,
+    useRef,
     useMemo,
     KeyboardEvent,
     useLayoutEffect,
@@ -10,6 +11,7 @@ import React, {
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import { TabsProps } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -28,6 +30,10 @@ import {
     Tab,
     Select,
     H3,
+    TabPanels,
+    TabPanel,
+    TabList,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
@@ -36,7 +42,7 @@ import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
 import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './FuzzyTabs'
-import { HighlightedLink, linkStyle } from './HighlightedLink'
+import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
 
@@ -49,6 +55,7 @@ export interface FuzzyModalProps extends FuzzyState {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
+    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -123,6 +130,40 @@ function fuzzySearch(
     }
 }
 
+interface ResultProps {
+    fileIndex: number
+    file: HighlightedLinkProps
+    isSelected: boolean
+    onClickItem: () => void
+}
+
+const Result: React.FC<ResultProps> = ({ fileIndex, file, isSelected, onClickItem }) => {
+    const ref = useRef<HTMLLIElement>(null)
+
+    useEffect(() => {
+        if (isSelected && ref.current) {
+            ref.current.scrollIntoView({ block: 'nearest' })
+        }
+    }, [isSelected])
+
+    return (
+        <li
+            // This ID is required to make the `Enter` shortcut work.
+            id={fuzzyResultId(fileIndex)}
+            ref={ref}
+            role="option"
+            aria-selected={isSelected}
+            className={classNames(
+                'd-flex align-items-center py-1 px-3 rounded-0',
+                styles.resultItem,
+                isSelected && styles.focused
+            )}
+        >
+            <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
+        </li>
+    )
+}
+
 function renderFuzzyResults(
     props: RenderProps,
     focusIndex: number,
@@ -140,10 +181,7 @@ function renderFuzzyResults(
                 // decision to place the number here, as long as the number is
                 // recorded as a dependency to `renderFuzzyResults` then it
                 // should work OK.
-                <Text
-                    data-fsm-generation={props.fsmGeneration}
-                    className={classNames(styles.results, styles.emptyResults, 'text-muted')}
-                >
+                <Text data-fsm-generation={props.fsmGeneration} className="p-3 text-center text-muted">
                     No matches
                 </Text>
             ),
@@ -152,17 +190,15 @@ function renderFuzzyResults(
 
     const linksToRender = props.result.links.slice(0, props.resultCount)
     const element = (
-        <ul id={FUZZY_MODAL_RESULTS} className={styles.results} role="listbox" aria-label="Fuzzy finder results">
+        <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results" className="py-1 px-0 mb-0">
             {linksToRender.map((file, fileIndex) => (
-                <li
-                    id={fuzzyResultId(fileIndex)}
+                <Result
+                    fileIndex={fileIndex}
                     key={file.url || file.text}
-                    role="option"
-                    aria-selected={fileIndex === focusIndex}
-                    className={classNames(fileIndex === focusIndex && styles.focused)}
-                >
-                    <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
-                </li>
+                    file={file}
+                    isSelected={focusIndex === fileIndex}
+                    onClickItem={onClickItem}
+                />
             ))}
         </ul>
     )
@@ -230,6 +266,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
+    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -241,7 +278,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             maxResults,
             initialMaxResults,
             setMaxResults,
-            onClickItem
+            handleResultClick
         )
     }, [
         activeTab,
@@ -251,7 +288,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         maxResults,
         initialMaxResults,
         setMaxResults,
-        onClickItem,
+        handleResultClick,
         tabs,
     ])
 
@@ -264,7 +301,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             const index = newNumber % queryResult.resultCount
             const nextIndex = index < 0 ? queryResult.resultCount + index : index
             setFocusIndex(nextIndex)
-            document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView({ block: 'center' })
         },
         [focusIndex, setFocusIndex, queryResult]
     )
@@ -314,16 +350,25 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         fileAnchor?.click()
                     }
                     break
-                case event.key === 'Tab':
-                    if (tabs.isOnlyFilesEnabled()) {
-                        break
-                    }
-                    event.preventDefault()
-                    setActiveTab(tabs.focusTabWithIncrement(activeTab, event.shiftKey ? -1 : 1))
                 default:
             }
         },
-        [activeTab, setActiveTab, onClose, queryResult, focusIndex, setRoundedFocusIndex, tabs]
+        [onClose, queryResult, focusIndex, setRoundedFocusIndex]
+    )
+
+    const showTabs = !tabs.isOnlyFilesEnabled()
+    const WrapperComponent = showTabs ? Tabs : 'div'
+    const wrapperComponentProps: TabsProps | {} = showTabs
+        ? {
+              size: 'large',
+              index: tabs.activeIndex(activeTab),
+              onChange: (index: number) => setActiveTab(tabs.focusTab(index)),
+          }
+        : {}
+
+    const handleGoToResultsPageClick = useCallback(
+        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
+        [onClickItem]
     )
 
     return (
@@ -333,33 +378,44 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             onDismiss={() => onClose()}
             aria-label={tabs.underlying[activeTab].title}
         >
-            <div className={styles.content}>
-                <div className={styles.header} data-testid="fuzzy-modal-header">
-                    {tabs.isOnlyFilesEnabled() ? (
-                        <H3>Find files</H3>
-                    ) : (
-                        <Tabs
-                            size="large"
-                            index={tabs.activeIndex(activeTab)}
-                            onFocus={() => focusFuzzyInput()}
-                            onChange={index => setActiveTab(tabs.focusTab(index))}
-                            className={styles.tabList}
-                        >
+            <WrapperComponent
+                className="d-flex align-items-stretch flex-column h-100 bg-transparent"
+                {...wrapperComponentProps}
+            >
+                <div
+                    className={classNames(
+                        'd-flex justify-space-between align-items-center pt-2 pb-0 px-3',
+                        styles.header
+                    )}
+                    data-testid="fuzzy-modal-header"
+                >
+                    {showTabs ? (
+                        <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
-                                <Tab key={key} className={styles.tab}>
+                                <Tab key={key} className={styles.tab} data-testid={key}>
                                     {tab.title}
                                     <span className={styles.shortcut}>
                                         {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
                                     </span>
                                 </Tab>
                             ))}
-                        </Tabs>
+                        </TabList>
+                    ) : (
+                        <H3>Find files</H3>
                     )}
-                    <Button variant="icon" onClick={() => onClose()} aria-label="Close" className={styles.closeButton}>
+                    <Badge
+                        variant="info"
+                        href="https://github.com/sourcegraph/sourcegraph/discussions/42874"
+                        tooltip="Provide feedback on this experimental feature"
+                        className={styles.experimentalBadge}
+                    >
+                        Experimental
+                    </Badge>
+                    <Button variant="icon" onClick={onClose} aria-label="Close" className={styles.closeButton}>
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
-                <div className={styles.divider} />
+                <hr className="mt-0 mb-2 w-100" />
                 <Input
                     id="fuzzy-modal-input"
                     autoComplete="off"
@@ -394,16 +450,24 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         </span>
                     )}
                 </div>
-                <div className={classNames(styles.divider, 'mb-0')} />
-                {queryResult.jsxElement}
-                <div className={styles.divider} />
-                <div className={styles.footer}>
-                    <SearchQueryLink {...props} />
-                    <span className={styles.rightAligned}>
+                <hr className="my-0 w-100" />
+                {showTabs ? (
+                    <TabPanels className="flex-1 overflow-auto">
+                        {tabs.entries().map(([key]) => (
+                            <TabPanel key={key}>{activeTab === key && queryResult.jsxElement}</TabPanel>
+                        ))}
+                    </TabPanels>
+                ) : (
+                    <div className="flex-1 overflow-auto">{queryResult.jsxElement}</div>
+                )}
+                <hr className="my-0 w-100" />
+                <div className="d-flex align-items-center w-100 p-3">
+                    <SearchQueryLink {...props} onClickItem={handleGoToResultsPageClick} />
+                    <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>
                 </div>
-            </div>
+            </WrapperComponent>
         </Modal>
     )
 }
@@ -473,7 +537,7 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
     </Select>
 )
 
-const SearchQueryLink: React.FunctionComponent<FuzzyState> = props => {
+const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () => void }> = props => {
     const { onClickItem, scope } = props
     const searchQueryLink = useCallback(
         (query: string): JSX.Element => {

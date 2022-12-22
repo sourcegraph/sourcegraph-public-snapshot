@@ -15,6 +15,7 @@ import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 import java.io.File;
+import java.util.Optional;
 
 public class RepoUtil {
     // repoInfo returns the Sourcegraph repository URI, and the file path
@@ -25,7 +26,7 @@ public class RepoUtil {
         VCSType vcsType = getVcsType(project, file);
         String relativePath = "";
         String remoteUrl = "";
-        String branchName = "";
+        String remoteBranchName = "";
         try {
             String repoRootPath = getRepoRootPath(project, file);
             if (repoRootPath == null) {
@@ -40,9 +41,8 @@ public class RepoUtil {
             }
 
             // If the current branch doesn't exist on the remote, use the default branch.
-            String localBranchName = getLocalBranchName(project, file);
-            branchName = localBranchName != null && doesRemoteBranchExist(project, file, localBranchName)
-                ? localBranchName : ConfigUtil.getDefaultBranchName(project);
+            remoteBranchName = Optional.ofNullable(getRemoteBranchName(project, file))
+                .orElse(ConfigUtil.getDefaultBranchName(project));
 
             remoteUrl = getRemoteRepoUrl(project, file);
             remoteUrl = doReplacements(project, remoteUrl);
@@ -57,7 +57,7 @@ public class RepoUtil {
             Logger.getInstance(RepoUtil.class).warn(message);
             err.printStackTrace();
         }
-        return new RepoInfo(vcsType, remoteUrl, branchName, relativePath);
+        return new RepoInfo(vcsType, remoteUrl, remoteBranchName, relativePath);
     }
 
     private static String doReplacements(@NotNull Project project, @NotNull String remoteUrl) {
@@ -103,30 +103,21 @@ public class RepoUtil {
     }
 
     /**
-     * Returns the current branch name of the repository.
-     * In detached HEAD state and other exceptional cases it returns "HEAD".
+     * @return Like "main"
      */
     @Nullable
-    private static String getLocalBranchName(@NotNull Project project, @NotNull VirtualFile file) {
-        Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
-        return repository != null ? repository.getCurrentBranchName() : null;
-    }
-
-    /**
-     * @param branchName E.g. "main"
-     */
-    private static boolean doesRemoteBranchExist(@NotNull Project project, @NotNull VirtualFile file, @NotNull String branchName) {
+    private static String getRemoteBranchName(@NotNull Project project, @NotNull VirtualFile file) {
         Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
         if (repository == null) {
-            return false;
+            return null;
         }
 
         if (repository instanceof GitRepository) {
-            return GitUtil.doesRemoteBranchExist((GitRepository) repository, branchName);
+            return GitUtil.getRemoteBranchName((GitRepository) repository);
         }
 
         // Unknown VCS.
-        return false;
+        return null;
     }
 
     public static VCSType getVcsType(@NotNull Project project, @NotNull VirtualFile file) {

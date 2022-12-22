@@ -5,12 +5,23 @@ import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegr
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-const getHeaders = (): { [header: string]: string } => ({
-    ...window?.context?.xhrHeaders,
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-})
+const getHeaders = (): { [header: string]: string } => {
+    const headers: { [header: string]: string } = {
+        ...window?.context?.xhrHeaders,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    }
+    const parameters = new URLSearchParams(window.location.search)
+    const trace = parameters.get('trace')
+    if (trace) {
+        headers['X-Sourcegraph-Should-Trace'] = trace
+    }
+    const feat = parameters.getAll('feat')
+    if (feat.length) {
+        headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
+    }
+    return headers
+}
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`

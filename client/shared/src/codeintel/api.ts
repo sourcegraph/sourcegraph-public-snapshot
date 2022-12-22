@@ -21,9 +21,10 @@ import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { PanelViewData } from '../api/extension/extensionHostApi'
 import { getModeFromPath } from '../languages'
+import type { PlatformContext } from '../platform/context'
+import { isSettingsValid, Settings, SettingsCascade } from '../settings/settings'
 import { parseRepoURI } from '../util/url'
 
-import { CodeIntelContext } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
 import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
@@ -42,9 +43,34 @@ interface CodeIntelAPI {
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
 
-function newCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
+function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
     sourcegraph.updateCodeIntelContext(context)
     return new DefaultCodeIntelAPI()
+}
+
+export let codeIntelAPI: null | CodeIntelAPI = null
+export async function getOrCreateCodeIntelAPI(context: PlatformContext): Promise<CodeIntelAPI> {
+    if (codeIntelAPI !== null) {
+        return codeIntelAPI
+    }
+
+    return new Promise<CodeIntelAPI>((resolve, reject) => {
+        context.settings.subscribe(settingsCascade => {
+            try {
+                if (!isSettingsValid(settingsCascade)) {
+                    throw new Error('Settings are not valid')
+                }
+                codeIntelAPI = createCodeIntelAPI({
+                    requestGraphQL: context.requestGraphQL,
+                    telemetryService: context.telemetryService,
+                    settings: newSettingsGetter(settingsCascade),
+                })
+                resolve(codeIntelAPI)
+            } catch (error) {
+                reject(error)
+            }
+        })
+    })
 }
 
 class DefaultCodeIntelAPI implements CodeIntelAPI {
@@ -151,12 +177,27 @@ const languages: Language[] = languageSpecs.map(spec => ({
     providers: createProviders(spec, hasImplementationsField, new RedactingLogger(console)),
 }))
 
+// Returns true if the provided language supports "Find implementations"
+export function hasFindImplementationsSupport(language: string): boolean {
+    for (const spec of languageSpecs) {
+        if (spec.languageID === language) {
+            return spec.textDocumentImplemenationSupport ?? false
+        }
+    }
+    return false
+}
+
 function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
     return [
         { language: languageSpec.languageID },
         ...(languageSpec.verbatimFilenames || []).flatMap(filename => [{ pattern: filename }]),
         ...languageSpec.fileExts.flatMap(extension => [{ pattern: `*.${extension}` }]),
     ]
+}
+
+function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): sourcegraph.SettingsGetter {
+    return <T>(setting: string): T | undefined =>
+        settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
 }
 
 // Replaces codeintel functions from the "old" extension/webworker extension API
@@ -172,9 +213,9 @@ function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
 // customers that choose to enable the legacy extensions.
 export function injectNewCodeintel(
     old: FlatExtensionHostAPI,
-    codeintelContext: CodeIntelContext
+    codeintelContext: sourcegraph.CodeIntelContext
 ): FlatExtensionHostAPI {
-    const codeintel = newCodeIntelAPI(codeintelContext)
+    const codeintel = createCodeIntelAPI(codeintelContext)
     function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
         return promise.pipe(
             map(result => {

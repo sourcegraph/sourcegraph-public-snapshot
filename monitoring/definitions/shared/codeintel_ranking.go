@@ -66,10 +66,10 @@ func (codeIntelligence) NewRankingStoreGroup(containerName string) monitoring.Gr
 	})
 }
 
-// src_codeintel_codenav_ranking_uploads_read_total
-// src_codeintel_codenav_ranking_bytes_uploaded_total
-// src_codeintel_codenav_ranking_stale_uploads_removed_total
-// src_codeintel_codenav_ranking_bytes_deleted_total
+// src_codeintel_uploads_ranking_uploads_read_total
+// src_codeintel_uploads_ranking_bytes_uploaded_total
+// src_codeintel_uploads_ranking_stale_uploads_removed_total
+// src_codeintel_uploads_ranking_bytes_deleted_total
 // src_codeintel_ranking_csv_files_processed_total
 // src_codeintel_ranking_csv_files_bytes_read_total
 // src_codeintel_ranking_repositories_updated_total
@@ -104,14 +104,14 @@ func (codeIntelligence) NewRankingPageRankGroup(containerName string) monitoring
 
 			{
 				Standard.Count("uploads read for export")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_codenav_ranking_uploads_read",
+					MetricNameRoot:        "codeintel_uploads_ranking_uploads_read",
 					MetricDescriptionRoot: "uploads read",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of upload records read.
 				`).Observable(),
 
 				Standard.Count("stale upload records removed")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_codenav_ranking_stale_uploads_removed",
+					MetricNameRoot:        "codeintel_uploads_ranking_stale_uploads_removed",
 					MetricDescriptionRoot: "uploads removed",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of stale upload records removed from GCS.
@@ -127,14 +127,14 @@ func (codeIntelligence) NewRankingPageRankGroup(containerName string) monitoring
 				`).Observable()),
 
 				withBytes(Standard.Count("bytes uploaded to GCS")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_codenav_ranking_bytes_uploaded",
+					MetricNameRoot:        "codeintel_uploads_ranking_bytes_uploaded",
 					MetricDescriptionRoot: "bytes uploaded",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of bytes uploaded to GCS.
 				`).Observable()),
 
 				withBytes(Standard.Count("bytes deleted from GCS")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_codenav_ranking_bytes_deleted",
+					MetricNameRoot:        "codeintel_uploads_ranking_bytes_deleted",
 					MetricDescriptionRoot: "bytes deleted",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					The number of bytes deleted from GCS.

@@ -6,7 +6,6 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -14,7 +13,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
-import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
+import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../theme'
 import {
@@ -52,10 +51,8 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
-    defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
     now: () => parseISO('2020-09-16T23:15:01Z'),
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })

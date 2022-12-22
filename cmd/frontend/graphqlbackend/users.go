@@ -31,7 +31,9 @@ func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConne
 		return nil, err
 	}
 
-	var opt database.UsersListOptions
+	opt := database.UsersListOptions{
+		ExcludeSourcegraphOperators: true,
+	}
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
@@ -133,12 +135,12 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 		return nil, err
 	}
 
-	after := r.opt.LimitOffset.Offset + len(users)
-
 	// We would have had all results when no limit set
 	if r.opt.LimitOffset == nil {
 		return graphqlutil.HasNextPage(false), nil
 	}
+
+	after := r.opt.LimitOffset.Offset + len(users)
 
 	// We got less results than limit, means we've had all results
 	if after < r.opt.Limit {

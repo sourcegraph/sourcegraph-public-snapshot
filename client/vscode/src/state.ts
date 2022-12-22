@@ -51,7 +51,10 @@ export interface ContextInvalidatedState {
 /**
  * Subset of SearchQueryState that's necessary and clone-able (`postMessage`) for the VS Code extension.
  */
-export type VSCEQueryState = Pick<SearchQueryState, 'queryState' | 'searchCaseSensitivity' | 'searchPatternType'> | null
+export type VSCEQueryState = Pick<
+    SearchQueryState,
+    'queryState' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> | null
 
 interface CommonContext {
     authenticatedUser: AuthenticatedUser | null

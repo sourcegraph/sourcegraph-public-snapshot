@@ -86,7 +86,7 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return category
 	})
 
-	apiURL, err := urlFromConfig(config)
+	apiURL, err := UrlFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Cloud"),
 		nethttp.ClientTrace(false))
@@ -278,7 +278,7 @@ func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
 }
 
-func urlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
+func UrlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
 	if config.ApiURL == "" {
 		return url.Parse("https://api.bitbucket.org")
 	}

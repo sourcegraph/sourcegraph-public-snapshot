@@ -5,9 +5,8 @@ import { mdiArrowExpand, mdiArrowCollapse, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual, noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, H4, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { useField } from '../../../../../../form'

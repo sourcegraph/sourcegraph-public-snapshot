@@ -23,11 +23,10 @@ interface FeedbackBadgeProps extends BaseProductStatusBadgeProps {
 export const FeedbackBadge: React.FunctionComponent<React.PropsWithChildren<FeedbackBadgeProps>> = ({
     className,
     status,
-    tooltip,
     feedback: { mailto, text },
 }) => (
     <div className={classNames(styles.feedbackBadge, className)}>
-        <ProductStatusBadge tooltip={tooltip} status={status} className={styles.productStatusBadge} />
+        <ProductStatusBadge status={status} className={styles.productStatusBadge} />
         <Link to={`mailto:${mailto}`} className={styles.anchor} target="_blank" rel="noopener noreferrer">
             {text || 'Share feedback'}
         </Link>

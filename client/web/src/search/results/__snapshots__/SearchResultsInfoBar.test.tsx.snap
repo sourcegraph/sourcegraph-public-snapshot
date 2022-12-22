@@ -12,6 +12,37 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       class="row"
     >
       <div />
+      <section
+        class="mb-0 d-flex justify-content-center outlined"
+      >
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+          />
+        </svg>
+        <p
+          class="my-auto"
+        >
+          To search across your private repositories, 
+          <a
+            class="anchorLink"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            try Sourcegraph Cloud
+          </a>
+          .
+        </p>
+      </section>
       <div
         class="expander"
       />
@@ -88,6 +119,37 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <div />
+      <section
+        class="mb-0 d-flex justify-content-center outlined"
+      >
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+          />
+        </svg>
+        <p
+          class="my-auto"
+        >
+          To search across your private repositories, 
+          <a
+            class="anchorLink"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            try Sourcegraph Cloud
+          </a>
+          .
+        </p>
+      </section>
       <div
         class="expander"
       />
@@ -164,6 +226,37 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <div />
+      <section
+        class="mb-0 d-flex justify-content-center outlined"
+      >
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+          />
+        </svg>
+        <p
+          class="my-auto"
+        >
+          To search across your private repositories, 
+          <a
+            class="anchorLink"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            try Sourcegraph Cloud
+          </a>
+          .
+        </p>
+      </section>
       <div
         class="expander"
       />
@@ -240,6 +333,37 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       class="row"
     >
       <div />
+      <section
+        class="mb-0 d-flex justify-content-center outlined"
+      >
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+          />
+        </svg>
+        <p
+          class="my-auto"
+        >
+          To search across your private repositories, 
+          <a
+            class="anchorLink"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            try Sourcegraph Cloud
+          </a>
+          .
+        </p>
+      </section>
       <div
         class="expander"
       />
@@ -316,6 +440,37 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       class="row"
     >
       <div />
+      <section
+        class="mb-0 d-flex justify-content-center outlined"
+      >
+        <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
+          fill="currentColor"
+          height="24"
+          role="img"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+          />
+        </svg>
+        <p
+          class="my-auto"
+        >
+          To search across your private repositories, 
+          <a
+            class="anchorLink"
+            href="https://signup.sourcegraph.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            try Sourcegraph Cloud
+          </a>
+          .
+        </p>
+      </section>
       <div
         class="expander"
       />

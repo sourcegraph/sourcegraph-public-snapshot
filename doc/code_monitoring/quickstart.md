@@ -8,7 +8,7 @@ In this tutorial, we will create a new code monitor that monitors new appearance
 
 Prerequisite: Ensure [email notifications](https://docs.sourcegraph.com/admin/observability/alerting#email) are configured in site configuration.  
 
-1. On your Sourcegraph instance, click the **Code monitoring** menu item at the top right of your page. Alternatively, go to https://sourcegraph.example.com/code-monitoring (where sourcegraph.example.com represents your unique Sourcegraph url).
+1. On your Sourcegraph instance, click the **Code monitoring** menu item at the top right of your page. Alternatively, go to `https://sourcegraph.example.com/code-monitoring` (where sourcegraph.example.com represents your unique Sourcegraph url).
 1. Click the **Create new code monitor** button at the top right of the page.
 1. Fill out the **Name** input with: "TODOs".
 1. Under the **Trigger** section, click **When there are new search results**. 
@@ -21,7 +21,7 @@ Prerequisite: Ensure [email notifications](https://docs.sourcegraph.com/admin/ob
 1. Click **Done**.
 1. Click **Create code monitor**.
 
-You should now be on https://sourcegraph.example.com/code-monitoring, and be able to see the TODO code monitor on the page.
+You should now be on `https://sourcegraph.example.com/code-monitoring`, and be able to see the TODO code monitor on the page.
 
 ## Sending a test email notification
 

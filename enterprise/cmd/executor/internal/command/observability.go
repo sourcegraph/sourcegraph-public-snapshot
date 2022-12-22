@@ -27,16 +27,16 @@ type Operations struct {
 	RunLockHeldTotal prometheus.Counter
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
+func NewOperations(observationCtx *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"apiworker_command",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(opName string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("apiworker.%s", opName),
 			MetricLabelValues: []string{opName},
 			Metrics:           metrics,
@@ -47,13 +47,13 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		Name: "src_executor_run_lock_wait_total",
 		Help: "The number of milliseconds spent waiting for the run lock.",
 	})
-	observationContext.Registerer.MustRegister(runLockWaitTotal)
+	observationCtx.Registerer.MustRegister(runLockWaitTotal)
 
 	runLockHeldTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_executor_run_lock_held_total",
 		Help: "The number of milliseconds spent holding the run lock.",
 	})
-	observationContext.Registerer.MustRegister(runLockHeldTotal)
+	observationCtx.Registerer.MustRegister(runLockHeldTotal)
 
 	return &Operations{
 		SetupGitInit:                 op("setup.git.init"),

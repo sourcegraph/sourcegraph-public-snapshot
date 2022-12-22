@@ -10,9 +10,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 -->
 
-- [About](getting-started/index.md)
-  - [Product tour](getting-started/tour.md)
-  - [Personalization](getting-started/personalization/index.md)
+- [Getting started](index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
   - [How-to guides](code_search/how-to/index.md)
@@ -43,7 +41,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Browser extension](integration/browser_extension/index.md)
   - [Editors](integration/editor.md)
   - [Browser search engine](integration/browser_extension/how-tos/browser_search_engine.md)
-- [Extensions](extensions/index.md)
 - [CLI](cli/index.md)
   - [Quickstart](cli/quickstart.md)
   - [Explanations](cli/explanations/index.md)
@@ -57,7 +54,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
-  - [Extension registry](admin/extensions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
   - [FAQ](admin/faq.md)
@@ -71,7 +67,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - <br/>
-- [★ Get Started](index.md)
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)
 - [★ Changelog](CHANGELOG.md)

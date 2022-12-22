@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -144,7 +145,7 @@ func TestQueryExecution_ToQueueJob(t *testing.T) {
 		exec.Revision = "asdf1234"
 		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		got := ToQueueJob(exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test to job without dependents", func(t *testing.T) {
@@ -152,7 +153,41 @@ func TestQueryExecution_ToQueueJob(t *testing.T) {
 		exec.RecordingTime = bTime
 		exec.Revision = "asdf1234"
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		got := ToQueueJob(exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
+}
+
+func TestQueryJobsStatus(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	workerBaseStore := basestore.NewWithHandle(db.Handle())
+
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO insights_query_runner_jobs(series_id, state, search_query) 
+		VALUES('s1', 'queued', '1'), 
+		      ('s1', 'processing', '2'), 
+		      ('s1', 'processing', '4'), 
+		      ('s1', 'fake-state', '3')
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := QueryJobsStatus(ctx, workerBaseStore, "s1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &JobsStatus{Queued: 1, Processing: 2}
+
+	stringify := func(status *JobsStatus) string {
+		return fmt.Sprintf("queued: %d, processing: %d, completed: %d, failed: %d, errored: %d",
+			status.Queued, status.Processing, status.Completed, status.Failed, status.Errored,
+		)
+	}
+	if stringify(want) != stringify(got) {
+		t.Errorf("got %v want %v", got, want)
+	}
 }

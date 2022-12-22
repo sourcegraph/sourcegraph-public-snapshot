@@ -3,10 +3,9 @@ import React from 'react'
 import { mdiCommentOutline, mdiLinkVariantRemove, mdiSync, mdiSourceBranch, mdiUpload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, AlertLink, Link, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert, Icon, H4, Text, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'

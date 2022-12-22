@@ -6,6 +6,7 @@ import {
     CreateSearchBasedInsightResult,
     GetDashboardInsightsResult,
     GetDashboardInsightsVariables,
+    InsightViewNode,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
 import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
@@ -84,7 +85,7 @@ function createSearchBasedInsight(
                     return
                 }
 
-                searchInsightCreationOptimisticUpdate(cache, data, dashboard)
+                searchInsightCreationOptimisticUpdate(cache, data.createLineChartSearchInsight.view, dashboard)
             },
         })
     )
@@ -94,9 +95,9 @@ function createSearchBasedInsight(
  * Updates Apollo caches after insight creation. Add insight to main insights gql query,
  * add newly created insight to the cache dashboard that insight was created from.
  */
-function searchInsightCreationOptimisticUpdate(
+export function searchInsightCreationOptimisticUpdate(
     cache: ApolloCache<unknown>,
-    data: CreateSearchBasedInsightResult,
+    createdView: InsightViewNode,
     dashboard: InsightDashboard | null
 ): void {
     if (dashboard && !isVirtualDashboard(dashboard)) {
@@ -115,7 +116,7 @@ function searchInsightCreationOptimisticUpdate(
             ...cachedDashboard,
             views: {
                 ...cachedDashboard.views,
-                nodes: [...cachedDashboardInsights, data.createLineChartSearchInsight.view],
+                nodes: [...cachedDashboardInsights, createdView],
             },
         }
 

@@ -2,41 +2,19 @@
 
 .modal {
     height: 80vh;
+    max-height: 850px;
     // `!important` is required to ensure that this rule is applied in the production bundle.
     // It can be removed after addressing the following issue:
     // https://github.com/sourcegraph/sourcegraph/issues/42217
     width: 80vw !important;
+    max-width: 900px;
     background-color: var(--body-bg);
     padding: 0;
-    border-radius: 4px;
-}
-
-.content {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
-    height: 100%;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
-    margin-bottom: -1px;
+    margin-bottom: -1px; // stylelint-disable-line declaration-property-unit-allowed-list
     z-index: 1;
-}
-
-.divider {
-    width: 100%; // stylelint-disable-next-line declaration-property-unit-allowed-list
-    height: 1px;
-    background-color: var(--border-color);
-    margin-bottom: 0.5rem;
-    z-index: 0;
-
-    &.mb-0 {
-        margin-bottom: 0;
-    }
 }
 
 .shortcut {
@@ -50,58 +28,15 @@
     box-shadow: var(--search-input-shadow);
 }
 
-.empty-results {
-    text-align: center;
-}
-
-.results {
-    overflow: auto;
-    flex: 1;
-    padding: 0.25rem 0;
-    margin-bottom: 0;
-    // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
-    & p {
-        padding: 1rem;
-    }
-
-    li {
-        padding: 0.325rem 1rem;
-        border-radius: 0;
-        display: flex;
-        align-items: center;
-
-        a {
-            max-height: initial;
-
-            span:global(.fuzzy-repos-result-icon) {
-                margin-right: 0.25rem;
-            }
-            span:global(.fuzzy-repos-star) {
-                margin-left: 0.25rem;
-            }
-
-            &:hover {
-                text-decoration: none;
-            }
-        }
-
-        &:hover {
-            background-color: var(--color-bg-2);
-        }
+.result-item {
+    &:hover {
+        background-color: var(--color-bg-2);
     }
 }
 
 .focused {
     border-radius: var(--border-radius);
     background-color: var(--color-bg-3);
-}
-
-.footer {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
 }
 
 .keyboard-explanation {
@@ -135,6 +70,11 @@
     color: var(--text-muted);
 }
 
+.experimental-badge {
+    margin: -0.5rem 0.75rem 0 auto;
+    text-transform: uppercase;
+}
+
 .close-button {
     width: 1.5rem;
     height: 1.5rem;
@@ -157,16 +97,12 @@
     gap: 0.75rem;
     display: flex;
     flex-direction: row;
-    background: transparent;
 }
 
 .tab {
     gap: 0.5rem;
 }
 
-.right-aligned {
-    text-align: right;
-}
 .tab-centered-text {
     text-align: center;
 }

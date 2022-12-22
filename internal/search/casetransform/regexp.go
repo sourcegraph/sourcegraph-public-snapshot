@@ -1,7 +1,7 @@
 package casetransform
 
 import (
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt/query"

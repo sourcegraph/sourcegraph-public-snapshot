@@ -61,7 +61,7 @@ export function useNotebookEventHandlers({
     onRunBlock,
     onDeleteBlock,
     onDuplicateBlock,
-    onNewBlock: onNewBlock,
+    onNewBlock,
 }: UseNotebookEventHandlersProps): void {
     const onMoveBlockSelection = useCallback(
         (id: string, direction: BlockDirection) => {

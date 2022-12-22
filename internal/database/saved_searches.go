@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -70,7 +70,7 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "")
 	defer func() {
 		tr.SetError(err)
-		tr.LogFields(otlog.Int("count", len(savedSearches)))
+		tr.SetAttributes(attribute.Int("count", len(savedSearches)))
 		tr.Finish()
 	}()
 

@@ -8,28 +8,25 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type SyncWorkerOptions struct {
-	NumHandlers            int                   // defaults to 3
-	WorkerInterval         time.Duration         // defaults to 10s
-	PrometheusRegisterer   prometheus.Registerer // if non-nil, metrics will be collected
-	CleanupOldJobs         bool                  // run a background process to cleanup old jobs
-	CleanupOldJobsInterval time.Duration         // defaults to 1h
+	NumHandlers            int           // defaults to 3
+	WorkerInterval         time.Duration // defaults to 10s
+	CleanupOldJobs         bool          // run a background process to cleanup old jobs
+	CleanupOldJobsInterval time.Duration // defaults to 1h
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -54,7 +51,9 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options{
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store", ""), observationCtx)
+
+	store := workerstore.New(observationCtx, dbHandle, workerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
@@ -70,51 +69,40 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Name:              "repo_sync_worker",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
-		CancelInterval:    5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
+		Metrics:           newWorkerMetrics(observationCtx),
 	})
 
-	resetter := dbworker.NewResetter(logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(observationCtx.Logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
-		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
+		Metrics:  newResetterMetrics(observationCtx),
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, logger, dbHandle, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, observationCtx.Logger, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
 }
 
-func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerObservability {
-	var observationContext *observation.Context
+func newWorkerMetrics(observationCtx *observation.Context) workerutil.WorkerObservability {
+	observationCtx = observation.ContextWithLogger(log.Scoped("sync_worker", ""), observationCtx)
 
-	if r == nil {
-		observationContext = &observation.TestContext
-	} else {
-		observationContext = &observation.Context{
-			Logger:     log.Scoped("sync_worker", ""),
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: r,
-		}
-	}
-
-	return workerutil.NewMetrics(observationContext, "repo_updater_external_service_syncer")
+	return workerutil.NewMetrics(observationCtx, "repo_updater_external_service_syncer")
 }
 
-func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
+func newResetterMetrics(observationCtx *observation.Context) dbworker.ResetterMetrics {
 	return dbworker.ResetterMetrics{
-		RecordResets: promauto.With(r).NewCounter(prometheus.CounterOpts{
+		RecordResets: promauto.With(observationCtx.Registerer).NewCounter(prometheus.CounterOpts{
 			Name: "src_external_service_queue_resets_total",
 			Help: "Total number of external services put back into queued state",
 		}),
-		RecordResetFailures: promauto.With(r).NewCounter(prometheus.CounterOpts{
+		RecordResetFailures: promauto.With(observationCtx.Registerer).NewCounter(prometheus.CounterOpts{
 			Name: "src_external_service_queue_max_resets_total",
 			Help: "Total number of external services that exceed the max number of resets",
 		}),
-		Errors: promauto.With(r).NewCounter(prometheus.CounterOpts{
+		Errors: promauto.With(observationCtx.Registerer).NewCounter(prometheus.CounterOpts{
 			Name: "src_external_service_queue_reset_errors_total",
 			Help: "Total number of errors when running the external service resetter",
 		}),

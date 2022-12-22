@@ -4,10 +4,18 @@ import { parseISO } from 'date-fns'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
+import {
+    LoadingSpinner,
+    useObservable,
+    Link,
+    CardFooter,
+    Alert,
+    ButtonLink,
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductLicenseInfoResult } from '../../../graphql-operations'

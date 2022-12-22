@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
@@ -111,11 +112,12 @@ export const RepoContributors: React.FunctionComponent<
 
 export const RepoCommits: React.FunctionComponent<
     Omit<RepositoryCommitsPageProps, 'repo'> & Pick<RepoRevisionContainerContext, 'repo'> & RouteComponentProps
-> = ({ revision, repo, ...context }) => <RepositoryCommitsPage {...context} repo={repo} revision={revision} />
+> = ({ revision, repo, ...context }) =>
+    repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />
 
 const blobPath = '/-/:objectType(blob)/:filePath*'
 const treePath = '/-/:objectType(tree)/:filePath*'
-export const commitsPath = '/-/commits'
+export const commitsPath = '/-/commits/:filePath*'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[

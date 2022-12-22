@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
@@ -51,14 +51,14 @@ export const MonitorLogNode: React.FunctionComponent<
                     {expanded ? (
                         <Icon
                             className="mr-2 flex-shrink-0"
-                            svgPath={mdiChevronDown}
+                            svgPath={mdiChevronUp}
                             inline={false}
                             aria-label="Collapse code monitor"
                         />
                     ) : (
                         <Icon
                             className="mr-2 flex-shrink-0"
-                            svgPath={mdiChevronRight}
+                            svgPath={mdiChevronDown}
                             inline={false}
                             aria-label="Expand code monitor"
                         />

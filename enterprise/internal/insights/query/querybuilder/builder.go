@@ -15,6 +15,7 @@ import (
 // in the base query. For example an input query of `repo:myrepo test` might be provided a default `archived:no`,
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
+// This also converts count:all to count:99999999.
 func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -40,7 +41,6 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
 func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
-
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
@@ -208,13 +208,46 @@ func (q ComputeInsightQuery) String() string {
 	return string(q)
 }
 
+// WithCount adds or updates a count paramerter for an existing query
+func (q BasicQuery) WithCount(count string) (BasicQuery, error) {
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldCount,
+			Value:      count,
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	plan, err := searchquery.Pipeline(searchquery.Init(string(q), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(upsertParams))
+
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
 var QueryNotSupported = errors.New("query not supported")
 
 // IsSingleRepoQuery - Returns a boolean indicating if the query provided targets only a single repo.
 // At this time only queries with a single query plan step are supported.  Queries with multiple plan steps
 // will error with `QueryNotSupported`
 func IsSingleRepoQuery(query BasicQuery) (bool, error) {
-
 	// because we are only attempting to understand if this query targets a single repo, the search type is not relevant
 	planSteps, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
 	if err != nil {
@@ -317,9 +350,13 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 			params = append(params, parameter)
 		}
 
+		value := "yes"
+		if !sensitive {
+			value = "no"
+		}
 		params = append(params, searchquery.Parameter{
 			Field:      searchquery.FieldCase,
-			Value:      "yes",
+			Value:      value,
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})
@@ -329,25 +366,55 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
-func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (BasicQuery, error) {
-	insightsQuery, err := withDefaults(query, defaultParams)
-	if err != nil {
-		return "", errors.Wrap(err, "withDefaults")
+// RepositoryScopeQuery adds fork:yes archived:yes count:all to a user inputted query.
+// It overwrites any input such as fork:no archived:no.
+func RepositoryScopeQuery(query string) (BasicQuery, error) {
+	repositoryScopeParameters := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldFork,
+			Value:      string(searchquery.Yes),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldArchived,
+			Value:      string(searchquery.Yes),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldCount,
+			Value:      "all",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
 	}
-	plan, err := searchquery.Pipeline(searchquery.Init(string(insightsQuery), searchquery.SearchTypeLiteral))
+	plan, err := searchquery.Pipeline(searchquery.Init(query, searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
 	}
-	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
-		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
-		modified = append(modified, basic.Parameters...)
-		modified = append(modified, searchquery.Parameter{
-			Field:      searchquery.FieldSelect,
-			Value:      "repo",
-			Negated:    false,
-			Annotation: searchquery.Annotation{},
-		})
-		return basic.MapParameters(modified)
-	})
-	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
+
+	modified := make(searchquery.Plan, 0, len(plan))
+	for _, basic := range plan {
+		p := repositoryScopeParameters
+		for _, param := range basic.Parameters {
+			if !repositoryScopeParameters.Exists(param.Field) {
+				p = append(p, param)
+			}
+		}
+		modified = append(modified, basic.MapParameters(p))
+	}
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}
+
+func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery) (BasicQuery, error) {
+	modifiedQuery, err := withDefaults(withCountAll(query), CodeInsightsQueryDefaults(true))
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing search query")
+	}
+	repositoryPlan, err := ParseQuery(repositoryCriteria, "literal")
+	if err != nil {
+		return "", errors.Wrap(err, "error parsing repository filters")
+	}
+	return BasicQuery(searchquery.StringHuman(repositoryPlan.ToQ()) + " " + modifiedQuery.String()), nil
 }

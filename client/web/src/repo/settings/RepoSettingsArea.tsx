@@ -8,11 +8,10 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/wildcard'
+import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -57,9 +56,10 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 }) => {
     const repoName = props.repo.name
     const repoOrError = useObservable(
-        useMemo(() => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [
-            repoName,
-        ])
+        useMemo(
+            () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))),
+            [repoName]
+        )
     )
 
     useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
@@ -93,7 +93,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     }
 
     return (
-        <div className={classNames('container d-flex mt-3', styles.repoSettingsArea)}>
+        <div className={classNames('container d-flex mt-3 px-3 flex-column flex-sm-row', styles.repoSettingsArea)}>
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
             <div className="flex-bounded">
                 <Switch>

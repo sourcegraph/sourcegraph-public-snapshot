@@ -138,6 +138,22 @@ extend type Query {
     authzProviderTypes: [String!]!
 
     """
+    EXPERIMENTAL: Returns a list of recent permissions sync jobs for a given set of parameters.
+
+    This endpoint currently only reports recently completed sync jobs, with an expiry configurable by 'authz.syncJobsRecordsTTL'.
+    """
+    permissionsSyncJobs(
+        """
+        Only returns jobs with this status.
+        """
+        status: PermissionsSyncJobStatus
+        """
+        Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
+        """
+        first: Int = 100
+    ): PermissionsSyncJobsConnection!
+
+    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(
@@ -294,6 +310,98 @@ input FetchPermissionsOptions {
     sync should be invalidated.
     """
     invalidateCaches: Boolean
+}
+
+"""
+Permission sync jobs.
+"""
+type PermissionsSyncJobsConnection {
+    """
+    Permission sync jobs.
+    """
+    nodes: [PermissionsSyncJob!]!
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Status types of permissions sync jobs.
+"""
+enum PermissionsSyncJobStatus {
+    ERROR
+    SUCCESS
+}
+
+"""
+State of a permission sync job.
+"""
+type PermissionsSyncJob implements Node {
+    """
+    Unique node ID.
+    """
+    id: ID!
+    """
+    Type of the sync job.
+    """
+    type: String!
+    """
+    ID of the entity worked on in this sync job.
+    """
+    jobID: Int!
+    """
+    Completion time of the sync job.
+    """
+    completedAt: DateTime
+    """
+    Status of the sync job.
+    """
+    status: PermissionsSyncJobStatus!
+    """
+    Message describing the status of the sync job - for example, the contents of any
+    errors.
+    """
+    message: String!
+    """
+    Per-provider states.
+    """
+    providers: [PermissionsProviderState!]!
+}
+
+"""
+Status types of permissions providers.
+"""
+enum PermissionsProviderStatus {
+    ERROR
+    SUCCESS
+}
+
+"""
+State of a permissions provider during a sync job.
+"""
+type PermissionsProviderState {
+    """
+    Type of the provider.
+    """
+    type: String!
+    """
+    ID representing the provider.
+    """
+    id: String!
+    """
+    Type of the sync job.
+    """
+    status: PermissionsProviderStatus!
+    """
+    Message describing the status of the provider during a sync job - for example, the
+    contents of any errors and during which operation they occured.
+    """
+    message: String!
 }
 
 """

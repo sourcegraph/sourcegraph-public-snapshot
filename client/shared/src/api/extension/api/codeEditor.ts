@@ -1,5 +1,5 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
-import { isEqual, uniqueId } from 'lodash'
+import { isEqual } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
@@ -10,10 +10,6 @@ import { CodeEditorData, ViewerId } from '../../viewerTypes'
 
 import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
-
-export const createStatusBarItemType = (): sourcegraph.StatusBarItemType => ({ key: uniqueId('StatusBarItemType') })
-
-export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.StatusBarItemType
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
@@ -70,23 +66,6 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         )
     }
 
-    private _statusBarItemsByType = new Map<sourcegraph.StatusBarItemType, StatusBarItemWithKey>()
-
-    private _mergedStatusBarItems = new BehaviorSubject<StatusBarItemWithKey[]>([])
-    public get mergedStatusBarItems(): Observable<StatusBarItemWithKey[]> {
-        return this._mergedStatusBarItems
-    }
-
-    public setStatusBarItem(
-        statusBarItemType: sourcegraph.StatusBarItemType,
-        statusBarItem: sourcegraph.StatusBarItem
-    ): void {
-        this._statusBarItemsByType.set(statusBarItemType, { ...statusBarItem, ...statusBarItemType })
-        this._mergedStatusBarItems.next(
-            [...this._statusBarItemsByType.values()].flat().filter(statusBarItem => isValidStatusBarItem(statusBarItem))
-        )
-    }
-
     public update(data: Pick<CodeEditorData, 'selections'>): void {
         const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
 
@@ -112,8 +91,6 @@ const isEmptyObjectDeep = (value: any): boolean =>
 
 const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
     isEmptyObjectDeep(contents)
-
-const isValidStatusBarItem = ({ key, text }: StatusBarItemWithKey): boolean => !!key && !!text
 
 function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
     return {

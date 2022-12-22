@@ -3,10 +3,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiEmailCheck, mdiEmail, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, H2, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CopyableText } from '../../components/CopyableText'

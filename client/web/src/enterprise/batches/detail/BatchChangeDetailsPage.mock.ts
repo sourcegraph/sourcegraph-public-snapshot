@@ -71,6 +71,33 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             nodes: [],
             totalCount: 0,
         },
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
+        },
+        files: {
+            totalCount: 2,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'random-id',
+                    name: 'test.txt',
+                    binary: false,
+                    byteSize: 74,
+                    url: 'test/url',
+                },
+                {
+                    id: 'random-id-2',
+                    name: 'src-cli',
+                    binary: true,
+                    byteSize: 75,
+                    url: 'test/url',
+                },
+            ],
+        },
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],

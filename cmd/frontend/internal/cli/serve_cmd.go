@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -14,17 +13,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/throttled/throttled/v2/store/redigostore"
-	"go.opentelemetry.io/otel"
-
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-
 	sglog "github.com/sourcegraph/log"
+	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -36,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -56,7 +48,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -86,30 +77,10 @@ var (
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
-// defaultExternalURL returns the default external URL of the application.
-func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
-	addr := nginxAddr
-	if addr == "" {
-		addr = httpAddr
-	}
-
-	var hostPort string
-	if strings.HasPrefix(addr, ":") {
-		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + addr
-	} else {
-		hostPort = addr
-	}
-
-	return &url.URL{Scheme: "http", Host: hostPort}
-}
-
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB(logger sglog.Logger) (*sql.DB, error) {
-	obsCtx := observation.TestContext
-	obsCtx.Logger = logger
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
+	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
@@ -122,7 +93,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.Services, c conftypes.UnifiedWatchable) enterprise.Services) error {
+func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -149,15 +120,12 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	observationCtx := observation.NewContext(logger)
+
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		log15.Warn("Skipping out-of-band migrations check")
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
-		observationContext := &observation.Context{
-			Logger:     logger,
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
 		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
 			return errors.Wrap(err, "failed to synchronized out of band migration metadata")
@@ -177,15 +145,6 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 	conf.MustValidateDefaults()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
-	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
-		DB: db,
-		// N.B. must call after conf.Init()
-		CodeIntelDB: mustInitializeCodeIntelDB(logger),
-	})
-	if err != nil {
-		return err
-	}
-
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to initialize encryption keyring")
@@ -203,12 +162,12 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d))) //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, codeIntelServices, conf.DefaultClient())
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
@@ -266,7 +225,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 	siteid.Init(db)
 
 	globals.WatchBranding()
-	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
+	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
@@ -290,6 +249,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
+		enterprise.WebhooksResolver,
 	)
 	if err != nil {
 		return err
@@ -300,12 +260,12 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 		return err
 	}
 
-	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, codeIntelServices)
+	internalAPI, err := makeInternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -328,7 +288,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 	return nil
 }
 
-func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
@@ -340,11 +300,13 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
-			GitHubWebhook:                   enterprise.GitHubWebhook,
-			GitLabWebhook:                   enterprise.GitLabWebhook,
 			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
-			BitbucketServerWebhook:          enterprise.BitbucketServerWebhook,
-			BitbucketCloudWebhook:           enterprise.BitbucketCloudWebhook,
+			GitLabSyncWebhook:               enterprise.GitLabSyncWebhook,
+			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
+			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
+			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
+			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
+			BatchesBitbucketCloudWebhook:    enterprise.BatchesBitbucketCloudWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
@@ -361,16 +323,16 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP running", "on", httpAddr)
+	logger.Debug("HTTP running", sglog.String("on", httpAddr))
 	return server, nil
 }
 
 func makeInternalAPI(
-	schema *graphql.Schema,
 	db database.DB,
+	logger sglog.Logger,
+	schema *graphql.Schema,
 	enterprise enterprise.Services,
 	rateLimiter graphqlbackend.LimitWatcher,
-	codeIntelServices codeintel.Services,
 ) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
@@ -386,9 +348,9 @@ func makeInternalAPI(
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
-		codeIntelServices,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
@@ -400,7 +362,7 @@ func makeInternalAPI(
 	}
 
 	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+	logger.Debug("HTTP (internal) running", sglog.String("on", httpAddrInternal))
 	return server, nil
 }
 
@@ -434,17 +396,4 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
-}
-
-func mustInitializeCodeIntelDB(logger sglog.Logger) stores.CodeIntelDB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.CodeIntelPostgresDSN
-	})
-
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
-	if err != nil {
-		logger.Fatal("Failed to connect to codeintel database", sglog.Error(err))
-	}
-
-	return stores.NewCodeIntelDB(db)
 }
