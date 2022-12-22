@@ -16,12 +16,6 @@ var ErrExtensionsDisabled = errors.New("extensions are disabled in site configur
 func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (ExtensionRegistryResolver, error) {
 	reg := ExtensionRegistry(r.db)
 	if conf.Extensions() == nil {
-		if !reg.ImplementsLocalExtensionRegistry() {
-			// The OSS build doesn't implement a local extension registry, so the reason for
-			// extensions being disabled is probably that the OSS build is in use.
-			return nil, errors.New("no extension registry is available (use Sourcegraph Free or Sourcegraph Enterprise to access the Sourcegraph extension registry and/or to host a private internal extension registry)")
-		}
-
 		return nil, ErrExtensionsDisabled
 	}
 	return reg, nil
@@ -31,13 +25,9 @@ func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (ExtensionRegist
 var ExtensionRegistry func(db database.DB) ExtensionRegistryResolver
 
 // ExtensionRegistryResolver is the interface for the GraphQL type ExtensionRegistry.
-//
-// Some methods are only implemented if there is a local extension registry. For these methods, the
-// implementation (if one exists) is set on the XyzFunc struct field.
 type ExtensionRegistryResolver interface {
 	Extensions(context.Context, *RegistryExtensionConnectionArgs) (RegistryExtensionConnection, error)
 
-	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
 	// FilterRemoteExtensions enforces `allowRemoteExtensions` by returning a
 	// new slice with extension IDs that were present in
 	// `allowRemoteExtensions`. It returns the original extension IDs if
