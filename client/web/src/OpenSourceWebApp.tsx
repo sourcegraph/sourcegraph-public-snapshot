@@ -45,5 +45,6 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
         searchContextsEnabled={false}
         notebooksEnabled={false}
         codeMonitoringEnabled={false}
+        searchAggregationEnabled={false}
     />
 )
