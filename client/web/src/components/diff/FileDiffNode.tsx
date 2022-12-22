@@ -160,7 +160,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             fileDiffAnchor={anchor}
                             history={history}
                             isLightTheme={isLightTheme}
-                            location={location}
                             persistLines={persistLines}
                             extensionInfo={
                                 extensionInfo && {
