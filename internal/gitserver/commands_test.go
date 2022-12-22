@@ -3141,7 +3141,7 @@ filename format.go
 
 var testGitBlameOutputHunks = []*Hunk{
 	{
-		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 43,
+		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3152,7 +3152,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 5, EndLine: 15, StartByte: 43, EndByte: 252,
+		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
 		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
@@ -3163,7 +3163,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 15, EndLine: 16, StartByte: 252, EndByte: 331,
+		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
 		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
@@ -3174,7 +3174,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 16, EndLine: 20, StartByte: 331, EndByte: 398,
+		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3185,7 +3185,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 20, EndLine: 21, StartByte: 398, EndByte: 508,
+		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3196,7 +3196,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 21, EndLine: 22, StartByte: 508, EndByte: 557,
+		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3207,7 +3207,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 22, EndLine: 24, StartByte: 557, EndByte: 699,
+		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
