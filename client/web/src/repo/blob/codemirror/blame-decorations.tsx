@@ -58,9 +58,10 @@ class BlameDecorationWidget extends WidgetType {
         public view: EditorView,
         public readonly hunk: BlameHunk | undefined,
         public readonly line: number,
-        // We can not access the light theme from the view props because we need
-        // the widget to re-render when it updates.
-        public readonly isLightTheme: boolean
+        // We can not access the light theme and first commit date from the view
+        // props because we need the widget to re-render when it updates.
+        public readonly isLightTheme: boolean,
+        public readonly firstCommitDate: Date | undefined
     ) {
         super()
         const blobProps = this.view.state.facet(blobPropsFacet)
@@ -78,7 +79,6 @@ class BlameDecorationWidget extends WidgetType {
             this.container.classList.add('blame-decoration')
 
             this.reactRoot = createRoot(this.container)
-            const blobProps = this.view.state.facet(blobPropsFacet)
             this.reactRoot.render(
                 <BlameDecoration
                     line={this.line ?? 0}
@@ -86,7 +86,7 @@ class BlameDecorationWidget extends WidgetType {
                     history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
-                    firstCommitDate={blobProps.blameHunks?.firstCommitDate}
+                    firstCommitDate={this.firstCommitDate}
                     isLightTheme={this.isLightTheme}
                 />
             )
@@ -118,6 +118,7 @@ class BlameDecorationWidget extends WidgetType {
 interface BlameDecorationsFacetProps {
     hunks: BlameHunk[]
     isLightTheme: boolean
+    firstCommitDate: Date | undefined
 }
 const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDecorationsFacetProps>({
     combine: decorations => decorations[0],
@@ -130,6 +131,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 public decorations: DecorationSet
                 private previousHunkLength = -1
                 private previousIsLightTheme = false
+                private previousFirstCommitDate: Date | undefined
 
                 constructor(view: EditorView) {
                     this.decorations = this.computeDecorations(view, facet)
@@ -139,16 +141,19 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                     const facetProps = update.view.state.facet(facet)
                     const hunks = facetProps.hunks
                     const isLightMode = facetProps.isLightTheme
+                    const firstCommitDate = facetProps.firstCommitDate
 
                     if (
                         update.docChanged ||
                         update.viewportChanged ||
                         this.previousHunkLength !== hunks.length ||
-                        this.previousIsLightTheme !== isLightMode
+                        this.previousIsLightTheme !== isLightMode ||
+                        this.previousFirstCommitDate !== firstCommitDate
                     ) {
                         this.decorations = this.computeDecorations(update.view, facet)
                         this.previousHunkLength = hunks.length
                         this.previousIsLightTheme = isLightMode
+                        this.previousFirstCommitDate = firstCommitDate
                     }
                 }
 
@@ -158,7 +163,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 ): DecorationSet {
                     const widgets = []
                     const facetProps = view.state.facet(facet)
-                    const { hunks, isLightTheme } = facetProps
+                    const { hunks, isLightTheme, firstCommitDate } = facetProps
 
                     for (const { from, to } of view.visibleRanges) {
                         let nextHunkDecorationLineRenderedAt = -1
@@ -186,7 +191,13 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                             }
 
                             const decoration = Decoration.widget({
-                                widget: new BlameDecorationWidget(view, matchingHunk, line.number, isLightTheme),
+                                widget: new BlameDecorationWidget(
+                                    view,
+                                    matchingHunk,
+                                    line.number,
+                                    isLightTheme,
+                                    firstCommitDate
+                                ),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
@@ -281,9 +292,10 @@ function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Exten
 export const createBlameDecorationsExtension = (
     isBlameVisible: boolean,
     blameHunks: BlameHunk[] | undefined,
+    firstCommitDate: Date | undefined,
     isLightTheme: boolean
 ): Extension => [
     blameLineStyles({ isBlameVisible }),
     isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
-    blameHunks ? showGitBlameDecorations.of({ hunks: blameHunks, isLightTheme }) : [],
+    blameHunks ? showGitBlameDecorations.of({ hunks: blameHunks, isLightTheme, firstCommitDate }) : [],
 ]
