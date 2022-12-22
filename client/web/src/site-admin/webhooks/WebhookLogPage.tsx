@@ -51,8 +51,9 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                 description="Use these logs of received webhooks to debug integrations"
                 className="mb-3"
             />
-            <Alert variant={'warning'}>
-                This webhooks page has been deprecated, please see our <Link to="/site-admin/webhooks/">new webhooks page</Link>.
+            <Alert variant="warning">
+                This webhooks page has been deprecated, please see our{' '}
+                <Link to="/site-admin/webhooks/">new webhooks page</Link>.
             </Alert>
             <Container>
                 <WebhookLogPageHeader
