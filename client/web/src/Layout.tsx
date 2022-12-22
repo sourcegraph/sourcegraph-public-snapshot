@@ -12,9 +12,8 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
@@ -100,7 +99,7 @@ export interface LayoutProps
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
      * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: SettingsSubjectCommonFields
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
