@@ -30,8 +30,10 @@ func Read(in io.Reader) (*codeownerspb.File, error) {
 		if !ok {
 			return nil, fmt.Errorf("failed to match rule: %s", p.line)
 		}
+		// Need to handle this error once, codeownerspb.File supports
+		// error metadata.
 		r := codeownerspb.Rule{
-			Pattern:     pattern,
+			Pattern:     unescape(pattern),
 			SectionName: strings.TrimSpace(strings.ToLower(p.section)),
 		}
 		for _, ownerText := range owners {
@@ -78,7 +80,11 @@ func (p *parsing) nextLine(line string) {
 // The first capturing   The second capturing group
 // group extracts        extracts all the owners
 // the file pattern.     separated by whitespace.
-var rulePattern = regexp.MustCompile(`^\s*(\S+)((?:\s+\S+)*)\s*$`)
+//
+// The first capturing group supports escaping a whitespace with a `\`,
+// so that the space is not treated as a separator between the pattern
+// and owners.
+var rulePattern = regexp.MustCompile(`^\s*((?:\\.|\S)+)((?:\s+\S+)*)\s*$`)
 
 // matchRule tries to extract a codeowners rule from the current line
 // and return the file pattern and one or more owners.
@@ -142,4 +148,18 @@ func (p *parsing) lineWithoutComments() string {
 
 	}
 	return p.line[:commentStartIndex]
+}
+
+func unescape(s string) string {
+	var b strings.Builder
+	var esc bool // whether the current character is escaped
+	for _, r := range []rune(s) {
+		if r == escapeCharacter && !esc {
+			esc = true
+			continue
+		}
+		b.WriteRune(r)
+		esc = false
+	}
+	return b.String()
 }

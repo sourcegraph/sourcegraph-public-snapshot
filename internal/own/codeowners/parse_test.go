@@ -196,7 +196,7 @@ lib/ @lib-owner
 /config/ @config-owner
 
 # If the path contains spaces, escape them like this:
-#path\ with\ spaces/ @space-owner
+path\ with\ spaces/ @space-owner
 
 # Code Owners section:
 [Documentation]
@@ -233,9 +233,8 @@ README.md  @docs
 				{Handle: "ruby-owner"},
 			},
 		},
-		// Note: Remove the escape from the pattern.
 		{
-			Pattern: "\\#file_with_pound.rb",
+			Pattern: "#file_with_pound.rb",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "owner-file-with-pound"},
 			},
@@ -292,6 +291,12 @@ README.md  @docs
 			Pattern: "/config/",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "config-owner"},
+			},
+		},
+		{
+			Pattern: "path with spaces/",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "space-owner"},
 			},
 		},
 		{
