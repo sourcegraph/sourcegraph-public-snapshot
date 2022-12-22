@@ -1,10 +1,9 @@
-package repos
+package webhooks
 
 import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -21,8 +20,8 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.GitHubSyncWebhook = webhooks.NewGitHubHandler()
-	enterpriseServices.GitLabSyncWebhook = webhooks.NewGitLabHandler()
+	enterpriseServices.GitHubSyncWebhook = NewGitHubHandler()
+	enterpriseServices.GitLabSyncWebhook = NewGitLabHandler()
 	enterpriseServices.WebhooksResolver = resolvers.NewWebhooksResolver(db)
 	return nil
 }

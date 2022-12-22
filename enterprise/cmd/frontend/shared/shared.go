@@ -25,7 +25,7 @@ import (
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
@@ -51,7 +51,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
 	"searchcontexts": searchcontexts.Init,
-	"repos":          repos.Init,
+	"repos.webhooks": webhooks.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
