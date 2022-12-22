@@ -78,6 +78,9 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                             const line = row.querySelector('td.line')
                             if (line) {
                                 line.classList.add('px-2', styles.lineNumber)
+                                if (isBlameVisible) {
+                                    line.classList.add(styles.visible)
+                                }
                             }
 
                             // add decorations wrapper
