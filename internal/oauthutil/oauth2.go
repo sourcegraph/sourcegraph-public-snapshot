@@ -62,10 +62,10 @@ func getOAuthErrorDetails(body []byte) error {
 type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthContext) (*auth.OAuthBearerToken, error)
 
 // DoRequest is a function that uses the httpcli.Doer interface to make HTTP
-// requests and to handle "401 Unauthorized" errors. When the 401 error is due to
-// a token being expired, it will use the supplied AuthenticatorWithRefresh to
-// update the token. If the token is updated successfully, the same request will
-// be retried exactly once.
+// requests. It authenticates the request using the supplied Authenticator.
+// If the Authenticator implements the AuthenticatorWithRefresh interface,
+// it will also attempt to refresh the token in case of a 401 response.
+// If the token is updated successfully, the same request will be retried exactly once.
 func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator) (*http.Response, error) {
 	if auther == nil {
 		return doer.Do(req.WithContext(ctx))

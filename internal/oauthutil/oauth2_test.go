@@ -84,17 +84,14 @@ func TestDoRequest(t *testing.T) {
 			var auther auth.Authenticator
 
 			if test.authToken != "" {
-				oauthToken := &auth.OAuthBearerToken{Token: test.authToken}
-
-				if test.refreshToken != "" {
-					oauthToken.RefreshToken = refreshToken
-					oauthToken.Expiry = time.Now().Add(time.Duration(test.expiresIn) * time.Minute)
-					oauthToken.RefreshFunc = func(_ context.Context, _ httpcli.Doer, _ *auth.OAuthBearerToken) (string, string, time.Time, error) {
+				auther = &auth.OAuthBearerToken{
+					Token:        test.authToken,
+					RefreshToken: test.refreshToken,
+					Expiry:       time.Now().Add(time.Duration(test.expiresIn) * time.Minute),
+					RefreshFunc: func(_ context.Context, _ httpcli.Doer, _ *auth.OAuthBearerToken) (string, string, time.Time, error) {
 						return refreshedAuthToken, "", time.Time{}, nil
-					}
+					},
 				}
-
-				auther = oauthToken
 			}
 
 			resp, err := DoRequest(ctx, logger, http.DefaultClient, req, auther)
