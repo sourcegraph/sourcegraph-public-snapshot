@@ -136,21 +136,18 @@ func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]
 			Time:     s.series.Points[i].Time,
 			Value:    float64(s.series.Points[i].Count),
 		}
-		var previous *store.SeriesPoint
+		var after *time.Time
 		if i > 0 {
-			previous = &store.SeriesPoint{
-				SeriesID: s.series.SeriesId,
-				Time:     s.series.Points[i-1].Time,
-				Value:    float64(s.series.Points[i-1].Count),
-			}
+			after = &s.series.Points[i-1].Time
 		}
 		pointResolver := &insightsDataPointResolver{
 			p: point,
-			diffGenerateReqs: &pointDiffReqirements{
-				Previous:         previous,
+			diffInfo: &querybuilder.PointDiffQueryInfo{
+				After:            after,
+				Before:           point.Time,
 				RepoList:         s.repoList,
 				RepoSearch:       s.repoSearch,
-				SearchQuery:      s.searchQuery,
+				SearchQuery:      querybuilder.BasicQuery(s.searchQuery),
 				GenerationMethod: s.generationMethod,
 			}}
 		resolvers = append(resolvers, pointResolver)

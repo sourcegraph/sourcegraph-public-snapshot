@@ -3,9 +3,11 @@ package querybuilder
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -127,6 +129,45 @@ func forRepos(query BasicQuery, repos []string) BasicQuery {
 		escapedRepos[i] = regexp.QuoteMeta(repo)
 	}
 	return BasicQuery(fmt.Sprintf("%s repo:^(%s)$", query, (strings.Join(escapedRepos, "|"))))
+}
+
+type PointDiffQueryInfo struct {
+	Before             time.Time
+	After              *time.Time
+	FilterRepoIncludes []string // Includes repos included from a selected context
+	FilterRepoExcludes []string // includes repos excluded from a selected context
+	RepoList           []string
+	RepoSearch         *string
+	SearchQuery        BasicQuery
+	GenerationMethod   types.GenerationMethod
+}
+
+func PointDiffQuery(diffInfo PointDiffQueryInfo) (BasicQuery, error) {
+
+	query := diffInfo.SearchQuery.String()
+
+	if len(diffInfo.FilterRepoIncludes) > 0 {
+		query += fmt.Sprintf(" repo:(%s)", strings.Join(diffInfo.FilterRepoIncludes, "|"))
+	}
+
+	if len(diffInfo.FilterRepoExcludes) > 0 {
+		query += fmt.Sprintf(" -repo:(%s)", strings.Join(diffInfo.FilterRepoExcludes, "|"))
+	}
+
+	if len(diffInfo.RepoList) > 0 {
+		query = forRepos(BasicQuery(query), diffInfo.RepoList).String()
+	} else if diffInfo.RepoSearch != nil {
+		query += " repo:" + *diffInfo.RepoSearch
+	}
+
+	if diffInfo.After != nil {
+		query += " after:" + diffInfo.After.UTC().Format(time.RFC3339)
+	}
+	query += " before:" + diffInfo.Before.UTC().Format(time.RFC3339)
+
+	query += " type:diff"
+
+	return BasicQuery(query), nil
 }
 
 // SingleRepoQuery generates a Sourcegraph query with the provided default values given a user specified query and a repository / revision target. The repository string

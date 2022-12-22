@@ -22,6 +22,7 @@ export const GET_INSIGHT_PREVIEW_GQL = gql`
             points {
                 dateTime
                 value
+                diffQuery
             }
             label
         }
@@ -155,18 +156,13 @@ function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
         }
     })
 
-    const seriesDefinitionMap = Object.fromEntries(seriesMetadata.map(definition => [definition.id, definition]))
-
     return indexedSeries.map((line, index) => ({
         id: line.seriesId,
         data: line.points.map(point => ({
             value: point.value,
             dateTime: new Date(point.dateTime),
             link: generateLinkURL({
-                point,
-                previousPoint: line.points[index - 1],
-                query: seriesDefinitionMap[line.seriesId].query,
-                repositories,
+                diffQuery: point.diffQuery,
             }),
         })),
         name: line.label,

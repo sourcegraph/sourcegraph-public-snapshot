@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/go-enry/go-enry/v2/regex"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -82,8 +79,8 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct {
-	p                store.SeriesPoint
-	diffGenerateReqs *pointDiffReqirements
+	p        store.SeriesPoint
+	diffInfo *querybuilder.PointDiffQueryInfo
 }
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
@@ -92,85 +89,16 @@ func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
 
-func isNilOrEmpty(s *string) bool {
-	if s == nil {
-		return true
-	}
-	return *s == ""
-}
-
 func (i insightsDataPointResolver) DiffQuery() (*string, error) {
-	if i.diffGenerateReqs == nil {
+	if i.diffInfo == nil {
 		return nil, nil
 	}
-	return diffQueryFunc(*i.diffGenerateReqs, i.p)
-}
-
-type pointDiffReqirements struct {
-	Previous         *store.SeriesPoint
-	Filters          types.InsightViewFilters
-	RepoList         []string
-	RepoSearch       *string
-	SearchQuery      string
-	GenerationMethod types.GenerationMethod
-}
-
-func diffQueryFunc(req pointDiffReqirements, point store.SeriesPoint) (*string, error) {
-	if len(req.Filters.SearchContexts) > 1 {
-		return nil, errors.New("invalid search context")
-	}
-
-	includeRepoFilter := ""
-	if !isNilOrEmpty(req.Filters.IncludeRepoRegex) {
-		includeRepoFilter = "repo:" + *req.Filters.IncludeRepoRegex
-	}
-	excludeRepoFilter := ""
-	if !isNilOrEmpty(req.Filters.ExcludeRepoRegex) {
-		excludeRepoFilter = "-repo:" + *req.Filters.ExcludeRepoRegex
-	}
-
-	filtersRepoScope := strings.TrimSpace(fmt.Sprintf("%s %s", includeRepoFilter, excludeRepoFilter))
-
-	searchContext := ""
-	if len(req.Filters.SearchContexts) == 1 {
-		if req.Filters.SearchContexts[0] != "" {
-			searchContext = "context:" + req.Filters.SearchContexts[0]
-		}
-	}
-	seriesRepoFilter := ""
-	if len(req.RepoList) > 0 {
-		quoted := []string{}
-		for i := 0; i < len(req.RepoList); i++ {
-			quoted = append(quoted, regex.QuoteMeta(req.RepoList[i]))
-		}
-		seriesRepoFilter = fmt.Sprintf("repo:^(%s)$", strings.Join(quoted, "|"))
-	} else if req.RepoSearch != nil {
-		seriesRepoFilter = regex.QuoteMeta(*req.RepoSearch)
-	}
-
-	repoFilters := strings.TrimSpace(fmt.Sprintf("%s %s", filtersRepoScope, seriesRepoFilter))
-
-	afterFilter := ""
-	if req.Previous != nil {
-		afterFilter = "after:" + req.Previous.Time.UTC().Format(time.RFC3339)
-	}
-	beforeFilter := "before:" + point.Time.UTC().Format(time.RFC3339)
-
-	timeFilter := strings.TrimSpace(fmt.Sprintf("%s %s", beforeFilter, afterFilter))
-
-	query := fmt.Sprintf("%s %s type:diff %s %s",
-		searchContext,
-		repoFilters,
-		timeFilter,
-		req.SearchQuery,
-	)
-	plan, err := querybuilder.ParseQuery(query, "literal")
+	query, err := querybuilder.PointDiffQuery(*i.diffInfo)
 	if err != nil {
 		return nil, err
 	}
-	newQuery := searchquery.StringHuman(plan.ToQ())
-	return &newQuery, nil
-
+	q := query.String()
+	return &q, nil
 }
 
 type statusInfo struct {
@@ -296,21 +224,40 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
+	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
+	scLoader := &scLoader{primary: db}
 	modifiedPoints := removeClosePoints(p.points, p.series)
+	filterRepoIncludes := []string{}
+	filterRepoExcludes := []string{}
+
+	if !isNilOrEmpty(p.filters.IncludeRepoRegex) {
+		filterRepoIncludes = append(filterRepoIncludes, *p.filters.IncludeRepoRegex)
+	}
+	if !isNilOrEmpty(p.filters.ExcludeRepoRegex) {
+		filterRepoExcludes = append(filterRepoExcludes, *p.filters.ExcludeRepoRegex)
+	}
+
+	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
+	includeRepos, excludeRepos, _ := unwrapSearchContexts(ctx, scLoader, p.filters.SearchContexts)
+	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
+	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
+
 	for i := 0; i < len(modifiedPoints); i++ {
-		var previousPoint *store.SeriesPoint
+		var after *time.Time
 		if i > 0 {
-			previousPoint = &modifiedPoints[i-1]
+			after = &modifiedPoints[i-1].Time
 		}
 		pointResolver := insightsDataPointResolver{
 			p: modifiedPoints[i],
-			diffGenerateReqs: &pointDiffReqirements{
-				Previous:         previousPoint,
-				Filters:          p.filters,
-				RepoList:         p.series.Repositories,
-				RepoSearch:       p.series.RepositoryCriteria,
-				SearchQuery:      p.series.Query,
-				GenerationMethod: p.series.GenerationMethod,
+			diffInfo: &querybuilder.PointDiffQueryInfo{
+				After:              after,
+				Before:             modifiedPoints[i].Time,
+				FilterRepoIncludes: filterRepoIncludes,
+				FilterRepoExcludes: filterRepoExcludes,
+				RepoList:           p.series.Repositories,
+				RepoSearch:         p.series.RepositoryCriteria,
+				SearchQuery:        querybuilder.BasicQuery(p.series.Query),
+				GenerationMethod:   p.series.GenerationMethod,
 			},
 		}
 		resolvers = append(resolvers, pointResolver)
@@ -678,4 +625,10 @@ func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resol
 	}
 
 	return resolvers, err
+}
+func isNilOrEmpty(s *string) bool {
+	if s == nil {
+		return true
+	}
+	return *s == ""
 }

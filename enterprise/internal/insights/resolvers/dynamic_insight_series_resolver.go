@@ -36,7 +36,7 @@ func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbac
 			Value:    float64(d.generated.Points[i].Count),
 		}
 		// This resolver is no longer used and about to be removed
-		resolvers = append(resolvers, &insightsDataPointResolver{p: point, diffGenerateReqs: nil})
+		resolvers = append(resolvers, &insightsDataPointResolver{p: point, diffInfo: nil})
 	}
 
 	return resolvers, nil
