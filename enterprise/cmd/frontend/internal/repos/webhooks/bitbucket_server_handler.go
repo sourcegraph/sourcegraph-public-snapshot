@@ -48,7 +48,7 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 	if err != nil {
 		// Repo not existing on Sourcegraph is fine
 		if errcode.IsNotFound(err) {
-			g.logger.Warn("BitbucketServer push webhook received for unknown repo", log.String("repo", string(repoName)))
+			g.logger.Warn("BitbucketServer push event received for unknown repo", log.String("repo", string(repoName)))
 			return nil
 		}
 		return errors.Wrap(err, "handlePushEvent: EnqueueRepoUpdate failed")
