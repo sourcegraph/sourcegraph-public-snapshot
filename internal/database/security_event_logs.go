@@ -57,6 +57,9 @@ const (
 	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
 	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
 
+	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
+	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
+
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
 )

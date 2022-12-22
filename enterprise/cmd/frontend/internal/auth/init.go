@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githuboauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/httpheader"
@@ -33,6 +34,7 @@ func Init(logger log.Logger, db database.DB) {
 	httpheader.Init()
 	githuboauth.Init(logger, db)
 	gitlaboauth.Init(logger, db)
+	bitbucketcloudoauth.Init(logger, db)
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
@@ -42,6 +44,7 @@ func Init(logger log.Logger, db database.DB) {
 		httpheader.Middleware(db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
+		bitbucketcloudoauth.Middleware(db),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
@@ -71,6 +74,8 @@ func Init(logger log.Logger, db database.DB) {
 				name = "GitHub OAuth"
 			case p.Gitlab != nil:
 				name = "GitLab OAuth"
+			case p.Bitbucketcloud != nil:
+				name = "Bitbucket Cloud OAuth"
 			case p.HttpHeader != nil:
 				name = "HTTP header"
 			case p.Openidconnect != nil:
