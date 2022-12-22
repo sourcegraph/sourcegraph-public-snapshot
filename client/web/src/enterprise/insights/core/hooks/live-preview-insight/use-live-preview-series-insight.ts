@@ -115,7 +115,7 @@ interface PreviewProps {
 }
 
 function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
-    const { response, originalSeries, repositories } = props
+    const { response, originalSeries } = props
     const { searchInsightPreview: series } = response
 
     // inputMetadata creates a lookup so that the correct color can be later applied to the preview series
@@ -137,24 +137,6 @@ function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
             DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length]
         )
     }
-
-    // TODO Revisit live preview and dashboard insight resolver methods in order to
-    // improve series data handling and manipulation
-    const seriesMetadata = indexedSeries.map((generatedSeries, index) => {
-        // inputMetaData is keyed using the label provided by the user.
-        // Capture groups do not have a label, so we omit the label and look
-        // for a meta-object without it.
-        // Note we only support 1 capture group right now, so the "index" is always 0.
-        // https://github.com/sourcegraph/sourcegraph/issues/38098
-        const metaData = inputMetadata[`${generatedSeries.label}-${index}`] ?? inputMetadata[`-${0}`]
-
-        return {
-            id: generatedSeries.seriesId,
-            name: generatedSeries.label,
-            query: metaData?.query || '',
-            stroke: getColorForSeries(generatedSeries.label, index),
-        }
-    })
 
     return indexedSeries.map((line, index) => ({
         id: line.seriesId,
