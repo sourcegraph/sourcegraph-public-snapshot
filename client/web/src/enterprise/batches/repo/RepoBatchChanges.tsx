@@ -3,7 +3,6 @@ import React, { useCallback } from 'react'
 import * as H from 'history'
 import { map } from 'rxjs/operators'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
@@ -16,7 +15,7 @@ import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 
 import styles from './RepoBatchChanges.module.scss'
 
-interface Props extends ThemeProps {
+interface Props {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -37,7 +36,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     history,
     location,
     repo,
-    isLightTheme,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
@@ -61,7 +59,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 location={location}
                 nodeComponent={BatchChangeNode}
                 nodeComponentProps={{
-                    isLightTheme,
                     history,
                     location,
                     queryExternalChangesetWithFileDiffs,

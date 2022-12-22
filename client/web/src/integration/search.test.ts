@@ -221,13 +221,6 @@ describe('Search', () => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                        RegistryExtensions: () => ({
-                            extensionRegistry: {
-                                __typename: 'ExtensionRegistry',
-                                extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
-                            },
-                        }),
                     })
                 })
 

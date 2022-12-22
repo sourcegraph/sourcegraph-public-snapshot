@@ -165,8 +165,8 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 		}
 
-		for _, repo := range repos {
-			repo := repo
+		for _, rr := range repos {
+			repo := rr
 			g.Go(func() error {
 				// Create the repo on destination.
 				if !repo.Created {
@@ -189,10 +189,10 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 				// Push the repo on destination.
 				if !repo.Pushed && repo.Created {
 					err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
-					// state might be out of date so ignore existing repos
-					if err != nil && !strings.Contains(err.Error(), "has already been taken") {
+					if err != nil {
 						repo.Failed = err.Error()
 						r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
+						println()
 					} else {
 						repo.Pushed = true
 					}
@@ -238,7 +238,7 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 
 	// we add the repo name so that we ensure we cd to the right repo directory
 	// if we don't do this, there is no guarantee that the repo name and the git url are the same
-	cmd := run.Bash(ctx, "git clone --mirror", repo.GitURL).Dir(tmpDir)
+	cmd := run.Bash(ctx, "git clone --bare", repo.GitURL, repo.Name).Dir(tmpDir)
 	for _, opt := range srcOpts {
 		cmd = opt(cmd)
 	}
@@ -247,7 +247,7 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 		return err
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)
-	cmd = run.Bash(ctx, "git remote add destination", repo.ToGitURL).Dir(repoDir)
+	cmd = run.Bash(ctx, "git remote set-url origin", repo.ToGitURL).Dir(repoDir)
 	for _, opt := range destOpts {
 		cmd = opt(cmd)
 	}
@@ -262,7 +262,7 @@ func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...Gi
 	var err error
 	for i := 0; i < retry; i++ {
 		// --force, with mirror we want the remote to look exactly as we have it
-		cmd := run.Bash(ctx, "git push --mirror --force destination").Dir(dir)
+		cmd := run.Bash(ctx, "git push --mirror --force origin").Dir(dir)
 		for _, opt := range destOpts {
 			cmd = opt(cmd)
 		}

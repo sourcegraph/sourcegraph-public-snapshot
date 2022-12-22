@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, H2 } from '@sourcegraph/wildcard'
 
 import { RepoBatchChange } from '../../../graphql-operations'
@@ -15,7 +14,7 @@ import { MAX_CHANGESETS_COUNT } from './backend'
 
 import styles from './BatchChangeNode.module.scss'
 
-export interface BatchChangeNodeProps extends ThemeProps {
+export interface BatchChangeNodeProps {
     node: RepoBatchChange
     viewerCanAdminister: boolean
     history: H.History

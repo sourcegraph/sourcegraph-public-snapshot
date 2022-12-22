@@ -56,7 +56,7 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     )
 }
 
-interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
+interface BatchSpecDownloadLinkProps extends Omit<BatchSpecProps, 'isLightTheme'>, Pick<BatchChangeFields, 'name'> {
     className?: string
     asButton: boolean
 }
@@ -91,14 +91,15 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
     })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
-export const BatchSpecDownloadButton: React.FunctionComponent<BatchSpecProps & Pick<BatchChangeFields, 'name'>> =
-    React.memo(function BatchSpecDownloadButton(props) {
-        return (
-            <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
-                <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
-            </BatchSpecDownloadLink>
-        )
-    })
+export const BatchSpecDownloadButton: React.FunctionComponent<
+    Omit<BatchSpecProps, 'isLightTheme'> & Pick<BatchChangeFields, 'name'>
+> = React.memo(function BatchSpecDownloadButton(props) {
+    return (
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+        </BatchSpecDownloadLink>
+    )
+})
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 

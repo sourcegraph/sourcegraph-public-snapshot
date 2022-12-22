@@ -41,7 +41,7 @@ func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client, logg
 	return &GitLabWebhook{webhook: &webhook{store, gitserverClient, logger, extsvc.TypeGitLab}}
 }
 
-func (h *GitLabWebhook) Register(router *fewebhooks.WebhookRouter) {
+func (h *GitLabWebhook) Register(router *fewebhooks.Router) {
 	router.Register(
 		h.handleEvent,
 		extsvc.KindGitLab,

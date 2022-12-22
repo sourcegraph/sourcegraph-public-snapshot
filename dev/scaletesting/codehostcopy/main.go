@@ -148,7 +148,7 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 		logger.Fatal("failed to create destination code host", log.Error(err))
 	}
 	runner := NewRunner(logger, s, from, dest)
-	return runner.Copy(ctx, 20)
+	return runner.Copy(ctx, cfg.MaxConcurrency)
 }
 
 func doList(ctx context.Context, logger log.Logger, state string, config string, limit int) error {
