@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -65,30 +66,41 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 // a token being expired, it will use the supplied AuthenticatorWithRefresh to
 // update the token. If the token is updated successfully, the same request will
 // be retried exactly once.
-// autherWithRefresh should not be nil.
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, autherWithRefresh auth.AuthenticatorWithRefresh) (resp *http.Response, err error) {
+func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator) (*http.Response, error) {
+	if auther == nil {
+		return doer.Do(req.WithContext(ctx))
+	}
+
+	// Try a pre-emptive token refresh in case we know it is definitely expired
+	autherWithRefresh, ok := auther.(auth.AuthenticatorWithRefresh)
+	if ok && autherWithRefresh.NeedsRefresh() {
+		if err := autherWithRefresh.Refresh(ctx, doer); err != nil {
+			logger.Warn("doRequest: token refresh failed", log.Error(err))
+		}
+	}
+
+	if err := auther.Authenticate(req); err != nil {
+		return nil, errors.Wrap(err, "authenticating request")
+	}
+
 	// Do first request
-	resp, err = authAndDoRequest(ctx, doer, req, autherWithRefresh)
+	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
 		return resp, err
 	}
 
-	// If response is unauthorised, attempt a token refresh
-	if resp.StatusCode == http.StatusUnauthorized {
+	// If the response was unauthorised, try to refresh the token
+	if resp.StatusCode == http.StatusUnauthorized && ok {
 		if err = autherWithRefresh.Refresh(ctx, doer); err != nil {
 			// If the refresh failed, return the original response
 			return resp, nil
 		}
+		// Re-authorize the request and re-do the request
+		if err = autherWithRefresh.Authenticate(req); err != nil {
+			return nil, errors.Wrap(err, "authenticating request after token refresh")
+		}
+		resp, err = doer.Do(req.WithContext(ctx))
 	}
 
-	// Do second request with refreshed token
-	return authAndDoRequest(ctx, doer, req, autherWithRefresh)
-}
-
-func authAndDoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, autherWithRefresh auth.AuthenticatorWithRefresh) (resp *http.Response, err error) {
-	if err := autherWithRefresh.Authenticate(req); err != nil {
-		return nil, errors.Wrap(err, "could not authenticate request")
-	}
-
-	return doer.Do(req.WithContext(ctx))
+	return resp, err
 }
