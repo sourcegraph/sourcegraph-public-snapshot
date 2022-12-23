@@ -159,6 +159,88 @@ func Zoekt() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
+							Name:        "indexed_search_request_duration_p99_aggregate",
+							Description: "99th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_aggregate",
+							Description: "90th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_aggregate",
+							Description: "75th percentile indexed search duration over 1m (aggregate)",
+							Query:       `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "indexed_search_request_duration_p99_by_instance",
+							Description: "99th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p90_by_instance",
+							Description: "90th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+						{
+							Name:        "indexed_search_request_duration_p75_by_instance",
+							Description: "75th percentile indexed search duration over 1m (per instance)",
+							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
+
+								Large duration spikes can be an indicator of saturation and / or a performance regression.
+							`,
+						},
+					},
+					{
+						{
 							Name:        "indexed_search_request_errors",
 							Description: "indexed search request errors every 5m by code",
 							Query:       `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,

@@ -16712,13 +16712,151 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 ### Zoekt: Search requests
 
+#### zoekt: indexed_search_request_duration_p99_aggregate
+
+<p class="subtitle">99th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p90_aggregate
+
+<p class="subtitle">90th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p75_aggregate
+
+<p class="subtitle">75th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p99_by_instance
+
+<p class="subtitle">99th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p90_by_instance
+
+<p class="subtitle">90th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p75_by_instance
+
+<p class="subtitle">75th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
 #### zoekt: indexed_search_request_errors
 
 <p class="subtitle">Indexed search request errors every 5m by code</p>
 
 Refer to the [alerts reference](./alerts.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100120` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16746,7 +16884,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100130` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16774,7 +16912,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100131` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
