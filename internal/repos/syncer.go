@@ -545,8 +545,10 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
-	if err := src.CheckConnection(ctx); err != nil {
-		return err
+	if checker, ok := src.(ConnectionChecker); ok {
+		if err := checker.CheckConnection(ctx); err != nil {
+			return err
+		}
 	}
 
 	results := make(chan SourceResult)

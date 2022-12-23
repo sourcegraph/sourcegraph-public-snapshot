@@ -56,16 +56,6 @@ type externalServiceUnknown struct{}
 
 const externalServiceIDKind = "ExternalService"
 
-// availabilityCheck indicates which code host types have an availability check implemented. For any
-// new code hosts where this check is implemented, add a new entry for the respective kind and set
-// the value to true.
-var availabilityCheck = map[string]bool{
-	extsvc.KindGitHub:          true,
-	extsvc.KindGitLab:          true,
-	extsvc.KindBitbucketServer: true,
-	extsvc.KindBitbucketCloud:  true,
-}
-
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
@@ -225,7 +215,13 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		return mockCheckConnection(ctx, r)
 	}
 
-	if !r.HasConnectionCheck(ctx) {
+	source, err := r.createSource(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create source")
+	}
+
+	checker, ok := source.(repos.ConnectionChecker)
+	if !ok {
 		r.availability = availabilityState{
 			unknown: &externalServiceUnknown{},
 		}
@@ -233,18 +229,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		return r, nil
 	}
 
-	source, err := repos.NewSource(
-		ctx,
-		log.Scoped("externalServiceResolver.CheckConnection", ""),
-		r.db,
-		r.externalService,
-		httpcli.ExternalClientFactory,
-	)
-	if err != nil {
-		return r, errors.Wrap(err, "failed to create source")
-	}
-
-	if err := source.CheckConnection(ctx); err != nil {
+	if err := checker.CheckConnection(ctx); err != nil {
 		r.availability = availabilityState{
 			unavailable: &externalServiceUnavailable{
 				suspectedReason: err.Error(),
@@ -263,8 +248,24 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 	return r, nil
 }
 
-func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) bool {
-	return availabilityCheck[r.externalService.Kind]
+func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) (bool, error) {
+	source, err := r.createSource(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create source")
+	}
+
+	_, ok := source.(repos.ConnectionChecker)
+	return ok, nil
+}
+
+func (r *externalServiceResolver) createSource(ctx context.Context) (repos.Source, error) {
+	return repos.NewSource(
+		ctx,
+		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		r.db,
+		r.externalService,
+		httpcli.ExternalClientFactory,
+	)
 }
 
 func (r *externalServiceResolver) ToExternalServiceAvailable() (*externalServiceResolver, bool) {

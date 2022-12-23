@@ -91,12 +91,17 @@ type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
+
+	// ExternalServices returns the ExternalServices for the Source.
+	ExternalServices() types.ExternalServices
+}
+
+// ConnectionChecker is an optional interface implemented by some sources.
+type ConnectionChecker interface {
 	// CheckConnection returns an error if the Source service is not reachable
 	// or available to serve requests. The error is descriptive and can be displayed
 	// to the user.
 	CheckConnection(context.Context) error
-	// ExternalServices returns the ExternalServices for the Source.
-	ExternalServices() types.ExternalServices
 }
 
 // RepoGetter captures the optional GetRepo method of a Source. It's used on
