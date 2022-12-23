@@ -14,7 +14,7 @@ type GeneratedTimeSeries struct {
 }
 
 type timeCounts map[time.Time]int
-type justInTimeExecutor struct {
+type previewExecutor struct {
 	db        database.DB
 	repoStore database.RepoStore
 	filter    compression.DataFrameFilter

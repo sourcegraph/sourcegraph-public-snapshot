@@ -19,7 +19,7 @@ import (
 )
 
 type CaptureGroupExecutor struct {
-	justInTimeExecutor
+	previewExecutor
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 
 	logger log.Logger
@@ -27,7 +27,7 @@ type CaptureGroupExecutor struct {
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
-		justInTimeExecutor: justInTimeExecutor{
+		previewExecutor: previewExecutor{
 			db:        postgres,
 			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
