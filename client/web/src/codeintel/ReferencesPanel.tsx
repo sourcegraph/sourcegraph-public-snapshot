@@ -62,6 +62,7 @@ import {
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
@@ -153,6 +154,12 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     >
 > = props => {
     const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
+
+    // Scroll blob UI to the selected symbol right after the reference panel is rendered
+    // and shifted the blob UI (scroll into view is needed because there are a few cases
+    // when ref panel may overlap with current symbol)
+    useEffect(() => BlobAPI.scrollIntoView({ line: props.line }), [props.line])
+
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
