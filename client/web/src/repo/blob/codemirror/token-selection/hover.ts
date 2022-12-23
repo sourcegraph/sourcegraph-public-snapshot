@@ -91,7 +91,7 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
             const { start, end } = occurrence.range
 
             return Decoration.set(
-                Decoration.mark({ class: 'sourcegraph-document-highlight' }).range(
+                Decoration.mark({ class: 'selection-highlight' }).range(
                     state.doc.line(start.line + 1).from + start.character,
                     state.doc.line(end.line + 1).from + end.character
                 )
