@@ -29,6 +29,6 @@ generate_graphql_operations(
     srcs = [
         ":graphql_operations_files",
     ],
+    out = "src/graphql-operations.ts",
     interface_name = "WebGraphQlOperations",
-    output = "src/graphql-operations.ts",
 )

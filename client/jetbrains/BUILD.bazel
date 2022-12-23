@@ -22,6 +22,6 @@ generate_graphql_operations(
     srcs = [
         "//client/jetbrains/webview:graphql_operations_files",
     ],
+    out = "src/graphql-operations.ts",
     interface_name = "JetBrainsGraphQlOperations",
-    output = "src/graphql-operations.ts",
 )
