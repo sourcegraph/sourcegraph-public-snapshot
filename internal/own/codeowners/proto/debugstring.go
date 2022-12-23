@@ -6,7 +6,7 @@ import (
 )
 
 // Repr returns a string representation that resembles the syntax
-// of a CODEOWNERS file. Order matterns for every repeated field within
+// of a CODEOWNERS file. Order matters for every repeated field within
 // the proto (as within the CODEOWNERS file), so the returned text
 // representation is deterministic. This is useful in tests,
 // where deep comparison ma not work due to protobuf metadata.
