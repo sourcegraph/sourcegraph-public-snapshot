@@ -36,6 +36,31 @@ const config = {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'no-console': 'error',
+
+    'require-await': 'off', // Covered by @typescript-eslint/require-await
+    // Disabled rules for React
+    'react/jsx-no-bind': 'off',
+    'react/no-multi-comp': ['off', { ignoreStateless: true }], // too many existing violations :/
+    'react/prop-types': 'off', // Not needed with TypeScript
+    'react/no-render-return-value': 'off', // Not needed with new React 18 root API.
+
+    // Rules for React components which are too slow and ROI is low.
+    'react/no-this-in-sfc': 'off',
+    'react/void-dom-elements-no-children': 'off',
+
+    // Disabled rules for React class components.
+    'react/no-access-state-in-setstate': 'off',
+    'react/require-render-return': 'off',
+    'react/no-string-refs': 'off',
+    'react/no-typos': 'off',
+    'react/no-unused-state': 'off',
+    'react/no-redundant-should-component-update': 'off',
+    'react/no-unsafe': 'off',
+    'react/no-did-mount-set-state': 'off',
+    'react/no-did-update-set-state': 'off',
+    'react/no-direct-mutation-state': 'off',
+    'react/no-is-mounted': 'off',
+
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
     '@typescript-eslint/consistent-type-exports': 'warn',
