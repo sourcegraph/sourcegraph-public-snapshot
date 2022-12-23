@@ -22,7 +22,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps } from '..'
+import { SearchAggregationProps, SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -53,7 +53,8 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
         ThemeProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        SearchAggregationProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -70,6 +71,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         codeInsightsEnabled,
         isSourcegraphDotCom,
         extensionsController,
+        searchAggregationEnabled,
     } = props
 
     const history = useHistory()
@@ -300,9 +302,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         })
     }
 
-    // Show aggregation panel by default and only if search doesn't have any matches
-    // hide aggregation panel from the sidebar
-    const showAggregationPanel = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
+    const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
+
+    // Show aggregation panel only if we're in Enterprise versions and hide it in OSS and
+    // when search doesn't have any matches
+    const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
     const onDisableSmartSearch = useCallback(
         () =>

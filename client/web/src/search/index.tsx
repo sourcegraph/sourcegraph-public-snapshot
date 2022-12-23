@@ -14,6 +14,8 @@ import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
+export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
+
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
  * returns undefined. When parsing for interactive mode, each filter's individual query parameter
