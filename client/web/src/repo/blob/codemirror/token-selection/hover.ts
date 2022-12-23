@@ -1,6 +1,7 @@
 import { countColumn, Extension, StateEffect, StateField } from '@codemirror/state'
 import {
     closeHoverTooltips,
+    Decoration,
     EditorView,
     hoverTooltip,
     PluginValue,
@@ -79,6 +80,23 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
         }
         return value
     },
+    provide: field =>
+        EditorView.decorations.compute([field], state => {
+            const occurrence = state.field(field)
+
+            if (occurrence === null || !isInteractiveOccurrence(occurrence)) {
+                return Decoration.none
+            }
+
+            const { start, end } = occurrence.range
+
+            return Decoration.set(
+                Decoration.mark({ class: 'sourcegraph-document-highlight' }).range(
+                    state.doc.line(start.line + 1).from + start.character,
+                    state.doc.line(end.line + 1).from + end.character
+                )
+            )
+        }),
 })
 
 export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
