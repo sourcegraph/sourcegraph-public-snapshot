@@ -17,7 +17,7 @@ import (
 // file for main branch of given repository.
 type CodeownersStore interface {
 	basestore.ShareableStore
-	// Put updates the newest CODEOWNERS file for given repository's HEAD.
+	// Put updates of the newest CODEOWNERS file for given repository's HEAD.
 	PutHead(context.Context, api.RepoName, *codeownerspb.File) error
 	// GetHead returns the CODEOWNERS file associated with
 	// or nil, if there is none.
