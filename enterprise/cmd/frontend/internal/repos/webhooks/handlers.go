@@ -128,7 +128,7 @@ func bitbucketServerCloneURLFromEvent(event *bitbucketserver.PushEvent) (string,
 	return "", errors.New("no ssh URLs found")
 }
 
-// handlePushEvent is a takes a push payload and a function to extract the repo
+// handlePushEvent takes a push payload and a function to extract the repo
 // clone URL from the event. It then uses the clone URL to find a repo and queues
 // a repo update.
 func handlePushEvent[T any](ctx context.Context, db database.DB, logger log.Logger, payload any, cloneURLGetter func(event T) (string, error)) error {
