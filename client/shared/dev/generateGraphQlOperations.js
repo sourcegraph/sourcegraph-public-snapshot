@@ -14,11 +14,7 @@ const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [
-  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
-  `!${SHARED_FOLDER}/src/testing/**/*.*`,
-  `!${SHARED_FOLDER}/src/schema.ts`,
-]
+const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`]
 
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
