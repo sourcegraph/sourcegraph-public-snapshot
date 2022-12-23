@@ -165,7 +165,7 @@ func (p *parsing) lineWithoutComments() string {
 
 func unescape(s string) string {
 	var b strings.Builder
-	var esc bool // whether the current character is escaped
+	var isEscaped bool
 	for _, r := range s {
 		if r == escapeCharacter && !esc {
 			esc = true
