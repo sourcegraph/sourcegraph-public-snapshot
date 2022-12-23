@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 
 import { mdiMagnify, mdiPlus } from '@mdi/js'
 
-import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

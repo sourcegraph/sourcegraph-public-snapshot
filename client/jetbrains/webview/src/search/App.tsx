@@ -3,9 +3,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable, of, Subscription } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
-import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState, SearchPatternType } from '@sourcegraph/search'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState } from '@sourcegraph/shared/src/search'
 import {
     aggregateStreamingSearch,
     AggregateStreamingSearchResults,
@@ -19,6 +19,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/sha
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../graphql-operations'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'

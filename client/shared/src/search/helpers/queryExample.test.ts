@@ -1,4 +1,4 @@
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterType } from '../query/filters'
 
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from './queryExample'
 

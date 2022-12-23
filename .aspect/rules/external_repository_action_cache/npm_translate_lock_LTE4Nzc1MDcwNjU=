@@ -1,9 +1,9 @@
 # Input hashes for repository rule npm_translate_lock(name = "npm", pnpm_lock = "//:pnpm-lock.yaml").
 # This file should be checked into version control along with the pnpm-lock.yaml file.
 .npmrc=2146577291
-pnpm-lock.yaml=-1835484148
-yarn.lock=189145180
-package.json=44218985
+pnpm-lock.yaml=-411279339
+yarn.lock=-660720214
+package.json=1340273860
 client/branded/package.json=784076174
 client/browser/package.json=-2024393090
 client/build-config/package.json=-745736751
@@ -18,7 +18,6 @@ client/jetbrains/package.json=1441482894
 client/observability-client/package.json=-463261822
 client/observability-server/package.json=1984976913
 client/search-ui/package.json=-602996280
-client/search/package.json=-467983686
 client/shared/package.json=426064482
 client/storybook/package.json=-1924844575
 client/template-parser/package.json=-867948495
@@ -27,3 +26,4 @@ client/wildcard/package.json=362918481
 client/vscode/package.json=1345248728
 dev/release/package.json=1426426960
 pnpm-workspace.yaml=-1949047588
+client/testing/package.json=366497236

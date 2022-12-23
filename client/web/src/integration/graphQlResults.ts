@@ -1,4 +1,3 @@
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
@@ -58,9 +57,7 @@ export const createViewerSettingsGraphQLOverride = (
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {

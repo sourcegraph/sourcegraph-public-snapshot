@@ -11,13 +11,14 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
+
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'

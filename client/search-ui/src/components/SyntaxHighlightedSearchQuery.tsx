@@ -2,9 +2,10 @@ import React, { Fragment, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchPatternType } from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { decorate, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+
 
 interface SyntaxHighlightedSearchQueryProps extends React.HTMLAttributes<HTMLSpanElement> {
     query: string

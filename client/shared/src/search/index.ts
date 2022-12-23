@@ -4,6 +4,8 @@ import { catchError, map } from 'rxjs/operators'
 import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import { SearchPatternType } from '../graphql-operations'
+
 import {
     fetchSearchContexts,
     getUserSearchContextNamespaces,
@@ -15,13 +17,11 @@ import {
     isSearchContextAvailable,
     fetchDefaultSearchContextSpec,
 } from './backend'
-import { SearchPatternType } from './graphql-operations'
 import { SearchMode } from './searchQueryState'
 
 export * from './backend'
 export * from './searchQueryState'
 export * from './helpers'
-export * from './graphql-operations'
 export * from './helpers/queryExample'
 export * from './integration/streaming-search-mocks'
 

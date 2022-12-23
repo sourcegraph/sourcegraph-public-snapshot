@@ -1,6 +1,6 @@
 import * as H from 'history'
 
-import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange } from './query/token'
 
 import { CaseSensitivityProps, SearchContextProps, SearchMode, SearchPatternTypeProps } from '.'
 

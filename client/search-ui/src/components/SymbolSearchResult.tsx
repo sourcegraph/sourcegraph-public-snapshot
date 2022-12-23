@@ -5,13 +5,14 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
+
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'

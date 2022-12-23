@@ -1,12 +1,12 @@
 import { decode } from 'js-base64'
 
-import { SearchPatternType } from '@sourcegraph/search'
-
+import { SearchPatternType } from '../graphql-operations'
 import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
 import type { Search, Theme } from '../search/types'
 
 import { dark } from './theme-snapshots/dark'
 import { light } from './theme-snapshots/light'
+
 
 /* Set these to connect to a different server */
 const instanceURL = 'https://sourcegraph.com/'

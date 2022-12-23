@@ -5,10 +5,11 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
+
+import { SearchMode } from './searchQueryState'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
