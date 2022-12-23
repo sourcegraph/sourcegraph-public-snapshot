@@ -144,7 +144,7 @@ func (p *parsing) lineWithoutComments() string {
 	// the string at the end, using the line-length as the index
 	// of the first character dropped, yields the original string.
 	commentStartIndex := len(p.line)
-	var esc bool // whether current character is escaped.
+	var isEscaped bool
 	for i, c := range p.line {
 		// Unescaped # seen - this is where the comment starts.
 		if c == commentStart && !esc {
