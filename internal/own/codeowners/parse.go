@@ -146,7 +146,7 @@ func (p *parsing) lineWithoutComments() string {
 	commentStartIndex := len(p.line)
 	var esc bool // whether current character is escaped.
 	for i, c := range p.line {
-		// Unespcaped # seen - this is where the comment starts.
+		// Unescaped # seen - this is where the comment starts.
 		if c == commentStart && !esc {
 			commentStartIndex = i
 			break
