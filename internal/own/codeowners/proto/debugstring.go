@@ -6,10 +6,10 @@ import (
 )
 
 // Repr returns a string representation that resembles the syntax
-// of a CODEOWNERS file. Order matterns for every repeated field within
+// of a CODEOWNERS file. Order matters for every repeated field within
 // the proto (as within the CODEOWNERS file), so the returned text
 // representation is deterministic. This is useful in tests,
-// where deep comparison ma not work due to protobuf metadata.
+// where deep comparison may not work due to protobuf metadata.
 func (f *File) Repr() string {
 	w := new(strings.Builder)
 	var lastSeenSection string
