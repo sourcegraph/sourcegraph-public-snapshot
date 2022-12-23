@@ -720,7 +720,7 @@ func TestPointDiffQuery(t *testing.T) {
 
 	before := time.Date(2022, time.February, 1, 1, 1, 0, 0, time.UTC)
 	after := time.Date(2022, time.January, 1, 1, 1, 0, 0, time.UTC)
-	repoSearch := ".*"
+	repoSearch := "repo:.*"
 	tests := []struct {
 		opts PointDiffQueryOpts
 		want autogold.Value

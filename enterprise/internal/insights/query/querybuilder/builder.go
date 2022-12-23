@@ -155,7 +155,7 @@ func PointDiffQuery(diffInfo PointDiffQueryOpts) (BasicQuery, error) {
 	if len(diffInfo.RepoList) > 0 {
 		query = forRepos(BasicQuery(query), diffInfo.RepoList).String()
 	} else if diffInfo.RepoSearch != nil {
-		query += " repo:" + *diffInfo.RepoSearch
+		query += " " + *diffInfo.RepoSearch
 	}
 
 	if diffInfo.After != nil {
