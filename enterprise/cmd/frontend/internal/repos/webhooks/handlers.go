@@ -23,7 +23,7 @@ import (
 )
 
 // Init initializes the given enterpriseServices with the webhook handlers for
-// handling GitHub push events.
+// handling push events.
 func Init(
 	_ context.Context,
 	_ *observation.Context,
