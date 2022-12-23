@@ -11,11 +11,11 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
-// Read parses CODEOWNERS file given as a Reader and returns the proto
+// Parse parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
-func Read(in io.Reader) (*codeownerspb.File, error) {
-	scanner := bufio.NewScanner(in)
+func Parse(codeownersFile io.Reader) (*codeownerspb.File, error) {
+	scanner := bufio.NewScanner(codeownersFile)
 	var rs []*codeownerspb.Rule
 	p := new(parsing)
 	for scanner.Scan() {
@@ -131,40 +131,39 @@ const (
 // stripped out.
 func (p *parsing) lineWithoutComments() string {
 	// A sensible default for index of the first byte where line-comment
-	// starts is the line lenght. When the comment is removed by slcing
+	// starts is the line length. When the comment is removed by slicing
 	// the string at the end, using the line-length as the index
 	// of the first character dropped, yields the original string.
 	commentStartIndex := len(p.line)
-	var esc bool // whether current character is escaped.
+	var isEscaped bool
 	for i, c := range p.line {
-		// Unespcaped # seen - this is where the comment starts.
-		if c == commentStart && !esc {
+		// Unescaped # seen - this is where the comment starts.
+		if c == commentStart && !isEscaped {
 			commentStartIndex = i
 			break
 		}
 		// Seeing escape character that is not being escaped itself (like \\)
 		// means the following character is escaped.
-		if c == escapeCharacter && !esc {
-			esc = true
+		if c == escapeCharacter && !isEscaped {
+			isEscaped = true
 			continue
 		}
 		// Otherwise the next character is definitely not escaped.
-		esc = false
-
+		isEscaped = false
 	}
 	return p.line[:commentStartIndex]
 }
 
 func unescape(s string) string {
 	var b strings.Builder
-	var esc bool // whether the current character is escaped
+	var isEscaped bool
 	for _, r := range s {
-		if r == escapeCharacter && !esc {
-			esc = true
+		if r == escapeCharacter && !isEscaped {
+			isEscaped = true
 			continue
 		}
 		b.WriteRune(r)
-		esc = false
+		isEscaped = false
 	}
 	return b.String()
 }
