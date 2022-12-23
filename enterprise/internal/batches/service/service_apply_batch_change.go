@@ -145,7 +145,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// And execute the mapping.
-	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
+	newChangesets, updatedChangesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
@@ -156,13 +156,28 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// Upsert all changesets.
-	for _, changeset := range changesets {
+	for i, changeset := range newChangesets {
 		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
 			changeset.UiPublicationState = state
+			newChangesets[i] = changeset
 		}
+	}
 
-		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
+	for i, changeset := range updatedChangesets {
+		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
+			changeset.UiPublicationState = state
+			updatedChangesets[i] = changeset
+		}
+	}
+
+	if len(newChangesets) > 0 {
+		if err = tx.CreateChangeset(ctx, newChangesets...); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(updatedChangesets) > 0 {
+		if err = tx.UpdateChangesetsForApply(ctx, updatedChangesets); err != nil {
 			return nil, err
 		}
 	}
