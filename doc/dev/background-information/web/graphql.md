@@ -266,7 +266,7 @@ In contrast to **offset-based pagination**, this approach brings us these benefi
 
 We currently have two accepted pagination patterns:
 
-- **Page switcher pagination**: Here, we only show one page of data (usually in the range of ~30 items) in the view at all times. The backend needs to allow pagination in both directions (forwards _and backwards_) for this to be possible. This is the proffered pagination pattern for elements that we can fetch from the postgres database.
+- **Page switcher pagination**: Here, we only show one page of data (usually in the range of ~30 items) in the view at all times. The backend needs to allow pagination in both directions (forwards _and backwards_) for this to be possible. This is the preferred pagination pattern for elements that we can fetch from the postgres database.
 
   To implement this, you can use the following abstractions:
 

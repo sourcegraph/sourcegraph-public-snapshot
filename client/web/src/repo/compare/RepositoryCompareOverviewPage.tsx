@@ -11,7 +11,7 @@ import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryComparisonFields, Scalars } from '../../graphql-operations'
+import { RepositoryComparisonFields, RepositoryComparisonResult, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -23,7 +23,7 @@ function queryRepositoryComparison(args: {
     base: string | null
     head: string | null
 }): Observable<RepositoryComparisonFields['comparison']['range']> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryComparisonResult>(
         gql`
             query RepositoryComparison($repo: ID!, $base: String, $head: String) {
                 node(id: $repo) {

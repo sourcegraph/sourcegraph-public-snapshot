@@ -40,7 +40,7 @@ func (g *GitLabHandler) handlePushEvent(ctx context.Context, payload any) error 
 
 	repoName, err := gitlabNameFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handleGitLabWebhook: get name failed")
+		return errors.Wrap(err, "handlePushEvent: get name failed")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -59,11 +59,11 @@ func (g *GitLabHandler) handlePushEvent(ctx context.Context, payload any) error 
 
 func gitlabNameFromEvent(event *gitlabwebhooks.PushEvent) (api.RepoName, error) {
 	if event == nil {
-		return api.RepoName(""), errors.New("nil PushEvent received")
+		return "", errors.New("nil PushEvent received")
 	}
 	parsed, err := url.Parse(event.Project.WebURL)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing project URL")
 	}
-	return api.RepoName(parsed.Host + parsed.Path), nil
+	return api.RepoName(parsed.Hostname() + parsed.Path), nil
 }

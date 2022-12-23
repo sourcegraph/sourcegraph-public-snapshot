@@ -6,7 +6,6 @@ import { timeFormat } from 'd3-time-format'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { IncompleteDatapointAlert } from '@sourcegraph/shared/src/schema'
 import {
     Alert,
     Button,
@@ -24,6 +23,7 @@ import {
 
 import { BackendInsightSeries } from '../../../../../../core'
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
+import { IncompleteDatapointAlert } from '../../../../../../core/types/insight/common'
 
 import styles from './BackendInsightAlerts.module.scss'
 

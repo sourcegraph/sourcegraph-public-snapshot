@@ -168,7 +168,7 @@ func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileM
 }
 
 func fetchContent(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
-	content, err = gitserver.NewClient(db).ReadFile(ctx, repo, commit, path, authz.DefaultSubRepoPermsChecker)
+	content, err = gitserver.NewClient(db).ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}

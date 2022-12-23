@@ -4,8 +4,8 @@ import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
 
-import { CopyableText } from '../../../../components/CopyableText'
-import { randomizeUserPassword, setUserIsSiteAdmin } from '../../../backend'
+import { CopyableText } from '../../../components/CopyableText'
+import { randomizeUserPassword, setUserIsSiteAdmin } from '../../backend'
 import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS } from '../queries'
 
 import { UseUserListActionReturnType, SiteUser, getUsernames } from './UsersList'

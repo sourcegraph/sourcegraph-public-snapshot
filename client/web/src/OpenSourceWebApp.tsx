@@ -10,7 +10,6 @@ import { repoContainerRoutes, repoRevisionContainerRoutes } from './repo/routes'
 import { repoSettingsAreaRoutes } from './repo/settings/routes'
 import { repoSettingsSideBarGroups } from './repo/settings/sidebaritems'
 import { routes } from './routes'
-import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { SourcegraphWebApp } from './SourcegraphWebApp'
@@ -25,7 +24,7 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
     <SourcegraphWebApp
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
-        siteAdminOverviewComponents={siteAdminOverviewComponents}
+        siteAdminOverviewComponents={[]}
         userAreaRoutes={userAreaRoutes}
         userAreaHeaderNavItems={userAreaHeaderNavItems}
         userSettingsSideBarItems={userSettingsSideBarItems}

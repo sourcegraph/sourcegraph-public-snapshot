@@ -66,5 +66,5 @@ func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse repository URL")
 	}
-	return api.RepoName(parsed.Host + parsed.Path), nil
+	return api.RepoName(parsed.Hostname() + parsed.Path), nil
 }

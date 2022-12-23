@@ -4,6 +4,7 @@ import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -74,7 +75,6 @@ describe('FileContentSearchResult', () => {
                 {
                     lastID: 1,
                     settings: { 'search.contextLines': 3 },
-                    extensions: null,
                     subject: {
                         __typename: 'User' as const,
                         username: 'f',
@@ -82,10 +82,12 @@ describe('FileContentSearchResult', () => {
                         settingsURL: '/users/f/settings',
                         viewerCanAdminister: true,
                         displayName: 'f',
+                        latestSettings: null,
                     },
                 },
             ],
-        }
+        } satisfies SettingsCascade
+
         const { container } = renderWithBrandedContext(
             <FileContentSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
