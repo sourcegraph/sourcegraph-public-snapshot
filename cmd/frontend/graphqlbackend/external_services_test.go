@@ -306,13 +306,16 @@ func TestExternalServices(t *testing.T) {
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 {
 			return []*types.ExternalService{
-				{ID: 2, Config: extsvc.NewEmptyConfig()},
+				{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 			}, nil
 		}
 
+		cfg := extsvc.NewEmptyConfig()
+		cfg.Set(`{"url": "http://127.0.0.1:80"}`)
+
 		ess := []*types.ExternalService{
 			{ID: 1, Config: extsvc.NewEmptyConfig()},
-			{ID: 2, Config: extsvc.NewEmptyConfig()},
+			{ID: 2, Config: cfg, Kind: extsvc.KindGitHub},
 		}
 		if opt.LimitOffset != nil {
 			return ess[:opt.LimitOffset.Limit], nil
@@ -378,6 +381,7 @@ func TestExternalServices(t *testing.T) {
 			}
 		`,
 		},
+		// checkConnection
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
@@ -386,6 +390,14 @@ func TestExternalServices(t *testing.T) {
 						nodes {
 							id
 							checkConnection {
+								// FIXME: Ignoreing the lastCheckedAt field for now. Find out a way
+								// to ignore comparison for this field while still checking that this
+								// field was returned maybe?
+								... on ExternalServiceAvailable {
+								}
+								... on ExternalServiceUnavailable {
+									suspectedReason
+								}
 								... on ExternalServiceAvailabilityUnknown {
 									implementationNote
 								}
@@ -395,6 +407,8 @@ func TestExternalServices(t *testing.T) {
 					}
 				}
 			`,
+			// FIXME: Ignoring checkConneciton.lastCheckedAt for now. Find out a way to ignore
+			// comparison for this field maybe?
 			ExpectedResult: `
 				{
 					"externalServices": {
@@ -402,16 +416,15 @@ func TestExternalServices(t *testing.T) {
 							{
 								"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=",
 								"checkConnection": {
-									"implementationNote": "not implemented yet"
+									"implementationNote": "not implemented"
 								},
 								"hasConnectionCheck": false
 							},
 							{
 								"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
 								"checkConnection": {
-									"implementationNote": "not implemented yet"
 								},
-								"hasConnectionCheck": false
+								"hasConnectionCheck": true
 							}
 						]
 					}
