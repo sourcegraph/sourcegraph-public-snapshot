@@ -86,7 +86,7 @@ type InsightDataPoint {
     value: Float!
 
     """
-    A search query that shows the diffs between this point and the previous point
+    A search query that will show the diff between this point and the previous point
     """
     diffQuery: String
 }
