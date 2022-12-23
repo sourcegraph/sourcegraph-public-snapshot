@@ -706,7 +706,7 @@ func TestMakeQueryWithRepoFilters(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.want.Name(), func(t *testing.T) {
-			got, err := MakeQueryWithRepoFilters(test.repos, BasicQuery(test.query))
+			got, err := MakeQueryWithRepoFilters(test.repos, BasicQuery(test.query), true, CodeInsightsQueryDefaults(true)...)
 			if err != nil {
 				test.want.Equal(t, err.Error())
 			} else {
@@ -721,6 +721,8 @@ func TestPointDiffQuery(t *testing.T) {
 	before := time.Date(2022, time.February, 1, 1, 1, 0, 0, time.UTC)
 	after := time.Date(2022, time.January, 1, 1, 1, 0, 0, time.UTC)
 	repoSearch := "repo:.*"
+	complexRepoSearch := "repo:sourcegraph or repo:about"
+
 	tests := []struct {
 		opts PointDiffQueryOpts
 		want autogold.Value
@@ -732,7 +734,7 @@ func TestPointDiffQuery(t *testing.T) {
 				FilterRepoIncludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("multiple includes or together", BasicQuery("insights repo:(repo1|repo2) after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("multiple includes or together", BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			PointDiffQueryOpts{
@@ -741,7 +743,7 @@ func TestPointDiffQuery(t *testing.T) {
 				FilterRepoExcludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("multiple excludes or together", BasicQuery("insights -repo:(repo1|repo2) after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("multiple excludes or together", BasicQuery("-repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			PointDiffQueryOpts{
@@ -750,7 +752,7 @@ func TestPointDiffQuery(t *testing.T) {
 				RepoList:    []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("repo list escaped and or together", BasicQuery("insights repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("repo list escaped and or together", BasicQuery("repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			PointDiffQueryOpts{
@@ -759,7 +761,7 @@ func TestPointDiffQuery(t *testing.T) {
 				RepoSearch:  &repoSearch,
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("repo search added", BasicQuery("insights repo:.* after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("repo search added", BasicQuery("repo:.* after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			PointDiffQueryOpts{
@@ -769,14 +771,34 @@ func TestPointDiffQuery(t *testing.T) {
 				FilterRepoExcludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("include and excluded can be used together", BasicQuery("insights repo:(repoa|repob) -repo:(repo1|repo2) after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("include and excluded can be used together", BasicQuery("repo:repoa|repob -repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			PointDiffQueryOpts{
 				Before:      before,
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("after isn't needed", BasicQuery("insights before:2022-02-01T01:01:00Z type:diff")),
+			autogold.Want("after isn't needed", BasicQuery("before:2022-02-01T01:01:00Z type:diff insights")),
+		},
+		{
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoIncludes: []string{"sourcegraph", "about"},
+				FilterRepoExcludes: []string{"mega", "multierr"},
+				SearchQuery:        BasicQuery("insights or worker"),
+				RepoSearch:         &complexRepoSearch,
+			},
+			autogold.Want("compound repo search and include/exclude", BasicQuery("(repo:sourcegraph OR repo:about) repo:sourcegraph|about -repo:mega|multierr after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff (insights OR worker)")),
+		},
+		{
+			PointDiffQueryOpts{
+				Before:             before,
+				After:              &after,
+				FilterRepoIncludes: []string{"repo1|repo2"},
+				SearchQuery:        BasicQuery("insights"),
+			},
+			autogold.Want("regex in include", BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 	}
 	for _, test := range tests {

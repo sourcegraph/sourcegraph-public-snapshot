@@ -141,29 +141,78 @@ type PointDiffQueryOpts struct {
 }
 
 func PointDiffQuery(diffInfo PointDiffQueryOpts) (BasicQuery, error) {
-
-	query := diffInfo.SearchQuery.String()
+	// Build up a list of parameters that should be added to the original query
+	newFilters := []searchquery.Parameter{}
 
 	if len(diffInfo.FilterRepoIncludes) > 0 {
-		query += fmt.Sprintf(" repo:(%s)", strings.Join(diffInfo.FilterRepoIncludes, "|"))
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldRepo,
+			Value:   strings.Join(diffInfo.FilterRepoIncludes, "|"),
+			Negated: false,
+		})
 	}
 
 	if len(diffInfo.FilterRepoExcludes) > 0 {
-		query += fmt.Sprintf(" -repo:(%s)", strings.Join(diffInfo.FilterRepoExcludes, "|"))
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldRepo,
+			Value:   strings.Join(diffInfo.FilterRepoExcludes, "|"),
+			Negated: true,
+		})
 	}
 
 	if len(diffInfo.RepoList) > 0 {
-		query = forRepos(BasicQuery(query), diffInfo.RepoList).String()
-	} else if diffInfo.RepoSearch != nil {
-		query += " " + *diffInfo.RepoSearch
-	}
+		escapedRepos := make([]string, len(diffInfo.RepoList))
+		for i, repo := range diffInfo.RepoList {
+			escapedRepos[i] = regexp.QuoteMeta(repo)
+		}
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldRepo,
+			Value:   fmt.Sprintf("^(%s)$", strings.Join(escapedRepos, "|")),
+			Negated: false,
+		})
 
+	}
 	if diffInfo.After != nil {
-		query += " after:" + diffInfo.After.UTC().Format(time.RFC3339)
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldAfter,
+			Value:   diffInfo.After.UTC().Format(time.RFC3339),
+			Negated: false,
+		})
 	}
-	query += " before:" + diffInfo.Before.UTC().Format(time.RFC3339)
+	newFilters = append(newFilters, searchquery.Parameter{
+		Field:   searchquery.FieldBefore,
+		Value:   diffInfo.Before.UTC().Format(time.RFC3339),
+		Negated: false,
+	})
+	newFilters = append(newFilters, searchquery.Parameter{
+		Field:   searchquery.FieldType,
+		Value:   "diff",
+		Negated: false,
+	})
 
-	query += " type:diff"
+	queryPlan, err := ParseQuery(diffInfo.SearchQuery.String(), "literal")
+	if err != nil {
+		return "", err
+	}
+	modifiedPlan := make(searchquery.Plan, 0, len(queryPlan))
+	for _, step := range queryPlan {
+		s := make(searchquery.Parameters, 0, len(step.Parameters)+len(newFilters))
+		for _, filter := range newFilters {
+			s = append(s, filter)
+		}
+		s = append(s, step.Parameters...)
+		modifiedPlan = append(modifiedPlan, step.MapParameters(s))
+	}
+	query := searchquery.StringHuman(modifiedPlan.ToQ())
+
+	// If a repo search was provided treat it like its own query and combine to preserve proper groupings in compound query cases
+	if diffInfo.RepoSearch != nil {
+		queryWithRepo, err := MakeQueryWithRepoFilters(*diffInfo.RepoSearch, BasicQuery(query), false)
+		if err != nil {
+			return "", err
+		}
+		query = queryWithRepo.String()
+	}
 
 	return BasicQuery(query), nil
 }
@@ -450,8 +499,11 @@ func RepositoryScopeQuery(query string) (BasicQuery, error) {
 	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
 }
 
-func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery) (BasicQuery, error) {
-	modifiedQuery, err := withDefaults(withCountAll(query), CodeInsightsQueryDefaults(true))
+func MakeQueryWithRepoFilters(repositoryCriteria string, query BasicQuery, countAll bool, defaults ...searchquery.Parameter) (BasicQuery, error) {
+	if countAll {
+		query = withCountAll(query)
+	}
+	modifiedQuery, err := withDefaults(query, defaults)
 	if err != nil {
 		return "", errors.Wrap(err, "error parsing search query")
 	}
