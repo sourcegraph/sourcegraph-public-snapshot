@@ -1201,7 +1201,7 @@ func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Schedul
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
 		}
-		return v2HistoricFill(ctx, series, tx, scheduler)
+		return historicFill(ctx, series, tx, scheduler)
 	}
 }
 
@@ -1218,7 +1218,7 @@ func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *stor
 	return nil
 }
 
-func v2HistoricFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
+func historicFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
 	backfillScheduler = backfillScheduler.With(tx)
 	_, err := backfillScheduler.InitialBackfill(ctx, series)
 	if err != nil {
