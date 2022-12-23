@@ -435,13 +435,14 @@ func TestRewirer_Rewire(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := New(tc.mappings, testBatchChangeID)
 
-			changesets, err := r.Rewire()
+			newChangesets, updatedChangesets, err := r.Rewire()
 			if err != nil && tc.wantErr == nil {
 				t.Fatal(err)
 			}
 			if tc.wantErr != nil && err.Error() != tc.wantErr.Error() {
 				t.Fatalf("incorrect error returned. want=%+v have=%+v", tc.wantErr, err)
 			}
+			changesets := append(newChangesets, updatedChangesets...)
 			if have, want := len(changesets), len(tc.wantChangesets); have != want {
 				t.Fatalf("incorrect amount of changesets returned. want=%d have=%d", want, have)
 			}
