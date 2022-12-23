@@ -3,6 +3,7 @@
 }
 
 .header {
+    margin-bottom: 0.25rem;
     a {
         color: var(--text-muted);
     }
@@ -24,4 +25,8 @@
     padding: 0.5rem;
     overflow: auto;
     max-height: 32rem;
+}
+
+.symbol-kind {
+    color: inherit;
 }

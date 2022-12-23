@@ -57,6 +57,7 @@ const defaultProps: StreamingSearchResultsProps = {
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
+    searchAggregationEnabled: true,
 }
 
 const decorator: DecoratorFn = Story => {

@@ -39,17 +39,18 @@ func TestTransformRecord(t *testing.T) {
 	})
 
 	secs := database.NewMockExecutorSecretStore()
-	secs.ListFunc.SetDefaultReturn(
-		[]*database.ExecutorSecret{
+	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
+		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
+			return nil, 0, nil
+		}
+		return []*database.ExecutorSecret{
 			database.NewMockExecutorSecret(&database.ExecutorSecret{
 				Key:       "FOO",
 				Scope:     database.ExecutorSecretScopeBatches,
 				CreatorID: 1,
 			}, "bar"),
-		},
-		0,
-		nil,
-	)
+		}, 0, nil
+	})
 	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
 
 	sal := database.NewMockExecutorSecretAccessLogStore()
@@ -90,7 +91,7 @@ steps:
 			1: {
 				Key: "testcachekey",
 				Value: &execution.AfterStepResult{
-					Diff: "123",
+					Diff: []byte("123"),
 				},
 			},
 		},
@@ -131,12 +132,12 @@ steps:
 	}
 
 	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: "123"}))
+		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,62 +150,7 @@ steps:
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: string(marshaledInput)},
-			},
-			CliSteps: []apiclient.CliStep{
-				{
-					Key: "batch-exec",
-					Commands: []string{
-						"batch",
-						"exec",
-						"-f",
-						"input.json",
-						"-repo",
-						"repository",
-						"-tmp",
-						".src-tmp",
-					},
-					Dir: ".",
-					Env: []string{
-						"FOO=bar",
-					},
-				},
-			},
-			RedactedValues: map[string]string{
-				"bar": "${{ secrets.FOO }}",
-			},
-		}
-		if diff := cmp.Diff(expected, job); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
-		}
-
-		mockassert.CalledOnce(t, secs.ListFunc)
-		mockassert.CalledOnce(t, sal.CreateFunc)
-	})
-
-	t.Run("with cache disabled", func(t *testing.T) {
-		// Set the no cache flag on the batch spec.
-		batchSpec.NoCache = true
-
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
-		if err != nil {
-			t.Fatalf("unexpected error transforming record: %s", err)
-		}
-
-		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: string(marshaledInput)},
+				"input.json": {Content: marshaledInput},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
@@ -234,32 +180,18 @@ steps:
 		}
 
 		mockassert.CalledN(t, secs.ListFunc, 2)
-		mockassert.CalledN(t, sal.CreateFunc, 2)
+		mockassert.CalledOnce(t, sal.CreateFunc)
 	})
 
-	t.Run("workspace file", func(t *testing.T) {
-		t.Cleanup(func() {
-			store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(nil, 0, nil)
-		})
+	t.Run("with cache disabled", func(t *testing.T) {
+		// Copy.
+		workspace := *workspace
+		workspace.CachedResultFound = false
+		workspace.StepCacheResults = map[int]btypes.StepCacheResult{}
+		workspace.ChangesetSpecIDs = []int64{}
+		store.GetBatchSpecWorkspaceFunc.PushReturn(&workspace, nil)
 
-		batchSpec.NoCache = true
-
-		workspaceFileModifiedAt := time.Now()
-		store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(
-			[]*btypes.BatchSpecWorkspaceFile{
-				{
-					RandID:     "xyz",
-					FileName:   "script.sh",
-					Path:       "foo/bar",
-					Size:       12,
-					ModifiedAt: workspaceFileModifiedAt,
-				},
-			},
-			0,
-			nil,
-		)
-
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
@@ -277,7 +209,157 @@ steps:
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json":                        {Content: string(marshaledInput)},
+				"input.json": {Content: marshaledInput},
+			},
+			CliSteps: []apiclient.CliStep{
+				{
+					Key: "batch-exec",
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+					},
+					Dir: ".",
+					Env: []string{
+						"FOO=bar",
+					},
+				},
+			},
+			RedactedValues: map[string]string{
+				"bar": "${{ secrets.FOO }}",
+			},
+		}
+		if diff := cmp.Diff(expected, job); diff != "" {
+			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		}
+
+		mockassert.CalledN(t, secs.ListFunc, 4)
+		mockassert.CalledN(t, sal.CreateFunc, 2)
+	})
+
+	t.Run("with docker auth config", func(t *testing.T) {
+		// Copy.
+		workspace := *workspace
+		workspace.CachedResultFound = false
+		workspace.StepCacheResults = map[int]btypes.StepCacheResult{}
+		workspace.ChangesetSpecIDs = []int64{}
+		store.GetBatchSpecWorkspaceFunc.PushReturn(&workspace, nil)
+
+		secs.ListFunc.PushReturn(secs.List(context.Background(), database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{}))
+		secs.ListFunc.PushReturn(
+			[]*database.ExecutorSecret{
+				database.NewMockExecutorSecret(&database.ExecutorSecret{
+					Key:       "DOCKER_AUTH_CONFIG",
+					Scope:     database.ExecutorSecretScopeBatches,
+					CreatorID: 1,
+				}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
+			},
+			0,
+			nil,
+		)
+
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+		if err != nil {
+			t.Fatalf("unexpected error transforming record: %s", err)
+		}
+
+		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := apiclient.Job{
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json": {Content: marshaledInput},
+			},
+			CliSteps: []apiclient.CliStep{
+				{
+					Key: "batch-exec",
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+					},
+					Dir: ".",
+					Env: []string{
+						"FOO=bar",
+					},
+				},
+			},
+			RedactedValues: map[string]string{
+				"bar": "${{ secrets.FOO }}",
+			},
+			DockerAuthConfig: apiclient.DockerAuthConfig{
+				Auths: apiclient.DockerAuthConfigAuths{
+					"hub.docker.com": apiclient.DockerAuthConfigAuth{
+						Auth: []byte("hunter:hunter2"),
+					},
+				},
+			},
+		}
+		if diff := cmp.Diff(expected, job); diff != "" {
+			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		}
+
+		mockassert.CalledN(t, secs.ListFunc, 7)
+		mockassert.CalledN(t, sal.CreateFunc, 4)
+	})
+
+	t.Run("workspace file", func(t *testing.T) {
+		t.Cleanup(func() {
+			store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(nil, 0, nil)
+		})
+
+		workspaceFileModifiedAt := time.Now()
+		store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(
+			[]*btypes.BatchSpecWorkspaceFile{
+				{
+					RandID:     "xyz",
+					FileName:   "script.sh",
+					Path:       "foo/bar",
+					Size:       12,
+					ModifiedAt: workspaceFileModifiedAt,
+				},
+			},
+			0,
+			nil,
+		)
+
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+		if err != nil {
+			t.Fatalf("unexpected error transforming record: %s", err)
+		}
+
+		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := apiclient.Job{
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json":                        {Content: marshaledInput},
 				"workspace-files/foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
 			},
 			CliSteps: []apiclient.CliStep{
@@ -309,7 +391,7 @@ steps:
 			t.Errorf("unexpected job (-want +got):\n%s", diff)
 		}
 
-		mockassert.CalledN(t, secs.ListFunc, 3)
-		mockassert.CalledN(t, sal.CreateFunc, 3)
+		mockassert.CalledN(t, secs.ListFunc, 9)
+		mockassert.CalledN(t, sal.CreateFunc, 5)
 	})
 }

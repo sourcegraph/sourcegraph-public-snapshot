@@ -4,16 +4,17 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
 import {
+    FetchCodeMonitorResult,
     MonitorEditInput,
     MonitorEditTriggerInput,
     MonitorEditActionInput,
     MonitorEmailPriority,
-} from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-
-import { FetchCodeMonitorResult } from '../../graphql-operations'
+} from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
@@ -38,7 +39,6 @@ describe('ManageCodeMonitorPage', () => {
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
-        fetchUserCodeMonitors: sinon.spy(),
         updateCodeMonitor: sinon.spy(
             (
                 monitorEditInput: MonitorEditInput,
@@ -157,11 +157,11 @@ describe('ManageCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const submitButton = screen.getByTestId('submit-monitor')
-        expect(submitButton).toBeDisabled()
+        assertAriaDisabled(submitButton)
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
 
-        expect(submitButton).toBeEnabled()
+        assertAriaEnabled(submitButton)
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {

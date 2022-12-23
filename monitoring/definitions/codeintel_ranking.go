@@ -9,7 +9,7 @@ func CodeIntelRanking() *monitoring.Dashboard {
 	return &monitoring.Dashboard{
 		Name:        "codeintel-ranking",
 		Title:       "Code Intelligence > Ranking",
-		Description: "The service at `internal/codeintel/ranking`.",
+		Description: "The service at `enterprise/internal/codeintel/ranking`.",
 		Variables: []monitoring.ContainerVariable{
 			{
 				Label: "Source",

@@ -1,16 +1,9 @@
 package api
 
 import (
-	"context"
-	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -94,135 +87,6 @@ func TestParseExtensionID(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockRegistryExtension struct {
-	id   int32
-	name string
-	graphqlbackend.RegistryExtension
-}
-
-func TestGetExtensionByExtensionID(t *testing.T) {
-	enableLegacyExtensions()
-	defer conf.Mock(nil)
-
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, nil)
-
-	t.Run("root", func(t *testing.T) {
-		mockLocalRegistryExtensionIDPrefix = &strnilptr
-		defer func() { mockLocalRegistryExtensionIDPrefix = nil }()
-
-		t.Run("2-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
-				if want := "a/b"; extensionID != want {
-					t.Errorf("got %q, want %q", extensionID, want)
-				}
-				return &mockRegistryExtension{id: 1, name: "b"}, nil
-			}
-			defer func() { GetLocalExtensionByExtensionID = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, db, "a/b")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&mockRegistryExtension{id: 1, name: "b"}); !reflect.DeepEqual(local, want) {
-				t.Errorf("got %+v, want %+v", local, want)
-			}
-			if remote != nil {
-				t.Error()
-			}
-		})
-
-		t.Run("3-part", func(t *testing.T) {
-			if _, _, err := GetExtensionByExtensionID(ctx, db, "a/b/c"); err == nil {
-				t.Fatal()
-			}
-		})
-	})
-
-	t.Run("non-root", func(t *testing.T) {
-		mockLocalRegistryExtensionIDPrefix = strptrptr("x")
-		defer func() { mockLocalRegistryExtensionIDPrefix = nil }()
-
-		t.Run("2-part", func(t *testing.T) {
-			mockGetRemoteRegistryExtension = func(field, value string) (*registry.Extension, error) {
-				if want := "extensionID"; field != want {
-					t.Errorf("got field %q, want %q", field, want)
-				}
-				if want := "a/b"; value != want {
-					t.Errorf("got value %q, want %q", value, want)
-				}
-				return &registry.Extension{UUID: "u", ExtensionID: "a/b"}, nil
-			}
-			defer func() { mockGetRemoteRegistryExtension = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, db, "a/b")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if local != nil {
-				t.Error()
-			}
-			if want := (&registry.Extension{UUID: "u", ExtensionID: "a/b"}); !reflect.DeepEqual(remote, want) {
-				t.Errorf("got %+v, want %+v", remote, want)
-			}
-		})
-
-		t.Run("3-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
-				if want := "b/c"; extensionID != want {
-					t.Errorf("got %q, want %q", extensionID, want)
-				}
-				return &mockRegistryExtension{id: 1, name: "b"}, nil
-			}
-			defer func() { GetLocalExtensionByExtensionID = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, db, "x/b/c")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := (&mockRegistryExtension{id: 1, name: "b"}); !reflect.DeepEqual(local, want) {
-				t.Errorf("got %+v, want %+v", local, want)
-			}
-			if remote != nil {
-				t.Error()
-			}
-		})
-	})
-
-	t.Run("invalid extension ID", func(t *testing.T) {
-		if _, _, err := GetExtensionByExtensionID(ctx, db, "a/b/c/d"); err == nil {
-			t.Fatal()
-		}
-	})
-}
-
-func TestIsWorkInProgressExtension(t *testing.T) {
-	tests := map[*string]bool{
-		nil:                      true,
-		strptr(`{`):              false,
-		strptr(`{}`):             false,
-		strptr(`{"wip": true}`):  true,
-		strptr(`{"wip": false}`): false,
-	}
-	for manifest, want := range tests {
-		got := IsWorkInProgressExtension(manifest)
-		if got != want {
-			var label string
-			if manifest == nil {
-				label = "nil"
-			} else {
-				label = *manifest
-			}
-			t.Errorf("got %v, want %v (manifest: %s)", got, want, label)
-		}
-	}
-}
-
-var strnilptr *string
-
-func strptrptr(s string) **string {
-	tmp := &s
-	return &tmp
 }
 
 func enableLegacyExtensions() {

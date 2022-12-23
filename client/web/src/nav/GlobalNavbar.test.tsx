@@ -2,14 +2,13 @@ import React from 'react'
 
 import { createLocation, createMemoryHistory } from 'history'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
@@ -38,18 +37,17 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
     globbing: false,
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     showKeyboardShortcutsHelp: () => undefined,
     setFuzzyFinderIsVisible: () => undefined,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    showFeedbackModal: () => undefined,
 }
 
 describe('GlobalNavbar', () => {

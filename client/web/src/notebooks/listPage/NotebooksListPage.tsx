@@ -10,9 +10,10 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
+import { PageHeader, Button, useEventObservable, Alert, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
@@ -74,6 +75,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
+    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
@@ -286,6 +288,21 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 </ButtonLink>
                             </div>
                         ))}
+
+                        {selectedTab === 'notebooks' && isSourcegraphDotCom && (
+                            <CloudCtaBanner variant="outlined" small={true} className="ml-sm-auto mt-md-0 mt-3">
+                                To create Notebooks across your private repositories,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=notebooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </CloudCtaBanner>
+                        )}
                     </div>
                 </div>
 

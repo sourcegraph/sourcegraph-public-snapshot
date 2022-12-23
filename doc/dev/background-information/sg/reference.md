@@ -87,7 +87,9 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batcheshelper-builder
 * bext
+* blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
@@ -104,7 +106,6 @@ Available commands in `sg.config.yaml`:
 * grafana
 * jaeger
 * loki
-* minio
 * monitoring-generator
 * oss-frontend
 * oss-repo-updater
@@ -386,7 +387,7 @@ Flags:
 * `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Try to fix any lint issues
-* `--no-format-check, --nfc`: Don't check file formatting
+* `--skip-format-check, --sfc`: Skip file formatting check
 
 ### sg lint urls
 
@@ -460,6 +461,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint format
+
+Check client code and docs for formatting errors.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg generate
 
 Run code and docs generation tasks.
@@ -474,6 +484,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--quiet, -q`: Suppress all output but errors from generate tasks
+
+### sg generate buf
+
+Re-generate protcol buffer bindings using buf.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg generate go
 
@@ -541,6 +560,24 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg db update-user-external-services
+
+Manually update a user's external services.
+
+Patches the table 'user_external_services' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.
+
+
+Flags:
+
+* `--extsvc.display-name="<value>"`: The display name of the GitHub instance connected to the Sourcegraph instance (as listed under Site admin > Manage code hosts)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--github.baseurl="<value>"`: The base url of the GitHub instance to connect to
+* `--github.client-id="<value>"`: The client ID of an OAuth app on the GitHub instance
+* `--github.token="<value>"`: GitHub token with a scope to read all user data
+* `--github.username="<value>"`: Username of the account on the GitHub instance (default: sourcegraph)
+* `--oauth.token="<value>"`: OAuth token to patch for the provided user
+* `--sg.username="<value>"`: Username of the user account on Sourcegraph (default: sourcegraph)
+
 ### sg db add-user
 
 Create an admin sourcegraph user.
@@ -563,7 +600,7 @@ Modifies and runs database migrations.
 $ sg migration up
 
 # Migrate specific database down one migration
-$ sg migration down --db codeintel
+$ sg migration downto --db codeintel --target <version>
 
 # Add new migration for specific database
 $ sg migration add --db codeintel 'add missing index'
@@ -621,7 +658,7 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
@@ -713,7 +750,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
@@ -1006,6 +1043,7 @@ Flags:
 * `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
+* `--multi-instance-groupings="<value>"`: If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
 * `--prometheus.dir="<value>"`: Output directory for generated Prometheus assets (default: $SG_ROOT/docker-images/prometheus/config/)
 * `--prometheus.url="<value>"`: Address for the Prometheus instance to reload (default: http://127.0.0.1:9090)
@@ -1314,6 +1352,9 @@ Available preset environments:
 * k8s
 * scaletesting
 
+See more information about the deployments schedule here:
+https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience/#sourcegraph-instances-operated-by-us
+
 ```sh
 # See which version is deployed on a preset environment
 $ sg live s2
@@ -1397,6 +1438,28 @@ Flags:
 * `--opsgenie.token="<value>"`: OpsGenie token
 * `--priority, -p="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
 * `--url="<value>"`: URL field for alert details (optional)
+
+## sg cloud
+
+Install and work with Sourcegraph Cloud tools.
+
+Learn more about Sourcegraph Cloud:
+
+- Product: https://docs.sourcegraph.com/cloud
+- Handbook: https://handbook.sourcegraph.com/departments/cloud/
+
+
+
+### sg cloud install
+
+Install or upgrade local `mi2` CLI (for Cloud V2).
+
+To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg help
 
@@ -1498,3 +1561,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--raw`: view raw data
+
+## sg release
+
+Sourcegraph release utilities.
+
+
+### sg release cve-check
+
+Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release.
+
+```sh
+$ sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191
+```
+
+Flags:
+
+* `--buildNumber, -b="<value>"`: The buildkite build number to check for CVEs
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--uri, -u="<value>"`: A reference url that contains approved CVEs. Often a link to a handbook page eg: https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/.

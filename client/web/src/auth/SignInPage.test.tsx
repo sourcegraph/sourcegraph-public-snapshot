@@ -1,7 +1,7 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -43,6 +43,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -105,6 +106,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: { hideSourcegraphOperatorLogin },
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -131,6 +133,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -165,6 +168,7 @@ describe('SignInPage', () => {
                                     resetPasswordEnabled: true,
                                     experimentalFeatures: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />

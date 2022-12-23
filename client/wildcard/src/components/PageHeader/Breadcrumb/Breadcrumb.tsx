@@ -2,16 +2,15 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-
 import { Icon, IconType } from '../../Icon'
+import { LinkOrSpan } from '../../Link/LinkOrSpan'
 
 import styles from './Breadcrumb.module.scss'
 
 export type BreadcrumbIcon = IconType
 export type BreadcrumbText = React.ReactNode
 
-type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
+export type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
     /** Use a valid path to render this Breadcrumb as a Link */
     to?: string
     icon?: BreadcrumbIcon

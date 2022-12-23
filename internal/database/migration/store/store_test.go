@@ -340,7 +340,8 @@ func TestWrappedUp(t *testing.T) {
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
-		}, {
+		},
+		{
 			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
@@ -388,7 +389,7 @@ func TestWrappedUp(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: relation"
 
 		definition := definition.Definition{
 			ID: 17,
@@ -521,7 +522,7 @@ func TestWrappedDown(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: syntax error at or near"
 
 		definition := definition.Definition{
 			ID: 13,
@@ -712,7 +713,7 @@ func testStore(db *sql.DB) *Store {
 }
 
 func testStoreWithName(db *sql.DB, name string) *Store {
-	return NewWithDB(db, name, NewOperations(&observation.TestContext))
+	return NewWithDB(&observation.TestContext, db, name)
 }
 
 func strPtr(v string) *string {

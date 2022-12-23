@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -747,4 +749,41 @@ func TestLocalGitCommand(t *testing.T) {
 	if command.ExitStatus() != 0 {
 		t.Fatalf("Local git command finished with non-zero status. Status: %d", command.ExitStatus())
 	}
+}
+
+func TestClient_ReposStats(t *testing.T) {
+	const gitserverAddr = "172.16.8.1:8080"
+	now := time.Now().UTC()
+	addrs := []string{gitserverAddr}
+
+	expected := fmt.Sprintf("http://%s", gitserverAddr)
+	wantStats := protocol.ReposStats{
+		UpdatedAt:   now,
+		GitDirBytes: 1337,
+	}
+
+	cli := gitserver.NewTestClient(
+		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			case expected + "/repos-stats":
+				encoded, _ := json.Marshal(wantStats)
+				body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+				return &http.Response{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
+			default:
+				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+			}
+		}),
+		newMockDB(),
+		addrs,
+	)
+
+	gotStatsMap, err := cli.ReposStats(context.Background())
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", expected, err)
+	}
+
+	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }

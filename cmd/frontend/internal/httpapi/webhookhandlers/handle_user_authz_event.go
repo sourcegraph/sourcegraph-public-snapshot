@@ -3,11 +3,13 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,8 +21,8 @@ import (
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+func handleGitHubUserAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
+	return webhooks.Handler(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -45,7 +47,7 @@ func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) fu
 		}
 
 		return scheduleUserUpdate(ctx, db, user, opts)
-	}
+	})
 }
 
 type memberGetter interface {
@@ -62,7 +64,7 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 	}
 	accs, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceType: "github",
-		AccountID:   githubUser.GetID(),
+		AccountID:   strconv.FormatInt(githubUser.GetID(), 10),
 	})
 	if err != nil {
 		return err

@@ -64,9 +64,9 @@ A list of services that can be externalized. See our docs on [Using external ser
 |                                               |                                                                                                                                                                         |
 | :-------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`codeinsights-db`](scale.md#codeinsights-db) | A PostgreSQL instance for storing code insights data.                                                                                                                   |
-| [`codeintel-db`](scale.md#codeintel-db)       | A PostgreSQL instance for storing large-volume code graph data.                                                                                          |
+| [`codeintel-db`](scale.md#codeintel-db)       | A PostgreSQL instance for storing large-volume code graph data.                                                                                                         |
 | [`jaeger`](scale.md#jeager)                   | A Jaeger instance for end-to-end distributed tracing.                                                                                                                   |
-| [`minio`](scale.md#minio)                     | A MinIO instance that serves as a local S3-compatible object storage to hold user uploads for code-intel before they can be processed.                                  |
+| [`blobstore`](scale.md#blobstore)             | A blobstore instance that serves as a local S3-compatible object storage to hold user uploads for code-intel before they can be processed.                              |
 | [`pgsql`](scale.md#pgsql)                     | A PostgreSQL instance for storing long-term information, such as user information when using Sourcegraph’s built-in authentication provider instead of an external one. |
 | [`redis-cache`](scale.md#redis-cache)         | A Redis instance for storing cache data.                                                                                                                                |
 | [`redis-store`](scale.md#redis-store)         | A Redis instance for storing short-term information such as user sessions.                                                                                              |
@@ -167,14 +167,14 @@ A PostgreSQL instance for storing large-volume code graph data.
 | :---------- | :------------------------------------------------------------------------------------------------ |
 | `Overview`  | Executes queries                                                                                  |
 | `Factors`   | Number of active users                                                                            |
-|             | Frequency with which the instance runs precise code navigation queries                          |
+|             | Frequency with which the instance runs precise code navigation queries                            |
 | `Guideline` | The default value should work for all deployments. Please refer to the note below for more detail |
 
 | Memory      |                                                                                                                           |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `Overview`  | Process LSIF indexes                                                                                                      |
 | `Factors`   | Number of active users                                                                                                    |
-|             | Frequency with which the instance runs precise code navigation queries                                                  |
+|             | Frequency with which the instance runs precise code navigation queries                                                    |
 |             | Total size of repositories indexed by Rockskip                                                                            |
 | `Guideline` | The database must be configured properly to consume resources effectively and efficiently. See note below for more detail |
 |             | The amount of memory each Postgres worker can utilize must be adjusted according to the memory assigned to the database   |
@@ -183,7 +183,7 @@ A PostgreSQL instance for storing large-volume code graph data.
 | Storage     |                                                                              |
 | :---------- | :--------------------------------------------------------------------------- |
 | `Overview`  | Stores processed upload data                                                 |
-| `Factors`   | Number and size of precise code graph data uploads                         |
+| `Factors`   | Number and size of precise code graph data uploads                           |
 |             | Indexer used                                                                 |
 | `Guideline` | The index size and processed size are currently based on indexer used        |
 |             | Requires about 4 times of the total size of repositories indexed by Rockskip |
@@ -337,10 +337,10 @@ A Jaeger instance for end-to-end distributed tracing
 
 ---
 
-### minio
+### blobstore
 
 ```
-A MinIO instance that serves as local S3-compatible object storage.
+A blobstore instance that serves as local S3-compatible object storage.
 It holds index uploads for precise code navigation before they can be processed.
 The data is for temporary storage and content will be automatically deleted once processed.
 ```
@@ -427,11 +427,11 @@ It converts LSIF upload file into Postgres data.
 | `Factors`   | Number of jobs in the upload queue                                                            |
 | `Guideline` | When there is a large queue backlog to increase the throughput at which uploads are processed |
 
-| CPU         |                                                                                                                               |
-| :---------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | This service is I/O bound: reading from MinIO/GCS/S3 and writing to pgsql/codeintel-db. Correlation has been fairly optimized |
-| `Factors`   | Number of jobs in the upload queue                                                                                            |
-| `Guideline` | Upload jobs may finish faster if the CPU is increased, but having it at a reasonable minimum should be the ideal target here  |
+| CPU         |                                                                                                                                   |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | This service is I/O bound: reading from blobstore/GCS/S3 and writing to pgsql/codeintel-db. Correlation has been fairly optimized |
+| `Factors`   | Number of jobs in the upload queue                                                                                                |
+| `Guideline` | Upload jobs may finish faster if the CPU is increased, but having it at a reasonable minimum should be the ideal target here      |
 
 | MEM         |                                                                                                                     |
 | :---------- | :------------------------------------------------------------------------------------------------------------------ |

@@ -9,7 +9,7 @@ func CodeIntelUploads() *monitoring.Dashboard {
 	return &monitoring.Dashboard{
 		Name:        "codeintel-uploads",
 		Title:       "Code Intelligence > Uploads",
-		Description: "The service at `internal/codeintel/uploads`.",
+		Description: "The service at `enterprise/internal/codeintel/uploads`.",
 		Variables: []monitoring.ContainerVariable{
 			{
 				Label: "Source",

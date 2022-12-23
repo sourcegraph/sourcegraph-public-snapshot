@@ -25,7 +25,10 @@ type SemanticColorBase = typeof SEMANTIC_COLORS[number]
 type SemanticColorVariant = `${SemanticColorBase}-${number}`
 type SemanticColor = SemanticColorBase | SemanticColorVariant
 
-const isSemanticColor = (colorPattern: RegExp) => (value: string): value is SemanticColor => colorPattern.test(value)
+const isSemanticColor =
+    (colorPattern: RegExp) =>
+    (value: string): value is SemanticColor =>
+        colorPattern.test(value)
 
 export const getSemanticColorVariables = (): SemanticColor[] => {
     const properties = getCSSCustomProperties()

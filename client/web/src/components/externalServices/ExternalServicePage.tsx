@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 import { delay, repeatWhen } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
 import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
@@ -29,7 +29,6 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 import { Duration } from '../time/Duration'
-import { Timestamp, TimestampFormat } from '../time/Timestamp'
 
 import {
     useSyncExternalService,
@@ -103,19 +102,15 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
         }
     )
 
-    const [
-        syncExternalService,
-        { error: syncExternalServiceError, loading: syncExternalServiceLoading },
-    ] = useSyncExternalService()
+    const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
+        useSyncExternalService()
 
     const [updated, setUpdated] = useState(false)
-    const [
-        updateExternalService,
-        { error: updateExternalServiceError, loading: updateExternalServiceLoading },
-    ] = useUpdateExternalService(result => {
-        setExternalService(result.updateExternalService)
-        setUpdated(true)
-    })
+    const [updateExternalService, { error: updateExternalServiceError, loading: updateExternalServiceLoading }] =
+        useUpdateExternalService(result => {
+            setExternalService(result.updateExternalService)
+            setUpdated(true)
+        })
 
     const onSubmit = useCallback(
         async (event?: React.FormEvent<HTMLFormElement>) => {
@@ -142,7 +137,6 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 setExternalService({
                     ...externalService,
                     ...input,
-                    namespace: externalService.namespace,
                 })
             }
         },
@@ -201,12 +195,12 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 <Container className="mb-3">
                     {externalServiceCategory && (
                         <div className="mb-3">
-                            <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
+                            <ExternalServiceCard {...externalServiceCategory} />
                         </div>
                     )}
                     {externalServiceCategory && (
                         <ExternalServiceForm
-                            input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
+                            input={{ ...externalService }}
                             editorActions={externalServiceCategory.editorActions}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             error={updateExternalServiceError}
@@ -300,10 +294,8 @@ interface ExternalServiceSyncJobNodeProps {
 }
 
 const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node, onUpdate }) => {
-    const [
-        cancelExternalServiceSync,
-        { error: cancelSyncJobError, loading: cancelSyncJobLoading },
-    ] = useCancelExternalServiceSync()
+    const [cancelExternalServiceSync, { error: cancelSyncJobError, loading: cancelSyncJobLoading }] =
+        useCancelExternalServiceSync()
 
     const cancelJob = useCallback(
         () =>
@@ -376,7 +368,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                         onClick={toggleIsExpanded}
                     >
-                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
                     </Button>
                 </div>
                 <div className="d-flex mr-2 justify-content-left">

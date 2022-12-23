@@ -2,6 +2,7 @@ import { of, Subscription } from 'rxjs'
 import { map, switchMap, throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
+import { SearchMode } from '@sourcegraph/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
@@ -43,6 +44,7 @@ export function createStreamSearch({
                 queryState: { query },
                 searchCaseSensitivity: options.caseSensitive,
                 searchPatternType: options.patternType,
+                searchMode: options.searchMode || SearchMode.Precise,
             },
         })
         // Focus search panel if not already focused

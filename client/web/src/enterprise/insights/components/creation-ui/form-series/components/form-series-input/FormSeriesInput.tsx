@@ -139,8 +139,8 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 message={
                     queryFieldDescription ?? (
                         <span>
-                            Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed,{' '}
-                            <Code>repo:</Code> will be added automatically.
+                            Do not include <Code>context:</Code> <Code>repo:</Code> or <Code>rev:</Code> filters; if
+                            needed, <Code>repo:</Code> will be added automatically.
                         </span>
                     )
                 }

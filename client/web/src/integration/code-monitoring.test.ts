@@ -10,7 +10,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
-import { createEditorAPI, percySnapshotWithVariants } from './utils'
+import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -27,9 +27,6 @@ describe('Code monitoring', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
-            }),
             ViewerSettings: () => ({
                 viewerSettings: {
                     __typename: 'SettingsCascade',
@@ -88,8 +85,7 @@ describe('Code monitoring', () => {
                                 },
                                 trigger: {
                                     id: 'Q29kZU1vbml0b3JUcmlnZ2VyUXVlcnk6Mg==',
-                                    query:
-                                        'type:diff repo:sourcegraph/sourcegraph after:\\"1 week ago\\" filtered  patternType:literal',
+                                    query: 'type:diff repo:sourcegraph/sourcegraph after:\\"1 week ago\\" filtered  patternType:literal',
                                 },
                             },
                         ],
@@ -128,9 +124,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
+                await isElementDisabled(driver, '.test-action-button-email'),
                 true,
                 'Expected action button to be disabled'
             )
@@ -157,9 +151,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
+                await isElementDisabled(driver, '.test-action-button-email'),
                 true,
                 'Expected action button to be disabled'
             )
@@ -177,9 +169,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
+                await isElementDisabled(driver, '.test-action-button-email'),
                 false,
                 'Expected action button to be enabled'
             )
@@ -195,9 +185,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-submit-monitor')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-submit-monitor')!.disabled
-                ),
+                await isElementDisabled(driver, '.test-submit-monitor'),
                 true,
                 'Expected submit monitor button to be disabled'
             )
@@ -219,9 +207,7 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-submit-action-email')
 
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-submit-monitor')!.disabled
-                ),
+                await isElementDisabled(driver, '.test-submit-monitor'),
                 false,
                 'Expected submit monitor button to be enabled'
             )

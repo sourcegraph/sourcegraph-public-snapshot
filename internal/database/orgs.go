@@ -37,7 +37,6 @@ type OrgStore interface {
 	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
-	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	HardDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
@@ -69,12 +68,6 @@ func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
 // returned if the user is not authenticated or is not a member of any org.
 func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
 	return o.getByUserID(ctx, userID, false)
-}
-
-// GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
-// An empty slice is returned if the user is not authenticated or is not a member of any org.
-func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	return o.getByUserID(ctx, userID, true)
 }
 
 // getByUserID returns a list of all organizations for the user. An empty slice is

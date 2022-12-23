@@ -1,4 +1,4 @@
-import { propagation, Span, ROOT_CONTEXT } from '@opentelemetry/api'
+import { Span, trace, context, Context } from '@opentelemetry/api'
 import { otperformance } from '@opentelemetry/core'
 import { PerformanceTimingNames } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
@@ -7,8 +7,6 @@ import {
     addTimeEventsToSpan,
     addSpanPerformancePaintEvents,
     performanceNavigationTimingToEntries,
-    getServerSideTraceParent,
-    ActiveSpanConfig,
     InstrumentationBaseWeb,
     SharedSpanName,
 } from '../sdk'
@@ -46,11 +44,7 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
     public static instrumentationName = '@sourcegraph/instrumentation-window-load'
     public static version = '0.1'
 
-    // The PerformanceObserver listener is executed once for the first `navigation` list update.
-    private observer = new PerformanceObserver((_list, observer) => {
-        this.collectPerformance()
-        observer.disconnect()
-    })
+    private rootContext: Context | undefined
 
     constructor() {
         super(WindowLoadInstrumentation.instrumentationName, WindowLoadInstrumentation.version)
@@ -73,20 +67,19 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
     }
 
     private collectPerformance(): void {
-        const entries = performanceNavigationTimingToEntries()
-        const rootContext = propagation.extract(ROOT_CONTEXT, { traceparent: getServerSideTraceParent() })
-
-        const rootSpanConfig: ActiveSpanConfig = {
-            name: SharedSpanName.WindowLoad,
-            startTime: entries[PerformanceTimingNames.FETCH_START],
-            context: rootContext,
-            attributes: {
-                [SemanticAttributes.HTTP_URL]: location.href,
-                [SemanticAttributes.HTTP_USER_AGENT]: navigator.userAgent,
-            },
+        if (!this.rootContext) {
+            throw new Error('The `WindowLoad` context should be created. Check `createWindowLoadContext` method.')
         }
 
-        this.createActiveSpan(rootSpanConfig, rootSpan => {
+        const rootSpan = trace.getSpan(this.rootContext)
+
+        if (!rootSpan) {
+            throw new Error('The `WindowLoad` span should be created. Check `createWindowLoadContext` method.')
+        }
+
+        const entries = performanceNavigationTimingToEntries()
+
+        context.with(this.rootContext, () => {
             addTimeEventsToSpan(rootSpan, entries, [
                 PerformanceTimingNames.FETCH_START,
                 PerformanceTimingNames.UNLOAD_EVENT_START,
@@ -114,15 +107,37 @@ export class WindowLoadInstrumentation extends InstrumentationBaseWeb {
         })
     }
 
+    public createWindowLoadContext(): void {
+        const entries = performanceNavigationTimingToEntries()
+
+        const span = this.tracer.startSpan(SharedSpanName.WindowLoad, {
+            startTime: entries[PerformanceTimingNames.FETCH_START],
+        })
+
+        this.rootContext = trace.setSpan(context.active(), span)
+    }
+
+    private onDocumentLoaded = (): void => {
+        // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd.
+        setTimeout(() => {
+            this.collectPerformance()
+        })
+    }
+
     public enable(): void {
+        // Create the WindowLoad span on instrumentation init to make it possible
+        // to link spans from other instrumentation to it, which occur before the WindowLoad event
+        // E.g., `@opentelemetry/instrumentation-fetch` spans.
+        this.createWindowLoadContext()
+
         if (window.document.readyState === 'complete') {
             return this.collectPerformance()
         }
 
-        this.observer.observe({ type: 'navigation' })
+        window.addEventListener('load', this.onDocumentLoaded)
     }
 
     public disable(): void {
-        this.observer.disconnect()
+        window.removeEventListener('load', this.onDocumentLoaded)
     }
 }

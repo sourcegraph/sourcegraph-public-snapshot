@@ -6,8 +6,8 @@ require('ts-node').register({
   project: path.resolve(__dirname, './tsconfig.json'),
 })
 
-const log = require('fancy-log')
 const gulp = require('gulp')
+const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 
 const {
@@ -36,7 +36,7 @@ const WEBPACK_STATS_OPTIONS = {
  * @param {import('webpack').Stats} stats
  */
 const logWebpackStats = stats => {
-  log(stats.toString(WEBPACK_STATS_OPTIONS))
+  signale.log(stats.toString(WEBPACK_STATS_OPTIONS))
 }
 
 async function webpack() {
@@ -55,14 +55,14 @@ async function webpack() {
 async function watchWebpack() {
   const webpackConfig = await createWebpackConfig()
   const compiler = createWebpackCompiler(webpackConfig)
-  compiler.hooks.watchRun.tap('Notify', () => log('Webpack compiling...'))
+  compiler.hooks.watchRun.tap('Notify', () => signale.log('Webpack compiling...'))
   await new Promise(() => {
     compiler.watch({ aggregateTimeout: 300 }, (error, stats) => {
       logWebpackStats(stats)
       if (error || stats.hasErrors()) {
-        log.error('Webpack compilation error')
+        signale.error('Webpack compilation error')
       } else {
-        log('Webpack compilation done')
+        signale.log('Webpack compilation done')
       }
     })
   })

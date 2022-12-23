@@ -1,7 +1,7 @@
+import { writeFileSync } from 'fs'
 import path from 'path'
 
 import * as esbuild from 'esbuild'
-import ElmPlugin from 'esbuild-plugin-elm'
 
 import {
     MONACO_LANGUAGES_AND_FEATURES,
@@ -50,16 +50,12 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
         experimentalNoticePlugin,
-        ElmPlugin({
-            cwd: path.join(ROOT_PATH, 'client/web/src/search/results/components/compute'),
-            pathToElm: path.join(ROOT_PATH, 'node_modules/.bin/elm'),
-        }),
     ],
     define: {
         ...Object.fromEntries(
             Object.entries({ ...ENVIRONMENT_CONFIG, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
                 `process.env.${key}`,
-                JSON.stringify(value),
+                JSON.stringify(value === undefined ? null : value),
             ])
         ),
         global: 'window',
@@ -69,7 +65,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.ttf': 'file',
         '.png': 'file',
     },
-    target: 'es2021',
+    target: 'esnext',
     sourcemap: true,
 
     // TODO(sqs): When https://github.com/evanw/esbuild/pull/1458 is merged (or the issue is
@@ -81,10 +77,15 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
 }
 
 export const build = async (): Promise<void> => {
-    await esbuild.build({
+    const metafile = process.env.ESBUILD_METAFILE
+    const result = await esbuild.build({
         ...BUILD_OPTIONS,
         outdir: STATIC_ASSETS_PATH,
+        metafile: Boolean(metafile),
     })
+    if (metafile) {
+        writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
+    }
     await buildMonaco(STATIC_ASSETS_PATH)
 }
 

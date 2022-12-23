@@ -3,7 +3,7 @@ package otlpadapter
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -78,7 +78,7 @@ func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mu
 					body := "tunnel disabled via site configuration"
 					return &http.Response{
 						StatusCode:    http.StatusUnprocessableEntity,
-						Body:          ioutil.NopCloser(bytes.NewBufferString(body)),
+						Body:          io.NopCloser(bytes.NewBufferString(body)),
 						ContentLength: int64(len(body)),
 						Request:       r,
 						Header:        make(http.Header, 0),
@@ -90,7 +90,7 @@ func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mu
 		ErrorLog: std.NewLogger(adapterLogger, log.LevelWarn),
 	})
 
-	adapterLogger.Info("signal adapter registered")
+	adapterLogger.Debug("signal adapter registered")
 }
 
 type roundTripper struct {

@@ -2,14 +2,26 @@ import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-const getHeaders = (): { [header: string]: string } => ({
-    ...window?.context?.xhrHeaders,
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-})
+import { WebGraphQlOperations } from '../graphql-operations'
+
+const getHeaders = (): { [header: string]: string } => {
+    const headers: { [header: string]: string } = {
+        ...window?.context?.xhrHeaders,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    }
+    const parameters = new URLSearchParams(window.location.search)
+    const trace = parameters.get('trace')
+    if (trace) {
+        headers['X-Sourcegraph-Should-Trace'] = trace
+    }
+    const feat = parameters.getAll('feat')
+    if (feat.length) {
+        headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
+    }
+    return headers
+}
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
@@ -30,6 +42,8 @@ export const requestGraphQL = <TResult, TVariables = object>(
         headers: getHeaders(),
     })
 
+type WebGraphQlOperationResults = ReturnType<WebGraphQlOperations[keyof WebGraphQlOperations]>
+
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
@@ -39,8 +53,11 @@ export const requestGraphQL = <TResult, TVariables = object>(
  *
  * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
-export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>> =>
-    requestGraphQLCommon<GQL.IQuery>({
+export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
+    request: string,
+    variables?: {}
+): Observable<GraphQLResult<TResult>> =>
+    requestGraphQLCommon<TResult>({
         request,
         variables,
         headers: getHeaders(),
@@ -55,8 +72,11 @@ export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQ
  *
  * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
-export const mutateGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>> =>
-    requestGraphQLCommon<GQL.IMutation>({
+export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
+    request: string,
+    variables?: {}
+): Observable<GraphQLResult<TResult>> =>
+    requestGraphQLCommon<TResult>({
         request,
         variables,
         headers: getHeaders(),

@@ -4,9 +4,43 @@ import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
-        // Render empty page if no page selected
-        path: '',
-        render: lazyComponent(() => import('./overview/SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
+        path: '/',
+        render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/search',
+        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/code-intel',
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/extensions',
+        render: lazyComponent(() => import('./analytics/AnalyticsExtensionsPage'), 'AnalyticsExtensionsPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/users',
+        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/code-insights',
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/batch-changes',
+        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
+        exact: true,
+    },
+    {
+        path: '/analytics/notebooks',
+        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
         exact: true,
     },
     {
@@ -36,10 +70,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/users',
         exact: true,
-        render: lazyComponent(
-            () => import('./SiteAdminAllUsersPage/FeatureFlaggedUsersPage'),
-            'FeatureFlaggedUsersPage'
-        ),
+        render: lazyComponent(() => import('./UserManagement'), 'UsersManagement'),
     },
     {
         path: '/users/new',
@@ -50,11 +81,6 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/tokens',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage'),
-    },
-    {
-        path: '/usage-statistics',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminUsageStatisticsPage'), 'SiteAdminUsageStatisticsPage'),
     },
     {
         path: '/updates',
@@ -82,6 +108,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage'),
     },
     {
+        path: '/outbound-requests',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminOutboundRequestsPage'), 'SiteAdminOutboundRequestsPage'),
+    },
+    {
         path: '/feature-flags',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminFeatureFlagsPage'), 'SiteAdminFeatureFlagsPage'),
@@ -98,5 +129,25 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/webhooks',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),
+    },
+    {
+        path: '/webhooks/create',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookCreatePage'), 'SiteAdminWebhookCreatePage'),
+    },
+    {
+        path: '/webhooks/:id',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage'),
+    },
+    {
+        path: '/slow-requests',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminSlowRequestsPage'), 'SiteAdminSlowRequestsPage'),
+    },
+    {
+        path: '/webhooks/:id/edit',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhookUpdatePage'), 'SiteAdminWebhookUpdatePage'),
     },
 ]

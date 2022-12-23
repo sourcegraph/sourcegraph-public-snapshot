@@ -16,5 +16,6 @@
     { "path": "../branded" },
     { "path": "../http-client" },
     { "path": "../common" },
+    { "path": "../observability-client" },
   ],
 }

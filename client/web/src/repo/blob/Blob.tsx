@@ -20,7 +20,6 @@ import {
 import {
     catchError,
     concatMap,
-    distinctUntilChanged,
     filter,
     first,
     map,
@@ -28,7 +27,6 @@ import {
     pairwise,
     switchMap,
     tap,
-    throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
@@ -47,7 +45,6 @@ import {
     isErrorLike,
     isDefined,
     property,
-    observeResize,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     toPositionOrRangeQueryParameter,
@@ -86,8 +83,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
-import { StatusBar } from '../../extensions/components/StatusBar'
-import { BlobStencilFields } from '../../graphql-operations'
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -109,7 +105,7 @@ interface CodeMirrorBlobProps {
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -124,14 +120,15 @@ export interface BlobProps
     'data-testid'?: string
 
     // Experimental reference panel
-    disableStatusBar: boolean
     disableDecorations: boolean
     // When navigateToLineOnAnyClick=true, the code intel popover is disabled
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables keyboard navigation across precise code intelligence
-    tokenKeyboardNavigation?: boolean
+    // Enables experimental navigation by rendering links for all interactive tokens.
+    enableLinkDrivenCodeNavigation?: boolean
+    // Enables experimental navigation by making interactive tokens selectable on click.
+    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -139,8 +136,10 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    supportsFindImplementations?: boolean
+
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -154,6 +153,12 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     lsif?: string
 
     stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
 }
 
 const domFunctions = {
@@ -185,16 +190,13 @@ const domFunctions = {
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.querySelector<HTMLTableCellElement>('th.line')
+        const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
         return parseInt(numberCell.dataset.line, 10)
     },
 }
-
-const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
-const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
 /**
  * Renders a code view augmented by Sourcegraph extensions
@@ -246,9 +248,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextBlobElement = useCallback((blobElement: HTMLElement | null) => blobElements.next(blobElement), [
-        blobElements,
-    ])
+    const nextBlobElement = useCallback(
+        (blobElement: HTMLElement | null) => blobElements.next(blobElement),
+        [blobElements]
+    )
 
     const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
     const nextOverlayElement = useCallback(
@@ -272,9 +275,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Emits on changes from URL search params
     const urlSearchParameters = useMemo(() => new ReplaySubject<URLSearchParams>(1), [])
-    const nextUrlSearchParameters = useCallback((value: URLSearchParams) => urlSearchParameters.next(value), [
-        urlSearchParameters,
-    ])
+    const nextUrlSearchParameters = useCallback(
+        (value: URLSearchParams) => urlSearchParameters.next(value),
+        [urlSearchParameters]
+    )
     useEffect(() => {
         nextUrlSearchParameters(new URLSearchParams(location.search))
     }, [nextUrlSearchParameters, location.search])
@@ -285,10 +289,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
-        location.search,
-        location.hash,
-    ])
+    const parsedHash = useMemo(
+        () => parseQueryAndHash(location.search, location.hash),
+        [location.search, location.hash]
+    )
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -349,9 +353,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
-        urlSearchParameters,
-    ])
+    const popoverParameter = useMemo(
+        () => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))),
+        [urlSearchParameters]
+    )
 
     const hoverifier = useMemo(
         () =>
@@ -695,68 +700,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
 
-    // Status bar
-    const getStatusBarItems = useCallback(
-        () =>
-            viewerUpdates.pipe(
-                switchMap(viewerData => {
-                    if (!viewerData) {
-                        return of('loading' as const)
-                    }
-
-                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
-                })
-            ),
-        [viewerUpdates]
-    )
-
-    const statusBarElements = useMemo(() => new ReplaySubject<HTMLDivElement | null>(1), [])
-    const nextStatusBarElement = useCallback(
-        (statusBarElement: HTMLDivElement | null) => statusBarElements.next(statusBarElement),
-        [statusBarElements]
-    )
-
-    // Floating status bar: add scrollbar size with "base" gaps to achieve
-    // our desired gap between the scrollbar and status bar
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([blobElements, statusBarElements]).pipe(
-                    switchMap(([blobElement, statusBarElement]) => {
-                        if (!(blobElement && statusBarElement)) {
-                            return EMPTY
-                        }
-
-                        // ResizeObserver doesn't reliably fire when navigating between documents
-                        // in Firefox, so recalculate on blobInfoChanges as well.
-                        return merge(observeResize(blobElement), blobInfoChanges).pipe(
-                            // Throttle reflow without losing final value.
-                            throttleTime(100, undefined, { leading: true, trailing: true }),
-                            map(() => {
-                                // Read
-                                const blobRightScrollbarWidth = blobElement.offsetWidth - blobElement.clientWidth
-                                const blobBottomScollbarHeight = blobElement.offsetHeight - blobElement.clientHeight
-
-                                return { blobRightScrollbarWidth, blobBottomScollbarHeight }
-                            }),
-                            distinctUntilChanged((a, b) => isEqual(a, b)),
-                            tap(({ blobRightScrollbarWidth, blobBottomScollbarHeight }) => {
-                                // Write
-                                statusBarElement.style.right = `calc(var(${STATUS_BAR_HORIZONTAL_GAP_VAR}) + ${blobRightScrollbarWidth}px)`
-                                statusBarElement.style.bottom = `calc(var(${STATUS_BAR_VERTICAL_GAP_VAR}) + ${blobBottomScollbarHeight}px)`
-
-                                // Maintain an equal gap with the left side of the container when the status bar is overflowing.
-                                statusBarElement.style.maxWidth = `calc(100% - ((2 * var(${STATUS_BAR_HORIZONTAL_GAP_VAR})) + ${blobRightScrollbarWidth}px))`
-                            })
-                        )
-                    }),
-                    mapTo(undefined),
-                    catchError(() => EMPTY)
-                ),
-            [blobElements, statusBarElements, blobInfoChanges]
-        )
-    )
-
     const pinOptions = useMemo<PinOptions>(
         () => ({
             showCloseButton: true,
@@ -885,6 +828,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
+                    history={props.history}
+                    isLightTheme={isLightTheme}
                 />
 
                 {groupedDecorations &&
@@ -905,18 +850,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         })
                         .toArray()}
             </div>
-            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
-                <StatusBar
-                    getStatusBarItems={getStatusBarItems}
-                    extensionsController={extensionsController}
-                    uri={toURIWithPath(blobInfo)}
-                    location={location}
-                    className={styles.blobStatusBarBody}
-                    statusBarRef={nextStatusBarElement}
-                    hideWhileInitializing={true}
-                    isBlobPage={true}
-                />
-            )}
         </>
     )
 }

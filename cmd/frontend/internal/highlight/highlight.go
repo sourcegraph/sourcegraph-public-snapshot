@@ -18,6 +18,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
@@ -108,6 +109,11 @@ type Params struct {
 
 	// Format defines the response format of the syntax highlighting request.
 	Format gosyntect.HighlightResponseType
+
+	// KeepFinalNewline keeps the final newline of the file content when highlighting.
+	// By default we drop the last newline to match behavior of common code hosts
+	// that don't render another line at the end of the file.
+	KeepFinalNewline bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -340,7 +346,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// TODO: It could be worthwhile to log that this language isn't supported or something
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
-	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 
@@ -392,7 +398,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// This matches other online code reading tools such as e.g. GitHub; see
 	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
 	// background.
-	code = strings.TrimSuffix(code, "\n")
+	if !p.KeepFinalNewline {
+		code = strings.TrimSuffix(code, "\n")
+	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)
@@ -426,7 +434,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
-		Tracer:           ot.GetTracer(ctx),
+		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
@@ -453,7 +461,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
-		trace.Log(otlog.Bool("timeout", true))
+		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
@@ -477,7 +485,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis.
-			trace.Log(otlog.Bool(problem, true))
+			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
 			prometheusStatus = problem
 		}
 
@@ -562,10 +570,10 @@ func generatePlainTable(code string) (*HighlightedCode, error) {
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
 
-		thLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Th, Data: atom.Th.String()}
-		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
-		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
-		tr.AppendChild(thLineNumber)
+		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
+		tr.AppendChild(tdLineNumber)
 
 		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
 		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})

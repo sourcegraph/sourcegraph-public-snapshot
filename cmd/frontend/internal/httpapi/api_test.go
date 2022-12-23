@@ -33,13 +33,16 @@ func newTest(t *testing.T) *httptestutil.Client {
 		nil,
 		rateLimiter,
 		&Handlers{
-			GitHubWebhook:             enterpriseServices.GitHubWebhook,
-			GitLabWebhook:             enterpriseServices.GitLabWebhook,
-			GitHubSyncWebhook:         enterpriseServices.GitHubSyncWebhook,
-			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
-			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
-			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
+			BatchesGitHubWebhook:          enterpriseServices.BatchesGitHubWebhook,
+			BatchesGitLabWebhook:          enterpriseServices.BatchesGitLabWebhook,
+			GitHubSyncWebhook:             enterpriseServices.ReposGithubWebhook,
+			GitLabSyncWebhook:             enterpriseServices.ReposGitLabWebhook,
+			BitbucketServerSyncWebhook:    enterpriseServices.ReposBitbucketServerWebhook,
+			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
+			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
+			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
+			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
 		},
 	))
 }

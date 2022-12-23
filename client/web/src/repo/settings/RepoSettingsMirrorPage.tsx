@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     Container,
@@ -19,10 +19,10 @@ import {
     Input,
     Text,
     Code,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     CheckMirrorRepositoryConnectionResult,
     CheckMirrorRepositoryConnectionVariables,
@@ -55,7 +55,9 @@ interface UpdateMirrorRepositoryActionContainerProps {
     history: H.History
 }
 
-const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<UpdateMirrorRepositoryActionContainerProps> = props => {
+const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
+    UpdateMirrorRepositoryActionContainerProps
+> = props => {
     const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: props.repo.id } }
@@ -139,7 +141,9 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
     history: H.History
 }
 
-const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<CheckMirrorRepositoryConnectionActionContainerProps> = props => {
+const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
+    CheckMirrorRepositoryConnectionActionContainerProps
+> = props => {
     const [checkConnection, { data, loading, error }] = useMutation<
         CheckMirrorRepositoryConnectionResult,
         CheckMirrorRepositoryConnectionVariables

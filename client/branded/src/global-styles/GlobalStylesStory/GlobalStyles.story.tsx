@@ -7,11 +7,24 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4 } from '@sourcegraph/wildcard'
+import {
+    TextArea,
+    Button,
+    Link,
+    Select,
+    Checkbox,
+    Input,
+    Text,
+    Code,
+    H1,
+    H2,
+    H3,
+    H4,
+    Form,
+} from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
-import { Form } from '../../components/Form'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
@@ -115,8 +128,7 @@ Colors.parameters = {
     design: {
         name: 'Figma',
         type: 'figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
     },
 }
 

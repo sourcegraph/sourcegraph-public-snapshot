@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"go.opentelemetry.io/otel"
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -35,12 +34,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type telemetryJob struct {
-}
+type telemetryJob struct{}
 
 func NewTelemetryJob() *telemetryJob {
 	return &telemetryJob{}
@@ -54,19 +50,19 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}
-	logger.Info("Usage telemetry export enabled - initializing background routine")
+	observationCtx.Logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(logger, db),
+		newBackgroundTelemetryJob(observationCtx.Logger, db),
 		queueSizeMetricJob(db),
 	}, nil
 }
@@ -85,7 +81,7 @@ func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
 			Help:      "Currently configured maximum throughput per second.",
 		}),
 	}
-	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
+	return goroutine.NewPeriodicGoroutine(context.Background(), "analytics.event-log-export-metrics", "event logs export backlog metrics", time.Minute*5, job)
 }
 
 type queueSizeJob struct {
@@ -116,26 +112,23 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 }
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
-	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	handlerMetrics := newHandlerMetrics(observationContext)
+	observationCtx := observation.NewContext(log.NoOp())
+	handlerMetrics := newHandlerMetrics(observationCtx)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "analytics.telemetry-export", "event logs telemetry sender", JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
 
-func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics {
+func newHandlerMetrics(observationCtx *observation.Context) *handlerMetrics {
 	redM := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"telemetry_job",
 		metrics.WithLabels("op"),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("telemetry_job.telemetry_handler.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redM,
@@ -178,8 +171,10 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
-const MaxEventsCountDefault = 1000
-const JobCooldownDuration = time.Second * 60
+const (
+	MaxEventsCountDefault = 1000
+	JobCooldownDuration   = time.Second * 60
+)
 
 func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
@@ -284,9 +279,11 @@ const (
 	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
 )
 
-var enabled, _ = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
-var topicName = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
-var projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+var (
+	enabled, _  = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
+	topicName   = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
+	projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+)
 
 func emptyIfNil(s *string) string {
 	if s == nil {

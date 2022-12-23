@@ -6,18 +6,18 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,17 +53,32 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 func createRepo(ctx context.Context, t *testing.T, db DB, repo *types.Repo) {
 	t.Helper()
 
-	op := InsertRepoOp{
-		Name:         repo.Name,
-		Private:      repo.Private,
-		ExternalRepo: repo.ExternalRepo,
-		Description:  repo.Description,
-		Fork:         repo.Fork,
-		Archived:     repo.Archived,
-	}
+	op := createInsertRepoOp(repo, 0)
 
 	if err := upsertRepo(ctx, db, op); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func createRepoWithSize(ctx context.Context, t *testing.T, db DB, repo *types.Repo, size int64) {
+	t.Helper()
+
+	op := createInsertRepoOp(repo, size)
+
+	if err := upsertRepo(ctx, db, op); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createInsertRepoOp(repo *types.Repo, size int64) InsertRepoOp {
+	return InsertRepoOp{
+		Name:              repo.Name,
+		Private:           repo.Private,
+		ExternalRepo:      repo.ExternalRepo,
+		Description:       repo.Description,
+		Fork:              repo.Fork,
+		Archived:          repo.Archived,
+		GitserverRepoSize: size,
 	}
 }
 
@@ -104,6 +119,21 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 	}
 }
 
+func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
+	t.Helper()
+	ctx := context.Background()
+	repo, err := db.Repos().GetByName(ctx, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+		uint32(repo.ID): {},
+	})
+	if err != nil {
+		t.Fatalf("failed to set indexed status of %q: %s", name, err)
+	}
+}
+
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
@@ -124,12 +154,13 @@ func reposFromRepoNames(names []types.MinimalRepo) []*types.Repo {
 
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
-	Name         api.RepoName
-	Description  string
-	Fork         bool
-	Archived     bool
-	Private      bool
-	ExternalRepo api.ExternalRepoSpec
+	Name              api.RepoName
+	Description       string
+	Fork              bool
+	Archived          bool
+	Private           bool
+	ExternalRepo      api.ExternalRepoSpec
+	GitserverRepoSize int64
 }
 
 const upsertSQL = `
@@ -178,7 +209,7 @@ INSERT INTO repo (
     $7 AS archived,
     $8 AS private
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
-)`
+) RETURNING id`
 
 // upsertRepo updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
@@ -207,7 +238,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	_, err = s.Handle().ExecContext(
+	qrc := s.Handle().QueryRowContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -219,6 +250,19 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		op.Archived,
 		op.Private,
 	)
+	err = qrc.Err()
+
+	// Set size if specified
+	if op.GitserverRepoSize > 0 {
+		var lastInsertId int64
+		err2 := qrc.Scan(&lastInsertId)
+		if err2 != nil {
+			return err2
+		}
+		_, err = s.Handle().ExecContext(ctx, `UPDATE gitserver_repos set repo_size_bytes = $1 where repo_id = $2`,
+			op.GitserverRepoSize, lastInsertId)
+
+	}
 
 	return err
 }
@@ -483,159 +527,6 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-func TestRepos_ListMinimalRepos_userID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	// Create a user
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	require.NoError(t, err)
-
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
-
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	externalServices := db.ExternalServices()
-	repos := db.Repos()
-
-	// Create a user-owned external service and its repository
-	userExternalService := types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - User-owned",
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-		NamespaceUserID: user.ID,
-	}
-	err = externalServices.Create(ctx, confGet, &userExternalService)
-	require.NoError(t, err)
-
-	userRepo := &types.Repo{
-		Name: "github.com/sourcegraph/user",
-		Sources: map[string]*types.SourceInfo{
-			userExternalService.URN(): {
-				ID:       userExternalService.URN(),
-				CloneURL: "git@github.com:sourcegraph/user.git",
-			},
-		},
-	}
-	err = repos.Create(ctx, userRepo)
-	require.NoError(t, err)
-
-	// Create a site-owned external service and its repository
-	siteExternalService := types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Site-owned",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-	}
-	err = externalServices.Create(ctx, confGet, &siteExternalService)
-	require.NoError(t, err)
-
-	siteRepo := &types.Repo{
-		Name: "github.com/sourcegraph/site",
-		Sources: map[string]*types.SourceInfo{
-			siteExternalService.URN(): {
-				ID:       siteExternalService.URN(),
-				CloneURL: "git@github.com:sourcegraph/site.git",
-			},
-		},
-	}
-	err = repos.Create(ctx, siteRepo)
-	require.NoError(t, err)
-
-	have, err := repos.ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
-	require.NoError(t, err)
-
-	want := []types.MinimalRepo{
-		{ID: userRepo.ID, Name: userRepo.Name},
-	}
-	assert.Equal(t, want, have)
-}
-
-func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	// Create an org
-	displayName := "Acme Corp"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	require.NoError(t, err)
-
-	now := time.Now()
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	externalServices := db.ExternalServices()
-	repos := db.Repos()
-
-	// Create an org-owned external service and its repository
-	orgExternalService := types.ExternalService{
-		Kind:           extsvc.KindGitHub,
-		DisplayName:    "Github - Org-owned",
-		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-		CreatedAt:      now,
-		UpdatedAt:      now,
-		NamespaceOrgID: org.ID,
-	}
-	err = externalServices.Create(ctx, confGet, &orgExternalService)
-	require.NoError(t, err)
-
-	repo := &types.Repo{
-		Name: "github.com/sourcegraph/org",
-		Sources: map[string]*types.SourceInfo{
-			orgExternalService.URN(): {
-				ID:       orgExternalService.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
-			},
-		},
-	}
-	err = repos.Create(ctx, repo)
-	require.NoError(t, err)
-
-	// Create a site-owned external service and its repository
-	siteExternalService := types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Site-owned",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-	err = externalServices.Create(ctx, confGet, &siteExternalService)
-	require.NoError(t, err)
-
-	siteRepo := &types.Repo{
-		Name: "github.com/sourcegraph/site",
-		Sources: map[string]*types.SourceInfo{
-			siteExternalService.URN(): {
-				ID:       siteExternalService.URN(),
-				CloneURL: "git@github.com:sourcegraph/site.git",
-			},
-		},
-	}
-	err = repos.Create(ctx, siteRepo)
-	require.NoError(t, err)
-
-	have, err := repos.ListMinimalRepos(ctx, ReposListOptions{OrgID: org.ID})
-	require.NoError(t, err)
-
-	want := []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
-	}
-	assert.Equal(t, want, have)
-}
-
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -736,6 +627,53 @@ func TestRepos_List_cloned(t *testing.T) {
 		// These don't make sense, but we test that both conditions are used
 		{"OnlyCloned && CloneStatus=Cloning", ReposListOptions{OnlyCloned: true, CloneStatus: types.CloneStatusCloning}, nil},
 		{"NoCloned && CloneStatus=Cloned", ReposListOptions{NoCloned: true, CloneStatus: types.CloneStatusCloned}, nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_indexed(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	var repos []*types.Repo
+	for _, data := range []struct {
+		repo    *types.Repo
+		indexed bool
+	}{
+		{repo: &types.Repo{Name: "repo-0"}, indexed: true},
+		{repo: &types.Repo{Name: "repo-1"}, indexed: false},
+	} {
+		repo := mustCreate(ctx, t, db, data.repo)
+		if data.indexed {
+			setZoektIndexed(t, db, repo.Name)
+		}
+		repos = append(repos, repo)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Default", ReposListOptions{}, repos},
+		{"OnlyIndexed", ReposListOptions{OnlyIndexed: true}, repos[0:1]},
+		{"NoIndexed", ReposListOptions{NoIndexed: true}, repos[1:2]},
+		{"NoIndexed && OnlyIndexed", ReposListOptions{NoIndexed: true, OnlyIndexed: true}, nil},
 	}
 
 	for _, test := range tests {
@@ -979,6 +917,12 @@ func TestRepos_List_query1(t *testing.T) {
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, db, repo)
 	}
+
+	abcDefRepo, err := db.Repos().GetByName(ctx, "abc/def")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		query string
 		want  []api.RepoName
@@ -987,6 +931,10 @@ func TestRepos_List_query1(t *testing.T) {
 		{"ABC/DEF", []api.RepoName{"abc/def"}},
 		{"xyz", []api.RepoName{"github.com/abc/xyz"}},
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
+
+		// Test if we match by ID
+		{strconv.Itoa(int(abcDefRepo.ID)), []api.RepoName{"abc/def"}},
+		{string(relay.MarshalID("Repository", abcDefRepo.ID)), []api.RepoName{"abc/def"}},
 	}
 	for _, test := range tests {
 		repos, err := db.Repos().List(ctx, ReposListOptions{Query: test.query})
@@ -1042,6 +990,11 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 	}
 }
 
+type repoAndSize struct {
+	repo *types.Repo
+	size int64
+}
+
 // Test sort
 func TestRepos_List_sort(t *testing.T) {
 	if testing.Short() {
@@ -1053,17 +1006,17 @@ func TestRepos_List_sort(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	createdRepos := []*types.Repo{
-		{Name: "c/def"},
-		{Name: "def/mno"},
-		{Name: "b/def"},
-		{Name: "abc/m"},
-		{Name: "abc/def"},
-		{Name: "def/jkl"},
-		{Name: "def/ghi"},
+	reposAndSizes := []*repoAndSize{
+		{repo: &types.Repo{Name: "c/def"}, size: 20},
+		{repo: &types.Repo{Name: "def/mno"}, size: 30},
+		{repo: &types.Repo{Name: "b/def"}, size: 40},
+		{repo: &types.Repo{Name: "abc/m"}, size: 50},
+		{repo: &types.Repo{Name: "abc/def"}, size: 60},
+		{repo: &types.Repo{Name: "def/jkl"}, size: 70},
+		{repo: &types.Repo{Name: "def/ghi"}, size: 10},
 	}
-	for _, repo := range createdRepos {
-		createRepo(ctx, t, db, repo)
+	for _, repoAndSize := range reposAndSizes {
+		createRepoWithSize(ctx, t, db, repoAndSize.repo, repoAndSize.size)
 	}
 	tests := []struct {
 		query   string
@@ -1099,6 +1052,14 @@ func TestRepos_List_sort(t *testing.T) {
 				Descending: true,
 			}},
 			want: []api.RepoName{"def/ghi", "def/jkl", "abc/def", "b/def", "def/mno", "c/def"},
+		},
+		{
+			query: "",
+			orderBy: RepoListOrderBy{{
+				Field:      RepoListSize,
+				Descending: false,
+			}},
+			want: []api.RepoName{"def/ghi", "c/def", "def/mno", "b/def", "abc/m", "abc/def", "def/jkl"},
 		},
 	}
 	for _, test := range tests {
@@ -2178,54 +2139,6 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	user, repo := initUserAndRepo(t, ctx, db)
-	// create a repo we don't own
-	_, otherRepo := initUserAndRepo(t, ctx, db)
-
-	// register our interest in the other user's repo
-	err := db.UserPublicRepos().SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
-	}
-
-	have, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
-
-	want = []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
-		{ID: otherRepo.ID, Name: otherRepo.Name},
-	}
-
-	have, err = db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
-}
-
 func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -2262,67 +2175,6 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	if name != "github.com/foo/bar" {
 		t.Fatalf("Want %q, got %q", "github.com/foo/bar", name)
 	}
-}
-
-func initUserAndRepo(t *testing.T, ctx context.Context, db DB) (*types.User, *types.Repo) {
-	id := rand.String(8)
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:                 id + "@example.com",
-		Username:              "u" + id,
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: user.ID,
-	})
-
-	now := time.Now()
-
-	// Create an external service
-	service := types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - Test",
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-		CreatedAt:       now,
-		UpdatedAt:       now,
-		NamespaceUserID: user.ID,
-	}
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-	err = db.ExternalServices().Create(ctx, confGet, &service)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := &types.Repo{
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "r" + id,
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com",
-		},
-		Name:        api.RepoName("github.com/sourcegraph/" + rand.String(10)),
-		Private:     false,
-		URI:         "uri",
-		Description: "description",
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		Metadata:    new(github.Repository),
-		Sources: map[string]*types.SourceInfo{
-			service.URN(): {
-				ID:       service.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
-			},
-		},
-	}
-	err = db.Repos().Create(ctx, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return user, repo
 }
 
 func TestParseIncludePattern(t *testing.T) {

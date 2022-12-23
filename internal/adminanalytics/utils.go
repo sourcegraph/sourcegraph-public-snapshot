@@ -3,13 +3,14 @@ package adminanalytics
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -106,7 +107,7 @@ func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32,
 	return ids, nil
 }
 
-var eventLogsNodesQuery = `
+const eventLogsNodesQuery = `
 SELECT
 	%s AS date,
 	COUNT(*) AS total_count,
@@ -118,7 +119,7 @@ FROM
 GROUP BY date
 `
 
-var eventLogsSummaryQuery = `
+const eventLogsSummaryQuery = `
 SELECT
 	COUNT(*) AS total_count,
 	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
@@ -137,6 +138,7 @@ func getDefaultConds(ctx context.Context, db database.DB, cache bool) ([]*sqlf.Q
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
 		sqlf.Sprintf("name NOT IN (%s)", sqlf.Join(nonActiveUserEvents, ", ")),
+		sqlf.Sprintf(fmt.Sprintf(`NOT public_argument @> '{"%s": true}'`, database.EventLogsSourcegraphOperatorKey)), // Exclude Sourcegraph Operator user accounts
 	}
 
 	sgEmpUserIds, err := getSgEmpUserIDs(ctx, db, cache)

@@ -155,7 +155,7 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                     {frequencies && (
                         <ChartContainer
                             title="Frequency of use"
-                            labelX="Days used"
+                            labelX="Minimum days used"
                             labelY={uniqueOrPercentage === 'unique' ? 'Unique users' : 'Percentage of active users'}
                             className={classNames(styles.barChart)}
                         >
@@ -169,6 +169,9 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                                     getDatumValue={datum => datum.value}
                                     getDatumColor={() => 'var(--bar-color)'}
                                     getDatumFadeColor={() => 'var(--bar-fade-color)'}
+                                    getDatumHoverValueLabel={datum =>
+                                        `${datum.value}${uniqueOrPercentage !== 'unique' ? '%' : ''}`
+                                    }
                                 />
                             )}
                         </ChartContainer>

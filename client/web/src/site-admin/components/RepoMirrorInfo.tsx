@@ -2,9 +2,9 @@ import * as React from 'react'
 
 import { mdiCloudOutline } from '@mdi/js'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 

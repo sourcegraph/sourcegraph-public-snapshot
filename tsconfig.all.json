@@ -20,6 +20,7 @@
     { "path": "client/storybook" },
     { "path": "client/search" },
     { "path": "client/search-ui" },
+    { "path": "client/testing" },
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },
@@ -27,6 +28,6 @@
     { "path": "client/vscode" },
     { "path": "client/jetbrains" },
     { "path": "client/observability-client" },
-    { "path": "client/observability-server" },
-  ],
+    { "path": "client/observability-server" }
+  ]
 }

@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -38,37 +40,44 @@ func TestFilterRepositories(t *testing.T) {
 			query string
 		}
 	}{
-		{name: "test one exclude",
+		{
+			name:         "test one exclude",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
 			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr("gitlab.com")},
 			want:         []string{"github.com/sourcegraph/sourcegraph"},
 		},
-		{name: "test one include",
+		{
+			name:         "test one include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
 			filters:      types.InsightViewFilters{IncludeRepoRegex: addrStr("gitlab.com")},
 			want:         []string{"gitlab.com/myrepo/repo"},
 		},
-		{name: "test no filters",
+		{
+			name:         "test no filters",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
 			filters:      types.InsightViewFilters{},
 			want:         []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
 		},
-		{name: "test exclude and include",
+		{
+			name:         "test exclude and include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr("github.*"), IncludeRepoRegex: addrStr("myrepo")},
 			want:         []string{"gitlab.com/myrepo/repo"},
 		},
-		{name: "test exclude all",
+		{
+			name:         "test exclude all",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr(".*")},
 			want:         []string{},
 		},
-		{name: "test include all",
+		{
+			name:         "test include all",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{IncludeRepoRegex: addrStr(".*")},
 			want:         []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 		},
-		{name: "test context include",
+		{
+			name:         "test context include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
 			searchContexts: []struct {
@@ -79,7 +88,8 @@ func TestFilterRepositories(t *testing.T) {
 			},
 			want: []string{"github.com/sourcegraph/sourcegraph"},
 		},
-		{name: "test context exclude",
+		{
+			name:         "test context exclude",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
 			searchContexts: []struct {
@@ -90,7 +100,8 @@ func TestFilterRepositories(t *testing.T) {
 			},
 			want: []string{"gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 		},
-		{name: "test context exclude include",
+		{
+			name:         "test context exclude include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
 			searchContexts: []struct {
@@ -101,7 +112,8 @@ func TestFilterRepositories(t *testing.T) {
 			},
 			want: []string{"gitlab.com/myrepo/repo"},
 		},
-		{name: "test context exclude regex include",
+		{
+			name:         "test context exclude regex include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
 			searchContexts: []struct {
@@ -112,7 +124,8 @@ func TestFilterRepositories(t *testing.T) {
 			},
 			want: []string{"gitlab.com/myrepo/repo"},
 		},
-		{name: "test context include regex exclude",
+		{
+			name:         "test context include regex exclude",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, ExcludeRepoRegex: addrStr("^github.*")},
 			searchContexts: []struct {
@@ -123,7 +136,8 @@ func TestFilterRepositories(t *testing.T) {
 			},
 			want: []string{"gitlab.com/myrepo/repo"},
 		},
-		{name: "test context and regex include",
+		{
+			name:         "test context and regex include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
 			searchContexts: []struct {
@@ -170,7 +184,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		permStore := store.NewInsightPermissionStore(postgres)
 		clock := timeutil.Now
@@ -223,7 +237,6 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 }
 
 func TestInsightViewDashboardConnections(t *testing.T) {
-
 	// Test setup
 	// Create 1 insight
 	// Create 3 dashboards with insight
@@ -236,7 +249,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgresDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 	base := baseInsightResolver{
 		insightStore:   store.NewInsightStore(insightsDB),
@@ -273,7 +286,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 
 	global := true
-	globalGrants := []store.DashboardGrant{{nil, nil, &global}}
+	globalGrants := []store.DashboardGrant{{UserID: nil, OrgID: nil, Global: &global}}
 	dashboard1 := types.Dashboard{ID: 1, Title: "dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
@@ -286,7 +299,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 
 	userId := 1
-	privateCurrentUserGrants := []store.DashboardGrant{{&userId, nil, nil}}
+	privateCurrentUserGrants := []store.DashboardGrant{{UserID: &userId, OrgID: nil, Global: nil}}
 	dashboard2 := types.Dashboard{ID: 2, Title: "users private dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
@@ -297,7 +310,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	notUsersId := 2
-	privateDifferentUserGrants := []store.DashboardGrant{{&notUsersId, nil, nil}}
+	privateDifferentUserGrants := []store.DashboardGrant{{UserID: &notUsersId, OrgID: nil, Global: nil}}
 	dashboard3 := types.Dashboard{ID: 3, Title: "different users private dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
@@ -411,7 +424,8 @@ func TestRemoveClosePoints(t *testing.T) {
 		series types.InsightViewSeries
 		want   []store.SeriesPoint
 	}{
-		{name: "test hour",
+		{
+			name:   "test hour",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Hour), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPoint(4, 15, 2, 0),
@@ -427,7 +441,8 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPoint(4, 15, 5, 0),
 			},
 		},
-		{name: "test day",
+		{
+			name:   "test day",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Day), SampleIntervalValue: 2},
 			points: []store.SeriesPoint{
 				getPoint(4, 3, 0, 0),
@@ -445,7 +460,8 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPoint(4, 11, 1, 0),
 			},
 		},
-		{name: "test week",
+		{
+			name:   "test week",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Week), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPoint(4, 1, 0, 0),
@@ -463,7 +479,8 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPoint(4, 30, 1, 0),
 			},
 		},
-		{name: "test month",
+		{
+			name:   "test month",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPoint(4, 1, 0, 0),
@@ -481,7 +498,8 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPoint(7, 15, 1, 0),
 			},
 		},
-		{name: "test year",
+		{
+			name:   "test year",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Year), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPointWithYear(2018, 0),
@@ -499,12 +517,14 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPointWithYear(2022, 0),
 			},
 		},
-		{name: "test no points",
+		{
+			name:   "test no points",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Week), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{},
 			want:   []store.SeriesPoint{},
 		},
-		{name: "test no close points, no snapshots",
+		{
+			name:   "test no close points, no snapshots",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPoint(4, 1, 0, 0),
@@ -519,7 +539,8 @@ func TestRemoveClosePoints(t *testing.T) {
 				getPoint(7, 1, 0, 0),
 			},
 		},
-		{name: "test no close points, one snapshot",
+		{
+			name:   "test no close points, one snapshot",
 			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
 			points: []store.SeriesPoint{
 				getPoint(4, 1, 0, 0),
@@ -545,4 +566,66 @@ func TestRemoveClosePoints(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInsightRepoScopeResolver(t *testing.T) {
+
+	makeSeries := func(repoList []string, search string) types.InsightViewSeries {
+		var repoSearch *string = &search
+		if search == "" {
+			repoSearch = nil
+		}
+		return types.InsightViewSeries{
+			SeriesID:            "asdf",
+			Query:               "asdf",
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
+			Repositories:        repoList,
+			RepositoryCriteria:  repoSearch,
+		}
+
+	}
+
+	type tcResult struct {
+		SearchScoped bool
+		RepoList     []string
+		Search       string
+		AllRepos     bool
+	}
+
+	testCases := []struct {
+		series types.InsightViewSeries
+		want   autogold.Value
+	}{
+		{series: makeSeries(nil, "repo:a"), want: autogold.Want("search based", `{"SearchScoped":true,"RepoList":null,"Search":"repo:a","AllRepos":false}`)},
+		{series: makeSeries([]string{"repoA", "repoB"}, ""), want: autogold.Want("named list", `{"SearchScoped":false,"RepoList":["repoA","repoB"],"Search":"","AllRepos":false}`)},
+		{series: makeSeries(nil, ""), want: autogold.Want("all repos", `{"SearchScoped":true,"RepoList":null,"Search":"","AllRepos":true}`)},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			unionResolver := insightRepositoryDefinitionResolver{series: tc.series}
+			repoScopedResolver, ok := unionResolver.ToInsightRepositoryScope()
+			var result tcResult
+			if ok == true {
+				result.SearchScoped = false
+				repos, _ := repoScopedResolver.Repositories(context.Background())
+				result.RepoList = repos
+			}
+
+			searchScopedResolver, ok2 := unionResolver.ToRepositorySearchScope()
+			if ok && ok2 {
+				t.Fail()
+			}
+			if ok2 {
+				result.SearchScoped = true
+				result.Search = searchScopedResolver.Search()
+				result.AllRepos = searchScopedResolver.AllRepositories()
+			}
+			resultStr, _ := json.Marshal(result)
+			tc.want.Equal(t, string(resultStr))
+		})
+	}
+
 }

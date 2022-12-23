@@ -195,28 +195,9 @@ const TooltipTarget = forwardRef<any, TooltipTargetProps>(function TooltipTarget
     const { 'aria-describedby': ariaDescribedby, children } = props
 
     const mergedRef = useMergeRefs([forwardedRef, (children as any).ref])
-    let trigger: React.ReactElement
 
-    // Disabled buttons come through with a disabled prop and must be wrapped with a
-    // span in order for the Tooltip to work properly
-    // Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (children.props?.disabled) {
-        trigger = (
-            <span className={styles.tooltipWrapper}>
-                <div className={styles.tooltipTriggerContainer}>
-                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-                    <div className={styles.tooltipTriggerDisabledOverlay} tabIndex={0} />
-                    {children}
-                </div>
-            </span>
-        )
-    } else {
-        trigger = children
-    }
-
-    if (React.isValidElement(trigger)) {
-        return React.cloneElement(trigger as ReactElement, {
+    if (React.isValidElement(children)) {
+        return React.cloneElement(children as ReactElement, {
             'aria-describedby': ariaDescribedby,
             ref: mergedRef,
         })

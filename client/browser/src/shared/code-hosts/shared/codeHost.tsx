@@ -885,13 +885,14 @@ export async function handleCodeHost({
 
     if (isGithubCodeHost(codeHost)) {
         // TODO: add tests in codeHost.test.tsx
-        const { searchEnhancement, enhanceSearchPage } = codeHost
+        const { searchEnhancement } = codeHost
         if (searchEnhancement) {
             subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
         }
-        if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL))
-        }
+        // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+        // if (codeHost.enhanceSearchPage) {
+        //     subscriptions.add(enhanceSearchPage(sourcegraphURL))
+        // }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {

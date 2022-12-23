@@ -18,6 +18,7 @@ export const currentAuthStateQuery = gql`
             settingsURL
             organizations {
                 nodes {
+                    __typename
                     id
                     name
                     displayName
@@ -35,6 +36,10 @@ export const currentAuthStateQuery = gql`
             emails {
                 email
                 verified
+            }
+            latestSettings {
+                id
+                contents
             }
         }
     }

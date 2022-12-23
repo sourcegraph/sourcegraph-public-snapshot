@@ -50,7 +50,7 @@ type UsersStatsNumberRange struct {
 	Lte *float64
 }
 
-func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+func (d *UsersStatsNumberRange) toSQLConds(column string) []*sqlf.Query {
 	var conds []*sqlf.Query
 
 	if d.Lte != nil {
@@ -60,7 +60,7 @@ func (d *UsersStatsNumberRange) toSQLConds(column string) ([]*sqlf.Query, error)
 		conds = append(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
 	}
 
-	return conds, nil
+	return conds
 }
 
 type UsersStatsFilters struct {
@@ -118,10 +118,7 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 	}
 
 	if s.Filters.EventsCount != nil {
-		eventsCountConds, err := s.Filters.EventsCount.toSQLConds("events_count")
-		if err != nil {
-			return nil, err
-		}
+		eventsCountConds := s.Filters.EventsCount.toSQLConds("events_count")
 		conds = append(conds, eventsCountConds...)
 		if s.Filters.EventsCount.Lte != nil {
 			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
@@ -130,6 +127,16 @@ func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
 			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
 		}
 	}
+
+	// Exclude Sourcegraph Operator user accounts
+	conds = append(conds, sqlf.Sprintf(`
+NOT EXISTS (
+	SELECT FROM user_external_accounts
+	WHERE
+		service_type = 'sourcegraph-operator'
+	AND user_id = aggregated_stats.id
+)
+`))
 	return conds, nil
 }
 

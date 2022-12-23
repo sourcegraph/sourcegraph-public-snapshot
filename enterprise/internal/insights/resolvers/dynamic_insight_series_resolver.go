@@ -29,22 +29,21 @@ func (d *dynamicInsightSeriesResolver) Label() string {
 
 func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
-	for _, point := range d.generated.Points {
-		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
+	for i := 0; i < len(d.generated.Points); i++ {
+		point := store.SeriesPoint{
 			SeriesID: d.generated.SeriesId,
-			Time:     point.Time,
-			Value:    float64(point.Count),
-		}})
+			Time:     d.generated.Points[i].Time,
+			Value:    float64(d.generated.Points[i].Count),
+		}
+		// This resolver is no longer used and about to be removed
+		resolvers = append(resolvers, &insightsDataPointResolver{p: point, diffInfo: nil})
 	}
+
 	return resolvers, nil
 }
 
 func (d *dynamicInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
 	return &emptyInsightStatusResolver{}, nil
-}
-
-func (d *dynamicInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	return nil, nil
 }
 
 type emptyInsightStatusResolver struct{}
@@ -75,4 +74,8 @@ func (e emptyInsightStatusResolver) IsLoadingData(ctx context.Context) (*bool, e
 func (e emptyInsightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlutil.DateTime {
 	current := time.Now().AddDate(-1, 0, 0)
 	return gqlutil.DateTimeOrNil(&current)
+}
+
+func (e emptyInsightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	return nil, nil
 }

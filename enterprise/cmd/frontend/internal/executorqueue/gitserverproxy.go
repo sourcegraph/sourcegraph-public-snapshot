@@ -6,8 +6,11 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"runtime"
 
 	"github.com/gorilla/mux"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -20,7 +23,7 @@ type GitserverClient interface {
 
 // gitserverProxy creates an HTTP handler that will proxy requests to the correct
 // gitserver at the given gitPath.
-func gitserverProxy(gitserverClient GitserverClient, gitPath string) http.Handler {
+func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		repo := getRepoName(r)
 
@@ -42,6 +45,19 @@ func gitserverProxy(gitserverClient GitserverClient, gitPath string) http.Handle
 			},
 			Transport: httpcli.InternalClient.Transport,
 		}
+		defer func() {
+			e := recover()
+			if e != nil {
+				if e == http.ErrAbortHandler {
+					logger.Warn("failed to read gitserver response")
+				} else {
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					logger.Error("reverseproxy: panic reading response", log.String("stack", string(buf)))
+				}
+			}
+		}()
 		p.ServeHTTP(w, r)
 	})
 }

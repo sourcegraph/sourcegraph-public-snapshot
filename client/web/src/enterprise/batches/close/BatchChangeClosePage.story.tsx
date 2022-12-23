@@ -3,8 +3,6 @@ import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-
 import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
@@ -94,6 +92,11 @@ const batchChangeDefaults: BatchChangeFields = {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 0,
             nodes: [],
+        },
+        files: null,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
         },
     },
     batchSpecs: {
@@ -276,9 +279,6 @@ export const Overview: Story = args => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -317,9 +317,6 @@ export const NoOpenChangesets: Story = () => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>

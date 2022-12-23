@@ -69,11 +69,6 @@ type InsightsSeries {
     The status of this series of data, e.g. progress collecting it.
     """
     status: InsightSeriesStatus!
-
-    """
-    Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
-    """
-    dirtyMetadata: [InsightDirtyQueryMetadata!]!
 }
 
 """
@@ -89,26 +84,11 @@ type InsightDataPoint {
     The value of the insight at this point in time.
     """
     value: Float!
-}
-
-"""
-An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
-"""
-type InsightDirtyQueryMetadata {
-    """
-    The number of dirty queries for this data point and reason combination.
-    """
-    count: Int!
 
     """
-    The reason the query was marked dirty.
+    A search query that will show the diff between this point and the previous point
     """
-    reason: String!
-
-    """
-    The time in the data series that is marked dirty.
-    """
-    time: DateTime!
+    diffQuery: String
 }
 
 """
@@ -172,6 +152,46 @@ type InsightSeriesStatus {
     Indicates if the series is currently loading additional data
     """
     isLoadingData: Boolean
+
+    """
+    Data points that are flagged terminally incomplete for this series.
+    """
+    incompleteDatapoints: [IncompleteDatapointAlert!]!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+interface IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+type TimeoutDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time. Only returns alerts that do not satisfy a specific implementation.
+"""
+type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+
+    """
+    A message describing why the datapoint was marked incomplete.
+    """
+    reason: String!
 }
 
 extend type Query {
@@ -341,7 +361,7 @@ type InsightViewConnection {
     """
     A list of insights.
     """
-    nodes: [InsightView!]!
+    nodes: [InsightView]!
 
     """
     Pagination information.
@@ -446,6 +466,21 @@ extend type Query {
     Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
     """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+
+    """
+    Retrieve information about an insight view and its status. Restricted to admins only.
+    """
+    insightViewDebug(id: ID!): InsightViewDebug
+}
+
+"""
+Debugging information related to an InsightView
+"""
+type InsightViewDebug {
+    """
+    A JSON dump of debug information for series on the insight view
+    """
+    raw: [String!]!
 }
 
 """
@@ -543,6 +578,11 @@ input RepositoryScopeInput {
     The list of repositories included in this scope.
     """
     repositories: [String!]!
+
+    """
+    A search query to select repositories for this scope.
+    """
+    repositoryCriteria: String
 }
 
 """
@@ -563,6 +603,16 @@ input LineChartSearchInsightInput {
     The list of data series to create (or add) to this insight.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The scope of repositories for the insight. If provided here it will apply to all series unless overwritten.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The scope of time for the insight view. If provided here it will apply to all series unless overwritten.
+    """
+    timeScope: TimeScopeInput
 
     """
     The options for this line chart.
@@ -588,6 +638,16 @@ input UpdateLineChartSearchInsightInput {
     The complete list of data series on this line chart. Note: excluding a data series will remove it.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The scope of repositories for the insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    repositoryScope: RepositoryScopeInput
+
+    """
+    The time scope for this insight, this scope will apply to all dataSeries unless another scope is provided by a series.
+    """
+    timeScope: TimeScopeInput
 
     """
     The presentation options for this line chart.
@@ -723,13 +783,16 @@ input LineChartSearchInsightDataSeriesInput {
     """
     options: LineChartDataSeriesOptionsInput!
     """
-    The scope of repositories.
+    The scope of repositories. The repository scope can be provided at the LineChartSearchInsightInput level.
+    If scope is provided here will take priority of any other scope provide at a higher level in the input.
     """
-    repositoryScope: RepositoryScopeInput!
+    repositoryScope: RepositoryScopeInput
+
     """
-    The scope of time.
+    The scope of time. This time scope can also be provided at the LineChartSearchInsightInput level.
+    If the scope is provided here it will take priority over any other scope provided at a higher level in the input.
     """
-    timeScope: TimeScopeInput!
+    timeScope: TimeScopeInput
 
     """
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
@@ -863,6 +926,11 @@ extend type Mutation {
     Delete an insight view given the graphql ID.
     """
     deleteInsightView(id: ID!): EmptyResponse!
+
+    """
+    Create a new insight view from an existing view.
+    """
+    saveInsightAsNewView(input: SaveInsightAsNewViewInput!): InsightViewPayload!
 }
 
 """
@@ -928,6 +996,16 @@ type InsightView implements Node {
     The total number of series on this insight.
     """
     seriesCount: Int
+
+    """
+    The Repositories the dataSeries on this insight will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
 }
 
 """
@@ -982,9 +1060,14 @@ type SearchInsightDataSeriesDefinition {
     query: String!
 
     """
-    A scope of repositories defined for this insight.
+    A scope of repositories defined for this series. Series with repository scopes defined by a search query are not identifiable via this field
     """
-    repositoryScope: InsightRepositoryScope!
+    repositoryScope: InsightRepositoryScope! @deprecated(reason: "use repositoryDefinition instead")
+
+    """
+    A definition of Repositories this series will operate over.
+    """
+    repositoryDefinition: InsightRepositoryDefinition!
 
     """
     The scope of time for which the insight data is generated.
@@ -1007,6 +1090,25 @@ type SearchInsightDataSeriesDefinition {
     """
     groupBy: GroupByField
 }
+
+"""
+Describes a scope of repositories, this type is used for both the search based scopes and all repositories
+"""
+type RepositorySearchScope {
+    """
+    The user provided search used to generate the list of repositories the insight runs over.
+    """
+    search: String!
+    """
+    Indicates if this search scope represents all repositories
+    """
+    allRepositories: Boolean!
+}
+
+"""
+Defines how the scope of repositories was generated
+"""
+union InsightRepositoryDefinition = RepositorySearchScope | InsightRepositoryScope
 
 """
 View presentation for a line chart insight
@@ -1167,4 +1269,72 @@ type SearchInsightLivePreviewSeries {
     The label for the data series.
     """
     label: String!
+}
+
+"""
+Input for saving a new view on an insight.
+"""
+input SaveInsightAsNewViewInput {
+    """
+    The insight view ID we are creating a new view from.
+    """
+    insightViewId: ID!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard ID to associate this insight with once created.
+    """
+    dashboard: ID
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
+}
+
+extend type Query {
+    """
+    Validates a query for determining insight scope and returns the number of repositories it matches for the caller.
+    """
+    validateScopedInsightQuery(query: String!): ScopedInsightQueryPayload!
+    """
+    Returns the number of repositories matched given a valid query.
+    """
+    previewRepositoriesFromQuery(query: String!): RepositoryPreviewPayload!
+}
+
+"""
+Information about scope query validity
+"""
+type ScopedInsightQueryPayload {
+    """
+    The original query.
+    """
+    query: String!
+    """
+    Whether the query is valid.
+    """
+    isValid: Boolean!
+    """
+    The reason why the query is invalid.
+    """
+    invalidReason: String
+}
+
+"""
+Information about the number of repositories matched from a query
+"""
+type RepositoryPreviewPayload {
+    """
+    The query used to find number of repository matches.
+    """
+    query: String!
+    """
+    The number of repositories matched.
+    """
+    numberOfRepositories: Int
 }

@@ -18,7 +18,7 @@
       "group": "Search"
     },
     "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "REMOVED.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
@@ -519,6 +519,24 @@
             }
           }
         },
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
+            }
+          }
+        },
         "enableGithubInternalRepoVisibility": {
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
@@ -560,7 +578,8 @@
         "insightsBackfillerV2": {
           "description": "Use v2 of the insights backfiller which backfills a series at a time.",
           "type": "boolean",
-          "default": false
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "examples": [
@@ -894,6 +913,30 @@
       "default": 3,
       "group": "External services"
     },
+    "repoPurgeWorker": {
+      "description": "Configuration for repository purge worker.",
+      "type": "object",
+      "group": "External services",
+      "additionalProperties": false,
+      "default": {
+        "interval": 15,
+        "deletedTTL": 60
+      },
+      "properties": {
+        "intervalMinutes": {
+          "type": "integer",
+          "description": "Interval in minutes at which to run purge jobs. Set to 0 to disable.",
+          "default": "15",
+          "minimum": 0
+        },
+        "deletedTTLMinutes": {
+          "type": "integer",
+          "description": "Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions",
+          "default": "60",
+          "minimum": 0
+        }
+      }
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -973,6 +1016,11 @@
     },
     "authz.refreshInterval": {
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
+    },
+    "authz.syncJobsRecordsTTL": {
+      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
       "type": "integer",
       "default": 5
     },
@@ -1113,6 +1161,33 @@
         "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
+        },
+        "additionalHeaders": {
+          "description": "Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.",
+          "type": "array",
+          "items": {
+            "title": "Header",
+            "type": "object",
+            "required": ["key", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "sensitive": {
+                "type": "boolean"
+              }
+            },
+            "examples": [
+              {
+                "key": "",
+                "value": ""
+              }
+            ]
+          }
         }
       },
       "default": null,
@@ -1134,6 +1209,21 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "email.templates": {
+      "description": "Configurable templates for some email types sent by Sourcegraph.",
+      "type": "object",
+      "properties": {
+        "resetPassword": {
+          "description": "Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        },
+        "setPassword": {
+          "description": "Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        }
+      },
+      "group": "Email"
+    },
     "executors.frontendURL": {
       "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
       "type": "string",
@@ -1146,6 +1236,16 @@
     },
     "executors.srcCLIImageTag": {
       "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
       "type": "string",
       "examples": ["4.1.0"]
     },
@@ -1393,13 +1493,19 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
+    },
+    "observability.captureSlowGraphQLRequestsLimit": {
+      "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [2000]
     },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
@@ -1411,7 +1517,7 @@
       "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [6]
     },
     "insights.historical.frameLength": {
       "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
@@ -1437,9 +1543,16 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
@@ -1488,6 +1601,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 90,
+      "minimum": 0,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -1614,14 +1735,13 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "sourcegraph-operator"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
           }
         },
         "oneOf": [
           { "$ref": "#/definitions/BuiltinAuthProvider" },
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/SourcegraphOperatorAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" }
@@ -1822,6 +1942,20 @@
         }
       }
     },
+    "outboundRequestLogLimit": {
+      "description": "The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 50,
+      "maximum": 500
+    },
+    "redactOutboundRequestHeaders": {
+      "description": "Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
+    },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
       "type": "object",
@@ -1912,39 +2046,6 @@
           "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
-        }
-      }
-    },
-    "SourcegraphOperatorAuthProvider": {
-      "description": "Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "issuer", "clientID", "clientSecret"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "sourcegraph-operator"
-        },
-        "issuer": {
-          "description": "The URL of the Sourcegraph Operator issuer.",
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https?://"
-        },
-        "clientID": {
-          "description": "The client ID of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "clientSecret": {
-          "description": "The client secret of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "lifecycleDuration": {
-          "description": "The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.",
-          "type": "integer",
-          "default": 60
         }
       }
     },
@@ -2422,6 +2523,24 @@
         "type": {
           "type": "string",
           "const": "noop"
+        }
+      }
+    },
+    "EmailTemplate": {
+      "type": "object",
+      "required": ["subject", "text", "html"],
+      "properties": {
+        "subject": {
+          "description": "Template for email subject header",
+          "type": "string"
+        },
+        "text": {
+          "description": "Template for plain-text body",
+          "type": "string"
+        },
+        "html": {
+          "description": "Template for HTML body",
+          "type": "string"
         }
       }
     }

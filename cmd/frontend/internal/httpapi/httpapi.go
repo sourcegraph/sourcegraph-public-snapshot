@@ -28,7 +28,6 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -40,16 +39,28 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook                   webhooks.Registerer
-	GitHubSyncWebhook               webhooks.Registerer
-	GitLabWebhook                   webhooks.RegistererHandler
-	BitbucketServerWebhook          http.Handler
-	BitbucketCloudWebhook           http.Handler
+	// Repo sync
+	GitHubSyncWebhook          webhooks.Registerer
+	GitLabSyncWebhook          webhooks.Registerer
+	BitbucketServerSyncWebhook webhooks.Registerer
+
+	// Permissions
+	PermissionsGitHubWebhook webhooks.Registerer
+
+	// Batch changes
+	BatchesGitHubWebhook            webhooks.Registerer
+	BatchesGitLabWebhook            webhooks.RegistererHandler
+	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
+	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
+
+	// Code intel
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+
+	// Compute
+	NewComputeStreamHandler enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -81,36 +92,47 @@ func NewHandler(
 	})
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
+	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield())))
 	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	webhookMiddleware := webhooks.NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	wh := webhooks.WebhookRouter{
-		DB: db,
+	wh := webhooks.Router{
+		Logger: logger.Scoped("webhooks.Router", "handling webhook requests and dispatching them to handlers"),
+		DB:     db,
 	}
-	webhookhandlers.Init(db, &wh)
-	handlers.GitHubWebhook.Register(&wh)
-	handlers.GitLabWebhook.Register(&wh)
+	webhookhandlers.Init(&wh)
+	handlers.BatchesGitHubWebhook.Register(&wh)
+	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BitbucketServerSyncWebhook.Register(&wh)
+	handlers.BatchesBitbucketServerWebhook.Register(&wh)
+	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.GitLabSyncWebhook.Register(&wh)
+	handlers.PermissionsGitHubWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
-	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
+	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
 
+	// New UUID based webhook handler
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
+
+	// Old, soon to be deprecated, webhook handlers
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
-	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
+	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
+
 	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
 	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
 	if envvar.SourcegraphDotComMode() {
@@ -123,6 +145,9 @@ func NewHandler(
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+
+	gsClient := gitserver.NewClient(db)
+	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
@@ -149,9 +174,9 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices internalcodeintel.Services,
 ) http.Handler {
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
 	if m == nil {
@@ -178,9 +203,8 @@ func NewInternalHandler(
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers: search.Indexers(),
-		Ranking:  codeIntelServices.RankingService,
-
+		Indexers:               search.Indexers(),
+		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
@@ -204,6 +228,8 @@ func NewInternalHandler(
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Get(apirouter.SCIPUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -284,3 +310,7 @@ func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *
 		}
 	}
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

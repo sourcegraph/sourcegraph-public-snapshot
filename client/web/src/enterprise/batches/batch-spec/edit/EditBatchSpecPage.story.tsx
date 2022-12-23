@@ -2,13 +2,11 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import {
@@ -37,20 +35,24 @@ const config: Meta = {
 
 export default config
 
-const FIXTURE_ORG: SettingsOrgSubject = {
+const FIXTURE_ORG: OrgSettingFields = {
     __typename: 'Org',
     name: 'sourcegraph',
     displayName: 'Sourcegraph',
     id: 'a',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
-const FIXTURE_USER: SettingsUserSubject = {
+const FIXTURE_USER: UserSettingFields = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
 const SETTINGS_CASCADE = {
@@ -86,6 +88,23 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
+const MOCK_ORGANIZATION = {
+    __typename: 'Org',
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
+}
+
+const mockAuthenticatedUser = {
+    __typename: 'User',
+    username: 'alice',
+    displayName: 'alice',
+    id: 'b',
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
+
 export const EditFirstTime: Story = () => (
     <WebStory>
         {props => (
@@ -97,6 +116,7 @@ export const EditFirstTime: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -144,6 +164,7 @@ export const EditLatestBatchSpec: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -176,6 +197,7 @@ export const BatchChangeNotFound: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -208,6 +230,7 @@ export const InvalidBatchSpec: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}
@@ -240,6 +263,7 @@ export const ExecutorsNotActive: Story = () => (
                         namespace: 'test1234',
                     }}
                     settingsCascade={SETTINGS_CASCADE}
+                    authenticatedUser={mockAuthenticatedUser}
                 />
             </MockedTestProvider>
         )}

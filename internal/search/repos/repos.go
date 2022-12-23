@@ -11,10 +11,10 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -43,13 +44,30 @@ type Resolved struct {
 
 	MissingRepoRevs []RepoRevSpecs
 
+	// BackendsMissing is the number of search backends that failed to be
+	// searched. This is due to it being unreachable. The most common reason
+	// for this is during zoekt rollout.
+	BackendsMissing int
+
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
 	Next types.MultiCursor
 }
 
+// MaybeSendStats is a convenience which will stream a stats event if r
+// contains any.
+func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
+	if r.BackendsMissing > 0 {
+		stream.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{
+				BackendsMissing: r.BackendsMissing,
+			},
+		})
+	}
+}
+
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), len(r.MissingRepoRevs), r.BackendsMissing)
 }
 
 func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
@@ -87,11 +105,12 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
+			// For missing repo revs, just collect the error and keep paging
+			if !errors.Is(err, &MissingRepoRevsError{}) {
 				break
 			}
 		}
-		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
+		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
 
 		if err = handle(&page); err != nil {
 			errs = errors.Append(errs, err)
@@ -137,6 +156,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 			Key:     filter.Key,
 			Value:   filter.Value,
 			Negated: filter.Negated,
+			KeyOnly: filter.KeyOnly,
 		})
 	}
 
@@ -175,7 +195,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		options.SearchContextID = searchContext.ID
 		options.UserID = searchContext.NamespaceUserID
 		options.OrgID = searchContext.NamespaceOrgID
-		options.IncludeUserPublicRepos = searchContext.ID == 0 && searchContext.NamespaceUserID != 0
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
@@ -254,7 +273,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	tr.LazyPrintf("completed rev filtering")
 
 	tr.LazyPrintf("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
 	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "filter has file content")
@@ -268,6 +287,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
 		MissingRepoRevs: missingRepoRevs,
+		BackendsMissing: backendsMissing,
 		Next:            next,
 	}, err
 }
@@ -468,7 +488,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			g.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev, authz.DefaultSubRepoPermsChecker); err != nil {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -519,10 +539,11 @@ func (r *Resolver) filterRepoHasFileContent(
 ) (
 	_ []*search.RepositoryRevisions,
 	_ []RepoRevSpecs,
+	_ int,
 	err error,
 ) {
 	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
-	tr.LogFields(otlog.Int("inputRevCount", len(repoRevs)))
+	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -530,7 +551,7 @@ func (r *Resolver) filterRepoHasFileContent(
 
 	// Early return if there are no filters
 	if len(op.HasFileContent) == 0 {
-		return repoRevs, nil, nil
+		return repoRevs, nil, 0, nil
 	}
 
 	indexed, unindexed, err := searchzoekt.PartitionRepos(
@@ -543,7 +564,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		false,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
@@ -571,6 +592,15 @@ func (r *Resolver) filterRepoHasFileContent(
 			}
 			repoRev.Revs = append(repoRev.Revs, rev)
 			filtered[id] = repoRev
+		}
+		backendsMissing    = 0
+		addBackendsMissing = func(c int) {
+			if c == 0 {
+				return
+			}
+			mu.Lock()
+			backendsMissing += c
+			mu.Unlock()
 		}
 	)
 
@@ -602,8 +632,10 @@ func (r *Resolver) filterRepoHasFileContent(
 					return err
 				}
 
+				addBackendsMissing(repos.Crashes)
+
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.Minimal {
+				for repoID, repo := range repos.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
 					for _, branch := range repo.Branches {
 						for _, inputRev := range inputRevs {
@@ -662,7 +694,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	// Filter the input revs to only those that matched all the contains conditions
@@ -673,8 +705,10 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
-	return matchedRepoRevs, missing, nil
+	tr.SetAttributes(
+		attribute.Int("filteredRevCount", len(matchedRepoRevs)),
+		attribute.Int("backendsMissing", backendsMissing))
+	return matchedRepoRevs, missing, backendsMissing, nil
 }
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
@@ -745,17 +779,16 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		IncludePatterns: includePatterns,
 		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-		NoForks:                op.NoForks,
-		OnlyForks:              op.OnlyForks,
-		NoArchived:             op.NoArchived,
-		OnlyArchived:           op.OnlyArchived,
-		NoPrivate:              op.Visibility == query.Public,
-		OnlyPrivate:            op.Visibility == query.Private,
-		SearchContextID:        searchContext.ID,
-		UserID:                 searchContext.NamespaceUserID,
-		OrgID:                  searchContext.NamespaceOrgID,
-		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+		LimitOffset:     &database.LimitOffset{Limit: limit + 1},
+		NoForks:         op.NoForks,
+		OnlyForks:       op.OnlyForks,
+		NoArchived:      op.NoArchived,
+		OnlyArchived:    op.OnlyArchived,
+		NoPrivate:       op.Visibility == query.Public,
+		OnlyPrivate:     op.Visibility == query.Private,
+		SearchContextID: searchContext.ID,
+		UserID:          searchContext.NamespaceUserID,
+		OrgID:           searchContext.NamespaceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)

@@ -13,8 +13,8 @@ import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
-    fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     SearchContextProps,
     fetchSearchContexts,
@@ -24,16 +24,14 @@ import {
     updateSearchContext,
     deleteSearchContext,
     isSearchContextSpecAvailable,
-    getAvailableSearchContextSpecOrDefault,
     SearchQueryStateStoreProvider,
+    getDefaultSearchContextSpec,
 } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
-import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -52,12 +50,9 @@ import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
+import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
-import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import type { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import type { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
@@ -76,11 +71,10 @@ import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURL, getQueryStateFromLocation } from './search'
+import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import {
     setQueryStateFromSettings,
     setExperimentalFeaturesFromSettings,
@@ -107,11 +101,8 @@ export interface SourcegraphWebAppProps
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         NotebookProps,
-        CodeMonitoringProps {
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
+        CodeMonitoringProps,
+        SearchAggregationProps {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -150,7 +141,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
-    defaultSearchContextSpec: string
 
     /**
      * Whether globbing is enabled for filters.
@@ -168,10 +158,11 @@ const notificationStyles: BrandedNotificationItemStyleProps = {
     },
 }
 
-const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
+
+const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
 setLinkComponent(RouterLink)
 
@@ -189,7 +180,7 @@ export class SourcegraphWebApp extends React.Component<
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
-        : createNoopController(this.platformContext)
+        : null
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
@@ -201,7 +192,6 @@ export class SourcegraphWebApp extends React.Component<
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             globbing: false,
         }
     }
@@ -270,13 +260,12 @@ export class SourcegraphWebApp extends React.Component<
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
-            this.setSelectedSearchContextSpec('global')
+            this.setSelectedSearchContextSpecWithNoChecks(GLOBAL_SEARCH_CONTEXT_SPEC)
         }
         if (!parsedSearchQuery) {
-            // If no query is present (e.g. search page, settings page), select the last saved
-            // search context from localStorage as currently selected search context.
-            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
+            // If no query is present (e.g. search page, settings page),
+            // select the user's default search context.
+            this.setSelectedSearchContextSpecToDefault()
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
@@ -356,121 +345,124 @@ export class SourcegraphWebApp extends React.Component<
         const { children, ...props } = this.props
 
         return (
-            <ApolloProvider client={graphqlClient}>
-                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                    <ErrorBoundary location={null}>
-                        <FeatureFlagsProvider>
-                            <ShortcutProvider>
-                                <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
-                                    <SearchResultsCacheProvider>
-                                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                                            <Router history={history} key={0}>
-                                                <CompatRouter>
-                                                    <Route
-                                                        path="/"
-                                                        render={routeComponentProps => (
-                                                            <CodeHostScopeProvider
-                                                                authenticatedUser={authenticatedUser}
-                                                            >
-                                                                <Layout
-                                                                    {...props}
-                                                                    {...routeComponentProps}
-                                                                    authenticatedUser={authenticatedUser}
-                                                                    viewerSubject={this.state.viewerSubject}
-                                                                    settingsCascade={this.state.settingsCascade}
-                                                                    batchChangesEnabled={this.props.batchChangesEnabled}
-                                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                                        this.state.settingsCascade
-                                                                    )}
-                                                                    batchChangesWebhookLogsEnabled={
-                                                                        window.context.batchChangesWebhookLogsEnabled
-                                                                    }
-                                                                    // Search query
-                                                                    fetchHighlightedFileLineRanges={
-                                                                        this.fetchHighlightedFileLineRanges
-                                                                    }
-                                                                    // Extensions
-                                                                    platformContext={this.platformContext}
-                                                                    extensionsController={this.extensionsController}
-                                                                    telemetryService={eventLogger}
-                                                                    isSourcegraphDotCom={
-                                                                        window.context.sourcegraphDotComMode
-                                                                    }
-                                                                    searchContextsEnabled={
-                                                                        this.props.searchContextsEnabled
-                                                                    }
-                                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                                    setSelectedSearchContextSpec={
-                                                                        this.setSelectedSearchContextSpec
-                                                                    }
-                                                                    getUserSearchContextNamespaces={
-                                                                        getUserSearchContextNamespaces
-                                                                    }
-                                                                    fetchAutoDefinedSearchContexts={
-                                                                        fetchAutoDefinedSearchContexts
-                                                                    }
-                                                                    fetchSearchContexts={fetchSearchContexts}
-                                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                                    fetchSearchContext={fetchSearchContext}
-                                                                    createSearchContext={createSearchContext}
-                                                                    updateSearchContext={updateSearchContext}
-                                                                    deleteSearchContext={deleteSearchContext}
-                                                                    isSearchContextSpecAvailable={
-                                                                        isSearchContextSpecAvailable
-                                                                    }
-                                                                    defaultSearchContextSpec={
-                                                                        this.state.defaultSearchContextSpec
-                                                                    }
-                                                                    globbing={this.state.globbing}
-                                                                    streamSearch={aggregateStreamingSearch}
-                                                                    onCreateNotebookFromNotepad={this.onCreateNotebook}
-                                                                />
-                                                            </CodeHostScopeProvider>
-                                                        )}
-                                                    />
-                                                </CompatRouter>
-                                            </Router>
-                                            {this.extensionsController !== null &&
-                                            window.context.enableLegacyExtensions ? (
-                                                <Notifications
-                                                    key={2}
-                                                    extensionsController={this.extensionsController}
-                                                    notificationItemStyleProps={notificationStyles}
-                                                />
-                                            ) : null}
-                                            <UserSessionStores />
-                                        </SearchQueryStateStoreProvider>
-                                    </SearchResultsCacheProvider>
-                                </TemporarySettingsProvider>
-                            </ShortcutProvider>
-                        </FeatureFlagsProvider>
-                    </ErrorBoundary>
-                </WildcardThemeContext.Provider>
-            </ApolloProvider>
+            <ComponentsComposer
+                components={[
+                    // `ComponentsComposer` provides children via `React.cloneElement`.
+                    /* eslint-disable react/no-children-prop, react/jsx-key */
+                    <ApolloProvider client={graphqlClient} children={undefined} />,
+                    <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                    <ErrorBoundary location={null} />,
+                    <TraceSpanProvider name={SharedSpanName.AppMount} />,
+                    <FeatureFlagsProvider />,
+                    <ShortcutProvider />,
+                    <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
+                    <SearchResultsCacheProvider />,
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
+                    /* eslint-enable react/no-children-prop, react/jsx-key */
+                ]}
+            >
+                <Router history={history} key={0}>
+                    <CompatRouter>
+                        <Route
+                            path="/"
+                            render={routeComponentProps => (
+                                <Layout
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    batchChangesEnabled={this.props.batchChangesEnabled}
+                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                        this.state.settingsCascade
+                                    )}
+                                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                                    // Search query
+                                    fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                                    // Extensions
+                                    platformContext={this.platformContext}
+                                    extensionsController={this.extensionsController}
+                                    telemetryService={eventLogger}
+                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                    searchContextsEnabled={this.props.searchContextsEnabled}
+                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                    fetchSearchContexts={fetchSearchContexts}
+                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                    fetchSearchContext={fetchSearchContext}
+                                    createSearchContext={createSearchContext}
+                                    updateSearchContext={updateSearchContext}
+                                    deleteSearchContext={deleteSearchContext}
+                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                    globbing={this.state.globbing}
+                                    streamSearch={aggregateStreamingSearch}
+                                    onCreateNotebookFromNotepad={this.onCreateNotebook}
+                                />
+                            )}
+                        />
+                    </CompatRouter>
+                </Router>
+                {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
+                    <Notifications
+                        key={2}
+                        extensionsController={this.extensionsController}
+                        notificationItemStyleProps={notificationStyles}
+                    />
+                ) : null}
+                <UserSessionStores />
+            </ComponentsComposer>
         )
     }
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
+    private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
+        this.setState({ selectedSearchContextSpec: spec })
+        this.setWorkspaceSearchContext(spec).catch(error => {
+            logger.error('Error sending search context to extensions', error)
+        })
+    }
+
     private setSelectedSearchContextSpec = (spec: string): void => {
         if (!this.props.searchContextsEnabled) {
             return
         }
 
-        const { defaultSearchContextSpec } = this.state
-        this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({
-                spec,
-                defaultSpec: defaultSearchContextSpec,
-                platformContext: this.platformContext,
-            }).subscribe(availableSearchContextSpecOrDefault => {
-                this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+        // The global search context is always available.
+        if (spec === GLOBAL_SEARCH_CONTEXT_SPEC) {
+            this.setSelectedSearchContextSpecWithNoChecks(spec)
+        }
 
-                this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                    logger.error('Error sending search context to extensions', error)
-                })
+        // Check if the wanted search context is available.
+        this.subscriptions.add(
+            isSearchContextSpecAvailable({
+                spec,
+                platformContext: this.platformContext,
+            }).subscribe(isAvailable => {
+                if (isAvailable) {
+                    this.setSelectedSearchContextSpecWithNoChecks(spec)
+                } else if (!this.state.selectedSearchContextSpec) {
+                    // If the wanted search context is not available and
+                    // there is no currently selected search context,
+                    // set the current selection to the default search context.
+                    // Otherwise, keep the current selection.
+                    this.setSelectedSearchContextSpecToDefault()
+                }
+            })
+        )
+    }
+
+    private setSelectedSearchContextSpecToDefault = (): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
+        this.subscriptions.add(
+            getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
+                // Fall back to global if no default is returned.
+                this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
         )
     }

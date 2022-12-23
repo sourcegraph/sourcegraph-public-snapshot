@@ -3,9 +3,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { subtypeOf } from '@sourcegraph/common'
-// eslint-disable-next-line no-restricted-imports
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
@@ -38,7 +37,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-4">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'shared/ActionItem',

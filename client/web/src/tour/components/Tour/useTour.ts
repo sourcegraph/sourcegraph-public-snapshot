@@ -3,9 +3,7 @@ import { useCallback } from 'react'
 import { omit, uniq } from 'lodash'
 import { Optional } from 'utility-types'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-
-import { TourLanguage } from './types'
+import { useTemporarySetting, TourLanguage } from '@sourcegraph/shared/src/settings/temporary'
 
 export interface TourState {
     completedStepIds?: string[]
@@ -56,10 +54,10 @@ export function useTour(tourKey: string): UseTourReturnType {
         [setAllToursState, tourKey]
     )
 
-    const restart = useCallback((): void => setAllToursState(previousState => omit(previousState, tourKey)), [
-        setAllToursState,
-        tourKey,
-    ])
+    const restart = useCallback(
+        (): void => setAllToursState(previousState => omit(previousState, tourKey)),
+        [setAllToursState, tourKey]
+    )
 
     return {
         ...allToursSate?.[tourKey],

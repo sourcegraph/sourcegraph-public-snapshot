@@ -32,7 +32,7 @@
     table {
         margin-bottom: 0 !important; /* Override docsite Markdown table CSS. A currently open PR removes that CSS and lets us remove this override. */
     }
-    th:global(.line) {
+    td:global(.line) {
         display: none;
     }
     td:global(.code) > span:first-child {

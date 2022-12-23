@@ -12,13 +12,12 @@ const defaultSettings: SettingsExperimentalFeatures = {
      */
     showMultilineSearchConsole: false,
     showSearchContext: true,
-    showSearchContextManagement: true,
     showSearchNotebook: true,
-    showComputeComponent: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
     editor: 'codemirror6',
+    codeInsightsRepoUI: 'single-search-query',
     applySearchQuerySuggestionOnEnter: false,
 }
 

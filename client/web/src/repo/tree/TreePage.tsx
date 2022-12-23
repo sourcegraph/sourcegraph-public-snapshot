@@ -6,7 +6,6 @@ import * as H from 'history'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
@@ -30,6 +29,7 @@ import {
     ButtonGroup,
     Button,
     Text,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -79,6 +79,7 @@ interface Props
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     match: RepositoryFileTreePageProps['match']
     isSourcegraphDotCom: boolean
+    className?: string
 }
 
 export const treePageRepositoryFragment = gql`
@@ -92,6 +93,7 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    location,
     repo,
     repoName,
     commitID,
@@ -104,6 +106,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     useActionItemsBar,
     match,
     isSourcegraphDotCom,
+    className,
     ...props
 }) => {
     useEffect(() => {
@@ -199,7 +202,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featureFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
     const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
@@ -308,7 +311,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     )
 
     return (
-        <div className={styles.treePage}>
+        <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
                 {!showPageTitle && <PageTitle title={getPageTitle()} />}
                 {treeOrError === undefined || repo === undefined ? (
@@ -348,7 +351,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             )}
                                         />
                                         <Route
-                                            path={`${treeOrError.url}/-/commits/tab`}
+                                            path={`${treeOrError.url}/-/commits/tab/:filePath*`}
                                             render={routeComponentProps => (
                                                 <RepoCommits
                                                     repo={repo}
@@ -394,8 +397,8 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                     <RepositoryCompareArea
                                                         repo={repo}
                                                         match={match}
-                                                        settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
+                                                        location={location}
                                                         {...props}
                                                     />
                                                 </RepoRevisionWrapper>
@@ -411,6 +414,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 repo={repo}
                                 revision={revision}
                                 commitID={commitID}
+                                location={location}
                                 {...props}
                             />
                         )}

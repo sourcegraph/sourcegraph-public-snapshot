@@ -38,6 +38,8 @@ const onSubmit = (): Observable<SearchContextFields> =>
         query: '',
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const searchContextToEdit: SearchContextFields = {
@@ -59,6 +61,8 @@ const searchContextToEdit: SearchContextFields = {
     ],
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,
+    viewerHasAsDefault: false,
+    viewerHasStarred: false,
 }
 
 const authUser: AuthenticatedUser = {
@@ -84,6 +88,7 @@ const authUser: AuthenticatedUser = {
     tosAccepted: true,
     searchable: true,
     emails: [],
+    latestSettings: null,
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

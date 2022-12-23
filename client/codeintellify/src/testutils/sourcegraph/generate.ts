@@ -5,7 +5,7 @@ export function generateSourcegraphCodeTable(lines: string[]): string {
     const code = lines
         .map(
             (line, index) => `<tr>
-                <th class="line" data-line="${index + 1}"></th>
+                <td class="line" data-line="${index + 1}"></td>
                 <td class="code">${line}</td>
             </tr>`
         )

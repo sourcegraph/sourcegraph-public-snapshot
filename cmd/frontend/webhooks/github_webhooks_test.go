@@ -28,7 +28,7 @@ import (
 )
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
-	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+	h := GitHubWebhook{Router: &Router{}}
 	var called bool
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called = true
@@ -45,17 +45,18 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
-	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+	logger := logtest.Scoped(t)
+	h := GitHubWebhook{Router: &Router{Logger: logger}}
 	ctx := context.Background()
 
 	eventType := "test-event-1"
 	err := h.Dispatch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil)
-	assert.Equal(t, eventTypeNotFoundError{codeHostKind: extsvc.KindGitHub, eventType: eventType}, err)
+	assert.Nil(t, err)
 }
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	var (
-		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+		h      = GitHubWebhook{Router: &Router{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
@@ -78,7 +79,7 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 
 func TestGithubWebhookDispatchError(t *testing.T) {
 	var (
-		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+		h      = GitHubWebhook{Router: &Router{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
@@ -110,13 +111,10 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
 	ctx := context.Background()
 
 	secret := "secret"
@@ -154,7 +152,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	}
 
 	hook := GitHubWebhook{
-		WebhookRouter: &WebhookRouter{
+		Router: &Router{
 			DB: db,
 		},
 	}
@@ -184,53 +182,47 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		"https://example.com/.api/github-webhook",
 	}
 
+	sendRequest := func(u, secret string) *http.Response {
+		req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("X-Github-Event", "public")
+		if secret != "" {
+			req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte(secret)))
+		}
+		rec := httptest.NewRecorder()
+		hook.ServeHTTP(rec, req)
+		resp := rec.Result()
+		return resp
+	}
+
+	t.Run("missing service", func(t *testing.T) {
+		u, err := extsvc.WebhookURL(extsvc.TypeGitHub, 99, nil, "https://example.com/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		called = false
+		resp := sendRequest(u, secret)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.False(t, called)
+	})
+
 	t.Run("valid secret", func(t *testing.T) {
 		for _, u := range urls {
 			called = false
-
-			req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
-			if err != nil {
-				t.Fatal(err)
-			}
-			req.Header.Set("X-Github-Event", "public")
-			req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte(secret)))
-
-			rec := httptest.NewRecorder()
-			hook.ServeHTTP(rec, req)
-			resp := rec.Result()
-
-			if resp.StatusCode != http.StatusOK {
-				t.Fatalf("Non 200 code: %v", resp.StatusCode)
-			}
-
-			if !called {
-				t.Fatalf("Expected called to be true, got false (webhook handler was not called)")
-			}
+			resp := sendRequest(u, secret)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.True(t, called)
 		}
 	})
 
 	t.Run("invalid secret", func(t *testing.T) {
 		for _, u := range urls {
 			called = false
-
-			req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
-			if err != nil {
-				t.Fatal(err)
-			}
-			req.Header.Set("X-Github-Event", "public")
-			req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte("not_secret")))
-
-			rec := httptest.NewRecorder()
-			hook.ServeHTTP(rec, req)
-			resp := rec.Result()
-
-			if resp.StatusCode != http.StatusInternalServerError {
-				t.Errorf("Non 500 code: %v", resp.StatusCode)
-			}
-
-			if called {
-				t.Fatalf("Expected called to be false, got true (webhook handler was called)")
-			}
+			resp := sendRequest(u, "not_secret")
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			assert.False(t, called)
 		}
 	})
 
@@ -239,24 +231,9 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		// signed and we don't need to validate it on our side
 		for _, u := range urls {
 			called = false
-
-			req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
-			if err != nil {
-				t.Fatal(err)
-			}
-			req.Header.Set("X-Github-Event", "public")
-
-			rec := httptest.NewRecorder()
-			hook.ServeHTTP(rec, req)
-			resp := rec.Result()
-
-			if resp.StatusCode != http.StatusOK {
-				t.Fatalf("Non 200 code: %v", resp.StatusCode)
-			}
-
-			if !called {
-				t.Fatalf("Expected called to be true, got false (webhook handler was not called)")
-			}
+			resp := sendRequest(u, "")
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.True(t, called)
 		}
 	})
 }

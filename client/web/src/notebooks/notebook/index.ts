@@ -7,7 +7,6 @@ import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import {
     aggregateStreamingSearch,
     emptyAggregateResults,
@@ -18,7 +17,6 @@ import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -115,13 +113,7 @@ export class Notebook {
     }
 
     public getBlockIndex(id: string): number {
-        const blocks = this.getBlocks()
-        for (let idx = 0; idx < blocks.length; idx++) {
-            if (blocks[idx].id === id) {
-                return idx
-            }
-        }
-        return -1
+        return this.blockOrder.indexOf(id)
     }
 
     public getBlocks(): Block[] {
@@ -162,26 +154,17 @@ export class Notebook {
                 })
                 break
             case 'query': {
-                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearch(
-                        transformSearchQuery({
-                            query,
-                            extensionHostAPIPromise: extensionHostAPI,
-                            enableGoImportsSearchQueryTransform,
-                            eventLogger,
-                        }),
-                        {
-                            version: LATEST_VERSION,
-                            patternType: SearchPatternType.standard,
-                            caseSensitive: false,
-                            trace: undefined,
-                            chunkMatches: true,
-                        }
-                    ).pipe(startWith(emptyAggregateResults)),
+                    output: aggregateStreamingSearch(of(query), {
+                        version: LATEST_VERSION,
+                        patternType: SearchPatternType.standard,
+                        caseSensitive: false,
+                        trace: undefined,
+                        chunkMatches: true,
+                    }).pipe(startWith(emptyAggregateResults)),
                 })
                 break
             }
@@ -260,8 +243,6 @@ export class Notebook {
                 this.blocks.set(block.id, { ...block, output })
                 break
             }
-            case 'compute':
-                this.blocks.set(block.id, { ...block, output: null })
         }
     }
 
@@ -284,8 +265,6 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'symbol') {
                 observables.push(block.output.pipe(mapTo(DONE)))
-            } else if (block.type === 'compute') {
-                // Noop: Compute block does not currently emit an output observable.
             }
         }
         // We store output observables and join them into a single observable,

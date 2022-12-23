@@ -125,7 +125,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 //	}
 //
 // In the case of a repository that is cloning, a Common data structure is
-// returned but it has an incomplete RevSpec.
+// returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
 	logger := sglog.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
@@ -309,6 +309,12 @@ func serveHome(db database.DB) handlerFunc {
 		}
 		if common == nil {
 			return nil // request was handled
+		}
+
+		// we only allow HEAD requests on sourcegraph.com.
+		if r.Method == "HEAD" {
+			w.WriteHeader(http.StatusOK)
+			return nil
 		}
 
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.

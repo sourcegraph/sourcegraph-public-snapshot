@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,12 +20,12 @@ import (
 // processing.
 func NewReconcilerWorker(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	s *store.Store,
-	workerStore dbworkerstore.Store,
+	workerStore dbworkerstore.Store[*btypes.Changeset],
 	gitClient gitserver.Client,
 	sourcer sources.Sourcer,
-	observationContext *observation.Context,
-) *workerutil.Worker {
+) *workerutil.Worker[*btypes.Changeset] {
 	r := reconciler.New(gitClient, sourcer, s)
 
 	options := workerutil.WorkerOptions{
@@ -32,9 +33,9 @@ func NewReconcilerWorker(
 		NumHandlers:       5,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_reconciler"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "batch_changes_reconciler"),
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
+	worker := dbworker.NewWorker[*btypes.Changeset](ctx, workerStore, r.HandlerFunc(), options)
 	return worker
 }

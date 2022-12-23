@@ -10,7 +10,6 @@
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
-        font-weight: inherit;
         user-select: none;
 
         &::before {
@@ -23,10 +22,6 @@
     :global(.code) {
         white-space: pre;
         padding-left: 1rem;
-    }
-
-    :global(.hl-source) {
-        cursor: text;
     }
 
     &-error {

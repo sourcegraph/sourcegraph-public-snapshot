@@ -187,10 +187,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
-	if err != nil {
-		return err
-	}
+	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
@@ -565,6 +562,11 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
+			// Make "patch does not apply" errors a fatal error. Retrying the changeset
+			// rollout won't help here and just causes noise.
+			if strings.Contains(e.CombinedOutput, "patch does not apply") {
+				return errcode.MakeNonRetryable(pushCommitError{e})
+			}
 			return pushCommitError{e}
 		}
 		return err
@@ -609,14 +611,16 @@ func handleArchivedRepo(
 	return nil
 }
 
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
-	opts = protocol.CreateCommitFromPatchRequest{
+func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
+	// will fail with "corrupt patch at line <N>" where N is the last line.
+	patch := append([]byte{}, spec.Diff...)
+	patch = append(patch, []byte("\n")...)
+	opts := protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
 		BaseCommit: api.CommitID(spec.BaseRev),
-		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     string(spec.Diff) + "\n",
-		TargetRef: spec.HeadRef,
+		Patch:      patch,
+		TargetRef:  spec.HeadRef,
 
 		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
@@ -637,7 +641,7 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		Push:         pushOpts,
 	}
 
-	return opts, nil
+	return opts
 }
 
 type getBatchChanger interface {

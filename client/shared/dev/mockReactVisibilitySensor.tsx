@@ -19,9 +19,11 @@ export class MockVisibilitySensor extends React.Component<VisibilitySensorPropsT
 
 jest.mock(
     'react-visibility-sensor',
-    (): typeof _VisibilitySensor => ({ children, onChange }: VisibilitySensorPropsType) => (
-        <>
-            <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-        </>
-    )
+    (): typeof _VisibilitySensor =>
+        ({ children, onChange }: VisibilitySensorPropsType) =>
+            (
+                <>
+                    <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
+                </>
+            )
 )

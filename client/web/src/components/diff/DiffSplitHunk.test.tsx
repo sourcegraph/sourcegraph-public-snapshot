@@ -44,8 +44,7 @@ describe('DiffSplitHunk', () => {
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
-                    html:
-                        '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
+                    html: '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
                 },
                 {
                     kind: DiffHunkLineType.DELETED,
@@ -76,9 +75,7 @@ describe('DiffSplitHunk', () => {
         beforeEach(() => {
             queries = renderWithProps({
                 hunk,
-                decorations: { head: new Map(), base: new Map() },
                 lineNumbers: true,
-                isLightTheme: true,
                 fileDiffAnchor: 'anchor_',
             })
         })

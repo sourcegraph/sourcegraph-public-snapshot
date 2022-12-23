@@ -5,9 +5,10 @@ import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import {
+    FetchFileParameters,
+    fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared,
+} from '@sourcegraph/shared/src/backend/file'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -28,8 +29,7 @@ interface EmbeddedNotebookPageProps
             | 'authenticatedUser'
             | 'settingsCascade'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
     notebookId: string
 }
 
@@ -38,7 +38,6 @@ const LOADING = 'loading' as const
 export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
     notebookId,
     platformContext,
-    extensionsController,
     ...props
 }) => {
     useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
@@ -89,7 +88,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildr
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
                     platformContext={platformContext}
-                    extensionsController={extensionsController}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks
                     onCopyNotebook={() => NEVER}

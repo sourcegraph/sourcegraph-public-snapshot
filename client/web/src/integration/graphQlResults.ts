@@ -81,6 +81,7 @@ export const commonWebGraphQlResults: Partial<
             viewerCanAdminister: true,
             searchable: true,
             emails: [],
+            latestSettings: null,
         },
     }),
     ...createViewerSettingsGraphQLOverride(),
@@ -134,42 +135,6 @@ export const commonWebGraphQlResults: Partial<
             alwaysNil: null,
         },
     }),
-    AutoDefinedSearchContexts: () => ({
-        autoDefinedSearchContexts: [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                name: 'global',
-                namespace: null,
-                autoDefined: true,
-                public: true,
-                description: 'All repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-            {
-                __typename: 'SearchContext',
-                id: '2',
-                spec: '@test',
-                name: 'test',
-                namespace: {
-                    __typename: 'User',
-                    id: 'u1',
-                    namespaceName: 'test',
-                },
-                autoDefined: true,
-                public: true,
-                description: 'Your repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-        ],
-    }),
     ListSearchContexts: () => ({
         searchContexts: {
             nodes: [],
@@ -185,11 +150,6 @@ export const commonWebGraphQlResults: Partial<
             totalCount: 0,
             nodes: [],
             pageInfo: { hasNextPage: false, endCursor: null },
-        },
-    }),
-    ExternalServicesScopes: () => ({
-        externalServices: {
-            nodes: [],
         },
     }),
     EvaluateFeatureFlag: () => ({
@@ -218,6 +178,12 @@ export const commonWebGraphQlResults: Partial<
                 __typename: 'EventLogsConnection',
                 nodes: [],
             },
+        },
+    }),
+    DefaultSearchContextSpec: () => ({
+        defaultSearchContext: {
+            __typename: 'SearchContext',
+            spec: 'global',
         },
     }),
 }

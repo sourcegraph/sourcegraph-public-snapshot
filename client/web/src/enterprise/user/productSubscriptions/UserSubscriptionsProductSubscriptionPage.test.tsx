@@ -2,7 +2,7 @@ import { act } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ProductSubscriptionFieldsOnSubscriptionPage } from '../../../graphql-operations'
 
@@ -14,7 +14,12 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
         const component = renderWithBrandedContext(
             <UserSubscriptionsProductSubscriptionPage
                 user={{ settingsURL: '/u' }}
-                match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
+                match={{
+                    isExact: true,
+                    params: { subscriptionUUID: '43002662-f627-4550-9af6-d621d2a878de' },
+                    path: '/p',
+                    url: '/p',
+                }}
                 _queryProductSubscription={() =>
                     of<ProductSubscriptionFieldsOnSubscriptionPage>({
                         __typename: 'ProductSubscription',

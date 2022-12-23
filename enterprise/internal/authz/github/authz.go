@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -126,12 +125,15 @@ func newAuthzProvider(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
-			return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
+		config, err := conf.GitHubAppConfig()
+		if err != nil {
+			return nil, err
+		}
+		if !config.Configured() {
+			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
 		}
 
-		return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
+		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now

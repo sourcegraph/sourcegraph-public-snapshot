@@ -29,7 +29,7 @@ func TestSeriesPoints(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
@@ -135,7 +135,7 @@ func TestCountData(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -227,7 +227,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -322,7 +322,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -385,7 +385,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -448,7 +448,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsDB)
@@ -497,7 +497,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	}
 	recordingTimes := types.InsightSeriesRecordingTimes{
 		InsightSeriesID: 1,
-		RecordingTimes:  []types.RecordingTime{{current, true}, {current.Add(time.Hour), false}},
+		RecordingTimes:  []types.RecordingTime{{Timestamp: current, Snapshot: true}, {Timestamp: current.Add(time.Hour), Snapshot: false}},
 	}
 	if err := store.RecordSeriesPointsAndRecordingTimes(ctx, records, recordingTimes); err != nil {
 		t.Fatal(err)
@@ -533,7 +533,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRecordingTimes := types.InsightSeriesRecordingTimes{1, []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
+	wantRecordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
 	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
@@ -557,7 +557,7 @@ func TestDelete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
@@ -669,7 +669,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
@@ -715,12 +715,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	series1Times := []time.Time{now, now.AddDate(0, 1, 0)}
 	series2Times := []time.Time{now, now.AddDate(0, 1, 1), now.AddDate(0, -1, 1)}
 	series1 := types.InsightSeriesRecordingTimes{
-		1,
-		makeRecordings(series1Times, false),
+		InsightSeriesID: 1,
+		RecordingTimes:  makeRecordings(series1Times, false),
 	}
 	series2 := types.InsightSeriesRecordingTimes{
-		2,
-		makeRecordings(series2Times, false),
+		InsightSeriesID: 2,
+		RecordingTimes:  makeRecordings(series2Times, false),
 	}
 
 	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
@@ -755,12 +755,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{1, makeRecordings([]time.Time{now}, true)},
+			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
 			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{2, makeRecordings([]time.Time{now.Local()}, true)},
+			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 2, RecordingTimes: makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
 			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
 		},

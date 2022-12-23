@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -94,23 +96,24 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 }
 
 type BackgroundJobMonitor struct {
-	inProgressWorker   *workerutil.Worker
-	inProgressResetter *dbworker.Resetter
-	inProgressStore    dbworkerstore.Store
+	inProgressWorker   *workerutil.Worker[*BaseJob]
+	inProgressResetter *dbworker.Resetter[*BaseJob]
+	inProgressStore    dbworkerstore.Store[*BaseJob]
 
-	newBackfillWorker   *workerutil.Worker
-	newBackfillResetter *dbworker.Resetter
-	newBackfillStore    dbworkerstore.Store
+	newBackfillWorker   *workerutil.Worker[*BaseJob]
+	newBackfillResetter *dbworker.Resetter[*BaseJob]
+	newBackfillStore    dbworkerstore.Store[*BaseJob]
 }
 
 type JobMonitorConfig struct {
-	InsightsDB      edb.InsightsDB
-	InsightStore    store.Interface
-	RepoStore       database.RepoStore
-	BackfillRunner  pipeline.Backfiller
-	ObsContext      *observation.Context
-	AllRepoIterator *discovery.AllReposIterator
-	CostAnalyzer    *priority.QueryAnalyzer
+	InsightsDB        edb.InsightsDB
+	InsightStore      store.Interface
+	RepoStore         database.RepoStore
+	BackfillRunner    pipeline.Backfiller
+	ObservationCtx    *observation.Context
+	AllRepoIterator   *discovery.AllReposIterator
+	CostAnalyzer      *priority.QueryAnalyzer
+	RepoQueryExecutor query.RepoQueryExecutor
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
@@ -133,6 +136,15 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 
 type SeriesReader interface {
 	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
+}
+
+type SeriesBackfillComplete interface {
+	SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error
+}
+
+type SeriesReadBackfillComplete interface {
+	SeriesReader
+	SeriesBackfillComplete
 }
 
 type Scheduler struct {
@@ -171,4 +183,9 @@ func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSer
 		return nil, errors.Wrap(err, "enqueueBackfill")
 	}
 	return bf, nil
+}
+
+// RepoQueryExecutor is the consumer interface for query.RepoQueryExecutor, used for tests.
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
 }

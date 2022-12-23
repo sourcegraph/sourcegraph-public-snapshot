@@ -60,9 +60,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
             queryExternalServices({
                 first: args.first ?? null,
                 after: args.after ?? null,
-                namespace: userID ?? null,
             }),
-        [userID, queryExternalServices]
+        [queryExternalServices]
     )
 
     const [noExternalServices, setNoExternalServices] = useState<boolean>(false)

@@ -80,6 +80,10 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 	}, nil
 }
 
+func (s BitbucketCloudSource) CheckConnection(ctx context.Context) error {
+	return checkConnection(s.config.Url)
+}
+
 // ListRepos returns all Bitbucket Cloud repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan SourceResult) {

@@ -7,14 +7,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // SplitExtensionID splits an extension ID of the form [host/]publisher/name (where [host/] is the
@@ -220,64 +218,4 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 		x.RegistryURL = registryURL.String()
 	}
 	return xs, nil
-}
-
-// GetLocalFeaturedExtensions looks up and returns the featured registry extensions in the local registry
-// If this is not sourcegraph.com, it is not implemented.
-var GetLocalFeaturedExtensions func(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryExtension, error)
-
-// GetFeaturedExtensions returns the set of featured extensions.
-//
-// If this is sourcegraph.com, these are local extensions. Otherwise, these are remote extensions
-// retrieved from sourcegraph.com.
-func GetFeaturedExtensions(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryExtension, error) {
-	if envvar.SourcegraphDotComMode() && GetLocalFeaturedExtensions != nil {
-		return GetLocalFeaturedExtensions(ctx, db)
-	}
-
-	// Get remote featured extensions if the remote registry is sourcegraph.com.
-	registryURL, err := getRemoteRegistryURL()
-	if registryURL == nil || registryURL.String() != "https://sourcegraph.com/.api/registry" || err != nil {
-		return nil, err
-	}
-
-	remote, err := registry.GetFeaturedExtensions(ctx, registryURL)
-	if err != nil {
-		return nil, err
-	}
-	remote = FilterRemoteExtensions(remote)
-	for _, x := range remote {
-		x.RegistryURL = registryURL.String()
-	}
-	registryExtensions := make([]graphqlbackend.RegistryExtension, len(remote))
-	for i, x := range remote {
-		registryExtensions[i] = &registryExtensionRemoteResolver{v: x}
-	}
-
-	return registryExtensions, nil
-}
-
-// IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
-// marked as a work-in-progress extension (by having a "wip": true property).
-func IsWorkInProgressExtension(manifest *string) bool {
-	if manifest == nil {
-		// Extensions with no manifest (== no releases published yet) are considered
-		// work-in-progress.
-		return true
-	}
-
-	// jsonc-parsing the manifest can be slow, so do a first pass. If the manifest doesn't even
-	// contain `"wip"`, then there is no way that it could be WIP.
-	if !strings.Contains(*manifest, `"wip"`) {
-		return false
-	}
-
-	var result schema.SourcegraphExtensionManifest
-	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
-		// An extension whose manifest fails to parse is problematic for other reasons (and an error
-		// will be displayed), but it isn't helpful to also consider it work-in-progress.
-		return false
-	}
-
-	return result.Wip
 }

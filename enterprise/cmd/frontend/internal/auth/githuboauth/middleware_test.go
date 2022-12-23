@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -61,7 +62,16 @@ func TestMiddleware(t *testing.T) {
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
-	t.Run("unauthenticated homepage visit -> github oauth flow", func(t *testing.T) {
+
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+	})
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> github oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -82,6 +92,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
+
 		if got, want := resp.Header.Get("Location"), "/.auth/github/login?"; !strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,9 +21,9 @@ func TestRecord(t *testing.T) {
 		ctx := context.Background()
 		ctx = withContext(ctx, &paramsContext{})
 
-		meta := map[string]string{"cmd": "git", "args": "grep foo"}
+		meta := []log.Field{log.String("cmd", "git"), log.String("args", "grep foo")}
 
-		Record(ctx, "github.com/foo/bar", meta)
+		Record(ctx, "github.com/foo/bar", meta...)
 
 		pc := fromContext(ctx)
 		require.NotNil(t, pc)
@@ -33,9 +34,9 @@ func TestRecord(t *testing.T) {
 	t.Run("OK not initialized context", func(t *testing.T) {
 		ctx := context.Background()
 
-		meta := map[string]string{"cmd": "git", "args": "grep foo"}
+		meta := []log.Field{log.String("cmd", "git"), log.String("args", "grep foo")}
 
-		Record(ctx, "github.com/foo/bar", meta)
+		Record(ctx, "github.com/foo/bar", meta...)
 		pc := fromContext(ctx)
 		assert.Nil(t, pc)
 	})
@@ -65,8 +66,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	t.Run("OK for access log setting", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 		h := HTTPMiddleware(logger, &accessLogConf{}, func(w http.ResponseWriter, r *http.Request) {
-			meta := map[string]string{"cmd": "git", "args": "grep foo"}
-			Record(r.Context(), "github.com/foo/bar", meta)
+			Record(r.Context(), "github.com/foo/bar", log.String("cmd", "git"), log.String("args", "grep foo"))
 		})
 
 		rec := httptest.NewRecorder()
@@ -115,8 +115,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		cfg := &accessLogConf{disabled: true}
 		var handled bool
 		h := HTTPMiddleware(logger, cfg, func(w http.ResponseWriter, r *http.Request) {
-			meta := map[string]string{"cmd": "git", "args": "grep foo"}
-			Record(r.Context(), "github.com/foo/bar", meta)
+			Record(r.Context(), "github.com/foo/bar", log.String("cmd", "git"), log.String("args", "grep foo"))
 			handled = true
 		})
 		rec := httptest.NewRecorder()

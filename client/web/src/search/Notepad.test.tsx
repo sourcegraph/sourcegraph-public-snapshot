@@ -5,7 +5,7 @@ import { spy, assert } from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { useNotepadState } from '../stores'
 import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
@@ -121,7 +121,7 @@ describe('Notepad', () => {
 
             // Entries are in reverse order
             expect(entryLinks[0]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
-            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard')
+            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard&sm=0')
         })
 
         it('creates notebooks', () => {

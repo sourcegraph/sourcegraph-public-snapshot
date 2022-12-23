@@ -72,5 +72,5 @@ func (t *switchableOTTracer) set(
 	t.debug = debug
 	t.logger = logger.With(log.String("tracer", fmt.Sprintf("%T", tracer))).AddCallerSkip(1)
 
-	t.logger.Info("tracer set")
+	t.logger.Debug("tracer set")
 }

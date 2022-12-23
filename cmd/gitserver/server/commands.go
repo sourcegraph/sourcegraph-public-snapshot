@@ -21,9 +21,7 @@ func handleGetObject(logger log.Logger, getObject gitdomain.GetObjectFunc) func(
 		}
 
 		// Log which actor is accessing the repo.
-		accesslog.Record(r.Context(), string(req.Repo), map[string]string{
-			"objectname": req.ObjectName,
-		})
+		accesslog.Record(r.Context(), string(req.Repo), log.String("objectname", req.ObjectName))
 
 		obj, err := getObject(r.Context(), req.Repo, req.ObjectName)
 		if err != nil {

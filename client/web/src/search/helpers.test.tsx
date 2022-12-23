@@ -15,10 +15,9 @@ describe('search/helpers', () => {
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 source: 'home',
-                searchParameters: undefined,
             })
             expect(history.location.search).toMatchInlineSnapshot(
-                '"?q=context:global+querystring&patternType=standard"'
+                '"?q=context:global+querystring&patternType=standard&sm=0"'
             )
         })
         test('should keep trace param when updating history', () => {
@@ -30,10 +29,9 @@ describe('search/helpers', () => {
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 source: 'home',
-                searchParameters: undefined,
             })
             expect(history.location.search).toMatchInlineSnapshot(
-                '"?q=context%3Aglobal+querystring&patternType=standard&trace=1"'
+                '"?q=context:global+querystring&patternType=standard&sm=0&trace=1"'
             )
         })
     })
