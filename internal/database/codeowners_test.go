@@ -20,7 +20,7 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
-func TestCodeowners_putAndGet(t *testing.T) {
+func TestCodeownersPutAndGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -45,7 +45,7 @@ func TestCodeowners_putAndGet(t *testing.T) {
 	assert.Equal(t, want.Repr(), got.Repr())
 }
 
-func TestCodeowners_getNoData(t *testing.T) {
+func TestCodeownersGetNoData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -60,7 +60,7 @@ func TestCodeowners_getNoData(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-func TestCodeowners_overwrite(t *testing.T) {
+func TestCodeownersOverwrite(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -98,7 +98,7 @@ func TestCodeowners_overwrite(t *testing.T) {
 	assert.Equal(t, second.Repr(), got.Repr())
 }
 
-func TestCodeowners_noRepo(t *testing.T) {
+func TestCodeownersNoRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
