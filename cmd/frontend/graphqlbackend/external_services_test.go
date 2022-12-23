@@ -307,15 +307,14 @@ func TestExternalServices(t *testing.T) {
 		if opt.AfterID > 0 {
 			return []*types.ExternalService{
 				{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+				{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 			}, nil
 		}
 
-		cfg := extsvc.NewEmptyConfig()
-		cfg.Set(`{"url": "http://127.0.0.1:80"}`)
-
 		ess := []*types.ExternalService{
 			{ID: 1, Config: extsvc.NewEmptyConfig()},
-			{ID: 2, Config: cfg, Kind: extsvc.KindGitHub},
+			{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+			{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		}
 		if opt.LimitOffset != nil {
 			return ess[:opt.LimitOffset.Limit], nil
@@ -335,6 +334,24 @@ func TestExternalServices(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
+	mockLastCheckedAt := time.Now()
+	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceResolver, error) {
+		switch r.externalService.ID {
+		case 1:
+			r.availability.unknown = &externalServiceUnknown{}
+		case 2:
+			r.availability.unavailable = &externalServiceUnavailable{
+				suspectedReason: "failed to connect",
+			}
+		case 3:
+			r.availability.available = &externalServiceAvailable{
+				lastCheckedAt: mockLastCheckedAt,
+			}
+		}
+
+		return r, nil
+	}
+
 	// NOTE: all these tests run as site admin
 	RunTests(t, []*Test{
 		// Read all external services
@@ -352,8 +369,12 @@ func TestExternalServices(t *testing.T) {
 			ExpectedResult: `
 			{
 				"externalServices": {
-					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}, {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="}]
-				}
+					"nodes": [
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="}
+                    ]
+                }
 			}
 		`,
 		},
@@ -375,7 +396,8 @@ func TestExternalServices(t *testing.T) {
 				"externalServices": {
 					"nodes": [
                         {"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","lastSyncError":"Oops"},
-                        {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=","lastSyncError":"Oops"}
+                        {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=","lastSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=","lastSyncError":"Oops"}
                     ]
 				}
 			}
@@ -390,10 +412,8 @@ func TestExternalServices(t *testing.T) {
 						nodes {
 							id
 							checkConnection {
-								// FIXME: Ignoreing the lastCheckedAt field for now. Find out a way
-								// to ignore comparison for this field while still checking that this
-								// field was returned maybe?
 								... on ExternalServiceAvailable {
+									lastCheckedAt
 								}
 								... on ExternalServiceUnavailable {
 									suspectedReason
@@ -407,29 +427,35 @@ func TestExternalServices(t *testing.T) {
 					}
 				}
 			`,
-			// FIXME: Ignoring checkConneciton.lastCheckedAt for now. Find out a way to ignore
-			// comparison for this field maybe?
-			ExpectedResult: `
-				{
-					"externalServices": {
-						"nodes": [
-							{
-								"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=",
-								"checkConnection": {
-									"implementationNote": "not implemented"
-								},
-								"hasConnectionCheck": false
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"externalServices": {
+					"nodes": [
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"checkConnection": {
+								"implementationNote": "not implemented"
 							},
-							{
-								"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
-								"checkConnection": {
-								},
-								"hasConnectionCheck": true
-							}
-						]
-					}
+							"hasConnectionCheck": false
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"checkConnection": {
+								"suspectedReason": "failed to connect"
+							},
+							"hasConnectionCheck": true
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"checkConnection": {
+								"lastCheckedAt": %q
+							},
+							"hasConnectionCheck": true
+						}
+					]
 				}
-			`,
+			}
+			`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
 		},
 		// Pagination
 		{
@@ -474,7 +500,7 @@ func TestExternalServices(t *testing.T) {
 			ExpectedResult: `
 			{
 				"externalServices": {
-					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="}],
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="}],
 					"pageInfo":{"endCursor":null,"hasNextPage":false}
 				}
 			}

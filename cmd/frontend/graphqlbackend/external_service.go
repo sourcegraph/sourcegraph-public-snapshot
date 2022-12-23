@@ -217,7 +217,14 @@ func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*
 	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
 }
 
+// mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
+var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceResolver, error)
+
 func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceResolver, error) {
+	if mockCheckConnection != nil {
+		return mockCheckConnection(ctx, r)
+	}
+
 	if !r.HasConnectionCheck(ctx) {
 		r.availability = availabilityState{
 			unknown: &externalServiceUnknown{},
