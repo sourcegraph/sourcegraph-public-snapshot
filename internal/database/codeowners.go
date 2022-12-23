@@ -31,7 +31,7 @@ type codeownersStore struct {
 }
 
 func (s *codeownersStore) PutHead(ctx context.Context, repoName api.RepoName, f *codeownerspb.File) error {
-	b, err := proto.Marshal(f)
+	codeownersData, err := proto.Marshal(f)
 	if err != nil {
 		return err
 	}
