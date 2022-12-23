@@ -31,7 +31,7 @@ type codeownersStore struct {
 }
 
 func (s *codeownersStore) PutHead(ctx context.Context, repoName api.RepoName, f *codeownerspb.File) error {
-	codeownersData, err := proto.Marshal(f)
+	codeownersBytes, err := proto.Marshal(f)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (s *codeownersStore) PutHead(ctx context.Context, repoName api.RepoName, f 
 	`
 	// Discard the result of the scan, but run it to see if repo
 	// with given name was found.
-	err = s.Handle().QueryRowContext(ctx, q, b, repoName).Scan(new(int))
+	err = s.Handle().QueryRowContext(ctx, q, codeownersBytes, repoName).Scan(new(int))
 	if err == sql.ErrNoRows {
 		return errors.Wrapf(err, "repo %q not found", repoName)
 	}
@@ -67,17 +67,17 @@ func (s *codeownersStore) GetHead(ctx context.Context, repoName api.RepoName) (*
 		ON h.repo_id = r.id
 		WHERE r.name = $1
 	`
-	var b []byte
-	err := s.Handle().QueryRowContext(ctx, q, repoName).Scan(&b)
+	var codeownersBytes []byte
+	err := s.Handle().QueryRowContext(ctx, q, repoName).Scan(&codeownersBytes)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var p codeownerspb.File
-	if err := proto.Unmarshal(b, &p); err != nil {
+	var f codeownerspb.File
+	if err := proto.Unmarshal(codeownersBytes, &f); err != nil {
 		return nil, err
 	}
-	return &p, nil
+	return &f, nil
 }
