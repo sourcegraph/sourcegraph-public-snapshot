@@ -5,9 +5,8 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
-
-import { Timestamp } from './time/Timestamp'
 
 import styles from './Timeline.module.scss'
 

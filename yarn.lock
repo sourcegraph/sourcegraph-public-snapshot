@@ -5519,6 +5519,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sourcegraph/testing@workspace:client/testing":
+  version: 0.0.0-use.local
+  resolution: "@sourcegraph/testing@workspace:client/testing"
+  languageName: unknown
+  linkType: soft
+
 "@sourcegraph/tsconfig@npm:^4.0.1":
   version: 4.0.1
   resolution: "@sourcegraph/tsconfig@npm:4.0.1"

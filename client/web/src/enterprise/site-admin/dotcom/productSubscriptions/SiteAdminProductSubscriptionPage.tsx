@@ -6,6 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import {
@@ -25,7 +26,6 @@ import {
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,

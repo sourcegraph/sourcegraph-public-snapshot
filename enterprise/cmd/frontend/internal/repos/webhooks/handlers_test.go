@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	gh "github.com/google/go-github/v43/github"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
@@ -25,12 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,9 +52,9 @@ func TestGitHubHandler(t *testing.T) {
 	}
 
 	conn := schema.GitHubConnection{
-		Url:      "https://github.com",
+		Url:      "https://ghe.sgdev.org",
 		Token:    "token",
-		Repos:    []string{"owner/name"},
+		Repos:    []string{"milton/test"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
@@ -160,41 +160,74 @@ func sign(t *testing.T, message, secret []byte) string {
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }
 
-func TestGithubNameFromEvent(t *testing.T) {
-	tests := []struct {
-		name    string
-		event   *gh.PushEvent
-		want    api.RepoName
-		wantErr error
-	}{
-		{
-			name: "valid event",
-			event: &gh.PushEvent{
-				Repo: &gh.PushEventRepository{
-					URL: stringp("https://github.com/sourcegraph/sourcegraph"),
-				},
-			},
-			want: api.RepoName("github.com/sourcegraph/sourcegraph"),
-		},
-		{
-			name:    "nil event",
-			event:   nil,
-			want:    api.RepoName(""),
-			wantErr: errors.New("URL for repository not found"),
-		},
+func TestGitLabHandler(t *testing.T) {
+	repoName := "gitlab.com/ryanslade/ryan-test-private"
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return api.RepoName(repoName), nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	handler := NewGitLabHandler()
+	data, err := os.ReadFile("testdata/gitlab-push.json")
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := githubNameFromEvent(tt.event)
-			if tt.wantErr != nil {
-				assert.EqualError(t, tt.wantErr, err.Error())
-				return
-			}
-			assert.Equal(t, tt.want, got)
-		})
+	var payload gitlabwebhooks.PushEvent
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatal(err)
 	}
+
+	var updateQueued string
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		updateQueued = string(repo)
+		return &protocol.RepoUpdateResponse{
+			ID:   1,
+			Name: string(repo),
+		}, nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+
+	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, repoName, updateQueued)
 }
 
-func stringp(s string) *string {
-	return &s
+func TestBitbucketServerHandler(t *testing.T) {
+	repoName := "bitbucket.sgdev.org/private/test-2020-06-01"
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return "bitbucket.sgdev.org/private/test-2020-06-01", nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	handler := NewBitbucketServerHandler()
+	data, err := os.ReadFile("testdata/bitbucket-server-push.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload bitbucketserver.PushEvent
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatal(err)
+	}
+
+	var updateQueued string
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		updateQueued = string(repo)
+		return &protocol.RepoUpdateResponse{
+			ID:   1,
+			Name: string(repo),
+		}, nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+
+	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, repoName, updateQueued)
 }

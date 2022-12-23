@@ -2,8 +2,8 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'

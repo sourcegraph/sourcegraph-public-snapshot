@@ -3,9 +3,9 @@ import { FunctionComponent } from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
 import { CodeIntelUploadOrIndexLastActivity } from '../../shared/components/CodeIntelUploadOrIndexLastActivity'

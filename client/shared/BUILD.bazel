@@ -13,8 +13,8 @@ generate_graphql_operations(
     srcs = [
         ":graphql_operations_files",
     ],
+    out = "src/graphql-operations.ts",
     interface_name = "SharedGraphQlOperations",
-    output = "src/graphql-operations.ts",
 )
 
 js_library(

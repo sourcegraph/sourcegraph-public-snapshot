@@ -6,6 +6,7 @@ import { debounce } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
 import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -30,7 +31,6 @@ import {
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 
 import { useDefaultContext } from './hooks/useDefaultContext'
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'

@@ -32,7 +32,6 @@ import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegrap
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
-import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -72,7 +71,7 @@ import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURL, getQueryStateFromLocation } from './search'
+import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -102,7 +101,8 @@ export interface SourcegraphWebAppProps
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         NotebookProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        SearchAggregationProps {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -180,7 +180,7 @@ export class SourcegraphWebApp extends React.Component<
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
-        : createNoopController(this.platformContext)
+        : null
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
