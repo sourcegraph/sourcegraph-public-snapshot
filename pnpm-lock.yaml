@@ -848,6 +848,9 @@ importers:
   client/template-parser:
     specifiers: {}
 
+  client/testing:
+    specifiers: {}
+
   client/vscode:
     specifiers:
       vsce: ^2.7.0
