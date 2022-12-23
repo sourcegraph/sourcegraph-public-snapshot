@@ -743,7 +743,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             nav={props.blobNav}
             history={history}
             location={location}
-            disableStatusBar={true}
             disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}

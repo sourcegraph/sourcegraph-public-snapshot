@@ -10,12 +10,12 @@ import { isErrorLike } from '@sourcegraph/common'
 import {
     CaseSensitivityProps,
     SearchContextProps,
+    SearchPatternType,
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
     SubmitSearchProps,
 } from '@sourcegraph/search'
 import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

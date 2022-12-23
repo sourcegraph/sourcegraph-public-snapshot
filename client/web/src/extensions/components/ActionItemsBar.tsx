@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -19,7 +19,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -334,21 +334,6 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
-                <div className="list-unstyled m-0">
-                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
-                        <div className={styles.listItem}>
-                            <Tooltip content="Add extensions">
-                                <Link
-                                    to="/extensions"
-                                    className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
-                                    aria-label="Add"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                </Link>
-                            </Tooltip>
-                        </div>
-                    ) : null}
-                </div>
             </ErrorBoundary>
         </div>
     )

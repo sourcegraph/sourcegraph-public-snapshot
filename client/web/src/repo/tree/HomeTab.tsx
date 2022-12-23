@@ -54,7 +54,7 @@ const fetchTreeCommits = memoizeObservable(
         filePath?: string
         after?: string
     }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
-        queryGraphQL(
+        queryGraphQL<TreeCommits2Result>(
             gql`
                 query TreeCommits2($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {

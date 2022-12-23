@@ -88,6 +88,7 @@ const authUser: AuthenticatedUser = {
     tosAccepted: true,
     searchable: true,
     emails: [],
+    latestSettings: null,
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

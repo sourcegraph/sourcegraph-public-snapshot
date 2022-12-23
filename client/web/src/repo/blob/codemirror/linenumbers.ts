@@ -345,6 +345,12 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                 cursor: 'pointer',
                 color: 'var(--line-number-color)',
             },
+            '.cm-lineNumbers .cm-gutterElement': {
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+            },
             '.cm-lineNumbers .cm-gutterElement:hover': {
                 textDecoration: 'underline',
             },
