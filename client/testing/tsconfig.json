@@ -8,9 +8,6 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
-    "paths": {
-      "*": ["../common/src/types/*"],
-    },
   },
   "include": ["./src/**/*", "./*.ts"],
 }
