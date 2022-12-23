@@ -140,7 +140,7 @@ const (
 // stripped out.
 func (p *parsing) lineWithoutComments() string {
 	// A sensible default for index of the first byte where line-comment
-	// starts is the line lenght. When the comment is removed by slcing
+	// starts is the line length. When the comment is removed by slicing
 	// the string at the end, using the line-length as the index
 	// of the first character dropped, yields the original string.
 	commentStartIndex := len(p.line)
