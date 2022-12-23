@@ -9,16 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitLabHandler(t *testing.T) {
 	repoName := "gitlab.com/ryanslade/ryan-test-private"
-	handler := NewGitLabHandler()
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return api.RepoName(repoName), nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	handler := NewGitLabHandler(db)
 	data, err := os.ReadFile("testdata/gitlab-push.json")
 	if err != nil {
 		t.Fatal(err)
@@ -42,41 +49,4 @@ func TestGitLabHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)
-}
-
-func TestGitlabNameFromEvent(t *testing.T) {
-	tests := []struct {
-		name    string
-		event   *gitlabwebhooks.PushEvent
-		want    api.RepoName
-		wantErr error
-	}{
-		{
-			name: "valid event",
-			event: &gitlabwebhooks.PushEvent{
-				EventCommon: gitlabwebhooks.EventCommon{
-					Project: gitlab.ProjectCommon{
-						WebURL: "https://gitlab.com/sourcegraph/sourcegraph",
-					},
-				},
-			},
-			want: api.RepoName("gitlab.com/sourcegraph/sourcegraph"),
-		},
-		{
-			name:    "nil event",
-			event:   nil,
-			want:    api.RepoName(""),
-			wantErr: errors.New("nil PushEvent received"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := gitlabNameFromEvent(tt.event)
-			if tt.wantErr != nil {
-				assert.EqualError(t, tt.wantErr, err.Error())
-				return
-			}
-			assert.Equal(t, tt.want, got)
-		})
-	}
 }

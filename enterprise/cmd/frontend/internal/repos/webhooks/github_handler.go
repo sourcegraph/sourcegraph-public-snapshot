@@ -2,14 +2,13 @@ package webhooks
 
 import (
 	"context"
-	"net/url"
 
 	gh "github.com/google/go-github/v43/github"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,6 +17,7 @@ import (
 )
 
 type GitHubHandler struct {
+	db     database.DB
 	logger log.Logger
 }
 
@@ -27,8 +27,9 @@ func (g *GitHubHandler) Register(router *webhooks.Router) {
 	}, extsvc.KindGitHub, "push")
 }
 
-func NewGitHubHandler() *GitHubHandler {
+func NewGitHubHandler(db database.DB) *GitHubHandler {
 	return &GitHubHandler{
+		db:     db,
 		logger: log.Scoped("webhooks.GitHubHandler", "github webhook handler"),
 	}
 }
@@ -39,9 +40,16 @@ func (g *GitHubHandler) handlePushEvent(ctx context.Context, payload any) error 
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
 	}
 
-	repoName, err := githubNameFromEvent(event)
+	cloneURL, err := gitHubCloneURLFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handlePushEvent: get name failed")
+		return errors.Wrap(err, "getting clone URL from event")
+	}
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, g.db, cloneURL)
+	if err != nil {
+		return errors.Wrap(err, "getting repo name from clone URL")
+	}
+	if repoName == "" {
+		return errors.New("could not determine repo from CloneURL")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -58,13 +66,9 @@ func (g *GitHubHandler) handlePushEvent(ctx context.Context, payload any) error 
 	return nil
 }
 
-func githubNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
-	if event == nil || event.Repo == nil || event.Repo.URL == nil {
+func gitHubCloneURLFromEvent(event *gh.PushEvent) (string, error) {
+	if event == nil || event.Repo == nil || event.Repo.CloneURL == nil {
 		return "", errors.New("URL for repository not found")
 	}
-	parsed, err := url.Parse(*event.Repo.URL)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to parse repository URL")
-	}
-	return api.RepoName(parsed.Hostname() + parsed.Path), nil
+	return event.GetRepo().GetCloneURL(), nil
 }

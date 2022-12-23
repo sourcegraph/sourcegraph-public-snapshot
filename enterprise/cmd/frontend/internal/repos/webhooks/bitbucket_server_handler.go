@@ -2,13 +2,11 @@ package webhooks
 
 import (
 	"context"
-	"net/url"
-	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,6 +16,7 @@ import (
 )
 
 type BitbucketServerHandler struct {
+	db     database.DB
 	logger log.Logger
 }
 
@@ -27,8 +26,9 @@ func (g *BitbucketServerHandler) Register(router *webhooks.Router) {
 	}, extsvc.KindBitbucketServer, "repo:refs_changed")
 }
 
-func NewBitbucketServerHandler() *BitbucketServerHandler {
+func NewBitbucketServerHandler(db database.DB) *BitbucketServerHandler {
 	return &BitbucketServerHandler{
+		db:     db,
 		logger: log.Scoped("webhooks.BitbucketServerHandler", "bitbucket server webhook handler"),
 	}
 }
@@ -39,9 +39,16 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 		return errors.Newf("expected BitbucketServer.PushEvent, got %T", payload)
 	}
 
-	repoName, err := bitbucketServerNameFromEvent(event)
+	cloneURL, err := bitbucketServerCloneURLFromEvent(event)
 	if err != nil {
-		return errors.Wrap(err, "handlePushEvent: get name failed")
+		return errors.Wrap(err, "getting clone URL from event")
+	}
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, g.db, cloneURL)
+	if err != nil {
+		return errors.Wrap(err, "getting repo name from clone URL")
+	}
+	if repoName == "" {
+		return errors.New("could not determine repo from CloneURL")
 	}
 
 	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
@@ -58,7 +65,7 @@ func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, payload an
 	return nil
 }
 
-func bitbucketServerNameFromEvent(event *bitbucketserver.PushEvent) (api.RepoName, error) {
+func bitbucketServerCloneURLFromEvent(event *bitbucketserver.PushEvent) (string, error) {
 	if event == nil {
 		return "", errors.New("nil PushEvent received")
 	}
@@ -67,11 +74,7 @@ func bitbucketServerNameFromEvent(event *bitbucketserver.PushEvent) (api.RepoNam
 		if link.Name != "ssh" {
 			continue
 		}
-		parsed, err := url.Parse(link.Href)
-		if err != nil {
-			return "", errors.Wrap(err, "unable to parse repository URL")
-		}
-		return api.RepoName(parsed.Hostname() + strings.TrimSuffix(parsed.Path, ".git")), nil
+		return link.Href, nil
 	}
 	return "", errors.New("no ssh URLs found")
 }

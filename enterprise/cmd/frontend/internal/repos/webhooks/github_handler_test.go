@@ -15,13 +15,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	gh "github.com/google/go-github/v43/github"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -30,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,9 +48,9 @@ func TestGitHubHandler(t *testing.T) {
 	}
 
 	conn := schema.GitHubConnection{
-		Url:      "https://github.com",
+		Url:      "https://ghe.sgdev.org",
 		Token:    "token",
-		Repos:    []string{"owner/name"},
+		Repos:    []string{"milton/test"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
@@ -72,7 +68,7 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := NewGitHubHandler()
+	handler := NewGitHubHandler(db)
 	router := &webhooks.GitHubWebhook{
 		Router: &webhooks.Router{
 			DB: db,
@@ -158,43 +154,4 @@ func sign(t *testing.T, message, secret []byte) string {
 	}
 
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
-}
-
-func TestGithubNameFromEvent(t *testing.T) {
-	tests := []struct {
-		name    string
-		event   *gh.PushEvent
-		want    api.RepoName
-		wantErr error
-	}{
-		{
-			name: "valid event",
-			event: &gh.PushEvent{
-				Repo: &gh.PushEventRepository{
-					URL: stringp("https://github.com/sourcegraph/sourcegraph"),
-				},
-			},
-			want: api.RepoName("github.com/sourcegraph/sourcegraph"),
-		},
-		{
-			name:    "nil event",
-			event:   nil,
-			want:    api.RepoName(""),
-			wantErr: errors.New("URL for repository not found"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := githubNameFromEvent(tt.event)
-			if tt.wantErr != nil {
-				assert.EqualError(t, tt.wantErr, err.Error())
-				return
-			}
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func stringp(s string) *string {
-	return &s
 }

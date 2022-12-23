@@ -221,7 +221,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	}
 }
 
-// remoteURL returns the GitLab projects's Git remote URL
+// remoteURL returns the GitLab project's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
 // if you need to get an authenticated clone url use repos.CloneURL
