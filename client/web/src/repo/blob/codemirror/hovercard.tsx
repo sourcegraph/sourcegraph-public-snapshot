@@ -684,6 +684,7 @@ export class HovercardView implements TooltipView {
                                 this.nextPinned.next(true)
                             },
                         }}
+                        hoverOverlayContainerClassName="position-relative"
                     />
                 </div>
             </Container>

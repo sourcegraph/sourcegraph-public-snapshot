@@ -211,7 +211,7 @@ const tooltipStyles = EditorView.theme({
         padding: '0.5rem',
     },
 
-    '.cm-tooltip-above:not(.tmp-tooltip)': {
+    '.cm-tooltip-above:not(.tmp-tooltip), .cm-tooltip-below:not(.tmp-tooltip)': {
         border: 'unset',
     },
 
