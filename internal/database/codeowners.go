@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"google.golang.org/protobuf/proto"
 
@@ -36,7 +35,6 @@ func (s *codeownersStore) PutHead(ctx context.Context, repoName api.RepoName, f 
 	if err != nil {
 		return err
 	}
-	fmt.Printf("WRITE %v\n", b)
 	q := `
 		WITH inline_repo_bytes AS (
 			SELECT r.id AS repo_id, $1::bytea AS proto
@@ -77,7 +75,6 @@ func (s *codeownersStore) GetHead(ctx context.Context, repoName api.RepoName) (*
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("READ %v\n", b)
 	var p codeownerspb.File
 	if err := proto.Unmarshal(b, &p); err != nil {
 		return nil, err
