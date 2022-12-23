@@ -483,10 +483,10 @@ function initiateSearchStream(
         if (trace) {
             parameters.push(['trace', trace])
         }
-        for (const v of featureOverrides || []) {
-            parameters.push(['feat', v])
+        for (const value of featureOverrides || []) {
+            parameters.push(['feat', value])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
