@@ -4,7 +4,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-
 import { getFullQuery, Toggles } from './Toggles'
 
 describe('Toggles', () => {

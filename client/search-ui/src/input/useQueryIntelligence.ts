@@ -10,7 +10,6 @@ import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
 /**

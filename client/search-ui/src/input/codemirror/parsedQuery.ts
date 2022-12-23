@@ -6,7 +6,6 @@ import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/sea
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 
-
 export interface QueryTokens {
     patternType: SearchPatternType
     tokens: Token[]
