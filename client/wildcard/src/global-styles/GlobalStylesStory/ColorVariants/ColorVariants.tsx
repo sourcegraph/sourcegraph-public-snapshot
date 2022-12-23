@@ -1,8 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { Code } from '@sourcegraph/wildcard'
-
+import { Code } from '../../../components'
 import { getSemanticColorVariables } from '../utils'
 
 import styles from './ColorVariants.module.scss'

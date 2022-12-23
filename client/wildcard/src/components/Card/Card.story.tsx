@@ -1,10 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H1, H2, H3, Text } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -14,11 +11,7 @@ const config: Meta = {
     title: 'wildcard/Card',
     component: Card,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Card,
@@ -91,13 +84,6 @@ const cardItem = (
                 <CardSubtitle>New search result → Sends email notifications, delivers webhook</CardSubtitle>
             </div>
             <div className="d-flex align-items-center">
-                <Toggle
-                    display="inline"
-                    onClick={() => {}}
-                    value={true}
-                    className="mr-3 align-item-baseline"
-                    disabled={false}
-                />
                 <Button variant="link">Edit</Button>
             </div>
         </CardBody>
