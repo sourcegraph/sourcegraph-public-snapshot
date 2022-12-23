@@ -5,19 +5,11 @@ import (
 	"io"
 	"strings"
 
-	"github.com/grafana/regexp"
-
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
-
-// Parse parses CODEOWNERS file given as string and returns the proto
-// representation of all rules within. The rules are in the same order
-// as in the file, since this matters for evaluation.
-func Parse(in string) (*codeownerspb.File, error) {
-	return Read(strings.NewReader(in))
-}
 
 // Read parses CODEOWNERS file given as a Reader and returns the proto
 // representation of all rules within. The rules are in the same order
@@ -75,7 +67,6 @@ type parsing struct {
 }
 
 // nextLine advances parsing to focus on the next line.
-// Conveniently returns the same object for chaining with `notBlank()`.
 func (p *parsing) nextLine(line string) {
 	p.line = line
 }
@@ -92,7 +83,7 @@ func (p *parsing) nextLine(line string) {
 // The first capturing group supports escaping a whitespace with a `\`,
 // so that the space is not treated as a separator between the pattern
 // and owners.
-var rulePattern = regexp.MustCompile(`^\s*((?:\\.|\S)+)((?:\s+\S+)*)\s*$`)
+var rulePattern = lazyregexp.New(`^\s*((?:\\.|\S)+)((?:\s+\S+)*)\s*$`)
 
 // matchRule tries to extract a codeowners rule from the current line
 // and return the file pattern and one or more owners.
@@ -113,7 +104,7 @@ func (p *parsing) matchRule() (string, []string, bool) {
 	return filePattern, owners, true
 }
 
-var sectionPattern = regexp.MustCompile(`^\s*\[([^\]]+)\]\s*$`)
+var sectionPattern = lazyregexp.New(`^\s*\[([^\]]+)\]\s*$`)
 
 // matchSection tries to extract a section which looks like `[section name]`.
 func (p *parsing) matchSection() bool {

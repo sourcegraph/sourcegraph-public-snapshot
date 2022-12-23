@@ -1,6 +1,7 @@
 package codeowners_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestParseGithubExample(t *testing.T) {
-	got, err := codeowners.Parse(
+	got, err := codeowners.Read(strings.NewReader(
 		`# This is a comment.
 # Each line is a file pattern followed by one or more owners.
 
@@ -66,7 +67,7 @@ apps/ @octocat
 # directory in the root of your repository except for the /apps/github
 # subdirectory, as its owners are left empty.
 /apps/ @octocat
-/apps/github`)
+/apps/github`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{
 		{
@@ -140,7 +141,7 @@ apps/ @octocat
 }
 
 func TestParseGitlabExample(t *testing.T) {
-	got, err := codeowners.Parse(
+	got, err := codeowners.Parse(strings.NewReader(
 		`# This is an example of a CODEOWNERS file.
 # Lines that start with '#' are ignored.
 
@@ -210,7 +211,7 @@ model/db   @database
 # This section is combined with the previously defined [Documentation] section:
 [DOCUMENTATION]
 README.md  @docs
-`)
+`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{
 		{
@@ -339,7 +340,7 @@ README.md  @docs
 }
 
 func TestParseAtHandle(t *testing.T) {
-	got, err := codeowners.Parse("README.md @readme-team")
+	got, err := codeowners.Read(strings.NewReader("README.md @readme-team"))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{{
 		Pattern: "README.md",
@@ -351,7 +352,7 @@ func TestParseAtHandle(t *testing.T) {
 }
 
 func TestParseAtHandleSupportsNesting(t *testing.T) {
-	got, err := codeowners.Parse("README.md @readme-team/readme-subteam")
+	got, err := codeowners.Read(strings.NewReader("README.md @readme-team/readme-subteam"))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{{
 		Pattern: "README.md",
@@ -363,7 +364,7 @@ func TestParseAtHandleSupportsNesting(t *testing.T) {
 }
 
 func TestParseEmailHandle(t *testing.T) {
-	got, err := codeowners.Parse("README.md me@example.com")
+	got, err := codeowners.Read(strings.NewReader("README.md me@example.com"))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{{
 		Pattern: "README.md",
@@ -388,7 +389,7 @@ func TestParseTwoHandles(t *testing.T) {
 }
 
 func TestParsePathWithSpaces(t *testing.T) {
-	got, err := codeowners.Parse(`path\ with\ spaces/* @space-owner`)
+	got, err := codeowners.Read(strings.NewReader(`path\ with\ spaces/* @space-owner`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{{
 		Pattern: "path with spaces/*",
@@ -400,9 +401,9 @@ func TestParsePathWithSpaces(t *testing.T) {
 }
 
 func TestParseSection(t *testing.T) {
-	got, err := codeowners.Parse(
+	got, err := codeowners.Read(strings.NewReader(
 		`[PM]
-		own/codeowners/* @own-pms`)
+		own/codeowners/* @own-pms`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{{
 		Pattern:     "own/codeowners/*",
@@ -415,12 +416,12 @@ func TestParseSection(t *testing.T) {
 }
 
 func TestParseManySections(t *testing.T) {
-	got, err := codeowners.Parse(
+	got, err := codeowners.Read(strings.NewReader(
 		`own/codeowners/* @own-eng
 		[PM]
 		own/codeowners/* @own-pms
 		[docs]
-		own/**/*.md @own-docs`)
+		own/**/*.md @own-docs`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{
 		{
@@ -448,25 +449,25 @@ func TestParseManySections(t *testing.T) {
 }
 
 func TestParseEmptyString(t *testing.T) {
-	got, err := codeowners.Parse("")
+	got, err := codeowners.Read(strings.NewReader(""))
 	require.NoError(t, err)
 	assert.Equal(t, &codeownerspb.File{}, got)
 }
 
 func TestParseBlankString(t *testing.T) {
-	got, err := codeowners.Parse("  ")
+	got, err := codeowners.Read(strings.NewReader("  "))
 	require.NoError(t, err)
 	assert.Equal(t, &codeownerspb.File{}, got)
 }
 
 func TestParseComment(t *testing.T) {
-	got, err := codeowners.Parse(" # This is a comment ")
+	got, err := codeowners.Read(strings.NewReader(" # This is a comment "))
 	require.NoError(t, err)
 	assert.Equal(t, &codeownerspb.File{}, got)
 }
 
 func TestParseRuleWithComment(t *testing.T) {
-	got, err := codeowners.Parse(`/escaped\#/is/pattern @and-then # Inline comment`)
+	got, err := codeowners.Read(strings.NewReader(`/escaped\#/is/pattern @and-then # Inline comment`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{
 		{
@@ -482,9 +483,9 @@ func TestParseRuleWithComment(t *testing.T) {
 // Note: Should a # within [Section name] not be treated as a comment-start
 // even if it is not escaped?
 func TestParseSectionWithComment(t *testing.T) {
-	got, err := codeowners.Parse(
+	got, err := codeowners.Read(strings.NewReader(
 		`[Section] # Inline comment
-		/pattern @owner`)
+		/pattern @owner`))
 	require.NoError(t, err)
 	want := []*codeownerspb.Rule{
 		{
