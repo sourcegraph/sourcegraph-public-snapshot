@@ -159,7 +159,6 @@ func (p *parsing) lineWithoutComments() string {
 		}
 		// Otherwise the next character is definitely not escaped.
 		esc = false
-
 	}
 	return p.line[:commentStartIndex]
 }
