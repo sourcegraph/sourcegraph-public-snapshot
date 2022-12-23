@@ -1,6 +1,7 @@
 import { countColumn, Extension, StateEffect, StateField } from '@codemirror/state'
 import {
     closeHoverTooltips,
+    Decoration,
     EditorView,
     hoverTooltip,
     PluginValue,
@@ -20,9 +21,10 @@ import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
 import { pin } from '../hovercard'
-import { isInteractiveOccurrence, occurrenceAtPosition } from '../occurrence-utils'
+import { isInteractiveOccurrence, occurrenceAtPosition, rangeToCmSelection } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { uiPositionToOffset } from '../utils'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 export function hoverExtension(): Extension {
     return [
@@ -32,6 +34,7 @@ export function hoverExtension(): Extension {
         tooltipStyles,
         hoverField,
         pinManager,
+        tooltipOccurrence,
     ]
 }
 export const hoverCache = StateField.define<Map<Occurrence, Promise<HoverResult>>>({
@@ -80,6 +83,17 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
         return value
     },
 })
+export const [tooltipOccurrence, setTooltipOccurrence] = createUpdateableField<Occurrence | null>(null, field =>
+    EditorView.decorations.compute([field], state => {
+        const occurrence = state.field(field)
+        console.log(occurrence)
+        if (occurrence === null) {
+            return Decoration.none
+        }
+        const range = rangeToCmSelection(state, occurrence.range)
+        return Decoration.set(Decoration.mark({ class: 'selection-highlight' }).range(range.from, range.to))
+    })
+)
 
 export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
     const cmLine = view.state.doc.lineAt(pos)
@@ -175,7 +189,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === null || hover.contents.length === 0
+        hover === undefined || hover === null || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)

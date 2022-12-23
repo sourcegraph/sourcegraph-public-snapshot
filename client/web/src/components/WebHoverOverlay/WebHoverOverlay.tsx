@@ -72,6 +72,11 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
     const clickToGoToDefinition = getClickToGoToDefinition(props.settingsCascade)
+    useEffect(() => {
+        return () => {
+            console.log('UNMOUNT')
+        }
+    }, [])
 
     useEffect(() => {
         if (!clickToGoToDefinition) {

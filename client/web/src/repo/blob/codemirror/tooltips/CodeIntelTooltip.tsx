@@ -14,6 +14,7 @@ import { HovercardView, HoverData } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
 import { DefinitionResult, goToDefinitionAtOccurrence } from '../token-selection/definition'
 import { modifierClickDescription } from '../token-selection/modifier-click'
+import { setTooltipOccurrence } from '../token-selection/hover'
 
 export interface HoverResult {
     markdownContents: string
@@ -73,7 +74,13 @@ export class CodeIntelTooltip implements Tooltip {
             const hovercardData: Observable<HoverData> = definitionResults.pipe(
                 map(result => this.hovercardData(result))
             )
-            return new HovercardView(view, occurrence.range.withIncrementedValues(), false, hovercardData)
+            return new HovercardView(view, occurrence.range.withIncrementedValues(), false, hovercardData, {
+                onMount: () => requestAnimationFrame(() => setTooltipOccurrence(view, occurrence)),
+                onDestroy: () => {
+                    console.log('ONDESTROY')
+                    requestAnimationFrame(() => setTooltipOccurrence(view, null))
+                },
+            })
         }
     }
     private hovercardData(definition: AsyncDefinitionResult): HoverData {

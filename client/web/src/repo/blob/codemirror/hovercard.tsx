@@ -564,7 +564,11 @@ export class HovercardView implements TooltipView {
         private readonly view: EditorView,
         private readonly tokenRange: UIRange,
         pinned: boolean,
-        hovercardData: Observable<HoverData>
+        hovercardData: Observable<HoverData>,
+        private params?: {
+            onMount?: () => void
+            onDestroy?: () => void
+        }
     ) {
         this.dom = document.createElement('div')
 
@@ -582,6 +586,10 @@ export class HovercardView implements TooltipView {
     }
 
     public mount(): void {
+        console.log('MOUNT')
+        if (this.params?.onMount) {
+            this.params.onMount()
+        }
         this.nextContainer.next(this.dom)
     }
 
@@ -593,8 +601,15 @@ export class HovercardView implements TooltipView {
             this.nextProps.next(props)
         }
     }
+    public positioned(): void {
+        console.log('POSITIONED')
+    }
 
     public destroy(): void {
+        console.log('DESTROY')
+        // if (this.params?.onDestroy) {
+        //     this.params.onDestroy()
+        // }
         this.subscription.unsubscribe()
         this.root?.unmount()
     }
@@ -618,9 +633,14 @@ export class HovercardView implements TooltipView {
                 ...zeroToOneBasedPosition(hoverOrError.range.start),
             }
         }
+        const onDestroy = this.params?.onDestroy
 
         root.render(
-            <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
+            <Container
+                onUnmount={() => onDestroy?.()}
+                onRender={() => repositionTooltips(this.view)}
+                history={props.history}
+            >
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,
