@@ -6,7 +6,7 @@ import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 
 import { Tooltip } from '@sourcegraph/wildcard'
 
-interface Props {
+interface TimestampProps {
     /** The date (if string, in ISO 8601 format). */
     date: string | Date | number
 
@@ -40,7 +40,7 @@ const RERENDER_INTERVAL_MSEC = 7000
  * Displays a date's relative time ("... ago") and shows the full date on hover. Re-renders
  * periodically to ensure the relative time string is up-to-date.
  */
-export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const Timestamp: React.FunctionComponent<React.PropsWithChildren<TimestampProps>> = ({
     date,
     noAbout = false,
     strict = false,

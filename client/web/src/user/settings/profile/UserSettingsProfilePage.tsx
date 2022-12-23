@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
 import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

@@ -7,6 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import {
@@ -25,7 +26,6 @@ import {
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     reindexResult,
     reindexVariables,

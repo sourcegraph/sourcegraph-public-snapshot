@@ -3,10 +3,10 @@ import React, { useMemo } from 'react'
 import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
