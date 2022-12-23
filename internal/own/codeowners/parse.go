@@ -15,7 +15,7 @@ import (
 // Parse parses CODEOWNERS file given as string and returns the proto
 // representation of all rules within. The rules are in the same order
 // as in the file, since this matters for evaluation.
-func Parse(in string) (*codeownerspb.File, error) {
+func Parse(codeownersFile string) (*codeownerspb.File, error) {
 	return Read(strings.NewReader(in))
 }
 
