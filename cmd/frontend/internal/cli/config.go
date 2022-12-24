@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -480,25 +479,29 @@ var (
 )
 
 func gitservers() *endpoint.Map {
+	const (
+		s = "gitserverh"
+		p = "3178"
+		h = ""
+	)
 	gitserversOnce.Do(func() {
-		gitserversVal = endpoint.New(func() string {
-			v := os.Getenv("SRC_GIT_SERVERS")
-			r := os.Getenv("GITSERVER_REPLICA_COUNT")
-
-			if addr, ok := computeEndpointsByReplicas(r, "gitserver"); ok {
-				return addr
-			}
-
-			if v == "" {
-				// Detect 'go test' and setup default addresses in that case.
-				p, err := os.Executable()
-				if err == nil && strings.HasSuffix(p, ".test") {
-					return "gitserver:3178"
+		v := os.Getenv("SRC_GIT_SERVERS")
+		r := os.Getenv("GITSERVER_REPLICA_COUNT")
+		if r != "" && v != "" {
+			gitserversVal = endpoint.NewReplicas(v, s, r, p, h)
+		} else {
+			gitserversVal = endpoint.New(func() string {
+				if v == "" {
+					// Detect 'go test' and setup default addresses in that case.
+					p, err := os.Executable()
+					if err == nil && strings.HasSuffix(p, ".test") {
+						return "gitserver:3178"
+					}
+					return "k8s+rpc://gitserver:3178?kind=sts"
 				}
-				return "k8s+rpc://gitserver:3178?kind=sts"
-			}
-			return v
-		}())
+				return v
+			}())
+		}
 	})
 	return gitserversVal
 }
@@ -546,14 +549,13 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 }
 
 var (
-	deploymentType = env.Get("DEPLOY_TYPE", "kubernetes", "deployment type")
-
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+	searcherURL      = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+	searcherReplicas = env.Get("SEARCHER_REPLICA_COUNT", "", "searcher replica count")
 
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
-	indexedBasename = env.Get("INDEXED_SEARCH_BASENAME", "indexed-search", "base name of zoekt shards")
+	indexedReplicas = env.Get("INDEXED_SEARCH_REPLICA_COUNT", "", "indexed-search replica count")
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -572,43 +574,32 @@ var (
 )
 
 func computeSearcherEndpoints() *endpoint.Map {
+	const (
+		s = "searcher"
+		p = "3181"
+		h = "http://"
+	)
 	searcherURLsOnce.Do(func() {
-		if addr := searcherAddr(os.Environ()); addr != "" {
-			searcherURLs = endpoint.New(addr)
-		} else {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		}
+		searcherURLs = endpoint.NewReplicas(searcherURL, s, searcherReplicas, p, h)
 	})
 	return searcherURLs
 }
 
-func searcherAddr(environ []string) string {
-	if r, ok := getEnv(environ, "SEARCHER_REPLICA_COUNT"); ok {
-		if addr, ok := computeEndpointsByReplicas(r, "searcher"); ok {
-			return addr
-		}
-	}
-
-	return searcherURL
-}
-
 func computeIndexedEndpoints() *endpoint.Map {
+	const (
+		s = "indexed-search"
+		p = "6070"
+		h = ""
+	)
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(addr)
+			indexedEndpoints = endpoint.NewReplicas(addr, s, indexedReplicas, p, h)
 		}
 	})
 	return indexedEndpoints
 }
 
 func zoektAddr(environ []string) string {
-
-	if r, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_COUNT"); ok {
-		if addr, ok := computeEndpointsByReplicas(r, indexedBasename); ok {
-			return addr
-		}
-	}
-
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
 		return addr
 	}
@@ -631,41 +622,4 @@ func getEnv(environ []string, key string) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-// Generate list of endpoints based on replica numbers provided.
-// Docker-compose and k8s deployments use different endpoints
-// docker-compose: zoekt-webserver-0:6070
-// k8s: indexed-search-0.indexed-search:6070
-func computeEndpointsByReplicas(replicas string, service string) (string, bool) {
-	num, err := strconv.Atoi(replicas)
-	if err != nil || num < 1 {
-		return "", false
-	}
-
-	eps := ""
-	h := ""
-	p := ""
-	s := "." + service
-	switch service {
-	case "gitserver":
-		p = "3178"
-	case "searcher":
-		h = "http://"
-		p = "3181"
-	case "indexed-search", "zoekt-webserver":
-		p = "6070"
-	default:
-		return "", false
-	}
-
-	if deploymentType == "docker-compose" {
-		s = ""
-	}
-
-	for i := 0; i < num; i++ {
-		eps += fmt.Sprintf("%s%s-%d%s:%s ", h, service, i, s, p)
-	}
-
-	return eps, true
 }

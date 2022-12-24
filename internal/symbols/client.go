@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -77,24 +75,15 @@ type Client struct {
 	langMappingCache map[string][]glob.Glob
 }
 
+// Compute endpoints based on the provided env vars
 func (c *Client) url(repo api.RepoName) (string, error) {
-	// Compute endpoints based on the provided env vars
+	const (
+		s = "symbols"
+		p = "3184"
+		h = "http://"
+	)
 	c.endpointOnce.Do(func() {
-		e := ""
-		num, err := strconv.Atoi(symbolsReplicas)
-		if err == nil {
-			for i := 0; i < num; i++ {
-				e += fmt.Sprintf(" http://symbols-%d:3184", i)
-			}
-		} else {
-			e = c.URL
-		}
-		if e == "" {
-			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-			return
-		}
-
-		c.endpoint = endpoint.New(e)
+		c.endpoint = endpoint.NewReplicas(symbolsURL, s, symbolsReplicas, p, h)
 	})
 
 	return c.endpoint.Get(string(repo))

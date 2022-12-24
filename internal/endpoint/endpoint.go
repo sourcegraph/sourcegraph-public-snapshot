@@ -2,7 +2,9 @@
 package endpoint
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -64,6 +66,58 @@ func New(urlspec string) *Map {
 		return Static(strings.Fields(urlspec)...)
 	}
 	return K8S(logger, urlspec)
+}
+
+// NewReplicas first checks if replica count is empty or not
+// If replica count is empty, it returns endpoints using the service URL
+//
+// Endpoints will only be generated using the replica count if:
+// 1. replica count is not empty and its value is greater than 0
+// 2. URL is set to "docker-compose" / "kubernetes" to enable this
+//
+// Generate list of endpoints based on replica numbers provided
+// If only replicas number is provided, return an error
+//
+// Note: Docker-compose and k8s deployments have different endpoints
+// docker-compose: zoekt-webserver-0:6070
+// k8s: indexed-search-0.indexed-search:6070
+func NewReplicas(urlspec string, service string, replicas string, port string, protocol string) *Map {
+	if replicas != "" {
+		r, err := strconv.Atoi(replicas)
+		if err != nil || r == 0 {
+			return Empty(errors.New("error parsing replicas value for " + service))
+		}
+		switch urlspec {
+		case "docker-compose":
+			return DockerReplicas(service, r, port, protocol)
+		case "kubernetes":
+			return K8sReplicas(service, r, port, protocol)
+		default:
+			return Empty(errors.New("unrecognized url value to enable replica endpoints " + urlspec))
+		}
+	}
+
+	if urlspec != "" {
+		return New(urlspec)
+	}
+
+	return Empty(errors.New(service + " service has not been configured"))
+}
+
+func DockerReplicas(service string, replicas int, port string, protocol string) *Map {
+	var buffer bytes.Buffer
+	for i := range make([]int, replicas) {
+		buffer.WriteString(fmt.Sprintf("%s%s-%d:%s ", protocol, service, i, port))
+	}
+	return Static(strings.Fields(buffer.String())...)
+}
+
+func K8sReplicas(service string, replicas int, port string, protocol string) *Map {
+	var buffer bytes.Buffer
+	for i := range make([]int, replicas) {
+		buffer.WriteString(fmt.Sprintf("%s%s-%d.%s:%s ", protocol, service, i, service, port))
+	}
+	return Static(strings.Fields(buffer.String())...)
 }
 
 // Static returns an Endpoint map which consistently hashes over endpoints.
