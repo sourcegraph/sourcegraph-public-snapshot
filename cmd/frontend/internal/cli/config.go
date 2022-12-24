@@ -556,6 +556,7 @@ var (
 	searcherURLs     *endpoint.Map
 
 	indexedReplicas = env.Get("INDEXED_SEARCH_REPLICA_COUNT", "", "indexed-search replica count")
+	indexedBasename = env.Get("INDEXED_SEARCH_BASENAME", "indexed-search", "indexed-search base name")
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -587,13 +588,12 @@ func computeSearcherEndpoints() *endpoint.Map {
 
 func computeIndexedEndpoints() *endpoint.Map {
 	const (
-		s = "indexed-search"
 		p = "6070"
 		h = ""
 	)
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.NewReplicas(addr, s, indexedReplicas, p, h)
+			indexedEndpoints = endpoint.NewReplicas(addr, indexedBasename, indexedReplicas, p, h)
 		}
 	})
 	return indexedEndpoints
