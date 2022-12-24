@@ -248,7 +248,7 @@ func Zoekt() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
-								This dashboards shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+								This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
 
 								In-flight search requests include both running and queued requests.
 
@@ -263,7 +263,7 @@ func Zoekt() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
-								This dashboards shows the current number of indexed search requests that are-flight, broken out per instance.
+								This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
 
 								In-flight search requests include both running and queued requests.
 
@@ -287,7 +287,7 @@ func Zoekt() *monitoring.Dashboard {
 
 								This metric gives a notion of how quickly the indexed-search backend is working through its request load
 								(taking into account the request arrival rate and processing time). A sustained high rate of growth
-                                can indicate that the indexed-search backend is saturated.
+								can indicate that the indexed-search backend is saturated.
 							`,
 						},
 						{
@@ -304,7 +304,7 @@ func Zoekt() *monitoring.Dashboard {
 
 								This metric gives a notion of how quickly the indexed-search backend is working through its request load
 								(taking into account the request arrival rate and processing time). A sustained high rate of growth
-                                can indicate that the indexed-search backend is saturated.
+								can indicate that the indexed-search backend is saturated.
 							`,
 						},
 					},
