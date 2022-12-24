@@ -546,10 +546,14 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 }
 
 var (
+	deploymentType = env.Get("DEPLOY_TYPE", "kubernetes", "deployment type")
+
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
+
+	indexedBasename = env.Get("INDEXED_SEARCH_BASENAME", "indexed-search", "base name of zoekt shards")
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -600,7 +604,7 @@ func computeIndexedEndpoints() *endpoint.Map {
 func zoektAddr(environ []string) string {
 
 	if r, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_COUNT"); ok {
-		if addr, ok := computeEndpointsByReplicas(r, "zoekt-webserver"); ok {
+		if addr, ok := computeEndpointsByReplicas(r, indexedBasename); ok {
 			return addr
 		}
 	}
@@ -629,31 +633,39 @@ func getEnv(environ []string, key string) (string, bool) {
 	return "", false
 }
 
-// Generate list of endpoints based on replica numbers provided
+// Generate list of endpoints based on replica numbers provided.
+// Docker-compose and k8s deployments use different endpoints
+// docker-compose: zoekt-webserver-0:6070
+// k8s: indexed-search-0.indexed-search:6070
 func computeEndpointsByReplicas(replicas string, service string) (string, bool) {
 	num, err := strconv.Atoi(replicas)
 	if err != nil || num < 1 {
 		return "", false
 	}
 
-	e := ""
+	eps := ""
 	h := ""
 	p := ""
+	s := "." + service
 	switch service {
 	case "gitserver":
 		p = "3178"
 	case "searcher":
 		h = "http://"
 		p = "3181"
-	case "indexed-search":
+	case "indexed-search", "zoekt-webserver":
 		p = "6070"
 	default:
 		return "", false
 	}
 
-	for i := 0; i < num; i++ {
-		e += fmt.Sprintf("%s%s-%d:%s ", h, service, i, p)
+	if deploymentType == "docker-compose" {
+		s = ""
 	}
 
-	return e, true
+	for i := 0; i < num; i++ {
+		eps += fmt.Sprintf("%s%s-%d%s:%s ", h, service, i, s, p)
+	}
+
+	return eps, true
 }
