@@ -1,4 +1,3 @@
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
@@ -9,7 +8,7 @@ import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contribution
 /**
  * Properties passed to all page components in the namespace area.
  */
-export interface NamespaceAreaContext extends ExtensionsControllerProps, ThemeProps {
+export interface NamespaceAreaContext extends ThemeProps {
     namespace: Pick<UserAreaUserFields | OrgAreaOrganizationFields, '__typename' | 'id' | 'url'>
 
     authenticatedUser: AuthenticatedUser | null

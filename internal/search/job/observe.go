@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -15,16 +16,16 @@ type finishSpanFunc func(*search.Alert, error)
 
 func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
 	tr, ctx := trace.New(ctx, job.Name(), "")
-	tr.TagFields(trace.LazyFields(func() []log.Field { return job.Fields(VerbosityMax) }))
+	tr.TagFields(trace.LazyFields(func() []log.Field { return job.Fields(VerbosityMax) })) //nolint:staticcheck // OK until we drop OpenTracing
 
 	observingStream := newObservingStream(tr, stream)
 
 	return tr, ctx, observingStream, func(alert *search.Alert, err error) {
 		tr.SetError(err)
 		if alert != nil {
-			tr.TagFields(log.String("alert", alert.Title))
+			tr.SetAttributes(attribute.String("alert", alert.Title))
 		}
-		tr.TagFields(log.Int64("total_results", observingStream.totalEvents.Load()))
+		tr.SetAttributes(attribute.Int64("total_results", observingStream.totalEvents.Load()))
 		tr.Finish()
 	}
 }
@@ -45,7 +46,7 @@ func (o *observingStream) Send(event streaming.SearchEvent) {
 		// Only log the first results once. We can rely on reusing the atomic
 		// int64 as a "sync.Once" since it is only ever incremented.
 		if newTotal == int64(l) {
-			o.tr.LogFields(log.Event("first results"))
+			o.tr.SetAttributes(attribute.String("event", "first results"))
 		}
 	}
 	o.parent.Send(event)

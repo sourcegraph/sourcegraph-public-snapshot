@@ -37,10 +37,12 @@ export const esbuildDevelopmentServer = async (
         createProxyMiddleware({
             target: { protocol: 'http:', host: esbuildHost, port: esbuildPort },
             pathRewrite: { [`^${assetPathPrefix}`]: '' },
-            onProxyRes: (proxyResponse, request) => {
+            onProxyRes: (proxyResponse, request, response) => {
                 // Cache chunks because their filename includes a hash of the content.
                 const isCacheableChunk = path.basename(request.url).startsWith('chunk-')
-                proxyResponse.headers['Cache-Control'] = isCacheableChunk ? 'max-age=3600' : 'no-cache'
+                if (isCacheableChunk) {
+                    response.setHeader('Cache-Control', 'max-age=3600')
+                }
             },
             logLevel: 'error',
         })

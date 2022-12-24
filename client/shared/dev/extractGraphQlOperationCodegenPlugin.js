@@ -3,7 +3,7 @@
 const path = require('path')
 
 const { visit } = require('graphql')
-const logger = require('gulplog')
+const logger = require('signale')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../')
 /**

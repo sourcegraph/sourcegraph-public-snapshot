@@ -85,7 +85,7 @@ interface HighlightedFileLineRangesProps {
 
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
         HoverThresholdProps,
@@ -743,7 +743,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             nav={props.blobNav}
             history={history}
             location={location}
-            disableStatusBar={true}
             disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}

@@ -3,11 +3,10 @@ import React from 'react'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-// eslint-disable-next-line no-restricted-imports
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Code } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
@@ -46,11 +45,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
-                <Link
-                    to={getCommitMatchUrl(result)}
-                    data-selectable-search-result="true"
-                    data-selectable-search-result-header-link="true"
-                >
+                <Link to={getCommitMatchUrl(result)} data-selectable-search-result="true">
                     {result.message.split('\n', 1)[0]}
                 </Link>
             </span>

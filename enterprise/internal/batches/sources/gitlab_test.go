@@ -1051,7 +1051,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequest(expected gitlab.
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlab.ID, notes []*gitlab.Note, pageSize int, err error) {
 	gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
 		p.testCommonParams(ctx, client, project)
@@ -1066,7 +1065,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
 	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
 		p.testCommonParams(ctx, client, project)
@@ -1081,7 +1079,6 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEven
 	}
 }
 
-//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
 	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
 		p.testCommonParams(ctx, client, project)

@@ -104,7 +104,6 @@ const ScrollableListDemo = () => (
                 <ComboboxOption value="github.com/sourcegraph/sorokin" />
                 <ComboboxOption value="github.com/sourcegraph/1.1" />
                 <ComboboxOption value="github.com/sourcegraph/2.0" />
-                <ComboboxOption value="github.com/sourcegraph/extensions" />
             </ComboboxList>
         </ComboboxPopover>
     </Combobox>

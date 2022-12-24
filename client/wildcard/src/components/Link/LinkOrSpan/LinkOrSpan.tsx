@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import { ForwardReferenceComponent, Link } from '@sourcegraph/wildcard'
+import { ForwardReferenceComponent } from '../../../types'
+import { Link } from '../Link/Link'
 
 type LinkOrSpanProps = React.PropsWithChildren<
     {

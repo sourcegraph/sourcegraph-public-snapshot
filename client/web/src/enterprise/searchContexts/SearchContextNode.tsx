@@ -3,12 +3,12 @@ import React, { useCallback } from 'react'
 import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { Badge, Icon, Link, Menu, MenuButton, MenuItem, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { Timestamp } from '../../components/time/Timestamp'
 
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
 import { SearchContextStarButton } from './SearchContextStarButton'

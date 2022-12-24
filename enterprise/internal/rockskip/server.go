@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -89,8 +90,10 @@ func NewService(
 }
 
 func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
+	// We should use an internal actor when doing cross service calls.
+	ctx := actor.WithInternalActor(context.Background())
 	for indexRequest := range indexRequestQueue {
-		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
+		err := s.Index(ctx, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)

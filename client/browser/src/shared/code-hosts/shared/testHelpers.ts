@@ -1,8 +1,8 @@
 import { Observable, of, throwError } from 'rxjs'
 
 import { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { IQuery } from '@sourcegraph/shared/src/schema'
 
 export interface GraphQLResponseMap {
     [requestName: string]: (
@@ -13,7 +13,6 @@ export interface GraphQLResponseMap {
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
     SiteProductVersion: () =>
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 site: {
@@ -23,9 +22,8 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
                 },
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
     CurrentUSer: () =>
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 currentUser: {
@@ -39,10 +37,9 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
                     siteAdmin: false,
                 },
             },
-        } as SuccessGraphQLResult<IQuery>),
+        } as SuccessGraphQLResult<CurrentAuthStateResult>),
 
     ResolveRev: () =>
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {
@@ -55,9 +52,8 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
                 },
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
     BlobContent: () =>
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {
@@ -69,9 +65,8 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
                 },
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
     ResolveRepo: variables =>
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {
@@ -79,7 +74,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
                 },
             },
             errors: undefined,
-        } as SuccessGraphQLResult<IQuery>),
+        }),
 }
 
 /**

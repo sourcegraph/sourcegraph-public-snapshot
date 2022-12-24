@@ -82,10 +82,14 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             group: [
               '@sourcegraph/*/src/*',
+              '@sourcegraph/*/src/testing/*',
               '!@sourcegraph/branded/src/*',
+              '!@sourcegraph/branded/src/testing/*',
               '!@sourcegraph/shared/src/*',
+              '!@sourcegraph/shared/src/testing/*',
               '!@sourcegraph/web/src/SourcegraphWebApp.scss',
               '!@sourcegraph/search-ui/src/experimental',
+              '!@sourcegraph/*/src/testing',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',

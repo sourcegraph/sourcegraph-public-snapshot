@@ -4,12 +4,12 @@ import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { Button, Link, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
-import { Timestamp } from '../time/Timestamp'
 
 import { deleteExternalService } from './backend'
 import { defaultExternalServices } from './externalServices'

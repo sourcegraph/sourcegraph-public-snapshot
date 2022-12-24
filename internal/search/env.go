@@ -95,7 +95,7 @@ func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, str
 			return map[uint32]*zoekt.MinimalRepoListEntry{}
 		}
 
-		return resp.Minimal
+		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	}
 }
 

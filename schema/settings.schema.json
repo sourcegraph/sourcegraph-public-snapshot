@@ -53,6 +53,15 @@
             "pointer": true
           }
         },
+        "codeInsightsRepoUI": {
+          "description": "Specifies which (code insight repo) editor to use for repo query UI",
+          "type": "string",
+          "default": "single-search-query",
+          "enum": ["old-strict-list", "single-search-query", "search-query-or-strict-list"],
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",

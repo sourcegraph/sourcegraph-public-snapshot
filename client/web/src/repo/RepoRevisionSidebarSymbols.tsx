@@ -7,7 +7,6 @@ import { NavLink, useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { SymbolKind as SymbolKindEnum } from '@sourcegraph/shared/src/schema'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
@@ -21,7 +20,13 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import {
+    Scalars,
+    SymbolNodeFields,
+    SymbolsResult,
+    SymbolsVariables,
+    SymbolKind as SymbolKindEnum,
+} from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 

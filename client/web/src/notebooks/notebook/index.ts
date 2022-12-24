@@ -7,7 +7,6 @@ import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import {
     aggregateStreamingSearch,
     emptyAggregateResults,
@@ -18,7 +17,6 @@ import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -156,26 +154,17 @@ export class Notebook {
                 })
                 break
             case 'query': {
-                const { extensionHostAPI, enableGoImportsSearchQueryTransform } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearch(
-                        transformSearchQuery({
-                            query,
-                            extensionHostAPIPromise: extensionHostAPI,
-                            enableGoImportsSearchQueryTransform,
-                            eventLogger,
-                        }),
-                        {
-                            version: LATEST_VERSION,
-                            patternType: SearchPatternType.standard,
-                            caseSensitive: false,
-                            trace: undefined,
-                            chunkMatches: true,
-                        }
-                    ).pipe(startWith(emptyAggregateResults)),
+                    output: aggregateStreamingSearch(of(query), {
+                        version: LATEST_VERSION,
+                        patternType: SearchPatternType.standard,
+                        caseSensitive: false,
+                        trace: undefined,
+                        chunkMatches: true,
+                    }).pipe(startWith(emptyAggregateResults)),
                 })
                 break
             }

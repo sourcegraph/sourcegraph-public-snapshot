@@ -183,7 +183,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
 			},
 			{
 				name: "CanonicalURL",
@@ -328,7 +328,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
 			},
 			{
 				name: "CanonicalURL",

@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Select } from '@sourcegraph/wildcard'
 
 type PartialNamespace =
-    | Pick<SettingsUserSubject, '__typename' | 'id' | 'username' | 'displayName'>
-    | Pick<SettingsOrgSubject, '__typename' | 'id' | 'name' | 'displayName'>
+    | Pick<UserSettingFields, '__typename' | 'id' | 'username' | 'displayName'>
+    | Pick<OrgSettingFields, '__typename' | 'id' | 'name' | 'displayName'>
 
 const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
@@ -38,8 +38,7 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
             }
 
             const selectedNamespace = namespaces.find(
-                (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
-                    namespace.id === event.target.value
+                (namespace): namespace is UserSettingFields | OrgSettingFields => namespace.id === event.target.value
             )
             onSelect(selectedNamespace || namespaces[0])
         },

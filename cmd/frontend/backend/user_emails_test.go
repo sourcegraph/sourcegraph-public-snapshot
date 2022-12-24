@@ -504,18 +504,6 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Len(t, accounts, 0)
-
-		// Confirm that sub-repo permissions are gone
-		perms, err := db.SubRepoPerms().Get(ctx, createdUser.ID, createdRepo.ID)
-		require.NoError(t, err)
-		assert.Empty(t, perms.Paths)
-
-		// Confirm that user permissions were revoked
-		authedRepos, err := db.Authz().AuthorizedRepos(ctx, &database.AuthorizedReposArgs{
-			UserID: createdUser.ID,
-		})
-		require.NoError(t, err)
-		assert.Empty(t, authedRepos)
 	}
 
 	t.Run("OnDelete", func(t *testing.T) {

@@ -109,13 +109,25 @@ describe('MainThreadAPI', () => {
                         {
                             settings: null,
                             lastID: null,
-                            subject: { id: 'id1', __typename: 'DefaultSettings', viewerCanAdminister: true },
+                            subject: {
+                                id: 'id1',
+                                __typename: 'DefaultSettings',
+                                viewerCanAdminister: true,
+                                settingsURL: null,
+                                latestSettings: null,
+                            },
                         },
                         {
                             settings: null,
                             lastID: null,
 
-                            subject: { id: 'id2', __typename: 'DefaultSettings', viewerCanAdminister: true },
+                            subject: {
+                                id: 'id2',
+                                __typename: 'DefaultSettings',
+                                viewerCanAdminister: true,
+                                settingsURL: null,
+                                latestSettings: null,
+                            },
                         },
                     ],
                     final: { a: 'value' },

@@ -5,8 +5,6 @@ import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import {
     StreamingSearchResultsList,
@@ -14,11 +12,8 @@ import {
     changeListener,
     createDefaultSuggestions,
 } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -45,13 +40,11 @@ interface NotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 // Defines the max height for the CodeMirror editor
@@ -74,7 +67,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         telemetryService,
         settingsCascade,
         isSelected,
-        hoverifier,
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
@@ -214,8 +206,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
-                                extensionsController={props.extensionsController}
-                                hoverifier={hoverifier}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
                             />

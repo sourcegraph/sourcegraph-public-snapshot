@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -32,9 +34,37 @@ type externalServiceResolver struct {
 	webhookURLOnce sync.Once
 	webhookURL     string
 	webhookErr     error
+
+	availability availabilityState
 }
 
+type availabilityState struct {
+	available   *externalServiceAvailable
+	unavailable *externalServiceUnavailable
+	unknown     *externalServiceUnknown
+}
+
+type externalServiceAvailable struct {
+	lastCheckedAt time.Time
+}
+
+type externalServiceUnavailable struct {
+	suspectedReason string
+}
+
+type externalServiceUnknown struct{}
+
 const externalServiceIDKind = "ExternalService"
+
+// availabilityCheck indicates which code host types have an availability check implemented. For any
+// new code hosts where this check is implemented, add a new entry for the respective kind and set
+// the value to true.
+var availabilityCheck = map[string]bool{
+	extsvc.KindGitHub:          true,
+	extsvc.KindGitLab:          true,
+	extsvc.KindBitbucketServer: true,
+	extsvc.KindBitbucketCloud:  true,
+}
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: check whether user is site-admin
@@ -187,44 +217,79 @@ func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*
 	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
 }
 
-func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvailabilityResolver, error) {
-	return &externalServiceAvailabilityResolver{}, nil
+// mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
+var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceResolver, error)
+
+func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceResolver, error) {
+	if mockCheckConnection != nil {
+		return mockCheckConnection(ctx, r)
+	}
+
+	if !r.HasConnectionCheck(ctx) {
+		r.availability = availabilityState{
+			unknown: &externalServiceUnknown{},
+		}
+
+		return r, nil
+	}
+
+	source, err := repos.NewSource(
+		ctx,
+		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		r.db,
+		r.externalService,
+		httpcli.ExternalClientFactory,
+	)
+	if err != nil {
+		return r, errors.Wrap(err, "failed to create source")
+	}
+
+	if err := source.CheckConnection(ctx); err != nil {
+		r.availability = availabilityState{
+			unavailable: &externalServiceUnavailable{
+				suspectedReason: err.Error(),
+			},
+		}
+
+		return r, nil
+	}
+
+	r.availability = availabilityState{
+		available: &externalServiceAvailable{
+			lastCheckedAt: time.Now(),
+		},
+	}
+
+	return r, nil
 }
 
-func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) (bool, error) {
-	return false, nil
+func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) bool {
+	return availabilityCheck[r.externalService.Kind]
 }
 
-type externalServiceAvailabilityResolver struct{}
-
-func (r *externalServiceAvailabilityResolver) ToExternalServiceAvailable() (*externalServiceAvailableResolver, bool) {
-	return nil, false
+func (r *externalServiceResolver) ToExternalServiceAvailable() (*externalServiceResolver, bool) {
+	return r, r.availability.available != nil
 }
 
-func (r *externalServiceAvailabilityResolver) ToExternalServiceUnavailable() (*externalServiceUnavailableResolver, bool) {
-	return nil, false
+func (r *externalServiceResolver) ToExternalServiceUnavailable() (*externalServiceResolver, bool) {
+	return r, r.availability.unavailable != nil
+
 }
 
-func (r *externalServiceAvailabilityResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityUnknownResolver, bool) {
-	return &externalServiceAvailabilityUnknownResolver{}, true
+func (r *externalServiceResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceResolver, bool) {
+	return r, r.availability.unknown != nil
 }
 
-type externalServiceAvailableResolver struct{}
-
-func (r *externalServiceAvailableResolver) LastCheckedAt() (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: time.Now()}, errors.New("not implemented yet")
+func (r *externalServiceResolver) LastCheckedAt() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.availability.available.lastCheckedAt}, nil
 }
 
-type externalServiceUnavailableResolver struct{}
-
-func (r *externalServiceUnavailableResolver) SuspectedReason() (string, error) {
-	return "", errors.New("not implemented yet")
+func (r *externalServiceResolver) SuspectedReason() (string, error) {
+	return r.availability.unavailable.suspectedReason, nil
 }
 
-type externalServiceAvailabilityUnknownResolver struct{}
-
-func (r *externalServiceAvailabilityUnknownResolver) ImplementationNote() (string, error) {
-	return "not implemented yet", nil
+func (r *externalServiceResolver) ImplementationNote() string {
+	return "not implemented"
 }
 
 type externalServiceSyncJobConnectionResolver struct {

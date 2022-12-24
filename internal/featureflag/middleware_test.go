@@ -186,5 +186,5 @@ func setupRedisTest(t *testing.T) {
 		return nil, nil
 	}))
 
-	pool = redis.NewPool(func() (redis.Conn, error) { return mockConn, nil }, 10)
+	pool = &redis.Pool{Dial: func() (redis.Conn, error) { return mockConn, nil }, MaxIdle: 10}
 }

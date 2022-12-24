@@ -12,6 +12,7 @@ export class LoadingTooltip {
                 above: true,
                 create() {
                     const dom = document.createElement('div')
+                    dom.classList.add('tmp-tooltip')
                     dom.textContent = 'Loading...'
                     return { dom }
                 },

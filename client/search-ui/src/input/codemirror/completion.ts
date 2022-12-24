@@ -57,7 +57,7 @@ import {
     repositoryInsertText,
 } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
@@ -352,10 +352,22 @@ export function createDefaultSuggestionSources(
                     from = token.range.start
                 }
 
+                const suggestions = [...FILTER_SUGGESTIONS, ...FILTER_SHORTHAND_SUGGESTIONS].filter(suggestion =>
+                    token?.type === 'pattern'
+                        ? suggestion.label.toLowerCase().includes(token.value.toLowerCase())
+                        : true
+                )
                 return {
                     from,
-                    options: FILTER_SUGGESTIONS,
-                    validFor: /^-?[a-z]+$/i,
+                    options: suggestions,
+                    // Use filter:false to ensure that static suggestions stay
+                    // at the top after dynamic suggestions load. With
+                    // `filter:true`, typing a query like `symbol` makes the
+                    // `type:symbol` static suggestion appear briefly at the top
+                    // until a dynamic suggestion for a repo with a match
+                    // against "symbol" gets loaded and the `type:symbol`
+                    // suggestion jumps to the bottom.
+                    filter: false,
                 }
             }),
             // Show static filter value suggestions
@@ -427,13 +439,15 @@ export function createDefaultSuggestionSources(
                     return null
                 }
 
-                const results = await options.fetchSuggestions(
+                const results: SearchMatch[] = await options.fetchSuggestions(
                     getSuggestionQuery(tokens, token, resolvedFilter.definition.suggestions),
                     context.onAbort
                 )
+
                 if (results.length === 0) {
                     return null
                 }
+
                 const filteredResults = results
                     .filter(match => match.type === resolvedFilter.definition.suggestions)
                     .flatMap(match =>
@@ -462,7 +476,7 @@ export function createDefaultSuggestionSources(
                     return null
                 }
 
-                const results = await options.fetchSuggestions(
+                const results: SearchMatch[] = await options.fetchSuggestions(
                     getSuggestionQuery(tokens, token, suggestionTypeFromTokens(tokens, options)),
                     context.onAbort
                 )
@@ -656,6 +670,32 @@ const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FIL
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters
     })
 )
+
+// Shorthand suggestions for complete filters like `type:symbol`, `lang:haskell`
+// or `patterntype:regexp`.  Shorthand suggestions are helpful for users who may
+// not be super familiar with our search syntax and may therefore type "symbol"
+// without knowing that the filter is "type:symbol". Without shorthand
+// suggestions, the query "symbol" would not have any suggestions because none
+// of our filters start with "symbol".
+export const FILTER_SHORTHAND_SUGGESTIONS: Completion[] = filterTypeKeys.flatMap(filterType => {
+    if (filterType === 'repo' || filterType === 'select') {
+        // Ignore shorthand suggestions for repo (because it's noisy) and select
+        // (because it has similar values as `type:` suggestions and we assume
+        // most users intend to use `type:` instead of `select:`). Feel free to
+        // revert this condition in the future if you think repo/select should
+        // be included for shorthand suggestions.
+        return []
+    }
+    const completions = FILTERS[filterType].discreteValues?.(undefined, false) ?? []
+    return completions.map<Completion>(completion => {
+        const insertText = `${filterType}:${completion.label} `.toLowerCase()
+        return {
+            label: insertText,
+            type: 'filter-shorthand',
+            insertText,
+        }
+    })
+})
 
 /**
  * This helper function creates a function suitable for CodeMirror's 'getMatch'

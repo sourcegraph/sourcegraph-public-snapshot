@@ -91,12 +91,12 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
 
-// gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
+// gitCommitGQLID is a type used for marshaling and unmarshalling a Git commit's
 // GraphQL ID.
 type gitCommitGQLID struct {
 	Repository graphql.ID  `json:"r"`
@@ -260,7 +260,7 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.path") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("path", path)
 
@@ -323,6 +323,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Path        *string
+	Follow      bool
 	After       *string
 	AfterCursor *string
 }) (*gitCommitConnectionResolver, error) {
@@ -333,6 +334,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		first:           args.ConnectionArgs.First,
 		query:           args.Query,
 		path:            args.Path,
+		follow:          args.Follow,
 		after:           args.After,
 		afterCursor:     args.AfterCursor,
 		repo:            r.repoResolver,

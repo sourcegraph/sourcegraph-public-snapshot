@@ -5,8 +5,8 @@ import (
 	"io"
 	"sort"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -333,13 +333,13 @@ func writeSCIPData(
 
 		numDocuments += 1
 	}
-	trace.Log(otlog.Uint32("numDocuments", numDocuments))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
 
 	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}
-	trace.Log(otlog.Uint32("numSymbols", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
 
 	return nil
 }

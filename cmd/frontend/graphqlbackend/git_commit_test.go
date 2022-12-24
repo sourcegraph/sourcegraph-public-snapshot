@@ -63,7 +63,7 @@ func TestGitCommitResolver(t *testing.T) {
 
 	t.Run("Lazy loading", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions, authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 			return commit, nil
 		})
 
@@ -226,9 +226,9 @@ func TestGitCommitAncestors(t *testing.T) {
 
 	client.CommitsFunc.SetDefaultHook(func(
 		ctx context.Context,
+		authz authz.SubRepoPermissionChecker,
 		repo api.RepoName,
-		opt gitserver.CommitsOptions,
-		authz authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 
 		// Offset the returned list of commits based on the value of the Skip option.
 		return commits[opt.Skip:], nil

@@ -314,10 +314,10 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 func addExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return cli.NewExitError("no migration name specified", 1)
+		return cli.Exit("no migration name specified", 1)
 	}
 	if len(args) != 1 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	var (
@@ -325,7 +325,7 @@ func addExec(ctx *cli.Context) error {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.Add(database, args[0])
@@ -334,10 +334,10 @@ func addExec(ctx *cli.Context) error {
 func revertExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return cli.NewExitError("no commit specified", 1)
+		return cli.Exit("no commit specified", 1)
 	}
 	if len(args) != 1 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	return migration.Revert(db.Databases(), args[0])
@@ -346,10 +346,10 @@ func revertExec(ctx *cli.Context) error {
 func squashExec(ctx *cli.Context) (err error) {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return cli.NewExitError("no current-version specified", 1)
+		return cli.Exit("no current-version specified", 1)
 	}
 	if len(args) != 1 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	var (
@@ -357,7 +357,7 @@ func squashExec(ctx *cli.Context) (err error) {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
@@ -373,11 +373,11 @@ func squashExec(ctx *cli.Context) (err error) {
 func visualizeExec(ctx *cli.Context) (err error) {
 	args := ctx.Args().Slice()
 	if len(args) != 0 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	if outputFilepath == "" {
-		return cli.NewExitError("Supply an output file with -f", 1)
+		return cli.Exit("Supply an output file with -f", 1)
 	}
 
 	var (
@@ -386,7 +386,7 @@ func visualizeExec(ctx *cli.Context) (err error) {
 	)
 
 	if !ok {
-		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.Visualize(database, outputFilepath)
@@ -395,11 +395,11 @@ func visualizeExec(ctx *cli.Context) (err error) {
 func rewriteExec(ctx *cli.Context) (err error) {
 	args := ctx.Args().Slice()
 	if len(args) != 0 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	if targetRevision == "" {
-		return cli.NewExitError("Supply a target revision with -rev", 1)
+		return cli.Exit("Supply a target revision with -rev", 1)
 	}
 
 	var (
@@ -408,7 +408,7 @@ func rewriteExec(ctx *cli.Context) (err error) {
 	)
 
 	if !ok {
-		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.Rewrite(database, targetRevision)
@@ -417,11 +417,11 @@ func rewriteExec(ctx *cli.Context) (err error) {
 func squashAllExec(ctx *cli.Context) (err error) {
 	args := ctx.Args().Slice()
 	if len(args) != 0 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	if outputFilepath == "" {
-		return cli.NewExitError("Supply an output file with -f", 1)
+		return cli.Exit("Supply an output file with -f", 1)
 	}
 
 	var (
@@ -430,7 +430,7 @@ func squashAllExec(ctx *cli.Context) (err error) {
 	)
 
 	if !ok {
-		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.SquashAll(database, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, skipSquashData, outputFilepath)
@@ -439,10 +439,10 @@ func squashAllExec(ctx *cli.Context) (err error) {
 func leavesExec(ctx *cli.Context) (err error) {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return cli.NewExitError("no commit specified", 1)
+		return cli.Exit("no commit specified", 1)
 	}
 	if len(args) != 1 {
-		return cli.NewExitError("too many arguments", 1)
+		return cli.Exit("too many arguments", 1)
 	}
 
 	return migration.LeavesForCommit(db.Databases(), args[0])

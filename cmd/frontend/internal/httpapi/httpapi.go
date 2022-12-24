@@ -39,8 +39,15 @@ import (
 )
 
 type Handlers struct {
-	GitHubSyncWebhook               webhooks.Registerer
-	PermissionsGitHubWebhook        webhooks.Registerer
+	// Repo sync
+	GitHubSyncWebhook          webhooks.Registerer
+	GitLabSyncWebhook          webhooks.Registerer
+	BitbucketServerSyncWebhook webhooks.Registerer
+
+	// Permissions
+	PermissionsGitHubWebhook webhooks.Registerer
+
+	// Batch changes
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
 	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
@@ -48,8 +55,12 @@ type Handlers struct {
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
+
+	// Code intel
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+
+	// Compute
+	NewComputeStreamHandler enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -88,22 +99,24 @@ func NewHandler(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	wh := webhooks.WebhookRouter{
-		Logger: logger.Scoped("WebhookRouter", "handling webhook requests and dispatching them to handlers"),
+	wh := webhooks.Router{
+		Logger: logger.Scoped("webhooks.Router", "handling webhook requests and dispatching them to handlers"),
 		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)
 	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BitbucketServerSyncWebhook.Register(&wh)
 	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.GitLabSyncWebhook.Register(&wh)
 	handlers.PermissionsGitHubWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
-	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
+	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
 
 	// New UUID based webhook handler
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))

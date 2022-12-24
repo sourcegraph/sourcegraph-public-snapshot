@@ -186,11 +186,11 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							WebhookRouter: &webhooks.WebhookRouter{
+							Router: &webhooks.Router{
 								DB: db,
 							},
 						}
-						hook.Register(handler.WebhookRouter)
+						hook.Register(handler.Router)
 
 						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 						if err != nil {

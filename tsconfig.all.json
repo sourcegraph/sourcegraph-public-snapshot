@@ -20,6 +20,7 @@
     { "path": "client/storybook" },
     { "path": "client/search" },
     { "path": "client/search-ui" },
+    { "path": "client/testing" },
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },
