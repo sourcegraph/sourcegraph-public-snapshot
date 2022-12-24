@@ -16850,13 +16850,116 @@ Query: `histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duratio
 
 <br />
 
+#### zoekt: indexed_search_num_concurrent_requests_aggregate
+
+<p class="subtitle">Amount of in-flight indexed search requests (aggregate)</p>
+
+This dashboards shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (name) (zoekt_search_running)`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_num_concurrent_requests_by_instance
+
+<p class="subtitle">Amount of in-flight indexed search requests (per instance)</p>
+
+This dashboards shows the current number of indexed search requests that are-flight, broken out per instance.
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100121` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance, name) (zoekt_search_running{instance=~`${instance:regex}`})`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_concurrent_request_growth_rate_1m_aggregate
+
+<p class="subtitle">Rate of growth of in-flight indexed search requests over 1m (aggregate)</p>
+
+This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
+
+This metric gives a notion of how fast the indexed-search system is processing it`s request load`,
+taking into account the request arrival rate and 
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (name) (deriv(zoekt_search_running[1m]))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_concurrent_request_growth_rate_1m_per_instance
+
+<p class="subtitle">Rate of growth of in-flight indexed search requests over 1m (per instance)</p>
+
+This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (deriv(zoekt_search_running[1m]))`
+
+</details>
+
+<br />
+
 #### zoekt: indexed_search_request_errors
 
 <p class="subtitle">Indexed search request errors every 5m by code</p>
 
 Refer to the [alerts reference](./alerts.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100140` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16884,7 +16987,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100150` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16912,7 +17015,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100151` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
