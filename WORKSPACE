@@ -79,6 +79,7 @@ npm_translate_lock(
         "//:client/shared/package.json",
         "//:client/storybook/package.json",
         "//:client/template-parser/package.json",
+        "//:client/testing/package.json",
         "//:client/web/package.json",
         "//:client/wildcard/package.json",
         "//:client/vscode/package.json",
