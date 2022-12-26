@@ -8,6 +8,8 @@ import (
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // Inputs contains fields we set before kicking off search.
@@ -347,6 +348,8 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	CodeOwnershipFilters bool `json:"codeownersip"`
 }
 
 func (f *Features) String() string {
