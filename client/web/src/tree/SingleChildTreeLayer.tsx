@@ -1,9 +1,6 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
-
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable } from './components'
 import { Directory } from './Directory'
@@ -13,10 +10,6 @@ import { SingleChildGitTree } from './util'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
-
-    fileDecorationsByPath: FileDecorationsByPath
-
-    fileDecorations?: FileDecoration[]
 }
 
 /**
@@ -132,12 +125,10 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             entryInfo={this.props.entryInfo}
                             depth={this.props.depth}
                             index={this.props.index}
-                            isLightTheme={this.props.isLightTheme}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
-                            fileDecorations={this.props.fileDecorations}
                             isActive={isActive}
                             isSelected={isSelected}
                             isExpanded={this.props.isExpanded}
