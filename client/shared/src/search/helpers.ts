@@ -2,6 +2,7 @@ import * as H from 'history'
 
 import { SearchPatternType } from '../graphql-operations'
 
+import { SearchContextProps } from './helpers/searchContext'
 import { CharacterRange } from './query/token'
 import { SearchMode } from './searchQueryState'
 
