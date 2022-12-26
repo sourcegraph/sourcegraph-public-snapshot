@@ -836,7 +836,10 @@ importers:
     specifiers: {}
 
   client/storybook:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/build-config': workspace:^0.0.1
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
 
   client/template-parser:
     specifiers: {}
