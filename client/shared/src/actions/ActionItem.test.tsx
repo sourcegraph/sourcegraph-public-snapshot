@@ -193,32 +193,6 @@ describe('ActionItem', () => {
         expect(asFragment()).toMatchSnapshot()
     })
 
-    test('run command with error with showInlineError', async () => {
-        const { asFragment } = render(
-            <ActionItem
-                active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                variant="actionItem"
-                showInlineError={true}
-                location={history.location}
-                extensionsController={{
-                    ...NOOP_EXTENSIONS_CONTROLLER,
-                    executeCommand: () => Promise.reject(new Error('x')),
-                }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
-            />
-        )
-
-        // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
-        // to result in the setState call.)
-        userEvent.click(screen.getByRole('button'))
-
-        await waitFor(() => expect(screen.getByLabelText('Error: x')).toBeInTheDocument())
-
-        expect(asFragment()).toMatchSnapshot()
-    })
-
     describe('"open" command', () => {
         it('renders as link', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })

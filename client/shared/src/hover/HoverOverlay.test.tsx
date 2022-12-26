@@ -114,15 +114,6 @@ describe('HoverOverlay', () => {
                     actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError={{
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
-                        alerts: [
-                            {
-                                summary: {
-                                    kind: MarkupKind.Markdown,
-                                    value: 'Testing `markdown` rendering.',
-                                },
-                                type: 'test-alert-dismissalType',
-                            },
-                        ],
                     }}
                 />
             ).asFragment()

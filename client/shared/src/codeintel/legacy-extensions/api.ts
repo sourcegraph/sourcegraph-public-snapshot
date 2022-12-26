@@ -1,4 +1,3 @@
-/* eslint-disable etc/no-deprecated */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Observable, Unsubscribable } from 'rxjs'
 
@@ -78,54 +77,6 @@ export interface DocumentFilter {
  * @example let sel: DocumentSelector = [{ language: 'typescript' }, { language: 'json', pattern: '**∕tsconfig.json' }];
  */
 export type DocumentSelector = (string | DocumentFilter)[]
-
-/**
- * Options for an input box displayed as a result of calling {@link Window#showInputBox}.
- */
-export interface InputBoxOptions {
-    /**
-     * The text that describes what input the user should provide.
-     */
-    prompt?: string
-
-    /**
-     * The pre-filled input value for the input box.
-     */
-    value?: string
-}
-
-export interface ProgressOptions {
-    title?: string
-}
-
-export interface Progress {
-    /** Optional message. If not set, the previous message is still shown. */
-    message?: string
-
-    /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
-    percentage?: number
-}
-
-export interface ProgressReporter {
-    /**
-     * Updates the progress display with a new message and/or percentage.
-     */
-    next(status: Progress): void
-
-    /**
-     * Turns the progress display into an error display for the given error or message.
-     * Use if the operation failed.
-     * No further progress updates can be sent after this.
-     */
-    error(error: any): void
-
-    /**
-     * Completes the progress bar and hides the display.
-     * Sending a percentage of 100 has the same effect.
-     * No further progress updates can be sent after this.
-     */
-    complete(): void
-}
 
 export interface Directory {
     /**
@@ -472,32 +423,6 @@ export interface MarkupContent {
     kind?: MarkupKind
 }
 
-/**
- * The type of a notification shown through {@link Window.showNotification}.
- */
-export enum NotificationType {
-    /**
-     * An error message.
-     */
-    Error = 1,
-    /**
-     * A warning message.
-     */
-    Warning = 2,
-    /**
-     * An info message.
-     */
-    Info = 3,
-    /**
-     * A log message.
-     */
-    Log = 4,
-    /**
-     * A success message.
-     */
-    Success = 5,
-}
-
 /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
 export interface Badge {
     /**
@@ -725,12 +650,10 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             )
         )
     }
-    return (
-        context
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
-            .toPromise()
-    )
+    return context
+
+        .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+        .toPromise()
 }
 
 export function getSetting<T>(key: string): T | undefined {
