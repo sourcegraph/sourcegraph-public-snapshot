@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
+import { mdiCircle, mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
-import { deleteExternalService } from './backend'
+import { deleteExternalService, testExternalServiceConnection } from './backend'
 import { defaultExternalServices } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
@@ -50,6 +50,19 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
             setIsDeleting(asError(error))
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
+
+    const [isTestInProgress, setIsTestInProgress] = useState<boolean | Error>(false)
+    const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
+        setIsTestInProgress(true)
+        try {
+            // FIXME: Implement
+            await testExternalServiceConnection(node.id)
+            setIsTestInProgress(false)
+            // FIXME: add on update callback
+        } catch (error) {
+            setIsTestInProgress(asError(error))
+        }
+    }, [])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -109,6 +122,16 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
+                    <Tooltip content={'Test connectivity to code host'}>
+                        <Button
+                            className="test-connection-external-service-button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={onTestConnection}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiConnection} /> {'Test'}
+                        </Button>
+                    </Tooltip>{' '}
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
