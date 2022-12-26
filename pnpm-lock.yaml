@@ -28,8 +28,6 @@ importers:
       '@codemirror/search': ^6.0.1
       '@codemirror/state': ^6.1.0
       '@codemirror/view': ^6.4.0
-      '@gql2ts/from-schema': ^1.10.1
-      '@gql2ts/language-typescript': ^1.9.0
       '@gql2ts/types': ^1.9.0
       '@graphiql/react': ^0.10.0
       '@graphql-codegen/cli': ^2.16.1
@@ -533,8 +531,6 @@ importers:
       '@babel/preset-env': 7.20.2_@babel+core@7.20.5
       '@babel/preset-typescript': 7.18.6_@babel+core@7.20.5
       '@babel/runtime': 7.20.6
-      '@gql2ts/from-schema': 1.10.1_graphql@15.4.0
-      '@gql2ts/language-typescript': 1.9.0_graphql@15.4.0
       '@gql2ts/types': 1.9.0_graphql@15.4.0
       '@graphql-codegen/cli': 2.16.1_hh6lbfhb7qo2hnm4o4l47spzc4
       '@graphql-codegen/typescript': 2.8.5_graphql@15.4.0
@@ -2959,32 +2955,11 @@ packages:
       graphql: 14.7.0
     dev: true
 
-  /@gql2ts/from-schema/1.10.1_graphql@15.4.0:
-    resolution: {integrity: sha512-atYXxY8WBBfK39fEbdwx3CgqRYYUR10a1hGPIwVcvEuNYIlAnIUR1drVbmC3higwMbAyHGkMxDPJ9Us7tnNz6w==}
-    peerDependencies:
-      graphql: '>= 0.10 <15'
-    dependencies:
-      '@gql2ts/language-typescript': 1.9.0_graphql@15.4.0
-      '@gql2ts/util': 1.9.0_graphql@15.4.0
-      dedent: 0.7.0
-      graphql: 15.4.0
-    dev: true
-
   /@gql2ts/language-typescript/1.9.0_graphql@14.7.0:
     resolution: {integrity: sha512-d3OlIFMjKoXH+VukXD7+pQRLgrP3NkXDQbCWSGonIl5mpRQ5aO5I8Fo53cMZQ9xCjj1Y5Vg24wtZOuY8spc6Ag==}
     requiresBuild: true
     dependencies:
       '@gql2ts/util': 1.9.0_graphql@14.7.0
-      humps: 2.0.1
-    transitivePeerDependencies:
-      - graphql
-    dev: true
-
-  /@gql2ts/language-typescript/1.9.0_graphql@15.4.0:
-    resolution: {integrity: sha512-d3OlIFMjKoXH+VukXD7+pQRLgrP3NkXDQbCWSGonIl5mpRQ5aO5I8Fo53cMZQ9xCjj1Y5Vg24wtZOuY8spc6Ag==}
-    requiresBuild: true
-    dependencies:
-      '@gql2ts/util': 1.9.0_graphql@15.4.0
       humps: 2.0.1
     transitivePeerDependencies:
       - graphql
