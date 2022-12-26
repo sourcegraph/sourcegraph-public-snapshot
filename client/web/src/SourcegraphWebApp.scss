@@ -5,19 +5,11 @@ It should import all component stylesheets.
 
 // Global libraries styles
 @import 'react-grid-layout/css/styles.css';
-@import 'react-resizable/css/styles.css';
 
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
 @import '../../wildcard/src/global-styles/index.scss';
-
-// stylelint-disable-next-line selector-max-id
-html,
-body,
-#root {
-    height: 100%;
-}
 
 // Document highlight is the background color for tokens which are matched with
 // a result from a document highlight provider. e.g. for references of the token

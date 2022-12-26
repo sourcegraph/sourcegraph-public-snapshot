@@ -74,13 +74,6 @@
     --media-xl: 1200px;
 }
 
-// stylelint-disable-next-line selector-max-id
-html,
-body,
-#root {
-    height: 100%;
-}
-
 body {
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
