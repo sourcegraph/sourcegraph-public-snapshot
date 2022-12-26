@@ -86,6 +86,7 @@ type InsightViewDebugArgs struct {
 type InsightsDataPointResolver interface {
 	DateTime() gqlutil.DateTime
 	Value() float64
+	DiffQuery() (*string, error)
 }
 
 type InsightViewDebugResolver interface {

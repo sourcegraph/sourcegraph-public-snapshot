@@ -1,4 +1,4 @@
-import { SubmitSearchParameters } from '@sourcegraph/search'
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 

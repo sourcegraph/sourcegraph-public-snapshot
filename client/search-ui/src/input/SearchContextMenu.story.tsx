@@ -1,7 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
-import { ListSearchContextsResult } from '@sourcegraph/search'
+import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchSearchContexts,

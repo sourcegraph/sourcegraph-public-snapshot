@@ -5,6 +5,12 @@ import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import { SearchBox } from '@sourcegraph/search-ui'
+// The experimental search input should be shown on the search home page
+// eslint-disable-next-line  no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
@@ -13,13 +19,7 @@ import {
     canSubmitSearch,
     QueryState,
     SearchModeProps,
-} from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
-// The experimental search input should be shown on the search home page
-// eslint-disable-next-line  no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+} from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

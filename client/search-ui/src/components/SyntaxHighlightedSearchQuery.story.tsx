@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { SearchPatternType } from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Text } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 

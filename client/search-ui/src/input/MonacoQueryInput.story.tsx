@@ -1,6 +1,6 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
-import { SearchPatternType } from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'

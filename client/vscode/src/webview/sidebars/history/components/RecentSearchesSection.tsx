@@ -3,8 +3,8 @@ import React, { useMemo, useState } from 'react'
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 

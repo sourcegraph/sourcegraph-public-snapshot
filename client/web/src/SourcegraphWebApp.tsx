@@ -14,6 +14,15 @@ import * as uuid from 'uuid'
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
+import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     getUserSearchContextNamespaces,
     SearchContextProps,
@@ -26,16 +35,7 @@ import {
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
     getDefaultSearchContextSpec,
-} from '@sourcegraph/search'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
-import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
-import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+} from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'

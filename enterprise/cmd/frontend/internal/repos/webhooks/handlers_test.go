@@ -16,12 +16,16 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -68,7 +72,7 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := NewGitHubHandler(db)
+	handler := NewGitHubHandler()
 	router := &webhooks.GitHubWebhook{
 		Router: &webhooks.Router{
 			DB: db,
@@ -154,4 +158,76 @@ func sign(t *testing.T, message, secret []byte) string {
 	}
 
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+}
+
+func TestGitLabHandler(t *testing.T) {
+	repoName := "gitlab.com/ryanslade/ryan-test-private"
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return api.RepoName(repoName), nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	handler := NewGitLabHandler()
+	data, err := os.ReadFile("testdata/gitlab-push.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload gitlabwebhooks.PushEvent
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatal(err)
+	}
+
+	var updateQueued string
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		updateQueued = string(repo)
+		return &protocol.RepoUpdateResponse{
+			ID:   1,
+			Name: string(repo),
+		}, nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+
+	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, repoName, updateQueued)
+}
+
+func TestBitbucketServerHandler(t *testing.T) {
+	repoName := "bitbucket.sgdev.org/private/test-2020-06-01"
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
+		return "bitbucket.sgdev.org/private/test-2020-06-01", nil
+	})
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	handler := NewBitbucketServerHandler()
+	data, err := os.ReadFile("testdata/bitbucket-server-push.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload bitbucketserver.PushEvent
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatal(err)
+	}
+
+	var updateQueued string
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		updateQueued = string(repo)
+		return &protocol.RepoUpdateResponse{
+			ID:   1,
+			Name: string(repo),
+		}, nil
+	}
+	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+
+	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, repoName, updateQueued)
 }
