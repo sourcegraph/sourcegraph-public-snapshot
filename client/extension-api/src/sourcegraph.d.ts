@@ -423,54 +423,6 @@ declare module 'sourcegraph' {
     export type DocumentSelector = (string | DocumentFilter)[]
 
     /**
-     * Options for an input box displayed as a result of calling {@link Window#showInputBox}.
-     */
-    export interface InputBoxOptions {
-        /**
-         * The text that describes what input the user should provide.
-         */
-        prompt?: string
-
-        /**
-         * The pre-filled input value for the input box.
-         */
-        value?: string
-    }
-
-    export interface ProgressOptions {
-        title?: string
-    }
-
-    export interface Progress {
-        /** Optional message. If not set, the previous message is still shown. */
-        message?: string
-
-        /** Integer from 0 to 100. If not set, the previous percentage is still shown. */
-        percentage?: number
-    }
-
-    export interface ProgressReporter {
-        /**
-         * Updates the progress display with a new message and/or percentage.
-         */
-        next(status: Progress): void
-
-        /**
-         * Turns the progress display into an error display for the given error or message.
-         * Use if the operation failed.
-         * No further progress updates can be sent after this.
-         */
-        error(error: any): void
-
-        /**
-         * Completes the progress bar and hides the display.
-         * Sending a percentage of 100 has the same effect.
-         * No further progress updates can be sent after this.
-         */
-        complete(): void
-    }
-
-    /**
      * A window in the client application that is running the extension.
      */
     export interface Window {
@@ -488,52 +440,6 @@ declare module 'sourcegraph' {
          * An event that is fired when the active view component changes.
          */
         activeViewComponentChanges: Subscribable<ViewComponent | undefined>
-
-        /**
-         * Show a notification message to the user that does not require interaction or steal focus.
-         *
-         * @param message The message to show. Markdown is supported.
-         * @param type a {@link NotificationType} affecting the display of the notification.
-         */
-        showNotification(message: string, type: NotificationType): void
-
-        /**
-         * Show progress in the window. Progress is shown while running the given callback
-         * and while the promise it returned isn't resolved nor rejected.
-         *
-         * @param task A callback returning a promise. Progress state can be reported with
-         * the provided [ProgressReporter](#ProgressReporter)-object.
-         *
-         * @returns The Promise the task-callback returned.
-         */
-        withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
-
-        /**
-         * Show progress in the window. The returned ProgressReporter can be used to update the
-         * progress bar, complete it or turn the notification into an error notification in case the operation failed.
-         *
-         * @returns A ProgressReporter that allows updating the progress display.
-         */
-        showProgress(options: ProgressOptions): Promise<ProgressReporter>
-
-        /**
-         * Show a modal message to the user that the user must dismiss before continuing.
-         *
-         * @param message The message to show.
-         * @returns A promise that resolves when the user dismisses the message.
-         */
-        showMessage(message: string): Promise<void>
-
-        /**
-         * Displays an input box to ask the user for input.
-         *
-         * The returned value will be `undefined` if the input box was canceled (e.g., because the user pressed the
-         * ESC key). Otherwise the returned value will be the string provided by the user.
-         *
-         * @param options Configures the behavior of the input box.
-         * @returns The string provided by the user, or `undefined` if the input box was canceled.
-         */
-        showInputBox(options?: InputBoxOptions): Promise<string | undefined>
     }
 
     /**
@@ -1090,32 +996,6 @@ declare module 'sourcegraph' {
         kind?: MarkupKind
     }
 
-    /**
-     * The type of a notification shown through {@link Window.showNotification}.
-     */
-    export enum NotificationType {
-        /**
-         * An error message.
-         */
-        Error = 1,
-        /**
-         * A warning message.
-         */
-        Warning = 2,
-        /**
-         * An info message.
-         */
-        Info = 3,
-        /**
-         * A log message.
-         */
-        Log = 4,
-        /**
-         * A success message.
-         */
-        Success = 5,
-    }
-
     /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
     export interface Badge {
         /**
@@ -1164,41 +1044,6 @@ declare module 'sourcegraph' {
          * position or the current position itself.
          */
         range?: Range
-
-        /**
-         * Alerts that should be shown in this hover.
-         */
-        alerts?: HoverAlert[]
-    }
-
-    export interface HoverAlert {
-        /**
-         * Text content to be shown on hovers. Since the alert is displayed inline,
-         * multiparagraph content will be rendered on one line. It's recommended to
-         * provide a brief message here, and place futher details in the badge or
-         * provide a link.
-         */
-        summary: MarkupContent
-
-        /**
-         * When an alert has a dismissal type, dismissing it will prevent all alerts
-         * of that type from being shown. If no type is provided, the alert is not
-         * dismissible.
-         */
-        type?: string
-
-        /** Predefined icons to display next ot the summary. */
-        iconKind?: 'info' | 'error' | 'warning'
-
-        /**
-         * When set, this renders a row of button underneath the content. Note
-         * that this was added after the extension deprecation and will only
-         * work with newer clients.
-         *
-         * When buttons are rendered this way, an eventual dismiss button is
-         * appended to this list.
-         */
-        buttons?: React.ReactNode[]
     }
 
     export interface HoverProvider {
