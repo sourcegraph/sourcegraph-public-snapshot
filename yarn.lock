@@ -27463,8 +27463,6 @@ __metadata:
     "@codemirror/search": ^6.0.1
     "@codemirror/state": ^6.1.0
     "@codemirror/view": ^6.4.0
-    "@gql2ts/from-schema": ^1.10.1
-    "@gql2ts/language-typescript": ^1.9.0
     "@gql2ts/types": ^1.9.0
     "@graphiql/react": ^0.10.0
     "@graphql-codegen/cli": ^2.16.1

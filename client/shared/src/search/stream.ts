@@ -1,5 +1,4 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-/* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
@@ -7,8 +6,7 @@ import { AggregableBadge } from 'sourcegraph'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchMode } from '@sourcegraph/search'
 
-import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../schema'
+import { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -485,10 +483,10 @@ function initiateSearchStream(
         if (trace) {
             parameters.push(['trace', trace])
         }
-        for (const v of featureOverrides || []) {
-            parameters.push(['feat', v])
+        for (const value of featureOverrides || []) {
+            parameters.push(['feat', value])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
