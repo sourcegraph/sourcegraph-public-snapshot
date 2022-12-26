@@ -5,7 +5,6 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -14,6 +13,7 @@ import {
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

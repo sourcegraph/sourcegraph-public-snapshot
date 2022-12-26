@@ -2,13 +2,12 @@ import React, { createContext, useContext } from 'react'
 
 import { StoreApi, UseBoundStore } from 'zustand'
 
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { SearchPatternType } from '../graphql-operations'
 
-import { SearchPatternType } from './graphql-operations'
-
-import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
+import { QueryState, SubmitSearchParameters, toggleSubquery } from './helpers'
+import { FilterType } from './query/filters'
+import { appendFilter, updateFilter } from './query/transformer'
+import { filterExists } from './query/validate'
 
 export type SearchQueryStateStore<T extends SearchQueryState = SearchQueryState> = UseBoundStore<T, StoreApi<T>>
 

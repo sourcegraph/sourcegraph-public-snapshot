@@ -14,34 +14,7 @@ import {
     deleteSearchContext,
     isSearchContextAvailable,
     fetchDefaultSearchContextSpec,
-} from './backend'
-import { SearchPatternType } from './graphql-operations'
-import { SearchMode } from './searchQueryState'
-
-export * from './backend'
-export * from './searchQueryState'
-export * from './helpers'
-export * from './graphql-operations'
-export * from './helpers/queryExample'
-export * from './integration/streaming-search-mocks'
-
-export interface SearchPatternTypeProps {
-    patternType: SearchPatternType
-}
-
-export interface SearchPatternTypeMutationProps {
-    setPatternType: (patternType: SearchPatternType) => void
-}
-
-export interface CaseSensitivityProps {
-    caseSensitive: boolean
-    setCaseSensitivity: (caseSensitive: boolean) => void
-}
-
-export interface SearchModeProps {
-    searchMode: SearchMode
-    setSearchMode: (searchMode: SearchMode) => void
-}
+} from '../backend'
 
 export interface SearchContextProps {
     searchContextsEnabled: boolean

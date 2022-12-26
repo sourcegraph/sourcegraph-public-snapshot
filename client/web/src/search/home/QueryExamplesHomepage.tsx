@@ -4,12 +4,13 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'

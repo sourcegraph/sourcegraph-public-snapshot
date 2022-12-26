@@ -11,12 +11,12 @@ import {
     SearchQueryState,
     updateQuery,
     InitialParametersSource,
-    SearchPatternType,
     SearchMode,
-} from '@sourcegraph/search'
+} from '@sourcegraph/shared/src/search'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { SearchPatternType } from '../graphql-operations'
 import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import {

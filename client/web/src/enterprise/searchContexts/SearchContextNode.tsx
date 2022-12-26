@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
-import { SearchContextMinimalFields } from '@sourcegraph/search'
+import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, Icon, Link, Menu, MenuButton, MenuItem, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

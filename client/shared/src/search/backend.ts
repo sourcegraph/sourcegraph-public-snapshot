@@ -3,9 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, isErrorGraphQLResult } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import { AuthenticatedUser } from '../auth'
 import {
     EventLogsDataResult,
     EventLogsDataVariables,
@@ -31,7 +30,8 @@ import {
     SearchContextFields,
     DefaultSearchContextSpecResult,
     DefaultSearchContextSpecVariables,
-} from './graphql-operations'
+} from '../graphql-operations'
+import { PlatformContext } from '../platform/context'
 
 const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {

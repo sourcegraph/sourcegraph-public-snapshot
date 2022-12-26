@@ -1,6 +1,6 @@
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
-import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/search'
+import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/shared/src/search/integration'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 
