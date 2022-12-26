@@ -4,11 +4,10 @@ import { StoreApi, UseBoundStore } from 'zustand'
 
 import { SearchPatternType } from '../graphql-operations'
 
+import { QueryState, SubmitSearchParameters, toggleSubquery } from './helpers'
 import { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
 import { filterExists } from './query/validate'
-
-import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
 
 export type SearchQueryStateStore<T extends SearchQueryState = SearchQueryState> = UseBoundStore<T, StoreApi<T>>
 

@@ -1,8 +1,27 @@
 import * as H from 'history'
 
-import { CharacterRange } from './query/token'
+import { SearchPatternType } from '../graphql-operations'
 
-import { CaseSensitivityProps, SearchContextProps, SearchMode, SearchPatternTypeProps } from '.'
+import { CharacterRange } from './query/token'
+import { SearchMode } from './searchQueryState'
+
+export interface SearchPatternTypeProps {
+    patternType: SearchPatternType
+}
+
+export interface SearchPatternTypeMutationProps {
+    setPatternType: (patternType: SearchPatternType) => void
+}
+
+export interface CaseSensitivityProps {
+    caseSensitive: boolean
+    setCaseSensitivity: (caseSensitive: boolean) => void
+}
+
+export interface SearchModeProps {
+    searchMode: SearchMode
+    setSearchMode: (searchMode: SearchMode) => void
+}
 
 export enum QueryChangeSource {
     /**
