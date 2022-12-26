@@ -1,6 +1,5 @@
 import { mdiMagnify } from '@mdi/js'
 
-import { SearchPatternType } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -9,6 +8,7 @@ import { IconType } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesIcon } from '../../batches/icons'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
+import { SearchPatternType } from '../../graphql-operations'
 import { CodeInsightsIcon } from '../../insights/Icons'
 
 export interface CreateAction {

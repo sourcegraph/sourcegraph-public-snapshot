@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -27,67 +26,59 @@ func init() {
 	frontendregistry.HandleRegistry = handleRegistry
 }
 
-// Funcs called by serveRegistry to get registry data. If fakeRegistryData is set, it is used as
-// the data source instead of the database.
-var (
-	registryList = func(ctx context.Context, db database.DB, opt stores.ExtensionsListOptions) ([]*registry.Extension, error) {
-		vs, err := stores.Extensions(db).List(ctx, opt)
-		if err != nil {
-			return nil, err
-		}
-
-		xs, err := toRegistryAPIExtensionBatch(ctx, db, vs)
-		if err != nil {
-			return nil, err
-		}
-
-		ys := make([]*registry.Extension, 0, len(xs))
-		for _, x := range xs {
-			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
-			// skip this extension.
-			if x.Manifest != nil {
-				var o schema.SourcegraphExtensionManifest
-				if err := jsonc.Unmarshal(*x.Manifest, &o); err != nil {
-					continue
-				}
-			}
-			ys = append(ys, x)
-		}
-		return ys, nil
+func registryList(ctx context.Context, db database.DB, opt stores.ExtensionsListOptions) ([]*registry.Extension, error) {
+	if useFrozenRegistryData(ctx, db) {
+		return frontendregistry.FilterRegistryExtensions(getFrozenRegistryData(), opt.Query), nil
 	}
 
-	registryGetByUUID = func(ctx context.Context, db database.DB, uuid string) (*registry.Extension, error) {
-		x, err := stores.Extensions(db).GetByUUID(ctx, uuid)
-		if err != nil {
-			return nil, err
-		}
-		return toRegistryAPIExtension(ctx, db, x)
+	vs, err := stores.Extensions(db).List(ctx, opt)
+	if err != nil {
+		return nil, err
 	}
 
-	registryGetByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (*registry.Extension, error) {
-		x, err := stores.Extensions(db).GetByExtensionID(ctx, extensionID)
-		if err != nil {
-			return nil, err
-		}
-		return toRegistryAPIExtension(ctx, db, x)
+	xs, err := toRegistryAPIExtensionBatch(ctx, db, vs)
+	if err != nil {
+		return nil, err
 	}
 
-	registryGetFeaturedExtensions = func(ctx context.Context, db database.DB) ([]*registry.Extension, error) {
-		dbExtensions, err := stores.Extensions(db).GetFeaturedExtensions(ctx)
-		if err != nil {
-			return nil, err
-		}
-		registryExtensions := []*registry.Extension{}
-		for _, x := range dbExtensions {
-			registryExtension, err := toRegistryAPIExtension(ctx, db, x)
-			if err != nil {
+	ys := make([]*registry.Extension, 0, len(xs))
+	for _, x := range xs {
+		// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
+		// skip this extension.
+		if x.Manifest != nil {
+			var o schema.SourcegraphExtensionManifest
+			if err := jsonc.Unmarshal(*x.Manifest, &o); err != nil {
 				continue
 			}
-			registryExtensions = append(registryExtensions, registryExtension)
 		}
-		return registryExtensions, nil
+		ys = append(ys, x)
 	}
-)
+	return ys, nil
+}
+
+func registryGetByUUID(ctx context.Context, db database.DB, uuid string) (*registry.Extension, error) {
+	if useFrozenRegistryData(ctx, db) {
+		return frontendregistry.FindRegistryExtension(getFrozenRegistryData(), "uuid", uuid), nil
+	}
+
+	x, err := stores.Extensions(db).GetByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+	return toRegistryAPIExtension(ctx, db, x)
+}
+
+func registryGetByExtensionID(ctx context.Context, db database.DB, extensionID string) (*registry.Extension, error) {
+	if useFrozenRegistryData(ctx, db) {
+		return frontendregistry.FindRegistryExtension(getFrozenRegistryData(), "extensionID", extensionID), nil
+	}
+
+	x, err := stores.Extensions(db).GetByExtensionID(ctx, extensionID)
+	if err != nil {
+		return nil, err
+	}
+	return toRegistryAPIExtension(ctx, db, x)
+}
 
 func toRegistryAPIExtension(ctx context.Context, db database.DB, v *stores.Extension) (*registry.Extension, error) {
 	release, err := getLatestRelease(ctx, stores.Releases(db), v.NonCanonicalExtensionID, v.ID, "release")
@@ -125,10 +116,6 @@ func newExtension(v *stores.Extension, manifest *string, publishedAt time.Time) 
 	return &registry.Extension{
 		UUID:        v.UUID,
 		ExtensionID: v.NonCanonicalExtensionID,
-		Publisher: registry.Publisher{
-			Name: v.Publisher.NonCanonicalName,
-			URL:  baseURL + frontendregistry.PublisherExtensionsURL(v.Publisher.UserID != 0, v.Publisher.OrgID != 0, v.Publisher.NonCanonicalName),
-		},
 		Name:        v.Name,
 		Manifest:    manifest,
 		CreatedAt:   v.CreatedAt,
@@ -199,9 +186,9 @@ func handleRegistry(db database.DB) func(w http.ResponseWriter, r *http.Request)
 		case urlPath == extensionsPath:
 			operation = "list"
 
-			query := r.URL.Query().Get("q")
-			var opt stores.ExtensionsListOptions
-			opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
+			opt := stores.ExtensionsListOptions{
+				Query: r.URL.Query().Get("q"),
+			}
 			xs, err := registryList(r.Context(), db, opt)
 			if err != nil {
 				return err
@@ -210,11 +197,7 @@ func handleRegistry(db database.DB) func(w http.ResponseWriter, r *http.Request)
 
 		case urlPath == extensionsPath+"/featured":
 			operation = "featured"
-			x, err := registryGetFeaturedExtensions(r.Context(), db)
-			if err != nil {
-				return err
-			}
-			result = x
+			result = []struct{}{}
 
 		case strings.HasPrefix(urlPath, extensionsPath+"/"):
 			var (
@@ -259,51 +242,3 @@ var (
 		Help: "Seconds spent handling a request to the HTTP registry API",
 	}, []string{"operation", "code"})
 )
-
-func init() {
-	// Allow providing fake registry data for local dev (intended for use in local dev only).
-	//
-	// If FAKE_REGISTRY is set and refers to a valid JSON file (of []*registry.Extension), is used
-	// by serveRegistry (instead of the DB) as the source for registry data.
-	path := os.Getenv("FAKE_REGISTRY")
-	if path == "" {
-		return
-	}
-
-	readFakeExtensions := func() ([]*registry.Extension, error) {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
-		var xs []*registry.Extension
-		if err := json.Unmarshal(data, &xs); err != nil {
-			return nil, err
-		}
-		return xs, nil
-	}
-
-	registryList = func(ctx context.Context, db database.DB, opt stores.ExtensionsListOptions) ([]*registry.Extension, error) {
-		xs, err := readFakeExtensions()
-		if err != nil {
-			return nil, err
-		}
-		return frontendregistry.FilterRegistryExtensions(xs, opt.Query), nil
-	}
-	registryGetByUUID = func(ctx context.Context, db database.DB, uuid string) (*registry.Extension, error) {
-		xs, err := readFakeExtensions()
-		if err != nil {
-			return nil, err
-		}
-		return frontendregistry.FindRegistryExtension(xs, "uuid", uuid), nil
-	}
-	registryGetByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (*registry.Extension, error) {
-		xs, err := readFakeExtensions()
-		if err != nil {
-			return nil, err
-		}
-		return frontendregistry.FindRegistryExtension(xs, "extensionID", extensionID), nil
-	}
-	registryGetFeaturedExtensions = func(ctx context.Context, db database.DB) ([]*registry.Extension, error) {
-		return []*registry.Extension{}, nil
-	}
-}

@@ -157,7 +157,7 @@ func normalizeFiletype(filetype string) string {
 	return normalized
 }
 
-func (c *Client) IsTreesitterSupported(filetype string) bool {
+func IsTreesitterSupported(filetype string) bool {
 	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
 	return contained
 }
@@ -173,7 +173,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
 
-	if q.Engine == SyntaxEngineTreesitter && !c.IsTreesitterSupported(q.Filetype) {
+	if q.Engine == SyntaxEngineTreesitter && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
 

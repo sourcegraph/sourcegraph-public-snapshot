@@ -1209,6 +1209,21 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "email.templates": {
+      "description": "Configurable templates for some email types sent by Sourcegraph.",
+      "type": "object",
+      "properties": {
+        "resetPassword": {
+          "description": "Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        },
+        "setPassword": {
+          "description": "Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}",
+          "$ref": "#/definitions/EmailTemplate"
+        }
+      },
+      "group": "Email"
+    },
     "executors.frontendURL": {
       "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
       "type": "string",
@@ -1486,6 +1501,12 @@
       "group": "Debug",
       "examples": [10000]
     },
+    "observability.captureSlowGraphQLRequestsLimit": {
+      "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [2000]
+    },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
       "type": "integer",
@@ -1580,6 +1601,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 90,
+      "minimum": 0,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -2494,6 +2523,24 @@
         "type": {
           "type": "string",
           "const": "noop"
+        }
+      }
+    },
+    "EmailTemplate": {
+      "type": "object",
+      "required": ["subject", "text", "html"],
+      "properties": {
+        "subject": {
+          "description": "Template for email subject header",
+          "type": "string"
+        },
+        "text": {
+          "description": "Template for plain-text body",
+          "type": "string"
+        },
+        "html": {
+          "description": "Template for HTML body",
+          "type": "string"
         }
       }
     }

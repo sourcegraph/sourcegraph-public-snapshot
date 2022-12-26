@@ -5,8 +5,8 @@ import { MemoryRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ThemePreference } from '../theme'
 

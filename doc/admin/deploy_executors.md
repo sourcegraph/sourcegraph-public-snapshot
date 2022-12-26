@@ -53,3 +53,77 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
 
 ![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
+
+## Using private registries
+
+If you want to use docker images stored in a private registry that requires authentication, follow this section to configure it.
+
+Depending on the executor runtime that is being used, different options exist for provisioning access to private container registries:
+
+- Through a special secret called `DOCKER_AUTH_CONFIG`, set in [executor secrets](./executor_secrets.md) in Sourcegraph.
+- Through the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (also available as a variable in the terraform modules for executors).
+- Through the [`config.json` file in `~/.docker`](https://docs.docker.com/engine/reference/commandline/login/). **If using executors with firecracker enabled (recommended) this option is not available.**
+
+When multiple of the above options are combined, executors will use them in the following order:
+
+- If a `DOCKER_AUTH_CONFIG` executor secret is configured, that will be preferred. That is so that users can overwrite the credentials being used in their user-settings. This is the only option available in Sourcegraph Cloud.
+- If the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable is set, this will be used as the next option.
+- Finally, if neither of the above are set, executors will fall back to the `config.json` file in the user home directory of the user that is owning the executor process. NOTE: This is not available in the firecracker runtime, as the rootfs is not shared with the host.
+
+The docker CLI supports three ways to use credentials:
+
+- Using static credentials
+- Using [credential helpers](https://docs.docker.com/engine/reference/commandline/login/#credential-helpers)
+- Using [credential stores](https://docs.docker.com/engine/reference/commandline/login/#credentials-store)
+
+Credential helpers and credential stores are only available for use with the `config.json` configuration option, as they require additional infrastructural changes. Thus, those options are not available on Sourcegraph Cloud.
+
+### Using static credentials
+
+The `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable and the `DOCKER_AUTH_CONFIG` secret expect a docker config with only the necessary properties set for configuring authentication.
+The format of this config supports multiple registries to be configured and looks like this:
+
+```json
+{
+  "auths": {
+    "myregistry.example.com[:port]": {
+      "auth": "base64(username:password)"
+    },
+    "myregistry2.example.com[:port]": {
+      "auth": "base64(username:password)"
+    }
+  }
+}
+```
+
+You can either create this config yourself by hand, or let docker do it for you by running:
+
+```bash
+TMP_FILE="$(mktemp -d)" bash -c 'echo "<password>" | docker --config "${TMP_FILE}" login --username "<username>" --password-stdin "<registryurl>" && cat "${TMP_FILE}/config.json" && rm -rf "${TMP_FILE}"'
+```
+
+> NOTE: This doesn't work on Docker for Mac if "Securely store Docker logins in macOS keychain" is enabled, as it would store it in the credentials store instead.
+
+You can also run the following:
+
+```bash
+echo "username:password" | base64
+```
+
+and then paste the result of that into a JSON string like this:
+
+```json
+{
+  "auths": {
+    "myregistry.example.com[:port]": {
+      "auth": "<the value from above>"
+    }
+  }
+}
+```
+
+For Google Container Registry, [follow this guide](https://cloud.google.com/container-registry/docs/advanced-authentication#json-key) for how to obtain long-lived static credentials.
+
+### Configuring the auth config for use in executors
+
+Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](./executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.

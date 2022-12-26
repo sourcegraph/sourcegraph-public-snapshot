@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,7 +25,8 @@ func NewRepositoryIndexer(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		// We should use an internal actor when doing cross service calls.
+		actor.WithInternalActor(context.Background()),
 		"pagerank.repo-indexer", "builds page-rank indexes for repositories",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

@@ -37,7 +37,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 		return ""
 	}
 
-	r, ok := list.Minimal[uint32(repo.ID)]
+	r, ok := list.Minimal[uint32(repo.ID)] //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	if !ok || !r.HasSymbols {
 		return ""
 	}
@@ -71,7 +71,10 @@ func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	raw := *queryString
+	var raw string
+	if queryString != nil {
+		raw = *queryString
+	}
 	if raw == "" {
 		raw = ".*"
 	}

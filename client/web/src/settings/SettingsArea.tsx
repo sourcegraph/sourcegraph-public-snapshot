@@ -7,7 +7,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -15,19 +14,15 @@ import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/ext
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import {
-    gqlToCascade,
-    SettingsCascadeProps,
-    SettingsSubject,
-    SubjectSettingsContents,
-} from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -40,7 +35,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
     /** The subject whose settings to edit. */
-    subject: Pick<SettingsSubject & SubjectSettingsContents, '__typename' | 'id'>
+    subject: Pick<SettingsSubject, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -48,9 +43,8 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     authenticatedUser: AuthenticatedUser | null
 }
 
-type SettingsCascadeSubject = (SettingsSubject & SubjectSettingsContents)[]
 interface SettingsData {
-    subjects: SettingsCascadeSubject
+    subjects: SettingsSubject[]
     settingsJSONSchema: { $id: string }
 }
 
@@ -75,6 +69,10 @@ interface State {
      * The data, loading, or an error.
      */
     dataOrError: typeof LOADING | SettingsData | ErrorLike
+}
+
+interface SettingsSubjects {
+    subjects: SettingsSubject[]
 }
 
 /**
@@ -195,7 +193,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsCascadeSubject }): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: SettingsSubjects): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
@@ -227,8 +225,8 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsCascadeSubject }> {
-    return queryGraphQL(
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<SettingsSubjects> {
+    return queryGraphQL<SettingsCascadeResult>(
         gql`
             query SettingsCascade($subject: ID!) {
                 settingsSubject(id: $subject) {
@@ -249,7 +247,7 @@ function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: Se
             if (!data || !data.settingsSubject) {
                 throw createAggregateError(errors)
             }
-            return data.settingsSubject.settingsCascade
+            return data.settingsSubject.settingsCascade as SettingsSubjects
         })
     )
 }

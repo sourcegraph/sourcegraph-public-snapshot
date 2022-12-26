@@ -6,7 +6,6 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -20,6 +19,7 @@ import {
     H2,
     Text,
     ButtonLink,
+    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -54,7 +54,7 @@ const fetchTreeCommits = memoizeObservable(
         filePath?: string
         after?: string
     }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
-        queryGraphQL(
+        queryGraphQL<TreeCommits2Result>(
             gql`
                 query TreeCommits2($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {

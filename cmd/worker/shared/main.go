@@ -65,7 +65,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	env.Lock()
 	env.HandleHelpFlag()
 	conf.Init()
-	logging.Init()
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 

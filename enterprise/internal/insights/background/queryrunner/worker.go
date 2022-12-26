@@ -531,7 +531,7 @@ var jobsColumns = []*sqlf.Query{
 }
 
 // ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
-func ToQueueJob(q *compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
+func ToQueueJob(q compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
 	return &Job{
 		SearchJob: SearchJob{
 			SeriesID:        seriesID,

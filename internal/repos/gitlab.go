@@ -161,11 +161,8 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 	return s.client.ValidateToken(ctx)
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
 func (s GitLabSource) CheckConnection(ctx context.Context) error {
-	return nil
+	return checkConnection(s.config.Url)
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
@@ -224,7 +221,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	}
 }
 
-// remoteURL returns the GitLab projects's Git remote URL
+// remoteURL returns the GitLab project's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
 // if you need to get an authenticated clone url use repos.CloneURL

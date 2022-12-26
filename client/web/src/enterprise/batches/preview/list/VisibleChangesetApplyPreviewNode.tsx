@@ -6,13 +6,12 @@ import {
     mdiAccountEdit,
     mdiCheckboxBlankCircle,
     mdiChevronDown,
-    mdiChevronRight,
+    mdiChevronUp,
 } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
@@ -34,7 +33,7 @@ import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
-export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
+export interface VisibleChangesetApplyPreviewNodeProps {
     node: VisibleChangesetApplyPreviewFields
     history: H.History
     location: H.Location
@@ -54,7 +53,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
     React.PropsWithChildren<VisibleChangesetApplyPreviewNodeProps>
 > = ({
     node,
-    isLightTheme,
     history,
     location,
     authenticatedUser,
@@ -79,7 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -184,7 +182,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -199,7 +197,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         <ExpandedSection
                             node={node}
                             history={history}
-                            isLightTheme={isLightTheme}
                             location={location}
                             authenticatedUser={authenticatedUser}
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
@@ -263,18 +260,16 @@ const SelectBox: React.FunctionComponent<
 }
 
 const ExpandedSection: React.FunctionComponent<
-    React.PropsWithChildren<
-        {
-            node: VisibleChangesetApplyPreviewFields
-            history: H.History
-            location: H.Location
-            authenticatedUser: PreviewPageAuthenticatedUser
+    React.PropsWithChildren<{
+        node: VisibleChangesetApplyPreviewFields
+        history: H.History
+        location: H.Location
+        authenticatedUser: PreviewPageAuthenticatedUser
 
-            /** Used for testing. **/
-            queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-        } & ThemeProps
-    >
-> = ({ node, history, isLightTheme, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
+        /** Used for testing. **/
+        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+    }>
+> = ({ node, history, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
             <Alert className="mb-0" variant="info">
@@ -359,7 +354,6 @@ const ExpandedSection: React.FunctionComponent<
                     )}
                     <ChangesetSpecFileDiffConnection
                         history={history}
-                        isLightTheme={isLightTheme}
                         location={location}
                         spec={node.targets.changesetSpec.id}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

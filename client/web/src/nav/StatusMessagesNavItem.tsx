@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react'
 import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
@@ -22,6 +21,7 @@ import {
     H4,
     Text,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { StatusMessagesResult } from '../graphql-operations'
@@ -182,6 +182,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         ) {
             codeHostMessage = 'Syncing repositories failed!'
             iconProps = { as: CloudAlertIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'GitUpdatesDisabled')) {
+            codeHostMessage = 'Syncing repositories disabled!'
+            iconProps = { as: CloudAlertIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Cloning repositories...'
             iconProps = { as: CloudSyncIconRefresh }
@@ -227,6 +230,20 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         return (
             <>
                 {data.statusMessages.map(status => {
+                    if (status.__typename === 'GitUpdatesDisabled') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={status.message}
+                                message={status.message}
+                                title="Code syncing disabled"
+                                messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
+                                linkTo="/site-admin/configuration"
+                                linkText="View site configuration"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
                     if (status.__typename === 'CloningProgress') {
                         return (
                             <StatusMessagesNavItemEntry

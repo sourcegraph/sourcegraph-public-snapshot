@@ -2,8 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields } from '../../../../graphql-operations'
 

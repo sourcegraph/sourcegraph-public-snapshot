@@ -1,8 +1,8 @@
 # Introduction to code navigation
 
-Code navigation is enabled by [Sourcegraph extensions](../../../extensions/index.md) and provides users with two different types of code navigation: search-based and precise.
+There are 2 types of code navigation that Sourcegraph supports: search-based and precise.
 
-[**Search-based code navigation**](./search_based_code_navigation.md) works out of the box with all of the most popular programming languages via [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+[**Search-based code navigation**](./search_based_code_navigation.md) works out of the box with all of the most popular programming languages.
 
 **Precise code navigation** is an opt-in feature that is enabled in your admin settings and requires you to upload indexes for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code navigation is available for use across popular development tools:
 

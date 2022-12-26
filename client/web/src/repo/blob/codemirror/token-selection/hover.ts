@@ -14,14 +14,14 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
 import { pin } from '../hovercard'
 import { isInteractiveOccurrence, occurrenceAtPosition } from '../occurrence-utils'
-import { CodeIntelTooltip, emptyHoverResult, HoverResult } from '../tooltips/CodeIntelTooltip'
+import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { uiPositionToOffset } from '../utils'
 
 export function hoverExtension(): Extension {
@@ -29,6 +29,7 @@ export function hoverExtension(): Extension {
         hoverCache,
         hoveredOccurrenceField,
         hoverTooltip((view, position) => getHoverTooltip(view, position), { hoverTime: 200, hideOnChange: true }),
+        tooltipStyles,
         hoverField,
         pinManager,
     ]
@@ -83,7 +84,7 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
 export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
     const cmLine = view.state.doc.lineAt(pos)
     const line = cmLine.number - 1
-    const character = countColumn(cmLine.text, 1, pos - cmLine.from) - 1
+    const character = countColumn(cmLine.text, 1, pos - cmLine.from)
     const occurrence = occurrenceAtPosition(view.state, new Position(line, character))
     if (!occurrence) {
         return null
@@ -170,26 +171,23 @@ async function hoverRequest(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
-    const api = await view.state.facet(blobPropsFacet).extensionsController?.extHostAPI
-    if (!api) {
-        return emptyHoverResult
-    }
-    const hover = await api.getHover(params)
-    const result = await wrapRemoteObservable(hover).toPromise()
-    let markdownContents =
-        result === undefined || result.isLoading || result.result === null || result.result.contents.length === 0
+    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const hover = await api.getHover(params).toPromise()
+
+    let markdownContents: string =
+        hover === null || hover.contents.length === 0
             ? ''
-            : result.result.contents
+            : hover.contents
                   .map(({ value }) => value)
                   .join('\n\n----\n\n')
                   .trimEnd()
     if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
         markdownContents = 'No hover information available'
     }
-    return { markdownContents, hoverMerged: result?.result, isPrecise: isPrecise(result?.result) }
+    return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null | undefined): boolean {
+function isPrecise(hover: HoverMerged | null): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
@@ -197,3 +195,30 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
     }
     return false
 }
+
+const tooltipStyles = EditorView.theme({
+    // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
+    // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
+    // ignoring the min/max width rules.
+    '.cm-tooltip.tmp-tooltip': {
+        fontSize: '0.875rem',
+        backgroundClip: 'padding-box',
+        backgroundColor: 'var(--dropdown-bg)',
+        border: '1px solid var(--dropdown-border-color)',
+        borderRadius: 'var(--popover-border-radius)',
+        color: 'var(--body-color)',
+        boxShadow: 'var(--dropdown-shadow)',
+        padding: '0.5rem',
+    },
+
+    '.cm-tooltip-above:not(.tmp-tooltip), .cm-tooltip-below:not(.tmp-tooltip)': {
+        border: 'unset',
+    },
+
+    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:before': {
+        borderTopColor: 'var(--dropdown-border-color)',
+    },
+    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:after': {
+        borderTopColor: 'var(--dropdown-bg)',
+    },
+})

@@ -1,7 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-// eslint-disable-next-line no-restricted-imports
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 
 import { SymbolKind } from '../graphql-operations'
 
@@ -10,7 +9,7 @@ import { SymbolTag } from './SymbolTag'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'client/shared/src/symbols/SymbolTag',
+    title: 'shared/SymbolTag',
     parameters: {
         chromatic: { disableSnapshots: false },
     },
@@ -22,7 +21,7 @@ export default config
 const symbolKinds = Object.values(SymbolKind)
 
 export const Default: Story = () => (
-    <WebStory>
+    <BrandedStory>
         {() => (
             <div>
                 {symbolKinds.map(symbolKind => (
@@ -32,5 +31,5 @@ export const Default: Story = () => (
                 ))}
             </div>
         )}
-    </WebStory>
+    </BrandedStory>
 )

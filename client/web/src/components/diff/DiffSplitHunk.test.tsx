@@ -75,9 +75,7 @@ describe('DiffSplitHunk', () => {
         beforeEach(() => {
             queries = renderWithProps({
                 hunk,
-                decorations: { head: new Map(), base: new Map() },
                 lineNumbers: true,
-                isLightTheme: true,
                 fileDiffAnchor: 'anchor_',
             })
         })

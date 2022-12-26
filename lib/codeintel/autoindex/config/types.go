@@ -8,12 +8,13 @@ type IndexConfiguration struct {
 }
 
 type IndexJob struct {
-	Steps       []DockerStep `json:"steps" yaml:"steps"`
-	LocalSteps  []string     `json:"local_steps" yaml:"local_steps"`
-	Root        string       `json:"root" yaml:"root"`
-	Indexer     string       `json:"indexer" yaml:"indexer"`
-	IndexerArgs []string     `json:"indexer_args" yaml:"indexer_args"`
-	Outfile     string       `json:"outfile" yaml:"outfile"`
+	Steps            []DockerStep `json:"steps" yaml:"steps"`
+	LocalSteps       []string     `json:"local_steps" yaml:"local_steps"`
+	Root             string       `json:"root" yaml:"root"`
+	Indexer          string       `json:"indexer" yaml:"indexer"`
+	IndexerArgs      []string     `json:"indexer_args" yaml:"indexer_args"`
+	Outfile          string       `json:"outfile" yaml:"outfile"`
+	RequestedEnvVars []string     `json:"requestedEnvVars" yaml:"requestedEnvVars"`
 }
 
 func (j IndexJob) GetRoot() string {

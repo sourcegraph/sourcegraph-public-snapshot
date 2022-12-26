@@ -72,7 +72,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
 }
 
-type GitCommitsFunc func(context.Context, api.RepoName, gitserver.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+type GitCommitsFunc func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.CommitsOptions) ([]*gitdomain.Commit, error)
 
 func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
 	var (
@@ -85,11 +85,11 @@ func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo,
 		goroutine.Go(func() {
 			defer wg.Done()
 
-			recentCommits, err := gitCommits(ctx, repo.Name, gitserver.CommitsOptions{
+			recentCommits, err := gitCommits(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true, // Don't try to fetch missing commits.
 				NameOnly:         true, // Don't fetch detailed info like commit diffs.
-			}, authz.DefaultSubRepoPermsChecker)
+			})
 			if err != nil {
 				log15.Error("InvitableCollaborators: failed to get recent committers", "err", err)
 				return

@@ -30,7 +30,7 @@ Treat adding new data to pings as having a very high bar. Would you be willing t
     - Will it be needed forever, or only for a short time? If only for a  short time, what is the criteria and estimated timeline for removing the  data point(s)?
     - Have you considered alternatives? E.g., collecting this data from Sourcegraph.com, or adding a report for admins that we can request from some number of friendly customers?    
 
-    These RFCs are great examples: [Adding code host versions to Pings](https://docs.google.com/document/d/1Z68vV1SvCmRW5Hz5v4SkI8oUW4pgLmq5199RmLYToeU/edit#heading=h.trqab8y0kufp) and [Adding Sourcegraph Extensions Usage Metrics to Pings](https://docs.google.com/document/d/1HKgwTyG-IcRM81xLAmussWV4EdK95uy7GjKFIG8vgU4/edit#heading=h.trqab8y0kufp).
+    This RFCs is a great example: [Adding code host versions to Pings](https://docs.google.com/document/d/1Z68vV1SvCmRW5Hz5v4SkI8oUW4pgLmq5199RmLYToeU/edit#heading=h.trqab8y0kufp).
 1. When the RFC is approved, use the [life of a ping documentation](https://docs.sourcegraph.com/dev/background-information/architecture/life-of-a-ping) with help of [an example PR](https://github.com/sourcegraph/sourcegraph/pull/15389) to implement the change. At least one member of the BizOps team must approve the resulting PR before it can be merged. DO NOT merge your PR yet. Steps 3, 4, and 5 must be completed before merging.
     - Ensure a CHANGELOG entry is added, and that the two sources of truth for ping data are updated along with your PR:
       - Pings documentation: https://docs.sourcegraph.com/admin/pings

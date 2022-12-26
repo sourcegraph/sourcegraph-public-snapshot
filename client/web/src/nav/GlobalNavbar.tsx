@@ -5,15 +5,14 @@ import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
-import { SearchContextInputProps } from '@sourcegraph/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -244,13 +243,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
                                 Insights
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {enableLegacyExtensions && (
-                        <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
-                                Extensions
                             </NavLink>
                         </NavItem>
                     )}

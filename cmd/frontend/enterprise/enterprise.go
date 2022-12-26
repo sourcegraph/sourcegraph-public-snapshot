@@ -27,7 +27,11 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 
-	GitHubSyncWebhook           webhooks.Registerer
+	// Repo related webhook handlers, currently only handle `push` events.
+	ReposGithubWebhook          webhooks.Registerer
+	ReposGitLabWebhook          webhooks.Registerer
+	ReposBitbucketServerWebhook webhooks.Registerer
+
 	PermissionsGitHubWebhook    webhooks.Registerer
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
 	RankingService              RankingService
@@ -74,7 +78,9 @@ type NewComputeStreamHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
+		ReposGithubWebhook:              &emptyWebhookHandler{name: "github sync webhook"},
+		ReposGitLabWebhook:              &emptyWebhookHandler{name: "gitlab sync webhook"},
+		ReposBitbucketServerWebhook:     &emptyWebhookHandler{name: "bitbucket server sync webhook"},
 		PermissionsGitHubWebhook:        &emptyWebhookHandler{name: "permissions github webhook"},
 		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
 		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
@@ -103,7 +109,7 @@ type emptyWebhookHandler struct {
 	name string
 }
 
-func (e *emptyWebhookHandler) Register(w *webhooks.WebhookRouter) {}
+func (e *emptyWebhookHandler) Register(w *webhooks.Router) {}
 
 func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	makeNotFoundHandler(e.name)

@@ -10,7 +10,6 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import {
     useCurrentSpan,
@@ -18,12 +17,12 @@ import {
     createActiveSpan,
     reactManualTracer,
 } from '@sourcegraph/observability-client'
-import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -38,6 +37,7 @@ import {
     Text,
     useEventObservable,
     useObservable,
+    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -102,6 +102,7 @@ interface BlobPageProps
     repoUrl?: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    className?: string
 }
 
 /**
@@ -112,7 +113,7 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = props => {
+export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = ({ className, ...props }) => {
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
@@ -433,7 +434,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     if (blobInfoOrError === undefined) {
         // Render placeholder for layout before content is fetched.
         return (
-            <div className={styles.placeholder}>
+            <div className={classNames(styles.placeholder, className)}>
                 {alwaysRender}
                 {!enableLazyBlobSyntaxHighlighting && <BlobLoadingSpinner />}
             </div>
@@ -443,7 +444,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     // File not found:
     if (blobInfoOrError === null) {
         return (
-            <div className={styles.placeholder}>
+            <div className={classNames(styles.placeholder, className)}>
                 <HeroPage
                     icon={MapSearchIcon}
                     title="Not found"
@@ -459,7 +460,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         const externalService = externalUrl && serviceKindDisplayNameAndIcon(externalUrl.serviceKind)
 
         return (
-            <div className={styles.placeholder}>
+            <div className={classNames(styles.placeholder, className)}>
                 <HeroPage
                     icon={FileAlertIcon}
                     title="Stored with Git LFS"
@@ -490,7 +491,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
 
     return (
-        <>
+        <div className={className}>
             {alwaysRender}
             {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} />}
             {blobInfoOrError.richHTML && (
@@ -562,7 +563,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
                         location={props.location}
-                        disableStatusBar={!window.context.enableLegacyExtensions}
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
@@ -574,6 +574,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     />
                 </TraceSpanProvider>
             )}
-        </>
+        </div>
     )
 }

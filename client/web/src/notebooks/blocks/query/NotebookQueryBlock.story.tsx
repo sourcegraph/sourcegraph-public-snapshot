@@ -6,7 +6,6 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     NOOP_PLATFORM_CONTEXT,
@@ -67,7 +66,6 @@ export const Default: Story = () => (
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -93,7 +91,6 @@ export const Selected: Story = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -119,7 +116,6 @@ export const ReadOnlySelected: Story = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>

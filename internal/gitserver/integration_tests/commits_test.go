@@ -79,7 +79,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, repoCommits, true, nil)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, nil, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -117,7 +117,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, repoCommits, true, getTestSubRepoPermsChecker("file1", "file3"))
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -173,7 +173,7 @@ func TestHead(t *testing.T) {
 		repo := MakeGitRepository(t, gitCommands...)
 		ctx := context.Background()
 
-		head, exists, err := client.Head(ctx, repo, nil)
+		head, exists, err := client.Head(ctx, nil, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -198,7 +198,7 @@ func TestHead(t *testing.T) {
 		})
 		checker := getTestSubRepoPermsChecker("file")
 		// call Head() when user doesn't have access to view the commit
-		_, exists, err := client.Head(ctx, repo, checker)
+		_, exists, err := client.Head(ctx, checker, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -207,7 +207,7 @@ func TestHead(t *testing.T) {
 		}
 		readAllChecker := getTestSubRepoPermsChecker()
 		// call Head() when user has access to view the commit; should return expected commit
-		head, exists, err := client.Head(ctx, repo, readAllChecker)
+		head, exists, err := client.Head(ctx, readAllChecker, repo)
 		if err != nil {
 			t.Fatal(err)
 		}

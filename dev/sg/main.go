@@ -157,7 +157,7 @@ var sg = &cli.App{
 				std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
 					sgBugReportTemplate)
 				message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
-				err = cli.NewExitError(message, 1)
+				err = cli.Exit(message, 1)
 			}
 		}()
 
@@ -285,6 +285,7 @@ var sg = &cli.App{
 		opsCommand,
 		auditCommand,
 		pageCommand,
+		cloudCommand,
 
 		// Util
 		helpCommand,

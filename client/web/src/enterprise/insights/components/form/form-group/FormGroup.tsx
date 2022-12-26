@@ -2,7 +2,7 @@ import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorMessage } from '@sourcegraph/wildcard'
 
 import styles from './FormGroup.module.scss'
 

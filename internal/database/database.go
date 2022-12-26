@@ -36,9 +36,12 @@ type DB interface {
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	OrgStats() OrgStatsStore
+	Permissions() PermissionStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
+	RolePermissions() RolePermissionStore
+	Roles() RoleStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
@@ -47,6 +50,7 @@ type DB interface {
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
+	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
 	Webhooks(encryption.Key) WebhookStore
@@ -165,6 +169,10 @@ func (d *db) OrgStats() OrgStatsStore {
 	return OrgStatsWith(d.Store)
 }
 
+func (d *db) Permissions() PermissionStore {
+	return PermissionsWith(d.Store)
+}
+
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
 }
@@ -175,6 +183,14 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
+}
+
+func (d *db) RolePermissions() RolePermissionStore {
+	return RolePermissionsWith(d.Store)
+}
+
+func (d *db) Roles() RoleStore {
+	return RolesWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
@@ -207,6 +223,10 @@ func (d *db) UserEmails() UserEmailsStore {
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
 	return ExternalAccountsWith(d.logger, d.Store)
+}
+
+func (d *db) UserRoles() UserRoleStore {
+	return UserRolesWith(d.Store)
 }
 
 func (d *db) Users() UserStore {

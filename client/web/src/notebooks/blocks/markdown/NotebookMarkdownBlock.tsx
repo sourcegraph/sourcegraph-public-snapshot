@@ -11,9 +11,8 @@ import classNames from 'classnames'
 
 import { changeListener } from '@sourcegraph/search-ui'
 import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Markdown } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
 import { focusEditor } from '../../codemirror-utils'
