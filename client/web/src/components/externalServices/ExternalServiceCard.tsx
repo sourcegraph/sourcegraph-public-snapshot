@@ -32,7 +32,7 @@ interface ExternalServiceCardProps {
     /**
      * ToIcon is an icon shown on the right-hand side of the card. Default value is right-pointed chevron.
      */
-    toIcon: string | undefined | null
+    toIcon?: string | undefined | null
     className?: string
     enabled?: boolean
     badge?: string
