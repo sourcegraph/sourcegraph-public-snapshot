@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { ApolloLink } from '@apollo/client'
 import { MockedProvider, MockedProviderProps, MockedResponse, MockLink } from '@apollo/client/testing'
 import { getOperationName } from '@apollo/client/utilities'
 
 import { logger } from '@sourcegraph/common'
-import { cache } from '@sourcegraph/http-client'
+
+import { generateCache } from '../graphql/apollo/cache'
 
 /**
  * Intercept each mocked Apollo request and ensure that any request variables match the specified mock.
@@ -41,15 +42,23 @@ export const MockedStoryProvider: React.FunctionComponent<React.PropsWithChildre
     mocks = [],
     useStrictMocking,
     ...props
-}) => (
-    <MockedProvider
-        cache={cache}
-        mocks={mocks}
-        link={ApolloLink.from(
-            useStrictMocking ? [new MockLink(mocks)] : [forceMockVariablesLink(mocks), new MockLink(mocks)]
-        )}
-        {...props}
-    >
-        {children}
-    </MockedProvider>
-)
+}) => {
+    /**
+     * Generate a fresh cache for each instance of MockedTestProvider.
+     * Important to ensure tests don't share cached data.
+     */
+    const cache = useMemo(() => generateCache(), [])
+
+    return (
+        <MockedProvider
+            cache={cache}
+            mocks={mocks}
+            link={ApolloLink.from(
+                useStrictMocking ? [new MockLink(mocks)] : [forceMockVariablesLink(mocks), new MockLink(mocks)]
+            )}
+            {...props}
+        >
+            {children}
+        </MockedProvider>
+    )
+}
