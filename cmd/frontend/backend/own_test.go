@@ -1,4 +1,4 @@
-package own_test
+package backend_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -33,7 +33,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := own.NewService(git).OwnersFile(context.Background(), "repo", "SHA")
+			got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersFile.Repr(), got.Repr())
 		})
@@ -54,7 +54,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := own.NewService(git).OwnersFile(context.Background(), "repo", "SHA")
+	got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
