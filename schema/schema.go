@@ -623,7 +623,7 @@ type ExpandedGitCommitDescription struct {
 	Message string `json:"message"`
 }
 
-// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+// ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
@@ -698,7 +698,84 @@ type ExperimentalFeatures struct {
 	//
 	// JSON array of version context configuration
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
+	Additional      map[string]any    `json:"-"` // additionalProperties not explicitly defined in the schema
 }
+
+func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
+	m := make(map[string]any, len(v.Additional))
+	for k, v := range v.Additional {
+		m[k] = v
+	}
+	type wrapper ExperimentalFeatures
+	b, err := json.Marshal(wrapper(v))
+	if err != nil {
+		return nil, err
+	}
+	var m2 map[string]any
+	if err := json.Unmarshal(b, &m2); err != nil {
+		return nil, err
+	}
+	for k, v := range m2 {
+		m[k] = v
+	}
+	return json.Marshal(m)
+}
+func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
+	type wrapper ExperimentalFeatures
+	var s wrapper
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*v = ExperimentalFeatures(s)
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "andOrQuery")
+	delete(m, "apidocs.search.indexing")
+	delete(m, "bitbucketServerFastPerm")
+	delete(m, "customGitFetch")
+	delete(m, "debug.log")
+	delete(m, "enableGitServerCommandExecFilter")
+	delete(m, "enableGithubInternalRepoVisibility")
+	delete(m, "enableLegacyExtensions")
+	delete(m, "enablePermissionsWebhooks")
+	delete(m, "enablePostSignupFlow")
+	delete(m, "enableWebhookRepoSync")
+	delete(m, "eventLogging")
+	delete(m, "gerrit")
+	delete(m, "gitServerPinnedRepos")
+	delete(m, "goPackages")
+	delete(m, "insightsAlternateLoadingStrategy")
+	delete(m, "insightsBackfillerV2")
+	delete(m, "jvmPackages")
+	delete(m, "npmPackages")
+	delete(m, "pagure")
+	delete(m, "passwordPolicy")
+	delete(m, "perforce")
+	delete(m, "pythonPackages")
+	delete(m, "ranking")
+	delete(m, "rateLimitAnonymous")
+	delete(m, "rubyPackages")
+	delete(m, "rustPackages")
+	delete(m, "search.index.branches")
+	delete(m, "search.index.query.contexts")
+	delete(m, "search.index.revisions")
+	delete(m, "search.sanitization")
+	delete(m, "searchMultipleRevisionsPerRepository")
+	delete(m, "structuralSearch")
+	delete(m, "subRepoPermissions")
+	delete(m, "tls.external")
+	delete(m, "versionContexts")
+	if len(m) > 0 {
+		v.Additional = make(map[string]any, len(m))
+	}
+	for k, vv := range m {
+		v.Additional[k] = vv
+	}
+	return nil
+}
+
 type ExportUsageTelemetry struct {
 	// BatchSize description: Maximum number of events scraped from the events table in a single scrape.
 	BatchSize int `json:"batchSize,omitempty"`
@@ -1814,7 +1891,7 @@ type Settings struct {
 	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
 	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
 	CodeIntelligenceMaxPanelResults int `json:"codeIntelligence.maxPanelResults,omitempty"`
-	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
@@ -1884,10 +1961,100 @@ type Settings struct {
 	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
-	SearchUppercase *bool `json:"search.uppercase,omitempty"`
+	SearchUppercase *bool          `json:"search.uppercase,omitempty"`
+	Additional      map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
-// SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+func (v Settings) MarshalJSON() ([]byte, error) {
+	m := make(map[string]any, len(v.Additional))
+	for k, v := range v.Additional {
+		m[k] = v
+	}
+	type wrapper Settings
+	b, err := json.Marshal(wrapper(v))
+	if err != nil {
+		return nil, err
+	}
+	var m2 map[string]any
+	if err := json.Unmarshal(b, &m2); err != nil {
+		return nil, err
+	}
+	for k, v := range m2 {
+		m[k] = v
+	}
+	return json.Marshal(m)
+}
+func (v *Settings) UnmarshalJSON(data []byte) error {
+	type wrapper Settings
+	var s wrapper
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*v = Settings(s)
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "alerts.codeHostIntegrationMessaging")
+	delete(m, "alerts.hideObservabilitySiteAlerts")
+	delete(m, "alerts.showPatchUpdates")
+	delete(m, "basicCodeIntel.globalSearchesEnabled")
+	delete(m, "basicCodeIntel.includeArchives")
+	delete(m, "basicCodeIntel.includeForks")
+	delete(m, "basicCodeIntel.indexOnly")
+	delete(m, "basicCodeIntel.unindexedSearchTimeout")
+	delete(m, "codeHost.useNativeTooltips")
+	delete(m, "codeIntel.blobKeyboardNavigation")
+	delete(m, "codeIntel.disableRangeQueries")
+	delete(m, "codeIntel.disableSearchBased")
+	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
+	delete(m, "codeIntel.referencesPanel")
+	delete(m, "codeIntel.traceExtension")
+	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
+	delete(m, "codeIntelligence.autoIndexRepositoryGroups")
+	delete(m, "codeIntelligence.clickToGoToDefinition")
+	delete(m, "codeIntelligence.maxPanelResults")
+	delete(m, "experimentalFeatures")
+	delete(m, "extensions")
+	delete(m, "extensions.activeLoggers")
+	delete(m, "fileSidebarVisibleByDefault")
+	delete(m, "history.defaultPageSize")
+	delete(m, "history.preferAbsoluteTimestamps")
+	delete(m, "insights")
+	delete(m, "insights.aggregations.extendedTimeout")
+	delete(m, "insights.allrepos")
+	delete(m, "insights.dashboards")
+	delete(m, "insights.displayLocation.directory")
+	delete(m, "insights.displayLocation.homepage")
+	delete(m, "insights.displayLocation.insightsPage")
+	delete(m, "motd")
+	delete(m, "notices")
+	delete(m, "openInEditor")
+	delete(m, "perforce.codeHostToSwarmMap")
+	delete(m, "quicklinks")
+	delete(m, "search.contextLines")
+	delete(m, "search.defaultCaseSensitive")
+	delete(m, "search.defaultMode")
+	delete(m, "search.defaultPatternType")
+	delete(m, "search.globbing")
+	delete(m, "search.hideSuggestions")
+	delete(m, "search.includeArchived")
+	delete(m, "search.includeForks")
+	delete(m, "search.migrateParser")
+	delete(m, "search.repositoryGroups")
+	delete(m, "search.savedQueries")
+	delete(m, "search.scopes")
+	delete(m, "search.uppercase")
+	if len(m) > 0 {
+		v.Additional = make(map[string]any, len(m))
+	}
+	for k, vv := range m {
+		v.Additional[k] = vv
+	}
+	return nil
+}
+
+// SettingsExperimentalFeatures description: Experimental features and settings.
 type SettingsExperimentalFeatures struct {
 	// ApiDocs description: Deprecated.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
@@ -2003,7 +2170,105 @@ type SettingsExperimentalFeatures struct {
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
-	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
+	TreeSitterEnabled *bool          `json:"treeSitterEnabled,omitempty"`
+	Additional        map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+}
+
+func (v SettingsExperimentalFeatures) MarshalJSON() ([]byte, error) {
+	m := make(map[string]any, len(v.Additional))
+	for k, v := range v.Additional {
+		m[k] = v
+	}
+	type wrapper SettingsExperimentalFeatures
+	b, err := json.Marshal(wrapper(v))
+	if err != nil {
+		return nil, err
+	}
+	var m2 map[string]any
+	if err := json.Unmarshal(b, &m2); err != nil {
+		return nil, err
+	}
+	for k, v := range m2 {
+		m[k] = v
+	}
+	return json.Marshal(m)
+}
+func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
+	type wrapper SettingsExperimentalFeatures
+	var s wrapper
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*v = SettingsExperimentalFeatures(s)
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "apiDocs")
+	delete(m, "applySearchQuerySuggestionOnEnter")
+	delete(m, "batchChangesExecution")
+	delete(m, "clientSearchResultRanking")
+	delete(m, "codeInsights")
+	delete(m, "codeInsightsAllRepos")
+	delete(m, "codeInsightsCompute")
+	delete(m, "codeInsightsGqlApi")
+	delete(m, "codeInsightsLandingPage")
+	delete(m, "codeInsightsRepoUI")
+	delete(m, "codeIntelRepositoryBadge")
+	delete(m, "codeMonitoring")
+	delete(m, "codeMonitoringWebHooks")
+	delete(m, "codeNavigation")
+	delete(m, "coolCodeIntel")
+	delete(m, "copyQueryButton")
+	delete(m, "editor")
+	delete(m, "enableCodeMirrorFileView")
+	delete(m, "enableFastResultLoading")
+	delete(m, "enableGoImportsSearchQueryTransform")
+	delete(m, "enableLazyBlobSyntaxHighlighting")
+	delete(m, "enableLazyFileResultSyntaxHighlighting")
+	delete(m, "enableMergedFileSymbolSidebar")
+	delete(m, "enableSearchFilePrefetch")
+	delete(m, "enableSearchStack")
+	delete(m, "enableSidebarFilePrefetch")
+	delete(m, "enableSmartQuery")
+	delete(m, "fuzzyFinder")
+	delete(m, "fuzzyFinderActions")
+	delete(m, "fuzzyFinderAll")
+	delete(m, "fuzzyFinderCaseInsensitiveFileCountThreshold")
+	delete(m, "fuzzyFinderNavbar")
+	delete(m, "fuzzyFinderRepositories")
+	delete(m, "fuzzyFinderSymbols")
+	delete(m, "goCodeCheckerTemplates")
+	delete(m, "homePanelsComputeSuggestions")
+	delete(m, "homepageUserInvitation")
+	delete(m, "insightsAlternateLoadingStrategy")
+	delete(m, "preloadGoToDefinition")
+	delete(m, "proactiveSearchResultsAggregations")
+	delete(m, "searchContextsQuery")
+	delete(m, "searchQueryInput")
+	delete(m, "searchResultsAggregations")
+	delete(m, "searchStats")
+	delete(m, "searchStreaming")
+	delete(m, "showCodeMonitoringLogs")
+	delete(m, "showCodeMonitoringTestEmailButton")
+	delete(m, "showComputeComponent")
+	delete(m, "showEnterpriseHomePanels")
+	delete(m, "showMultilineSearchConsole")
+	delete(m, "showOnboardingTour")
+	delete(m, "showQueryBuilder")
+	delete(m, "showRepogroupHomepage")
+	delete(m, "showSearchContext")
+	delete(m, "showSearchContextManagement")
+	delete(m, "showSearchNotebook")
+	delete(m, "symbolKindTags")
+	delete(m, "treeSitterEnabled")
+	if len(m) > 0 {
+		v.Additional = make(map[string]any, len(m))
+	}
+	for k, vv := range m {
+		v.Additional[k] = vv
+	}
+	return nil
 }
 
 // SettingsOpenInEditor description: Group of settings related to opening files in an editor.
@@ -2158,7 +2423,7 @@ type SiteConfiguration struct {
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
 	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
 	ExecutorsSrcCLIImageTag string `json:"executors.srcCLIImageTag,omitempty"`
-	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
@@ -2291,6 +2556,166 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+	Additional     map[string]any  `json:"-"` // additionalProperties not explicitly defined in the schema
+}
+
+func (v SiteConfiguration) MarshalJSON() ([]byte, error) {
+	m := make(map[string]any, len(v.Additional))
+	for k, v := range v.Additional {
+		m[k] = v
+	}
+	type wrapper SiteConfiguration
+	b, err := json.Marshal(wrapper(v))
+	if err != nil {
+		return nil, err
+	}
+	var m2 map[string]any
+	if err := json.Unmarshal(b, &m2); err != nil {
+		return nil, err
+	}
+	for k, v := range m2 {
+		m[k] = v
+	}
+	return json.Marshal(m)
+}
+func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
+	type wrapper SiteConfiguration
+	var s wrapper
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*v = SiteConfiguration(s)
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "RedirectUnsupportedBrowser")
+	delete(m, "api.ratelimit")
+	delete(m, "apidocs.search.index-size-limit-factor")
+	delete(m, "auth.accessTokens")
+	delete(m, "auth.enableUsernameChanges")
+	delete(m, "auth.lockout")
+	delete(m, "auth.minPasswordLength")
+	delete(m, "auth.passwordPolicy")
+	delete(m, "auth.passwordResetLinkExpiry")
+	delete(m, "auth.providers")
+	delete(m, "auth.public")
+	delete(m, "auth.sessionExpiry")
+	delete(m, "auth.unlockAccountLinkExpiry")
+	delete(m, "auth.unlockAccountLinkSigningKey")
+	delete(m, "auth.userOrgMap")
+	delete(m, "authz.enforceForSiteAdmins")
+	delete(m, "authz.refreshInterval")
+	delete(m, "authz.syncJobsRecordsTTL")
+	delete(m, "batchChanges.changesetsRetention")
+	delete(m, "batchChanges.disableWebhooksWarning")
+	delete(m, "batchChanges.enabled")
+	delete(m, "batchChanges.enforceForks")
+	delete(m, "batchChanges.restrictToAdmins")
+	delete(m, "batchChanges.rolloutWindows")
+	delete(m, "branding")
+	delete(m, "campaigns.enabled")
+	delete(m, "campaigns.restrictToAdmins")
+	delete(m, "cloneProgress.log")
+	delete(m, "codeIntelAutoIndexing.allowGlobalPolicies")
+	delete(m, "codeIntelAutoIndexing.enabled")
+	delete(m, "codeIntelAutoIndexing.indexerMap")
+	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelLockfileIndexing.enabled")
+	delete(m, "corsOrigin")
+	delete(m, "debug.search.symbolsParallelism")
+	delete(m, "defaultRateLimit")
+	delete(m, "disableAutoCodeHostSyncs")
+	delete(m, "disableAutoGitUpdates")
+	delete(m, "disableBuiltInSearches")
+	delete(m, "disableNonCriticalTelemetry")
+	delete(m, "disablePublicRepoRedirects")
+	delete(m, "dontIncludeSymbolResultsByDefault")
+	delete(m, "dotcom")
+	delete(m, "email.address")
+	delete(m, "email.smtp")
+	delete(m, "email.templates")
+	delete(m, "encryption.keys")
+	delete(m, "executors.accessToken")
+	delete(m, "executors.batcheshelperImage")
+	delete(m, "executors.batcheshelperImageTag")
+	delete(m, "executors.frontendURL")
+	delete(m, "executors.srcCLIImage")
+	delete(m, "executors.srcCLIImageTag")
+	delete(m, "experimentalFeatures")
+	delete(m, "exportUsageTelemetry")
+	delete(m, "extensions")
+	delete(m, "externalService.userMode")
+	delete(m, "externalURL")
+	delete(m, "git.cloneURLToRepositoryName")
+	delete(m, "gitHubApp")
+	delete(m, "gitLongCommandTimeout")
+	delete(m, "gitMaxCodehostRequestsPerSecond")
+	delete(m, "gitMaxConcurrentClones")
+	delete(m, "gitUpdateInterval")
+	delete(m, "githubClientID")
+	delete(m, "githubClientSecret")
+	delete(m, "htmlBodyBottom")
+	delete(m, "htmlBodyTop")
+	delete(m, "htmlHeadBottom")
+	delete(m, "htmlHeadTop")
+	delete(m, "insights.aggregations.bufferSize")
+	delete(m, "insights.aggregations.proactiveResultLimit")
+	delete(m, "insights.backfill.interruptAfter")
+	delete(m, "insights.commit.indexer.interval")
+	delete(m, "insights.commit.indexer.windowDuration")
+	delete(m, "insights.compute.graphql")
+	delete(m, "insights.historical.frameLength")
+	delete(m, "insights.historical.frames")
+	delete(m, "insights.historical.speedFactor")
+	delete(m, "insights.historical.worker.rateLimit")
+	delete(m, "insights.maximumSampleSize")
+	delete(m, "insights.query.worker.concurrency")
+	delete(m, "insights.query.worker.rateLimit")
+	delete(m, "insights.query.worker.rateLimitBurst")
+	delete(m, "insights.search.graphql")
+	delete(m, "licenseKey")
+	delete(m, "log")
+	delete(m, "lsifEnforceAuth")
+	delete(m, "maxReposToSearch")
+	delete(m, "observability.alerts")
+	delete(m, "observability.captureSlowGraphQLRequestsLimit")
+	delete(m, "observability.client")
+	delete(m, "observability.logSlowGraphQLRequests")
+	delete(m, "observability.logSlowSearches")
+	delete(m, "observability.silenceAlerts")
+	delete(m, "observability.tracing")
+	delete(m, "organizationInvitations")
+	delete(m, "outboundRequestLogLimit")
+	delete(m, "parentSourcegraph")
+	delete(m, "permissions.syncOldestRepos")
+	delete(m, "permissions.syncOldestUsers")
+	delete(m, "permissions.syncReposBackoffSeconds")
+	delete(m, "permissions.syncScheduleInterval")
+	delete(m, "permissions.syncUsersBackoffSeconds")
+	delete(m, "permissions.syncUsersMaxConcurrency")
+	delete(m, "permissions.userMapping")
+	delete(m, "productResearchPage.enabled")
+	delete(m, "redactOutboundRequestHeaders")
+	delete(m, "repoConcurrentExternalServiceSyncers")
+	delete(m, "repoListUpdateInterval")
+	delete(m, "repoPurgeWorker")
+	delete(m, "search.index.enabled")
+	delete(m, "search.index.symbols.enabled")
+	delete(m, "search.largeFiles")
+	delete(m, "search.limits")
+	delete(m, "syntaxHighlighting")
+	delete(m, "update.channel")
+	delete(m, "userRepos.maxPerSite")
+	delete(m, "userRepos.maxPerUser")
+	delete(m, "webhook.logging")
+	if len(m) > 0 {
+		v.Additional = make(map[string]any, len(m))
+	}
+	for k, vv := range m {
+		v.Additional[k] = vv
+	}
+	return nil
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
