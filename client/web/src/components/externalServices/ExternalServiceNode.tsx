@@ -6,7 +6,7 @@ import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -15,6 +15,7 @@ import { deleteExternalService, testExternalServiceConnection } from './backend'
 import { defaultExternalServices } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
+
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
@@ -55,7 +56,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
         setIsTestInProgress(true)
         try {
-            // FIXME: Implement
             await testExternalServiceConnection(node.id)
             setIsTestInProgress(false)
             // FIXME: add on update callback
@@ -122,16 +122,20 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content={'Test connectivity to code host'}>
-                        <Button
-                            className="test-connection-external-service-button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={onTestConnection}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiConnection} /> {'Test'}
-                        </Button>
-                    </Tooltip>{' '}
+                    <TestConnectionButton
+                        className="test-code-host-connection-button"
+                        title="Test"
+                        buttonVariant="secondary"
+                        // FIXME: Maybe update button if check in progress
+                        buttonLabel="Test"
+                        buttonSubtitle="Check code host connection"
+                        buttonDisabled={!node.hasConnectionCheck}
+                        flashText="Checking..."
+                        run={async () => {
+                            await testExternalServiceConnection(node.id)
+                        }}
+                    // history={}
+                    />
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
@@ -163,4 +167,98 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
         </li>
     )
+}
+
+interface Props {
+    title: React.ReactNode
+    buttonVariant?: ButtonProps['variant']
+    buttonLabel: React.ReactNode
+    buttonSubtitle?: string
+    buttonDisabled?: boolean
+    info?: React.ReactNode
+    className?: string
+
+    /** The message to briefly display below the button when the action is successful. */
+    flashText?: string
+
+    run: () => Promise<void>
+    history: H.History
+}
+
+interface State {
+    loading: boolean
+    flash: boolean
+    error?: string
+}
+
+
+class TestConnectionButton extends React.PureComponent<Props, State> {
+    public state: State = {
+        loading: false,
+        flash: false,
+    }
+
+    private timeoutHandle?: number
+
+    public componentWillUnmount(): void {
+        if (this.timeoutHandle) {
+            window.clearTimeout(this.timeoutHandle)
+        }
+    }
+
+    private onClick = (): void => {
+        this.setState({
+            error: undefined,
+            loading: true,
+        })
+
+        this.props.run().then(
+            () => {
+                this.setState({ loading: false, flash: true })
+                if (typeof this.timeoutHandle === 'number') {
+                    window.clearTimeout(this.timeoutHandle)
+                }
+                this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
+            },
+            error => this.setState({ loading: false, error: asError(error).message })
+        )
+    }
+
+    public render(): JSX.Element | null {
+        let content
+        if (!this.props.buttonDisabled) {
+            content = this.props.buttonSubtitle
+        } else {
+            content = "Connectivity check is not implemented for this code host"
+        }
+
+        let buttonLabelElement
+        if (this.state.loading) {
+            buttonLabelElement = <><LoadingSpinner /> Checking</>
+        } else {
+            buttonLabelElement=<><Icon aria-hidden={true} svgPath={mdiConnection} /> Test</>
+        }
+
+        return (
+            <>
+                <Tooltip content={content}>
+                    <Button
+                        className={this.props.className}
+                        variant={this.props.buttonVariant || "primary"}
+                        onClick={this.onClick}
+                        disabled={this.props.buttonDisabled || this.state.loading}
+                        size="sm"
+                    >
+                {buttonLabelElement}
+                </Button>
+                </Tooltip>{' '}
+
+                {this.props.flashText && this.state.flash && (
+                    <div className={classNames("flash")}>
+                        <small>{this.props.flashText}</small>
+                    </div>
+                )}
+            </>
+        )
+    }
 }

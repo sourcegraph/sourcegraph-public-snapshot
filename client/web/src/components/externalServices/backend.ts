@@ -169,6 +169,7 @@ export const listExternalServiceFragment = gql`
         updatedAt
         createdAt
         webhookURL
+        hasConnectionCheck
     }
 `
 export const EXTERNAL_SERVICES = gql`
