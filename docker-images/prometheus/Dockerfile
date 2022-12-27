@@ -77,6 +77,7 @@ COPY ./alertmanager.sh /alertmanager.sh
 
 # Copy config
 COPY --from=monitoring_builder /generated/prometheus/* /sg_config_prometheus/
+COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 COPY config/alertmanager.yml /sg_config_prometheus/
 
