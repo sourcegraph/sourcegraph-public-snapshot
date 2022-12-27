@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -26,19 +27,15 @@ func NewRulesCache() RulesCache {
 func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (Ruleset, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
 	key := RulesKey{repoName, commitID}
-	ruleset, ok := c.rules[key]
-	var err error
-	if !ok {
-		ruleset, err = NewRuleset(ctx, gitserver, repoName, commitID)
+	if _, ok := c.rules[key]; !ok {
+		file, err := backend.NewOwnService(gitserver).OwnersFile(ctx, repoName, commitID)
 		if err != nil {
 			emptyRuleset := Ruleset{}
 			c.rules[key] = emptyRuleset
 			return emptyRuleset, err
 		}
-		c.rules[key] = ruleset
+		c.rules[key] = Ruleset{file}
 	}
-
-	return ruleset, nil
+	return c.rules[key], nil
 }

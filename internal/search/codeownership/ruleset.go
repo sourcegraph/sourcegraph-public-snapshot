@@ -1,17 +1,11 @@
 package codeownership
 
 import (
-	"bytes"
-	"context"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
@@ -38,7 +32,7 @@ func (p pattern) String() string {
 
 func (p pattern) match(path string) bool {
 	// left anchored
-	if !strings.ContainsAny(p.String(), "*?\\") && p.String()[0] == os.PathSeparator {
+	if !strings.ContainsAny(p.String(), `*?\`) && p.String()[0] == os.PathSeparator {
 		prefix := p.String()
 
 		// Strip the leading slash as we're anchored to the root already
@@ -60,7 +54,6 @@ func (p pattern) match(path string) bool {
 		if len(path) > len(prefix) && path[len(prefix)] == os.PathSeparator {
 			return path[:len(prefix)] == prefix
 		}
-
 		return false
 	}
 	re, err := p.regex()
@@ -74,9 +67,9 @@ func (p pattern) regex() (*regexp.Regexp, error) {
 	// Handle specific edge cases first
 	switch {
 	case strings.Contains(p.String(), "***"):
-		return nil, fmt.Errorf("pattern cannot contain three consecutive asterisks")
+		return nil, errors.Errorf("pattern cannot contain three consecutive asterisks")
 	case p.String() == "":
-		return nil, fmt.Errorf("empty pattern")
+		return nil, errors.Errorf("empty pattern")
 	case p.String() == "/":
 		// "/" doesn't match anything
 		return regexp.Compile(`\A\z`)
@@ -178,43 +171,4 @@ func (p pattern) regex() (*regexp.Regexp, error) {
 	}
 	re.WriteString(`\z`)
 	return regexp.Compile(re.String())
-}
-
-func NewRuleset(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (Ruleset, error) {
-	ruleset := Ruleset{}
-
-	content, err := loadOwnershipFile(ctx, gitserver, repoName, commitID)
-	if err != nil {
-		return ruleset, err
-	}
-	if content == nil {
-		return ruleset, nil
-	}
-
-	codeownersRuleset, err := codeowners.Parse(bytes.NewReader(content))
-	if err != nil {
-		return ruleset, err
-	}
-
-	ruleset.file = codeownersRuleset
-
-	return ruleset, nil
-}
-
-func loadOwnershipFile(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) ([]byte, error) {
-	for _, path := range []string{"CODEOWNERS", ".github/CODEOWNERS", ".gitlab/CODEOWNERS", "docs/CODEOWNERS"} {
-		content, err := gitserver.ReadFile(
-			ctx,
-			authz.DefaultSubRepoPermsChecker,
-			repoName,
-			commitID,
-			path,
-		)
-
-		if err == nil && content != nil {
-			return content, nil
-		}
-	}
-
-	return nil, nil
 }
