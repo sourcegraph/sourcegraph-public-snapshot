@@ -1,5 +1,6 @@
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import { FuzzySearch, IndexingFSM, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { FuzzySearch, IndexingFSM, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValue } from '../../fuzzyFinder/SearchValue'
 
 import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'

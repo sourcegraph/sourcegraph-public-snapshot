@@ -2,7 +2,8 @@ import { BloomFilter } from 'bloomfilter'
 
 import { HighlightedLinkProps, offsetSum, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
-import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { SearchValue } from './SearchValue'
 import { Hasher } from './Hasher'
 
 /**

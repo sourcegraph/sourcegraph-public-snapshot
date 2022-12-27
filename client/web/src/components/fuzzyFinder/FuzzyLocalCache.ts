@@ -12,6 +12,8 @@ export interface PersistableQueryResult {
     url?: string
     symbolKind?: SymbolKind
     stars?: number
+    repoName?: string
+    filePath?: string
 }
 
 export interface FuzzyLocalCache {
@@ -27,6 +29,32 @@ export const emptyFuzzyCache: FuzzyLocalCache = {
     staleValues: () => Promise.resolve([]),
     cacheValues: () => {},
 }
+
+/**
+ * Implementation of `FuzzyLocalCache` that uses `Storage` such as `window.localStorage`
+ */
+export class FuzzyStorageCache implements FuzzyLocalCache {
+    constructor(
+        private readonly storage: Storage,
+        private readonly cacheKey: string,
+        public readonly staleValues: StaleValuesFunction
+    ) {}
+    public initialValues(): Promise<PersistableQueryResult[]> {
+        const fromCache = this.storage.getItem(this.cacheKey) ?? '[]'
+        try {
+            return Promise.resolve(JSON.parse(fromCache) as PersistableQueryResult[])
+        } catch (error) {
+            return Promise.resolve([])
+        }
+    }
+    public cacheValues(values: PersistableQueryResult[]): void {
+        this.storage.setItem(this.cacheKey, JSON.stringify(values))
+    }
+}
+
+/**
+ * Implementation of `FuzzyLocalCache` that uses the browser's `caches` API.
+ */
 export class FuzzyWebCache implements FuzzyLocalCache {
     constructor(private readonly cacheKey: string, public readonly staleValues: StaleValuesFunction) {}
     public async initialValues(): Promise<PersistableQueryResult[]> {

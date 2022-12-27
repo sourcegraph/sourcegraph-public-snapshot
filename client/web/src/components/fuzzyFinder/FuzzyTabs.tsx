@@ -18,6 +18,8 @@ import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
 import { FuzzyRepos } from './FuzzyRepos'
 import { FuzzySymbols } from './FuzzySymbols'
+import { UserHistory } from '../useUserHistory'
+import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 
 class Tab {
     constructor(
@@ -95,9 +97,10 @@ export interface FuzzyState {
     activeTab: FuzzyTabKey
     setActiveTab: Dispatch<SetStateAction<FuzzyTabKey>>
     query: string
-    setQuery: Dispatch<SetStateAction<string>>
+    setQuery: (newQuery: string) => void
     repoRevision: FuzzyRepoRevision
     tabs: FuzzyTabs
+    rankingCache: SearchValueRankingCache
     /**
      * fsmGeneration increases whenever `FuzzyTabs.fsms` have new underlying data
      * meaning the query should be re-triggered.
@@ -177,11 +180,7 @@ export function defaultFuzzyState(): FuzzyState {
     return {
         query,
         setQuery: newQuery => {
-            if (typeof newQuery === 'function') {
-                query = newQuery(query)
-            } else {
-                query = newQuery
-            }
+            query = newQuery
         },
         activeTab: 'all',
         setActiveTab: newActiveTab => {
@@ -196,6 +195,7 @@ export function defaultFuzzyState(): FuzzyState {
         fsmGeneration: 0,
         scope,
         isScopeToggleDisabled: false,
+        rankingCache: new SearchValueRankingCache(),
         setScope: newScope => {
             if (typeof newScope === 'function') {
                 scope = newScope(scope)
@@ -215,6 +215,12 @@ export interface FuzzyTabsProps extends FuzzyActionProps {
     client?: ApolloClient<object>
     initialQuery?: string
     isVisible: boolean
+    userHistory: UserHistory
+}
+
+interface FuzzyVisibility {
+    isVisible: boolean
+    activeTab: keyof Tabs
 }
 
 export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
@@ -252,14 +258,25 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     const { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } =
         getFuzzyFinderFeatureFlags(props.settingsCascade.final)
 
+    const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
+    const isVisibleHistory = useRef<FuzzyVisibility>({ isVisible, activeTab })
+
     // NOTE: the query is cached in session storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
-    const [query, setQuery] = useSessionStorage(`fuzzy-modal.query.${repoName}`, props.initialQuery || '')
+    const [query, setQuery] = useSessionStorage<string>(`fuzzy-modal.query.${repoName}`, props.initialQuery || '')
+
+    // Re-initialize the cache whenever the query changes. We want to preserve
+    // the ranking as long as the  queries to prevent jumpy ranking when the user
+    // is cycling through results by repeatedly activating the fuzzy finder
+    const rankingCache = useMemo(() => new SearchValueRankingCache(), [query])
+
+    useEffect(() => {
+        isVisibleHistory.current = { isVisible, activeTab }
+    }, [isVisible, activeTab])
+
     const queryRef = useRef(query)
     queryRef.current = query
-
-    const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
 
     // Scope determines whether to search for results within the repository of everywhere.
     const [scope, setScope] = useState<FuzzyScope>('repository')
@@ -296,7 +313,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
 
     // Repos
     const repos = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyRepos(apolloClient, incrementFsmRenderGeneration)
+        const fsm = new FuzzyRepos(apolloClient, incrementFsmRenderGeneration, props.userHistory)
         return new FuzzyTabFSM(
             'repos',
             'everywhere',
@@ -312,7 +329,8 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
             incrementFsmRenderGeneration,
             repoRevisionRef,
             false,
-            settingsCascade
+            settingsCascade,
+            props.userHistory
         )
         return new FuzzyTabFSM(
             'symbols',
@@ -322,7 +340,14 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         )
     }, [apolloClient, incrementFsmRenderGeneration, settingsCascade])
     const globalSymbols = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzySymbols(apolloClient, incrementFsmRenderGeneration, repoRevisionRef, true, settingsCascade)
+        const fsm = new FuzzySymbols(
+            apolloClient,
+            incrementFsmRenderGeneration,
+            repoRevisionRef,
+            true,
+            settingsCascade,
+            props.userHistory
+        )
         return new FuzzyTabFSM(
             'symbols',
             'everywhere',
@@ -333,7 +358,13 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
 
     // Files
     const localFiles = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyRepoFiles(apolloClient, createURL, incrementFsmRenderGeneration, repoRevisionRef.current)
+        const fsm = new FuzzyRepoFiles(
+            apolloClient,
+            createURL,
+            incrementFsmRenderGeneration,
+            repoRevisionRef.current,
+            props.userHistory
+        )
         return new FuzzyTabFSM(
             'files',
             'repository',
@@ -342,7 +373,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         )
     }, [apolloClient, incrementFsmRenderGeneration, createURL])
     const globalFiles = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyFiles(apolloClient, incrementFsmRenderGeneration, repoRevisionRef)
+        const fsm = new FuzzyFiles(apolloClient, incrementFsmRenderGeneration, repoRevisionRef, props.userHistory)
         return new FuzzyTabFSM(
             'files',
             'everywhere',
@@ -359,12 +390,15 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         if (fuzzyFinderRepositories) {
             tabs.push(repos)
         }
+
+        // Files are intentionally above symbols so that they rank above symbol results.
+        tabs.push(localFiles)
+        tabs.push(globalFiles)
+
         if (fuzzyFinderSymbols) {
             tabs.push(globalSymbols)
             tabs.push(localSymbols)
         }
-        tabs.push(localFiles)
-        tabs.push(globalFiles)
         return new FuzzyTabs(
             {
                 all: fuzzyFinderAll ? defaultTabs.all : hiddenKind,
@@ -401,5 +435,6 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         setScope,
         isScopeToggleDisabled,
         tabs,
+        rankingCache,
     }
 }
