@@ -44,15 +44,11 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
                     }
                 />
             </div>
-            <div
-                className={
-                    isNotCutoff
-                        ? classNames(styles.readmeMore)
-                        : classNames(styles.readmeMore, styles.readmeMoreVisible)
-                }
-            >
-                <Link to={readmeURL}>View full file</Link>
-            </div>
+            {!isNotCutoff && (
+                <div className={styles.readmeMore}>
+                    <Link to={readmeURL}>View full README</Link>
+                </div>
+            )}
         </>
     )
 }
