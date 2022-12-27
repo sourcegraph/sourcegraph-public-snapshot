@@ -13,7 +13,19 @@ module.exports = {
       },
       to: {
         circular: true,
-        viaSomeNot: '^client/$1/.+',
+        viaSomeNot: '^client/$1',
+      },
+    },
+    {
+      name: 'no-folder-cycles',
+      scope: 'folder',
+      severity: 'warn',
+      comment: 'This folder is part of a circular relationship. You might want to refactor that a bit.',
+      from: {
+        pathNot: '^client/.+/src/.+',
+      },
+      to: {
+        circular: true,
       },
     },
   ],
@@ -32,10 +44,10 @@ module.exports = {
        - dynamic: a boolean indicating whether to ignore dynamic (true) or static (false) dependencies.
           leave out if you want to exclude neither (recommended!)
     */
-    // exclude : {
-    //   path: '',
-    //   dynamic: true
-    // },
+    exclude: {
+      path: 'client/.+/{out,node_modules}',
+      // dynamic: true
+    },
 
     /* pattern specifying which files to include (regular expression)
        dependency-cruiser will skip everything not matching this pattern
