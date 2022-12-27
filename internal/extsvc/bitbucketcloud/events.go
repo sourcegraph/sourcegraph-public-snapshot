@@ -47,7 +47,7 @@ func ParseWebhookEvent(eventKey string, payload []byte) (any, error) {
 
 // Types (and subtypes) that we can unmarshal from a webhook payload.
 //
-// This is (intentionally) most, but not all, of the payload types as of April
+// This is (intentionally) most, but not all, of the payload types as of December
 // 2022. Some repo events are unlikely to ever be useful to us, so we don't even
 // attempt to unmarshal them.
 
