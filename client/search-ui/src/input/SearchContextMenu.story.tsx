@@ -1,7 +1,6 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -9,6 +8,7 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 

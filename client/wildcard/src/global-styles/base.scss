@@ -5,8 +5,8 @@
 @import './mixins.scss';
 @import './reboot';
 @import './utilities';
-@import 'wildcard/src/global-styles/breakpoints';
-@import 'shared/src/global-styles/icons';
+@import './breakpoints';
+@import './icons';
 @import './dropdown';
 @import './meter';
 @import './popover';
@@ -39,4 +39,24 @@ input[type='checkbox'] {
     &:not(:disabled) {
         cursor: pointer;
     }
+}
+
+@import 'react-resizable/css/styles.css';
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/combobox/styles.css';
+@import '@reach/menu-button/styles.css';
+
+// stylelint-disable-next-line selector-max-id
+html,
+body,
+#root {
+    height: 100%;
+}
+
+:root {
+    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
+    --reach-menu-button: 1;
+    --reach-accordion: 1;
+    // Legacy media breakpoints
+    --media-xl: 1200px;
 }

@@ -3,16 +3,20 @@ import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
-import { WildcardThemeContext } from '@sourcegraph/wildcard'
+
+import { WildcardThemeContext } from '../hooks/useWildcardTheme'
 
 import brandedStyles from '../global-styles/index.scss'
 
 export interface BrandedProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<React.PropsWithChildren<ThemeProps>>
+    children: React.FunctionComponent<
+        React.PropsWithChildren<{
+            isLightTheme: boolean
+        }>
+    >
     styles?: string
 }
 

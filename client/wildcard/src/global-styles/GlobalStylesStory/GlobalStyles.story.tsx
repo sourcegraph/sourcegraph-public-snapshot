@@ -1,30 +1,15 @@
 // This story is NOT a complete replication of the Bootstrap documentation. This means it is not an exhaustive
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
-// documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
+// documentation for that. Its primary purpose is to show what Bootstrap's components look like with our styling
 // customizations.
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import {
-    TextArea,
-    Button,
-    Link,
-    Select,
-    Checkbox,
-    Input,
-    Text,
-    Code,
-    H1,
-    H2,
-    H3,
-    H4,
-    Form,
-} from '@sourcegraph/wildcard'
 
-import { BrandedStory } from '../../components/BrandedStory'
-import { CodeSnippet } from '../../components/CodeSnippet'
+import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4, Form } from '../../components'
+import { BrandedStory } from '../../stories'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
@@ -106,11 +91,6 @@ export const CodeTypography: Story = () => (
             <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text to the clipboard.
         </Text>
         <H3>Code snippets</H3>
-        <Text>
-            Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}
-            <Code>{'<CodeSnippet />'}</Code> for these uses.
-        </Text>
-        <CodeSnippet code="property: 1" language="yaml" />
     </>
 )
 

@@ -2,7 +2,7 @@ import React, { ElementType } from 'react'
 
 import classNames from 'classnames'
 
-import { Code, Text } from '@sourcegraph/wildcard'
+import { Code, Text } from '../../../components'
 
 import styles from './TextVariants.module.scss'
 
