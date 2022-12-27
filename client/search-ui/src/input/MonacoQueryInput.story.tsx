@@ -1,7 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
