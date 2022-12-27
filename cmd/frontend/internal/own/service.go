@@ -15,9 +15,9 @@ import (
 // Service gives access to code ownership data.
 // At this point only data from CODEOWNERS file is presented, if available.
 type Service interface {
-	// Owners returns a CODEOWNERS file from a given repository at given commit ID.
+	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
 	// In the case the file can not be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
-	Owners(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
+	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
 }
 
 var _ Service = service{}
@@ -40,7 +40,7 @@ var codeownersLocations = []string{
 	"docs/CODEOWNERS",
 }
 
-func (s service) Owners(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (s service) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	var content []byte
 	var err error
 	for _, path := range codeownersLocations {

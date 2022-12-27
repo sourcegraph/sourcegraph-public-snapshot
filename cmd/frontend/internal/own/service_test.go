@@ -33,7 +33,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := own.NewService(git).Owners(context.Background(), "repo", "SHA")
+			got, err := own.NewService(git).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersFile.Repr(), got.Repr())
 		})
@@ -54,7 +54,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := own.NewService(git).Owners(context.Background(), "repo", "SHA")
+	got, err := own.NewService(git).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
