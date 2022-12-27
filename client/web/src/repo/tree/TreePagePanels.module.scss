@@ -1,5 +1,3 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
 .bar-svg {
     border-radius: 5px;
 }
@@ -11,7 +9,6 @@
 .diff-stat-deleted {
     fill: var(--diff-remove-fg);
 }
-
 
 .readme-container {
     max-height: 30rem;
@@ -46,14 +43,6 @@
 
 .meter-container {
     padding-top: 0.125rem;
-}
-
-.menu {
-    .text {
-        @media (--lg-breakpoint-down) {
-            display: none;
-        }
-    }
 }
 
 .tree-entry {

@@ -251,7 +251,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     const RootHeaderSection = (): React.ReactElement => (
         <>
             <div className="d-flex flex-wrap flex-lg-nowrap justify-content-between px-0">
-                <div className={classNames('flex-fill pl-0', styles.header)}>
+                <div className={styles.header}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
                             <PageHeader.Breadcrumb icon={mdiSourceRepository}>
@@ -261,7 +261,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     </PageHeader>
                     {repo?.description && <Text>{repo.description}</Text>}
                 </div>
-                <div className={classNames('flex-shrink-0 pr-0', styles.menu)}>
+                <div className={styles.menu}>
                     <ButtonGroup>
                         <Button
                             className="flex-shrink-0"
