@@ -1,8 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Text } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
