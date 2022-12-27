@@ -259,7 +259,7 @@ func TestDeleteExternalService(t *testing.T) {
 	})
 }
 
-func TestExternalServices(t *testing.T) {
+func TestExternalServicesResolver(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("cannot read site-level external services", func(t *testing.T) {
 			users := database.NewMockUserStore()
@@ -298,7 +298,9 @@ func TestExternalServices(t *testing.T) {
 			}
 		})
 	})
+}
 
+func TestExternalServices(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
@@ -306,8 +308,8 @@ func TestExternalServices(t *testing.T) {
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 {
 			return []*types.ExternalService{
-				{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
-				{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
+				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
 			}, nil
 		}
 
@@ -315,6 +317,8 @@ func TestExternalServices(t *testing.T) {
 			{ID: 1, Config: extsvc.NewEmptyConfig()},
 			{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 			{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+			{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
+			{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
 		}
 		if opt.LimitOffset != nil {
 			return ess[:opt.LimitOffset.Limit], nil
@@ -337,8 +341,6 @@ func TestExternalServices(t *testing.T) {
 	mockLastCheckedAt := time.Now()
 	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceResolver, error) {
 		switch r.externalService.ID {
-		case 1:
-			r.availability.unknown = &externalServiceUnknown{}
 		case 2:
 			r.availability.unavailable = &externalServiceUnavailable{
 				suspectedReason: "failed to connect",
@@ -347,16 +349,18 @@ func TestExternalServices(t *testing.T) {
 			r.availability.available = &externalServiceAvailable{
 				lastCheckedAt: mockLastCheckedAt,
 			}
+		default:
+			r.availability.unknown = &externalServiceUnknown{}
 		}
 
 		return r, nil
 	}
 
-	// NOTE: all these tests run as site admin
+	// NOTE: all these tests are run as site admin
 	RunTests(t, []*Test{
-		// Read all external services
 		{
 			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "Read all external services",
 			Query: `
 			{
 				externalServices() {
@@ -372,15 +376,17 @@ func TestExternalServices(t *testing.T) {
 					"nodes": [
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="}
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
                     ]
                 }
 			}
 		`,
 		},
-		// LastSyncError included
 		{
 			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "LastSyncError included",
 			Query: `
 			{
 				externalServices() {
@@ -397,15 +403,17 @@ func TestExternalServices(t *testing.T) {
 					"nodes": [
                         {"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","lastSyncError":"Oops"},
                         {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=","lastSyncError":"Oops"},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=","lastSyncError":"Oops"}
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=","lastSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=","lastSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=","lastSyncError":"Oops"}
                     ]
 				}
 			}
 		`,
 		},
-		// checkConnection
 		{
 			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "Check connection",
 			Query: `
 				{
 					externalServices() {
@@ -451,15 +459,29 @@ func TestExternalServices(t *testing.T) {
 								"lastCheckedAt": %q
 							},
 							"hasConnectionCheck": true
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"checkConnection": {
+								"implementationNote": "not implemented"
+							},
+							"hasConnectionCheck": false
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
+							"checkConnection": {
+								"implementationNote": "not implemented"
+							},
+							"hasConnectionCheck": false
 						}
 					]
 				}
 			}
 			`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
 		},
-		// Pagination
 		{
 			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "PageInfo included, using first",
 			Query: `
 			{
 				externalServices(first: 1) {
@@ -484,9 +506,10 @@ func TestExternalServices(t *testing.T) {
 		},
 		{
 			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "PageInfo included, using after",
 			Query: `
 			{
-				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjE=") {
+				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjM=") {
 					nodes {
 						id
 					}
@@ -500,8 +523,50 @@ func TestExternalServices(t *testing.T) {
 			ExpectedResult: `
 			{
 				"externalServices": {
-					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="}],
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}],
 					"pageInfo":{"endCursor":null,"hasNextPage":false}
+				}
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "SupportsRepoExclusion included",
+			Query: `
+			{
+				externalServices() {
+					nodes {
+						id
+						supportsRepoExclusion
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"supportsRepoExclusion": false
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"supportsRepoExclusion": true
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"supportsRepoExclusion": true
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"supportsRepoExclusion": true
+						},
+						{
+							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
+							"supportsRepoExclusion": false
+						}
+					]
 				}
 			}
 		`,

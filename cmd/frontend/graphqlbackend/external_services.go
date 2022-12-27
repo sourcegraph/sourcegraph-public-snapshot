@@ -307,7 +307,7 @@ type computedExternalServiceConnectionResolver struct {
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
@@ -319,11 +319,11 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
+func (r *computedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *computedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
@@ -333,7 +333,6 @@ const (
 	Add ExternalServiceMutationType = iota
 	Update
 	Delete
-	SetRepos
 )
 
 func (d ExternalServiceMutationType) String() string {

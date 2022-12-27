@@ -2833,6 +2833,11 @@ type ExternalService implements Node {
     If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
     """
     hasConnectionCheck: Boolean!
+
+    """
+    True if this external service configuration supports `exclude` parameter.
+    """
+    supportsRepoExclusion: Boolean!
 }
 
 """
