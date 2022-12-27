@@ -1,0 +1,77 @@
+package own_test
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+)
+
+func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
+	codeownersFile := &codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{
+				Pattern: "README.md",
+				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+			},
+		},
+	}
+	for name, repo := range map[string]repoFiles{
+		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersFile.Repr()},
+		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersFile.Repr()},
+		".gitlab":   {{"repo", "SHA", ".gitlab/CODEOWNERS"}: codeownersFile.Repr()},
+	} {
+		t.Run(name, func(t *testing.T) {
+			git := gitserver.NewMockClient()
+			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+			got, err := own.NewService(git).Owners(context.Background(), "repo", "SHA")
+			require.NoError(t, err)
+			assert.Equal(t, codeownersFile.Repr(), got.Repr())
+		})
+	}
+}
+
+func TestOwnersCannotFindFile(t *testing.T) {
+	codeownersFile := &codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{
+				Pattern: "README.md",
+				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+			},
+		},
+	}
+	repo := repoFiles{
+		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
+	}
+	git := gitserver.NewMockClient()
+	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+	got, err := own.NewService(git).Owners(context.Background(), "repo", "SHA")
+	require.NoError(t, err)
+	assert.Nil(t, got)
+}
+
+type repoPath struct {
+	Repo     api.RepoName
+	CommitID api.CommitID
+	Path     string
+}
+
+// repoFiles is a fake git client mapping a file
+type repoFiles map[repoPath]string
+
+func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+	if !ok {
+		return nil, errors.New("file does not exist")
+	}
+	return []byte(content), nil
+}
