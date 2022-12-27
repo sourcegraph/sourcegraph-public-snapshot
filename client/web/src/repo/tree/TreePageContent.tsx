@@ -584,18 +584,6 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={contributorsStyles.commits}>
-                <div className={contributorsStyles.commit}>
-                    {commit && (
-                        <>
-                            {/* <Timestamp date={commit.author.date} />:{' '} */}
-                            <Tooltip content="Most recent commit by contributor" placement="bottom">
-                                <Link to={commit.url} className="repository-contributor-node__commit-subject">
-                                    {commit.subject}
-                                </Link>
-                            </Tooltip>
-                        </>
-                    )}
-                </div>
                 <div className={contributorsStyles.count}>
                     <Tooltip
                         content={
