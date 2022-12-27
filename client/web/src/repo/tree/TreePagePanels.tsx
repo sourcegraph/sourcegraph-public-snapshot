@@ -6,7 +6,7 @@ import * as H from 'history'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
-import { StackedMeter, Link, Icon, Card, CardHeader, ParentSize } from '@sourcegraph/wildcard'
+import { StackedMeter, Link, Icon, Card, CardHeader, ParentSize, Tooltip } from '@sourcegraph/wildcard'
 
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -247,43 +247,50 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                         </div>
                         <div className="list-group list-group-flush px-2 py-1 border-bottom col-3">
                             {diffStatsByPath[entry.name] && (
-                                <div
-                                    className={styles.meterContainer}
-                                    title={`+${Intl.NumberFormat('en', { notation: 'compact' }).format(
-                                        diffStatsByPath[entry.name].added
-                                    )}, -${Intl.NumberFormat('en', { notation: 'compact' }).format(
-                                        diffStatsByPath[entry.name].deleted
-                                    )} lines`}
+                                <Tooltip
+                                    placement="topEnd"
+                                    content={`${Intl.NumberFormat('en', {
+                                        notation: 'compact',
+                                    }).format(diffStatsByPath[entry.name].added)} lines added,\n${Intl.NumberFormat(
+                                        'en',
+                                        {
+                                            notation: 'compact',
+                                        }
+                                    ).format(diffStatsByPath[entry.name].deleted)} lines removed in the past 30 days`}
                                 >
-                                    <ParentSize>
-                                        {({ width }) => (
-                                            <StackedMeter
-                                                width={width}
-                                                height={10}
-                                                viewMinMax={[0, maxLinesChanged]}
-                                                data={[
-                                                    {
-                                                        name: 'deleted',
-                                                        value: diffStatsByPath[entry.name].deleted,
-                                                        className: styles.diffStatDeleted,
-                                                    },
-                                                    {
-                                                        name: 'added',
-                                                        value: diffStatsByPath[entry.name].added,
-                                                        className: styles.diffStatAdded,
-                                                    },
-                                                ]}
-                                                getDatumValue={getDatumValue}
-                                                getDatumName={getDatumName}
-                                                getDatumClassName={getDatumClassName}
-                                                minBarWidth={10}
-                                                className={styles.barSvg}
-                                                barRadius={5}
-                                                rightToLeft={true}
-                                            />
-                                        )}
-                                    </ParentSize>
-                                </div>
+                                    <div className={styles.meterContainer}>
+                                        <ParentSize>
+                                            {({ width }) => (
+                                                <div>
+                                                    <StackedMeter
+                                                        width={width}
+                                                        height={10}
+                                                        viewMinMax={[0, maxLinesChanged]}
+                                                        data={[
+                                                            {
+                                                                name: 'deleted',
+                                                                value: diffStatsByPath[entry.name].deleted,
+                                                                className: styles.diffStatDeleted,
+                                                            },
+                                                            {
+                                                                name: 'added',
+                                                                value: diffStatsByPath[entry.name].added,
+                                                                className: styles.diffStatAdded,
+                                                            },
+                                                        ]}
+                                                        getDatumValue={getDatumValue}
+                                                        getDatumName={getDatumName}
+                                                        getDatumClassName={getDatumClassName}
+                                                        minBarWidth={10}
+                                                        className={styles.barSvg}
+                                                        barRadius={5}
+                                                        rightToLeft={true}
+                                                    />
+                                                </div>
+                                            )}
+                                        </ParentSize>
+                                    </div>
+                                </Tooltip>
                             )}
                         </div>
                     </div>

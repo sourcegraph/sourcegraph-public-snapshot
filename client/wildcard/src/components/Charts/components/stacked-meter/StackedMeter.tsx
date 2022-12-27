@@ -31,7 +31,6 @@ export function StackedMeter<Datum>({
     getDatumName,
     getDatumColor,
     getDatumClassName,
-    children,
     rightToLeft,
     minBarWidth,
     barRadius,
@@ -76,9 +75,7 @@ export function StackedMeter<Datum>({
                             radius={barRadius || 0}
                             left={isFirstBar}
                             right={isLastBar}
-                        >
-                            {children && (({ path }) => children({ path, datum: stackedDatum.datum }))}
-                        </BarRounded>
+                        />
                     )
                 })}
             </Group>
