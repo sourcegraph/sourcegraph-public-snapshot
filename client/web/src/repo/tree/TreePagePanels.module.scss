@@ -27,7 +27,7 @@
     width: 100%;
     height: 2.5rem;
     transition: ease-in;
-    background-image: linear-gradient(transparent, 75%, var(--code-bg));
+    background: linear-gradient(to bottom, transparent, 75%, var(--code-bg));
 }
 
 .readme-fader-invisible {
