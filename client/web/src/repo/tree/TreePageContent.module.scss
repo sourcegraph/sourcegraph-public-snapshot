@@ -1,0 +1,32 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.section {
+    width: 100%;
+    max-width: var(--media-xl);
+}
+
+.card-col-header-wrapper {
+    background-color: var(--color-bg-2);
+
+    a {
+        color: var(--link-color-2);
+    }
+}
+
+.card-col-header {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.git-commit-node {
+    padding: 0.25rem 0;
+
+    &-message-subject {
+        opacity: 0.9;
+    }
+
+    :global(.btn) {
+        opacity: 0.85;
+    }
+}

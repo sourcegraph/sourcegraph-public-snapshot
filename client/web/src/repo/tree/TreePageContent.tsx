@@ -54,7 +54,7 @@ import { BATCH_COUNT } from '../RepositoriesPopover'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
-import styles from './TreePage.module.scss'
+import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 
 export type TreeCommitsRepositoryCommit = NonNullable<

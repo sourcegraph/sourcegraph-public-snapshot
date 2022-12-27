@@ -10,7 +10,7 @@ import { StackedMeter, Link, Icon, Card, CardHeader, ParentSize, Tooltip } from 
 
 import { RenderedFile } from '../blob/RenderedFile'
 
-import styles from './TreePage.module.scss'
+import styles from './TreePagePanels.module.scss'
 
 interface ReadmePreviewCardProps {
     readmeHTML: string
