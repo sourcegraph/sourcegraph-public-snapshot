@@ -1086,7 +1086,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
