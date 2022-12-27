@@ -12,7 +12,11 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
+// Service gives access to code ownership data.
+// At this point only data from CODEOWNERS file is presented, if available.
 type Service interface {
+	// Owners returns a CODEOWNERS file from a given repository at given commit ID.
+	// In the case the file can not be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
 	Owners(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
 }
 
@@ -26,6 +30,9 @@ type service struct {
 	git gitserver.Client
 }
 
+// codeownersLocations contain all the locations where CODEOWNERS file
+// is expected to be found relative to the repository root directory.
+// These are in line with GitHub and GitLab documentation.
 var codeownersLocations = []string{
 	"CODEOWNERS",
 	".github/CODEOWNERS",
@@ -44,7 +51,6 @@ func (s service) Owners(ctx context.Context, repoName api.RepoName, commitID api
 			commitID,
 			path,
 		)
-
 		if err == nil && content != nil {
 			break
 		}
