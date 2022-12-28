@@ -41,6 +41,8 @@ var codeownersLocations = []string{
 	"docs/CODEOWNERS",
 }
 
+// OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of 
+// the possible codeownersLocations. It returns nil if no match is found.
 func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	var content []byte
 	var err error
