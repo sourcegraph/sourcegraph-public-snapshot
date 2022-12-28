@@ -18,7 +18,6 @@ describe('<StackedMeter />', () => {
                 getDatumColor={datum => datum.color}
                 minBarWidth={10}
                 className="myclass"
-                barRadius={5}
                 rightToLeft={true}
             />
         )

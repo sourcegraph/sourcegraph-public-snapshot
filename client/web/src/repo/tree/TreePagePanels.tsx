@@ -280,7 +280,6 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                                         getDatumClassName={getDatumClassName}
                                                         minBarWidth={10}
                                                         className={styles.barSvg}
-                                                        barRadius={5}
                                                         rightToLeft={true}
                                                     />
                                                 </div>

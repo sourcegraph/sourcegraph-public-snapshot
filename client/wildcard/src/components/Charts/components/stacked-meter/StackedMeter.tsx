@@ -18,7 +18,6 @@ interface StackedMeterProps<Datum> {
     className?: string
     rightToLeft?: boolean
     children?: ({ path, datum }: { path: string; datum: Datum }) => React.ReactNode
-    barRadius?: number
 }
 
 export function StackedMeter<Datum>({
@@ -33,7 +32,6 @@ export function StackedMeter<Datum>({
     getDatumClassName,
     rightToLeft,
     minBarWidth,
-    barRadius,
 }: StackedMeterProps<Datum>): ReactElement | null {
     if (width === 0) {
         return null
@@ -72,7 +70,7 @@ export function StackedMeter<Datum>({
                             height={barHeight}
                             fill={getDatumColor?.(stackedDatum.datum)}
                             className={getDatumClassName?.(stackedDatum.datum)}
-                            radius={barRadius || 0}
+                            radius={5}
                             left={isFirstBar}
                             right={isLastBar}
                         />
