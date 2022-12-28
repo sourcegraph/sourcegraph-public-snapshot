@@ -99,35 +99,35 @@ func (p globPattern) matchesWhole(state *big.Int) bool {
 // prefixes are considered, and for each the following pattern part is tested
 // to match the given path part. The result is written to `next` which is assumed
 // to be zeroed.
-func (m globPattern) consume(part string, current, next *big.Int) {
+func (p globPattern) consume(part string, current, next *big.Int) {
 	// ** invariant is that the position after ** is set if the position before ** is set.
-	for i := 0; i < len(m); i++ {
+	for i := 0; i < len(p); i++ {
 		if current.Bit(i) == 0 {
 			continue
 		}
 		// Advance to the i+1-th state depending on whether
 		// the i-th pattern matches
 		bit := uint(0)
-		if m[i].Match(part) {
+		if p[i].Match(part) {
 			bit = uint(1)
 		}
 		next.SetBit(next, i+1, bit)
 		// Set the bit after next **
-		if i+1 < len(m) {
-			if _, ok := m[i+1].(anySubPath); ok {
+		if i+1 < len(p) {
+			if _, ok := p[i+1].(anySubPath); ok {
 				next.SetBit(next, i+2, bit)
 			}
 		}
 		// Leave the bit set before **
-		if _, ok := m[i].(anySubPath); ok {
+		if _, ok := p[i].(anySubPath); ok {
 			next.SetBit(next, i, 1)
 		}
 	}
 }
 
-func (m globPattern) debugString(state *big.Int) string {
+func (p globPattern) debugString(state *big.Int) string {
 	var s strings.Builder
-	for i, p := range m {
+	for i, p := range p {
 		if state.Bit(i) != 0 {
 			s.WriteByte('X')
 		} else {
@@ -135,7 +135,7 @@ func (m globPattern) debugString(state *big.Int) string {
 		}
 		fmt.Fprint(&s, p.String())
 	}
-	if state.Bit(len(m)) != 0 {
+	if state.Bit(len(p)) != 0 {
 		s.WriteByte('X')
 	} else {
 		s.WriteByte('_')

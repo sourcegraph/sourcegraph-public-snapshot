@@ -47,7 +47,7 @@ func TestMatch(t *testing.T) {
 			pattern: "/main/src/**/README.md",
 			paths: []string{
 				"/main/src/README.md",
-				// "/main/src/foo/bar/README.md",
+				"/main/src/foo/bar/README.md",
 			},
 		},
 	}
@@ -108,6 +108,7 @@ func TestNoMatch(t *testing.T) {
 			pattern: "/main/src/**/README.md",
 			paths: []string{
 				"/main/src/README.mdf",
+				"/main/src/README.md/looks-like-a-file-but-was-dir",
 				"/main/src/foo/bar/README.mdf",
 				"/nested/main/src/README.md",
 				"/nested/main/src/foo/bar/README.md",
