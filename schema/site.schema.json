@@ -2320,10 +2320,9 @@
           "enum": ["email", "repository:read"]
         },
         "allowSignup": {
-          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
           "default": true,
-          "type": "boolean",
-          "!go": { "pointer": true }
+          "type": "boolean"
         },
         "tokenRefreshWindowMinutes": {
           "description": "Time in minutes before token expiry when we should attempt to refresh it",

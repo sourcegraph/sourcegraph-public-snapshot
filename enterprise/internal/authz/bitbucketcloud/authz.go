@@ -25,7 +25,7 @@ import (
 func NewAuthzProviders(conns []*types.BitbucketCloudConnection, db database.DB) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	for _, c := range conns {
 		bbURL, _ := url.Parse(c.Url)
-		p, err := newAuthzProvider(bbURL, c.URN, c.Username, c.AppPassword)
+		p, err := newAuthzProvider(c, bbURL, c.URN, c.Username, c.AppPassword)
 		if err != nil {
 			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
 			problems = append(problems, err.Error())
@@ -38,11 +38,15 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, db database.DB) 
 }
 
 func newAuthzProvider(
+	c *types.BitbucketCloudConnection,
 	url *url.URL,
 	urn string,
 	username string,
 	appPassword string,
 ) (authz.Provider, error) {
+	if c.Authorization == nil {
+		return nil, nil
+	}
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}

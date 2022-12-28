@@ -26,7 +26,7 @@ type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	clientKey   string
 	db          database.DB
-	allowSignup *bool
+	allowSignup bool
 }
 
 func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
@@ -39,13 +39,11 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	bbClient := bitbucket.NewOAuthbearerToken(token.AccessToken)
+	bbClient.SetApiBaseURL(*s.BaseURL)
 	bbUser, err := bbClient.User.Profile()
 	if err != nil {
-		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from context")
+		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
 	}
-
-	// AllowSignup defaults to true when not set to preserve the existing behavior.
-	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
 	var data extsvc.AccountData
 	if err := bitbucketcloud.SetExternalAccountData(&data, bbUser, token); err != nil {
@@ -82,22 +80,25 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		email            string
 		createIfNotExist bool
 	}
-	var attempts []attemptConfig
+	attempts := []attemptConfig{}
 	verifiedEmails := []string{}
-	for i := range emails.Values {
-		if emails.Values[i].IsConfirmed {
+	for _, email := range emails.Values {
+		if email.IsConfirmed {
 			attempts = append(attempts, attemptConfig{
-				email:            emails.Values[i].Email,
+				email:            email.Email,
 				createIfNotExist: false,
 			})
-			verifiedEmails = append(verifiedEmails, emails.Values[i].Email)
+			verifiedEmails = append(verifiedEmails, email.Email)
 		}
+	}
+	if len(verifiedEmails) == 0 {
+		return nil, "Could not find verified email address for Bitbucket user.", errors.New("no verified email")
 	}
 	// If allowSignup is true, we will create an account using the first verified
 	// email address from Bitbucket which we expect to be their primary address. Note
 	// that the order of attempts is important. If we manage to connect with an
 	// existing account we return early and don't attempt to create a new account.
-	if signupAllowed {
+	if s.allowSignup {
 		attempts = append(attempts, attemptConfig{
 			email:            emails.Values[0].Email,
 			createIfNotExist: true,
@@ -125,12 +126,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				AccountID:   bbUser.AccountId,
 			},
 			ExternalAccountData: data,
-			CreateIfNotExist:    signupAllowed,
+			CreateIfNotExist:    attempt.createIfNotExist,
 		})
-		if err != nil {
-			return nil, safeErrMsg, err
-		}
-
 		if err == nil {
 			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 				AnonymousUserID: anonymousUserID,
