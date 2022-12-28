@@ -43,6 +43,7 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 
 import styles from './TreePage.module.scss'
+import { TreePageContent } from './TreePageContent'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -304,6 +305,16 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 </PageHeader>
                             )}
                         </header>
+
+                        <TreePageContent
+                            filePath={filePath}
+                            tree={treeOrError}
+                            repo={repo}
+                            revision={revision}
+                            commitID={commitID}
+                            location={location}
+                            {...props}
+                        />
                     </div>
                 )}
             </Container>
