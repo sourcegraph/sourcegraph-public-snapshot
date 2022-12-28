@@ -273,6 +273,7 @@ func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...Gi
 			}
 			return err
 		}
+		break
 	}
 	return nil
 }
