@@ -42,8 +42,9 @@ import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 
-import styles from './TreePage.module.scss'
 import { TreePageContent } from './TreePageContent'
+
+import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
