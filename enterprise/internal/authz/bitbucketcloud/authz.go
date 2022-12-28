@@ -27,7 +27,7 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, db database.DB) 
 		bbURL, _ := url.Parse(c.Url)
 		p, err := newAuthzProvider(c, bbURL, c.URN, c.Username, c.AppPassword)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
+			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketCloud)
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)

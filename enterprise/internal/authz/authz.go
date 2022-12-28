@@ -179,11 +179,11 @@ func ProvidersFromConfig(
 	}
 
 	if len(bitbucketCloudConns) > 0 {
-		bbcProviders, bbcProblems, bbcWarnings, bbcInvalidConnections := bitbucketcloud.NewAuthzProviders(bitbucketCloudConns, db)
-		providers = append(providers, bbcProviders...)
-		seriousProblems = append(seriousProblems, bbcProblems...)
-		warnings = append(warnings, bbcWarnings...)
-		invalidConnections = append(invalidConnections, bbcInvalidConnections...)
+		bbcloudProviders, bbcloudProblems, bbcloudWarnings, bbcloudInvalidConnections := bitbucketcloud.NewAuthzProviders(bitbucketCloudConns, db)
+		providers = append(providers, bbcloudProviders...)
+		seriousProblems = append(seriousProblems, bbcloudProblems...)
+		warnings = append(warnings, bbcloudWarnings...)
+		invalidConnections = append(invalidConnections, bbcloudInvalidConnections...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
