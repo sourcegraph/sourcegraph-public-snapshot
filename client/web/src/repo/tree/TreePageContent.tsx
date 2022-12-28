@@ -399,7 +399,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                             >
                                 location={props.location}
-                                className="foobar"
                                 listClassName="list-group list-group-flush"
                                 noun="commit in this tree"
                                 pluralNoun="commits in this tree"
@@ -417,7 +416,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                                 hideSearch={true}
                                 emptyElement={emptyElement}
                                 totalCountSummaryComponent={TotalCountSummary}
-                                compact={true}
+                                loaderClassName={contributorsStyles.filteredConnectionLoading}
+                                summaryClassName={contributorsStyles.filteredConnectionSummary}
                             />
                         </Card>
                     </div>
@@ -529,7 +529,11 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
                     ))}
                 </ConnectionList>
             )}
-            {loading && <ConnectionLoading />}
+            {loading && (
+                <div className={contributorsStyles.filteredConnectionLoading}>
+                    <ConnectionLoading />
+                </div>
+            )}
             <SummaryContainer>
                 {connection && (
                     <div className="pl-2">
