@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -42,6 +43,10 @@ type credentials struct {
 
 type unlockAccountInfo struct {
 	Token string `json:"token"`
+}
+
+type unlockUserAccountInfo struct {
+	Username string `json:"username"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -371,6 +376,49 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 	}
 }
 
+func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := iauth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+			http.Error(w, "Only site admins can unlock user accounts", http.StatusUnauthorized)
+			return
+		}
+
+		if r.Method != http.MethodPost {
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var unlockUserAccountInfo unlockUserAccountInfo
+		if err := json.NewDecoder(r.Body).Decode(&unlockUserAccountInfo); err != nil {
+			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			return
+		}
+
+		if unlockUserAccountInfo.Username == "" {
+			http.Error(w, "Bad request: missing username", http.StatusBadRequest)
+			return
+		}
+
+		user, err := db.Users().GetByUsername(r.Context(), unlockUserAccountInfo.Username)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("Not found: could not find user with username %q", unlockUserAccountInfo.Username),
+				http.StatusNotFound)
+			return
+		}
+
+		_, isLocked := store.IsLockedOut(user.ID)
+		if !isLocked {
+			http.Error(w,
+				fmt.Sprintf("User with username %q is not locked", unlockUserAccountInfo.Username),
+				http.StatusBadRequest)
+			return
+		}
+
+		store.Reset(user.ID)
+	}
+}
+
 func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 	event := &database.SecurityEvent{
@@ -406,7 +454,6 @@ func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])
-
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

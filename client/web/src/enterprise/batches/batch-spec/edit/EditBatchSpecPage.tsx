@@ -177,12 +177,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 onChangeOptions={editor.setExecutionOptions}
             />
             {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink
-                    name={batchChange.name}
-                    originalInput={editor.code}
-                    isLightTheme={isLightTheme}
-                    asButton={false}
-                >
+                <BatchSpecDownloadLink name={batchChange.name} originalInput={editor.code} asButton={false}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
             ) : (
@@ -199,7 +194,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <BatchSpecDownloadLink
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     asButton={true}
                     className="mb-2"
                 >
@@ -290,7 +284,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <DownloadSpecModal
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
                 />

@@ -144,7 +144,6 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	return &gitRefConnectionResolver{
 		first: args.First,
 		refs:  refs,
-		repo:  r,
 	}, nil
 }
 
@@ -160,7 +159,7 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout
@@ -176,8 +175,6 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
-
-	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {

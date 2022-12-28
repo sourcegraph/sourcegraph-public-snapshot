@@ -487,6 +487,22 @@ type Dotcom struct {
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
 	SrcCliVersionCache *SrcCliVersionCache `json:"srcCliVersionCache,omitempty"`
 }
+type EmailTemplate struct {
+	// Html description: Template for HTML body
+	Html string `json:"html"`
+	// Subject description: Template for email subject header
+	Subject string `json:"subject"`
+	// Text description: Template for plain-text body
+	Text string `json:"text"`
+}
+
+// EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
+type EmailTemplates struct {
+	// ResetPassword description: Email sent on password resets. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
+	ResetPassword *EmailTemplate `json:"resetPassword,omitempty"`
+	// SetPassword description: Email sent on account creation, if a password reset URL is created. Available template variables: {{.Host}}, {{.Username}}, {{.URL}}
+	SetPassword *EmailTemplate `json:"setPassword,omitempty"`
+}
 
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
@@ -639,8 +655,6 @@ type ExperimentalFeatures struct {
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
 	GoPackages string `json:"goPackages,omitempty"`
-	// HideSourcegraphOperatorLogin description: Enables hiding Sourcegraph operator auth provider on login page.
-	HideSourcegraphOperatorLogin bool `json:"hideSourcegraphOperatorLogin,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// InsightsBackfillerV2 description: Use v2 of the insights backfiller which backfills a series at a time.
@@ -1892,7 +1906,9 @@ type SettingsExperimentalFeatures struct {
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
-	CodeInsightsLandingPage  *bool                     `json:"codeInsightsLandingPage,omitempty"`
+	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
+	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
+	CodeInsightsRepoUI       *string                   `json:"codeInsightsRepoUI,omitempty"`
 	CodeIntelRepositoryBadge *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
@@ -2126,6 +2142,8 @@ type SiteConfiguration struct {
 	// EmailSmtp description: The SMTP server used to send transactional emails.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
+	// EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
+	EmailTemplates *EmailTemplates `json:"email.templates,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
@@ -2193,6 +2211,8 @@ type SiteConfiguration struct {
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
+	// InsightsMaximumSampleSize description: WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.
+	InsightsMaximumSampleSize int `json:"insights.maximumSampleSize,omitempty"`
 	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
@@ -2211,6 +2231,8 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
+	// ObservabilityCaptureSlowGraphQLRequestsLimit description: (debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.
+	ObservabilityCaptureSlowGraphQLRequestsLimit int `json:"observability.captureSlowGraphQLRequestsLimit,omitempty"`
 	// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
 	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.

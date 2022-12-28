@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -128,6 +129,7 @@ func TestCodeMonitorHook(t *testing.T) {
 	gs := gitserver.NewMockClient()
 	gs.ResolveRevisionsFunc.PushReturn([]string{"hash1", "hash2"}, nil)
 	gs.ResolveRevisionsFunc.PushReturn([]string{"hash3", "hash4"}, nil)
+	gs.ResolveRevisionsFunc.PushReturn([]string{"hash5", "hash6"}, nil)
 
 	// The first time, doSearch should receive only the resolved hashes
 	doSearch := func(args *gitprotocol.SearchRequest) error {
@@ -138,7 +140,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -155,6 +157,16 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err = hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
+
+	t.Run("deadline exceeded is not propagated", func(t *testing.T) {
+		logger, getLogs := logtest.Captured(t)
+		doSearch = func(args *gitprotocol.SearchRequest) error {
+			return context.DeadlineExceeded
+		}
+		err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+		require.NoError(t, err)
+		require.Equal(t, getLogs()[0].Level, log.LevelWarn)
+	})
 }

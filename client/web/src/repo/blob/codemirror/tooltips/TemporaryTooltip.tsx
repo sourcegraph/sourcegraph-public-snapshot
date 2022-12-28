@@ -13,6 +13,7 @@ class TemporaryTooltip implements Tooltip {
     ) {}
     public create(): TooltipView {
         const div = document.createElement('div')
+        div.classList.add('tmp-tooltip')
         div.textContent = this.message
         return { dom: div }
     }

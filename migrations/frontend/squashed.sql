@@ -821,9 +821,10 @@ CREATE TABLE batch_changes (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     closed_at timestamp with time zone,
-    batch_spec_id bigint NOT NULL,
+    batch_spec_id bigint,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
+    CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
     CONSTRAINT batch_changes_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))),
     CONSTRAINT batch_changes_name_not_blank CHECK ((name <> ''::text))
 );
@@ -1903,8 +1904,10 @@ ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 CREATE TABLE executor_secret_access_logs (
     id integer NOT NULL,
     executor_secret_id integer NOT NULL,
-    user_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    machine_user text DEFAULT ''::text NOT NULL,
+    CONSTRAINT user_id_or_machine_user CHECK ((((user_id IS NULL) AND (machine_user <> ''::text)) OR ((user_id IS NOT NULL) AND (machine_user = ''::text))))
 );
 
 CREATE SEQUENCE executor_secret_access_logs_id_seq
@@ -2637,6 +2640,7 @@ CREATE TABLE lsif_indexes (
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
+    requested_envvars text[],
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2690,6 +2694,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

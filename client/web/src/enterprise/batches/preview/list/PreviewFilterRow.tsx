@@ -2,8 +2,7 @@ import React, { useCallback, useContext, useEffect, useRef } from 'react'
 
 import * as H from 'history'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Form } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'

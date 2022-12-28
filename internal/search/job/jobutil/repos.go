@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +34,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 
 	for it.Next() {
 		page := it.Current()
-		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
+		tr.SetAttributes(attribute.Int("resolved.len", len(page.RepoRevs)))
 		page.MaybeSendStats(stream)
 
 		descriptionMatches := make(map[api.RepoID][]result.Range)

@@ -39,13 +39,21 @@ type ExecutorSecret struct {
 	encryptedValue *encryption.Encryptable
 }
 
+type ExecutorSecretAccessLogCreator interface {
+	Create(ctx context.Context, log *ExecutorSecretAccessLog) error
+}
+
 // Value decrypts the contained value and logs an access log event. Calling Value
 // multiple times will not require another decryption call, but will create an
 // additional access log entry.
-func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStore) (string, error) {
+func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogCreator) (string, error) {
+	var userID *int32
+	if uid := actor.FromContext(ctx).UID; uid != 0 {
+		userID = &uid
+	}
 	if err := s.Create(ctx, &ExecutorSecretAccessLog{
-		// user is set automatically from the context actor.
 		ExecutorSecretID: e.ID,
+		UserID:           userID,
 	}); err != nil {
 		return "", errors.Wrap(err, "creating secret access log entry")
 	}
@@ -55,7 +63,8 @@ func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStor
 type ExecutorSecretScope string
 
 const (
-	ExecutorSecretScopeBatches ExecutorSecretScope = "batches"
+	ExecutorSecretScopeBatches   ExecutorSecretScope = "batches"
+	ExecutorSecretScopeCodeIntel ExecutorSecretScope = "codeintel"
 )
 
 // ExecutorSecretNotFoundErr is returned when a secret cannot be found.
@@ -481,7 +490,10 @@ RETURNING %s
 
 // scanExecutorSecret scans a secret from the given scanner into the given
 // ExecutorSecret.
-func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s dbutil.Scanner) error {
+func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
+	Scan(...any) error
+},
+) error {
 	var (
 		value []byte
 		keyID string

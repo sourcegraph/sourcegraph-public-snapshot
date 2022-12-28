@@ -3,11 +3,14 @@ import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { ExecutorSecretScope } from '@sourcegraph/search'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { GlobalExecutorSecretsResult, UserExecutorSecretsResult } from '../../../graphql-operations'
+import {
+    GlobalExecutorSecretsResult,
+    ExecutorSecretScope,
+    UserExecutorSecretsResult,
+} from '../../../graphql-operations'
 
 import { GLOBAL_EXECUTOR_SECRETS, USER_EXECUTOR_SECRETS } from './backend'
 import { GlobalExecutorSecretsListPage, UserExecutorSecretsListPage } from './ExecutorSecretsListPage'
@@ -43,7 +46,7 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
                 __typename: 'User',
                 executorSecrets: {
                     pageInfo: { hasNextPage: false, endCursor: null },
-                    totalCount: 4,
+                    totalCount: 5,
                     nodes: [
                         // Global secret.
                         {
@@ -121,6 +124,24 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
                                 namespaceName: 'jdoe',
                                 url: '/users/jdoe',
                             },
+                            overwritesGlobalSecret: false,
+                            scope: ExecutorSecretScope.BATCHES,
+                            createdAt: subDays(new Date(), 1).toISOString(),
+                            updatedAt: subDays(new Date(), 1).toISOString(),
+                        },
+                        // Docker auth secret.
+                        {
+                            __typename: 'ExecutorSecret',
+                            id: 'secret5',
+                            creator: {
+                                __typename: 'User',
+                                id: 'user1',
+                                displayName: 'John Doe',
+                                url: '/users/jdoe',
+                                username: 'jdoe',
+                            },
+                            key: 'DOCKER_AUTH_CONFIG',
+                            namespace: null,
                             overwritesGlobalSecret: false,
                             scope: ExecutorSecretScope.BATCHES,
                             createdAt: subDays(new Date(), 1).toISOString(),

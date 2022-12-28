@@ -25,12 +25,13 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 		},
 		"deadbeef",
 		Options{},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
-			`cd '/work/sub dir' && TEST=true CONTAINS_WHITESPACE='yes it does' ls -a`,
+			`cd '/work/sub dir' && TEST=true CONTAINS_WHITESPACE='yes it does' DOCKER_CONFIG=/tmp/docker-config ls -a`,
 		},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
@@ -57,13 +58,16 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				Memory:  "20G",
 			},
 		},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			strings.Join([]string{
-				"docker", "run", "--rm",
+				"docker",
+				"--config", "/tmp/docker-config",
+				"run", "--rm",
 				"--cpus", "4",
 				"--memory", "20G",
 				"-v", "/work:/data",
@@ -91,13 +95,16 @@ func TestFormatFirecrackerCommandDockerScript_NoInjection(t *testing.T) {
 		},
 		"deadbeef",
 		Options{},
+		"/tmp/docker-config",
 	)
 
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			strings.Join([]string{
-				"docker", "run", "--rm",
+				"docker",
+				"--config", "/tmp/docker-config",
+				"run", "--rm",
 				"-v", "/work:/data",
 				"-w", "/data",
 				"--entrypoint /bin/sh",
@@ -135,7 +142,7 @@ func TestSetupFirecracker(t *testing.T) {
 		t.Fatal(err)
 	}
 	logger := NewMockLogger()
-	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
+	if _, err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
 		t.Fatalf("unexpected error setting up virtual machine: %s", err)
 	}
 

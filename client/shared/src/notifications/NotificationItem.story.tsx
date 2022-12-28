@@ -4,7 +4,7 @@ import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
 import { NotificationType } from '@sourcegraph/extension-api-classes'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { NotificationItem } from './NotificationItem'
 
@@ -19,11 +19,9 @@ const notificationClassNames = {
 const onDismiss = action('onDismiss')
 
 const decorator: DecoratorFn = story => (
-    <>
-        <style>{webStyles}</style>
-        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
-    </>
+    <BrandedStory>{() => <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>}</BrandedStory>
 )
+
 const config: Meta = {
     title: 'shared/NotificationItem',
     decorators: [decorator],

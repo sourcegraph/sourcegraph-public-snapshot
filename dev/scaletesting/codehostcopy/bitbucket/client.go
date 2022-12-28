@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type getResult[T any] struct {
@@ -38,8 +36,6 @@ type Client struct {
 	setAuth SetAuthFunc
 	apiURL  *url.URL
 	http    http.Client
-	// FetchLimit The amount of records to request per page
-	FetchLimit int
 }
 
 type ClientOpt func(client *Client)
@@ -53,7 +49,7 @@ func setBasicAuth(username, password string) SetAuthFunc {
 
 func setTokenAuth(token string) SetAuthFunc {
 	return func(req *http.Request) {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 }
 
@@ -64,12 +60,13 @@ func WithTimeout(n time.Duration) ClientOpt {
 }
 
 // NewBasicAuthClient creates a Client that uses Basic Authentication. By default the FetchLimit is set to 150.
-// To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method.
+// To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method. This is the preferred client
+// interacting with the REST API, since it is able to perform some calls the Token based client is not allowed
+// to do by the Bitbucket API ie. CreateRepo
 func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:     url,
-		setAuth:    setBasicAuth(username, password),
-		FetchLimit: 150,
+		apiURL:  url,
+		setAuth: setBasicAuth(username, password),
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -79,12 +76,13 @@ func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientO
 }
 
 // NewTokenClient creates a Client that uses Token based authentication. By default the FetchLimit is set to 150.
-// To set the Timout, use WithTimeout and pass it as a ClientOpt to this method.
+// To set the Timout, use WithTimeout and pass it as a ClientOpt to this method. This client is more restrictive
+// than the BasicAuth client. The restriction is not imposed by the client itself, but by the nature of the Bitbucket
+// REST API. For more power like create projects and repos, use the Basic auth client.
 func NewTokenClient(token string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:     url,
-		setAuth:    setTokenAuth(token),
-		FetchLimit: 150,
+		apiURL:  url,
+		setAuth: setTokenAuth(token),
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -99,8 +97,8 @@ func (c *Client) url(fragment string) string {
 
 // getPaged issues a get request against a url that returns a paged response. The response is marshalled into
 // a PagedResponse and returned. Otherwise an APIError is returned
-func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedResp, error) {
-	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, c.FetchLimit)
+func (c *Client) getPaged(ctx context.Context, url string, start int, perPage int) (*PagedResp, error) {
+	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, perPage)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	c.setAuth(req)
@@ -182,7 +180,7 @@ func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], 
 	var apiErr *APIError
 	for {
 		ctx := ctx
-		resp, err := c.getPaged(ctx, url, start)
+		resp, err := c.getPaged(ctx, url, start, 30)
 		// If the error is a APIError we store the error and continue, otherwise
 		// something severe is wrong and we stop and exit early
 		if err != nil && errors.As(err, &apiErr) {
@@ -210,6 +208,23 @@ func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], 
 	return items, nil
 }
 
+func (c *Client) GetRepo(ctx context.Context, key string, name string) (*Repo, error) {
+	key = strings.ToUpper(key)
+	u := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos/%s", key, name))
+	respData, err := c.get(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	var repo Repo
+	err = json.Unmarshal(respData, &repo)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshall repo: %s", name)
+	}
+
+	return &repo, nil
+}
+
 func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, error) {
 	key = strings.ToUpper(key)
 	u := c.url(fmt.Sprintf("/rest/api/latest/projects/%s", key))
@@ -227,6 +242,7 @@ func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, err
 	return &p, nil
 }
 
+// CreateRepo creates a repo within the given project with the given name.
 func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*Repo, error) {
 	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
 
@@ -258,6 +274,13 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 	return &result, nil
 }
 
+// CreateProject creates a Project. The PROJECT_CREATE permission is required for this call, which one cannot
+// assign to a Token in the Bitbucket admin interface. The only available Token permissions are PROJECT_ADMIN,
+// PROJECT_READ, PROJECT_WRITE.
+//
+// PROJECT_ADMIN does not imply PROJECT_CREATE which is only associated with a
+// authenticated user. Therefore, it is strongly recommended, that if you want to create a project to use the
+// BasicAuth client.
 func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error) {
 	url := c.url("/rest/api/latest/projects")
 
@@ -300,12 +323,8 @@ func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 	return results, err
 }
 
-func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
-	projects, err := c.ListProjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.ListReposForProjects(ctx, projects)
+func (c *Client) ListRepos(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
+	return c.ListReposForProject(ctx, project, page, perPage)
 }
 
 func extractResults[T any](items []getResult[T]) ([]T, error) {
@@ -322,37 +341,20 @@ func extractResults[T any](items []getResult[T]) ([]T, error) {
 	return results, err
 }
 
-func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) ([]*Repo, error) {
-	g := group.NewWithResults[getResult[[]*Repo]]().WithMaxConcurrency(10)
+func (c *Client) ListReposForProject(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
 	repos := make([]*Repo, 0)
-	for _, p := range projects {
-
-		g.Go(func() getResult[[]*Repo] {
-			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
-			all, err := getAll[*Repo](ctx, c, url)
-			if err != nil {
-				return getResult[[]*Repo]{
-					Err: err,
-				}
-			}
-			results, error := extractResults(all)
-			return getResult[[]*Repo]{
-				Result: results,
-				Err:    error,
-			}
-
-		})
+	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
+	resp, err := c.getPaged(ctx, url, page, perPage)
+	if err != nil {
+		return nil, 0, err
 	}
-	results := g.Wait()
-	var err error
-	for _, r := range results {
-		if r.Err != nil {
-			err = errors.Append(err, r.Err)
-		} else if r.Result != nil {
-			repos = append(repos, r.Result...)
+	for _, v := range resp.Values {
+		var repo Repo
+		err := json.Unmarshal(v, &repo)
+		if err != nil {
+			return nil, 0, err
 		}
-
+		repos = append(repos, &repo)
 	}
-
-	return repos, err
+	return repos, resp.NextPageStart, nil
 }

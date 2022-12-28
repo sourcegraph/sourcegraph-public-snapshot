@@ -3,13 +3,12 @@ import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button, Link, AnchorLink } from '@sourcegraph/wildcard'
+import { Badge, Button, Link, AnchorLink, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { Timestamp } from '../../../components/time/Timestamp'
 import {
     DeleteExternalAccountResult,
     DeleteExternalAccountVariables,

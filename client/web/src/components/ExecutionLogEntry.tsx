@@ -2,12 +2,12 @@ import React from 'react'
 
 import { mdiCheckCircle, mdiAlertCircle } from '@mdi/js'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { LoadingSpinner, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
-import { Timestamp } from './time/Timestamp'
 
 interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
     logEntry: {

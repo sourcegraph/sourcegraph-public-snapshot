@@ -20,7 +20,7 @@ import {
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
-import { RequiredExtensionsControllerProps } from '../extensions/controller'
+import type { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -53,7 +53,7 @@ export interface ActionItemStyleProps {
 }
 
 export interface ActionItemComponentProps
-    extends RequiredExtensionsControllerProps<'executeCommand'>,
+    extends ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings'> {
     location: H.Location
 
@@ -145,7 +145,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 .pipe(
                     mergeMap(parameters =>
                         from(
-                            this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                            this.props.extensionsController
+                                ? this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                                : Promise.reject(
+                                      new Error(
+                                          'ActionItems commands other than open and invokeFunction-new are deprecated'
+                                      )
+                                  )
                         ).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
@@ -367,21 +373,38 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
 
+        const emitDidExecute = (): void => {
+            if (this.props.onDidExecute) {
+                // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
+                // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
+                // the URL actually changes underneath us before the URL is opened. There is no harm to
+                // deferring this call; onRun's documentation allows this.
+                const onDidExecute = this.props.onDidExecute
+                setTimeout(() => onDidExecute(action.id))
+            }
+        }
+
         if (urlForClientCommandOpen(action, this.props.location.hash)) {
             if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
                 // commands; in that case, this only ever opens the (non-alt) action.
-                if (this.props.onDidExecute) {
-                    // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
-                    // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
-                    // the URL actually changes underneath us before the URL is opened. There is no harm to
-                    // deferring this call; onRun's documentation allows this.
-                    const onDidExecute = this.props.onDidExecute
-                    setTimeout(() => onDidExecute(action.id))
-                }
+                emitDidExecute()
                 return
             }
+        }
+
+        // A special-case to support invokeFunction style actions without the extensions controller
+        if (action.command === 'invokeFunction-new') {
+            const args = action.commandArguments || []
+            for (const arg of args) {
+                if (typeof arg === 'function') {
+                    arg()
+                }
+            }
+
+            emitDidExecute()
+            return
         }
 
         // If the action we're running is *not* opening a URL by using the event target's default handler, then

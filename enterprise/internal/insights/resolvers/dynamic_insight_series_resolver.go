@@ -29,13 +29,16 @@ func (d *dynamicInsightSeriesResolver) Label() string {
 
 func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
-	for _, point := range d.generated.Points {
-		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
+	for i := 0; i < len(d.generated.Points); i++ {
+		point := store.SeriesPoint{
 			SeriesID: d.generated.SeriesId,
-			Time:     point.Time,
-			Value:    float64(point.Count),
-		}})
+			Time:     d.generated.Points[i].Time,
+			Value:    float64(d.generated.Points[i].Count),
+		}
+		// This resolver is no longer used and about to be removed
+		resolvers = append(resolvers, &insightsDataPointResolver{p: point, diffInfo: nil})
 	}
+
 	return resolvers, nil
 }
 

@@ -4,7 +4,7 @@ This how-to assumes that you already have created some code insights to add to a
 
 ## 1. Navigate to the Code Insights page 
 
-Start on the code insights page by clicking the Code Insights navbar item or going to `/insights/dashboards/all`. 
+Start on the code insights page by clicking the Code Insights navbar item or going to `/insights/all`. 
 
 ## 2. Create and name a new dashboard
 

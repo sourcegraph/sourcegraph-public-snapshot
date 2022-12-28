@@ -489,24 +489,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
 
-        getStatusBarItems: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            if (viewer.type !== 'CodeEditor') {
-                return proxySubscribable(EMPTY)
-            }
-
-            return proxySubscribable(
-                viewer.mergedStatusBarItems.pipe(
-                    debounceTime(0),
-                    map(statusBarItems =>
-                        statusBarItems.sort(
-                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
-                        )
-                    )
-                )
-            )
-        },
-
         // Content
         getLinkPreviews: (url: string) =>
             proxySubscribable(

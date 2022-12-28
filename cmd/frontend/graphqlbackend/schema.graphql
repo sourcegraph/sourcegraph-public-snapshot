@@ -131,6 +131,10 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!, async: Boolean = false): EmptyResponse!
     """
+    Excludes a repo from external service config. Only site admins may perform this mutation.
+    """
+    excludeRepoFromExternalService(externalService: ID!, repo: ID!): EmptyResponse!
+    """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
 
@@ -600,10 +604,6 @@ type Mutation {
     Submits happiness feedback.
     """
     submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
-    """
-    Manages the extension registry.
-    """
-    extensionRegistry: ExtensionRegistryMutation!
     """
     Creates a saved search.
     """
@@ -1323,6 +1323,10 @@ type Query {
         """
         failedFetch: Boolean = false
         """
+        Return repositories that are associated with the given external service.
+        """
+        externalService: ID
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1703,6 +1707,16 @@ type Query {
         """
         kind: ExternalServiceKind
     ): WebhookConnection!
+
+    """
+    List slow GraphQL requests that were recently captured (requires site-admin permissions).
+    """
+    slowRequests(
+        """
+        Opaque pagnination cursor.
+        """
+        after: String
+    ): SlowRequestConnection!
 }
 
 """
@@ -1713,6 +1727,11 @@ enum ExecutorSecretScope {
     The secret is meant to be used with Batch Changes execution.
     """
     BATCHES
+
+    """
+    The secret is meant to be used with Auto-indexing.
+    """
+    CODEINTEL
 }
 
 """
@@ -1827,8 +1846,14 @@ type ExecutorSecretAccessLog implements Node {
     executorSecret: ExecutorSecret!
     """
     The user in which name the secret has been used.
+    This is null when the access was not by a user account, or
+    when the user account was deleted.
     """
-    user: User!
+    user: User
+    """
+    True when the secret was accessed by an internal procedure.
+    """
+    machineUser: String!
     """
     The date and time when the secret has been used.
     """
@@ -2812,6 +2837,11 @@ type ExternalService implements Node {
     If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
     """
     hasConnectionCheck: Boolean!
+
+    """
+    True if this external service configuration supports `exclude` parameter.
+    """
+    supportsRepoExclusion: Boolean!
 }
 
 """
@@ -3060,6 +3090,10 @@ type Repository implements Node & GenericSearchResultInterface {
         inputRevspec: String
     ): GitCommit
     """
+    The first commit inside the repo
+    """
+    firstEverCommit: GitCommit
+    """
     Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
     some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
     maintained by the Sourcegraph site (not the other way around).
@@ -3215,6 +3249,9 @@ type Repository implements Node & GenericSearchResultInterface {
         Returns the first n contributors from the list.
         """
         first: Int
+        last: Int
+        after: String
+        before: String
     ): RepositoryContributorConnection!
     """
     Whether the viewer has admin privileges on this repository.
@@ -3456,6 +3493,10 @@ type RepositoryTextSearchIndex {
     Git refs in the repository that are configured for text search indexing.
     """
     refs: [RepositoryTextSearchIndexedRef!]!
+    """
+    Information about the indexserver that hosts the repo's index.
+    """
+    host: repositoryIndexserverHost
 }
 
 """
@@ -3497,6 +3538,16 @@ type RepositoryTextSearchIndexStatus {
     EXPERIMENTAL: The number of newlines in the other branches.
     """
     otherBranchesNewLinesCount: Int!
+}
+
+"""
+Information about the indexserver that hosts the repo's index.
+"""
+type repositoryIndexserverHost {
+    """
+    The hostname of the indexserver.
+    """
+    name: String!
 }
 
 """
@@ -3870,7 +3921,7 @@ type RepositoryContributorConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: BidirectionalPageInfo!
 }
 
 """
@@ -4379,13 +4430,35 @@ type PhabricatorRepo {
 }
 
 """
-Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+Pagination information for forward-only pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 """
 type PageInfo {
     """
     When paginating forwards, the cursor to continue.
     """
     endCursor: String
+    """
+    When paginating forwards, are there more items?
+    """
+    hasNextPage: Boolean!
+}
+
+"""
+Pagination information for bi-directional pagination. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+"""
+type BidirectionalPageInfo {
+    """
+    When paginating backwards, the cursor to continue.
+    """
+    startCursor: String
+    """
+    When paginating forwards, the cursor to continue.
+    """
+    endCursor: String
+    """
+    When paginating backwards, are there more items?
+    """
+    hasPreviousPage: Boolean!
     """
     When paginating forwards, are there more items?
     """
@@ -4550,6 +4623,10 @@ type GitCommit implements Node {
         Return commits that affect the path.
         """
         path: String
+        """
+        Follow history beyond renames (only works for a single file).
+        """
+        follow: Boolean = false
         """
         Return commits more recent than the specified date.
         """
@@ -7040,6 +7117,10 @@ type SiteUser {
     Total number of user's event_logs.
     """
     eventsCount: Float!
+    """
+    Whether or not the user account is locked.
+    """
+    locked: Boolean!
 }
 
 """
@@ -7336,12 +7417,6 @@ An extension registry.
 """
 type ExtensionRegistry {
     """
-    Find an extension by its extension ID (which is the concatenation of the publisher name, a slash ("/"), and the
-    extension name).
-    To find an extension by its GraphQL ID, use Query.node.
-    """
-    extension(extensionID: String!): RegistryExtension
-    """
     A list of extensions published in the extension registry.
     """
     extensions(
@@ -7350,191 +7425,10 @@ type ExtensionRegistry {
         """
         first: Int
         """
-        Returns only extensions from this publisher.
-        """
-        publisher: ID
-        """
-        Returns only extensions matching the query.
-        The following keywords are supported:
-        - category:"C" - include only extensions in the given category.
-        - tag:"T" - include only extensions in the given tag.
-        The following keywords are ignored by the server (so that the frontend can post-process the result set to
-        implement the keywords):
-        - installed - include only installed extensions.
-        - enabled - include only enabled extensions.
-        - disabled - include only disabled extensions.
-        """
-        query: String
-        """
-        Include extensions from the local registry.
-        """
-        local: Boolean = true
-        """
-        Include extensions from remote registries.
-        """
-        remote: Boolean = true
-        """
         Returns only extensions with the given IDs.
         """
         extensionIDs: [String!]
-        """
-        Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        """
-        prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
-    """
-    A list of publishers with at least 1 extension in the registry.
-    """
-    publishers(
-        """
-        Return the first n publishers from the list.
-        """
-        first: Int
-    ): RegistryPublisherConnection!
-    """
-    A list of publishers that the viewer may publish extensions as.
-    """
-    viewerPublishers: [RegistryPublisher!]!
-    """
-    The extension ID prefix for extensions that are published in the local extension registry. This is the
-    hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "externalURL" site configuration property.
-    It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
-    Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
-    """
-    localExtensionIDPrefix: String
-    """
-    A list of featured extensions in the registry.
-    """
-    featuredExtensions: FeaturedExtensionsConnection
-}
-
-"""
-A publisher of a registry extension.
-"""
-union RegistryPublisher = User | Org
-
-"""
-A list of publishers of extensions in the registry.
-"""
-type RegistryPublisherConnection {
-    """
-    A list of publishers.
-    """
-    nodes: [RegistryPublisher!]!
-    """
-    The total count of publishers in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Mutations for the extension registry.
-"""
-type ExtensionRegistryMutation {
-    """
-    Create a new extension in the extension registry.
-    """
-    createExtension(
-        """
-        The ID of the extension's publisher (a user or organization).
-        """
-        publisher: ID!
-        """
-        The name of the extension.
-        """
-        name: String!
-    ): ExtensionRegistryCreateExtensionResult!
-    """
-    Update an extension in the extension registry.
-    Only authorized extension publishers may perform this mutation.
-    """
-    updateExtension(
-        """
-        The extension to update.
-        """
-        extension: ID!
-        """
-        The new name for the extension, or null to leave unchanged.
-        """
-        name: String
-    ): ExtensionRegistryUpdateExtensionResult!
-    """
-    Delete an extension from the extension registry.
-    Only authorized extension publishers may perform this mutation.
-    """
-    deleteExtension(
-        """
-        The ID of the extension to delete.
-        """
-        extension: ID!
-    ): EmptyResponse!
-    """
-    Publish an extension in the extension registry, creating it (if it doesn't yet exist) or updating it (if it
-    does).
-    This is a helper that wraps multiple other GraphQL mutations to expose a single API for publishing an
-    extension.
-    """
-    publishExtension(
-        """
-        The extension ID of the extension to publish. If a host prefix (e.g., "sourcegraph.example.com/") is
-        needed and it is not included, it is automatically prepended.
-        Examples: "alice/myextension", "acmecorp/myextension"
-        """
-        extensionID: String!
-        """
-        The extension manifest (as JSON).
-        """
-        manifest: String!
-        """
-        The bundled JavaScript source of the extension.
-        """
-        bundle: String
-        """
-        The source map of the extension's JavaScript bundle, if any.
-        The JavaScript bundle's "//# sourceMappingURL=" directive, if any, is ignored. When the bundle is served,
-        the source map provided here is referenced instead.
-        """
-        sourceMap: String
-        """
-        Force publish even if there are warnings (such as invalid JSON warnings).
-        """
-        force: Boolean = false
-    ): ExtensionRegistryPublishExtensionResult!
-}
-
-"""
-The result of Mutation.extensionRegistry.createExtension.
-"""
-type ExtensionRegistryCreateExtensionResult {
-    """
-    The newly created extension.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-The result of Mutation.extensionRegistry.updateExtension.
-"""
-type ExtensionRegistryUpdateExtensionResult {
-    """
-    The newly updated extension.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-The result of Mutation.extensionRegistry.publishExtension.
-"""
-type ExtensionRegistryPublishExtensionResult {
-    """
-    The extension that was just published.
-    """
-    extension: RegistryExtension!
 }
 
 """
@@ -7547,69 +7441,14 @@ type RegistryExtension implements Node {
     """
     id: ID!
     """
-    The UUID of the extension. This identifies the extension externally (along with the origin). The UUID maps
-    1-to-1 to RegistryExtension.id.
-    """
-    uuid: String!
-    """
-    The publisher of the extension. If this extension is from a remote registry, the publisher may be null.
-    """
-    publisher: RegistryPublisher
-    """
     The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
     publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
     """
     extensionID: String!
     """
-    The extension ID without the registry name.
-    """
-    extensionIDWithoutRegistry: String!
-    """
-    The name of the extension (not including the publisher's name).
-    """
-    name: String!
-    """
     The extension manifest, or null if none is set.
     """
     manifest: ExtensionManifest
-    """
-    The date when this extension was created on the registry.
-    """
-    createdAt: DateTime
-    """
-    The date when this extension was last updated on the registry (including updates to its metadata only, not
-    publishing new releases).
-    """
-    updatedAt: DateTime
-    """
-    The date when a release of this extension was most recently published, or null if there are no releases.
-    """
-    publishedAt: DateTime
-    """
-    The URL to the extension on this Sourcegraph site.
-    """
-    url: String!
-    """
-    The URL to the extension on the extension registry where it lives (if this is a remote
-    extension). If this extension is local, then this field's value is null.
-    """
-    remoteURL: String
-    """
-    The name of this extension's registry.
-    """
-    registryName: String!
-    """
-    Whether the registry extension is published on this Sourcegraph site.
-    """
-    isLocal: Boolean!
-    """
-    Whether the extension is marked as a work-in-progress extension by the extension author.
-    """
-    isWorkInProgress: Boolean!
-    """
-    Whether the viewer has admin privileges on this registry extension.
-    """
-    viewerCanAdminister: Boolean!
 }
 
 """
@@ -7630,14 +7469,6 @@ type ExtensionManifest {
     and icon data).
     """
     jsonFields(fields: [String!]!): JSONValue!
-    """
-    The description specified in the manifest, if any.
-    """
-    description: String
-    """
-    The URL to the bundled JavaScript source code for the extension, if any.
-    """
-    bundleURL: String
 }
 
 """
@@ -7648,42 +7479,6 @@ type RegistryExtensionConnection {
     A list of registry extensions.
     """
     nodes: [RegistryExtension!]!
-    """
-    The total count of registry extensions in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-    """
-    The URL to this list, or null if none exists.
-    """
-    url: String
-    """
-    Errors that occurred while communicating with remote registries to obtain the list of extensions.
-    In order to be able to return local extensions even when the remote registry is unreachable, errors are
-    recorded here instead of in the top-level GraphQL errors list.
-    """
-    error: String
-}
-
-"""
-A list of featured extensions in the registry.
-"""
-type FeaturedExtensionsConnection {
-    """
-    A list of featured registry extensions.
-    """
-    nodes: [RegistryExtension!]!
-
-    """
-    Errors that occurred while communicating with remote registries to obtain the list of extensions.
-    In order to be able to return local extensions even when the remote registry is unreachable, errors are
-    recorded here instead of in the top-level GraphQL errors list.
-    """
-    error: String
 }
 
 """
@@ -7757,6 +7552,17 @@ type Hover {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when disableAutoGitUpdates is
+set to true in the site configuration
+"""
+type GitUpdatesDisabled {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when repositories are being
 cloned
 """
@@ -7811,7 +7617,7 @@ type IndexingProgress {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
+union StatusMessage = GitUpdatesDisabled | CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -8444,4 +8250,74 @@ enum ExecutorCompatibility {
     Executor version is more than one version ahead of the Sourcegraph instance.
     """
     VERSION_AHEAD
+}
+
+"""
+The result for Query.slowRequests.
+"""
+type SlowRequestConnection {
+    """
+    A list of slow graphql requests logs.
+    """
+    nodes: [SlowRequest!]!
+
+    """
+    The total number of slow graphql logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A logged slow GraphQL request, captured by the backend.
+"""
+type SlowRequest {
+    """
+    The index of this request.
+    """
+    index: String!
+    """
+    The date at which this request was started.
+    """
+    start: DateTime!
+    """
+    The duration of the request.
+    """
+    duration: Float!
+    """
+    The user associated with that request, if any.
+    """
+    user: User
+    """
+    The name of the GraphQL request.
+    """
+    name: String!
+    """
+    The source from which the request originated.
+    """
+    source: String!
+    """
+    The repository referenced by the request, if any.
+    """
+    repository: Repository
+    """
+    The variables used to build the GraphQL request.
+    """
+    variables: String!
+    """
+    The errors returned if the request failed.
+    """
+    errors: [String!]!
+    """
+    The GraphQL query.
+    """
+    query: String!
+    """
+    The file path referenced by the request, if any.
+    """
+    filepath: String
 }

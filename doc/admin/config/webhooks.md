@@ -12,9 +12,9 @@ See the table below for code host compatibility:
 Code host | [Batch changes](../../batch_changes/index.md) | Code push | User permissions
 --------- | :-: | :-: | :-:
 GitHub | 🟢 | 🟢 | 🟢
-GitLab | 🟢 | 🔴 | 🔴
-Bitbucket Server / Datacenter | 🟢 | 🔴 | 🔴
-Bitbucket Cloud | 🟢 | 🔴 | 🔴
+GitLab | 🟢 | 🟢 | 🔴
+Bitbucket Server / Datacenter | 🟢 | 🟢 | 🔴
+Bitbucket Cloud | 🟢 | 🟢 | 🔴
 
 To receive webhooks both Sourcegraph and the code host need to be configured. To configure Sourcegraph, [add an incoming webhook](#adding-an-incoming-webhook). Then [configure webhooks on your code host](#configuring-webhooks-on-the-code-host)
 
@@ -25,16 +25,19 @@ Before adding an incoming webhook you should ensure that you have at least one [
 The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
 1. Navigate to **Site Admin > Incoming webhooks**
-1. Click **Add webhook**
-1. Fill out the form:
+   ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/incoming-webhooks-page.png)
+2. Click **Add webhook**
+   ![Adding an incoming webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
+3. Fill out the form:
    1. **Webhook name**: Descriptive name for the webhook.
    1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance.
    1. **Code host URN**: The URN for the code host. Again, this will be filtered by code host connections added on your instance.
    1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
        > NOTE: Secrets are not supported for BitBucket cloud
-1. Click **Create**
+4. Click **Create**
 
 The incoming webhook will now be created, and you will be redirected to a page showing more details.
+![Created webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-created.png)
 
 Use the unique URL present on the details page to configure [the webhook on your code host](#configuring-webhooks-on-the-code-host).
 
@@ -101,6 +104,10 @@ Done! Sourcegraph will now receive webhook events from GitLab and use them to sy
 
 **NOTE:** We currently do not support [system webhooks](https://docs.gitlab.com/ee/administration/system_hooks.html) as these provide a different set of payloads.
 
+#### Code push
+
+Follow the same steps as above, but ensure you include the `Push events` trigger.
+
 ### Bitbucket server
 
 #### Batch changes
@@ -119,6 +126,10 @@ The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
 
+#### Code push
+
+Follow the same steps as above, but ensure you tick the `Push` option. If asked for a specific event, use `repo:refs_changed`.
+
 ### Bitbucket cloud
 
 #### Batch changes
@@ -136,12 +147,18 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbuc
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
 
+#### Code push
+
+Follow the same steps as above, but ensure you tick the `Push` option.
+
 ## Webhook logging
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
 1. Via **Site Admin > Incoming webhooks**
-1. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
+   ![Webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs.png)
+2. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
+   ![Legacy webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs-legacy.png)
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
 

@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
+import { assertAriaDisabled } from '@sourcegraph/testing'
 
 import { ActionEditor, ActionEditorProps } from './ActionEditor'
 

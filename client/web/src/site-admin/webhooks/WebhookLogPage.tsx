@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
-import { Container, PageHeader, H5 } from '@sourcegraph/wildcard'
+import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -51,6 +51,10 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                 description="Use these logs of received webhooks to debug integrations"
                 className="mb-3"
             />
+            <Alert variant="warning">
+                This webhooks page has been deprecated, please see our{' '}
+                <Link to="/site-admin/webhooks/">new webhooks page</Link>.
+            </Alert>
             <Container>
                 <WebhookLogPageHeader
                     onlyErrors={onlyErrors}

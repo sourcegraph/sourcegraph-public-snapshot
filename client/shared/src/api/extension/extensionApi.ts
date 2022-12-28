@@ -10,7 +10,6 @@ import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/e
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
-import { createStatusBarItemType } from './api/codeEditor'
 import { proxySubscribable } from './api/common'
 import { createDecorationType } from './api/decorations'
 import { DocumentHighlightKind } from './api/documentHighlights'
@@ -240,7 +239,6 @@ export function createExtensionAPIFactory(
             }
         },
         createDecorationType,
-        createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
     }

@@ -28,7 +28,7 @@ import (
 )
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
-	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+	h := GitHubWebhook{Router: &Router{}}
 	var called bool
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called = true
@@ -46,7 +46,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	h := GitHubWebhook{WebhookRouter: &WebhookRouter{Logger: logger}}
+	h := GitHubWebhook{Router: &Router{Logger: logger}}
 	ctx := context.Background()
 
 	eventType := "test-event-1"
@@ -56,7 +56,7 @@ func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	var (
-		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+		h      = GitHubWebhook{Router: &Router{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
@@ -79,7 +79,7 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 
 func TestGithubWebhookDispatchError(t *testing.T) {
 	var (
-		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
+		h      = GitHubWebhook{Router: &Router{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
@@ -152,7 +152,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	}
 
 	hook := GitHubWebhook{
-		WebhookRouter: &WebhookRouter{
+		Router: &Router{
 			DB: db,
 		},
 	}

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -77,13 +78,28 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
-type insightsDataPointResolver struct{ p store.SeriesPoint }
+type insightsDataPointResolver struct {
+	p        store.SeriesPoint
+	diffInfo *querybuilder.PointDiffQueryOpts
+}
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: i.p.Time}
 }
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
+
+func (i insightsDataPointResolver) DiffQuery() (*string, error) {
+	if i.diffInfo == nil {
+		return nil, nil
+	}
+	query, err := querybuilder.PointDiffQuery(*i.diffInfo)
+	if err != nil {
+		return nil, err
+	}
+	q := query.String()
+	return &q, nil
+}
 
 type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
@@ -208,10 +224,58 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
+	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
+	scLoader := &scLoader{primary: db}
 	modifiedPoints := removeClosePoints(p.points, p.series)
-	for _, point := range modifiedPoints {
-		resolvers = append(resolvers, insightsDataPointResolver{point})
+	filterRepoIncludes := []string{}
+	filterRepoExcludes := []string{}
+
+	if !isNilOrEmpty(p.filters.IncludeRepoRegex) {
+		filterRepoIncludes = append(filterRepoIncludes, *p.filters.IncludeRepoRegex)
 	}
+	if !isNilOrEmpty(p.filters.ExcludeRepoRegex) {
+		filterRepoExcludes = append(filterRepoExcludes, *p.filters.ExcludeRepoRegex)
+	}
+
+	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
+	includeRepos, excludeRepos, _ := unwrapSearchContexts(ctx, scLoader, p.filters.SearchContexts)
+	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
+	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
+
+	// Replacing capture group values if present
+	// Ignoring errors so it falls back to the entered query
+	query := p.series.Query
+	if p.series.GeneratedFromCaptureGroups && len(modifiedPoints) > 0 {
+		replacer, _ := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(query), searchquery.SearchTypeRegex)
+		if replacer != nil {
+			replaced, err := replacer.Replace(*modifiedPoints[0].Capture)
+			if err == nil {
+				query = replaced.String()
+			}
+		}
+	}
+
+	for i := 0; i < len(modifiedPoints); i++ {
+		var after *time.Time
+		if i > 0 {
+			after = &modifiedPoints[i-1].Time
+		}
+
+		pointResolver := insightsDataPointResolver{
+			p: modifiedPoints[i],
+			diffInfo: &querybuilder.PointDiffQueryOpts{
+				After:              after,
+				Before:             modifiedPoints[i].Time,
+				FilterRepoIncludes: filterRepoIncludes,
+				FilterRepoExcludes: filterRepoExcludes,
+				RepoList:           p.series.Repositories,
+				RepoSearch:         p.series.RepositoryCriteria,
+				SearchQuery:        querybuilder.BasicQuery(query),
+			},
+		}
+		resolvers = append(resolvers, pointResolver)
+	}
+
 	return resolvers, nil
 }
 
@@ -308,13 +372,13 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	opts.SupportsAugmentation = definition.SupportsAugmentation
 
 	// Default to last 12 points of data
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
-	}, time.Now())
+	}, definition.CreatedAt.Truncate(time.Minute))
 	oldest := time.Now().AddDate(-1, 0, 0)
 	if len(frames) != 0 {
-		possibleOldest := frames[0].From
+		possibleOldest := frames[0]
 		if possibleOldest.Before(oldest) {
 			oldest = possibleOldest
 		}
@@ -574,4 +638,10 @@ func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resol
 	}
 
 	return resolvers, err
+}
+func isNilOrEmpty(s *string) bool {
+	if s == nil {
+		return true
+	}
+	return *s == ""
 }

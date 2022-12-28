@@ -4,8 +4,8 @@ import { combineLatest, from, Observable, of } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -13,6 +13,8 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+
+export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it

@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { SearchPatternType, getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/search'
 import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -18,6 +18,7 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 

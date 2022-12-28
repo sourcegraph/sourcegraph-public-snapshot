@@ -49,7 +49,7 @@ interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
     const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
-    const { currentDashboard, dashboards } = useContext(InsightContext)
+    const { currentDashboard } = useContext(InsightContext)
     const { updateInsight } = useContext(CodeInsightsBackendContext)
     const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
@@ -189,7 +189,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                         <InsightContextMenu
                             insight={insight}
                             currentDashboard={currentDashboard}
-                            dashboards={dashboards}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         />

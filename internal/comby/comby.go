@@ -221,7 +221,7 @@ func StartAndWaitForCompletion(cmd *exec.Cmd) error {
 
 // Matches returns all matches in all files for which comby finds matches.
 func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	args.ResultKind = MatchOnly
@@ -238,7 +238,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 
 // Replacements performs in-place replacement for match and rewrite template.
 func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	results, err := Run(ctx, args, toFileReplacement)
@@ -255,7 +255,7 @@ func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 // Outputs performs substitution of all variables captured in a match
 // pattern in a rewrite template and outputs the result, newline-sparated.
 func Outputs(ctx context.Context, args Args) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	results, err := Run(ctx, args, toOutput)

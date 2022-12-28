@@ -301,7 +301,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
 	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
+		preds = append(preds, sqlf.Sprintf("((repositories IS NULL OR CARDINALITY(repositories) = 0) AND repository_criteria IS NULL)"))
 	}
 	if args.ExcludeJustInTime {
 		preds = append(preds, sqlf.Sprintf("just_in_time = false"))

@@ -385,7 +385,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 			tr.SetError(err)
 		}
 
-		tr.LogFields(
+		tr.LogFields( //nolint:staticcheck // TODO unpack the object
 			otlog.Object("opt", opt),
 			otlog.Int("accounts.count", len(acct)),
 		)

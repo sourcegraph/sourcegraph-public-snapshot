@@ -47,41 +47,14 @@ func TestToDBExtensionsListOptions(t *testing.T) {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{},
 			want: stores.ExtensionsListOptions{},
 		},
-		"Query simple": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr("q")},
-			want: stores.ExtensionsListOptions{Query: "q"},
-		},
-		"Query category quoted": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:"C🚀" c`)},
-			want: stores.ExtensionsListOptions{Query: "a b c", Category: "C🚀"},
-		},
-		"Query category unquoted": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b category:C c`)},
-			want: stores.ExtensionsListOptions{Query: "a b c", Category: "C"},
-		},
-		"Query multiple categories": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a category:"C🚀" b category:"DD" c`)},
-			want: stores.ExtensionsListOptions{Query: "a b c", Category: "DD"},
-		},
-		"Query tag": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b tag:"T🚀" c`)},
-			want: stores.ExtensionsListOptions{Query: "a b c", Tag: "T🚀"},
-		},
 		"ExensionIDs": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{ExtensionIDs: strarrayptr([]string{"a", "b"})},
 			want: stores.ExtensionsListOptions{ExtensionIDs: []string{"a", "b"}},
 		},
-		"PrioritizeExensionIDs": {
-			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
-			want: stores.ExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}},
-		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toDBExtensionsListOptions(test.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			got := toDBExtensionsListOptions(test.args)
 			if !reflect.DeepEqual(got, test.want) {
 				t.Errorf("got %+v, want %+v", got, test.want)
 			}

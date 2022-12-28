@@ -2,8 +2,7 @@ import React, { useCallback, useRef, useState } from 'react'
 
 import { useHistory } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Form } from '@sourcegraph/wildcard'
 
 import { WorkspacePreviewFilters } from './useWorkspaces'
 

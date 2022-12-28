@@ -2,7 +2,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -57,6 +57,7 @@ const defaultProps: StreamingSearchResultsProps = {
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
+    searchAggregationEnabled: true,
 }
 
 const decorator: DecoratorFn = Story => {

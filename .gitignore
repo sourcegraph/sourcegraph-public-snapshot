@@ -111,7 +111,6 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/schema.ts
 client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json

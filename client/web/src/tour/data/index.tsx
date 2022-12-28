@@ -1,8 +1,7 @@
 import { mdiCheckCircle, mdiMagnify, mdiPuzzleOutline, mdiShieldSearch, mdiNotebook, mdiCursorPointer } from '@mdi/js'
 
+import { TourLanguage, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Code, Icon } from '@sourcegraph/wildcard'
-
-import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
 /**
  * Tour tasks for non-authenticated users
