@@ -172,13 +172,30 @@ func (r *repositoryMirrorInfoResolver) CorruptedAt(ctx context.Context) (*gqluti
 	return &gqlutil.DateTime{Time: info.CorruptedAt}, nil
 }
 
-func (r *repositoryMirrorInfoResolver) CorruptionLog(ctx context.Context) ([]types.RepoCorruptionLog, error) {
+func (r *repositoryMirrorInfoResolver) CorruptionLogs(ctx context.Context) ([]*corruptionLogResolver, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return info.CorruptionLog, nil
+	logs := make([]*corruptionLogResolver, 0, len(info.CorruptionLogs))
+	for _, l := range info.CorruptionLogs {
+		logs = append(logs, &corruptionLogResolver{log: l})
+	}
+
+	return logs, nil
+}
+
+type corruptionLogResolver struct {
+	log types.RepoCorruptionLog
+}
+
+func (r *corruptionLogResolver) Timestamp() (*gqlutil.DateTime, error) {
+	return &gqlutil.DateTime{Time: r.log.Timestamp}, nil
+}
+
+func (r *corruptionLogResolver) Reason() (*string, error) {
+	return &r.log.Reason, nil
 }
 
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {

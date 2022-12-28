@@ -31,6 +31,11 @@ export const settingsAreaRepositoryFragment = gql`
             cloneProgress
             cloned
             updatedAt
+            corruptedAt
+            corruptionLogs {
+                timestamp
+                reason
+            }
             lastError
             updateSchedule {
                 due
