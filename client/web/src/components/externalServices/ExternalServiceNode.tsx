@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiCircle, mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
+import { mdiAlertCircle, mdiCircle, mdiCheckCircle, mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -123,25 +123,26 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
-            {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
-                checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceAvailable' &&
-                checkConnectionData.node.checkConnection.lastCheckedAt &&
-                <>
-                <span className="text-success">Code host is available. Last checked <Timestamp date={checkConnectionData.node.checkConnection.lastCheckedAt} />.
-                </span>
-                </>
-            }
-
-            {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
-                checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceUnavailable' &&
-                checkConnectionData.node.checkConnection.suspectedReason &&
-                <>
-                <span className="text-danger">
-                {capitalizeSuspectedReason(checkConnectionData.node.checkConnection.suspectedReason)}
-                </span>
-                </>
-            }
-                           </small>
+                                {checkConnectionLoading &&
+                                    <span className={classNames("text-primary")}>
+                                        <LoadingSpinner /> Checking connection...
+                                    </span>
+                                }
+                                {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
+                                    checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceAvailable' &&
+                                    checkConnectionData.node.checkConnection.lastCheckedAt &&
+                                    <span className="text-success">
+                                        <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.<span/>
+                                    </span>
+                                }
+                                {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
+                                    checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceUnavailable' &&
+                                    checkConnectionData.node.checkConnection.suspectedReason &&
+                                    <span className="text-danger">
+                                      <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> {capitalizeSuspectedReason(checkConnectionData.node.checkConnection.suspectedReason)}
+                                    </span>
+                                }
+                            </small>
                         </Text>
                     </div>
                 </div>
@@ -154,8 +155,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             disabled={!node?.hasConnectionCheck || checkConnectionLoading}
                             size="sm"
                         >
-                        {checkConnectionLoading && <><LoadingSpinner /> Checking</>}
-                        {!checkConnectionLoading && <><Icon aria-hidden={true} svgPath={mdiConnection} /> Test</>}
+                        <Icon aria-hidden={true} svgPath={mdiConnection} /> Test
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
