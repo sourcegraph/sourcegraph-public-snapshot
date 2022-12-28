@@ -609,7 +609,7 @@ func TestLogCorruption(t *testing.T) {
 
 		// Our last log entry should have "test 12" as the reason - the last element in the loop earlier
 		wanted := "test 11"
-		if fromDB.CorruptionLogs[9].Reason != wanted {
+		if fromDB.CorruptionLogs[0].Reason != wanted {
 			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLogs[9].Reason)
 		}
 

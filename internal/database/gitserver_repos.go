@@ -520,44 +520,27 @@ WHERE
 }
 
 func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string) error {
-	row := s.QueryRow(ctx, sqlf.Sprintf(`
-SELECT corruption_logs FROM gitserver_repos
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-    `, name))
-
-	var rawLog []byte
-	if err := row.Scan(&rawLog); err != nil {
-		return errors.Wrap(err, "could not scan corrution_logs value")
-	}
-	var logs []types.RepoCorruptionLog
-
-	if err := json.Unmarshal(rawLog, &logs); err != nil {
-		return errors.Wrap(err, "could not unmarshal corruption_logs")
-	}
-
 	// trim reason to 1 MB so that we don't store huge reasons and run into trouble when it gets too large
 	if len(reason) > MaxReasonSizeInMB {
 		reason = reason[:MaxReasonSizeInMB]
 	}
 
-	logs = append(logs, types.RepoCorruptionLog{Timestamp: time.Now(), Reason: reason})
-
-	// we only keep the last 10 entries
-	if len(logs) > 10 {
-		logs = logs[1:]
+	log := types.RepoCorruptionLog{
+		Timestamp: time.Now(),
+		Reason:    reason,
 	}
-
-	if data, err := json.Marshal(logs); err != nil {
+	var rawLog []byte
+	if data, err := json.Marshal(log); err != nil {
 		return errors.Wrap(err, "could not marshal corruption_logs")
 	} else {
 		rawLog = data
 	}
 
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
-UPDATE gitserver_repos
+UPDATE gitserver_repos as gtr
 SET
 	corrupted_at = NOW(),
-    corruption_logs = %s,
+    corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
     `, rawLog, name))

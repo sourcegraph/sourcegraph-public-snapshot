@@ -561,13 +561,17 @@ type GitserverRepo struct {
 	// Time when corruption of repo was detected
 	CorruptedAt time.Time
 	UpdatedAt   time.Time
-	// A log of the different types of corruption that was detected on this repo
+	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
+	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
 	CorruptionLogs []RepoCorruptionLog
 }
 
+// RepoCorruptionLog represents a corruption event that has been detected on a repo.
 type RepoCorruptionLog struct {
+	// When the corruption event was detected
 	Timestamp time.Time `json:"ts"`
-	Reason    string    `json:"reason"`
+	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
+	Reason string `json:"reason"`
 }
 
 func UnmarshalCorruptionLog(data []byte) ([]RepoCorruptionLog, error) {
