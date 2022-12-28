@@ -45,7 +45,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 			return oauth2.Config{
 				ClientID:     p.ClientKey,
 				ClientSecret: p.ClientSecret,
-				Scopes:       requestedScopes(p),
+				Scopes:       requestedScopes(),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/site/oauth2/authorize"}).String(),
 					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/site/oauth2/access_token"}).String(),
@@ -105,7 +105,7 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
 }
 
-func requestedScopes(p *schema.BitbucketCloudAuthProvider) []string {
+func requestedScopes() []string {
 	scopes := []string{"email"}
 	if !envvar.SourcegraphDotComMode() {
 		scopes = append(scopes, "repository")
