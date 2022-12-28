@@ -3,6 +3,8 @@
 # shellcheck disable=SC1090,SC1091
 source "$HOME/.profile"
 
+printenv
+
 # Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
