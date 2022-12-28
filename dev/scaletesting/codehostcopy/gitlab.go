@@ -141,7 +141,7 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 			NamespaceID: &group.ID,
 		})
 		retries++
-		if retries == 3 {
+		if retries == 3 && project == nil {
 			return nil, errors.Wrapf(err, "Exceeded retry limit while creating repo")
 		}
 	}
