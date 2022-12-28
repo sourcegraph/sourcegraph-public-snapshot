@@ -16,7 +16,7 @@ import (
 // At this point only data from CODEOWNERS file is presented, if available.
 type OwnService interface {
 	// OwnersFile returns a CODEOWNERS file from a given repository at given commit ID.
-	// In the case the file can not be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
+	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
 	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
 }
 
