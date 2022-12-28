@@ -3,7 +3,7 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -37,20 +37,10 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
-import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
-import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
-import { RepoCommits } from '../routes'
-import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
-
-import { RepositoryBranchesTab } from './BranchesTab'
-import { HomeTab } from './HomeTab'
-import { RepositoryTagTab } from './TagTab'
-import { TreePageContent } from './TreePageContent'
 
 import styles from './TreePage.module.scss'
 
@@ -196,57 +186,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return `${repoString}`
     }
 
-    // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featureFlag named 'new-repo-page' and set its value to true.
-    // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
-    const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
-
-    const homeTabProps = {
-        repo,
-        commitID,
-        revision,
-        filePath,
-        settingsCascade,
-        codeIntelligenceEnabled,
-        batchChangesEnabled,
-        location,
-    }
-
-    const [, setSelectedTab] = useState('home')
-    const [showPageTitle, setShowPageTitle] = useState(true)
-    const { path } = useRouteMatch()
-
-    useMemo(() => {
-        if (isNewRepoPageEnabled && treeOrError && !isErrorLike(treeOrError)) {
-            setShowPageTitle(false)
-
-            switch (path) {
-                case `${treeOrError.url}/-/tag/tab`:
-                    setSelectedTab('tags')
-                    break
-                case `${treeOrError.url}/-/docs/tab/:pathID*`:
-                    setSelectedTab('docs')
-                    setShowPageTitle(true)
-                    break
-                case `${treeOrError.url}/-/commits/tab`:
-                    setSelectedTab('commits')
-                    break
-                case `${treeOrError.url}/-/branch/tab`:
-                    setSelectedTab('branch')
-                    break
-                case `${treeOrError.url}/-/contributors/tab`:
-                    setSelectedTab('contributors')
-                    break
-                case `${treeOrError.url}/-/compare/tab/:spec*`:
-                    setSelectedTab('compare')
-                    break
-                case `${treeOrError.url}`:
-                    setSelectedTab('home')
-                    setShowPageTitle(true)
-                    break
-            }
-        }
-    }, [isNewRepoPageEnabled, path, treeOrError])
+    const [showPageTitle] = useState(true)
 
     const RootHeaderSection = (): React.ReactElement => (
         <>
@@ -364,86 +304,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 </PageHeader>
                             )}
                         </header>
-
-                        {isNewRepoPageEnabled ? (
-                            <div>
-                                <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                    <Switch>
-                                        <Route
-                                            path={`${treeOrError.url}/-/tag/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryTagTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/commits/tab/:filePath*`}
-                                            render={routeComponentProps => (
-                                                <RepoCommits
-                                                    repo={repo}
-                                                    revision={revision || ''}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}`}
-                                            exact={true}
-                                            render={routeComponentProps => (
-                                                <HomeTab
-                                                    {...homeTabProps}
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/branch/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/contributors/tab`}
-                                            render={routeComponentProps => (
-                                                <RepositoryStatsContributorsPage
-                                                    {...routeComponentProps}
-                                                    repo={repo}
-                                                    {...props}
-                                                />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/compare/tab`}
-                                            render={() => (
-                                                <RepoRevisionWrapper>
-                                                    <RepositoryCompareArea
-                                                        repo={repo}
-                                                        match={match}
-                                                        settingsCascade={settingsCascade}
-                                                        useBreadcrumb={useBreadcrumb}
-                                                        location={location}
-                                                        {...props}
-                                                    />
-                                                </RepoRevisionWrapper>
-                                            )}
-                                        />
-                                    </Switch>
-                                </section>
-                            </div>
-                        ) : (
-                            <TreePageContent
-                                filePath={filePath}
-                                tree={treeOrError}
-                                repo={repo}
-                                revision={revision}
-                                commitID={commitID}
-                                location={location}
-                                {...props}
-                            />
-                        )}
                     </div>
                 )}
             </Container>
