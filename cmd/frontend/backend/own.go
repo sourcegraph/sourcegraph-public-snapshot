@@ -34,6 +34,7 @@ type ownService struct {
 // is expected to be found relative to the repository root directory.
 // These are in line with GitHub and GitLab documentation.
 // https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+// https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 var codeownersLocations = []string{
 	"CODEOWNERS",
 	".github/CODEOWNERS",
