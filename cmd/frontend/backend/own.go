@@ -30,7 +30,7 @@ type ownService struct {
 	git gitserver.Client
 }
 
-// codeownersLocations contain all the locations where CODEOWNERS file
+// codeownersLocations contains the locations where CODEOWNERS file
 // is expected to be found relative to the repository root directory.
 // These are in line with GitHub and GitLab documentation.
 var codeownersLocations = []string{
