@@ -45,22 +45,17 @@ var codeownersLocations = []string{
 // OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of 
 // the possible codeownersLocations. It returns nil if no match is found.
 func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
-	var content []byte
-	var err error
 	for _, path := range codeownersLocations {
-		content, err = s.git.ReadFile(
+		content, err := s.git.ReadFile(
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			repoName,
 			commitID,
 			path,
 		)
-		if err == nil && content != nil {
-			break
+		if content != nil && err == nil {
+			return codeowners.Parse(bytes.NewReader(content))
 		}
 	}
-	if content == nil {
-		return nil, nil
-	}
-	return codeowners.Parse(bytes.NewReader(content))
+	return nil, nil
 }
