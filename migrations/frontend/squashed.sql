@@ -3149,6 +3149,56 @@ CREATE SEQUENCE outbound_webhook_event_types_id_seq
 
 ALTER SEQUENCE outbound_webhook_event_types_id_seq OWNED BY outbound_webhook_event_types.id;
 
+CREATE TABLE outbound_webhook_jobs (
+    id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text,
+    encryption_key_id text,
+    payload bytea NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_jobs_id_seq OWNED BY outbound_webhook_jobs.id;
+
+CREATE TABLE outbound_webhook_logs (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL,
+    status_code integer NOT NULL,
+    encryption_key_id text,
+    request bytea NOT NULL,
+    response bytea NOT NULL,
+    error bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_logs_id_seq OWNED BY outbound_webhook_logs.id;
+
 CREATE TABLE outbound_webhooks (
     id bigint NOT NULL,
     created_by integer,
@@ -3993,6 +4043,10 @@ ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY outbound_webhook_event_types ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_event_types_id_seq'::regclass);
 
+ALTER TABLE ONLY outbound_webhook_jobs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_logs_id_seq'::regclass);
+
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
@@ -4303,6 +4357,12 @@ ALTER TABLE ONLY out_of_band_migrations
 
 ALTER TABLE ONLY outbound_webhook_event_types
     ADD CONSTRAINT outbound_webhook_event_types_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_jobs
+    ADD CONSTRAINT outbound_webhook_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
@@ -4710,6 +4770,14 @@ CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (r
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
 
 CREATE INDEX outbound_webhook_event_types_event_type_idx ON outbound_webhook_event_types USING btree (event_type, scope);
+
+CREATE INDEX outbound_webhook_jobs_state_idx ON outbound_webhook_jobs USING btree (state);
+
+CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_logs USING btree (outbound_webhook_id);
+
+CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
+
+CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
@@ -5166,6 +5234,12 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 
 ALTER TABLE ONLY outbound_webhook_event_types
     ADD CONSTRAINT outbound_webhook_event_types_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_job_id_fkey FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;

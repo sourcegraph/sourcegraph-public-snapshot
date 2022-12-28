@@ -2519,6 +2519,59 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.outbound_webhook_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                      Default                      
+-------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                | bigint                   |           | not null | nextval('outbound_webhook_jobs_id_seq'::regclass)
+ event_type        | text                     |           | not null | 
+ scope             | text                     |           |          | 
+ encryption_key_id | text                     |           |          | 
+ payload           | bytea                    |           | not null | 
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           | not null | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+Indexes:
+    "outbound_webhook_jobs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_jobs_state_idx" btree (state)
+    "outbound_webhook_payload_process_after_idx" btree (process_after)
+Referenced by:
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhook_logs"
+```
+       Column        |           Type           | Collation | Nullable |                      Default                      
+---------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                  | bigint                   |           | not null | nextval('outbound_webhook_logs_id_seq'::regclass)
+ job_id              | bigint                   |           | not null | 
+ outbound_webhook_id | bigint                   |           | not null | 
+ sent_at             | timestamp with time zone |           | not null | now()
+ status_code         | integer                  |           | not null | 
+ encryption_key_id   | text                     |           |          | 
+ request             | bytea                    |           | not null | 
+ response            | bytea                    |           | not null | 
+ error               | bytea                    |           | not null | 
+Indexes:
+    "outbound_webhook_logs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_logs_outbound_webhook_id_idx" btree (outbound_webhook_id)
+    "outbound_webhooks_logs_status_code_idx" btree (status_code)
+Foreign-key constraints:
+    "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
 # Table "public.outbound_webhooks"
 ```
       Column       |           Type           | Collation | Nullable |                    Default                    
@@ -2538,6 +2591,7 @@ Foreign-key constraints:
     "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 Referenced by:
     TABLE "outbound_webhook_event_types" CONSTRAINT "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 

@@ -23,6 +23,11 @@ type OutboundWebhookStore interface {
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
+	// Convenience methods to construct job and log stores with the same
+	// encryption key.
+	ToJobStore() OutboundWebhookJobStore
+	ToLogStore() OutboundWebhookLogStore
+
 	Count(context.Context, OutboundWebhookCountOpts) (int64, error)
 	Create(context.Context, *types.OutboundWebhook) error
 	GetByID(context.Context, int64) (*types.OutboundWebhook, error)
@@ -64,6 +69,20 @@ func (s *outboundWebhookStore) Transact(ctx context.Context) (OutboundWebhookSto
 		Store: tx,
 		key:   s.key,
 	}, err
+}
+
+func (s *outboundWebhookStore) ToJobStore() OutboundWebhookJobStore {
+	return &outboundWebhookJobStore{
+		Store: s.Store,
+		key:   s.key,
+	}
+}
+
+func (s *outboundWebhookStore) ToLogStore() OutboundWebhookLogStore {
+	return &outboundWebhookLogStore{
+		Store: s.Store,
+		key:   s.key,
+	}
 }
 
 type OutboundWebhookCountOpts struct {
@@ -180,11 +199,6 @@ func (s *outboundWebhookStore) GetByID(ctx context.Context, id int64) (*types.Ou
 	return &webhook, nil
 }
 
-type OutboundWebhookListOpts struct {
-	*LimitOffset
-	OutboundWebhookCountOpts
-}
-
 type ScopedEventType struct {
 	EventType string
 	Scope     *string
@@ -195,6 +209,11 @@ func (s *outboundWebhookStore) Delete(ctx context.Context, id int64) error {
 	_, err := s.Query(ctx, q)
 
 	return err
+}
+
+type OutboundWebhookListOpts struct {
+	*LimitOffset
+	OutboundWebhookCountOpts
 }
 
 func (s *outboundWebhookStore) List(ctx context.Context, opts OutboundWebhookListOpts) ([]*types.OutboundWebhook, error) {
