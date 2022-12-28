@@ -25,32 +25,19 @@
 .person {
     display: flex;
     align-items: center;
-    min-width: 25%;
-    flex: none;
-    margin-right: 2rem;
-    white-space: nowrap;
+    flex: 1 2 60%;
     overflow: hidden;
+    white-space: nowrap;
+    & span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .commits {
-    display: flex;
-    flex: 1;
+    flex: 1 5 30%;
     align-items: center;
     justify-content: space-between;
-    min-width: 20rem;
     white-space: nowrap;
-}
-
-.count {
-    flex: none;
-    min-width: 5rem;
     text-align: right;
-}
-
-.commit {
-    flex: 1 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-right: 2rem;
 }

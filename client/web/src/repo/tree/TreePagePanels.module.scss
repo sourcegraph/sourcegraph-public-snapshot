@@ -1,3 +1,17 @@
+.card-col-header-wrapper {
+    background-color: var(--color-bg-2);
+
+    a {
+        color: var(--link-color-2);
+    }
+}
+
+.card-col-header {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 .bar-svg {
     border-radius: 5px;
 }

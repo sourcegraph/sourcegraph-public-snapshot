@@ -56,6 +56,7 @@ import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
+import panelStyles from './TreePagePanels.module.scss'
 
 export type TreeCommitsRepositoryCommit = NonNullable<
     Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']
@@ -360,16 +361,36 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             </div>
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <div className="row">
-                    <div className="col-12 mb-3">
+                    <div className="col-12 col-lg-8 mb-3">
                         <FilesCard diffStats={diffStats} entries={tree.entries} />
+                    </div>
+                    <div className="col-12 col-lg-4 mb-3">
+                        <Card className="card">
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>
+                                {tree.isRoot ? (
+                                    <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
+                                ) : (
+                                    'Contributors'
+                                )}
+                            </CardHeader>
+                            <Contributors
+                                filePath={filePath}
+                                tree={tree}
+                                repo={repo}
+                                commitID={commitID}
+                                revision={revision}
+                                {...props}
+                            />
+                        </Card>
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-12 col-lg-6 mb-3">
+                    <div className="col-12 col-lg-8 mb-3">
                         <Card className="card">
-                            <CardHeader className={styles.cardColHeaderWrapper}>
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>
                                 {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
                             </CardHeader>
+
                             <FilteredConnection<
                                 GitCommitFields,
                                 Pick<
@@ -396,25 +417,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                                 hideSearch={true}
                                 emptyElement={emptyElement}
                                 totalCountSummaryComponent={TotalCountSummary}
-                            />
-                        </Card>
-                    </div>
-                    <div className="col-12 col-lg-6">
-                        <Card className="card">
-                            <CardHeader className={styles.cardColHeaderWrapper}>
-                                {tree.isRoot ? (
-                                    <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
-                                ) : (
-                                    'Contributors'
-                                )}
-                            </CardHeader>
-                            <Contributors
-                                filePath={filePath}
-                                tree={tree}
-                                repo={repo}
-                                commitID={commitID}
-                                revision={revision}
-                                {...props}
+                                compact={true}
                             />
                         </Card>
                     </div>
@@ -565,8 +568,6 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     path,
     globbing,
 }) => {
-    const commit = node.commits.nodes[0] as RepositoryContributorNodeFields['commits']['nodes'][number] | undefined
-
     const query: string = [
         searchQueryForRepoRevision(repoName, globbing),
         'type:diff',
@@ -584,23 +585,21 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={contributorsStyles.commits}>
-                <div className={contributorsStyles.count}>
-                    <Tooltip
-                        content={
-                            revisionRange?.includes('..')
-                                ? 'All commits will be shown (revision end ranges are not yet supported)'
-                                : null
-                        }
-                        placement="left"
+                <Tooltip
+                    content={
+                        revisionRange?.includes('..')
+                            ? 'All commits will be shown (revision end ranges are not yet supported)'
+                            : null
+                    }
+                    placement="left"
+                >
+                    <Link
+                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
+                        className="font-weight-bold"
                     >
-                        <Link
-                            to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
-                            className="font-weight-bold"
-                        >
-                            {numberWithCommas(node.count)} {pluralize('commit', node.count)}
-                        </Link>
-                    </Tooltip>
-                </div>
+                        {numberWithCommas(node.count)} {pluralize('commit', node.count)}
+                    </Link>
+                </Tooltip>
             </div>
         </li>
     )
