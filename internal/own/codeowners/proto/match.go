@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -8,7 +9,12 @@ import (
 
 func (f *File) Match(path string) []*Owner {
 	for _, r := range f.GetRule() {
-		if compile(r.GetPattern()).match(path) {
+		m, err := compile(r.GetPattern())
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if m.match(path) {
 			return r.GetOwner()
 		}
 	}
@@ -17,33 +23,36 @@ func (f *File) Match(path string) []*Owner {
 
 const separator = "/"
 
-type globMatcher struct {
-	parts      []patternPart
-	skipStates *big.Int
-}
+type globMatcher []patternPart
 
-func compile(pattern string) globMatcher {
-	m := globMatcher{
-		// TODO this assumes not / in front
-		parts:      []patternPart{anySubPath{}},
-		skipStates: big.NewInt(0),
+func compile(pattern string) (globMatcher, error) {
+	var m []patternPart
+	if !strings.HasPrefix(pattern, separator) {
+		// No leading `/` is equivalent to prefixing with `/**/`.
+		m = append(m, anySubPath{})
 	}
-	skipVector := big.NewInt(0)
-	for i, part := range strings.Split(pattern, separator) {
+	for _, part := range strings.Split(strings.Trim(pattern, separator), separator) {
 		switch {
+		case part == "":
+			return nil, errors.New("two consecutive forward slashes")
+		case part == "*":
+			m = append(m, anyMatch{})
 		case part == "**":
-			m.parts = append(m.parts, anySubPath{})
-			skipVector.SetBit(skipVector, i, 1)
+			m = append(m, anySubPath{})
 		default:
-			m.parts = append(m.parts, exactMatch(part))
+			m = append(m, exactMatch(part))
 		}
 	}
-	return m
+	if strings.HasSuffix(pattern, separator) {
+		// Trailing `/` is equivalent with trailing `/**`
+		m = append(m, anySubPath{})
+	}
+	return m, nil
 }
 
 func (m globMatcher) initialState() *big.Int {
 	state := big.NewInt(1)
-	for i, p := range m.parts {
+	for i, p := range m {
 		if _, ok := p.(anySubPath); !ok {
 			break
 		}
@@ -55,189 +64,77 @@ func (m globMatcher) initialState() *big.Int {
 func (m globMatcher) match(filePath string) bool {
 	state := m.initialState()
 	parts := strings.Split(filePath, separator)
+	fmt.Println(parts)
 	if len(parts) > 0 && parts[0] == "" {
 		parts = parts[1:]
 	}
-	format := fmt.Sprintf("STATE %%0%db\n", len(m.parts)+1)
-	fmt.Printf(format, state)
 	moves := big.NewInt(0)
+	fmt.Println(m.debugString(state))
 	for _, part := range parts {
-		couldSkip := big.NewInt(0).And(state, m.skipStates) // which states could stay while parsing part
-		matchMoves(moves, m.parts, part)                    // which states can advance +1
-		moved := big.NewInt(0).And(state, moves)            // intersect with current states
-		state = moved.Lsh(moved, 1)                         // move everything +1
-		state.Or(state, couldSkip)
-		fmt.Printf(format, state)
+		m.move(part, state, moves)
+		state, moves = moves, state
+		fmt.Println(part)
+		fmt.Println(m.debugString(state))
 	}
-	return state.Bit(len(m.parts)) == 1
+	return state.Bit(len(m)) == 1
 }
 
-func matchMoves(moves *big.Int, patterns []patternPart, part string) {
-	for i, p := range patterns {
+func (m globMatcher) move(part string, state, moves *big.Int) {
+	moves.SetInt64(0)
+	for i, p := range m {
+		if state.Bit(i) == 0 {
+			continue
+		}
+		// Advance to the i+1-th state depending on whether
+		// the i-th pattern matches
 		bit := uint(0)
 		if p.Match(part) {
 			bit = uint(1)
 		}
-		moves.SetBit(moves, i, bit)
+		moves.SetBit(moves, i+1, bit)
+		// If the i-th pattern part is **, then the current path part
+		// may exhaust ** (and therefore i+1-th state is set) or it may
+		// be matched and consumed by ** (and therefore i-th state must be set).
+		if _, ok := p.(anySubPath); ok {
+			moves.SetBit(moves, i, 1)
+		}
 	}
 }
 
-func advance(state *big.Int, moves *big.Int) *big.Int {
-	moved := big.NewInt(0).And(state, moves)
-	return moved.Lsh(moved, 1)
+func (m globMatcher) debugString(state *big.Int) string {
+	var s strings.Builder
+	for i, p := range m {
+		if state.Bit(i) != 0 {
+			s.WriteByte('X')
+		} else {
+			s.WriteByte('_')
+		}
+		fmt.Fprint(&s, p.String())
+	}
+	if state.Bit(len(m)) != 0 {
+		s.WriteByte('X')
+	} else {
+		s.WriteByte('_')
+	}
+	return s.String()
 }
 
 type patternPart interface {
+	fmt.Stringer
 	Match(string) bool
 }
 
 type anySubPath struct{}
 
+func (p anySubPath) String() string      { return "**" }
 func (p anySubPath) Match(_ string) bool { return true }
 
 type exactMatch string
 
+func (p exactMatch) String() string         { return string(p) }
 func (p exactMatch) Match(part string) bool { return string(p) == part }
 
-// func match(pattern, path string) bool {
-// 	// left anchored
-// 	if !strings.ContainsAny(pattern, `*?\`) && pattern[0] == os.PathSeparator {
-// 		prefix := pattern
+type anyMatch struct{}
 
-// 		// Strip the leading slash as we're anchored to the root already
-// 		if prefix[0] == os.PathSeparator {
-// 			prefix = prefix[1:]
-// 		}
-
-// 		// If the pattern ends with a slash we can do a simple prefix match
-// 		if prefix[len(prefix)-1] == os.PathSeparator {
-// 			return strings.HasPrefix(path, prefix)
-// 		}
-
-// 		// If the strings are the same length, check for an exact match
-// 		if len(path) == len(prefix) {
-// 			return path == prefix
-// 		}
-
-// 		// Otherwise check if the test path is a subdirectory of the pattern
-// 		if len(path) > len(prefix) && path[len(prefix)] == os.PathSeparator {
-// 			return path[:len(prefix)] == prefix
-// 		}
-// 		return false
-// 	}
-// 	re, err := regex(pattern)
-// 	if err != nil {
-// 		return false
-// 	}
-// 	return re.MatchString(path)
-// }
-
-// func regex(pattern string) (*regexp.Regexp, error) {
-// 	// Handle specific edge cases first
-// 	switch {
-// 	case strings.Contains(pattern, "***"):
-// 		return nil, errors.Errorf("pattern cannot contain three consecutive asterisks")
-// 	case pattern == "":
-// 		return nil, errors.Errorf("empty pattern")
-// 	case pattern == "/":
-// 		// "/" doesn't match anything
-// 		return regexp.Compile(`\A\z`)
-// 	}
-
-// 	segs := strings.Split(pattern, "/")
-
-// 	if segs[0] == "" {
-// 		// Leading slash: match is relative to root
-// 		segs = segs[1:]
-// 	} else {
-// 		// No leading slash - check for a single segment pattern, which matches
-// 		// relative to any descendent path (equivalent to a leading **/)
-// 		if len(segs) == 1 || (len(segs) == 2 && segs[1] == "") {
-// 			if segs[0] != "**" {
-// 				segs = append([]string{"**"}, segs...)
-// 			}
-// 		}
-// 	}
-
-// 	if len(segs) > 1 && segs[len(segs)-1] == "" {
-// 		// Trailing slash is equivalent to "/**"
-// 		segs[len(segs)-1] = "**"
-// 	}
-
-// 	sep := string(os.PathSeparator)
-
-// 	lastSegIndex := len(segs) - 1
-// 	needSlash := false
-// 	var re strings.Builder
-// 	re.WriteString(`\A`)
-// 	for i, seg := range segs {
-// 		switch seg {
-// 		case "**":
-// 			switch {
-// 			case i == 0 && i == lastSegIndex:
-// 				// If the pattern is just "**" we match everything
-// 				re.WriteString(`.+`)
-// 			case i == 0:
-// 				// If the pattern starts with "**" we match any leading path segment
-// 				re.WriteString(`(?:.+` + sep + `)?`)
-// 				needSlash = false
-// 			case i == lastSegIndex:
-// 				// If the pattern ends with "**" we match any trailing path segment
-// 				re.WriteString(sep + `.*`)
-// 			default:
-// 				// If the pattern contains "**" we match zero or more path segments
-// 				re.WriteString(`(?:` + sep + `.+)?`)
-// 				needSlash = true
-// 			}
-
-// 		case "*":
-// 			if needSlash {
-// 				re.WriteString(sep)
-// 			}
-
-// 			// Regular wildcard - match any characters except the separator
-// 			re.WriteString(`[^` + sep + `]+`)
-// 			needSlash = true
-
-// 		default:
-// 			if needSlash {
-// 				re.WriteString(sep)
-// 			}
-
-// 			escape := false
-// 			for _, ch := range seg {
-// 				if escape {
-// 					escape = false
-// 					re.WriteString(regexp.QuoteMeta(string(ch)))
-// 					continue
-// 				}
-
-// 				// Other pathspec implementations handle character classes here (e.g.
-// 				// [AaBb]), but CODEOWNERS doesn't support that so we don't need to
-// 				switch ch {
-// 				case '\\':
-// 					escape = true
-// 				case '*':
-// 					// Multi-character wildcard
-// 					re.WriteString(`[^` + sep + `]*`)
-// 				case '?':
-// 					// Single-character wildcard
-// 					re.WriteString(`[^` + sep + `]`)
-// 				default:
-// 					// Regular character
-// 					re.WriteString(regexp.QuoteMeta(string(ch)))
-// 				}
-// 			}
-
-// 			if i == lastSegIndex {
-// 				// As there's no trailing slash (that'd hit the '**' case), we
-// 				// need to match descendent paths
-// 				re.WriteString(`(?:` + sep + `.*)?`)
-// 			}
-
-// 			needSlash = true
-// 		}
-// 	}
-// 	re.WriteString(`\z`)
-// 	return regexp.Compile(re.String())
-// }
+func (p anyMatch) String() string         { return "*" }
+func (p anyMatch) Match(part string) bool { return true }
