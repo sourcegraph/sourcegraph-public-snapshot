@@ -286,7 +286,7 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 		assert.Nil(t, cachedUpdate)
 	})
 
-	t.Run("ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.", func(t *testing.T) {
+	t.Run("ExcludeRepoFromExternalService. Empty exclude field in config. Repo exclusion added.", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Label:  "ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.",
@@ -314,10 +314,9 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 		assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 	})
 
-	t.Run("ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.", func(t *testing.T) {
+	t.Run("ExcludeRepoFromExternalService. Non empty exclude field in config. New repo exclusion added.", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "ExcludeRepoFromExternalService. Non empty exclude. New repo exclusion added.",
 			Query: `
 			mutation {
 				excludeRepoFromExternalService(
@@ -342,10 +341,9 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 		assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 	})
 
-	t.Run("ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.", func(t *testing.T) {
+	t.Run("ExcludeRepoFromExternalService. Non empty exclude field in config. Duplicate repo exclusion not added.", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "ExcludeRepoFromExternalService. Non empty exclude. Duplicate repo exclusion not added.",
 			Query: `
 			mutation {
 				excludeRepoFromExternalService(
@@ -371,7 +369,7 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 	})
 }
 
-func TestAddRepoToExclusion(t *testing.T) {
+func TestAddRepoToExclude(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
@@ -381,37 +379,37 @@ func TestAddRepoToExclusion(t *testing.T) {
 		expectedConfig string
 	}{
 		{
-			name:           "duplicate exclusion not added for AWSCodeCommit schema",
+			name:           "second attempt of excluding same repo is ignored for AWSCodeCommit schema",
 			kind:           extsvc.KindAWSCodeCommit,
 			initialConfig:  `{"accessKeyID":"accessKeyID","gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 		},
 		{
-			name:           "duplicate exclusion not added for BitbucketCloud schema",
+			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
 			kind:           extsvc.KindBitbucketCloud,
 			initialConfig:  `{"appPassword":"","url":"https://bitbucket.org","username":""}`,
 			expectedConfig: `{"appPassword":"","exclude":[{"name":"sourcegraph/sourcegraph"}],"url":"https://bitbucket.org","username":""}`,
 		},
 		{
-			name:           "duplicate exclusion not added for BitbucketServer schema",
+			name:           "second attempt of excluding same repo is ignored for BitbucketServer schema",
 			kind:           extsvc.KindBitbucketServer,
 			initialConfig:  `{"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 			expectedConfig: `{"exclude":[{"id":1,"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 		},
 		{
-			name:           "duplicate exclusion not added for GitHub schema",
+			name:           "second attempt of excluding same repo is ignored for GitHub schema",
 			kind:           extsvc.KindGitHub,
 			initialConfig:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			expectedConfig: `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`,
 		},
 		{
-			name:           "duplicate exclusion not added for GitLab schema",
+			name:           "second attempt of excluding same repo is ignored for GitLab schema",
 			kind:           extsvc.KindGitLab,
 			initialConfig:  `{"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
 			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
 		},
 		{
-			name:           "duplicate exclusion not added for Gitolite schema",
+			name:           "second attempt of excluding same repo is ignored for Gitolite schema",
 			kind:           extsvc.KindGitolite,
 			initialConfig:  `{"host":"gitolite.com","prefix":""}`,
 			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"host":"gitolite.com","prefix":""}`,
@@ -425,16 +423,17 @@ func TestAddRepoToExclusion(t *testing.T) {
 				DisplayName: fmt.Sprintf("%s #1", test.kind),
 				Config:      extsvc.NewUnencryptedConfig(test.initialConfig),
 			}
-			actualConfig, err := addRepoToExclusion(ctx, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
+			actualConfig, err := addRepoToExclude(ctx, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
 			if err != nil {
 				t.Fatal(err)
 			}
 			assert.Equal(t, test.expectedConfig, actualConfig)
 
-			actualConfig, err = addRepoToExclusion(ctx, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
+			actualConfig, err = addRepoToExclude(ctx, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
 			if err != nil {
 				t.Fatal(err)
 			}
+			// Config shouldn't have been changed.
 			assert.Equal(t, test.expectedConfig, actualConfig)
 		})
 	}

@@ -198,6 +198,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 
 	// If external service doesn't support repo exclusion, then return.
 	if !externalService.SupportsRepoExclusion() {
+		r.logger.Warn("Tried to exclude repo from external service which config doesn't support repo exclusion.")
 		return &EmptyResponse{}, nil
 	}
 
@@ -206,7 +207,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 		return nil, err
 	}
 
-	updatedConfig, err := addRepoToExclusion(ctx, externalService, repository)
+	updatedConfig, err := addRepoToExclude(ctx, externalService, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -219,11 +220,14 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 	// Error during triggering a sync is omitted, because this should not prevent
 	// from excluding the repo. The repo stays excluded and the sync will come
 	// eventually.
-	_, _ = r.SyncExternalService(ctx, &syncExternalServiceArgs{ID: args.ExternalService})
+	_, err = r.SyncExternalService(ctx, &syncExternalServiceArgs{ID: args.ExternalService})
+	if err != nil {
+		r.logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+	}
 	return &EmptyResponse{}, nil
 }
 
-func addRepoToExclusion(ctx context.Context, externalService *types.ExternalService, repository *types.Repo) (string, error) {
+func addRepoToExclude(ctx context.Context, externalService *types.ExternalService, repository *types.Repo) (string, error) {
 	config, err := externalService.Configuration(ctx)
 	if err != nil {
 		return "", err
