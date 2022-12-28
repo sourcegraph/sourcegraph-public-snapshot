@@ -127,6 +127,10 @@ type Mutation {
     """
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
     """
+    Updates a external service. Only site admins may perform this mutation.
+    """
+    excludeRepoFromExternalService(externalService: ID!, repo: ID!): EmptyResponse!
+    """
     Delete an external service. Only site admins may perform this mutation.
     """
     deleteExternalService(externalService: ID!, async: Boolean = false): EmptyResponse!

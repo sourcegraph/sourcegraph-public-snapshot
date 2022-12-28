@@ -66,15 +66,6 @@ var availabilityCheck = map[string]bool{
 	extsvc.KindBitbucketCloud:  true,
 }
 
-var supportsRepoExclusion = map[string]bool{
-	extsvc.KindAWSCodeCommit:   true,
-	extsvc.KindBitbucketCloud:  true,
-	extsvc.KindBitbucketServer: true,
-	extsvc.KindGitHub:          true,
-	extsvc.KindGitLab:          true,
-	extsvc.KindGitolite:        true,
-}
-
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
@@ -302,7 +293,7 @@ func (r *externalServiceResolver) ImplementationNote() string {
 }
 
 func (r *externalServiceResolver) SupportsRepoExclusion() bool {
-	return supportsRepoExclusion[r.externalService.Kind]
+	return r.externalService.SupportsRepoExclusion()
 }
 
 type externalServiceSyncJobConnectionResolver struct {
