@@ -11,7 +11,7 @@ import { Button, ButtonProps, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAl
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
-import { deleteExternalService, testExternalServiceConnection } from './backend'
+import { deleteExternalService, useExternalServiceCheckConnectionByIdLazyQuery } from './backend'
 import { defaultExternalServices } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
@@ -52,17 +52,23 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
-    const [isTestInProgress, setIsTestInProgress] = useState<boolean | Error>(false)
+    const [doCheckConnection, {called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData}] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
+
+    // const [isTestInProgress, setIsTestInProgress] = useState<boolean | Error>(false)
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
-        setIsTestInProgress(true)
+        console.log("ontest")
         try {
-            await testExternalServiceConnection(node.id)
-            setIsTestInProgress(false)
-            // FIXME: add on update callback
+            await doCheckConnection()
         } catch (error) {
-            setIsTestInProgress(asError(error))
+
         }
     }, [])
+
+    const capitalizeSuspectedReason = (s: string) => {
+      const firstCharacter = s.charAt(0).toUpperCase();
+      const restOfString = s.slice(1);
+      return firstCharacter + restOfString;
+    };
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -117,25 +123,39 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     </>
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
-                            </small>
+                                <br />
+            {checkConnectionCalled && checkConnectionData &&
+                checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceAvailable' &&
+                checkConnectionData.node.checkConnection.lastCheckedAt &&
+                <>
+                Code host is available. Last checked at <Timestamp date={checkConnectionData.node.checkConnection.lastCheckedAt} />.
+                </>
+            }
+
+            {checkConnectionCalled && checkConnectionData &&
+                checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceUnavailable' &&
+                checkConnectionData.node.checkConnection.suspectedReason &&
+                <>
+                {capitalizeSuspectedReason(checkConnectionData.node.checkConnection.suspectedReason)}
+                </>
+            }
+                           </small>
                         </Text>
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <TestConnectionButton
-                        className="test-code-host-connection-button"
-                        title="Test"
-                        buttonVariant="secondary"
-                        // FIXME: Maybe update button if check in progress
-                        buttonLabel="Test"
-                        buttonSubtitle="Check code host connection"
-                        buttonDisabled={!node.hasConnectionCheck}
-                        flashText="Checking..."
-                        run={async () => {
-                            await testExternalServiceConnection(node.id)
-                        }}
-                    // history={}
-                    />
+                    <Tooltip content={node?.hasConnectionCheck? "Test code host connection" : "Connection check unavailable" }>
+                        <Button
+                            className="test-connection-external-service-button"
+                            variant="secondary"
+                            onClick={onTestConnection}
+                            disabled={!node?.hasConnectionCheck || checkConnectionLoading}
+                            size="sm"
+                        >
+                        {checkConnectionLoading && <><LoadingSpinner /> Checking</>}
+                        {!checkConnectionLoading && <><Icon aria-hidden={true} svgPath={mdiConnection} /> Test</>}
+                        </Button>
+                    </Tooltip>{' '}
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
@@ -249,8 +269,8 @@ class TestConnectionButton extends React.PureComponent<Props, State> {
                         disabled={this.props.buttonDisabled || this.state.loading}
                         size="sm"
                     >
-                {buttonLabelElement}
-                </Button>
+                        {buttonLabelElement}
+                    </Button>
                 </Tooltip>{' '}
 
                 {this.props.flashText && this.state.flash && (
