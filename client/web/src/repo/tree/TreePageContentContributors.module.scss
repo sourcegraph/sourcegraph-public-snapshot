@@ -28,10 +28,11 @@
     flex: 1 2 60%;
     overflow: hidden;
     white-space: nowrap;
-    & span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+}
+
+.person span {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .commits {
