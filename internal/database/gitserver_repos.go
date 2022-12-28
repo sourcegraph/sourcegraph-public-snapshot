@@ -540,6 +540,7 @@ func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoNam
 UPDATE gitserver_repos as gtr
 SET
 	corrupted_at = NOW(),
+    -- append the json and then ensure we only keep 10 items in the resulting json array
     corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
