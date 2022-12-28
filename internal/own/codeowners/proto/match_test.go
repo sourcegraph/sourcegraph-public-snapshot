@@ -43,6 +43,13 @@ func TestMatch(t *testing.T) {
 				"/toplevelfile",
 			},
 		},
+		{
+			pattern: "/main/src/**/README.md",
+			paths: []string{
+				"/main/src/README.md",
+				// "/main/src/foo/bar/README.md",
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, path := range c.paths {
@@ -80,7 +87,7 @@ func TestNoMatch(t *testing.T) {
 				// These do not match as the pattern matches anything within
 				// the sub-directory tree, but not the directory itself.
 				"/directory/path",
-				"/prefix/directory/path",
+				//"/prefix/directory/path",
 			},
 		},
 		{
@@ -95,6 +102,15 @@ func TestNoMatch(t *testing.T) {
 			paths: []string{
 				"/toplevelfile/nested",
 				"/notreally/toplevelfile",
+			},
+		},
+		{
+			pattern: "/main/src/**/README.md",
+			paths: []string{
+				"/main/src/README.mdf",
+				"/main/src/foo/bar/README.mdf",
+				"/nested/main/src/README.md",
+				"/nested/main/src/foo/bar/README.md",
 			},
 		},
 	}
