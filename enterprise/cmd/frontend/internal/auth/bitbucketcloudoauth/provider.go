@@ -8,7 +8,6 @@ import (
 	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/bitbucket"
 	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -86,13 +85,11 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	encodedState, err := goauth2.StateFromContext(ctx)
 	if err != nil {
-		log15.Error("OAuth failed: could not get state from context.", "error", err)
 		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
 		return
 	}
 	state, err := oauth.DecodeState(encodedState)
 	if err != nil {
-		log15.Error("OAuth failed: could not decode state.", "error", err)
 		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
 		return
 	}
