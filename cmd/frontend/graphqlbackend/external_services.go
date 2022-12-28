@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/log"
 
@@ -157,6 +159,132 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	return res, nil
+}
+
+type excludeRepoFromExternalServiceArgs struct {
+	ExternalService graphql.ID
+	Repo            graphql.ID
+}
+
+// ExcludeRepoFromExternalService excludes given repo from given external service config.
+//
+// Function is pretty beefy, what it does is:
+// - checks whether current user is site-admin and returns if not
+// - finds an external service by ID and checks if it supports repo exclusion
+// - adds repo to `exclude` config parameter and updates an external service
+// - triggers external service sync
+//
+// Note: Failing to trigger an external service sync doesn't fail the whole update.
+func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	extSvcID, err := UnmarshalExternalServiceID(args.ExternalService)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	externalServices := r.db.ExternalServices()
+	externalService, err := externalServices.GetByID(ctx, extSvcID)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := r.logger.Scoped("ExcludeRepoFromExternalService", "excluding a repo from external service config").With(
+		log.Int64("externalServiceID", extSvcID),
+		log.Int32("repoID", int32(repositoryID)),
+	)
+
+	// If external service doesn't support repo exclusion, then return.
+	if !externalService.SupportsRepoExclusion() {
+		logger.Warn("Tried to exclude repo from external service which config doesn't support repo exclusion.")
+		return &EmptyResponse{}, nil
+	}
+
+	repository, err := r.db.Repos().Get(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedConfig, err := addRepoToExclude(ctx, externalService, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	err = externalServices.Update(ctx, conf.Get().AuthProviders, extSvcID, &database.ExternalServiceUpdate{Config: &updatedConfig})
+	if err != nil {
+		return nil, err
+	}
+
+	// Error during triggering a sync is omitted, because this should not prevent
+	// from excluding the repo. The repo stays excluded and the sync will come
+	// eventually.
+	_, err = r.SyncExternalService(ctx, &syncExternalServiceArgs{ID: args.ExternalService})
+	if err != nil {
+		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+	}
+	return &EmptyResponse{}, nil
+}
+
+func addRepoToExclude(ctx context.Context, externalService *types.ExternalService, repository *types.Repo) (string, error) {
+	config, err := externalService.Configuration(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	switch c := config.(type) {
+	case *schema.AWSCodeCommitConnection:
+		exclusion := &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)})
+		}
+	case *schema.BitbucketCloudConnection:
+		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: string(repository.Name)})
+		}
+	case *schema.BitbucketServerConnection:
+		exclusion := &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: string(repository.Name)})
+		}
+	case *schema.GitHubConnection:
+		exclusion := &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)})
+		}
+	case *schema.GitLabConnection:
+		exclusion := &schema.ExcludedGitLabProject{Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: string(repository.Name)})
+		}
+	case *schema.GitoliteConnection:
+		exclusion := &schema.ExcludedGitoliteRepo{Name: string(repository.Name)}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: string(repository.Name)})
+		}
+	}
+
+	strConfig, err := json.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+	return string(strConfig), nil
+}
+
+func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) bool {
+	for _, exclusion := range exclusions {
+		if *exclusion == *newExclusion {
+			return true
+		}
+	}
+	return false
 }
 
 type deleteExternalServiceArgs struct {
@@ -360,7 +488,13 @@ type syncExternalServiceArgs struct {
 	ID graphql.ID
 }
 
+// mockSyncExternalService mocks (*schemaResolver).SyncExternalService.
+var mockSyncExternalService func(context.Context, *syncExternalServiceArgs) (*EmptyResponse, error)
+
 func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
+	if mockSyncExternalService != nil {
+		return mockSyncExternalService(ctx, args)
+	}
 	start := time.Now()
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
