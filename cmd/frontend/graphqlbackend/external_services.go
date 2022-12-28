@@ -196,9 +196,14 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 		return nil, err
 	}
 
+	logger := r.logger.Scoped("ExcludeRepoFromExternalService", "excluding a repo from external service config").With(
+		log.Int64("externalServiceID", extSvcID),
+		log.Int32("repoID", int32(repositoryID)),
+	)
+
 	// If external service doesn't support repo exclusion, then return.
 	if !externalService.SupportsRepoExclusion() {
-		r.logger.Warn("Tried to exclude repo from external service which config doesn't support repo exclusion.")
+		logger.Warn("Tried to exclude repo from external service which config doesn't support repo exclusion.")
 		return &EmptyResponse{}, nil
 	}
 
@@ -222,7 +227,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 	// eventually.
 	_, err = r.SyncExternalService(ctx, &syncExternalServiceArgs{ID: args.ExternalService})
 	if err != nil {
-		r.logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
 	}
 	return &EmptyResponse{}, nil
 }
@@ -264,8 +269,6 @@ func addRepoToExclude(ctx context.Context, externalService *types.ExternalServic
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
 			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: string(repository.Name)})
 		}
-	default:
-		return "", err
 	}
 
 	strConfig, err := json.Marshal(config)
