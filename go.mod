@@ -129,7 +129,7 @@ require (
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
-	github.com/sourcegraph/go-jsonschema v0.0.0-20211011105148-2e30f7bacbe1
+	github.com/sourcegraph/go-jsonschema v0.0.0-20221228090406-5f704b86591e
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
