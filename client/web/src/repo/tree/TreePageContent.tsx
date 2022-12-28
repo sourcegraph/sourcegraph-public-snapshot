@@ -362,7 +362,49 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <div className="row">
                     <div className="col-12 col-lg-8 mb-3">
-                        <FilesCard diffStats={diffStats} entries={tree.entries} />
+                        <div className="row">
+                            <div className="col-12">
+                                <div className="mb-3">
+                                    <FilesCard diffStats={diffStats} entries={tree.entries} />
+                                </div>
+                                <Card className="card">
+                                    <CardHeader className={panelStyles.cardColHeaderWrapper}>
+                                        {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
+                                    </CardHeader>
+
+                                    <FilteredConnection<
+                                        GitCommitFields,
+                                        Pick<
+                                            GitCommitNodeProps,
+                                            'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'
+                                        >
+                                    >
+                                        location={props.location}
+                                        listClassName="list-group list-group-flush"
+                                        noun="commit in this tree"
+                                        pluralNoun="commits in this tree"
+                                        queryConnection={queryCommits}
+                                        nodeComponent={GitCommitNode}
+                                        nodeComponentProps={{
+                                            className: classNames('list-group-item px-2 py-1', styles.gitCommitNode),
+                                            messageSubjectClassName: styles.gitCommitNodeMessageSubject,
+                                            compact: true,
+                                            wrapperElement: 'li',
+                                        }}
+                                        updateOnChange={`${repo.name}:${revision}:${filePath}:${String(
+                                            showOlderCommits
+                                        )}`}
+                                        defaultFirst={20}
+                                        useURLQuery={false}
+                                        hideSearch={true}
+                                        emptyElement={emptyElement}
+                                        totalCountSummaryComponent={TotalCountSummary}
+                                        loaderClassName={contributorsStyles.filteredConnectionLoading}
+                                        summaryClassName={contributorsStyles.filteredConnectionSummary}
+                                    />
+                                </Card>
+                            </div>
+                        </div>
                     </div>
                     <div className="col-12 col-lg-4 mb-3">
                         <Card className="card">
@@ -380,44 +422,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                                 commitID={commitID}
                                 revision={revision}
                                 {...props}
-                            />
-                        </Card>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-12 col-lg-8 mb-3">
-                        <Card className="card">
-                            <CardHeader className={panelStyles.cardColHeaderWrapper}>
-                                {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
-                            </CardHeader>
-
-                            <FilteredConnection<
-                                GitCommitFields,
-                                Pick<
-                                    GitCommitNodeProps,
-                                    'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'
-                                >
-                            >
-                                location={props.location}
-                                listClassName="list-group list-group-flush"
-                                noun="commit in this tree"
-                                pluralNoun="commits in this tree"
-                                queryConnection={queryCommits}
-                                nodeComponent={GitCommitNode}
-                                nodeComponentProps={{
-                                    className: classNames('list-group-item px-2 py-1', styles.gitCommitNode),
-                                    messageSubjectClassName: styles.gitCommitNodeMessageSubject,
-                                    compact: true,
-                                    wrapperElement: 'li',
-                                }}
-                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                defaultFirst={20}
-                                useURLQuery={false}
-                                hideSearch={true}
-                                emptyElement={emptyElement}
-                                totalCountSummaryComponent={TotalCountSummary}
-                                loaderClassName={contributorsStyles.filteredConnectionLoading}
-                                summaryClassName={contributorsStyles.filteredConnectionSummary}
                             />
                         </Card>
                     </div>
