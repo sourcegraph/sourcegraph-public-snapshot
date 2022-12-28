@@ -56,7 +56,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
 
     // const [isTestInProgress, setIsTestInProgress] = useState<boolean | Error>(false)
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
-        console.log("ontest")
         try {
             await doCheckConnection()
         } catch (error) {
@@ -124,7 +123,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
-            {checkConnectionCalled && checkConnectionData &&
+            {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
                 checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceAvailable' &&
                 checkConnectionData.node.checkConnection.lastCheckedAt &&
                 <>
@@ -133,7 +132,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                 </>
             }
 
-            {checkConnectionCalled && checkConnectionData &&
+            {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
                 checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceUnavailable' &&
                 checkConnectionData.node.checkConnection.suspectedReason &&
                 <>
