@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -203,7 +202,54 @@ func TestUpdateExternalService(t *testing.T) {
 	})
 }
 
-func TestExcludeRepoFromExternalService(t *testing.T) {
+func TestExcludeRepoFromExternalService_ExternalServiceDoesntSupportRepoExclusion(t *testing.T) {
+	var cachedUpdate *database.ExternalServiceUpdate
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+		cachedUpdate = update
+		return nil
+	})
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
+		return &types.ExternalService{
+			ID:     id,
+			Kind:   extsvc.KindGerrit,
+			Config: extsvc.NewEmptyConfig(),
+		}, nil
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+			mutation {
+				excludeRepoFromExternalService(
+					externalService: "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+					repo: "UmVwb3NpdG9yeTox"
+				) {
+					alwaysNil
+				}
+			}
+		`,
+		ExpectedResult: `
+			{
+				"excludeRepoFromExternalService": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+	})
+
+	assert.Nil(t, cachedUpdate)
+}
+
+func TestExcludeRepoFromExternalService_NoExistingExcludedRepos_NewExcludedRepoAdded(t *testing.T) {
 	var cachedUpdate *database.ExternalServiceUpdate
 
 	users := database.NewMockUserStore()
@@ -215,40 +261,16 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 		return nil
 	})
 	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-		if id == 2 {
-			return &types.ExternalService{
-				ID:     id,
-				Kind:   extsvc.KindGerrit,
-				Config: extsvc.NewEmptyConfig(),
-			}, nil
-		}
-		if id != 1 {
-			return nil, errors.New("cannot find an external service with given ID")
-		}
-		if cachedUpdate == nil {
-			return &types.ExternalService{
-				ID:     id,
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
-			}, nil
-		}
 		return &types.ExternalService{
 			ID:     id,
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(*cachedUpdate.Config),
+			Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
 		}, nil
 	})
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		switch id {
-		case 1:
-			return &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"}, nil
-		case 2:
-			return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
-		default:
-			return nil, errors.New("oops, repo not found")
-		}
+		return &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -260,37 +282,10 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	t.Run("ExcludeRepoFromExternalService, external service doesn't support exclusion", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
-			mutation {
-				excludeRepoFromExternalService(
-					externalService: "RXh0ZXJuYWxTZXJ2aWNlOjI=",
-					repo: "UmVwb3NpdG9yeTox"
-				) {
-					alwaysNil
-				}
-			}
-		`,
-			ExpectedResult: `
-			{
-				"excludeRepoFromExternalService": {
-					"alwaysNil": null
-				}
-			}
-		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-		})
-
-		assert.Nil(t, cachedUpdate)
-	})
-
-	t.Run("ExcludeRepoFromExternalService. Empty exclude field in config. Repo exclusion added.", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.",
-			Query: `
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Label:  "ExcludeRepoFromExternalService. Empty exclude. Repo exclusion added.",
+		Query: `
 			mutation {
 				excludeRepoFromExternalService(
 					externalService: "RXh0ZXJuYWxTZXJ2aWNlOjE=",
@@ -300,24 +295,56 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 				}
 			}
 		`,
-			ExpectedResult: `
+		ExpectedResult: `
 			{
 				"excludeRepoFromExternalService": {
 					"alwaysNil": null
 				}
 			}
 		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-		})
-
-		expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-		assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	t.Run("ExcludeRepoFromExternalService. Non empty exclude field in config. New repo exclusion added.", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+}
+
+func TestExcludeRepoFromExternalService_ExcludedRepoExists_AnotherExcludedRepoAdded(t *testing.T) {
+	var cachedUpdate *database.ExternalServiceUpdate
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+		cachedUpdate = update
+		return nil
+	})
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
+		return &types.ExternalService{
+			ID:     id,
+			Kind:   extsvc.KindGitHub,
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+		}, nil
+	})
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+	})
+	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
+		return &EmptyResponse{}, nil
+	}
+	t.Cleanup(func() { mockSyncExternalService = nil })
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 			mutation {
 				excludeRepoFromExternalService(
 					externalService: "RXh0ZXJuYWxTZXJ2aWNlOjE=",
@@ -327,24 +354,56 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 				}
 			}
 		`,
-			ExpectedResult: `
+		ExpectedResult: `
 			{
 				"excludeRepoFromExternalService": {
 					"alwaysNil": null
 				}
 			}
 		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-		})
-
-		expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-		assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	t.Run("ExcludeRepoFromExternalService. Non empty exclude field in config. Duplicate repo exclusion not added.", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+}
+
+func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcludedAgain(t *testing.T) {
+	var cachedUpdate *database.ExternalServiceUpdate
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+		cachedUpdate = update
+		return nil
+	})
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
+		return &types.ExternalService{
+			ID:     id,
+			Kind:   extsvc.KindGitHub,
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+		}, nil
+	})
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+	})
+	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
+		return &EmptyResponse{}, nil
+	}
+	t.Cleanup(func() { mockSyncExternalService = nil })
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 			mutation {
 				excludeRepoFromExternalService(
 					externalService: "RXh0ZXJuYWxTZXJ2aWNlOjE=",
@@ -354,19 +413,18 @@ func TestExcludeRepoFromExternalService(t *testing.T) {
 				}
 			}
 		`,
-			ExpectedResult: `
+		ExpectedResult: `
 			{
 				"excludeRepoFromExternalService": {
 					"alwaysNil": null
 				}
 			}
 		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-		})
-
-		expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-		assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
+
+	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 }
 
 func TestAddRepoToExclude(t *testing.T) {
