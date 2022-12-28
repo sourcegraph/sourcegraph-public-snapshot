@@ -25,11 +25,12 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
 }) => {
     const fileRef = useRef<HTMLDivElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
-    const isNotCutoff =
+    const shouldHideReadmeTail = !(
         fileRef.current &&
         containerRef.current &&
         fileRef.current.clientHeight > 0 &&
         containerRef.current.clientHeight >= fileRef.current.clientHeight - 4
+    )
     return (
         <>
             <div className={classNames(styles.readmeContainer)} ref={containerRef}>
@@ -38,13 +39,13 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
                 </div>
                 <div
                     className={
-                        isNotCutoff
-                            ? classNames(styles.readmeFader, styles.readmeFaderInvisible)
-                            : classNames(styles.readmeFader)
+                        shouldHideReadmeTail
+                            ? classNames(styles.readmeFader)
+                            : classNames(styles.readmeFader, styles.readmeFaderInvisible)
                     }
                 />
             </div>
-            {!isNotCutoff && (
+            {shouldHideReadmeTail && (
                 <div className={styles.readmeMore}>
                     <Link to={readmeURL}>View full README</Link>
                 </div>
