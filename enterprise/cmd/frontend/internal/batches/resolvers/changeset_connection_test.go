@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -116,7 +117,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
