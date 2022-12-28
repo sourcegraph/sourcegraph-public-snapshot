@@ -489,7 +489,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
