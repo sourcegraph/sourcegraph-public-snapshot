@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql/kind"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -108,7 +109,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args any,
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		kind.BatchChange: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangeByID(ctx, id)
 		},
 		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
@@ -117,7 +118,7 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		changesetSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.changesetSpecByID(ctx, id)
 		},
-		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		kind.Changeset: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.changesetByID(ctx, id)
 		},
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {

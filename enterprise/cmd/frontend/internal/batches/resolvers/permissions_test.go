@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -278,7 +279,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalBatchChangeID(tc.batchChange))
+					graphqlID := string(bgql.MarshalBatchChangeID(tc.batchChange))
 
 					var res struct{ Node apitest.BatchChange }
 
@@ -605,7 +606,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 					expectedIDs := make(map[string]bool, len(tc.wantBatchChanges))
 					for _, c := range tc.wantBatchChanges {
-						graphqlID := string(marshalBatchChangeID(c))
+						graphqlID := string(bgql.MarshalBatchChangeID(c))
 						expectedIDs[graphqlID] = true
 					}
 
@@ -1005,7 +1006,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(marshalBatchChangeID(batchChangeID)),
+								string(bgql.MarshalBatchChangeID(batchChangeID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
@@ -1072,7 +1073,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 						_, bsID := createBatchSpec(t, bstore, namespace{userID: userID})
 						bcID := createBatchChange(t, bstore, namespace{userID: userID}, "testing", userID, bsID)
 
-						batchChangeID := string(marshalBatchChangeID(bcID))
+						batchChangeID := string(bgql.MarshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
@@ -1446,7 +1447,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 		}
 		testBatchChangeResponse(t, s, userCtx, input, wantBatchChangeResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
@@ -1497,7 +1498,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 			"checkState":  string(btypes.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
@@ -1509,7 +1510,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testBatchChangeResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]any{
-			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 			"reviewState": string(btypes.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse

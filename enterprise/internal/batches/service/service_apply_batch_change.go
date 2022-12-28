@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -167,6 +168,7 @@ func (s *Service) ApplyBatchChange(
 		}
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, batchChange)
 	return batchChange, nil
 }
 

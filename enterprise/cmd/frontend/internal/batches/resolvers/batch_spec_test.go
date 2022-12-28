@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -143,7 +144,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		},
 
 		AppliesToBatchChange: apitest.BatchChange{
-			ID: string(marshalBatchChangeID(matchingBatchChange.ID)),
+			ID: string(bgql.MarshalBatchChangeID(matchingBatchChange.ID)),
 		},
 
 		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{

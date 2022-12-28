@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -913,6 +914,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return nil, err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, batchChange)
 	return batchChange, nil
 }
 
@@ -931,6 +933,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, batchChange)
 	return s.store.DeleteBatchChange(ctx, id)
 }
 
@@ -1603,4 +1606,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, bc *btypes.BatchChange) {
+	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, bc)
 }

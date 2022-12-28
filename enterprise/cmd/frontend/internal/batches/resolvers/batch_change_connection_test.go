@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -87,10 +88,10 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	// Batch changes are returned in reverse order.
 	nodes := []apitest.BatchChange{
 		{
-			ID: string(marshalBatchChangeID(batchChange2.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)),
 		},
 		{
-			ID: string(marshalBatchChangeID(batchChange1.ID)),
+			ID: string(bgql.MarshalBatchChangeID(batchChange1.ID)),
 		},
 	}
 
@@ -242,7 +243,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID)), State: "OPEN"},
 				},
 			},
 		}
@@ -269,8 +270,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID)), State: "OPEN"},
 				},
 			},
 		}
@@ -327,7 +328,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID)), State: "OPEN"},
 				},
 			},
 		}
@@ -355,8 +356,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
+					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID)), State: "OPEN"},
 				},
 			},
 		}

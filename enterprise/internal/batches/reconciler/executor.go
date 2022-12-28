@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 	"text/template"
@@ -18,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -269,8 +268,17 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 			}
 		}
 	}
+
 	// Set the changeset to published.
 	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+
+	// Enqueue the appropriate webhook.
+	if exists {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
+	} else {
+		e.enqueueWebhook(ctx, webhooks.ChangesetPublish)
+	}
+
 	return nil
 }
 
@@ -355,12 +363,15 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
 			if err := e.handleArchivedRepo(ctx); err != nil {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 				return err
 			}
 		} else {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return errors.Wrap(err, "updating changeset")
 		}
 	}
+	e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
 
 	return nil
 }
@@ -449,6 +460,8 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 	if err := css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
 	}
+
+	e.enqueueWebhook(ctx, webhooks.ChangesetClose)
 	return nil
 }
 
@@ -611,6 +624,10 @@ func handleArchivedRepo(
 	return nil
 }
 
+func (e *executor) enqueueWebhook(ctx context.Context, eventType string) {
+	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, e.ch)
+}
+
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
@@ -680,7 +697,7 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return "", errors.Wrap(err, "retrieving namespace")
 	}
 
-	u, err := batchChangeURL(ctx, ns, batchChange)
+	u, err := batchChange.URL(ctx, ns.Name)
 	if err != nil {
 		return "", errors.Wrap(err, "building URL")
 	}
@@ -706,41 +723,6 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 
 	// Otherwise, append to the end of the body.
 	return fmt.Sprintf("%s\n\n%s", body, bcl), nil
-}
-
-// internalClient is here for mocking reasons.
-var internalClient interface {
-	ExternalURL(context.Context) (string, error)
-} = internalapi.Client
-
-func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) (string, error) {
-	// To build the absolute URL, we need to know where Sourcegraph is!
-	extStr, err := internalClient.ExternalURL(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "getting external Sourcegraph URL")
-	}
-
-	extURL, err := url.Parse(extStr)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
-	}
-
-	// This needs to be kept consistent with resolvers.batchChangeURL().
-	// (Refactoring the resolver to use the same function is difficult due to
-	// the different querying and caching behaviour in GraphQL resolvers, so we
-	// simply replicate the logic here.)
-	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/batch-changes/" + c.Name})
-
-	return u.String(), nil
-}
-
-func namespaceURL(ns *database.Namespace) string {
-	prefix := "/users/"
-	if ns.Organization != 0 {
-		prefix = "/organizations/"
-	}
-
-	return prefix + ns.Name
 }
 
 // errPublishSameBranch is returned by publish changeset if a changeset with
