@@ -122,7 +122,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
                                 {isErrorLike(checkConnectionError) && (
-                                    <span className='text-danger'>
+                                    <span className="text-danger">
                                         <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
                                         <ErrorMessage error={checkConnectionError} />
                                     </span>
@@ -152,7 +152,9 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     checkConnectionData.node.checkConnection.suspectedReason && (
                                         <span className="text-danger">
                                             <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                            <ErrorMessage error={checkConnectionData.node.checkConnection.suspectedReason} />
+                                            <ErrorMessage
+                                                error={checkConnectionData.node.checkConnection.suspectedReason}
+                                            />
                                         </span>
                                     )}
                             </small>
