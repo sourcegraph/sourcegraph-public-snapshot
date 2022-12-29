@@ -157,7 +157,7 @@ Sourcegraph can track incoming webhooks from code hosts to more easily debug iss
 
 1. Via **Site Admin > [Repositories] > Incoming webhooks**
    ![Webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs.png)
-2. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
+2. **Deprecated** Via code host connection: **Site Admin > [Batch Changes] > Incoming webhooks**
    ![Legacy webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs-legacy.png)
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
