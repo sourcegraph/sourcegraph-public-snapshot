@@ -2,16 +2,15 @@ package codeownership
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Test_applyCodeOwnershipFiltering(t *testing.T) {
