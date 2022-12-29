@@ -15,7 +15,6 @@ import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
 import {
     FileDecorationsByPath,
-    LinkPreviewMerged,
     ViewContexts,
     PanelViewData,
     ViewProviderResult,
@@ -167,9 +166,6 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<ViewProviderResult[]>
 
     getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
-
-    // Content
-    getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>
 
     /**
      * Emits true when the initial batch of extensions have been loaded.

@@ -32,11 +32,9 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
-import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
@@ -684,7 +682,6 @@ export const githubCodeHost: GithubCodeHost = {
     searchEnhancement,
     enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
-    contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     routeChange: mutations =>
         mutations.pipe(
@@ -765,8 +762,6 @@ export const githubCodeHost: GithubCodeHost = {
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
-    setElementTooltip,
-    linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (sourcegraphURL, target, context) => {
         if (target.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
