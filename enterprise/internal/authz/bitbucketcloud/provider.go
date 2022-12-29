@@ -73,11 +73,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
-	case account.Data == nil:
-		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
 		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
 			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
+	case account.Data == nil:
+		return nil, errors.New("no account data provided")
 	}
 
 	secret := ""
