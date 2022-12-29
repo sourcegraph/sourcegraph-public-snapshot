@@ -1,0 +1,78 @@
+extend type Query {
+    outboundWebhooks(first: Int = 50, after: String, eventType: String): OutboundWebhookConnection!
+    outboundWebhookEventTypes: [OutboundWebhookEventType!]!
+}
+
+extend type Mutation {
+    createOutboundWebhook(input: OutboundWebhookCreateInput!): OutboundWebhook!
+    deleteOutboundWebhook(id: ID!): EmptyResponse!
+    updateOutboundWebhook(id: ID!, input: OutboundWebhookUpdateInput!): OutboundWebhook!
+}
+
+type OutboundWebhook implements Node {
+    id: ID!
+    url: String!
+    eventTypes: [OutboundWebhookScopedEventType]!
+    stats: OutboundWebhookLogStats!
+    logs(first: Int = 50, after: String, onlyErrors: Boolean): OutboundWebhookLogConnection!
+}
+
+type OutboundWebhookConnection {
+    nodes: [OutboundWebhook!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type OutboundWebhookEventType {
+    key: String!
+    description: String!
+}
+
+input OutboundWebhookCreateInput {
+    url: String!
+    secret: String!
+    eventTypes: [OutboundWebhookScopedEventTypeInput!]!
+}
+
+input OutboundWebhookUpdateInput {
+    url: String!
+    eventTypes: [OutboundWebhookScopedEventTypeInput!]!
+}
+
+input OutboundWebhookScopedEventTypeInput {
+    eventType: String!
+    scope: String
+}
+
+type OutboundWebhookScopedEventType {
+    eventType: String!
+    scope: String
+}
+
+type OutboundWebhookLogConnection {
+    nodes: [OutboundWebhookLog!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type OutboundWebhookJob {
+    id: ID!
+    eventType: String!
+    scope: String
+    payload: String!
+}
+
+type OutboundWebhookLogStats {
+    total: Int!
+    errored: Int!
+}
+
+type OutboundWebhookLog {
+    id: ID!
+    job: OutboundWebhookJob!
+    sentAt: DateTime!
+    statusCode: Int!
+    request: WebhookLogRequest!
+    response: WebhookLogResponse
+    error: String
+}
