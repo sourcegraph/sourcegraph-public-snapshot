@@ -1,4 +1,4 @@
-import { QueryResult, MutationTuple } from '@apollo/client'
+import { QueryTuple, MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -17,8 +17,8 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    TestExternalServiceConnectionVariables,
-    TestExternalServiceConnectionResult,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServiceCheckConnectionByIdResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
@@ -152,8 +152,8 @@ export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
 
 export const useExternalServiceCheckConnectionByIdLazyQuery = (
     id: string
-): QueryResult<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables> =>
-    useLazyQuery<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables>(
+): QueryTuple<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables> =>
+    useLazyQuery<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables>(
         EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID,
         {
             variables: { id },
