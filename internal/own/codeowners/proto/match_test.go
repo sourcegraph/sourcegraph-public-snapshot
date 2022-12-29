@@ -62,7 +62,7 @@ func TestMatch(t *testing.T) {
 					{Pattern: pattern, Owner: owner},
 				},
 			}
-			got := file.Match(path)
+			got := file.FindOwners(path)
 			if !reflect.DeepEqual(got, owner) {
 				t.Errorf("want %q to match %q", pattern, path)
 			}
@@ -126,7 +126,7 @@ func TestNoMatch(t *testing.T) {
 					{Pattern: pattern, Owner: owner},
 				},
 			}
-			got := file.Match(path)
+			got := file.FindOwners(path)
 			if got != nil {
 				t.Errorf("want %q not to match %q", pattern, path)
 			}
