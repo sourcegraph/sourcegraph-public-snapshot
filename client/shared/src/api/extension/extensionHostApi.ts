@@ -1,15 +1,7 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, from, Observable, of, Subscribable, throwError } from 'rxjs'
-import {
-    catchError,
-    debounceTime,
-    defaultIfEmpty,
-    distinctUntilChanged,
-    map,
-    mergeMap,
-    switchMap,
-} from 'rxjs/operators'
+import { combineLatest, concat, Observable, of, Subscribable, throwError } from 'rxjs'
+import { catchError, debounceTime, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ProviderResult } from 'sourcegraph'
 
 import {
@@ -127,29 +119,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.searchContext = context
             state.searchContextChanges.next(context)
         },
-
-        // Search
-        transformSearchQuery: query =>
-            // TODO (simon) I don't enjoy the dark arts below
-            // we return observable because of potential deferred addition of transformers
-            // in this case we need to reissue the transformation and emit the resulting value
-            // we probably won't need an Observable if we somehow coordinate with extensions activation
-            proxySubscribable(
-                state.queryTransformers.pipe(
-                    switchMap(transformers =>
-                        transformers.reduce(
-                            (currentQuery: Observable<string>, transformer) =>
-                                currentQuery.pipe(
-                                    mergeMap(query => {
-                                        const result = transformer.transformQuery(query)
-                                        return result instanceof Promise ? from(result) : of(result)
-                                    })
-                                ),
-                            of(query)
-                        )
-                    )
-                )
-            ),
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {

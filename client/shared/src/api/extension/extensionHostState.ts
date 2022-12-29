@@ -44,8 +44,6 @@ export function createExtensionHostState(
         // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
         settings: new BehaviorSubject<Readonly<SettingsCascade>>(initData.initialSettings),
 
-        queryTransformers: new BehaviorSubject<readonly sourcegraph.QueryTransformer[]>([]),
-
         hoverProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
         documentHighlightProviders: new BehaviorSubject<
             readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]
@@ -100,9 +98,6 @@ export interface ExtensionHostState {
     rootChanges: Subject<void>
     searchContextChanges: Subject<string | undefined>
     searchContext: string | undefined
-
-    // Search
-    queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>
 
     // Language features
     hoverProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>

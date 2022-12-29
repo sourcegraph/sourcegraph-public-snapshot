@@ -36,9 +36,6 @@ export interface FlatExtensionHostAPI {
 
     setSearchContext: (searchContext: string | undefined) => void
 
-    // Search
-    transformSearchQuery: (query: string) => ProxySubscribable<string>
-
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
