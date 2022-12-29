@@ -51,7 +51,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
-    const [doCheckConnection, { called, loading, data }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
+    const [doCheckConnection, { loading, data }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
     const [checkConnectionError, setCheckConnectionError] = useState<boolean | Error>(false)
 
