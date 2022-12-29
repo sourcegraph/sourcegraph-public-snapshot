@@ -12,7 +12,7 @@ type testCase struct {
 	paths   []string
 }
 
-func TestMatch(t *testing.T) {
+func TestFileOwners_Match(t *testing.T) {
 	cases := []testCase{
 		{
 			pattern: "filename",

@@ -42,12 +42,12 @@ func compile(pattern string) (globPattern, error) {
 		p = append(p, anySubPath{})
 	}
 	for _, part := range strings.Split(strings.Trim(pattern, separator), separator) {
-		switch {
-		case part == "":
+		switch part {
+		case "":
 			return nil, errors.New("two consecutive forward slashes")
-		case part == "*":
+		case "*":
 			p = append(p, anyMatch{})
-		case part == "**":
+		case "**":
 			p = append(p, anySubPath{})
 		default:
 			p = append(p, exactMatch(part))
