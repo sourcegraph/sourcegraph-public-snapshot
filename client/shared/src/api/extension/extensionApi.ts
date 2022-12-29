@@ -12,8 +12,8 @@ import { syncRemoteSubscription } from '../util'
 
 import { proxySubscribable } from './api/common'
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { InitData, updateContext } from './extensionHost'
-import { NotificationType, PanelViewData } from './extensionHostApi'
+import { InitData } from './extensionHost'
+import { PanelViewData, NotificationType } from './extensionHostApi'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
@@ -338,7 +338,6 @@ export function createExtensionAPIFactory(
 
             internal: {
                 sync: () => sync(),
-                updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, state),
                 sourcegraphURL: new URL(initData.sourcegraphURL),
                 clientApplication: initData.clientApplication,
             },

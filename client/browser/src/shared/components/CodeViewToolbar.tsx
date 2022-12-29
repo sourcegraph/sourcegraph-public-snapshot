@@ -7,7 +7,6 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
-import { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,11 +30,6 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
      * Class name for the `<ul>` element wrapping all toolbar items
      */
     className?: string
-
-    /**
-     * The scope of this toolbar (e.g., the view component that it is associated with).
-     */
-    scope?: ContributionScope
 }
 
 export interface CodeViewToolbarProps
@@ -70,7 +64,6 @@ export const CodeViewToolbar: React.FunctionComponent<React.PropsWithChildren<Co
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
                 location={props.location}
-                scope={props.scope}
             />
         )}{' '}
         {isErrorLike(props.fileInfoOrError) ? (

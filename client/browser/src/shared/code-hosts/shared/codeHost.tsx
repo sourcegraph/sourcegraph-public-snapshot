@@ -1276,17 +1276,7 @@ export async function handleCodeHost({
                     }
                 }
 
-                const diffOrFileInfoWithEditor = await initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
-
-                let scopeEditor: CodeEditorWithPartialModel
-
-                if ('blob' in diffOrFileInfoWithEditor) {
-                    scopeEditor = diffOrFileInfoWithEditor.blob.editor
-                } else if (diffOrFileInfoWithEditor.head) {
-                    scopeEditor = diffOrFileInfoWithEditor.head.editor
-                } else {
-                    scopeEditor = diffOrFileInfoWithEditor.base.editor
-                }
+                await initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
 
                 if (wasRemoved) {
                     return
@@ -1368,7 +1358,6 @@ export async function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={scopeEditor}
                             // The bound function is constant
                             onSignInClose={nextSignInClose}
                         />,

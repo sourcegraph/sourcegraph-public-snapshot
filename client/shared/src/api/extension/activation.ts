@@ -12,7 +12,6 @@ import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
 import { tryCatchPromise } from '../util'
 
-import { parseContributionExpressions } from './api/contribution'
 import { ExtensionHostState } from './extensionHostState'
 
 export function observeActiveExtensions(
@@ -132,10 +131,9 @@ export function activateExtensions(
                                 !isErrorLike(extension.manifest) &&
                                 extension.manifest.contributes
                             ) {
-                                const parsedContributions = parseContributionExpressions(extension.manifest.contributes)
-                                extensionContributions.set(extension.id, parsedContributions)
+                                extensionContributions.set(extension.id, extension.manifest.contributes)
                                 // Extension contributions additions and removals are batched
-                                contributionsToAdd.set(extension.id, parsedContributions)
+                                contributionsToAdd.set(extension.id, extension.manifest.contributes)
                             }
                         }
                     }),
