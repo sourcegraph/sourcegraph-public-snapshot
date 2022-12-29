@@ -67,6 +67,11 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [doCheckConnection])
 
+    const checkConnectionNode =
+        checkConnectionData?.node?.__typename === 'ExternalService' ? checkConnectionData.node.checkConnection : null
+    const isExternalServiceAvailable = checkConnectionNode?.__typename === 'ExternalServiceAvailable'
+    const isExternalServiceUnavailable = checkConnectionNode?.__typename === 'ExternalServiceUnavailable'
+
     const IconComponent = defaultExternalServices[node.kind].icon
 
     return (
@@ -135,11 +140,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 {!isErrorLike(checkConnectionError) &&
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
-                                    checkConnectionData &&
-                                    checkConnectionData.node?.__typename === 'ExternalService' &&
-                                    checkConnectionData.node.checkConnection?.__typename ===
-                                        'ExternalServiceAvailable' &&
-                                    checkConnectionData.node.checkConnection.lastCheckedAt && (
+                                    isExternalServiceAvailable && (
                                         <span className="text-success">
                                             <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
                                         </span>
@@ -147,16 +148,11 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 {!isErrorLike(checkConnectionError) &&
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
-                                    checkConnectionData &&
-                                    checkConnectionData.node?.__typename === 'ExternalService' &&
-                                    checkConnectionData.node.checkConnection?.__typename ===
-                                        'ExternalServiceUnavailable' &&
-                                    checkConnectionData.node.checkConnection.suspectedReason && (
+                                    isExternalServiceUnavailable &&
+                                    checkConnectionNode?.suspectedReason && (
                                         <span className="text-danger">
                                             <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                            <ErrorMessage
-                                                error={checkConnectionData.node.checkConnection.suspectedReason}
-                                            />
+                                            <ErrorMessage error={checkConnectionNode.suspectedReason} />
                                         </span>
                                     )}
                             </small>
