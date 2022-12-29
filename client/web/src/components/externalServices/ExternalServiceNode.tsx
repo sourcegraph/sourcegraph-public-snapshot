@@ -136,7 +136,8 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
-                                    checkConnectionData.node?.checkConnection?.__typename ===
+                                    checkConnectionData.node?.__typename == 'ExternalService' &&
+                                    checkConnectionData.node.checkConnection?.__typename ===
                                         'ExternalServiceAvailable' &&
                                     checkConnectionData.node.checkConnection.lastCheckedAt && (
                                         <span className="text-success">
@@ -147,7 +148,8 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
-                                    checkConnectionData.node?.checkConnection?.__typename ===
+                                    checkConnectionData.node?.__typename == 'ExternalService' &&
+                                    checkConnectionData.node.checkConnection?.__typename ===
                                         'ExternalServiceUnavailable' &&
                                     checkConnectionData.node.checkConnection.suspectedReason && (
                                         <span className="text-danger">
