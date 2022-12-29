@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
@@ -12,7 +14,7 @@ type testCase struct {
 	paths   []string
 }
 
-func TestFileOwners_Match(t *testing.T) {
+func TestFileOwnersMatch(t *testing.T) {
 	cases := []testCase{
 		{
 			pattern: "filename",
@@ -70,7 +72,7 @@ func TestFileOwners_Match(t *testing.T) {
 	}
 }
 
-func TestNoMatch(t *testing.T) {
+func TestFileOwnersNoMatch(t *testing.T) {
 	cases := []testCase{
 		{
 			pattern: "filename",
@@ -134,4 +136,27 @@ func TestNoMatch(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestFileOwnersOrder(t *testing.T) {
+	wantOwner := []*codeownerspb.Owner{{Handle: "some-path-owner"}}
+	file := &codeownerspb.File{
+		Rule: []*codeownerspb.Rule{
+			{
+				Pattern: "/top-level-directory/",
+				Owner:   []*codeownerspb.Owner{{Handle: "top-level-owner"}},
+			},
+			// The owner of the last matching pattern is being picked
+			{
+				Pattern: "some/path/*",
+				Owner:   wantOwner,
+			},
+			{
+				Pattern: "does/not/match",
+				Owner:   []*codeownerspb.Owner{{Handle: "not-matching-owner"}},
+			},
+		},
+	}
+	got := file.FindOwners("/top-level-directory/some/path/main.go")
+	assert.Equal(t, wantOwner, got)
 }
