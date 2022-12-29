@@ -22,12 +22,12 @@ type OwnService interface {
 
 var _ OwnService = ownService{}
 
-func NewOwnService(git gitserver.Client) OwnService {
-	return ownService{git: git}
+func NewOwnService(g gitserver.Client) OwnService {
+	return ownService{gitserverClient: g}
 }
 
 type ownService struct {
-	git gitserver.Client
+	gitserverClient gitserver.Client
 }
 
 // codeownersLocations contains the locations where CODEOWNERS file
@@ -42,11 +42,11 @@ var codeownersLocations = []string{
 	"docs/CODEOWNERS",
 }
 
-// OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of 
+// OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
 // the possible codeownersLocations. It returns nil if no match is found.
 func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	for _, path := range codeownersLocations {
-		content, err := s.git.ReadFile(
+		content, err := s.gitserverClient.ReadFile(
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			repoName,
