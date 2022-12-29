@@ -2,7 +2,6 @@ package codeownership
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -108,20 +107,12 @@ matchesLoop:
 		if !ok {
 			continue
 		}
-		fmt.Println("FILEMATCH", mm.File.Path)
 
-		ruleset, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
+		file, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}
-
-		var owners []*codeownerspb.Owner
-		owners, err = ruleset.Match(mm.File.Path)
-		if err != nil {
-			errs = errors.Append(errs, err)
-		}
-		fmt.Println("OWNERS!!", mm.File.Path, owners)
-
+		owners := file.FindOwners(mm.File.Path)
 		for _, owner := range includeOwners {
 			if !containsOwner(owners, owner) {
 				continue matchesLoop
