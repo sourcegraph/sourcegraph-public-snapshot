@@ -51,10 +51,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
-    const [
-        doCheckConnection,
-        { called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData },
-    ] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
+    const [doCheckConnection, { called, loading, data }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
     const [checkConnectionError, setCheckConnectionError] = useState<boolean | Error>(false)
 
@@ -67,10 +64,25 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [doCheckConnection])
 
-    const checkConnectionNode =
-        checkConnectionData?.node?.__typename === 'ExternalService' ? checkConnectionData.node.checkConnection : null
-    const isExternalServiceAvailable = checkConnectionNode?.__typename === 'ExternalServiceAvailable'
-    const isExternalServiceUnavailable = checkConnectionNode?.__typename === 'ExternalServiceUnavailable'
+    const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
+
+    let externalServiceAvailabilityStatus
+    if (!checkConnectionError && !loading) {
+        if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
+            externalServiceAvailabilityStatus = (
+                <span className="text-success">
+                    <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
+                </span>
+            )
+        } else if (checkConnectionNode?.__typename === 'ExternalServiceUnavailable') {
+            externalServiceAvailabilityStatus = (
+                <span className="text-danger">
+                    <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
+                    <ErrorMessage error={checkConnectionNode.suspectedReason} />
+                </span>
+            )
+        }
+    }
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -126,50 +138,31 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
-                                {isErrorLike(checkConnectionError) && (
+                                {loading && (
+                                    <span className={classNames('text-primary')}>
+                                        <LoadingSpinner /> Checking connection...
+                                    </span>
+                                )}
+                                {!loading && isErrorLike(checkConnectionError) && (
                                     <span className="text-danger">
                                         <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
                                         <ErrorMessage error={checkConnectionError} />
                                     </span>
                                 )}
-                                {checkConnectionLoading && (
-                                    <span className={classNames('text-primary')}>
-                                        <LoadingSpinner /> Checking connection...
-                                    </span>
-                                )}
-                                {!isErrorLike(checkConnectionError) &&
-                                    !checkConnectionLoading &&
-                                    checkConnectionCalled &&
-                                    isExternalServiceAvailable && (
-                                        <span className="text-success">
-                                            <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
-                                        </span>
-                                    )}
-                                {!isErrorLike(checkConnectionError) &&
-                                    !checkConnectionLoading &&
-                                    checkConnectionCalled &&
-                                    isExternalServiceUnavailable &&
-                                    checkConnectionNode?.suspectedReason && (
-                                        <span className="text-danger">
-                                            <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                            <ErrorMessage error={checkConnectionNode.suspectedReason} />
-                                        </span>
-                                    )}
+                                {externalServiceAvailabilityStatus}
                             </small>
                         </Text>
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
                     <Tooltip
-                        content={
-                            node?.hasConnectionCheck ? 'Test code host connection' : 'Connection check unavailable'
-                        }
+                        content={node.hasConnectionCheck ? 'Test code host connection' : 'Connection check unavailable'}
                     >
                         <Button
                             className="test-connection-external-service-button"
                             variant="secondary"
                             onClick={onTestConnection}
-                            disabled={!node?.hasConnectionCheck || checkConnectionLoading}
+                            disabled={!node.hasConnectionCheck || loading}
                             size="sm"
                         >
                             <Icon aria-hidden={true} svgPath={mdiConnection} /> Test
