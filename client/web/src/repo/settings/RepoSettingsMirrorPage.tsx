@@ -207,6 +207,55 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
     )
 }
 
+// Add interface for props then create component
+interface CorruptionLogProps extends RouteComponentProps<{}> {
+    corruptedAt: any
+    logItems: any[]
+}
+
+const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
+    let health = (
+        <Alert className={classNames('mb-0', styles.alert)} variant="success">
+            The repository is currently not corrupt
+        </Alert>
+    )
+    if (props.corruptedAt) {
+        health = (
+            <Alert className={classNames('mb-0', styles.alert)} variant="warning">
+                The repository is corrupt, check the log entries below for more info and consider recloning.
+            </Alert>
+        )
+    }
+
+    const logEvents = []
+    for (let log of props.logItems) {
+        logEvents.push(
+            <li className="list-group-item px-2 py-2">
+                <div className="d-flex flex-column align-items-center justify-content-between">
+                    <Text className="overflow-auto text-monospace h-25">{log.reason}</Text>
+                    <small className="text-muted mb-0">
+                        <Timestamp date={log.timestamp} />
+                    </small>
+                </div>
+            </li>
+        )
+    }
+    // create log item list
+    return (
+        <BaseActionContainer
+            title="Repository corruption"
+            description={<span>Recent corruption events that have been detected on this repository.</span>}
+            details={
+                <div className="flex-1">
+                    {health}
+                    <br />
+                    <ul className="list-group">{logEvents}</ul>
+                </div>
+            }
+        />
+    )
+}
+
 interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
     history: H.History
@@ -345,6 +394,11 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                         </ul>
                     </Alert>
                 )}
+                <CorruptionLogsContainer
+                    corruptedAt={repo.mirrorInfo.corruptedAt}
+                    logItems={repo.mirrorInfo.corruptionLogs}
+                    history={props.history}
+                />
             </Container>
         </>
     )

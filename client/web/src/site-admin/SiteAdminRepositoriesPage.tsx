@@ -87,6 +87,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 </Alert>
             </div>
         )}
+        {node.mirrorInfo.corruptedAt && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="warning">
+                    <Text className="font-weight-bold">Repository is corrupt. Click here for more details</Text>
+                </Alert>
+            </div>
+        )}
     </li>
 )
 
