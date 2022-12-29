@@ -6,7 +6,7 @@ import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -56,19 +56,16 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         { called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData },
     ] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
+    const [checkConnectionError, setCheckConnectionError] = useState<boolean | Error>(false)
+
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
+        setCheckConnectionError(false)
         try {
             await doCheckConnection()
         } catch (error) {
-            // FIXME
+            setCheckConnectionError(asError(error))
         }
     }, [])
-
-    const capitalizeSuspectedReason = (s: string) => {
-        const firstCharacter = s.charAt(0).toUpperCase()
-        const restOfString = s.slice(1)
-        return firstCharacter + restOfString
-    }
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -124,12 +121,19 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
+                                {isErrorLike(checkConnectionError) && (
+                                    <span className='text-danger'>
+                                        <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
+                                        <ErrorMessage error={checkConnectionError} />
+                                    </span>
+                                )}
                                 {checkConnectionLoading && (
                                     <span className={classNames('text-primary')}>
                                         <LoadingSpinner /> Checking connection...
                                     </span>
                                 )}
-                                {!checkConnectionLoading &&
+                                {!isErrorLike(checkConnectionError) &&
+                                    !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
                                     checkConnectionData.node?.checkConnection?.__typename ===
@@ -137,10 +141,10 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     checkConnectionData.node.checkConnection.lastCheckedAt && (
                                         <span className="text-success">
                                             <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
-                                            <span />
                                         </span>
                                     )}
-                                {!checkConnectionLoading &&
+                                {!isErrorLike(checkConnectionError) &&
+                                    !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
                                     checkConnectionData.node?.checkConnection?.__typename ===
@@ -148,9 +152,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     checkConnectionData.node.checkConnection.suspectedReason && (
                                         <span className="text-danger">
                                             <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                            {capitalizeSuspectedReason(
-                                                checkConnectionData.node.checkConnection.suspectedReason
-                                            )}
+                                            <ErrorMessage error={checkConnectionData.node.checkConnection.suspectedReason} />
                                         </span>
                                     )}
                             </small>
