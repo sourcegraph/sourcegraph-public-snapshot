@@ -27,6 +27,36 @@ func (f *File) FindOwners(path string) []*Owner {
 
 const separator = "/"
 
+// patternPart implements matching for a single chunk of a glob pattern
+// when separated by `/`.
+type patternPart interface {
+	String() string
+	// Match is true if given file or directory name on the path matches
+	// this part of the glob pattern.
+	Match(string) bool
+}
+
+// anySubPath is indicated by ** in glob patterns, and matches arbitrary
+// number of parts.
+type anySubPath struct{}
+
+func (p anySubPath) String() string      { return "**" }
+func (p anySubPath) Match(_ string) bool { return true }
+
+// exactMatch is indicated by an exact name of directory or a file within
+// the glob pattern, and matches that exact part of the path only.
+type exactMatch string
+
+func (p exactMatch) String() string         { return string(p) }
+func (p exactMatch) Match(part string) bool { return string(p) == part }
+
+// anyMatch is indicated by * in a glob pattern, and matches any single file
+// or directory on the path.
+type anyMatch struct{}
+
+func (p anyMatch) String() string         { return "*" }
+func (p anyMatch) Match(part string) bool { return true }
+
 // globPattern implements a pattern for matching file paths,
 // which can use directory/file names, * and ** wildcards,
 // and may or may not be anchored to the root directory.
@@ -164,33 +194,3 @@ func (p globPattern) debugString(state *big.Int) string {
 	}
 	return s.String()
 }
-
-// patternPart implements matching for a single chunk of a glob pattern
-// when separated by `/`.
-type patternPart interface {
-	String() string
-	// Match is true if given file or directory name on the path matches
-	// this part of the glob pattern.
-	Match(string) bool
-}
-
-// anySubPath is indicated by ** in glob patterns, and matches arbitrary
-// number of parts.
-type anySubPath struct{}
-
-func (p anySubPath) String() string      { return "**" }
-func (p anySubPath) Match(_ string) bool { return true }
-
-// exactMatch is indicated by an exact name of directory or a file within
-// the glob pattern, and matches that exact part of the path only.
-type exactMatch string
-
-func (p exactMatch) String() string         { return string(p) }
-func (p exactMatch) Match(part string) bool { return string(p) == part }
-
-// anyMatch is indicated by * in a glob pattern, and matches any single file
-// or directory on the path.
-type anyMatch struct{}
-
-func (p anyMatch) String() string         { return "*" }
-func (p anyMatch) Match(part string) bool { return true }
