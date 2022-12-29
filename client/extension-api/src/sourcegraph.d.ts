@@ -1261,38 +1261,6 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A query transformer alters a user's search query before executing a search.
-     *
-     * Query transformers allow extensions to define new search query operators and syntax, for example,
-     * by matching strings in a query (e.g. `go.imports:`) and replacing them with a regular expression or string.
-     */
-    export interface QueryTransformer {
-        /**
-         * Transforms a search query into another, valid query. If there are no transformations to be made
-         * the original query is returned.
-         *
-         * @param query A search query.
-         */
-        transformQuery(query: string): string | Promise<string>
-    }
-
-    /**
-     * API for extensions to augment search functionality.
-     */
-    export namespace search {
-        /**
-         * Registers a query transformer.
-         *
-         * Multiple transformers can be registered. In that case, all transformations will be applied
-         * and the result is a single query that has been altered by all transformers. The order in
-         * which transforms are applied is not defined.
-         *
-         * @param provider A query transformer.
-         */
-        export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
-    }
-
-    /**
      * Commands are functions that are implemented and registered by extensions. Extensions can invoke any command
      * (including commands registered by other extensions). The extension can also define contributions (in
      * package.json), such as actions and menu items, that invoke a command.

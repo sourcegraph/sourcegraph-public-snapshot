@@ -20,7 +20,6 @@ export interface InitResult {
     configuration: sourcegraph.ConfigurationService
     workspace: typeof sourcegraph['workspace']
     commands: typeof sourcegraph['commands']
-    search: typeof sourcegraph['search']
     languages: typeof sourcegraph['languages'] & {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
@@ -185,11 +184,6 @@ export function createExtensionAPIFactory(
             syncRemoteSubscription(clientAPI.registerCommand(command, proxy(callback))),
     }
 
-    // Search
-    const search: typeof sourcegraph['search'] = {
-        registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
-    }
-
     const languages: InitResult['languages'] = {
         registerHoverProvider: (
             selector: sourcegraph.DocumentSelector,
@@ -271,7 +265,6 @@ export function createExtensionAPIFactory(
 
             languages,
 
-            search,
             commands,
             graphQL,
 
