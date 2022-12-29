@@ -179,7 +179,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(bitbucketCloudConns) > 0 {
-		bbcloudProviders, bbcloudProblems, bbcloudWarnings, bbcloudInvalidConnections := bitbucketcloud.NewAuthzProviders(bitbucketCloudConns, db)
+		bbcloudProviders, bbcloudProblems, bbcloudWarnings, bbcloudInvalidConnections := bitbucketcloud.NewAuthzProviders(bitbucketCloudConns, cfg.SiteConfig().AuthProviders)
 		providers = append(providers, bbcloudProviders...)
 		seriousProblems = append(seriousProblems, bbcloudProblems...)
 		warnings = append(warnings, bbcloudWarnings...)
