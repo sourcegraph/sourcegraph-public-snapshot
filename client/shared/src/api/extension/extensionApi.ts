@@ -11,7 +11,7 @@ import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { InitData, updateContext } from './extensionHost'
+import { InitData } from './extensionHost'
 import { PanelViewData } from './extensionHostApi'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
@@ -270,7 +270,6 @@ export function createExtensionAPIFactory(
 
             internal: {
                 sync: () => sync(),
-                updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, state),
                 sourcegraphURL: new URL(initData.sourcegraphURL),
                 clientApplication: initData.clientApplication,
             },

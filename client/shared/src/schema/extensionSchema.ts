@@ -1,4 +1,4 @@
-import { Contributions, Raw } from '@sourcegraph/client-api'
+import { Contributions } from '@sourcegraph/client-api'
 
 /**
  * See the extensions.schema.json JSON Schema for canonical documentation on these types.
@@ -15,6 +15,6 @@ export interface ExtensionManifest {
     icon?: string
     iconDark?: string
     activationEvents: string[]
-    contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
+    contributes?: Contributions & { configuration?: { [key: string]: any } }
     publisher?: string
 }

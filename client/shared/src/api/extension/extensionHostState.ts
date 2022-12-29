@@ -3,7 +3,6 @@ import { BehaviorSubject, Observable, of, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
@@ -54,16 +53,6 @@ export function createExtensionHostState(
             readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
         >([]),
 
-        context: new BehaviorSubject<Context>({
-            'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
-
-            // Arbitrary, undocumented versioning for extensions that need different behavior for different
-            // Sourcegraph versions.
-            //
-            // TODO: Make this more advanced if many extensions need this (although we should try to avoid
-            // extensions needing this).
-            'clientApplication.extensionAPIVersion.major': 3,
-        }),
         contributions: new BehaviorSubject<readonly Contributions[]>([]),
 
         lastViewerId: 0,
@@ -108,8 +97,6 @@ export interface ExtensionHostState {
         readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
     >
 
-    // Context + Contributions
-    context: BehaviorSubject<Context>
     /** All contributions, including those that are not enabled in the current context. */
     contributions: BehaviorSubject<readonly Contributions[]>
 

@@ -6,7 +6,7 @@ import * as H from 'history'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
+import { ActionContribution } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
     LoadingSpinner,
@@ -31,13 +31,13 @@ export interface ActionItemAction {
      * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
      * property.
      */
-    action: Evaluated<ActionContribution>
+    action: ActionContribution
 
     /**
      * The alternative action specified in the menu item's
      * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
-    altAction?: Evaluated<ActionContribution>
+    altAction?: ActionContribution
 
     /** Whether the action item is active in the given context */
     active: boolean
@@ -401,7 +401,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 }
 
 export function urlForClientCommandOpen(
-    action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>,
+    action: Pick<ActionContribution, 'command' | 'commandArguments'>,
     locationHash: string
 ): string | undefined {
     if (action.command === 'open' && action.commandArguments) {

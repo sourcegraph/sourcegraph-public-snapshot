@@ -40,19 +40,17 @@ interface Props extends ActionsProps, TelemetryProps {
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
 export const ActionsContainer: React.FunctionComponent<Props> = props => {
-    const { scope, extraContext, returnInactiveMenuItems, extensionsController, menu, empty } = props
+    const { returnInactiveMenuItems, extensionsController, menu, empty } = props
 
     const contributions = useObservable(
         useMemo(
             () =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(
-                            extensionHostAPI.getContributions({ scope, extraContext, returnInactiveMenuItems })
-                        )
+                        wrapRemoteObservable(extensionHostAPI.getContributions({ returnInactiveMenuItems }))
                     )
                 ),
-            [scope, extraContext, returnInactiveMenuItems, extensionsController.extHostAPI]
+            [returnInactiveMenuItems, extensionsController.extHostAPI]
         )
     )
 

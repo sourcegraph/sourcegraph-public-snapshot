@@ -2,7 +2,7 @@ import { Remote, ProxyMarked } from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { DocumentHighlight } from 'sourcegraph'
 
-import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
+import { Contributions, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { DeepReplace } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -53,36 +53,19 @@ export interface FlatExtensionHostAPI {
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
 
-    // CONTEXT + CONTRIBUTIONS
-
-    /**
-     * Sets the given context keys and values.
-     * If a value is `null`, the context key is removed.
-     *
-     * @param update Object with context keys as values
-     */
-    updateContext: (update: { [k: string]: unknown }) => void
+    // CONTRIBUTIONS
 
     /**
      * Register contributions and return an unsubscribable that deregisters the contributions.
      * Any expressions in the contributions will be parsed in the extension host.
      */
-    registerContributions: (rawContributions: Raw<Contributions>) => Unsubscribable & ProxyMarked
+    registerContributions: (rawContributions: Contributions) => Unsubscribable & ProxyMarked
 
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model
      * (with the optional scope). It emits whenever there is any change.
-     *
-     * @template T Extra allowed property value types for the {@link Context} value. See
-     * {@link Context}'s `T` type parameter for more information.
-     * @param scope The scope in which contributions are fetched. A scope can be a sub-component of
-     * the UI that defines its own context keys, such as the hover, which stores useful loading and
-     * definition/reference state in its scoped context keys.
-     * @param extraContext Extra context values to use when computing the contributions. Properties
-     * in this object shadow (take precedence over) properties in the global context for this
-     * computation.
      */
-    getContributions: <T>(contributionOptions?: ContributionOptions<T>) => ProxySubscribable<Evaluated<Contributions>>
+    getContributions: (contributionOptions?: ContributionOptions) => ProxySubscribable<Contributions>
 
     // TEXT DOCUMENTS
     addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void

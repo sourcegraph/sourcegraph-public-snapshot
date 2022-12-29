@@ -2,16 +2,13 @@ import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { identity } from 'lodash'
-import { combineLatest, from, ReplaySubject } from 'rxjs'
+import { from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { Contributions, Evaluated } from '@sourcegraph/client-api'
-import { Context } from '@sourcegraph/template-parser'
+import { Contributions } from '@sourcegraph/client-api'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { ContributionScope } from '../api/extension/api/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -60,7 +57,7 @@ export interface ActionsNavItemsProps
      * Transform function called when latest contributions from extensions are received.
      * Likely temporary: quick fix to dedup panel actions from various code intel extensions.
      */
-    transformContributions?: (contributions: Evaluated<Contributions>) => Evaluated<Contributions>
+    transformContributions?: (contributions: Contributions) => Contributions
 }
 
 /**
@@ -68,28 +65,16 @@ export interface ActionsNavItemsProps
  * class="nav"> or <ul class="navbar-nav">.
  */
 export const ActionsNavItems: React.FunctionComponent<React.PropsWithChildren<ActionsNavItemsProps>> = props => {
-    const { scope, extraContext, extensionsController, menu, wrapInList, transformContributions = identity } = props
-
-    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
-    useDeepCompareEffectNoCheck(() => {
-        scopeChanges.next(scope)
-    }, [scope])
-
-    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
-    useDeepCompareEffectNoCheck(() => {
-        extraContextChanges.next(extraContext)
-    }, [extraContext])
+    const { extensionsController, menu, wrapInList, transformContributions = identity } = props
 
     const contributions = useObservable(
         useMemo(
             () =>
-                combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
-                    switchMap(([scope, extraContext, extensionHostAPI]) =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
-                    ),
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions({}))),
                     map(transformContributions)
                 ),
-            [scopeChanges, extraContextChanges, extensionsController, transformContributions]
+            [extensionsController, transformContributions]
         )
     )
 

@@ -1,6 +1,6 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, Observable, of, Subscribable, throwError } from 'rxjs'
+import { combineLatest, concat, Observable, of, throwError } from 'rxjs'
 import { catchError, debounceTime, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ProviderResult } from 'sourcegraph'
 
@@ -23,7 +23,6 @@ import {
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Context } from '@sourcegraph/template-parser'
 
 import type {
     ReferenceContext,
@@ -40,19 +39,12 @@ import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerType
 
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, proxySubscribable } from './api/common'
-import { computeContext, ContributionScope } from './api/context/context'
-import {
-    evaluateContributions,
-    filterContributions,
-    mergeContributions,
-    parseContributionExpressions,
-} from './api/contribution'
+import { filterContributions, mergeContributions } from './api/contribution'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
 import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
 import { fromLocation, toPosition } from './api/types'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
-import { updateContext } from './extensionHost'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
@@ -307,15 +299,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        // Context data + Contributions
-        updateContext: update => updateContext(update, state),
-        registerContributions: rawContributions => {
-            const parsedContributions = parseContributionExpressions(rawContributions)
-
-            return proxy(addWithRollback(state.contributions, parsedContributions))
-        },
-        getContributions: ({ scope, extraContext, returnInactiveMenuItems }: ContributionOptions = {}) =>
-            // TODO(tj): memoize access from mainthread (maybe by scope and extraContext (shallow))
+        // Contributions
+        registerContributions: rawContributions => proxy(addWithRollback(state.contributions, rawContributions)),
+        getContributions: ({ returnInactiveMenuItems }: ContributionOptions = {}) =>
+            // TODO(tj): memoize access from mainthread
             proxySubscribable(
                 combineLatest([
                     state.contributions,
@@ -336,22 +323,11 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                         })
                     ),
                     state.settings,
-                    state.context as Subscribable<Context<unknown>>,
                 ]).pipe(
-                    map(([multiContributions, activeEditor, settings, context]) => {
-                        // Merge in extra context.
-                        if (extraContext) {
-                            context = { ...context, ...extraContext }
-                        }
-
-                        // TODO(sqs): Observe context so that we update immediately upon changes.
-                        const computedContext = computeContext(activeEditor, settings, context, scope)
-                        return multiContributions.map(contributions => {
+                    map(([multiContributions]) =>
+                        multiContributions.map(contributions => {
                             try {
-                                const evaluatedContributions = evaluateContributions(computedContext, contributions)
-                                return returnInactiveMenuItems
-                                    ? evaluatedContributions
-                                    : filterContributions(evaluatedContributions)
+                                return returnInactiveMenuItems ? contributions : filterContributions(contributions)
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
@@ -362,7 +338,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                                 return {}
                             }
                         })
-                    }),
+                    ),
                     map(mergeContributions),
                     distinctUntilChanged(isEqual)
                 )
@@ -651,8 +627,6 @@ export interface ViewProviderResult {
 
 // Contributions
 
-export interface ContributionOptions<T = unknown> {
-    scope?: ContributionScope | undefined
-    extraContext?: Context<T>
+export interface ContributionOptions {
     returnInactiveMenuItems?: boolean
 }

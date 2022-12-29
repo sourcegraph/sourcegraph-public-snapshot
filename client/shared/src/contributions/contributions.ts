@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash'
 
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
+import { ContributableMenu, Contributions } from '@sourcegraph/client-api'
 
 import { ActionItemAction } from '../actions/ActionItem'
 
@@ -11,10 +11,7 @@ const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
  *
  * @param prioritizeActions sort these actions first
  */
-export function getContributedActionItems(
-    contributions: Evaluated<Contributions>,
-    menu: ContributableMenu
-): ActionItemAction[] {
+export function getContributedActionItems(contributions: Contributions, menu: ContributableMenu): ActionItemAction[] {
     if (!contributions.actions) {
         return []
     }
