@@ -36,8 +36,6 @@ interface Context {
 
 /**
  * Enables integration with Sourcegraph extensions:
- * - Document highlights
- * - Hovercards (partially)
  * - Selection updates
  * - Reference panel warmup
  */
