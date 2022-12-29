@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Provider is an implementation of AuthzProvider that provides repository permissions as
-// determined from a Bitbucket Server instance API.
+// Provider is an implementation of AuthzProvider that provides repository and
+// user permissions as determined from Bitbucket Cloud.
 type Provider struct {
 	urn      string
 	codeHost *extsvc.CodeHost
@@ -26,10 +26,10 @@ type Provider struct {
 
 var _ authz.Provider = (*Provider)(nil)
 
-// NewProvider returns a new Bitbucket Server authorization provider that uses
-// the given bitbucketserver.Client to talk to a Bitbucket Server API that is
-// the source of truth for permissions. It assumes usernames of Sourcegraph accounts
-// match 1-1 with usernames of Bitbucket Server API users.
+// NewProvider returns a new Bitbucket Cloud authorization provider that uses
+// the given bitbucket.Client to talk to the Bitbucket Cloud API that is
+// the source of truth for permissions. Sourcegraph users will need a valid
+// Bitbucket Cloud external account for permissions to sync correctly.
 func NewProvider(url *url.URL, urn string, client *bitbucket.Client) *Provider {
 	return &Provider{
 		urn:      urn,
