@@ -54,12 +54,11 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
 
     const [doCheckConnection, {called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData}] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
-    // const [isTestInProgress, setIsTestInProgress] = useState<boolean | Error>(false)
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
         try {
             await doCheckConnection()
         } catch (error) {
-
+            // FIXME
         }
     }, [])
 

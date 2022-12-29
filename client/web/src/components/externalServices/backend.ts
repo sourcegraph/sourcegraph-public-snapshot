@@ -1,4 +1,4 @@
-import { MutationTuple } from '@apollo/client'
+import { QueryResult, MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -124,35 +124,6 @@ export async function deleteExternalService(externalService: Scalars['ID']): Pro
         { externalService }
     ).toPromise()
     dataOrThrowErrors(result)
-}
-
-export async function testExternalServiceConnection(id: Scalars['ID']): Promise<void> {
-    const result = await requestGraphQL<TestExternalServiceConnectionResult, TestExternalServiceConnectionVariables>(
-        gql`
-            query TestExternalServiceConnection($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ... on ExternalService {
-                        id
-                        hasConnectionCheck
-                        checkConnection {
-                            __typename
-                            ... on ExternalServiceAvailable {
-                                lastCheckedAt
-                            }
-                            ... on ExternalServiceUnavailable {
-                                suspectedReason
-                            }
-                            ... on ExternalServiceAvailabilityUnknown {
-                                implementationNote
-                            }
-                        }
-                    }
-                }
-            }
-        `,
-        { id }
-    ).toPromise()
 }
 
 export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
