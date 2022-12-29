@@ -80,20 +80,22 @@ func TestNoMatch(t *testing.T) {
 			},
 		},
 		{
-			pattern: "directory/path/",
+			pattern: "directory/leaf/",
 			paths: []string{
+				// These do not match as the right-most directory name `leaf`
+				// is just a prefix to the corresponding directory on the given path.
 				"/directory/path_and_more/file",
 				"/prefix/directory/path_and_more/file",
 				// These do not match as the pattern matches anything within
 				// the sub-directory tree, but not the directory itself.
 				"/directory/path",
-				//"/prefix/directory/path",
+				"/prefix/directory/path",
 			},
 		},
 		{
 			pattern: "directory/*",
 			paths: []string{
-				//"/directory/nested/file",
+				"/directory/nested/file",
 				"/directory/deeply/nested/file",
 			},
 		},
