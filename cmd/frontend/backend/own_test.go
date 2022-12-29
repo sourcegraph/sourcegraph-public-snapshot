@@ -16,26 +16,43 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
+type repoPath struct {
+	Repo     api.RepoName
+	CommitID api.CommitID
+	Path     string
+}
+
+// repoFiles is a fake git client mapping a file
+type repoFiles map[repoPath]string
+
+func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+	if !ok {
+		return nil, errors.New("file does not exist")
+	}
+	return []byte(content), nil
+}
+
 func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
-	codeownersFile := &codeownerspb.File{
+	codeownersText := (&codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
 			{
 				Pattern: "README.md",
 				Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
 			},
 		},
-	}
+	}).Repr()
 	for name, repo := range map[string]repoFiles{
-		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersFile.Repr()},
-		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersFile.Repr()},
-		".gitlab":   {{"repo", "SHA", ".gitlab/CODEOWNERS"}: codeownersFile.Repr()},
+		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
+		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
+		".gitlab":   {{"repo", "SHA", ".gitlab/CODEOWNERS"}: codeownersText},
 	} {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 			got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
-			assert.Equal(t, codeownersFile.Repr(), got.Repr())
+			assert.Equal(t, codeownersText, got.Repr())
 		})
 	}
 }
@@ -57,21 +74,4 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
-}
-
-type repoPath struct {
-	Repo     api.RepoName
-	CommitID api.CommitID
-	Path     string
-}
-
-// repoFiles is a fake git client mapping a file
-type repoFiles map[repoPath]string
-
-func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
-	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
-	if !ok {
-		return nil, errors.New("file does not exist")
-	}
-	return []byte(content), nil
 }

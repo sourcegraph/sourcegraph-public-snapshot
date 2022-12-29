@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -489,11 +488,6 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Len(t, accounts, 1)
-
-		// We also want to add some fake sub-repo permissions and check that they are
-		// deleted
-		err = db.SubRepoPerms().Upsert(ctx, createdUser.ID, createdRepo.ID, authz.SubRepoPermissions{Paths: []string{"**"}})
-		require.NoError(t, err)
 	}
 
 	assertRemovals := func(t *testing.T) {

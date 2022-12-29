@@ -17,6 +17,7 @@
     - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
+    - SubRepoPermsStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -32,6 +33,9 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
+- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+  interfaces:
     - SubRepoPermissionsGetter
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
@@ -57,7 +61,6 @@
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
-    - SubRepoPermsStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
