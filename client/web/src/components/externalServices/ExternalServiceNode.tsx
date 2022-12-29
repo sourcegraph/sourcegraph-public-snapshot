@@ -65,7 +65,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         } catch (error) {
             setCheckConnectionError(asError(error))
         }
-    }, [])
+    }, [doCheckConnection])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -136,7 +136,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
-                                    checkConnectionData.node?.__typename == 'ExternalService' &&
+                                    checkConnectionData.node?.__typename === 'ExternalService' &&
                                     checkConnectionData.node.checkConnection?.__typename ===
                                         'ExternalServiceAvailable' &&
                                     checkConnectionData.node.checkConnection.lastCheckedAt && (
@@ -148,7 +148,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     !checkConnectionLoading &&
                                     checkConnectionCalled &&
                                     checkConnectionData &&
-                                    checkConnectionData.node?.__typename == 'ExternalService' &&
+                                    checkConnectionData.node?.__typename === 'ExternalService' &&
                                     checkConnectionData.node.checkConnection?.__typename ===
                                         'ExternalServiceUnavailable' &&
                                     checkConnectionData.node.checkConnection.suspectedReason && (
