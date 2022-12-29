@@ -25,6 +25,7 @@ import {
 import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
+import { generateSecret } from '../util/security'
 
 interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {
     // existingWebhook is present when this page is used as an update page.
@@ -328,13 +329,4 @@ function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhook
         codeHostURN: webhook.codeHostURN,
         secret,
     }
-}
-
-function generateSecret(): string {
-    let text = ''
-    const possible = 'ABCDEF0123456789'
-    for (let index = 0; index < 12; index++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
-    return text
 }
