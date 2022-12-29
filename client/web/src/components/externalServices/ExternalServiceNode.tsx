@@ -16,7 +16,6 @@ import { defaultExternalServices } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
 
-
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
     onDidUpdate: () => void
@@ -52,7 +51,10 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
-    const [doCheckConnection, {called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData}] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
+    const [
+        doCheckConnection,
+        { called: checkConnectionCalled, loading: checkConnectionLoading, data: checkConnectionData },
+    ] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
         try {
@@ -63,10 +65,10 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
     }, [])
 
     const capitalizeSuspectedReason = (s: string) => {
-      const firstCharacter = s.charAt(0).toUpperCase();
-      const restOfString = s.slice(1);
-      return firstCharacter + restOfString;
-    };
+        const firstCharacter = s.charAt(0).toUpperCase()
+        const restOfString = s.slice(1)
+        return firstCharacter + restOfString
+    }
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -122,31 +124,45 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
                                 <br />
-                                {checkConnectionLoading &&
-                                    <span className={classNames("text-primary")}>
+                                {checkConnectionLoading && (
+                                    <span className={classNames('text-primary')}>
                                         <LoadingSpinner /> Checking connection...
                                     </span>
-                                }
-                                {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
-                                    checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceAvailable' &&
-                                    checkConnectionData.node.checkConnection.lastCheckedAt &&
-                                    <span className="text-success">
-                                        <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.<span/>
-                                    </span>
-                                }
-                                {!checkConnectionLoading && checkConnectionCalled && checkConnectionData &&
-                                    checkConnectionData.node?.checkConnection?.__typename === 'ExternalServiceUnavailable' &&
-                                    checkConnectionData.node.checkConnection.suspectedReason &&
-                                    <span className="text-danger">
-                                      <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> {capitalizeSuspectedReason(checkConnectionData.node.checkConnection.suspectedReason)}
-                                    </span>
-                                }
+                                )}
+                                {!checkConnectionLoading &&
+                                    checkConnectionCalled &&
+                                    checkConnectionData &&
+                                    checkConnectionData.node?.checkConnection?.__typename ===
+                                        'ExternalServiceAvailable' &&
+                                    checkConnectionData.node.checkConnection.lastCheckedAt && (
+                                        <span className="text-success">
+                                            <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
+                                            <span />
+                                        </span>
+                                    )}
+                                {!checkConnectionLoading &&
+                                    checkConnectionCalled &&
+                                    checkConnectionData &&
+                                    checkConnectionData.node?.checkConnection?.__typename ===
+                                        'ExternalServiceUnavailable' &&
+                                    checkConnectionData.node.checkConnection.suspectedReason && (
+                                        <span className="text-danger">
+                                            <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
+                                            {capitalizeSuspectedReason(
+                                                checkConnectionData.node.checkConnection.suspectedReason
+                                            )}
+                                        </span>
+                                    )}
                             </small>
                         </Text>
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content={node?.hasConnectionCheck? "Test code host connection" : "Connection check unavailable" }>
+                    <Tooltip
+                        content={
+                            node?.hasConnectionCheck ? 'Test code host connection' : 'Connection check unavailable'
+                        }
+                    >
                         <Button
                             className="test-connection-external-service-button"
                             variant="secondary"
@@ -154,7 +170,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             disabled={!node?.hasConnectionCheck || checkConnectionLoading}
                             size="sm"
                         >
-                        <Icon aria-hidden={true} svgPath={mdiConnection} /> Test
+                            <Icon aria-hidden={true} svgPath={mdiConnection} /> Test
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>

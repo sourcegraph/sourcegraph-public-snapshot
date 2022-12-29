@@ -150,11 +150,15 @@ export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
     }
 `
 
-export const useExternalServiceCheckConnectionByIdLazyQuery = (id: string): QueryResult<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables> =>
-    useLazyQuery<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables>(EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID, {
+export const useExternalServiceCheckConnectionByIdLazyQuery = (
+    id: string
+): QueryResult<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables> =>
+    useLazyQuery<ExternalServiceCheckConnectionResult, ExternalServiceCheckConnectionVariables>(
+        EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID,
+        {
             variables: { id },
-    })
-
+        }
+    )
 
 export const listExternalServiceFragment = gql`
     fragment ListExternalServiceFields on ExternalService {
