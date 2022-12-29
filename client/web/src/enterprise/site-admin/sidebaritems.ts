@@ -67,6 +67,16 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes/webhook-logs',
             condition: props => props.batchChangesWebhookLogsEnabled,
         },
+        {
+            // It's not super clear to me if this should live here temporarily
+            // since the only user of outbound webhooks at present is Batch
+            // Changes, or if this should live somewhere more generic and be
+            // gated on whether any event types have been registered. (This
+            // could be figured out by hitting the outboundWebhookEventTypes
+            // query.)
+            label: 'Outgoing webhooks',
+            to: '/site-admin/outbound-webhooks',
+        },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
