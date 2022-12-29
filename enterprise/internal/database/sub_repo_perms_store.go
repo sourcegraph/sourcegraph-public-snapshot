@@ -18,8 +18,10 @@ import (
 // and exclude patterns.
 const SubRepoPermsVersion = 1
 
-var SubRepoSupportedCodeHostTypes = []string{extsvc.TypePerforce}
-var supportedTypesQuery = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
+var (
+	SubRepoSupportedCodeHostTypes = []string{extsvc.TypePerforce}
+	supportedTypesQuery           = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
+)
 
 func init() {
 	// Build this up at startup, so we don't need to rebuild it every time
@@ -52,6 +54,8 @@ type SubRepoPermsStore interface {
 type subRepoPermsStore struct {
 	*basestore.Store
 }
+
+var _ SubRepoPermsStore = (*subRepoPermsStore)(nil)
 
 func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: basestore.NewWithHandle(other.Handle())}
