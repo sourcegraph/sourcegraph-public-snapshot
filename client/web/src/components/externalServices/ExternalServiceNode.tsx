@@ -53,10 +53,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
 
     const [doCheckConnection, { loading, data, error }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
-    const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
-        await doCheckConnection()
-    }, [doCheckConnection])
-
     const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
 
     let externalServiceAvailabilityStatus
@@ -154,7 +150,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                         <Button
                             className="test-connection-external-service-button"
                             variant="secondary"
-                            onClick={onTestConnection}
+                            onClick={doCheckConnection}
                             disabled={!node.hasConnectionCheck || loading}
                             size="sm"
                         >
