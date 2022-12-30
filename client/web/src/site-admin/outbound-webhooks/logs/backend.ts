@@ -33,7 +33,7 @@ const OUTBOUND_WEBHOOK_LOG_FIELDS_FRAGMENT = gql`
     }
 `
 
-const OUTBOUND_WEBHOOK_LOGS = gql`
+export const OUTBOUND_WEBHOOK_LOGS = gql`
     ${OUTBOUND_WEBHOOK_LOG_FIELDS_FRAGMENT}
 
     query OutboundWebhookLogs($id: ID!, $onlyErrors: Boolean!, $first: Int, $after: String) {
