@@ -21,11 +21,11 @@ import {
     UpdateWebhookVariables,
     WebhookFields,
 } from '../graphql-operations'
+import { generateSecret } from '../util/security'
 
 import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
-import { generateSecret } from '../util/security'
 
 interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {
     // existingWebhook is present when this page is used as an update page.
