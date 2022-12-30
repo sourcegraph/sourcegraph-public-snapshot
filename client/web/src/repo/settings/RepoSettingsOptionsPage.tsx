@@ -1,19 +1,20 @@
 import { RouteComponentProps } from 'react-router'
-import { Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
-
-import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Text, ErrorAlert, H2 } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, H2, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { PageTitle } from '../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    SettingsAreaRepositoryFields,
+    SettingsAreaRepositoryResult,
+    SettingsAreaRepositoryVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { fetchSettingsAreaRepository } from './backend'
-import { FC, useEffect, useState } from 'react'
+import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
+import { FC, useEffect } from 'react'
+import { useQuery } from '@sourcegraph/http-client'
 
 interface Props extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
@@ -23,27 +24,16 @@ interface Props extends RouteComponentProps<{}> {
  * The repository settings options page.
  */
 export const RepoSettingsOptionsPage: FC<Props> = ({ repo: propsRepo }) => {
-    const repoUpdates = new Subject<void>()
-    const subscriptions = new Subscription()
-
-    const [loading] = useState<boolean>(false)
-    const [repository, setRepository] = useState<SettingsAreaRepositoryFields>(propsRepo)
-    const [error, setError] = useState<string | undefined>(undefined)
-
     useEffect(() => {
         eventLogger.logViewEvent('RepoSettings')
-        subscriptions.add(
-            repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(propsRepo.name))).subscribe(
-                repoLocal => setRepository(repoLocal),
-                errorLocal => setError(asError(errorLocal).message)
-            )
-        )
-        return function cleanup() {
-            subscriptions.unsubscribe()
-        }
     })
 
-    const services = repository.externalServices.nodes
+    const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
+        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
+        { variables: { name: propsRepo.name } }
+    )
+
+    const services = data?.repository?.__typename === 'Repository' && data?.repository?.externalServices.nodes
 
     return (
         <>
@@ -53,7 +43,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo: propsRepo }) => {
                 <H2 className="mb-3">Code hosts</H2>
                 {loading && <LoadingSpinner />}
                 {error && <ErrorAlert error={error} />}
-                {services.length > 0 && (
+                {services && services.length > 0 && (
                     <div className="mb-3">
                         {services.map(service => (
                             <div className="mb-3" key={service.id}>
@@ -70,9 +60,8 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo: propsRepo }) => {
                         ))}
                         {services.length > 1 && (
                             <Text>
-                                This repository is mirrored by multiple external services. To change access,
-                                disable, or remove this repository, the configuration must be updated on all
-                                external services.
+                                This repository is mirrored by multiple external services. To change access, disable, or
+                                remove this repository, the configuration must be updated on all external services.
                             </Text>
                         )}
                     </div>
