@@ -150,7 +150,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                         <Button
                             className="test-connection-external-service-button"
                             variant="secondary"
-                            onClick={doCheckConnection}
+                            onClick={() => doCheckConnection()}
                             disabled={!node.hasConnectionCheck || loading}
                             size="sm"
                         >
