@@ -51,23 +51,16 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         }
     }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
 
-    const [doCheckConnection, { loading, data }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
-
-    const [checkConnectionError, setCheckConnectionError] = useState<boolean | Error>(false)
+    const [doCheckConnection, { loading, data, error }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
 
     const onTestConnection = useCallback<React.MouseEventHandler>(async () => {
-        setCheckConnectionError(false)
-        try {
-            await doCheckConnection()
-        } catch (error) {
-            setCheckConnectionError(asError(error))
-        }
+        await doCheckConnection()
     }, [doCheckConnection])
 
     const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
 
     let externalServiceAvailabilityStatus
-    if (!checkConnectionError && !loading) {
+    if (!error && !loading) {
         if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
             externalServiceAvailabilityStatus = (
                 <span className="text-success">
@@ -143,10 +136,10 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                         <LoadingSpinner /> Checking connection...
                                     </span>
                                 )}
-                                {!loading && isErrorLike(checkConnectionError) && (
+                                {!loading && error && (
                                     <span className="text-danger">
                                         <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                        <ErrorMessage error={checkConnectionError} />
+                                        <ErrorMessage error={error} />
                                     </span>
                                 )}
                                 {externalServiceAvailabilityStatus}
