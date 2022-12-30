@@ -243,6 +243,8 @@ func newOutboundWebhookConnectionResolver(
 	ctx context.Context, store database.OutboundWebhookStore,
 	opts database.OutboundWebhookListOpts,
 ) OutboundWebhookConnectionResolver {
+	limit := opts.Limit
+
 	nodes := syncx.OnceValues(func() ([]*types.OutboundWebhook, error) {
 		opts.Limit += 1
 		return store.List(ctx, opts)
@@ -256,8 +258,8 @@ func newOutboundWebhookConnectionResolver(
 				return nil, err
 			}
 
-			if len(webhooks) > opts.Limit {
-				webhooks = webhooks[0:opts.Limit]
+			if len(webhooks) > limit {
+				webhooks = webhooks[0:limit]
 			}
 
 			resolvers := make([]OutboundWebhookResolver, len(webhooks))
@@ -434,5 +436,5 @@ func outboundWebhookEventTypes(inputs []OutboundWebhookScopedEventTypeInput) []t
 }
 
 func outboundWebhookStore(db database.DB) database.OutboundWebhookStore {
-	return database.OutboundWebhooksWith(db, keyring.Default().OutboundWebhookKey)
+	return db.OutboundWebhooks(keyring.Default().OutboundWebhookKey)
 }

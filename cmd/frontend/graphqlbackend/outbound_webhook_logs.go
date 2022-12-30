@@ -71,7 +71,9 @@ func newOutboundWebhookLogConnectionResolver(
 	ctx context.Context, store database.OutboundWebhookStore,
 	opts database.OutboundWebhookLogListOpts,
 ) OutboundWebhookLogConnectionResolver {
+	limit := opts.Limit
 	logStore := store.ToLogStore()
+
 	nodes := syncx.OnceValues(func() ([]*types.OutboundWebhookLog, error) {
 		opts.Limit += 1
 		return logStore.ListForOutboundWebhook(ctx, opts)
@@ -85,8 +87,8 @@ func newOutboundWebhookLogConnectionResolver(
 				return nil, err
 			}
 
-			if len(logs) > opts.Limit {
-				logs = logs[0:opts.Limit]
+			if len(logs) > limit {
+				logs = logs[0:limit]
 			}
 
 			resolvers := make([]OutboundWebhookLogResolver, len(logs))
