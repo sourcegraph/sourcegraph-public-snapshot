@@ -37,6 +37,15 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func toParsedRepoFilters(repoRevs ...string) []search.ParsedRepoFilter {
+	repoFilters := make([]search.ParsedRepoFilter, len(repoRevs))
+	for i, r := range repoRevs {
+		repo, revs := search.ParseRepositoryRevisions(r)
+		repoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+	}
+	return repoFilters
+}
+
 func TestRevisionValidation(t *testing.T) {
 	mockGitserver := gitserver.NewMockClient()
 	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -138,7 +147,7 @@ func TestRevisionValidation(t *testing.T) {
 			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			op := search.RepoOptions{RepoFilters: tt.repoFilters}
+			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
@@ -239,7 +248,8 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			_, pats, err := findPatternRevs(test.specs)
+			repoRevs := toParsedRepoFilters(test.specs...)
+			_, pats, err := findPatternRevs(repoRevs)
 			if err != nil {
 				if test.err == nil {
 					t.Errorf("unexpected error: '%s'", err)
@@ -266,14 +276,16 @@ func TestSearchRevspecs(t *testing.T) {
 
 func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
-		_, pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
+		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
+		_, pats, _ := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
 
 	b.Run("multiple overlapping", func(b *testing.B) {
-		_, pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
+		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
+		_, pats, _ := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -314,7 +326,7 @@ func TestResolverIterator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: []string{"foo/bar[0-4]@rev"}})
+	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +366,7 @@ func TestResolverIterator(t *testing.T) {
 			name: "with limit 3 and fatal error",
 			opts: search.RepoOptions{
 				Limit:       3,
-				RepoFilters: []string{"foo/bar[0-5]@bad_commit"},
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@bad_commit"),
 			},
 			err:   &gitdomain.BadCommitError{},
 			pages: nil,
@@ -363,7 +375,7 @@ func TestResolverIterator(t *testing.T) {
 			name: "with limit 3 and missing repo revs",
 			opts: search.RepoOptions{
 				Limit:       3,
-				RepoFilters: []string{"foo/bar[0-5]@rev"},
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@rev"),
 			},
 			err: &MissingRepoRevsError{},
 			pages: []Resolved{
@@ -626,7 +638,7 @@ func TestRepoHasFileContent(t *testing.T) {
 
 			res := NewResolver(logtest.Scoped(t), db, gitserver.NewMockClient(), endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
-				RepoFilters:    []string{".*"},
+				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
 			})
 			require.NoError(t, err)
@@ -730,7 +742,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
 			res.gitserver = mockGitserver
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
-				RepoFilters: []string{tc.nameFilter},
+				RepoFilters: toParsedRepoFilters(tc.nameFilter),
 				CommitAfter: tc.commitAfter,
 			})
 			require.Equal(t, tc.err, err)

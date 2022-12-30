@@ -99,9 +99,16 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	}
 
 	var proposedQueries []*search.QueryDescription
+
+	parsedRepoFilters := make([]search.ParsedRepoFilter, len(repoFilters))
+	for i, r := range repoFilters {
+		repo, revs := search.ParseRepositoryRevisions(r)
+		parsedRepoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+	}
+
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
-			RepoFilters:      repoFilters,
+			RepoFilters:      parsedRepoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			NoForks:          false,
 		}
@@ -118,7 +125,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	if archivedNotSet {
 		tryIncludeArchived := search.RepoOptions{
-			RepoFilters:      repoFilters,
+			RepoFilters:      parsedRepoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			OnlyForks:        onlyForks,
 			NoForks:          noForks,

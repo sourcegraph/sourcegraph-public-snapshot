@@ -6,6 +6,8 @@ import (
 
 	"github.com/grafana/regexp"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
@@ -402,13 +403,15 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					return opts, true
 				}
 
-				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.RepoFilters = append(make([]search.ParsedRepoFilter, 0, len(opts.RepoFilters)), opts.RepoFilters...)
 				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
 					// No "@" in pattern? We're good.
-					opts.RepoFilters = append(opts.RepoFilters, pattern)
+					repo, revs := search.ParseRepositoryRevisions(pattern)
+					opts.RepoFilters = append(opts.RepoFilters,
+						search.ParsedRepoFilter{Repo: repo, Revs: revs})
 					return opts, true
 				}
 
@@ -426,7 +429,9 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+					repo, revs := search.ParseRepositoryRevisions(patternPrefix[0])
+					opts.RepoFilters = append(opts.RepoFilters,
+						search.ParsedRepoFilter{Repo: repo, Revs: revs})
 					return opts, true
 				}
 
@@ -447,14 +452,14 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-						repoFilterPrefix, _ := search.ParseRepositoryRevisions(repoFilter)
+
 						// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
 						// above, regexp meta characters in literal patterns are already escaped before the
 						// pattern is added to repoOptions, so no need to check that before compiling to regex
 						if repoOptions.CaseSensitiveRepoFilters {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilterPrefix))
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter.Repo))
 						} else {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilterPrefix))
+							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilter.Repo))
 						}
 					}
 
@@ -646,6 +651,12 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := b.Repositories()
 
+	parsedRepoFilters := make([]search.ParsedRepoFilter, len(repoFilters))
+	for i, r := range repoFilters {
+		repo, revs := search.ParseRepositoryRevisions(r)
+		parsedRepoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+	}
+
 	var settingForks, settingArchived bool
 	if v := userSettings.SearchIncludeForks; v != nil {
 		settingForks = *v
@@ -680,7 +691,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:         repoFilters,
+		RepoFilters:         parsedRepoFilters,
 		MinusRepoFilters:    minusRepoFilters,
 		DescriptionPatterns: b.RepoHasDescription(),
 		SearchContextSpec:   searchContextSpec,

@@ -923,15 +923,15 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	return
 }
 
-// findPatternRevs mutates the given list of include patterns to
-// be a raw list of the repository name patterns we want, separating
-// out their revision specs, if any.
-func findPatternRevs(includePatterns []string) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+// findPatternRevs separates out each repo filter into its repository name
+// pattern and its revision specs (if any). It validates each repository name
+// pattern and applies some small optimizations.
+func findPatternRevs(includePatterns []search.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
 	for _, includePattern := range includePatterns {
-		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
+		repoPattern, revs := includePattern.Repo, includePattern.Revs
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {

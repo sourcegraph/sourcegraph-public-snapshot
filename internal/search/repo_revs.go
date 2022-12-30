@@ -75,6 +75,23 @@ func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)
 }
 
+type ParsedRepoFilter struct {
+	Repo string
+	Revs []RevisionSpecifier
+}
+
+func (p ParsedRepoFilter) String() string {
+	if len(p.Revs) == 0 {
+		return p.Repo
+	}
+
+	revSpecs := make([]string, len(p.Revs))
+	for i, r := range p.Revs {
+		revSpecs[i] = r.String()
+	}
+	return p.Repo + "@" + strings.Join(revSpecs, ":")
+}
+
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
 // or more revspecs. The format is:
 //
