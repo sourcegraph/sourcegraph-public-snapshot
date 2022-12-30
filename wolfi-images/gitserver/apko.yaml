@@ -3,8 +3,9 @@ contents:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
+    - '@local /work/packages'
   packages:
-    # Base set of packages
+    ## Base set of packages
     - wolfi-baselayout # replaces alpine-baselayout-data
     - ca-certificates-bundle
     - tzdata
@@ -16,6 +17,7 @@ contents:
     - curl
     - wget
     # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
+
     ## Gitserver packages
     - 'git>=2.38.1'
     - git-lfs
@@ -26,6 +28,11 @@ contents:
     - bash
     # TODO: We require libstdc++ for p4-fusion - is it required on Wolfi?
     #- libstdc++
+
+    ## Packages refactored out of Dockerfile
+    - coursier@local
+    - p4cli@local
+    - p4-fusion@local
 
 accounts:
   groups:
