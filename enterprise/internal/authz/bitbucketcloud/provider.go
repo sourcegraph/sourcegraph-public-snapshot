@@ -8,7 +8,6 @@ import (
 
 	"github.com/ktrysmt/go-bitbucket"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -80,19 +79,20 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no account data provided")
 	}
 
-	secret := ""
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Bitbucketcloud != nil &&
-			authProvider.Bitbucketcloud.ClientKey == account.ClientID {
-			secret = authProvider.Bitbucketcloud.ClientSecret
-		}
-	}
+	// secret := ""
+	// for _, authProvider := range conf.SiteConfig().AuthProviders {
+	// 	if authProvider.Bitbucketcloud != nil &&
+	// 		authProvider.Bitbucketcloud.ClientKey == account.ClientID {
+	// 		secret = authProvider.Bitbucketcloud.ClientSecret
+	// 	}
+	// }
 
 	_, tok, err := bitbucketcloud.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, err
 	}
-	bbClient, _ := bitbucket.NewOAuthWithRefreshToken(account.ClientID, secret, tok.RefreshToken)
+	bbClient := bitbucket.NewOAuthbearerToken(tok.AccessToken)
+	bbClient.SetApiBaseURL(*p.codeHost.BaseURL)
 
 	repos, err := bbClient.Repositories.ListForAccount(&bitbucket.RepositoriesOptions{
 		Role: "member",
