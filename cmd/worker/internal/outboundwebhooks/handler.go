@@ -77,11 +77,13 @@ func (h *handler) sendWebhook(
 	ctx context.Context, logger log.Logger,
 	job *types.OutboundWebhookJob, webhook *types.OutboundWebhook,
 ) error {
+	// This function is a bit of a god function, but there isn't an obvious way
+	// to break it down — in classic Go style, much of its weight is really just
+	// repetitive error handling.
+
 	logger.Debug("sending webhook payload")
 
-	// Set up an empty webhook log entry that we can build up over the course of
-	// execution.
-
+	// First, we need to decrypt the values we need that may be encrypted.
 	url, err := webhook.URL.Decrypt(ctx)
 	if err != nil {
 		logger.Error("cannot decrypt webhook URL", log.Error(err))
@@ -100,6 +102,8 @@ func (h *handler) sendWebhook(
 		return errors.Wrap(err, "decrypting payload")
 	}
 
+	// Second, we need to generate a signature based on the shared secret and
+	// the payload contents.
 	payloadReader := bytes.NewReader([]byte(payload))
 	sig, err := calculateSignature(secret, payloadReader)
 	if err != nil {
@@ -108,6 +112,7 @@ func (h *handler) sendWebhook(
 	}
 	payloadReader.Seek(0, io.SeekStart)
 
+	// Third, we build the HTTP request.
 	req, err := http.NewRequestWithContext(ctx, "POST", url, payloadReader)
 	if err != nil {
 		logger.Error("cannot build webhook request", log.Error(err))
@@ -118,8 +123,8 @@ func (h *handler) sendWebhook(
 	req.Header.Add("X-Sourcegraph-Webhook-Event-Type", job.EventType)
 	req.Header.Add("X-Sourcegraph-Webhook-Signature", sig)
 
-	// If we've reached here, then we're going to send the request, so let's set
-	// up the logging.
+	// Fourth, we set up the outbound webhook logging, since at this point we
+	// now know we'll send the request.
 	webhookLog := &types.OutboundWebhookLog{
 		JobID:             job.ID,
 		OutboundWebhookID: webhook.ID,
@@ -141,12 +146,15 @@ func (h *handler) sendWebhook(
 		}
 	}()
 
+	// Fifth, we actually send the request.
 	resp, err := h.client.Do(req)
 	if err != nil {
 		logger.Info("error sending webhook", log.Error(err))
 		webhookLog.Error = encryption.NewUnencrypted(err.Error())
 		return errors.Wrap(err, "sending webhook")
 	}
+
+	// Sixth, we process the response for logging purposes.
 	defer resp.Body.Close()
 	webhookLog.StatusCode = resp.StatusCode
 

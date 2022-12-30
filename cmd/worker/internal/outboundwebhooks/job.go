@@ -55,7 +55,7 @@ func (s *sender) Routines(startupCtx context.Context, observationCtx *observatio
 			database.OutboundWebhookLogsWith(db, key),
 		),
 		makeResetter(observationCtx, workerStore),
-		// TODO: add janitor job to clean up logs beyond retention.
+		makeJanitor(observationCtx, db.OutboundWebhookJobs(key)),
 	}, nil
 }
 
