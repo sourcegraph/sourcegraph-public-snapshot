@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHandler_Handle(t *testing.T) {
@@ -60,6 +61,19 @@ func TestHandler_Handle(t *testing.T) {
 			assert.Equal(t, job.ID, log.JobID)
 			webhooksSeen.record(log.OutboundWebhookID)
 
+			// Ensure that the network error field is empty.
+			errorMessage, err := log.Error.Decrypt(ctx)
+			require.NoError(t, err)
+			assert.Empty(t, errorMessage)
+
+			// For the sadWebhook, we'll simulate a log write failure to ensure
+			// that the handler still completes.
+			if log.OutboundWebhookID == sadWebhook.ID {
+				assert.EqualValues(t, http.StatusInternalServerError, log.StatusCode)
+				return errors.New("no log for you!")
+			}
+
+			assert.EqualValues(t, http.StatusOK, log.StatusCode)
 			return nil
 		})
 
@@ -82,6 +96,62 @@ func TestHandler_Handle(t *testing.T) {
 		assert.EqualValues(t, 1, webhooksSeen.count(happyWebhook.ID))
 		assert.EqualValues(t, 1, webhooksSeen.count(sadWebhook.ID))
 	})
+
+	t.Run("network failure", func(t *testing.T) {
+		ctx := context.Background()
+		logger := logtest.Scoped(t)
+
+		payload := []byte(`"test payload"`)
+		secret := "shared secret"
+
+		job := &types.OutboundWebhookJob{
+			ID:        1,
+			EventType: "event",
+			Payload:   encryption.NewUnencrypted(string(payload)),
+		}
+
+		webhook := &types.OutboundWebhook{
+			ID:     1,
+			URL:    encryption.NewUnencrypted("moot"),
+			Secret: encryption.NewUnencrypted(secret),
+		}
+
+		store := database.NewMockOutboundWebhookStore()
+		store.ListFunc.SetDefaultReturn([]*types.OutboundWebhook{webhook}, nil)
+
+		want := errors.New("connection error")
+
+		logStore := database.NewMockOutboundWebhookLogStore()
+		logStore.CreateFunc.SetDefaultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
+			have, err := log.Error.Decrypt(ctx)
+			require.NoError(t, err)
+			assert.Contains(t, have, want.Error())
+
+			return nil
+		})
+
+		h := &handler{
+			client:   &http.Client{Transport: &badTransport{Err: want}},
+			store:    store,
+			logStore: logStore,
+		}
+
+		err := h.Handle(ctx, logger, job)
+		assert.ErrorIs(t, err, want)
+
+		mockassert.CalledN(t, store.ListFunc, 1)
+		mockassert.CalledN(t, logStore.CreateFunc, 1)
+	})
+}
+
+type badTransport struct {
+	Err error
+}
+
+var _ http.RoundTripper = &badTransport{}
+
+func (t *badTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return nil, t.Err
 }
 
 type mockServer struct {
