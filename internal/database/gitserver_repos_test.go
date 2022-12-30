@@ -607,7 +607,11 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("expected 10 corruption log entries but got %d", len(fromDB.CorruptionLogs))
 		}
 
-		// Our last log entry should have "test 12" as the reason - the last element in the loop earlier
+		// A log entry gets prepended to the json array, so:
+		// first entry = most recent log entry
+		// last entry = oldest log entry
+		// Our most recent log entry (idx 0!) should have "test 11" as the reason ie. the last element the loop
+		// that we added
 		wanted := "test 11"
 		if fromDB.CorruptionLogs[0].Reason != wanted {
 			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLogs[9].Reason)
@@ -625,7 +629,6 @@ func TestLogCorruption(t *testing.T) {
 		for i := 0; i < len(largeReason); i++ {
 			largeReason[i] = 'a'
 		}
-		t.Logf("fake large reason size: %d", len(largeReason))
 
 		logRepoCorruption(t, db, repo.Name, string(largeReason))
 

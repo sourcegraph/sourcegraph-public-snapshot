@@ -68,7 +68,8 @@ type GitserverRepoStore interface {
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
 
-const MaxReasonSizeInMB = 1 << (10 * 2)
+// Max reason size megabyte - 1 MB
+const MaxReasonSizeInMB = 1 << 20
 
 // gitserverRepoStore is responsible for data stored in the gitserver_repos table.
 type gitserverRepoStore struct {
