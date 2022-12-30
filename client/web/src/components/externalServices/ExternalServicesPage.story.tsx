@@ -29,7 +29,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
             {
                 id: 'service1',
                 kind: ExternalServiceKind.GITHUB,
-                displayName: 'GitHub.com',
+                displayName: 'GitHub #1',
                 config: '{"githubconfig":true}',
                 warning: null,
                 lastSyncError: null,
@@ -40,11 +40,12 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 createdAt: '2021-03-15T19:39:11Z',
                 namespace: null,
                 webhookURL: null,
+                hasConnectionCheck: true,
             },
             {
                 id: 'service2',
                 kind: ExternalServiceKind.GITHUB,
-                displayName: 'GitHub.com',
+                displayName: 'GitHub #2',
                 config: '{"githubconfig":true}',
                 warning: null,
                 lastSyncError: null,
@@ -59,6 +60,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                     url: '/users/johndoe',
                 },
                 webhookURL: null,
+                hasConnectionCheck: false,
             },
         ],
     })
