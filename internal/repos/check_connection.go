@@ -37,7 +37,7 @@ func getHostname(rawURL string) (string, error) {
 }
 
 // checkConnection parses the rawURL and makes a best effort attempt to obtain a hostname. It then
-// performs an IP lookup on that hostname and returns a non-nil error on failure.
+// performs an IP lookup on that hostname and returns a an error on failure.
 //
 // At the moment this function is only limited to doing IP lookups. We may want/have to expand this
 // to support other code hosts or to add more checks (for example making a test API call to verify
@@ -76,14 +76,13 @@ func dnsLookup(rawURL string) error {
 // UNIX sense since it uses TCP instead of ICMP. But we use the name to signifiy the intent here,
 // which is to check if we can connect to the URL.
 func ping(rawURL string) error {
-	var address string
-
 	hostname, err := getHostname(rawURL)
 	if err != nil {
 		return errors.Wrap(err, "getHostname failed")
 	}
 
 	baseURL := rawURL
+	var protocol string
 	if strings.Contains(rawURL, "://") {
 		parts := strings.Split(rawURL, "://")
 		// Technically we can never have this condition because of the getHostname check above which
@@ -94,17 +93,26 @@ func ping(rawURL string) error {
 			return errors.Newf("potentially malformed URL: %q", rawURL)
 		}
 
-		baseURL = parts[1]
+		protocol, baseURL = parts[0], parts[1]
 	}
 
 	// Check if the URL includes a port.
 	_, port, err := net.SplitHostPort(baseURL)
 	if err != nil {
-		// If no port is set, default to 80.
-		port = "80"
+		switch protocol {
+		// Assume HTTP if URL has no protocol or port.
+		case "":
+			port = "80"
+		case "http":
+			port = "80"
+		case "https":
+			port = "443"
+		default:
+			return errors.Wrap(err, "failed to get port for URL which is likely a non HTTP based URL")
+		}
 	}
 
-	address = net.JoinHostPort(hostname, port)
-	_, err = net.DialTimeout("tcp", address, time.Duration(time.Second))
+	address := net.JoinHostPort(hostname, port)
+	_, err = net.DialTimeout("tcp", address, time.Duration(2*time.Second))
 	return err
 }
