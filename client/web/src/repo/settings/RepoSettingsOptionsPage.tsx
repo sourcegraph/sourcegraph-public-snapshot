@@ -1,4 +1,8 @@
+import { FC, useEffect } from 'react'
+
 import { RouteComponentProps } from 'react-router'
+
+import { useQuery } from '@sourcegraph/http-client'
 import { Container, ErrorAlert, H2, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
@@ -13,8 +17,6 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
-import { FC, useEffect } from 'react'
-import { useQuery } from '@sourcegraph/http-client'
 
 interface Props extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
