@@ -208,9 +208,10 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
 }
 
 // Add interface for props then create component
-interface CorruptionLogProps extends RouteComponentProps<{}> {
+interface CorruptionLogProps {
     corruptedAt: any
     logItems: any[]
+    history: H.History
 }
 
 const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
