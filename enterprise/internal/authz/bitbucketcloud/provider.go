@@ -92,6 +92,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, err
 	}
 	bbClient := bitbucket.NewOAuthbearerToken(tok.AccessToken)
+	bbClient.Pagelen = 100
 	bbClient.SetApiBaseURL(*p.codeHost.BaseURL)
 
 	repos, err := bbClient.Repositories.ListForAccount(&bitbucket.RepositoriesOptions{
