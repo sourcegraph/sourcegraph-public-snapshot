@@ -21,6 +21,7 @@ import {
     Text,
     Tooltip,
     ErrorAlert,
+    LinkOrSpan,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
@@ -90,7 +91,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
         {node.mirrorInfo.corruptedAt && (
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
-                    <Text className="font-weight-bold">Repository is corrupt. Click here for more details</Text>
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}

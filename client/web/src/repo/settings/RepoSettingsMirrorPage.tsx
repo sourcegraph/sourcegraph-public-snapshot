@@ -230,9 +230,9 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
     const logEvents = []
     for (let log of props.logItems) {
         logEvents.push(
-            <li className="list-group-item px-2 py-2">
+            <li className="list-group-item px-2 py-1">
                 <div className="d-flex flex-column align-items-center justify-content-between">
-                    <Text className="overflow-auto text-monospace h-25">{log.reason}</Text>
+                    <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
                     <small className="text-muted mb-0">
                         <Timestamp date={log.timestamp} />
                     </small>
@@ -249,6 +249,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
                 <div className="flex-1">
                     {health}
                     <br />
+                    <h4>Corruption log entries</h4>
                     <ul className="list-group">{logEvents}</ul>
                 </div>
             }
