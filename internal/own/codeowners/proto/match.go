@@ -55,7 +55,7 @@ func (p exactMatch) Match(part string) bool { return string(p) == part }
 type anyMatch struct{}
 
 func (p anyMatch) String() string         { return "*" }
-func (p anyMatch) Match(part string) bool { return true }
+func (p anyMatch) Match(_ string) bool { return true }
 
 // globPattern implements a pattern for matching file paths,
 // which can use directory/file names, * and ** wildcards,
@@ -103,7 +103,7 @@ func compile(pattern string) (globPattern, error) {
 // *    *            *                          | /src/java
 // *    *                   *    *              | /src/java/test
 // *    *                   *    *            * | /src/java/test/UnitTest.java
-// The match is successful if after iterating throght the whole file path,
+// The match is successful if after iterating through the whole file path,
 // full pattern matches, that is there is a bit at the end of the glob.
 func (p globPattern) match(filePath string) bool {
 	currentState := big.NewInt(0)
@@ -118,10 +118,10 @@ func (p globPattern) match(filePath string) bool {
 	return p.matchesWhole(currentState)
 }
 
-// markEmptyMathes initializes a matching state with positions that are
-// matches for an empty input (`/“). This is most often just bit 0, but in case
-// there are sub-path wild-card **, it is expanded to all indices past the
-// wild-cards, since they match empty path.
+// markEmptyMatches initializes a matching state with positions that are
+// matches for an empty input (`/`). This is most often just bit 0, but in case
+// there are subpath wildcard **, it is expanded to all indices past the
+// wildcards, since they match empty path.
 func (p globPattern) markEmptyMatches(state *big.Int) {
 	state.SetBit(state, 0, 1)
 	for i, p := range p {
