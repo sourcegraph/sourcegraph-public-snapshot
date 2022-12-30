@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { format } from 'date-fns'
 import { Optional } from 'utility-types'
 
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
 import { WebhookLogFields } from '../../graphql-operations'
@@ -13,7 +14,6 @@ import { MessagePanel } from './MessagePanel'
 import { StatusCode } from './StatusCode'
 
 import styles from './WebhookLogNode.module.scss'
-import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
 export interface Props {
     node: Optional<WebhookLogFields, 'response'> & { error?: string; eventType?: string }
@@ -93,7 +93,7 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                                         requestOrStatusCode={statusCode}
                                     />
                                 ) : (
-                                    <CodeSnippet language="nohighlight" code={error} />
+                                    <CodeSnippet language="nohighlight" code={error ?? ''} />
                                 )}
                             </TabPanel>
                         </TabPanels>

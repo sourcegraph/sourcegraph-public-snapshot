@@ -16,7 +16,6 @@ import {
 
 import { OUTBOUND_WEBHOOKS, OUTBOUND_WEBHOOK_BY_ID, OUTBOUND_WEBHOOK_EVENT_TYPES } from './backend'
 import { OUTBOUND_WEBHOOK_LOGS } from './logs/backend'
-import { generateSecret } from '../../util/security'
 
 export interface WildcardResponse<TData> extends Omit<Omit<WildcardMockedResponse, 'result'>, 'response'> {
     request: GraphQLRequestWithWildcard
