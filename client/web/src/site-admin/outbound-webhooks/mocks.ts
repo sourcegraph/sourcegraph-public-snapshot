@@ -1,24 +1,22 @@
 import { FetchResult } from '@apollo/client'
 import { MockedResponse } from '@apollo/client/testing'
+import { GraphQLRequestWithWildcard, MATCH_ANY_PARAMETERS, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import {
-    GraphQLRequestWithWildcard,
-    MATCH_ANY_PARAMETERS,
-    WildcardMockedResponse,
-    WildcardMockLink,
-} from 'wildcard-mock-link'
 
 import {
     OutboundWebhookByIDResult,
     OutboundWebhookEventTypesResult,
+    OutboundWebhookFieldsWithStats,
     OutboundWebhookLogFields,
     OutboundWebhookLogsResult,
+    OutboundWebhooksListResult,
     WebhookLogResponseFields,
 } from '../../graphql-operations'
 
-import { OUTBOUND_WEBHOOK_BY_ID, OUTBOUND_WEBHOOK_EVENT_TYPES } from './backend'
+import { OUTBOUND_WEBHOOKS, OUTBOUND_WEBHOOK_BY_ID, OUTBOUND_WEBHOOK_EVENT_TYPES } from './backend'
 import { OUTBOUND_WEBHOOK_LOGS } from './logs/backend'
+import { generateSecret } from '../../util/security'
 
 export interface WildcardResponse<TData> extends Omit<Omit<WildcardMockedResponse, 'result'>, 'response'> {
     request: GraphQLRequestWithWildcard
@@ -141,3 +139,38 @@ export const logConnectionLink: WildcardResponse<OutboundWebhookLogsResult> = {
     },
     nMatches: Number.POSITIVE_INFINITY,
 }
+
+const randomWebhook = (num: number): OutboundWebhookFieldsWithStats => ({
+    __typename: 'OutboundWebhook',
+    id: `${num}`,
+    url: `http://example.com/${num}`,
+    eventTypes: [{ eventType: 'batch_change:apply', scope: null }],
+    stats: { total: num * 10, errored: Math.floor(num * 0.5) },
+})
+
+const randomWebhooks = (count: number): OutboundWebhookFieldsWithStats[] => {
+    const webhooks = []
+    for (let idx = 0; idx < count; idx++) {
+        webhooks.push(randomWebhook(idx))
+    }
+
+    return webhooks
+}
+
+export const buildOutboundWebhooksConnectionLink = (count: number): WildcardResponse<OutboundWebhooksListResult> => ({
+    request: {
+        query: getDocumentNode(OUTBOUND_WEBHOOKS),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: {
+        data: {
+            outboundWebhooks: {
+                __typename: 'OutboundWebhookConnection',
+                nodes: randomWebhooks(count),
+                totalCount: count,
+                pageInfo: { hasNextPage: false },
+            },
+        },
+    },
+    nMatches: Number.POSITIVE_INFINITY,
+})
