@@ -2538,7 +2538,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 
 				// The repo update might have failed due to the repo being corrupt
 				var gitErr *GitCommandError
-				if ok := errors.As(err, &gitErr); ok {
+				if errors.As(err, &gitErr) {
 					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
 				}
 			}
