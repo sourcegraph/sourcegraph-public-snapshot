@@ -22,7 +22,7 @@ import { OutboundWebhookFieldsWithStats } from '../../graphql-operations'
 import { useOutboundWebhooksConnection } from './backend'
 import { DeleteButton } from './delete/DeleteButton'
 
-import styles from './OutboundWebhooks.module.scss'
+import styles from './OutboundWebhooksPage.module.scss'
 
 export interface OutboundWebhooksPageProps extends TelemetryProps, RouteComponentProps<{}> {}
 
