@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -233,6 +234,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		return errcode.MakeNonRetryable(err)
 	}
 
+	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, webhooks.ChangesetClose, cs.Changeset)
 	return nil
 }
 

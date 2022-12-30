@@ -168,8 +168,7 @@ func (s *Service) ApplyBatchChange(
 		}
 	}
 
-	webhooks.Enqueue(ctx, s.logger, s.store, webhooks.BatchChangeApply, webhooks.MarshalBatchChange, batchChange)
-
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, batchChange)
 	return batchChange, nil
 }
 

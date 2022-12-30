@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -267,8 +268,17 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 			}
 		}
 	}
+
 	// Set the changeset to published.
 	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+
+	// Enqueue the appropriate webhook.
+	if exists {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
+	} else {
+		e.enqueueWebhook(ctx, webhooks.ChangesetPublish)
+	}
+
 	return nil
 }
 
@@ -353,12 +363,15 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
 			if err := e.handleArchivedRepo(ctx); err != nil {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 				return err
 			}
 		} else {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return errors.Wrap(err, "updating changeset")
 		}
 	}
+	e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
 
 	return nil
 }
@@ -447,6 +460,8 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 	if err := css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
 	}
+
+	e.enqueueWebhook(ctx, webhooks.ChangesetClose)
 	return nil
 }
 
@@ -607,6 +622,10 @@ func handleArchivedRepo(
 	ch.ExternalState = btypes.ChangesetExternalStateReadOnly
 
 	return nil
+}
+
+func (e *executor) enqueueWebhook(ctx context.Context, eventType string) {
+	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, e.ch)
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
