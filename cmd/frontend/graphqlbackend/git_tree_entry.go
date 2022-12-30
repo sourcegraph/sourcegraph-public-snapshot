@@ -334,6 +334,26 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
+func (r *GitTreeEntryResolver) Ownership() []Ownership {
+	return []Ownership{{
+		owners: []string{"@sqs"},
+		reason: "TESTING",
+	}}
+}
+
+type Ownership struct {
+	owners []string
+	reason string
+}
+
+func (o Ownership) Owners() []string {
+	return o.owners
+}
+
+func (o Ownership) Reason() string {
+	return o.reason
+}
+
 type symbolInfoArgs struct {
 	Line      int32
 	Character int32

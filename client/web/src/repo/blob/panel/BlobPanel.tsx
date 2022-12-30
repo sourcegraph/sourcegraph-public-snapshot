@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import * as H from 'history'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
@@ -28,6 +28,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { FileOwnership } from '../FileOwnership'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -194,6 +195,26 @@ function useBlobPanelViews({
                                     location={location}
                                     preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                                     defaultPageSize={defaultPageSize}
+                                />
+                            ),
+                        }))
+                    ),
+                },
+                {
+                    id: 'ownership',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ repoID, revision, filePath, history, location }) => ({
+                            title: 'Ownership',
+                            content: '',
+                            priority: 150,
+                            selector: null,
+                            locationProvider: undefined,
+                            reactElement: (
+                                <FileOwnership
+                                    key="ownership"
+                                    repoID={repoID}
+                                    revision={revision}
+                                    filePath={filePath}
                                 />
                             ),
                         }))
