@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -24,8 +26,17 @@ type OutboundWebhookJobStore interface {
 	Done(error) error
 
 	Create(ctx context.Context, eventType string, scope *string, payload []byte) (*types.OutboundWebhookJob, error)
+	DeleteBefore(ctx context.Context, before time.Time) error
 	GetByID(ctx context.Context, id int64) (*types.OutboundWebhookJob, error)
 }
+
+type OutboundWebhookJobNotFoundErr struct{ id int64 }
+
+func (err OutboundWebhookJobNotFoundErr) Error() string {
+	return fmt.Sprintf("outbound webhook job not found: %v", err.id)
+}
+
+func (OutboundWebhookJobNotFoundErr) NotFound() bool { return true }
 
 type outboundWebhookJobStore struct {
 	*basestore.Store
@@ -83,6 +94,15 @@ func (s *outboundWebhookJobStore) Create(ctx context.Context, eventType string, 
 	return job, nil
 }
 
+func (s *outboundWebhookJobStore) DeleteBefore(ctx context.Context, before time.Time) error {
+	q := sqlf.Sprintf(
+		outboundWebhookJobDeleteBeforeQueryFmtstr,
+		before,
+	)
+
+	return s.Exec(ctx, q)
+}
+
 func (s *outboundWebhookJobStore) GetByID(ctx context.Context, id int64) (*types.OutboundWebhookJob, error) {
 	q := sqlf.Sprintf(
 		outboundWebhookJobGetByIDQueryFmtstr,
@@ -91,8 +111,9 @@ func (s *outboundWebhookJobStore) GetByID(ctx context.Context, id int64) (*types
 	)
 
 	var job types.OutboundWebhookJob
-	err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q))
-	if err != nil {
+	if err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
+		return nil, OutboundWebhookJobNotFoundErr{id}
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -185,6 +206,14 @@ INSERT INTO
 	)
 VALUES (%s, %s, %s, %s)
 RETURNING %s
+`
+
+const outboundWebhookJobDeleteBeforeQueryFmtstr = `
+-- source: internal/database/outbound_webhook_jobs.go:DeleteBefore
+DELETE FROM
+	outbound_webhook_jobs
+WHERE
+	finished_at < %s
 `
 
 const outboundWebhookJobGetByIDQueryFmtstr = `

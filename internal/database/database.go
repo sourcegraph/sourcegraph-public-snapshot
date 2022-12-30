@@ -37,6 +37,8 @@ type DB interface {
 	Orgs() OrgStore
 	OrgStats() OrgStatsStore
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
+	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
+	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
@@ -172,6 +174,14 @@ func (d *db) OrgStats() OrgStatsStore {
 
 func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
 	return OutboundWebhooksWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookJobs(key encryption.Key) OutboundWebhookJobStore {
+	return OutboundWebhookJobsWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
+	return OutboundWebhookLogsWith(d.Store, key)
 }
 
 func (d *db) Permissions() PermissionStore {
