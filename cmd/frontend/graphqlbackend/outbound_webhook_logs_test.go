@@ -48,7 +48,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 			StatusCode:        500,
 			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header: map[string][]string{
-					"content-type": []string{"application/json"},
+					"content-type": {"application/json"},
 				},
 				Body:   []byte(jobPayload),
 				Method: "POST",
@@ -56,7 +56,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 			}),
 			Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header: map[string][]string{
-					"content-type": []string{"application/json"},
+					"content-type": {"application/json"},
 				},
 				Body: []byte(`"roger roger"`),
 			}),
@@ -70,7 +70,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 			StatusCode:        0,
 			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header: map[string][]string{
-					"content-type": []string{"application/json"},
+					"content-type": {"application/json"},
 				},
 				Body:   []byte(jobPayload),
 				Method: "POST",
