@@ -113,6 +113,6 @@ func ping(rawURL string) error {
 	}
 
 	address := net.JoinHostPort(hostname, port)
-	_, err = net.DialTimeout("tcp", address, time.Duration(2*time.Second))
+	_, err = net.DialTimeout("tcp", address, 2*time.Second)
 	return err
 }
