@@ -210,7 +210,6 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                             className={this.props.iconClassName}
                         />
                     )}{' '}
-                    {this.props.action.category ? `${this.props.action.category}: ` : ''}
                     {this.props.action.title}
                 </>
             )
