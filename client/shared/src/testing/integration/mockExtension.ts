@@ -7,10 +7,6 @@ interface ExtensionMockingUtils {
      * and exports an `activate` function, just like any other Sourcegraph extension.
      */
     mockExtension: ({ id, bundle }: { id: string; bundle: () => void }) => void
-    /**
-     * Merge/replace your mock settings `extensions` property with this object.
-     */
-    extensionSettings: {}
 }
 
 /**
