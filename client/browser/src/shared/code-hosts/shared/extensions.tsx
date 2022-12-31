@@ -27,7 +27,6 @@ import { Notifications } from '@sourcegraph/shared/src/notifications/Notificatio
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'
 import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 
@@ -79,26 +78,6 @@ export const renderCommandPalette =
                     }}
                 />
             </ShortcutProvider>,
-            mount
-        )
-    }
-
-export const renderGlobalDebug =
-    ({
-        extensionsController,
-        platformContext,
-        history,
-        render,
-        sourcegraphURL,
-    }: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) =>
-    (mount: HTMLElement): void => {
-        render(
-            <GlobalDebug
-                extensionsController={extensionsController}
-                location={history.location}
-                platformContext={platformContext}
-                sourcegraphURL={sourcegraphURL}
-            />,
             mount
         )
     }
