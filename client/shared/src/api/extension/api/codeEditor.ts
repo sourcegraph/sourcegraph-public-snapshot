@@ -1,11 +1,12 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
 import { isEqual } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { CodeEditor, TextDocumentDecoration } from 'sourcegraph'
 
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 
+import type { TextDocumentDecorationType } from '../../../codeintel/legacy-extensions/api'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
 
 import { createDecorationType } from './decorations'
@@ -14,7 +15,7 @@ import { ExtensionDocument } from './textDocument'
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
-export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
+export class ExtensionCodeEditor implements CodeEditor, ProxyMarked {
     public readonly [proxyMarker] = true
 
     /** The internal ID of this code editor. */
@@ -32,19 +33,19 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         this.update(data)
     }
 
-    public readonly selectionsChanges = new BehaviorSubject<sourcegraph.Selection[]>([])
+    public readonly selectionsChanges = new BehaviorSubject<Selection[]>([])
 
     public readonly type = 'CodeEditor'
 
-    public get selection(): sourcegraph.Selection | null {
+    public get selection(): Selection | null {
         return this.selectionsChanges.value.length > 0 ? this.selectionsChanges.value[0] : null
     }
 
-    public get selections(): sourcegraph.Selection[] {
+    public get selections(): Selection[] {
         return this.selectionsChanges.value
     }
 
-    private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
+    private _decorationsByType = new Map<TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
     private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
 
@@ -53,8 +54,8 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     }
 
     public setDecorations(
-        decorationType: sourcegraph.TextDocumentDecorationType | null,
-        decorations: sourcegraph.TextDocumentDecoration[]
+        decorationType: TextDocumentDecorationType | null,
+        decorations: TextDocumentDecoration[]
     ): void {
         // Backcompat: extensions developed against an older version of the API
         // may not supply a decorationType
@@ -92,7 +93,7 @@ const isEmptyObjectDeep = (value: any): boolean =>
 const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
     isEmptyObjectDeep(contents)
 
-function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
+function fromTextDocumentDecoration(decoration: TextDocumentDecoration): clientType.TextDocumentDecoration {
     return {
         ...decoration,
         range: (decoration.range as Range).toJSON(),

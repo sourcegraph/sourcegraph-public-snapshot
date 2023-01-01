@@ -1,4 +1,4 @@
-import * as sourcegraph from 'sourcegraph'
+import type { TextDocumentDecoration as APITextDocumentDecoration } from 'sourcegraph'
 
 import { Range } from './location'
 
@@ -7,8 +7,7 @@ import { Range } from './location'
  *
  * @see module:sourcgraph.TextDocumentDecoration
  */
-export interface TextDocumentDecoration
-    extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {
+export interface TextDocumentDecoration extends Omit<APITextDocumentDecoration, 'range'> {
     /** The range that the decoration applies to. */
     range: Range
 }

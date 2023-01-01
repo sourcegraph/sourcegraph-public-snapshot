@@ -37,7 +37,6 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { HoverAlert } from 'sourcegraph'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import {
@@ -67,6 +66,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,

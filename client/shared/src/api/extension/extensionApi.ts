@@ -1,6 +1,6 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, EMPTY, ReplaySubject, Unsubscribable } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
@@ -169,7 +169,7 @@ export function createExtensionAPIFactory(
         get windows() {
             return [window]
         },
-        registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
+        registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): Unsubscribable =>
             addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
             const panelViewData = new BehaviorSubject<PanelViewData>({
@@ -258,25 +258,24 @@ export function createExtensionAPIFactory(
         registerHoverProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.HoverProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
         registerDocumentHighlightProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DocumentHighlightProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
         registerDefinitionProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DefinitionProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
         registerReferenceProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.ReferenceProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
         registerLocationProvider: (
             id: string,
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.LocationProvider
-        ): sourcegraph.Unsubscribable =>
-            addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
+        ): Unsubscribable => addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
 
         // These were removed, but keep them here so that calls from old extensions do not throw
         // an exception and completely break.
@@ -292,7 +291,7 @@ export function createExtensionAPIFactory(
             )
             return { unsubscribe: () => undefined }
         },
-        registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
+        registerCompletionItemProvider: (): Unsubscribable => {
             logger.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
             return { unsubscribe: () => undefined }
         },

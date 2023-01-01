@@ -1,8 +1,8 @@
 import * as React from 'react'
 
 import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
-import { FileDecoration } from 'sourcegraph'
 
+import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
