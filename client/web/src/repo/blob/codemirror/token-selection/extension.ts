@@ -100,21 +100,6 @@ export function tokenSelectionExtension(): Extension {
                 // where it sporadically opens goto-def links in a new tab.
                 event.preventDefault()
             },
-            mousemove(event, view) {
-                events.mousemove = event
-                const atEvent = occurrenceAtMouseEvent(view, event)
-                const hoveredOccurrence = atEvent ? atEvent.occurrence : null
-                if (hoveredOccurrence !== view.state.field(hoveredOccurrenceField)) {
-                    view.dispatch({ effects: setHoveredOccurrenceEffect.of(hoveredOccurrence) })
-                    // Only pre-fetch/warmup codeintel for interactive tokens.
-                    // Users can still trigger code intel actions for
-                    // non-interactive tokens, the result just won't be
-                    // pre-fetched.
-                    if (hoveredOccurrence && isInteractiveOccurrence(hoveredOccurrence)) {
-                        warmupOccurrence(view, hoveredOccurrence)
-                    }
-                }
-            },
         }),
     ]
 }
