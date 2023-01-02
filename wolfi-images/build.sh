@@ -30,7 +30,7 @@ docker run \
   -v "$PWD/../../dependencies/keys":/work/keys \
   cgr.dev/chainguard/apko \
   build --debug -k /work/keys/melange.rsa.pub apko.yaml \
-  "sourcegraph/$name:latest" \
+  "sourcegraph/$name-base:latest" \
   "sourcegraph-$name.tar" ||
   (echo "*** Build failed ***" && exit 1)
 
