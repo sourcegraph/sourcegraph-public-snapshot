@@ -89,14 +89,14 @@ type Resolver struct {
 	searcher  *endpoint.Map
 }
 
-func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[*Resolved] {
+func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
 	}
 
 	var errs error
 	done := false
-	return iterator.New(func() ([]*Resolved, error) {
+	return iterator.New(func() ([]Resolved, error) {
 		if done {
 			return nil, errs
 		}
@@ -112,7 +112,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 
 		done = page.Next == nil
 		opts.Cursors = page.Next
-		return []*Resolved{&page}, nil
+		return []Resolved{page}, nil
 	})
 }
 

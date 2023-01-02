@@ -416,7 +416,7 @@ func TestResolverIterator(t *testing.T) {
 
 			for it.Next() {
 				page := it.Current()
-				pages = append(pages, *page)
+				pages = append(pages, page)
 			}
 
 			err = it.Err()
