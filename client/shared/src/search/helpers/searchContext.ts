@@ -2,8 +2,8 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import type { PlatformContext } from '../../platform/context'
 import {
     fetchSearchContexts,
     getUserSearchContextNamespaces,

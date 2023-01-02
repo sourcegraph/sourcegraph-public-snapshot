@@ -9,9 +9,9 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'

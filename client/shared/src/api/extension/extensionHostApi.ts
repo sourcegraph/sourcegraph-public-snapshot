@@ -10,7 +10,7 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import { FileDecorationContext, ProviderResult } from 'sourcegraph'
 
 import {
     fromHoverMerged,
@@ -33,6 +33,16 @@ import {
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
+import type {
+    ReferenceContext,
+    DocumentSelector,
+    FileDecoration,
+    NotificationType as LegacyNotificationType,
+    Progress,
+    DirectoryViewContext,
+    View,
+    PanelView,
+} from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
@@ -185,7 +195,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
-        getReferences: (textParameters: TextDocumentPositionParameters, context: sourcegraph.ReferenceContext) => {
+        getReferences: (textParameters: TextDocumentPositionParameters, context: ReferenceContext) => {
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -228,7 +238,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         },
 
         // Decorations
-        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) =>
+        getFileDecorations: (parameters: FileDecorationContext) =>
             proxySubscribable(
                 parameters.files.length === 0
                     ? EMPTY // Don't call providers when there are no files in the directory
@@ -496,7 +506,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 }
 
 export interface RegisteredProvider<T> {
-    selector: sourcegraph.DocumentSelector
+    selector: DocumentSelector
     provider: T
 }
 
@@ -512,7 +522,7 @@ export interface RegisteredProvider<T> {
 export function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: readonly P[],
-    selector: (p: P) => sourcegraph.DocumentSelector
+    selector: (p: P) => DocumentSelector
 ): P[] {
     return entries.filter(provider =>
         match(selector(provider), {
@@ -541,7 +551,7 @@ export function providersForDocument<P>(
 export function callProviders<TRegisteredProvider, TProviderResult, TMergedResult>(
     providersObservable: Observable<readonly TRegisteredProvider[]>,
     filterProviders: (providers: readonly TRegisteredProvider[]) => TRegisteredProvider[],
-    invokeProvider: (provider: TRegisteredProvider) => sourcegraph.ProviderResult<TProviderResult>,
+    invokeProvider: (provider: TRegisteredProvider) => ProviderResult<TProviderResult>,
     mergeResult: (providerResults: readonly (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
@@ -550,7 +560,7 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
             logger.error('Provider errored:', ...args)
         }
     }
-    const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
+    const safeInvokeProvider = (provider: TRegisteredProvider): ProviderResult<TProviderResult> => {
         try {
             return invokeProvider(provider)
         } catch (error) {
@@ -606,7 +616,7 @@ export function mergeProviderResults<TProviderResultElement>(
 }
 
 /** Object of array of file decorations keyed by path relative to repo root uri */
-export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
+export type FileDecorationsByPath = Record<string, FileDecoration[] | undefined>
 
 // Viewers + documents
 
@@ -637,13 +647,13 @@ export interface ViewContexts {
     [ContributableViewContainer.Homepage]: {}
     [ContributableViewContainer.InsightsPage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: sourcegraph.DirectoryViewContext
+    [ContributableViewContainer.Directory]: DirectoryViewContext
 }
 
 export interface RegisteredViewProvider<W extends ContributableViewContainer> {
     id: string
     viewProvider: {
-        provideView: (context: ViewContexts[W]) => sourcegraph.ProviderResult<sourcegraph.View>
+        provideView: (context: ViewContexts[W]) => ProviderResult<View>
     }
 }
 
@@ -660,7 +670,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                     concat(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
-                            defaultIfEmpty<sourcegraph.View | null | undefined>(null),
+                            defaultIfEmpty<View | null | undefined>(null),
                             catchError((error: unknown): [ErrorLike] => {
                                 logger.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
@@ -697,7 +707,7 @@ export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
 }
 
 /** @internal */
-export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
+export interface PanelViewData extends Omit<PanelView, 'unsubscribe'> {
     id: string
 }
 
@@ -713,7 +723,7 @@ interface BaseNotification {
     /**
      * The type of the message.
      */
-    type: sourcegraph.NotificationType
+    type: LegacyNotificationType
 
     /** The source of the notification.  */
     source?: string
@@ -732,7 +742,7 @@ export interface ProgressNotification {
      * Progress updates to show in this notification (progress bar and status messages).
      * If this Observable errors, the notification will be changed to an error type.
      */
-    progress: ProxySubscribable<sourcegraph.Progress>
+    progress: ProxySubscribable<Progress>
 }
 
 export interface ViewProviderResult {
@@ -740,7 +750,7 @@ export interface ViewProviderResult {
     id: string
 
     /** The result returned by the provider. */
-    view: sourcegraph.View | undefined | ErrorLike
+    view: View | undefined | ErrorLike
 }
 
 /**
@@ -748,7 +758,7 @@ export interface ViewProviderResult {
  * This is needed because if sourcegraph.NotificationType enum values are referenced,
  * the `sourcegraph` module import at the top of the file is emitted in the generated code.
  */
-export const NotificationType: typeof sourcegraph.NotificationType = {
+export const NotificationType: typeof LegacyNotificationType = {
     Error: 1,
     Warning: 2,
     Info: 3,

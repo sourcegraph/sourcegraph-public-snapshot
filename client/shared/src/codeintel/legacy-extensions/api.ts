@@ -1,15 +1,11 @@
 /* eslint-disable etc/no-deprecated */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Observable } from 'rxjs'
+import type { Observable, Unsubscribable } from 'rxjs'
 
-import { GraphQLResult } from '@sourcegraph/http-client'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
-import { PlatformContext } from '../../platform/context'
-import { Settings, SettingsCascade } from '../../settings/settings'
-
-export interface Unsubscribable {
-    unsubscribe(): void
-}
+import type { PlatformContext } from '../../platform/context'
+import type { Settings, SettingsCascade } from '../../settings/settings'
 
 /**
  * Represents a location inside a resource, such as a line
@@ -734,6 +730,41 @@ export interface Hover {
      * position or the current position itself.
      */
     range?: Range
+
+    /**
+     * Alerts that should be shown in this hover.
+     */
+    alerts?: HoverAlert[]
+}
+
+export interface HoverAlert {
+    /**
+     * Text content to be shown on hovers. Since the alert is displayed inline,
+     * multiparagraph content will be rendered on one line. It's recommended to
+     * provide a brief message here, and place futher details in the badge or
+     * provide a link.
+     */
+    summary: MarkupContent
+
+    /**
+     * When an alert has a dismissal type, dismissing it will prevent all alerts
+     * of that type from being shown. If no type is provided, the alert is not
+     * dismissible.
+     */
+    type?: string
+
+    /** Predefined icons to display next ot the summary. */
+    iconKind?: 'info' | 'error' | 'warning'
+
+    /**
+     * When set, this renders a row of button underneath the content. Note
+     * that this was added after the extension deprecation and will only
+     * work with newer clients.
+     *
+     * When buttons are rendered this way, an eventual dismiss button is
+     * appended to this list.
+     */
+    buttons?: React.ReactNode[]
 }
 
 export interface HoverProvider {
@@ -857,7 +888,7 @@ export interface Position {
 export interface Range {
     readonly start: Position
     readonly end: Position
-    contains(position: Position): boolean
+    contains(position: Position | Range): boolean
 }
 
 // NOTE(2022-09-08) We store global state at the module level because that was

@@ -1,6 +1,6 @@
-import { TextDocument } from 'sourcegraph'
-
 import { Selection } from '@sourcegraph/extension-api-types'
+
+import type { TextDocument } from '../codeintel/legacy-extensions/api'
 
 import { ExtensionCodeEditor } from './extension/api/codeEditor'
 import { ExtensionDirectoryViewer } from './extension/api/directoryViewer'

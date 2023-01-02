@@ -1,9 +1,9 @@
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import type { HoverAlert } from 'sourcegraph'
 
 import { combineLatestOrDefault } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import type { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'

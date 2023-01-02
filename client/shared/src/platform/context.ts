@@ -1,7 +1,6 @@
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
-import { InputBoxOptions } from 'sourcegraph'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { ErrorLike, hasProperty } from '@sourcegraph/common'
@@ -9,6 +8,7 @@ import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
+import type { InputBoxOptions } from '../codeintel/legacy-extensions/api'
 import { Scalars } from '../graphql-operations'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'

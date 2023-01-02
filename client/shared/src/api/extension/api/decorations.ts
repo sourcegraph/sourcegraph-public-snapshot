@@ -1,14 +1,15 @@
 import { uniqueId } from 'lodash'
-import {
+
+import { hasProperty } from '@sourcegraph/common'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+
+import type {
     TextDocumentDecorationType,
     DecorationAttachmentRenderOptions,
     ThemableDecorationAttachmentStyle,
     ThemableDecorationStyle,
     FileDecoration,
-} from 'sourcegraph'
-
-import { hasProperty } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+} from '../../../codeintel/legacy-extensions/api'
 
 // LINE DECORATIONS
 export const createDecorationType = (): TextDocumentDecorationType => ({ key: uniqueId('TextDocumentDecorationType') })

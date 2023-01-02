@@ -1,8 +1,6 @@
 import { castArray } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
-import * as sglegacy from 'sourcegraph'
-import { DocumentSelector, TextDocument } from 'sourcegraph'
 
 import {
     fromHoverMerged,
@@ -21,6 +19,7 @@ import type { PlatformContext } from '../platform/context'
 import { isSettingsValid, Settings, SettingsCascade } from '../settings/settings'
 import { parseRepoURI } from '../util/url'
 
+import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
 import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
@@ -36,7 +35,7 @@ interface CodeIntelAPI {
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
-    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
+    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
 }
 
 function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
@@ -117,13 +116,11 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 .pipe(map(result => fromHoverMerged([result])))
         )
     }
-    public getDocumentHighlights(
-        textParameters: TextDocumentPositionParameters
-    ): Observable<sglegacy.DocumentHighlight[]> {
+    public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]> {
         const request = requestFor(textParameters)
         return request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
             defaultIfEmpty(),
-            map(result => (result ? (result as sglegacy.DocumentHighlight[]) : []))
+            map(result => result || [])
         )
     }
 }
