@@ -117,7 +117,7 @@ importers:
       '@types/command-exists': 1.2.0
       '@types/compression': 1.7.2
       '@types/compression-webpack-plugin': 9.1.1
-      '@types/connect-history-api-fallback': 1.3.4
+      '@types/connect-history-api-fallback': 1.3.5
       '@types/d3-format': 2.0.0
       '@types/d3-scale': ^3.3.0
       '@types/d3-shape': ^1.3.1
@@ -605,7 +605,7 @@ importers:
       '@types/command-exists': 1.2.0
       '@types/compression': 1.7.2
       '@types/compression-webpack-plugin': 9.1.1_webpack@5.74.0
-      '@types/connect-history-api-fallback': 1.3.4
+      '@types/connect-history-api-fallback': 1.3.5
       '@types/d3-format': 2.0.0
       '@types/d3-scale': 3.3.2
       '@types/d3-shape': 1.3.2
@@ -7796,13 +7796,6 @@ packages:
       '@types/express': 4.17.14
     dev: true
 
-  /@types/connect-history-api-fallback/1.3.4:
-    resolution: {integrity: sha512-Kf8v0wljR5GSCOCF/VQWdV3ZhKOVA73drXtY3geMTQgHy9dgqQ0dLrf31M0hcuWkhFzK5sP0kkS3mJzcKVtZbw==}
-    dependencies:
-      '@types/express-serve-static-core': 4.17.19
-      '@types/node': 18.8.3
-    dev: true
-
   /@types/connect-history-api-fallback/1.3.5:
     resolution: {integrity: sha512-h8QJa8xSb1WD4fpKBDcATDNGXghFj6/3GRWG6dhmRcu0RX1Ubasur2Uvx5aeEwlf0MwblEC2bMzzMQntxnw/Cw==}
     dependencies:
@@ -10259,6 +10252,7 @@ packages:
 
   /bindings/1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
+    requiresBuild: true
     dependencies:
       file-uri-to-path: 1.0.0
     dev: true
@@ -14517,6 +14511,7 @@ packages:
 
   /file-uri-to-path/1.0.0:
     resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -19312,7 +19307,7 @@ packages:
       '@babel/plugin-proposal-optional-chaining': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-syntax-dynamic-import': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-syntax-export-default-from': 7.12.1_@babel+core@7.20.5
-      '@babel/plugin-syntax-flow': 7.12.1_@babel+core@7.20.5
+      '@babel/plugin-syntax-flow': 7.18.6_@babel+core@7.20.5
       '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-syntax-optional-chaining': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-transform-arrow-functions': 7.18.6_@babel+core@7.20.5
@@ -19322,7 +19317,7 @@ packages:
       '@babel/plugin-transform-computed-properties': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-destructuring': 7.20.2_@babel+core@7.20.5
       '@babel/plugin-transform-exponentiation-operator': 7.18.6_@babel+core@7.20.5
-      '@babel/plugin-transform-flow-strip-types': 7.12.1_@babel+core@7.20.5
+      '@babel/plugin-transform-flow-strip-types': 7.19.0_@babel+core@7.20.5
       '@babel/plugin-transform-function-name': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-literals': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-modules-commonjs': 7.19.6_@babel+core@7.20.5
@@ -19841,6 +19836,7 @@ packages:
 
   /nan/2.14.2:
     resolution: {integrity: sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==}
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -21999,7 +21995,7 @@ packages:
     resolution: {integrity: sha512-Rw7FzYOOzcfyUPaAm9P3g0tFdGqGq2LLiAI+wjYcp6CsF3DeeMrRS3HZAho4s273C29G/DJhx0e8BpRE/QZNGg==}
     dependencies:
       shell-quote: 1.7.4
-      ws: 7.4.6
+      ws: 7.5.9
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
