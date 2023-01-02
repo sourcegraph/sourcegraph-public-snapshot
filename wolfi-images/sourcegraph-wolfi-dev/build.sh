@@ -7,9 +7,9 @@ docker run \
   -v "$PWD/../../dependencies/keys":/work/keys \
   cgr.dev/chainguard/apko \
   build --debug -k /work/keys/melange.rsa.pub apko.yaml \
-  sourcegraph/repo-updater-base:latest \
-  sourcegraph-repo-updater-base.tar ||
+  sourcegraph/wolfi-dev:latest \
+  sourcegraph-wolfi-dev.tar ||
   echo "*** Build failed ***"
 
 # Import into Docker
-docker load <sourcegraph-repo-updater-base.tar
+docker load <sourcegraph-wolfi-dev.tar
