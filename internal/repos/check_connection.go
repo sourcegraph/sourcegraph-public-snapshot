@@ -101,9 +101,7 @@ func ping(rawURL string) error {
 	if err != nil {
 		switch protocol {
 		// Assume HTTP if URL has no protocol or port.
-		case "":
-			port = "80"
-		case "http":
+		case "", "http":
 			port = "80"
 		case "https":
 			port = "443"
