@@ -5,7 +5,7 @@
   "description": "Configuration for a Sourcegraph site.",
   "allowComments": true,
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "dontIncludeSymbolResultsByDefault": {
       "description": "Set to `true` to not include symbol results if no `type:` filter was given",
@@ -121,9 +121,9 @@
       }
     },
     "experimentalFeatures": {
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features and settings.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",

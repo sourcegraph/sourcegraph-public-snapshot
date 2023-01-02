@@ -5,12 +5,13 @@
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "allowComments": true,
   "type": "object",
+  "additionalProperties": true,
   "properties": {
     "experimentalFeatures": {
       "title": "SettingsExperimentalFeatures",
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features and settings.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "homePanelsComputeSuggestions": {
           "type": "boolean",
