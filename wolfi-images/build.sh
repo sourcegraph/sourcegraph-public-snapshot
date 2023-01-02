@@ -21,9 +21,8 @@ fi
 
 cd "$name"
 
-echo "Building apko base image '$name'"
-
-# # Build base image using apko build container
+## Build base image using apko build container
+echo " * Building apko base image '$name'"
 docker run \
   -v "$PWD":/work \
   -v "$PWD/../../dependencies/packages":/work/packages \
@@ -34,5 +33,12 @@ docker run \
   "sourcegraph-$name.tar" ||
   (echo "*** Build failed ***" && exit 1)
 
-# # Import into Docker
+## Import into Docker
+echo " * Loading tarball into Docker"
 docker load <"sourcegraph-$name.tar"
+
+## Cleanup
+echo " * Cleaning up tarball and SBOM"
+rm "sourcegraph-$name.tar"
+rm sbom*
+rmdir keys/ packages/
