@@ -7,19 +7,21 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-if [ ! -d "$1" ]; then
-  echo "Directory '$1' does not exist"
+name=${1%/}
+
+if [ ! -d "$name" ]; then
+  echo "Directory '$name' does not exist"
   exit 1
 fi
 
-if [ ! -f "$1/apko.yaml" ]; then
-  echo "File '$1/apko.yaml' does not exist"
+if [ ! -f "$name/apko.yaml" ]; then
+  echo "File '$name/apko.yaml' does not exist"
   exit 1
 fi
 
-cd "$1"
+cd "$name"
 
-echo "Building apko base image '$1'"
+echo "Building apko base image '$name'"
 
 # # Build base image using apko build container
 docker run \
@@ -28,9 +30,9 @@ docker run \
   -v "$PWD/../../dependencies/keys":/work/keys \
   cgr.dev/chainguard/apko \
   build --debug -k /work/keys/melange.rsa.pub apko.yaml \
-  "sourcegraph/$1:latest" \
-  "sourcegraph-$1.tar" ||
-  echo "*** Build failed ***"
+  "sourcegraph/$name:latest" \
+  "sourcegraph-$name.tar" ||
+  (echo "*** Build failed ***" && exit 1)
 
 # # Import into Docker
-docker load <"sourcegraph-$1".tar
+docker load <"sourcegraph-$name.tar"
