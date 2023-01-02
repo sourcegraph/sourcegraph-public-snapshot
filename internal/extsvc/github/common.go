@@ -1514,21 +1514,6 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	var autherWithRefresh auth.AuthenticatorWithRefresh
-	if auther != nil {
-		var ok bool
-		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
-		// Check if we should pre-emptively refresh
-		if ok && autherWithRefresh.NeedsRefresh() {
-			if err := autherWithRefresh.Refresh(ctx, httpClient); err != nil {
-				logger.Warn("doRequest: refreshing of the token failed", log.Error(err))
-			}
-		}
-		if err := auther.Authenticate(req); err != nil {
-			return nil, errors.Wrap(err, "authenticating request")
-		}
-	}
-
 	var resp *http.Response
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
@@ -1543,16 +1528,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		span.Finish()
 	}()
 
-	if autherWithRefresh != nil {
-		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
-		if err != nil {
-			return nil, errors.Wrap(err, "do request with refresh and retry failed")
-		}
-	} else {
-		resp, err = httpClient.Do(req.WithContext(ctx))
-		if err != nil {
-			return nil, errors.Wrap(err, "http request failed")
-		}
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
+	if err != nil {
+		return nil, errors.Wrap(err, "request failed")
 	}
 	defer resp.Body.Close()
 

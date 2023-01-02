@@ -570,11 +570,6 @@
           "type": "boolean",
           "default": false
         },
-        "hideSourcegraphOperatorLogin": {
-          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
-          "type": "boolean",
-          "default": false
-        },
         "insightsBackfillerV2": {
           "description": "Use v2 of the insights backfiller which backfills a series at a time.",
           "type": "boolean",
@@ -1601,6 +1596,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 90,
+      "minimum": 0,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

@@ -22,8 +22,8 @@ import (
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(opts authz.FetchPermsOptions) webhooks.WebhookHandler {
-	return webhooks.WebhookHandler(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+func handleGitHubRepoAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
+	return webhooks.Handler(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}

@@ -32,6 +32,7 @@ export const authUser: AuthenticatedUser & NameSpaceUser = {
     searchable: true,
     namespaceName: 'alice',
     emails: [],
+    latestSettings: null,
 }
 
 const org: NameSpaceOrg = {

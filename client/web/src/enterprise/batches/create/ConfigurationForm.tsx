@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import { useHistory, useLocation } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -97,7 +97,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
-        Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
+        Pick<UserSettingFields, 'id'> | Pick<OrgSettingFields, 'id'>
     >(defaultSelectedNamespace)
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')

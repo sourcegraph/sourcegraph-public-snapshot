@@ -51,6 +51,8 @@ env:
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
       { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
+      { "Name": "oss-gitserver-0", "Host": "127.0.0.1:3551" },
+      { "Name": "oss-gitserver-1", "Host": "127.0.0.1:3552" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
       { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
@@ -189,7 +191,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
     checkBinary: .bin/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
@@ -197,6 +199,41 @@ commands:
       - lib
       - internal
       - cmd/gitserver
+      - enterprise/internal
+      - enterprise/cmd/gitserver
+
+  oss-gitserver-template: &oss_gitserver_template
+    cmd: .bin/oss-gitserver
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/oss-gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    checkBinary: .bin/oss-gitserver
+    env: &oss_gitserverenv
+      HOSTNAME: 127.0.0.1:3178
+    watch:
+      - lib
+      - internal
+      - cmd/gitserver
+
+  oss-gitserver-0:
+    <<: *oss_gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+
+  oss-gitserver-1:
+    <<: *oss_gitserver_template
+    env:
+      <<: *oss_gitserverenv
+      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
 
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -794,8 +831,8 @@ commandsets:
       - oss-worker
       - oss-repo-updater
       - oss-symbols
-      - gitserver-0
-      - gitserver-1
+      - oss-gitserver-0
+      - oss-gitserver-1
       - searcher
       - oss-web
       - caddy

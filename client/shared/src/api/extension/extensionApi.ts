@@ -10,7 +10,6 @@ import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/e
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
-import { createStatusBarItemType } from './api/codeEditor'
 import { proxySubscribable } from './api/common'
 import { createDecorationType } from './api/decorations'
 import { DocumentHighlightKind } from './api/documentHighlights'
@@ -31,7 +30,6 @@ export interface InitResult {
         registerImplementationProvider: any
     }
     graphQL: typeof sourcegraph['graphQL']
-    content: typeof sourcegraph['content']
     app: typeof sourcegraph['app']
 }
 
@@ -240,7 +238,6 @@ export function createExtensionAPIFactory(
             }
         },
         createDecorationType,
-        createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
     }
@@ -306,12 +303,6 @@ export function createExtensionAPIFactory(
         execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
     }
 
-    // Content
-    const content: typeof sourcegraph['content'] = {
-        registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-            addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
-    }
-
     // For debugging/tests.
     const sync = async (): Promise<void> => {
         await clientAPI.ping()
@@ -349,7 +340,6 @@ export function createExtensionAPIFactory(
             search,
             commands,
             graphQL,
-            content,
 
             internal: {
                 sync: () => sync(),

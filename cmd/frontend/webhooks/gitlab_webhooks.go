@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (wr *WebhookRouter) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (wr *Router) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx = actor.WithInternalActor(ctx)
@@ -73,7 +73,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	return body, errors.Wrap(r.Body.Close(), "closing body")
 }
 
-func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+func (wr *Router) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {

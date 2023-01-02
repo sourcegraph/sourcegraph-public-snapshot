@@ -1,7 +1,8 @@
 import { screen } from '@testing-library/react'
 
-import { SearchMode, SearchPatternType } from '@sourcegraph/search'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { getFullQuery, Toggles } from './Toggles'
 

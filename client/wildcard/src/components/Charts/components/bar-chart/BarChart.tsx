@@ -3,8 +3,8 @@ import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
 
+import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
-import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
 import { BarChartContent } from './BarChartContent'

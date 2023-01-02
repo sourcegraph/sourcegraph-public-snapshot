@@ -4,12 +4,6 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
@@ -24,31 +18,19 @@ import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './Changeset
 
 import styles from './ExternalChangesetCloseNode.module.scss'
 
-export interface ExternalChangesetCloseNodeProps extends ThemeProps {
+export interface ExternalChangesetCloseNodeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 export const ExternalChangesetCloseNode: React.FunctionComponent<
     React.PropsWithChildren<ExternalChangesetCloseNodeProps>
-> = ({
-    node,
-    willClose,
-    viewerCanAdminister,
-    isLightTheme,
-    history,
-    location,
-    extensionInfo,
-    queryExternalChangesetWithFileDiffs,
-}) => {
+> = ({ node, willClose, viewerCanAdminister, history, location, queryExternalChangesetWithFileDiffs }) => {
     const [isExpanded, setIsExpanded] = useState(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
@@ -116,12 +98,10 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                     {node.error && <ErrorAlert error={node.error} />}
                     <ChangesetFileDiff
                         changesetID={node.id}
-                        isLightTheme={isLightTheme}
                         history={history}
                         location={location}
                         repositoryID={node.repository.id}
                         repositoryName={node.repository.name}
-                        extensionInfo={extensionInfo}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     />
                 </div>

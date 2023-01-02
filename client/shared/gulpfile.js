@@ -7,29 +7,7 @@ const { readFile } = require('mz/fs')
 
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
-const { graphQlSchema: _graphQlSchema } = require('./dev/generateGraphQlSchema')
 const { generateSchema } = require('./dev/generateSchema')
-
-const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
-
-/**
- * Generates the TypeScript types for the GraphQL schema.
- * These are used by older code, new code should rely on the new query-specific generated types.
- *
- * @returns {Promise<void>}
- */
-async function graphQlSchema() {
-  await _graphQlSchema(__dirname + '/src/schema.ts')
-}
-
-/**
- * Generates the legacy graphql.ts types on file changes.
- */
-async function watchGraphQlSchema() {
-  await new Promise((resolve, reject) => {
-    gulp.watch(GRAPHQL_SCHEMA_GLOB, graphQlSchema).on('error', reject)
-  })
-}
 
 /**
  * Determine whether to regenerate GraphQL operations based on the given
@@ -100,16 +78,6 @@ async function graphQlOperations() {
 }
 
 /**
- * Allow json-schema-ref-parser to resolve the v7 draft of JSON Schema
- * using a local copy of the spec, enabling developers to run/develop Sourcegraph offline
- */
-const draftV7resolver = {
-  order: 1,
-  read: () => readFile(path.join(__dirname, '../../schema/json-schema-draft-07.schema.json')),
-  canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
-}
-
-/**
  * Generates the TypeScript types for the JSON schemas.
  *
  * @returns {Promise<void>}
@@ -129,8 +97,6 @@ function watchSchema() {
 module.exports = {
   watchSchema,
   schema,
-  graphQlSchema,
-  watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
   cssModulesTypings,

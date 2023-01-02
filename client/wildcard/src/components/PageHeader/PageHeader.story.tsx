@@ -1,9 +1,7 @@
 import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
 import { Icon } from '../Icon'
@@ -13,7 +11,7 @@ import { H1, H2 } from '../Typography'
 import { PageHeader } from './PageHeader'
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
