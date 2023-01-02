@@ -27,6 +27,7 @@ func main() {
 	// Do not add initialization here, do all setup in sg.Before - this is a necessary
 	// workaround because we don't have control over the bash completion flag, which is
 	// part of urfave/cli internals.
+	// TRIGGER SOME GO CHANGE
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		bashCompletionsMode = true
 	}
