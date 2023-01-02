@@ -30,7 +30,6 @@ export interface InitResult {
         registerImplementationProvider: any
     }
     graphQL: typeof sourcegraph['graphQL']
-    content: typeof sourcegraph['content']
     app: typeof sourcegraph['app']
 }
 
@@ -304,12 +303,6 @@ export function createExtensionAPIFactory(
         execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
     }
 
-    // Content
-    const content: typeof sourcegraph['content'] = {
-        registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-            addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
-    }
-
     // For debugging/tests.
     const sync = async (): Promise<void> => {
         await clientAPI.ping()
@@ -347,7 +340,6 @@ export function createExtensionAPIFactory(
             search,
             commands,
             graphQL,
-            content,
 
             internal: {
                 sync: () => sync(),
