@@ -281,7 +281,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-func TestResolverPaginate(t *testing.T) {
+func TestResolverIterator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -410,13 +410,16 @@ func TestResolverPaginate(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+			it := r.Iterator(ctx, tc.opts)
 
 			var pages []Resolved
-			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
-				pages = append(pages, *page)
-				return nil
-			})
 
+			for it.Next() {
+				page := it.Current()
+				pages = append(pages, page)
+			}
+
+			err = it.Err()
 			if !errors.Is(err, tc.err) {
 				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))
 			}
