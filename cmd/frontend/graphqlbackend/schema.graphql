@@ -6315,10 +6315,6 @@ type Site implements SettingsSubject {
     """
     hasCodeIntelligence: Boolean!
     """
-    Whether we want to show built-in searches on the saved searches page
-    """
-    disableBuiltInSearches: Boolean!
-    """
     Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     verify users' email addresses.
     """

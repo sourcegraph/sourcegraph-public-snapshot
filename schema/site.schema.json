@@ -7,22 +7,6 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "dontIncludeSymbolResultsByDefault": {
-      "description": "Set to `true` to not include symbol results if no `type:` filter was given",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "disableBuiltInSearches": {
-      "description": "Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "search.index.enabled": {
-      "description": "REMOVED.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Search"
-    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
@@ -43,12 +27,6 @@
       "type": "integer",
       "group": "Debug",
       "examples": [["20"]]
-    },
-    "apidocs.search.index-size-limit-factor": {
-      "description": "Deprecated.",
-      "type": "number",
-      "default": 1.0,
-      "additionalProperties": false
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
@@ -180,20 +158,8 @@
             }
           }
         },
-        "apidocs.search.indexing": {
-          "description": "Deprecated.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "structuralSearch": {
           "description": "Enables structural search.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
-        "andOrQuery": {
-          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -203,12 +169,6 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "searchMultipleRevisionsPerRepository": {
-          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -396,69 +356,6 @@
           "type": "boolean",
           "default": false
         },
-        "versionContexts": {
-          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
-          "type": "array",
-          "items": {
-            "title": "VersionContext",
-            "description": "Configuration of the version context",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["name", "revisions"],
-            "properties": {
-              "name": {
-                "description": "Name of the version context, it must be unique.",
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "revisions": {
-                "description": "List of repositories of the version context",
-                "type": "array",
-                "items": {
-                  "title": "VersionContextRevision",
-                  "description": "Description of the chosen repository and revision",
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["repo", "rev"],
-                  "properties": {
-                    "repo": {
-                      "description": "Repository name",
-                      "type": "string"
-                    },
-                    "rev": {
-                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
-                      "type": "string"
-                    }
-                  }
-                }
-              },
-              "description": {
-                "description": "Description of the version context",
-                "type": "string"
-              }
-            }
-          },
-          "examples": [
-            {
-              "name": "Release foo",
-              "revisions": [
-                {
-                  "repo": "github.com/sourcegraph/sourcegraph",
-                  "rev": "3.15"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib1",
-                  "rev": "23edr233r"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib2",
-                  "rev": "2.4"
-                }
-              ]
-            }
-          ]
-        },
         "enableWebhookRepoSync": {
           "description": "Enable webhooks for repo syncing",
           "type": "boolean",
@@ -542,11 +439,6 @@
           "type": "boolean",
           "default": false
         },
-        "enableGitServerCommandExecFilter": {
-          "description": "DEPRECATED: Setting any value to this flag has no effect.",
-          "type": "boolean",
-          "default": true
-        },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
           "type": "object",
@@ -598,20 +490,6 @@
         }
       ],
       "group": "Experimental"
-    },
-    "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": true
-    },
-    "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": false
     },
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
@@ -720,13 +598,6 @@
       "group": "Code intelligence",
       "default": false
     },
-    "codeIntelLockfileIndexing.enabled": {
-      "description": "DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Code intelligence",
-      "default": false
-    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -807,18 +678,6 @@
         }
       },
       "group": "External services"
-    },
-    "githubClientID": {
-      "description": "Client ID for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
-    },
-    "githubClientSecret": {
-      "description": "Client secret for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
     },
     "gitLongCommandTimeout": {
       "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
@@ -1508,25 +1367,6 @@
       "group": "CodeInsights",
       "default": 60
     },
-    "insights.historical.frames": {
-      "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
-      "type": "integer",
-      "group": "Debug",
-      "examples": [6]
-    },
-    "insights.historical.frameLength": {
-      "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
-      "type": "string",
-      "group": "Debug",
-      "examples": ["30d"]
-    },
-    "insights.historical.speedFactor": {
-      "description": "DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
-      "!go": { "pointer": true },
-      "type": "number",
-      "group": "Debug",
-      "examples": ["1.0"]
-    },
     "insights.query.worker.concurrency": {
       "description": "Number of concurrent executions of a code insight query on a worker node",
       "type": "integer",
@@ -1549,20 +1389,6 @@
       "default": 20,
       "examples": [10, 20]
     },
-    "insights.compute.graphql": {
-      "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "CodeInsights",
-      "default": false
-    },
-    "insights.search.graphql": {
-      "description": "DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "CodeInsights",
-      "default": false
-    },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
@@ -1570,20 +1396,6 @@
       "default": 10,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
-    },
-    "insights.commit.indexer.interval": {
-      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
-      "type": "integer",
-      "group": "CodeInsights",
-      "default": 60,
-      "examples": [120]
-    },
-    "insights.commit.indexer.windowDuration": {
-      "description": "The number of days of commits the insights commit indexer will pull during each request (0 is no limit).",
-      "type": "integer",
-      "group": "CodeInsights",
-      "default": 0,
-      "examples": [30]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
@@ -1596,14 +1408,6 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
-    },
-    "insights.maximumSampleSize": {
-      "description": "WIP. The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
-      "type": "integer",
-      "group": "CodeInsights",
-      "default": 90,
-      "minimum": 0,
-      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -1819,20 +1623,6 @@
       "default": "release",
       "examples": ["none"],
       "group": "Misc."
-    },
-    "userRepos.maxPerSite": {
-      "description": "The site wide maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 200000,
-      "group": "Misc.",
-      "deprecationMessage": "Deprecated as we no longer support user added code"
-    },
-    "userRepos.maxPerUser": {
-      "description": "The per user maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 2000,
-      "group": "Misc.",
-      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
