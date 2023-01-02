@@ -6,12 +6,22 @@ import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
+    ExcludeRepoFromExternalServiceResult,
+    ExcludeRepoFromExternalServiceVariables,
+    Scalars,
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
 } from '../../graphql-operations'
 
 export const settingsAreaRepositoryFragment = gql`
+    fragment SettingsAreaExternalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        supportsRepoExclusion
+    }
+
     fragment SettingsAreaRepositoryFields on Repository {
         id
         name
@@ -38,9 +48,7 @@ export const settingsAreaRepositoryFragment = gql`
         }
         externalServices {
             nodes {
-                id
-                kind
-                displayName
+                ...SettingsAreaExternalServiceFields
             }
         }
     }
@@ -72,3 +80,24 @@ export function fetchSettingsAreaRepository(name: string): Observable<SettingsAr
         })
     )
 }
+
+export function excludeRepoFromExternalService(args: {
+    externalService: Scalars['ID']
+    repo: Scalars['ID']
+}): Observable<void> {
+    return requestGraphQL<ExcludeRepoFromExternalServiceResult, ExcludeRepoFromExternalServiceVariables>(
+        EXCLUDE_REPO_FROM_EXTERNAL_SERVICE,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(() => undefined)
+    )
+}
+
+export const EXCLUDE_REPO_FROM_EXTERNAL_SERVICE = gql`
+    mutation ExcludeRepoFromExternalService($externalService: ID!, $repo: ID!) {
+        excludeRepoFromExternalService(externalService: $externalService, repo: $repo) {
+            alwaysNil
+        }
+    }
+`
