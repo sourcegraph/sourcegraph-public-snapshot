@@ -1,12 +1,4 @@
-# NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS ctags
-# hadolint ignore=DL3002
-USER root
-
-COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
-RUN /ctags-install-alpine.sh
-
-FROM golang:1.19.3-alpine@sha256:27a9653759f44afd08c94418307a26d2db9cf78af12933200bc2ca63c4844316 AS symbols-build
+FROM cgr.dev/chainguard/go:latest AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
@@ -14,8 +6,6 @@ ENV GO111MODULE on
 ENV GOARCH amd64
 ENV GOOS linux
 ENV CGO_ENABLED 1
-
-RUN apk add --no-cache gcc g++
 
 COPY . /repo
 
@@ -54,8 +44,6 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
 COPY --from=symbols-build /symbols /usr/local/bin/symbols
 
