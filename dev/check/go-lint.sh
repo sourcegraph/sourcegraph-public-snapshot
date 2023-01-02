@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 echo "--- golangci-lint"
-trap 'rm -f "$TMPFILE"' EXIT
+trap 'rm -f "$TMPFILE" "$TMPFILE_WARN"' EXIT
 set -e
 TMPFILE=$(mktemp)
+TMPFILE_WARN=$(mktemp)
 
 echo "0" >"$TMPFILE"
 
@@ -15,6 +16,7 @@ export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
 config_file="$(pwd)/.golangci.yml"
+config_file_warn="$(pwd)/.golangci-warn.yml"
 lint_script="$(pwd)/dev/golangci-lint.sh"
 
 run() {
@@ -32,7 +34,19 @@ run() {
     # we store the EXIT_CODE (in a tmp file as this is running in a sub-shell).
     echo "$EXIT_CODE" >"$TMPFILE"
     mkdir -p "$base/annotations"
-    echo -e "$OUT" >"$base/annotations/go-lint"
+    echo -e "$OUT" >>"$base/annotations/go-lint"
+    echo "^^^ +++"
+  fi
+
+  set +e
+  OUT=$("$lint_script" --config "$config_file_warn" run "$LINTER_ARG")
+  EXIT_CODE_WARN=$?
+  set -e
+  echo -e "$OUT"
+
+  if [ $EXIT_CODE_WARN -ne 0 ]; then
+    mkdir -p "$base/annotations"
+    echo -e "$OUT" >>"$base/annotations/go-lint-warnings"
     echo "^^^ +++"
   fi
 }
