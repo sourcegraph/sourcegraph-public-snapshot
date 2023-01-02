@@ -47,7 +47,6 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
       *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
     esac
 
-    error_level=""
     case "$name" in
       WARN_*) annotate_file_opts="$annotate_file_opts -t warning" ;;
       ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
