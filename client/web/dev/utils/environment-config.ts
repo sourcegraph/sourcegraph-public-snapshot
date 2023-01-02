@@ -60,6 +60,13 @@ export const ENVIRONMENT_CONFIG = {
     DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,
 
     /**
+     * Omit slow deps (such as Monaco and GraphiQL) in the build to get a ~40% reduction in esbuild
+     * rebuild time. The web app will show placeholders if features needing these deps are used.
+     * (Esbuild only.)
+     */
+    DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
+
+    /**
      * ----------------------------------------
      * Application features configuration.
      * ----------------------------------------
