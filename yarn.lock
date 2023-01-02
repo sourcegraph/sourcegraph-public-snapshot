@@ -4362,7 +4362,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@peculiar/webcrypto@npm:^1.1.7, @peculiar/webcrypto@npm:^1.4.0":
+"@peculiar/webcrypto@npm:^1.4.0, @peculiar/webcrypto@npm:^1.4.1":
   version: 1.4.1
   resolution: "@peculiar/webcrypto@npm:1.4.1"
   dependencies:
@@ -27481,7 +27481,7 @@ __metadata:
     "@opentelemetry/sdk-trace-base": 1.5.0
     "@opentelemetry/sdk-trace-web": ^1.5.0
     "@opentelemetry/semantic-conventions": ^1.5.0
-    "@peculiar/webcrypto": ^1.1.7
+    "@peculiar/webcrypto": ^1.4.1
     "@percy/cli": ^1.16.0
     "@percy/puppeteer": ^2.0.0
     "@pmmmwh/react-refresh-webpack-plugin": ^0.5.10
