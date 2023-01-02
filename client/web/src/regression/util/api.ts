@@ -7,10 +7,10 @@ import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
 import { isErrorLike, createAggregateError, logger } from '@sourcegraph/common'
 import {
-    gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
     isErrorGraphQLResult,
+    gql,
 } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
@@ -26,7 +26,6 @@ import {
     AddExternalServiceInput,
     ExternalServiceKind,
     UpdateExternalServiceInput,
-    DeleteUserResult,
     Scalars,
     DeleteOrganizationResult,
     SearchPatternType,
@@ -38,34 +37,33 @@ import {
     CreateUserResult,
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
-    ResolveRevResult,
-    ResolveRevVariables,
     OrganizationsVariables,
-    addExternalServiceVariables,
-    SearchResult,
-    SearchVariables,
     SearchVersion,
-    ExternalServicesRegressionVariables,
-    ExternalServicesRegressionResult,
-    ExternalServiceNodeFields,
-    SiteProductVersionResult,
-    SiteProductVersionVariables,
-    SetUserEmailVerifiedResult,
-    SetUserEmailVerifiedVariables,
     DeleteOrganizationVariables,
     CreateOrganizationVariables,
     CreateUserVariables,
-    UserVariables,
-    UserResult,
     SetUserIsSiteAdminResult,
     SetUserIsSiteAdminVariables,
-    SetTosAcceptedResult,
-    SetTosAcceptedVariables,
     DeleteExternalServiceResult,
     DeleteExternalServiceVariables,
     UpdateSiteConfigurationVariables,
+    ResolveRevResult,
+    ResolveRevVariables,
+    ExternalServicesRegressionResult,
+    ExternalServicesRegressionVariables,
+    ExternalServiceNodeFields,
+    UserResult,
+    DeleteUserResult,
     DeleteUserVariables,
+    SetTosAcceptedResult,
+    SetTosAcceptedVariables,
+    SiteProductVersionResult,
+    SiteProductVersionVariables,
+    UserVariables,
     addExternalServiceResult,
+    addExternalServiceVariables,
+    SearchResult,
+    SearchVariables,
 } from '../../graphql-operations'
 
 import { GraphQLClient } from './GraphQlClient'
@@ -465,35 +463,6 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
             map(dataOrThrowErrors),
             map(({ site }) => site.productVersion)
         )
-        .toPromise()
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
-export async function setUserEmailVerified(
-    gqlClient: GraphQLClient,
-    username: string,
-    email: string,
-    verified: boolean
-): Promise<void> {
-    const user = await getUser(gqlClient, username)
-    if (!user) {
-        throw new Error(`User ${username} does not exist`)
-    }
-    await gqlClient
-        .mutateGraphQL<SetUserEmailVerifiedResult, SetUserEmailVerifiedVariables>(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: user.id, email, verified }
-        )
-        .pipe(map(dataOrThrowErrors))
         .toPromise()
 }
 

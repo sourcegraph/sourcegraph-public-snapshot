@@ -1,7 +1,6 @@
 import { Series } from '@sourcegraph/wildcard'
 
 import {
-    InsightDashboard,
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
@@ -80,7 +79,7 @@ export type CreationInsightInput =
 
 export interface InsightCreateInput {
     insight: CreationInsightInput
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 }
 
 export interface InsightUpdateInput {

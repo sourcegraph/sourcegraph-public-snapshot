@@ -7,6 +7,7 @@ import { Redirect, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 import { delay, repeatWhen } from 'rxjs/operators'
 
+import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
 import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -28,7 +29,6 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 import { Duration } from '../time/Duration'
-import { Timestamp, TimestampFormat } from '../time/Timestamp'
 
 import {
     useSyncExternalService,

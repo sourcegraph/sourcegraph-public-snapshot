@@ -3,7 +3,7 @@ import { of, Subscription, Observable } from 'rxjs'
 import { first, startWith, tap, last } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { observeLocation } from '../util/location'

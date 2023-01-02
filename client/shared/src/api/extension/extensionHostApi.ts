@@ -489,17 +489,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
 
-        // Content
-        getLinkPreviews: (url: string) =>
-            proxySubscribable(
-                callProviders(
-                    state.linkPreviewProviders,
-                    entries => entries.filter(entry => url.startsWith(entry.urlMatchPattern)),
-                    ({ provider }) => provider.provideLinkPreview(new URL(url)),
-                    stuffs => mergeLinkPreviews(stuffs)
-                ).pipe(map(result => (result.isLoading ? null : result.result)))
-            ),
-
         getActiveExtensions: () => proxySubscribable(state.activeExtensions),
     }
 
@@ -636,37 +625,6 @@ function assertViewerType<T extends ExtensionViewer['type']>(
     if (viewer.type !== type) {
         throw new Error(`Viewer ID ${viewer.viewerId} is type ${viewer.type}, expected ${type}`)
     }
-}
-
-// Content
-
-interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
-    kind: sourcegraph.MarkupKind.PlainText
-}
-
-/**
- * Represents one or more {@link sourcegraph.LinkPreview} values merged together.
- */
-export interface LinkPreviewMerged {
-    /** The content of the merged {@link sourcegraph.LinkPreview} values. */
-    content: sourcegraph.MarkupContent[]
-
-    /** The hover content of the merged {@link sourcegraph.LinkPreview} values. */
-    hover: MarkupContentPlainTextOnly[]
-}
-
-function mergeLinkPreviews(
-    values: readonly (sourcegraph.LinkPreview | 'loading' | null | undefined)[]
-): LinkPreviewMerged | null {
-    const nonemptyValues = values
-        .filter(isDefined)
-        .filter((value): value is Exclude<sourcegraph.LinkPreview | 'loading', 'loading'> => value !== 'loading')
-    const contentValues = nonemptyValues.filter(property('content', isDefined))
-    const hoverValues = nonemptyValues.filter(property('hover', isDefined))
-    if (hoverValues.length === 0 && contentValues.length === 0) {
-        return null
-    }
-    return { content: contentValues.map(({ content }) => content), hover: hoverValues.map(({ hover }) => hover) }
 }
 
 // Views

@@ -39,9 +39,16 @@ import (
 )
 
 type Handlers struct {
-	GitHubSyncWebhook               webhooks.Registerer
-	GitLabSyncWebhook               webhooks.Registerer
-	PermissionsGitHubWebhook        webhooks.Registerer
+	// Repo sync
+	GitHubSyncWebhook          webhooks.Registerer
+	GitLabSyncWebhook          webhooks.Registerer
+	BitbucketServerSyncWebhook webhooks.Registerer
+	BitbucketCloudSyncWebhook  webhooks.Registerer
+
+	// Permissions
+	PermissionsGitHubWebhook webhooks.Registerer
+
+	// Batch changes
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
 	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
@@ -49,8 +56,12 @@ type Handlers struct {
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
+
+	// Code intel
+	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+
+	// Compute
+	NewComputeStreamHandler enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -90,12 +101,14 @@ func NewHandler(
 	)
 
 	wh := webhooks.Router{
-		Logger: logger.Scoped("Router", "handling webhook requests and dispatching them to handlers"),
+		Logger: logger.Scoped("webhooks.Router", "handling webhook requests and dispatching them to handlers"),
 		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)
 	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BitbucketServerSyncWebhook.Register(&wh)
+	handlers.BitbucketCloudSyncWebhook.Register(&wh)
 	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)

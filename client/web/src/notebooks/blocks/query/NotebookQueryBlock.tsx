@@ -5,7 +5,6 @@ import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
-import { SearchContextProps } from '@sourcegraph/search'
 import {
     StreamingSearchResultsList,
     CodeMirrorQueryInput,
@@ -15,6 +14,7 @@ import {
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

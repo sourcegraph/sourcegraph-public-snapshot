@@ -9,26 +9,23 @@ const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
-const SEARCH_FOLDER = path.resolve(ROOT_FOLDER, './client/search')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [
-  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
-  `!${SHARED_FOLDER}/src/testing/**/*.*`,
-  `!${SHARED_FOLDER}/src/schema.ts`,
-]
+const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`]
 
-const WEB_DOCUMENTS_GLOB = [`${WEB_FOLDER}/src/**/*.{ts,tsx}`, `!${WEB_FOLDER}/src/end-to-end/**/*.*`]
+const WEB_DOCUMENTS_GLOB = [
+  `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
+  `${WEB_FOLDER}/src/regression/**/*.*`,
+  `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
+]
 
 const BROWSER_DOCUMENTS_GLOB = [
   `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,
   `!${BROWSER_FOLDER}/src/end-to-end/**/*.*`,
   '!**/*.d.ts',
 ]
-
-const SEARCH_DOCUMENTS_GLOB = [`${SEARCH_FOLDER}/src/**/*.{ts,tsx}`]
 
 const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
 
@@ -37,7 +34,6 @@ const JETBRAINS_DOCUMENTS_GLOB = [`${JETBRAINS_FOLDER}/webview/src/**/*.{ts,tsx}
 const GLOBS = {
   BrowserGraphQlOperations: BROWSER_DOCUMENTS_GLOB,
   JetBrainsGraphQlOperations: JETBRAINS_DOCUMENTS_GLOB,
-  SearchGraphQlOperations: SEARCH_DOCUMENTS_GLOB,
   SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
   VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
   WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
@@ -53,7 +49,6 @@ const ALL_DOCUMENTS_GLOB = [
     ...SHARED_DOCUMENTS_GLOB,
     ...WEB_DOCUMENTS_GLOB,
     ...BROWSER_DOCUMENTS_GLOB,
-    ...SEARCH_DOCUMENTS_GLOB,
     ...VSCODE_DOCUMENTS_GLOB,
     ...JETBRAINS_DOCUMENTS_GLOB,
   ]),
@@ -84,10 +79,6 @@ async function generateGraphQlOperations() {
       {
         interfaceNameForOperations: 'SharedGraphQlOperations',
         outputPath: path.join(SHARED_FOLDER, './src/graphql-operations.ts'),
-      },
-      {
-        interfaceNameForOperations: 'SearchGraphQlOperations',
-        outputPath: path.join(SEARCH_FOLDER, './src/graphql-operations.ts'),
       },
       {
         interfaceNameForOperations: 'VSCodeGraphQlOperations',

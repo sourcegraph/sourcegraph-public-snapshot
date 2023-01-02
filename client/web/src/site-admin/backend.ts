@@ -24,14 +24,10 @@ import {
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
-    DeleteUserResult,
-    DeleteUserVariables,
     ExternalServiceKind,
     FeatureFlagFields,
     FeatureFlagsResult,
     FeatureFlagsVariables,
-    InvalidateSessionsByIDResult,
-    InvalidateSessionsByIDVariables,
     OrganizationsConnectionFields,
     OrganizationsResult,
     OrganizationsVariables,
@@ -49,8 +45,6 @@ import {
     ScheduleRepositoryPermissionsSyncVariables,
     SetUserIsSiteAdminResult,
     SetUserIsSiteAdminVariables,
-    SetUserTagResult,
-    SetUserTagVariables,
     SiteAdminAccessTokenConnectionFields,
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
@@ -59,12 +53,8 @@ import {
     SiteResult,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
-    SiteUsageStatisticsResult,
     UpdateSiteConfigurationResult,
     UpdateSiteConfigurationVariables,
-    UserActivePeriod,
-    UsersResult,
-    UserUsageStatisticsResult,
     WebhookByIdResult,
     WebhookByIdVariables,
     WebhookFields,
@@ -79,49 +69,6 @@ import {
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 import { WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
-
-/**
- * Fetches all users.
- */
-export function fetchAllUsers(args: { first?: number; query?: string }): Observable<UsersResult['users']> {
-    return queryGraphQL<UsersResult>(
-        gql`
-            query Users($first: Int, $query: String) {
-                users(first: $first, query: $query) {
-                    nodes {
-                        ...UserNodeFields
-                    }
-                    totalCount
-                }
-            }
-
-            fragment UserNodeFields on User {
-                id
-                username
-                displayName
-                emails {
-                    email
-                    verified
-                    verificationPending
-                    viewerCanManuallyVerify
-                    isPrimary
-                }
-                createdAt
-                siteAdmin
-                organizations {
-                    nodes {
-                        name
-                    }
-                }
-                tags
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.users)
-    )
-}
 
 /**
  * Fetches all organizations.
@@ -204,15 +151,6 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalRepository {
             ...ExternalRepositoryFields
         }
-    }
-`
-
-export const SiteUsagePeriodFragment = gql`
-    fragment SiteUsagePeriodFields on SiteUsagePeriod {
-        userCount
-        registeredUserCount
-        anonymousUserCount
-        startTime
     }
 `
 
@@ -408,75 +346,6 @@ export const RECLONE_REPOSITORY_MUTATION = gql`
 `
 
 /**
- * Fetches usage statistics for all users.
- *
- * @returns Observable that emits the list of users and their usage data
- */
-export function fetchUserUsageStatistics(args: {
-    activePeriod?: UserActivePeriod
-    query?: string
-    first?: number
-}): Observable<UserUsageStatisticsResult['users']> {
-    return queryGraphQL<UserUsageStatisticsResult>(
-        gql`
-            query UserUsageStatistics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
-                users(activePeriod: $activePeriod, query: $query, first: $first) {
-                    nodes {
-                        id
-                        username
-                        usageStatistics {
-                            ...UserUsageStatisticsFields
-                        }
-                    }
-                    totalCount
-                }
-            }
-
-            fragment UserUsageStatisticsFields on UserUsageStatistics {
-                searchQueries
-                pageViews
-                codeIntelligenceActions
-                lastActiveTime
-                lastActiveCodeHostIntegrationTime
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.users)
-    )
-}
-
-/**
- * Fetches site-wide usage statitics.
- *
- * @returns Observable that emits the list of users and their usage data
- */
-export function fetchSiteUsageStatistics(): Observable<SiteUsageStatisticsResult['site']['usageStatistics']> {
-    return queryGraphQL<SiteUsageStatisticsResult>(gql`
-        query SiteUsageStatistics {
-            site {
-                usageStatistics {
-                    daus {
-                        ...SiteUsagePeriodFields
-                    }
-                    waus {
-                        ...SiteUsagePeriodFields
-                    }
-                    maus {
-                        ...SiteUsagePeriodFields
-                    }
-                }
-            }
-        }
-        ${SiteUsagePeriodFragment}
-    `).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.site.usageStatistics)
-    )
-}
-
-/**
  * Fetches the site and its configuration.
  *
  * @returns Observable that emits the site
@@ -670,22 +539,6 @@ export function setUserIsSiteAdmin(userID: Scalars['ID'], siteAdmin: boolean): O
     )
 }
 
-export function invalidateSessionsByID(userID: Scalars['ID']): Observable<void> {
-    return requestGraphQL<InvalidateSessionsByIDResult, InvalidateSessionsByIDVariables>(
-        gql`
-            mutation InvalidateSessionsByID($userID: ID!) {
-                invalidateSessionsByID(userID: $userID) {
-                    alwaysNil
-                }
-            }
-        `,
-        { userID }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
-    )
-}
-
 export function randomizeUserPassword(
     user: Scalars['ID']
 ): Observable<RandomizeUserPasswordResult['randomizeUserPassword']> {
@@ -704,26 +557,6 @@ export function randomizeUserPassword(
     )
 }
 
-export function deleteUser(user: Scalars['ID'], hard?: boolean): Observable<void> {
-    return requestGraphQL<DeleteUserResult, DeleteUserVariables>(
-        gql`
-            mutation DeleteUser($user: ID!, $hard: Boolean) {
-                deleteUser(user: $user, hard: $hard) {
-                    alwaysNil
-                }
-            }
-        `,
-        { user, hard: hard ?? null }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteUser) {
-                throw createInvalidGraphQLMutationResponseError('DeleteUser')
-            }
-        })
-    )
-}
-
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
     return mutateGraphQL<CreateUserResult>(
         gql`
@@ -737,26 +570,6 @@ export function createUser(username: string, email: string | undefined): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createUser)
-    )
-}
-
-export function setUserTag(node: string, tag: string, present: boolean = true): Observable<void> {
-    return requestGraphQL<SetUserTagResult, SetUserTagVariables>(
-        gql`
-            mutation SetUserTag($node: ID!, $tag: String!, $present: Boolean!) {
-                setTag(node: $node, tag: $tag, present: $present) {
-                    alwaysNil
-                }
-            }
-        `,
-        { node, tag, present }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.setTag) {
-                throw createInvalidGraphQLMutationResponseError('SetUserTag')
-            }
-        })
     )
 }
 

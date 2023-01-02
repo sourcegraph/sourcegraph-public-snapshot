@@ -52,5 +52,6 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         searchContextsEnabled={true}
         notebooksEnabled={true}
         codeMonitoringEnabled={true}
+        searchAggregationEnabled={true}
     />
 )

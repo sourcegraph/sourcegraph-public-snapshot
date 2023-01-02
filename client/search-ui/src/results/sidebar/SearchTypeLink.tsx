@@ -9,7 +9,7 @@ import {
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
     EditorHint,
-} from '@sourcegraph/search'
+} from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'

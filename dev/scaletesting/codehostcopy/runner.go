@@ -268,11 +268,13 @@ func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...Gi
 		}
 		err = cmd.Run().Wait()
 		if err != nil {
-			if strings.Contains(err.Error(), "timed out") {
+			errStr := err.Error()
+			if strings.Contains(errStr, "timed out") || strings.Contains(errStr, "502") {
 				continue
 			}
 			return err
 		}
+		break
 	}
 	return nil
 }

@@ -997,3 +997,26 @@ func TestResponseHasNextPage(t *testing.T) {
 		}
 	})
 }
+
+func TestListPublicRepositories(t *testing.T) {
+	t.Run("should skip null REST repositories", func(t *testing.T) {
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := w.Write([]byte(`[{"node_id": "1"}, null, {}, {"node_id": "2"}]`))
+			if err != nil {
+				t.Fatalf("failed to write response: %v", err)
+			}
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+
+		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Len(t, repositories, 2)
+		assert.False(t, hasNextPage)
+		assert.Equal(t, "1", repositories[0].ID)
+		assert.Equal(t, "2", repositories[1].ID)
+	})
+}

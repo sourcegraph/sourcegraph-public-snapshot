@@ -109,7 +109,7 @@ There are a few options:
 
 **[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
 
-_For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
+_This step can be skipped if you already have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers)._
 
 **3. Use your CDN's HTTPS proxy feature**<br />
 

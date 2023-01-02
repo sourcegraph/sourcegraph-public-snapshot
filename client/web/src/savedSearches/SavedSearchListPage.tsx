@@ -9,7 +9,7 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { SearchPatternTypeProps } from '@sourcegraph/search'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 

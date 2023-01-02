@@ -4,8 +4,8 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'

@@ -35,7 +35,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	db := database.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
+	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}

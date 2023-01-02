@@ -4,7 +4,6 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { SearchPatternType } from '@sourcegraph/search'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { usePrependStyles } from '@sourcegraph/storybook'
@@ -13,6 +12,7 @@ import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'
 import { light } from '../../bridge-mock/theme-snapshots/light'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { JetBrainsSearchBox } from './JetBrainsSearchBox'
 
