@@ -1,5 +1,5 @@
 namespaces:
-  - name: BATCH_CHANGES
+  - name: BATCHCHANGES
     actions:
       - READ
       - WRITE
