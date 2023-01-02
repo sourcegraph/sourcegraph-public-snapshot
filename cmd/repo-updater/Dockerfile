@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/repo-updater-base:latest
+FROM sourcegraph-wolfi/repo-updater-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

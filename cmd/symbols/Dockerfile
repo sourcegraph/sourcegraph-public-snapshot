@@ -38,7 +38,7 @@ RUN \
     -o /symbols \
     $PKG
 
-FROM sourcegraph/symbols-base:latest AS symbols
+FROM sourcegraph-wolfi/symbols-base:latest AS symbols
 
 # TODO(security): This container should not run as root!
 #

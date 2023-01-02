@@ -29,16 +29,16 @@ docker run \
   -v "$PWD/../../dependencies/keys":/work/keys \
   cgr.dev/chainguard/apko \
   build --debug -k /work/keys/melange.rsa.pub apko.yaml \
-  "sourcegraph/$name-base:latest" \
-  "sourcegraph-$name.tar" ||
+  "sourcegraph-wolfi/$name-base:latest" \
+  "sourcegraph-wolfi-$name-base.tar" ||
   (echo "*** Build failed ***" && exit 1)
 
 ## Import into Docker
 echo " * Loading tarball into Docker"
-docker load <"sourcegraph-$name.tar"
+docker load <"sourcegraph-wolfi-$name-base.tar"
 
 ## Cleanup
 echo " * Cleaning up tarball and SBOM"
-rm "sourcegraph-$name.tar"
+rm "sourcegraph-wolfi-$name-base.tar"
 rm sbom*
 rmdir keys/ packages/
