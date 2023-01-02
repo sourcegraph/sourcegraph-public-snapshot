@@ -11,5 +11,6 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 USER sourcegraph
 EXPOSE 3189
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/worker"]
 COPY worker /usr/local/bin/

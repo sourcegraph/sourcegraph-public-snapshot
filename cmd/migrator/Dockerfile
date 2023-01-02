@@ -10,6 +10,7 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 USER sourcegraph
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/migrator"]
 COPY migrator /usr/local/bin/
 COPY schema-descriptions /schema-descriptions

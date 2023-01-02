@@ -16,5 +16,6 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 ENV LOG_REQUEST=true
 USER sourcegraph
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/github-proxy"]
 COPY github-proxy /usr/local/bin/
