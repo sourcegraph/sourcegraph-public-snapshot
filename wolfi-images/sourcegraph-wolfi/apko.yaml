@@ -4,13 +4,13 @@ contents:
   repositories:
     - https://packages.wolfi.dev/os
   packages:
-    - wolfi-baselayout # replaces alpine-baselayout-data
+    ## Base set of packages included in sourcegraph/alpine base image
+    - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    # Included by existing SG base image
     - tini
     - mailcap
-    # These are dev tools - may not be required in production
+    # Dev tools - may not be required in production
     - busybox
     - curl
     - wget
@@ -24,7 +24,6 @@ accounts:
     - username: sourcegraph
       uid: 100
       gid: 101
-  run-as: 100
 
 # NOTE: This is ignored (see build output)
 # To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`

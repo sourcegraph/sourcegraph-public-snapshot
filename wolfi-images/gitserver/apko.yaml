@@ -5,31 +5,26 @@ contents:
     - https://packages.wolfi.dev/os
     - '@local /work/packages'
   packages:
-    ## Base set of packages
-    - wolfi-baselayout # replaces alpine-baselayout-data
+    ## Base set of packages included in sourcegraph/alpine base image
+    - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    # Included by existing SG base image
     - tini
     - mailcap
-    # These are dev tools - may not be required in production
+    # Dev tools - may not be required in production
     - busybox
     - curl
     - wget
     # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
-    ## Gitserver packages
+    ## gitserver packages
     - 'git>=2.38.1'
     - git-lfs
-    # - git-p4 # TODO: Not available in Wolfi repo
+    - git-p4
     - openssh-client
-    # - python2 # TODO: Not available in Wolfi repo
+    # - python2                  # TODO: Not available in Wolfi repo
     - python3
     - bash
-    # TODO: We require libstdc++ for p4-fusion - is it required on Wolfi?
-    #- libstdc++
-
-    ## Packages refactored out of Dockerfile
     - coursier@local
     - p4cli@local
     - p4-fusion@local
