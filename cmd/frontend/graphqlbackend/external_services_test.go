@@ -270,7 +270,7 @@ func TestExcludeRepoFromExternalService_NoExistingExcludedRepos_NewExcludedRepoA
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"}, nil
+		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -330,7 +330,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_AnotherExcludedRepoAd
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -389,7 +389,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
