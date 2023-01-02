@@ -47,6 +47,14 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
       *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
     esac
 
+    case "$name" in
+      "WARN_*") annotate_file_opts="$annotate_file_opts -t warning"
+      "ERROR_*") annotate_file_opts="$annotate_file_opts -t error"
+      "INFO_*") annotate_file_opts="$annotate_file_opts -t info"
+      "SUCCESS_*") annotate_file_opts="$annotate_file_opts -t success"
+      "*") annotate_file_opts="$annotate_file_opts -t error"
+    esac
+
     if [ "$include_names" = "true" ]; then
       # Set the name of the file as the title of this annotation section
       annotate_file_opts="-s '$name' $annotate_file_opts"

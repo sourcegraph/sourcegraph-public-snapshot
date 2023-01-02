@@ -46,7 +46,7 @@ run() {
 
   if [ $EXIT_CODE_WARN -ne 0 ]; then
     mkdir -p "$base/annotations"
-    echo -e "$OUT" >>"$base/annotations/go-lint-warnings"
+    echo -e "$OUT" >>"$base/annotations/WARN_go-lint"
     echo "^^^ +++"
   fi
 }
