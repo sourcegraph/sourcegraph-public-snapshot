@@ -207,8 +207,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
-                        startLine: 0,
-                        endLine: 200,
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
