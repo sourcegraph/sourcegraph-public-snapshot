@@ -230,6 +230,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
+	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
