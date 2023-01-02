@@ -42,7 +42,6 @@ accounts:
     - username: sourcegraph
       uid: 100
       gid: 101
-  run-as: 100
 
 # NOTE: This is ignored (see build output)
 # To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`

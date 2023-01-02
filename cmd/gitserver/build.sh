@@ -12,8 +12,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
-
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
