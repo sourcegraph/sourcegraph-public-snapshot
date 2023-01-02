@@ -2834,7 +2834,7 @@ type ExternalService implements Node {
     """
     True if this external service can perform availability check by running checkConnection.
 
-    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityNotImplemented.
     """
     hasConnectionCheck: Boolean!
 
@@ -2853,17 +2853,13 @@ can serve requests, and if not, why is the reason for that.
 union ExternalServiceAvailability =
       ExternalServiceAvailable
     | ExternalServiceUnavailable
-    | ExternalServiceAvailabilityUnknown
+    | ExternalServiceAvailabilityNotImplemented
 
+""" Indicator that the external service was found to be available after running
+some connection checks like DNS lookup and a connectivity check to the host:port
+of the code host.
 """
-Indicator that the external service was recently found to be available.
-"""
-type ExternalServiceAvailable {
-    """
-    The timestamp of the last successful availability check that was performed.
-    """
-    lastCheckedAt: DateTime!
-}
+type ExternalServiceAvailable {}
 
 """
 Indicator that the external service was recently not found available.
@@ -2876,16 +2872,9 @@ type ExternalServiceUnavailable {
 }
 
 """
-Availability for some external services may not be determined, or only partially
-supported. In that case unknown variant of ExternalServiceAvailability is returned.
+Availability for some external servic types may not have been implemented.
 """
-type ExternalServiceAvailabilityUnknown {
-    """
-    User-friendly textual description of the implementation status of availablity.
-    This is expected to be tied to specific kinds of external services.
-    """
-    implementationNote: String!
-}
+type ExternalServiceAvailabilityNotImplemented {}
 
 """
 A list of external service sync jobs.

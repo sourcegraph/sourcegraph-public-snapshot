@@ -635,7 +635,6 @@ func TestExternalServices(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	mockLastCheckedAt := time.Now()
 	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceResolver, error) {
 		switch r.externalService.ID {
 		case 2:
@@ -643,11 +642,9 @@ func TestExternalServices(t *testing.T) {
 				suspectedReason: "failed to connect",
 			}
 		case 3:
-			r.availability.available = &externalServiceAvailable{
-				lastCheckedAt: mockLastCheckedAt,
-			}
+			r.availability.available = &externalServiceAvailable{}
 		default:
-			r.availability.unknown = &externalServiceUnknown{}
+			r.availability.notImplemented = &externalServiceNotImplemented{}
 		}
 
 		return r, nil
@@ -717,35 +714,33 @@ func TestExternalServices(t *testing.T) {
 						nodes {
 							id
 							checkConnection {
-								... on ExternalServiceAvailable {
-									lastCheckedAt
-								}
+                                __typename
+								... on ExternalServiceAvailable {}
 								... on ExternalServiceUnavailable {
 									suspectedReason
 								}
-								... on ExternalServiceAvailabilityUnknown {
-									implementationNote
-								}
+								... on ExternalServiceAvailabilityNotImplemented {}
 							}
 							hasConnectionCheck
 						}
 					}
 				}
 			`,
-			ExpectedResult: fmt.Sprintf(`
+			ExpectedResult: `
 			{
 				"externalServices": {
 					"nodes": [
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+							  "__typename": "ExternalServiceAvailabilityNotImplemented"
 							},
 							"hasConnectionCheck": false
 						},
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
 							"checkConnection": {
+								"__typename": "ExternalServiceUnavailable",
 								"suspectedReason": "failed to connect"
 							},
 							"hasConnectionCheck": true
@@ -753,28 +748,28 @@ func TestExternalServices(t *testing.T) {
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
 							"checkConnection": {
-								"lastCheckedAt": %q
+								"__typename": "ExternalServiceAvailable"
 							},
 							"hasConnectionCheck": true
 						},
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+							  "__typename": "ExternalServiceAvailabilityNotImplemented"
 							},
 							"hasConnectionCheck": false
 						},
 						{
 							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+							  "__typename": "ExternalServiceAvailabilityNotImplemented"
 							},
 							"hasConnectionCheck": false
 						}
 					]
 				}
 			}
-			`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
+			`,
 		},
 		{
 			Schema: mustParseGraphQLSchema(t, db),

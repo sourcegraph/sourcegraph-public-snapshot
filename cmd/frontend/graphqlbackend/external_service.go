@@ -39,9 +39,9 @@ type externalServiceResolver struct {
 }
 
 type availabilityState struct {
-	available   *externalServiceAvailable
-	unavailable *externalServiceUnavailable
-	unknown     *externalServiceUnknown
+	available      *externalServiceAvailable
+	unavailable    *externalServiceUnavailable
+	notImplemented *externalServiceNotImplemented
 }
 
 type externalServiceAvailable struct {
@@ -52,7 +52,7 @@ type externalServiceUnavailable struct {
 	suspectedReason string
 }
 
-type externalServiceUnknown struct{}
+type externalServiceNotImplemented struct{}
 
 const externalServiceIDKind = "ExternalService"
 
@@ -227,7 +227,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 
 	if !r.HasConnectionCheck() {
 		r.availability = availabilityState{
-			unknown: &externalServiceUnknown{},
+			notImplemented: &externalServiceNotImplemented{},
 		}
 
 		return r, nil
@@ -255,9 +255,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 	}
 
 	r.availability = availabilityState{
-		available: &externalServiceAvailable{
-			lastCheckedAt: time.Now(),
-		},
+		available: &externalServiceAvailable{},
 	}
 
 	return r, nil
@@ -273,23 +271,14 @@ func (r *externalServiceResolver) ToExternalServiceAvailable() (*externalService
 
 func (r *externalServiceResolver) ToExternalServiceUnavailable() (*externalServiceResolver, bool) {
 	return r, r.availability.unavailable != nil
-
 }
 
-func (r *externalServiceResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceResolver, bool) {
-	return r, r.availability.unknown != nil
-}
-
-func (r *externalServiceResolver) LastCheckedAt() (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: r.availability.available.lastCheckedAt}, nil
+func (r *externalServiceResolver) ToExternalServiceAvailabilityNotImplemented() (*externalServiceResolver, bool) {
+	return r, r.availability.notImplemented != nil
 }
 
 func (r *externalServiceResolver) SuspectedReason() (string, error) {
 	return r.availability.unavailable.suspectedReason, nil
-}
-
-func (r *externalServiceResolver) ImplementationNote() string {
-	return "not implemented"
 }
 
 func (r *externalServiceResolver) SupportsRepoExclusion() bool {
