@@ -7342,13 +7342,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chrome@npm:0.0.127":
-  version: 0.0.127
-  resolution: "@types/chrome@npm:0.0.127"
+"@types/chrome@npm:0.0.206":
+  version: 0.0.206
+  resolution: "@types/chrome@npm:0.0.206"
   dependencies:
     "@types/filesystem": "*"
     "@types/har-format": "*"
-  checksum: 2b12e5c3b33490def9f7468e8f1b8e2b061a8482d39b4f2b6654293e77871943665a707bb50433d20a23fef76e9db98833e031128a105a5a48250651cd348750
+  checksum: 002af40b339ca0f665bf6e52af1fd2ecfdd4cffb6d10d891b0b4394c2a94d758e94e0d5497d38e9b45033eb8620ffa1a63e42294f88612507d9e74ddf3f6ce40
   languageName: node
   linkType: hard
 
@@ -27541,7 +27541,7 @@ __metadata:
     "@types/babel__core": 7.1.20
     "@types/bloomfilter": 0.0.0
     "@types/case-sensitive-paths-webpack-plugin": 2.1.6
-    "@types/chrome": 0.0.127
+    "@types/chrome": 0.0.206
     "@types/classnames": 2.2.10
     "@types/command-exists": 1.2.0
     "@types/compression": 1.7.2
