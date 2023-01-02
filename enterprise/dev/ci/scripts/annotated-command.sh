@@ -48,11 +48,11 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
     esac
 
     case "$name" in
-      "WARN_*") annotate_file_opts="$annotate_file_opts -t warning" ;;
-      "ERROR_*") annotate_file_opts="$annotate_file_opts -t error" ;;
-      "INFO_*") annotate_file_opts="$annotate_file_opts -t info" ;;
-      "SUCCESS_*") annotate_file_opts="$annotate_file_opts -t success" ;;
-      "*") annotate_file_opts="$annotate_file_opts -t error" ;;
+      WARN_*) annotate_file_opts="$annotate_file_opts -t warning" && echo "WARN" ;;
+      ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
+      INFO_*) annotate_file_opts="$annotate_file_opts -t info" ;;
+      SUCCESS_*) annotate_file_opts="$annotate_file_opts -t success" ;;
+      *) annotate_file_opts="$annotate_file_opts -t error" ;;
     esac
 
     if [ "$include_names" = "true" ]; then
