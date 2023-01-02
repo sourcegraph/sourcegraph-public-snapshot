@@ -71,7 +71,6 @@ import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
-import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -107,7 +106,6 @@ import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } fr
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
-import { featureFlags } from '../../util/featureFlags'
 import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
@@ -117,7 +115,6 @@ import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
-import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
@@ -169,7 +166,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
 /** Information for adding code navigation to code views on arbitrary code hosts. */
-export interface CodeHost extends ApplyLinkPreviewOptions {
+export interface CodeHost {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
      * Use {@link CodeHost#name} if you need a human-readable name for the code host to display in the UI.
@@ -224,11 +221,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
-
-    /**
-     * Resolve {@link ContentView}s from the DOM.
-     */
-    contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
      * Resolves {@link NativeTooltip}s from the DOM.
@@ -1475,17 +1467,6 @@ export async function handleCodeHost({
                 console.error('Sourcegraph: uncaught error handling code view', asError(error))
             })
         })
-    )
-
-    // Show link previews on content views (feature-flagged).
-    subscriptions.add(
-        handleContentViews(
-            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
-                switchMap(enabled => (enabled ? mutations : []))
-            ),
-            { extensionsController },
-            codeHost
-        )
     )
 
     return subscriptions

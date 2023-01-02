@@ -203,7 +203,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 
 	// If external service doesn't support repo exclusion, then return.
 	if !externalService.SupportsRepoExclusion() {
-		logger.Warn("Tried to exclude repo from external service which config doesn't support repo exclusion.")
+		logger.Warn("Tried to exclude repo from external service, but its config does not support repo exclusion.")
 		return &EmptyResponse{}, nil
 	}
 

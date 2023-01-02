@@ -9,6 +9,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
@@ -567,23 +568,45 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): string {
-    /**
-     * Account sign-ups should be available for customer instances whereas
-     * non customer instances like .com should direct users through our cloud
-     * sign-up flow to prioritize trial-starts.
-     */
-    const path = cloudSignup ? 'https://signup.sourcegraph.com' : 'https://sourcegraph.com/sign-up'
+/**
+ *
+ * @param cloudSignup - dotcom users are directed to Cloud Signup instead of SG signup
+ * @param authenticatedUser - User to pass to buildCloudTrialURL()
+ * @returns - Cloud Trial signup or SG signup URL string
+ */
+export function buildGetStartedURL(cloudSignup?: boolean, authenticatedUser?: AuthenticatedUser | null): string {
+    const path = cloudSignup ? buildCloudTrialURL(authenticatedUser) : 'https://sourcegraph.com/sign-up'
 
     const url = new URL(path)
-
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
-    }
 
     // Local sign-ups use relative URLs
     if (!cloudSignup) {
         return `${url.pathname}${url.search}`
+    }
+
+    return url.toString()
+}
+
+/**
+ *
+ * @param authenticatedUser - User email/name for Cloud form prefill
+ * @param product - CTA source product page, determines dynamic Cloud description
+ * @returns signup UR string with relevant params attached
+ */
+export const buildCloudTrialURL = (
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'email'> | null | undefined,
+    product?: string
+): string => {
+    const url = new URL('https://signup.sourcegraph.com/')
+
+    if (product) {
+        url.searchParams.append('p', product)
+    }
+    if (authenticatedUser?.email) {
+        url.searchParams.append('email', authenticatedUser.email)
+    }
+    if (authenticatedUser?.displayName) {
+        url.searchParams.append('name', authenticatedUser.displayName)
     }
 
     return url.toString()

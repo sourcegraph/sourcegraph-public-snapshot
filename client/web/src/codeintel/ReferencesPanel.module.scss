@@ -236,7 +236,7 @@
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - var(--filter-input-height) - var(--card-header-height));
+    height: calc(100% - var(--filter-input-height));
     overflow: auto;
 }
 

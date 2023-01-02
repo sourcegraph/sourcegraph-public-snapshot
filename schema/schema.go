@@ -188,7 +188,7 @@ type BatchChangeRolloutWindow struct {
 	// End description: Window end time. If omitted, no time window is applied to the day(s) that match this rule.
 	End string `json:"end,omitempty"`
 	// Rate description: The rate changesets will be published at.
-	Rate interface{} `json:"rate"`
+	Rate any `json:"rate"`
 	// Start description: Window start time. If omitted, no time window is applied to the day(s) that match this rule.
 	Start string `json:"start,omitempty"`
 }
@@ -204,7 +204,7 @@ type BatchSpec struct {
 	// Name description: The name of the batch change, which is unique among all batch changes in the namespace. A batch change's name is case-preserving.
 	Name string `json:"name"`
 	// On description: The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.
-	On []interface{} `json:"on,omitempty"`
+	On []any `json:"on,omitempty"`
 	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the workspace changes that will be included in the batch change.
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
@@ -395,7 +395,7 @@ type BranchChangesetSpec struct {
 	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
 	HeadRepository string `json:"headRepository"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
-	Published interface{} `json:"published,omitempty"`
+	Published any `json:"published,omitempty"`
 	// Title description: The title of the changeset on the code host.
 	Title string `json:"title"`
 	// Version description: A field for versioning the payload.
@@ -440,7 +440,7 @@ type ChangesetTemplate struct {
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
-	Published interface{} `json:"published,omitempty"`
+	Published any `json:"published,omitempty"`
 	// Title description: The title of the changeset.
 	Title string `json:"title"`
 }
@@ -721,7 +721,7 @@ type Extensions struct {
 	// Disabled description: Disable all usage of extensions.
 	Disabled *bool `json:"disabled,omitempty"`
 	// RemoteRegistry description: The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.
-	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
+	RemoteRegistry any `json:"remoteRegistry,omitempty"`
 }
 type ExternalIdentity struct {
 	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
@@ -1111,7 +1111,7 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 
 type ImportChangesets struct {
 	// ExternalIDs description: The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.
-	ExternalIDs []interface{} `json:"externalIDs"`
+	ExternalIDs []any `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
 }
@@ -1143,7 +1143,7 @@ type InsightSeries struct {
 	// Label description: The label to use for the series in the graph.
 	Label string `json:"label"`
 	// RepositoriesList description: Performs a search query and shows the number of results returned.
-	RepositoriesList []interface{} `json:"repositoriesList,omitempty"`
+	RepositoriesList []any `json:"repositoriesList,omitempty"`
 	// Search description: Performs a search query and shows the number of results returned.
 	Search string `json:"search,omitempty"`
 	// Webhook description: (not yet supported) Fetch data from a webhook URL.
@@ -1443,7 +1443,7 @@ type Overrides struct {
 	// Key description: The key that we want to override for example a username
 	Key string `json:"key,omitempty"`
 	// Limit description: The limit per hour, 'unlimited' or 'blocked'
-	Limit interface{} `json:"limit,omitempty"`
+	Limit any `json:"limit,omitempty"`
 }
 
 // PagureConnection description: Configuration for a connection to Pagure.
@@ -1878,7 +1878,7 @@ type Settings struct {
 	// SearchRepositoryGroups description: DEPRECATED: Use search contexts instead.
 	//
 	// Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
-	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
+	SearchRepositoryGroups map[string][]any `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
@@ -2308,11 +2308,11 @@ type Step struct {
 	// Container description: The Docker image used to launch the Docker container in which the shell command is run.
 	Container string `json:"container"`
 	// Env description: Environment variables to set in the step environment.
-	Env interface{} `json:"env,omitempty"`
+	Env any `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
 	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
-	If interface{} `json:"if,omitempty"`
+	If any `json:"if,omitempty"`
 	// Mount description: Files that are mounted to the Docker container.
 	Mount []*Mount `json:"mount,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
