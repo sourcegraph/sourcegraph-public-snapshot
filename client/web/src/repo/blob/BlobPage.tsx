@@ -196,17 +196,19 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      * Intention is to use this whilst we wait for syntax highlighting,
      * so the user has useful content rather than a loading spinner
      */
+
     const formattedBlobInfoOrError = useObservable(
         useMemo(
             () =>
                 createActiveSpan(reactManualTracer, { name: 'formattedBlobInfoOrError', parentSpan: span }, fetchSpan =>
+
                     fetchBlob({
                         repoName,
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
-                        after: 0,
-                        first: 200,
+                        startLine: 0,
+                        endLine: 200,
                     }).pipe(
                         map(blob => {
                             if (blob === null) {

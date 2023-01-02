@@ -43,15 +43,17 @@ var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FIL
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db               database.DB
-	gitserverClient  gitserver.Client
-	commit           *GitCommitResolver
+	db              database.DB
+	gitserverClient gitserver.Client
+	commit          *GitCommitResolver
+
 	contentOnce      sync.Once
-	fullContent      []byte
+	fullContentLines []string
+	fullContentBytes []byte
 	contentCache     *rcache.Cache
 	contentErr       error
-	first            *int32
-	after            *int32
+	startLine        *int32
+	endLine          *int32
 	cacheHighlighted bool
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
@@ -60,15 +62,22 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo, after, first *int32) *GitTreeEntryResolver {
+type GitTreeEntryResolverOpts struct {
+	commit    *GitCommitResolver
+	stat      fs.FileInfo
+	startLine *int32
+	endLine   *int32
+}
+
+func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, opts GitTreeEntryResolverOpts) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		db:              db,
-		commit:          commit,
-		stat:            stat,
+		commit:          opts.commit,
+		stat:            opts.stat,
 		gitserverClient: gitserverClient,
 		contentCache:    rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, 60),
-		after:           after,
-		first:           first,
+		endLine:         opts.endLine,
+		startLine:       opts.startLine,
 	}
 }
 
@@ -84,33 +93,26 @@ func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileRes
 }
 
 func (r *GitTreeEntryResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	// We only care about the full content length here, so we just need r.fullContent to be set.
+	// We only care about the full content length here, so we just need content to be set.
 	_, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.after == nil || r.first == nil || *r.first < 0 {
+	if r.endLine == nil || int(*r.endLine) >= len(r.fullContentLines) {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	first := int(*r.first)
-	endCursor := int(*r.after) + first
-
-	if endCursor >= len(r.fullContent) {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
-	return graphqlutil.NextPageCursor(strconv.Itoa(endCursor)), nil
+	return graphqlutil.NextPageCursor(strconv.Itoa(int(*r.endLine) + 1)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
-	// We only care about the full content length here, so we just need r.fullContent to be set.
+	// We only care about the full content length here, so we just need content to be set.
 	_, err := r.Content(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(r.fullContent)), nil
+	return int32(len(r.fullContentBytes)), nil
 }
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
@@ -120,43 +122,58 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		cacheKey := r.Path() + ":" + string(r.commit.OID())
 		content, ok := r.contentCache.Get(cacheKey)
 		if !ok {
-			r.fullContent, r.contentErr = r.gitserverClient.ReadFile(
+			fullContentBytes, contentErr := r.gitserverClient.ReadFile(
 				ctx,
 				r.commit.repoResolver.RepoName(),
 				api.CommitID(r.commit.OID()),
 				r.Path(),
 				authz.DefaultSubRepoPermsChecker,
 			)
+			r.contentErr = contentErr
+			if r.contentErr != nil {
+				r.fullContentLines = []string{}
+				return
+			}
+
+			r.fullContentBytes = content
+			// Split file by lines for easier paging.
+			r.fullContentLines = strings.Split(string(fullContentBytes), "\n")
+
 			// To avoid overwhelming Redis, we only cache larger files.
-			if len(r.fullContent) > largeFileContentCacheThresholdBytes {
-				r.contentCache.Set(cacheKey, r.fullContent)
+			if len(fullContentBytes) > largeFileContentCacheThresholdBytes {
+				r.contentCache.Set(cacheKey, fullContentBytes)
 			}
 		} else {
-			r.fullContent = content
+			r.fullContentBytes = content
+			r.fullContentLines = strings.Split(string(content), "\n")
 		}
 	})
 
-	return pageContent(r.fullContent, r.after, r.first), r.contentErr
+	return pageContent(r.fullContentLines, r.startLine, r.endLine), r.contentErr
 }
 
-func pageContent(content []byte, after, first *int32) string {
+func pageContent(content []string, startLine, endLine *int32) string {
 	// TODO: double check there is no off by 1 errors
 	totalContentLength := len(content)
-	afterCursor := 0
-	firstCursor := totalContentLength
-	if after != nil {
-		afterCursor = int(*after)
+	startCursor := 0
+	endCursor := totalContentLength
+
+	// If startLine is set and is a legit value, set the cursor to point to it.
+	if startLine != nil && *startLine >= 0 {
+		startCursor = int(*startLine)
 	}
-	if afterCursor > totalContentLength {
-		afterCursor = totalContentLength
+	if startCursor > totalContentLength {
+		startCursor = totalContentLength
 	}
-	if first != nil && *first >= 0 {
-		firstCursor = int(*first)
+
+	// If endLine is set and is a legit value, set the cursor to point to it.
+	if endLine != nil && *endLine >= 0 {
+		endCursor = int(*endLine)
 	}
-	if afterCursor+firstCursor > totalContentLength {
-		firstCursor = totalContentLength - afterCursor
+	if endCursor > totalContentLength {
+		endCursor = totalContentLength
 	}
-	return string(content[afterCursor : afterCursor+firstCursor])
+	return strings.Join(content[startCursor:endCursor], "\n")
 }
 
 func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
@@ -168,12 +185,12 @@ func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
-	// We only care about the full content length here, so we just need r.fullContent to be set.
+	// We only care about the full content length here, so we just need r.fullContentLines to be set.
 	_, err := r.Content(ctx)
 	if err != nil {
 		return false, err
 	}
-	return highlight.IsBinary(r.fullContent), nil
+	return highlight.IsBinary(r.fullContentBytes), nil
 }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
@@ -397,12 +414,12 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 }
 
 func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
-	// We only care about the full content length here, so we just need r.fullContent to be set.
+	// We only care about the full content length here, so we just need content to be set.
 	_, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return parseLFSPointer(string(r.fullContent)), nil
+	return parseLFSPointer(string(r.fullContentBytes)), nil
 }
 
 type symbolInfoArgs struct {

@@ -23,16 +23,16 @@ import { useExperimentalFeatures } from '../../stores'
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
-    first = -1,
-    after = 0,
+    startLine = 0,
+    endLine = -1,
     ...options
 
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
-    after,
-    first,
+    startLine,
+    endLine,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
@@ -47,12 +47,12 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
-    after?: number
-    first?: number
+    startLine?: number
+    endLine?: number
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format, after, first } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
@@ -68,12 +68,12 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
-                $after: Int
-                $first: Int
+                $startLine: Int
+                $endLine: Int
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        file(path: $filePath, after: $after, first: $first) {
+                        file(path: $filePath, startLine: $startLine, endLine: $endLine) {
                             ...BlobFileFields
                         }
                     }
@@ -104,7 +104,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html, after, first }
+        { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

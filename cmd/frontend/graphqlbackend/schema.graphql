@@ -4523,13 +4523,13 @@ type GitCommit implements Node {
     blob(
         path: String!
         """
-        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        Return blob content starting at line "startLine".
         """
-        first: Int
+        startLine: Int
         """
-        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        Return blob content ending at line "endLine".
         """
-        after: Int
+        endLine: Int
     ): GitBlob
     """
     The file at the given path for this commit.
@@ -4538,13 +4538,13 @@ type GitCommit implements Node {
     file(
         path: String!
         """
-        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        Return blob content starting at line "startLine".
         """
-        first: Int
+        startLine: Int
         """
-        Skip the first N bytes of the file before returning the number of bytes as set in the field "first".
+        Return blob content ending at line "endLine".
         """
-        after: Int
+        endLine: Int
      ): File2
     """
     Lists the programming languages present in the tree at this commit.

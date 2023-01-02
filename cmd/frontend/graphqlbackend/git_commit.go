@@ -236,11 +236,11 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
-	Path  string
-	After *int32
-	First *int32
+	Path      string
+	StartLine *int32
+	EndLine   *int32
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, args.After, args.First, func(stat fs.FileInfo) error {
+	return r.path(ctx, args.Path, args.StartLine, args.EndLine, func(stat fs.FileInfo) error {
 		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 			return errors.Errorf("not a blob: %q", args.Path)
 		}
@@ -250,22 +250,22 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
-	Path  string
-	After *int32
-	First *int32
+	Path      string
+	StartLine *int32
+	EndLine   *int32
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
 func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
-	Path  string
-	After *int32
-	First *int32
+	Path      string
+	StartLine *int32
+	EndLine   *int32
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, args.After, args.First, func(_ fs.FileInfo) error { return nil })
+	return r.path(ctx, args.Path, args.StartLine, args.EndLine, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, after, first *int32, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+func (r *GitCommitResolver) path(ctx context.Context, path string, startLine, endLine *int32, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
 	defer span.Finish()
 	span.SetTag("path", path)
@@ -280,8 +280,13 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, after, first 
 	if err := validate(stat); err != nil {
 		return nil, err
 	}
-
-	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r, stat, after, first), nil
+	opts := GitTreeEntryResolverOpts{
+		commit:    r,
+		stat:      stat,
+		startLine: startLine,
+		endLine:   endLine,
+	}
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {

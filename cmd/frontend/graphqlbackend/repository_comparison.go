@@ -202,7 +202,13 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
-	return NewGitTreeEntryResolver(db, r.gitserverClient, r.Head, CreateFileInfo(r.FileDiff.NewName, false), nil, nil)
+	opts := GitTreeEntryResolverOpts{
+		commit:    r.Head,
+		stat:      CreateFileInfo(r.FileDiff.NewName, false),
+		startLine: nil,
+		endLine:   nil,
+	}
+	return NewGitTreeEntryResolver(db, r.gitserverClient, opts)
 }
 
 // computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
@@ -437,7 +443,13 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
-	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r.Base, CreateFileInfo(r.FileDiff.OrigName, false), nil, nil)
+	opts := GitTreeEntryResolverOpts{
+		commit:    r.Base,
+		stat:      CreateFileInfo(r.FileDiff.OrigName, false),
+		startLine: nil,
+		endLine:   nil,
+	}
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts)
 }
 
 func (r *FileDiffResolver) NewFile() FileResolver {
