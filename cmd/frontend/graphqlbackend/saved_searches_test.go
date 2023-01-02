@@ -21,30 +21,52 @@ func TestSavedSearches(t *testing.T) {
 	key := int32(1)
 
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
+	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
 	ss := database.NewMockSavedSearchStore()
-	ss.ListSavedSearchesByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.SavedSearch, error) {
-		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: &userID, OrgID: nil}}, nil
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
+	})
+	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (*int32, error) {
+		totalCount := int32(1)
+		return &totalCount, nil
 	})
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
-	savedSearches, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)))
+	args := struct {
+		Namespace graphql.ID
+		First     *int32
+		Last      *int32
+		After     *string
+		Before    *string
+	}{
+		Namespace: MarshalUserID(key),
+		First:     &key,
+	}
+
+	resolver, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*savedSearchResolver{{db, types.SavedSearch{
-		ID:          key,
-		Description: "test query",
-		Query:       "test type:diff patternType:regexp",
-		UserID:      &key,
-		OrgID:       nil,
+
+	nodes, err := resolver.Nodes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantNodes := []*savedSearchResolver{{db, types.SavedSearch{
+		ID:              key,
+		Description:     "test query",
+		Query:           "test type:diff patternType:regexp",
+		UserID:          &key,
+		OrgID:           nil,
+		SlackWebhookURL: nil,
 	}}}
-	if !reflect.DeepEqual(savedSearches, want) {
-		t.Errorf("got %v+, want %v+", savedSearches[0], want[0])
+	if !reflect.DeepEqual(nodes, wantNodes) {
+		t.Errorf("got %v+, want %v+", nodes[0], wantNodes[0])
 	}
 }
 

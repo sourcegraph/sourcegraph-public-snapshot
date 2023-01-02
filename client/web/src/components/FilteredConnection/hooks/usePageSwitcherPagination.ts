@@ -39,6 +39,7 @@ export interface UsePaginatedConnectionResult<TData> extends PaginationProps {
     connection?: PaginatedConnection<TData>
     loading: boolean
     error?: ApolloError
+    refetch: () => any
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -55,7 +56,7 @@ interface UsePaginatedConnectionConfig<TResult> {
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TData> {
     query: string
     variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
-    getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TData>
+    getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TData> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
 }
 
@@ -135,6 +136,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         connection,
         loading,
         error,
+        refetch,
         hasNextPage: connection?.pageInfo?.hasNextPage ?? null,
         hasPreviousPage: connection?.pageInfo?.hasPreviousPage ?? null,
         goToNextPage,

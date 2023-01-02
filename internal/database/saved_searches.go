@@ -22,6 +22,8 @@ type SavedSearchStore interface {
 	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
 	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
+	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
+	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (*int32, error)
 	Transact(context.Context) (SavedSearchStore, error)
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
 	With(basestore.ShareableStore) SavedSearchStore
@@ -237,6 +239,77 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
+}
+
+// ListSavedSearchesByOrgOrUser lists all the saved searches associated with an
+// organization for the user.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure only admins or
+// members of the specified organization can access the returned saved
+// searches.
+func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
+	var savedSearches []*types.SavedSearch
+	conds := sqlf.Sprintf("WHERE user_id=%v OR org_id=%v", userID, orgID)
+
+	if paginationArgs != nil {
+		queryArgs, err := paginationArgs.SQL()
+		if err != nil {
+			return nil, errors.Wrap(err, "PaginationArgsContext")
+		}
+
+		if queryArgs.Where != nil {
+			conds = sqlf.Sprintf(`%v AND %v`, conds, queryArgs.Where)
+		}
+
+		conds = queryArgs.AppendOrderToQuery(conds)
+		conds = queryArgs.AppendLimitToQuery(conds)
+	}
+
+	query := sqlf.Sprintf(`SELECT
+	id,
+	description,
+	query,
+	notify_owner,
+	notify_slack,
+	user_id,
+	org_id,
+	slack_webhook_url
+	FROM saved_searches %v`, conds)
+
+	rows, err := s.Query(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryContext")
+	}
+	for rows.Next() {
+		var ss types.SavedSearch
+		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+			return nil, errors.Wrap(err, "Scan")
+		}
+
+		savedSearches = append(savedSearches, &ss)
+	}
+	return savedSearches, nil
+}
+
+// CountSavedSearchesByOrgOrUser counts all the saved searches associated with an
+// organization for the user.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure only admins or
+// members of the specified organization can access the returned saved
+// searches.
+func (s *savedSearchStore) CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (*int32, error) {
+	conds := sqlf.Sprintf("WHERE user_id=%v OR org_id=%v", userID, orgID)
+	query := sqlf.Sprintf(`SELECT COUNT(*) FROM saved_searches %v`, conds)
+
+	var count *int32
+	err := s.Handle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&count)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryContext")
+	}
+
+	return count, nil
 }
 
 // Create creates a new saved search with the specified parameters. The ID

@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -111,20 +112,106 @@ func (r *schemaResolver) toSavedSearchResolver(entry types.SavedSearch) *savedSe
 	return &savedSearchResolver{db: r.db, s: entry}
 }
 
-func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
+func (r *schemaResolver) SavedSearches(ctx context.Context, args struct {
+	Namespace graphql.ID
+	First     *int32
+	Last      *int32
+	After     *string
+	Before    *string
+}) (*graphqlutil.ConnectionResolver[savedSearchResolver], error) {
 	a := actor.FromContext(ctx)
+	user, err := a.User(ctx, r.db.Users())
+	if err != nil {
+		return nil, err
+	}
+
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no currently authenticated user")
 	}
 
-	allSavedSearches, err := r.db.SavedSearches().ListSavedSearchesByUserID(ctx, a.UID)
+	var uid, oid int32
+	if err := UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	if !user.SiteAdmin {
+		if uid != 0 && a.UID != uid {
+			return nil, errors.New("must be authenticated as the authorized user or as an admin.")
+		}
+
+		if oid != 0 {
+			orgMembership, err := r.db.OrgMembers().GetByOrgIDAndUserID(ctx, oid, a.UID)
+			if err != nil {
+				return nil, err
+			}
+
+			if orgMembership == nil {
+				return nil, errors.New("must be part of the organisation or a side admin. (must be a side admin)")
+			}
+		}
+	}
+
+	connectionStore := &savedSearchesConnectionStore{
+		db:     r.db,
+		userID: &uid,
+		orgID:  &oid,
+	}
+
+	connectionArgs := &graphqlutil.ConnectionResolverArgs{
+		First:  args.First,
+		Last:   args.Last,
+		After:  args.After,
+		Before: args.Before,
+	}
+
+	resolver, err := graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, connectionArgs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resolver, nil
+}
+
+type savedSearchesConnectionStore struct {
+	db     database.DB
+	userID *int32
+	orgID  *int32
+}
+
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver) (*string, error) {
+	if node == nil {
+		return nil, errors.New(`node is nil`)
+	}
+
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cusror string) (*int, error) {
+	nodeID, err := unmarshalSavedSearchID(graphql.ID(cusror))
+	if err != nil {
+		return nil, err
+	}
+
+	id := int(nodeID)
+
+	return &id, nil
+}
+
+func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	return s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
+}
+
+func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*savedSearchResolver, error) {
+	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, args)
 	if err != nil {
 		return nil, err
 	}
 
 	var savedSearches []*savedSearchResolver
 	for _, savedSearch := range allSavedSearches {
-		savedSearches = append(savedSearches, r.toSavedSearchResolver(*savedSearch))
+		savedSearches = append(savedSearches, &savedSearchResolver{db: s.db, s: *savedSearch})
 	}
 
 	return savedSearches, nil
