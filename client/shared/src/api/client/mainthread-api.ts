@@ -65,7 +65,6 @@ export const initMainThreadAPI = (
         | 'requestGraphQL'
         | 'showMessage'
         | 'showInputBox'
-        | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
@@ -150,7 +149,6 @@ export const initMainThreadAPI = (
         showInputBox: options =>
             platformContext.showInputBox ? platformContext.showInputBox(options) : defaultShowInputBox(options),
 
-        getSideloadedExtensionURL: () => proxySubscribable(platformContext.sideloadedExtensionURL),
         getScriptURLForExtension: () => {
             const getScriptURL = platformContext.getScriptURLForExtension()
             if (!getScriptURL) {

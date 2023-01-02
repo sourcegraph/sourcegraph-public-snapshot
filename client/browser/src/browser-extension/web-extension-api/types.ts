@@ -64,9 +64,7 @@ export interface SyncStorageItems extends SourcegraphURL {
     dismissedHoverAlerts: Record<string, boolean | undefined>
 }
 
-export interface LocalStorageItems {
-    sideloadedExtensionURL: string | null
-}
+export interface LocalStorageItems {}
 
 export interface ManagedStorageItems extends SourcegraphURL {
     phabricatorMappings: PhabricatorMapping[]

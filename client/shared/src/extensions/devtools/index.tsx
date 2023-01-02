@@ -28,7 +28,7 @@ import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps
     extends RequiredExtensionsControllerProps,
-        PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
+        PlatformContextProps<'settings'> {
     link: React.ComponentType<React.PropsWithChildren<{ id: string }>>
 }
 

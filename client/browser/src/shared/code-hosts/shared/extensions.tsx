@@ -48,9 +48,7 @@ export function initializeExtensions(
     return { platformContext, extensionsController }
 }
 
-interface InjectProps
-    extends PlatformContextProps<'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
-        RequiredExtensionsControllerProps {
+interface InjectProps extends PlatformContextProps<'settings' | 'sourcegraphURL'>, RequiredExtensionsControllerProps {
     history: H.History
     render: Renderer
 }

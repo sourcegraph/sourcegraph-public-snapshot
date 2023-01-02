@@ -9,7 +9,7 @@ import { Link } from '@sourcegraph/wildcard'
 
 import { ShortcutProvider } from './ShortcutProvider'
 
-interface Props extends PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
+interface Props extends PlatformContextProps<'settings'> {
     location: H.Location
     extensionsController: ClientController
     sourcegraphURL: string

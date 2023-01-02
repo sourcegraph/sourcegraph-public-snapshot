@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
-import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, NEVER, of, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -82,7 +82,6 @@ const createMockPlatformContext = (
 ): CodeIntelligenceProps['platformContext'] => ({
     urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
-    sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
     refreshSettings: () => Promise.resolve(),
     sourcegraphURL: '',

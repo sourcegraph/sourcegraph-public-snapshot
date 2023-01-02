@@ -202,7 +202,6 @@ export interface MainThreadAPI {
     showMessage: (message: string) => Promise<void>
     showInputBox: (options?: InputBoxOptions) => Promise<string | undefined>
 
-    getSideloadedExtensionURL: () => ProxySubscribable<string | null>
     getScriptURLForExtension: () =>
         | undefined
         | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
