@@ -116,7 +116,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
+import { applyDecorations, initializeExtensions, renderCommandPalette } from './extensions'
 import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
@@ -324,11 +324,10 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
+        'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
-    showGlobalDebug?: boolean
 }
 
 export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
@@ -340,13 +339,6 @@ export const getExistingOrCreateOverlayMount = (codeHostName: string, container:
         container.append(mount)
     }
 
-    return mount
-}
-
-export const createGlobalDebugMount = (): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.dataset.globalDebug = 'true'
-    document.body.append(mount)
     return mount
 }
 
@@ -822,7 +814,6 @@ export async function handleCodeHost({
     codeHost,
     extensionsController,
     platformContext,
-    showGlobalDebug,
     telemetryService,
     render,
     minimalUI,
@@ -933,14 +924,6 @@ export async function handleCodeHost({
                 })
             )
         )
-    }
-
-    // Render extension debug menu
-    // This renders to document.body, which we can assume is never removed,
-    // so we don't need to subscribe to mutations.
-    if (showGlobalDebug && extensionsController !== null) {
-        const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     const signInCloses = new Subject<void>()
@@ -1472,8 +1455,6 @@ export async function handleCodeHost({
     return subscriptions
 }
 
-const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
-
 const CODE_HOSTS: CodeHost[] = [
     bitbucketServerCodeHost,
     bitbucketCloudCodeHost,
@@ -1547,8 +1528,7 @@ export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    isExtension: boolean,
-    showGlobalDebug = SHOW_DEBUG()
+    isExtension: boolean
 ): Subscription {
     const subscriptions = new Subscription()
     const { platformContext, extensionsController } = initializeExtensions(
@@ -1617,7 +1597,6 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHost,
                     extensionsController,
                     platformContext,
-                    showGlobalDebug,
                     telemetryService,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,

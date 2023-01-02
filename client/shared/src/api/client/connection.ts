@@ -49,7 +49,6 @@ export async function createExtensionHostClientConnection(
         | 'getGraphQLClient'
         | 'requestGraphQL'
         | 'telemetryService'
-        | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'clientApplication'
     >

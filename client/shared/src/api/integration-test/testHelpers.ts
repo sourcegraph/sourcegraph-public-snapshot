@@ -1,7 +1,7 @@
 import 'message-port-polyfill'
 
 import { Remote } from 'comlink'
-import { BehaviorSubject, throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
+import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { EndpointPair, PlatformContext } from '../../platform/context'
@@ -46,7 +46,6 @@ interface Mocks
         | 'requestGraphQL'
         | 'getScriptURLForExtension'
         | 'clientApplication'
-        | 'sideloadedExtensionURL'
         | 'showMessage'
         | 'showInputBox'
     > {}
@@ -58,7 +57,6 @@ const NOOP_MOCKS: Mocks = {
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: () => undefined,
     clientApplication: 'sourcegraph',
-    sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
 }
 
 /**

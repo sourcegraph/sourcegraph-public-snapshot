@@ -32,7 +32,6 @@ import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -284,9 +283,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            {props.extensionsController !== null ? (
-                <GlobalDebug {...props} extensionsController={props.extensionsController} />
-            ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
