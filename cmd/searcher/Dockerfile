@@ -3,12 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/searcher-base
-
-# The comby/comby image is a small binary-only distribution. See the bin and src directories
-# here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
-# hadolint ignore=DL3022
-COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
+FROM sourcegraph/searcher-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -22,5 +17,6 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 ENV CACHE_DIR=/mnt/cache/searcher
 RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
 USER sourcegraph
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/searcher"]
 COPY searcher /usr/local/bin/
