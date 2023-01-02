@@ -5,8 +5,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { debounce } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Modal, H3, Icon } from '@sourcegraph/wildcard'
+import { Button, Input, Modal, H3, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

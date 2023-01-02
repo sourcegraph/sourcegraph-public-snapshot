@@ -2,19 +2,17 @@ package background
 
 import (
 	"context"
-	"crypto/sha256"
 	"io"
 	"sort"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -230,27 +228,10 @@ func processDocument(document *scip.Document, externalSymbolsByName map[string]*
 	path := document.RelativePath
 	canonicalizeDocument(document, externalSymbolsByName)
 
-	payload, err := proto.Marshal(document)
-	if err != nil {
-		return lsifstore.ProcessedSCIPDocument{
-			DocumentPath: path,
-			Err:          err,
-		}
-	}
-
 	return lsifstore.ProcessedSCIPDocument{
-		DocumentPath:   path,
-		Hash:           hashPayload(payload),
-		RawSCIPPayload: payload,
-		Symbols:        types.ExtractSymbolIndexes(document),
+		Path:     path,
+		Document: document,
 	}
-}
-
-// hashPayload returns a sha256 checksum of the given payload.
-func hashPayload(payload []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(payload)
-	return hash.Sum(nil)
 }
 
 // canonicalizeDocument ensures that the fields of the given document are ordered in a
@@ -326,8 +307,6 @@ func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
 	upload codeinteltypes.Upload,
-	repo *sgtypes.Repo,
-	isDefaultBranch bool,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {
@@ -341,36 +320,26 @@ func writeSCIPData(
 		return err
 	}
 
-	symbolWriter, err := tx.NewSymbolWriter(ctx, upload.ID)
+	scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
 	if err != nil {
 		return err
 	}
 
 	var numDocuments uint32
 	for document := range correlatedSCIPData.Documents {
-		documentLookupID, err := tx.InsertSCIPDocument(
-			ctx,
-			upload.ID,
-			document.DocumentPath,
-			document.Hash,
-			document.RawSCIPPayload,
-		)
-		if err != nil {
+		if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
 			return err
 		}
 
-		if err := symbolWriter.WriteSCIPSymbols(ctx, documentLookupID, document.Symbols); err != nil {
-			return err
-		}
 		numDocuments += 1
 	}
-	trace.Log(otlog.Uint32("numDocuments", numDocuments))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
 
-	count, err := symbolWriter.Flush(ctx)
+	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}
-	trace.Log(otlog.Uint32("numSymbols", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
 
 	return nil
 }

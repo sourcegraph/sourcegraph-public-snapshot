@@ -62,8 +62,15 @@ describe('Organizations', () => {
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
+                            final: '',
                             subjects: [
                                 {
+                                    __typename: 'Org',
+                                    id: '123',
+                                    settingsURL: '#',
+                                    name: 'testorg',
+                                    displayName: 'Test org',
+                                    viewerCanAdminister: true,
                                     latestSettings: {
                                         id: settingsID,
                                         contents: JSON.stringify({}),
@@ -129,8 +136,15 @@ describe('Organizations', () => {
                     SettingsCascade: () => ({
                         settingsSubject: {
                             settingsCascade: {
+                                final: '',
                                 subjects: [
                                     {
+                                        __typename: 'Org',
+                                        id: '123',
+                                        settingsURL: '#',
+                                        name: 'testorg',
+                                        displayName: 'Test org',
+                                        viewerCanAdminister: true,
                                         latestSettings: {
                                             id: settingsID,
                                             contents: JSON.stringify({}),

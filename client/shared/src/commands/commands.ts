@@ -1,15 +1,14 @@
 import { Remote } from 'comlink'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
-import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '@sourcegraph/client-api'
+import { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { formatSearchParameters } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { CommandEntry } from '../api/client/mainthread-api'
-import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/settings'
+import { SettingsEdit, updateSettings } from '../api/client/services/settings'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { PlatformContext } from '../platform/context'
 
@@ -21,7 +20,7 @@ import { PlatformContext } from '../platform/context'
 export function registerBuiltinClientCommands(
     context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'settings' | 'updateSettings'>,
     extensionHost: Remote<FlatExtensionHostAPI>,
-    registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
+    registerCommand: (entryToRegister: CommandEntry) => Unsubscribable
 ): Unsubscribable {
     const subscription = new Subscription()
 

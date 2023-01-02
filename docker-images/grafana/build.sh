@@ -22,10 +22,12 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 # Cross-compile monitoring generator before building the image.
+pushd "../../monitoring"
 go build \
   -trimpath \
-  -o "$BUILDDIR"/.bin/monitoring-generator ../../monitoring
+  -o "$BUILDDIR"/.bin/monitoring-generator .
 
+# Final pre-build stage.
 pushd "$BUILDDIR"
 
 # Enable image build caching via CACHE=true

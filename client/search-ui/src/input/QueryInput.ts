@@ -1,4 +1,9 @@
-import { CaseSensitivityProps, QueryState, SearchContextProps, SearchPatternTypeProps } from '@sourcegraph/search'
+import {
+    CaseSensitivityProps,
+    QueryState,
+    SearchContextProps,
+    SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 

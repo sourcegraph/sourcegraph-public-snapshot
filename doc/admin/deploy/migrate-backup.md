@@ -34,7 +34,6 @@ This list is not guaranteed to be complete, but rather representative of the typ
 |---|---|---|
 |Repository metadata (e.g. clone URLs, whether it is a fork or archive, etc.)|Yes||
 |User accounts|Yes (if using [SSO authentication](../auth/index.md)), No if using builtin authentication||
-|Private Sourcegraph extensions|Yes|Only used if your Sourcegraph instance uses a [private extension registry](../extensions/index.md#publish-extensions-to-a-private-extension-registry). Ensure that any private extension code is backed up.|
 |[Repository permissions](../repo/permissions.md)|Yes||
 |[Organizations](../organizations.md)|No||
 |[User and org settings](../config/settings.md)|No|Global settings can be backed up as described above, but user- and org-level settings cannot.|

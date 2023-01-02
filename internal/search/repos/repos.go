@@ -11,10 +11,10 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type Resolved struct {
@@ -88,42 +89,31 @@ type Resolver struct {
 	searcher  *endpoint.Map
 }
 
-func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
+func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
 	}
 
 	var errs error
+	done := false
+	return iterator.New(func() ([]Resolved, error) {
+		if done {
+			return nil, errs
+		}
 
-	for {
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
-				break
+			// For missing repo revs, just collect the error and keep paging
+			if !errors.Is(err, &MissingRepoRevsError{}) {
+				return nil, errs
 			}
 		}
-		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
 
-		if err = handle(&page); err != nil {
-			errs = errors.Append(errs, err)
-			break
-		}
-
-		if page.Next == nil {
-			break
-		}
-
+		done = page.Next == nil
 		opts.Cursors = page.Next
-	}
-
-	return errs
+		return []Resolved{page}, nil
+	})
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
@@ -487,7 +477,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			g.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev, authz.DefaultSubRepoPermsChecker); err != nil {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -542,7 +532,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	err error,
 ) {
 	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
-	tr.LogFields(otlog.Int("inputRevCount", len(repoRevs)))
+	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -634,7 +624,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				addBackendsMissing(repos.Crashes)
 
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.Minimal {
+				for repoID, repo := range repos.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
 					for _, branch := range repo.Branches {
 						for _, inputRev := range inputRevs {
@@ -704,10 +694,9 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	tr.LogFields(
-		otlog.Int("filteredRevCount", len(matchedRepoRevs)),
-		otlog.Int("backendsMissing", backendsMissing),
-	)
+	tr.SetAttributes(
+		attribute.Int("filteredRevCount", len(matchedRepoRevs)),
+		attribute.Int("backendsMissing", backendsMissing))
 	return matchedRepoRevs, missing, backendsMissing, nil
 }
 

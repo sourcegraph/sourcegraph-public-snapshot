@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/xanzy/go-gitlab"
 
 	"github.com/sourcegraph/run"
 
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,7 +32,7 @@ func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeH
 
 	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(baseURL.String()))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create GitLab client")
 	}
 	return &GitLabCodeHost{
 		def: def,
@@ -107,6 +109,18 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	return nil
 }
 
+func (g *GitLabCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+	return 0, 0, errors.New("not implemented for Gitlab")
+}
+
+func (g *GitLabCodeHost) Iterator() Iterator[[]*store.Repo] {
+	panic("not implemented")
+}
+
+func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+	return nil, errors.New("not implemented for Gitlab")
+}
+
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	groups, _, err := g.c.Groups.ListGroups(&gitlab.ListGroupsOptions{Search: gitlab.String(g.def.Path)})
 	if err != nil {
@@ -117,11 +131,27 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 	}
 	group := groups[0]
 
-	project, _, err := g.c.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name:        gitlab.String(name),
-		NamespaceID: &group.ID,
-	})
-	if err != nil {
+	var resp *gitlab.Response
+	var project *gitlab.Project
+	err = nil
+	retries := 0
+	for resp == nil || resp.StatusCode >= 500 {
+		project, resp, err = g.c.Projects.CreateProject(&gitlab.CreateProjectOptions{
+			Name:        gitlab.String(name),
+			NamespaceID: &group.ID,
+		})
+		retries++
+		if retries == 3 && project == nil {
+			return nil, errors.Wrapf(err, "Exceeded retry limit while creating repo")
+		}
+	}
+	if err != nil && strings.Contains(err.Error(), "has already been taken") {
+		// state does not match reality, get existing repo
+		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Name, name), &gitlab.GetProjectOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
 	}
 

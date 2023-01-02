@@ -101,7 +101,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
-                        isLightTheme={isLightTheme}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
@@ -109,11 +108,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 </TabPanel>
                 <TabPanel>
                     <div className="d-flex mb-2 justify-content-end">
-                        <BatchSpecDownloadButton
-                            name={spec.description.name}
-                            originalInput={spec.originalInput}
-                            isLightTheme={isLightTheme}
-                        />
+                        <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
                     </div>
                     <Container>
                         <BatchSpec

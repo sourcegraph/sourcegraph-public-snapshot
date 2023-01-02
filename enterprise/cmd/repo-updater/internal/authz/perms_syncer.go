@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -428,7 +428,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				extPerms = new(authz.ExternalUserPermissions)
 
 				// Load last synced sub-repo perms for this user and provider
-				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				currentSubRepoPerms, err := edb.NewEnterpriseDB(s.db).SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 				if err != nil {
 					return results, errors.Wrap(err, "fetching existing sub-repo permissions")
 				}
@@ -547,7 +547,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (providerStates []syncjobs.ProviderStatus, err error) {
-	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(log.Int32("userID", userID))
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -556,11 +555,17 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return providerStates, errors.Wrap(err, "get user")
 	}
 
+	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
+		log.Object("user",
+			log.Int32("ID", userID),
+			log.String("name", user.Username)),
+	)
+
 	// We call this when there are errors communicating with external services so
 	// that we don't have the same user stuck at the front of the queue.
 	tryTouchUserPerms := func() {
 		if err := s.permsStore.TouchUserPermissions(ctx, userID); err != nil {
-			logger.Warn("touching user permissions", log.Int32("userID", userID), log.Error(err))
+			logger.Warn("touching user permissions", log.Error(err))
 		}
 	}
 
@@ -568,7 +573,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	providerStates = results.providerStates
 	if err != nil {
 		tryTouchUserPerms()
-		return providerStates, errors.Wrap(err, "fetch user permissions via external accounts")
+		return providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
 	// fetch current permissions from database
@@ -593,10 +598,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Set sub-repository permissions
-	srp := s.db.SubRepoPerms()
+	srp := edb.NewEnterpriseDB(s.db).SubRepoPerms()
 	for spec, perm := range results.subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
-			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %d", spec, user.ID)
+			return providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Username, user.ID)
 		}
 	}
 
@@ -612,7 +617,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
-		return providerStates, errors.Wrap(err, "set user permissions")
+		return providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
 	}
 
 	logger.Debug("synced",
@@ -620,15 +625,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 
-	userLabel := strconv.Itoa(int(p.UserID))
-	metricsSuccessPermsSyncs.WithLabelValues("user", userLabel).Inc()
-	metricsPermsFound.WithLabelValues("user", userLabel).Set(float64(len(p.IDs)))
+	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
 	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
 	} else {
-		metricsFirstPermsSyncs.WithLabelValues("user", userLabel).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user", userLabel).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
 	}
 
 	return providerStates, nil
@@ -724,7 +727,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
-			return providerStates, errors.Wrap(err, "fetch repository permissions")
+			return providerStates, errors.Wrapf(err, "fetch repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
 		}
 		logger.Warn("proceedWithPartialResults", log.Error(err))
 	}
@@ -743,7 +746,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		})
 
 		if err != nil {
-			return providerStates, errors.Wrap(err, "get user IDs by external accounts")
+			return providerStates, errors.Wrapf(err, "get user IDs by external accounts for repository %q (id: %d)", repo.Name, repo.ID)
 		}
 
 		// Set up the set of all account IDs that need to be bound to permissions
@@ -787,12 +790,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	txs, err := s.permsStore.Transact(ctx)
 	if err != nil {
-		return providerStates, errors.Wrap(err, "start transaction")
+		return providerStates, errors.Wrapf(err, "start transaction for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	defer func() { err = txs.Done(err) }()
 
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
-		return providerStates, errors.Wrap(err, "set repository permissions")
+		return providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	regularCount := len(p.UserIDs)
 
@@ -802,25 +805,30 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		AccountIDs:  pendingAccountIDs,
 	}
 	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
-		return providerStates, errors.Wrap(err, "set repository pending permissions")
+		return providerStates, errors.Wrapf(err, "set repository pending permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	pendingCount := len(p.UserIDs)
+
+	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
+
+	var delayMetricField log.Field
+	if !oldPerms.SyncedAt.IsZero() {
+		delay := p.SyncedAt.Sub(oldPerms.SyncedAt)
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("repo").Inc()
+		delay := p.SyncedAt.Sub(repo.CreatedAt)
+		metricsPermsFirstSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
+		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	}
 
 	logger.Debug("synced",
 		log.Int("regularCount", regularCount),
 		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
+		delayMetricField,
 	)
-
-	metricsSuccessPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
-	metricsPermsFound.WithLabelValues("repo", string(p.RepoID)).Set(float64(regularCount))
-
-	if !oldPerms.SyncedAt.IsZero() {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
-	} else {
-		metricsFirstPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
-	}
 
 	return providerStates, nil
 }
@@ -852,8 +860,8 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
 	logger := s.logger.Scoped("syncPerms", "process perms sync request").With(
 		log.Object("request",
-			log.Int("type", int(request.Type)),
-			log.Int32("id", request.ID),
+			log.String("type", request.Type.String()),
+			log.Int32(request.IDFieldName(), request.ID),
 		))
 
 	defer s.queue.remove(request.Type, request.ID, true)
@@ -891,9 +899,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 				)
 
 				if request.Type == requestTypeUser {
-					metricsFailedPermsSyncs.WithLabelValues("user", string(request.ID)).Inc()
+					metricsFailedPermsSyncs.WithLabelValues("user").Inc()
 				} else {
-					metricsFailedPermsSyncs.WithLabelValues("repo", string(request.ID)).Inc()
+					metricsFailedPermsSyncs.WithLabelValues("repo").Inc()
 				}
 			} else {
 				logger.Debug("succeeded in syncing permissions",
@@ -1232,7 +1240,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.Finish()
-		tr.LogFields(otlog.Int32("id", id))
+		tr.SetAttributes(attribute.Int64("id", int64(id)))
 
 		var typLabel string
 		switch typ {

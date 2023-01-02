@@ -1,8 +1,7 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 
-import { ExecutorCompatibility } from '@sourcegraph/search'
-
 import { WebStory } from '../../../components/WebStory'
+import { ExecutorCompatibility } from '../../../graphql-operations'
 
 import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
 

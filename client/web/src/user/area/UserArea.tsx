@@ -4,7 +4,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -64,7 +63,6 @@ export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
-        ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
@@ -90,8 +88,7 @@ interface UserAreaProps
  * Properties passed to all page components in the user area.
  */
 export interface UserAreaRouteContext
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,

@@ -5,9 +5,8 @@ import * as H from 'history'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Code, H2, Input } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Code, H2, Input, Form } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'

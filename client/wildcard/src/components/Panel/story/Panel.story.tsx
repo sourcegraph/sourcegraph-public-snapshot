@@ -6,12 +6,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
-import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H1, H2, Tooltip } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -19,9 +15,11 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../../Tabs'
 import { PANEL_POSITIONS } from '../constants'
 import { Panel } from '../Panel'
 
+import { panels } from './TabbedPanelContent.fixtures'
+
 import styles from './Story.module.scss'
 
-const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div>{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'wildcard/Panel',
@@ -167,7 +165,7 @@ export const WithChildren: Story = (props = {}) => {
                             </TabPanel>
                         ))
                     ) : (
-                        <EmptyPanelView />
+                        <div>empty panel view</div>
                     )}
                 </TabPanels>
             </Tabs>

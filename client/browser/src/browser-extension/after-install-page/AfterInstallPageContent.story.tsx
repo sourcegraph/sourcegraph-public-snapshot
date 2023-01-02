@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AfterInstallPageContent } from './AfterInstallPageContent'
 

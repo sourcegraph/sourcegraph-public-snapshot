@@ -7,15 +7,6 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import create from 'zustand'
 
 import {
-    InitialParametersSource,
-    QueryUpdate,
-    SearchMode,
-    SearchPatternType,
-    SearchQueryState,
-    SearchQueryStateStore,
-    updateQuery,
-} from '@sourcegraph/search'
-import {
     getDynamicFilterLinks,
     getFiltersOfKind,
     getQuickLinks,
@@ -26,12 +17,21 @@ import {
     SearchSidebarSection,
 } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import {
+    InitialParametersSource,
+    QueryUpdate,
+    SearchMode,
+    SearchQueryState,
+    SearchQueryStateStore,
+    updateQuery,
+} from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Code, useObservable } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
 
 import styles from './SearchSidebarView.module.scss'

@@ -49,10 +49,11 @@ As part of this service you will receive a number of benefits from our team, inc
   
 ### Access to all Sourcegraph features
 
-All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, such as:
+All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
 
 - [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
 - [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
+- [Code Monitoring](../code_monitoring/index.md) (including [email delivery](#managed-smtp) of notifications)
 
 ### Access restrictions
 
@@ -93,8 +94,6 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 
 ### Managed SMTP
 
-> NOTE: This feature is currently undergoing a staged rollout.
-
 All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
 
 - [Code Monitoring](../code_monitoring/index.md) notifications
@@ -107,6 +106,12 @@ By default, emails will be sent from an `@cloud.sourcegraph.com` email address. 
 To opt out of managed SMTP, please let your Sourcegraph Account team know when requesting a trial. You can also opt out by [overriding the managed `email.address` and `email.smtp` configuration with your own in site configuration](../admin/config/email.md). If you have specific requests for managed SMTP, please [reach out regarding special requirements](#accommodating-special-requirements).
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
+
+### Sourcegraph management access
+
+[Sourcegraph management access](https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/) is the ability for Sourcergaph employees to grant time-bound and audit-trailed UI access to Cloud instances in the events of instance maintenance, issue troubleshooting, and customer assistance. Customer consent is guaranteed prior to human accesses.
+
+All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
 
 ## Requirements
 

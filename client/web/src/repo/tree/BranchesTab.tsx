@@ -5,9 +5,8 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'

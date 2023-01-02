@@ -50,30 +50,19 @@ Currently available in the following hosts:
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-### [Docker Compose](docker-compose/index.md)
+### [Single-machine install-script](single-node/script.md) 
 
-We recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format.
-
-Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
-
-Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
-
-<div class="getting-started">
-  <a class="btn btn-secondary text-center" href="./docker-compose/aws"><span>AWS</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/azure"><span>Azure</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/digitalocean"><span>DigitalOcean</span></a>
-  <a class="btn btn-secondary text-center" href="./docker-compose/google_cloud"><span>Google Cloud</span></a>
-</div>
+Quickly install Sourcegraph onto a single Linux machine using our install script.
 
 ### [Kubernetes](kubernetes/index.md) or [Kubernetes with Helm](kubernetes/helm.md)
 
-Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option.
+Kubernetes is recommended for non-standard deployments where our Machine Images or install-script is not a viable option.
 
-This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
 
 Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
 
-If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
 
 ---
 

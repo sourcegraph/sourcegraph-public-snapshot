@@ -35,7 +35,10 @@ func newTest(t *testing.T) *httptestutil.Client {
 		&Handlers{
 			BatchesGitHubWebhook:          enterpriseServices.BatchesGitHubWebhook,
 			BatchesGitLabWebhook:          enterpriseServices.BatchesGitLabWebhook,
-			GitHubSyncWebhook:             enterpriseServices.GitHubSyncWebhook,
+			GitHubSyncWebhook:             enterpriseServices.ReposGithubWebhook,
+			GitLabSyncWebhook:             enterpriseServices.ReposGitLabWebhook,
+			BitbucketServerSyncWebhook:    enterpriseServices.ReposBitbucketServerWebhook,
+			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
 			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
 			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,

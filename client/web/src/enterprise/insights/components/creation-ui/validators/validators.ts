@@ -1,5 +1,5 @@
-import { renderError } from '@sourcegraph/branded/src/components/alerts'
 import { dedupeWhitespace } from '@sourcegraph/common'
+import { renderError } from '@sourcegraph/wildcard'
 
 import { Validator, AsyncValidator } from '../../form'
 import { createRequiredValidator } from '../../form/hooks/validators'

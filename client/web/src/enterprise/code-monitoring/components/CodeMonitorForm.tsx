@@ -6,11 +6,10 @@ import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, Button, useEventObservable, Alert, Link, Select, Input } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'

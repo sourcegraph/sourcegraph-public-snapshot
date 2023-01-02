@@ -614,11 +614,11 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	iter, err := client.Diff(ctx, gitserver.DiffOptions{
+	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
-	}, authz.DefaultSubRepoPermsChecker)
+	})
 	if err != nil {
 		return nil, err
 	}

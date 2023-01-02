@@ -1,36 +1,31 @@
 import { Meta, Story } from '@storybook/react'
 
-import brandedStyles from '@sourcegraph/branded/src/global-styles/index.scss'
-import { usePrependStyles } from '@sourcegraph/storybook'
-
 import { H1, H2 } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 
-export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
-    usePrependStyles('branded-story-styles', brandedStyles)
-
-    return (
-        <>
-            <H1>Tabs</H1>
-            <Container title="Standard">
-                <TabsVariant {...args} />
-            </Container>
-            <Container width={300} title="Limited width">
-                <TabsVariant {...args} />
-            </Container>
-            <Container width={300} title="Scrolled tab list">
-                <TabsVariant {...args} longTabList="scroll" />
-            </Container>
-        </>
-    )
-}
+export const TabsStory: Story<TabsProps & { actions: boolean }> = args => (
+    <>
+        <H1>Tabs</H1>
+        <Container title="Standard">
+            <TabsVariant {...args} />
+        </Container>
+        <Container width={300} title="Limited width">
+            <TabsVariant {...args} />
+        </Container>
+        <Container width={300} title="Scrolled tab list">
+            <TabsVariant {...args} longTabList="scroll" />
+        </Container>
+    </>
+)
 
 TabsStory.storyName = 'Tabs component'
 
 const config: Meta = {
     title: 'wildcard/Tabs',
     component: Tabs,
+    decorators: [story => <BrandedStory>{() => story()}</BrandedStory>],
     parameters: {
         chromatic: {
             enableDarkMode: true,

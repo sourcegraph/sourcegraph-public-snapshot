@@ -41,6 +41,7 @@ type InsightViewSeries struct {
 	GroupBy                       *string
 	BackfillAttempts              int32
 	SupportsAugmentation          bool
+	RepositoryCriteria            *string
 }
 
 type Insight struct {
@@ -107,6 +108,7 @@ type InsightSeries struct {
 	GroupBy                    *string
 	BackfillAttempts           int32
 	SupportsAugmentation       bool
+	RepositoryCriteria         *string
 }
 
 type IntervalUnit string
@@ -165,12 +167,6 @@ const (
 	Line PresentationType = "LINE"
 	Pie  PresentationType = "PIE"
 )
-
-type Frame struct {
-	From   time.Time
-	To     time.Time
-	Commit string
-}
 
 type SeriesSortMode string
 

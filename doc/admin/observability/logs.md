@@ -2,6 +2,8 @@
 
 This document describes the log output from Sourcegraph services and how to configure it.
 
+Note: For request logs, see [Outbound request log](outbound-request-log.md).
+
 ## Log levels
 
 A Sourcegraph service's log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:

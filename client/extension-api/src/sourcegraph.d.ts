@@ -629,32 +629,6 @@ declare module 'sourcegraph' {
         readonly key: string
     }
 
-    /**
-     * A text element displayed in an editor's status bar.
-     * A status bar item can display tooltips on hover and execute commands on click
-     */
-    export interface StatusBarItem {
-        /** The text to display in the status bar */
-        text: string
-
-        /** Tooltip text to display when hovering over the status bar item. */
-        tooltip?: string
-
-        /** The id of and arguments to a command to execute when the status bar item is clicked */
-        command?: { id: string; args?: any[] }
-    }
-
-    /**
-     * Represents a handle to a status bar item.
-     *
-     * To get an instance of {@link StatusBarItemType}, use
-     * {@link sourcegraph.app.createStatusBarItemType}
-     */
-    export interface StatusBarItemType {
-        /** An opaque identifier. */
-        readonly key: string
-    }
-
     export interface Directory {
         /**
          * The URI of the directory.
@@ -724,16 +698,6 @@ declare module 'sourcegraph' {
          *
          */
         setDecorations(decorationType: TextDocumentDecorationType, decorations: TextDocumentDecoration[]): void
-
-        /**
-         * Add a status bar item to this editor's status bar. If a status bar item already exists with the given
-         * {@link StatusBarItemType}, it will be replaced.
-         *
-         * @see {@link StatusBarItemType}
-         * @see {@link sourcegraph.app.createStatusBarItemType}
-         *
-         */
-        setStatusBarItem(statusBarItemType: StatusBarItemType, statusBarItem: StatusBarItem): void
     }
 
     /**
@@ -1146,15 +1110,6 @@ declare module 'sourcegraph' {
         export function createDecorationType(): TextDocumentDecorationType
 
         /**
-         * Creates a statusBarItemType that can be used to add a status bar item to
-         * the status bar of code views.
-         *
-         * Use this to create a unique handle to a status bar item, that can be applied to
-         * text editors using {@link setStatusBarItem}.
-         */
-        export function createStatusBarItemType(): StatusBarItemType
-
-        /**
          * Register a view provider, which provides the contents of a view.
          *
          * This API is experimental and is subject to change or removal without notice.
@@ -1550,68 +1505,6 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A completion item is a suggestion to complete text that the user has typed.
-     *
-     * @see {@link CompletionItemProvider#provideCompletionItems}
-     *
-     * @deprecated
-     */
-    export interface CompletionItem {
-        /**
-         * The label of this completion item, which is rendered prominently. If no
-         * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
-         * user selects this completion.
-         */
-        label: string
-
-        /**
-         * The description of this completion item, which is rendered less prominently but still
-         * alongside the {@link CompletionItem#label}.
-         */
-        description?: string
-
-        /**
-         * A string to insert in a document when the user selects this completion. When not set, the
-         * {@link CompletionItem#label} is used.
-         */
-        insertText?: string
-    }
-
-    /**
-     * A collection of [completion items](#CompletionItem) to be presented in the editor.
-     *
-     * @deprecated
-     */
-    export interface CompletionList {
-        /**
-         * The list of completions.
-         */
-        items: CompletionItem[]
-    }
-
-    /**
-     * A completion item provider provides suggestions to insert or apply at the cursor as the user
-     * is typing.
-     *
-     * Providers are queried for completions as the user types in any document matching the document
-     * selector specified at registration time.
-     *
-     * @deprecated
-     */
-    export interface CompletionItemProvider {
-        /**
-         * Provide completion items for the given position and document.
-         *
-         * @param document The document in which the command was invoked.
-         * @param position The position at which the command was invoked.
-         *
-         * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
-         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
-         */
-        provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
-    }
-
-    /**
      * A document highlight is a range inside a text document which deserves special attention.
      * Usually a document highlight is visualized by changing the background color of its range.
      */
@@ -1847,65 +1740,6 @@ declare module 'sourcegraph' {
             data: T | null
             errors: readonly import('graphql').GraphQLError[]
         }
-    }
-
-    /**
-     * A description of the information available at a URL.
-     */
-    export interface LinkPreview {
-        /**
-         * The content of this link preview, which is shown next to the link.
-         */
-        content?: MarkupContent
-
-        /**
-         * The hover content of this link preview, which is shown when the cursor hovers the link.
-         *
-         * @todo Add support for Markdown. Currently only plain text is supported.
-         */
-        hover?: Pick<MarkupContent, 'value'> & { kind: MarkupKind.PlainText }
-    }
-
-    /**
-     * Called to obtain a preview of the information available at a URL.
-     */
-    export interface LinkPreviewProvider {
-        /**
-         * Provides a preview of the information available at the URL of a link in a document.
-         *
-         * @todo Add a `context` parameter so that the provider knows what document contains the
-         * link (so that it can handle links in code files differently from rendered Markdown
-         * documents, for example).
-         *
-         * @param url The URL of the link to preview.
-         */
-        provideLinkPreview(url: URL): ProviderResult<LinkPreview>
-    }
-
-    /**
-     * Extensions can customize how content is rendered.
-     */
-    export namespace content {
-        /**
-         * EXPERIMENTAL. This API is subject to change without notice and has no compatibility
-         * guarantees.
-         *
-         * Registers a provider for link previews ({@link LinkPreviewProvider}) for all URLs in a
-         * document matching the {@link urlMatchPattern}. A link preview is a description of the
-         * information available at a URL.
-         *
-         * @todo Support a more powerful syntax for URL match patterns, such as Chrome's
-         * (https://developer.chrome.com/extensions/match_patterns).
-         *
-         * @param urlMatchPattern A pattern that matches URLs for which the provider is called to
-         * obtain a preview. Currently it matches all URLs that start with the match pattern (i.e.,
-         * string prefix matches). No wildcards are supported.
-         * @param provider The link preview provider.
-         */
-        export function registerLinkPreviewProvider(
-            urlMatchPattern: string,
-            provider: LinkPreviewProvider
-        ): Unsubscribable
     }
 
     export interface ContextValues {

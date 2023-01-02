@@ -5,13 +5,15 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -36,7 +38,7 @@ export interface SearchResultsInfoBarProps
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'email'> | null
 
     /**
      * Whether the code insights feature flag is enabled.
@@ -44,9 +46,9 @@ export interface SearchResultsInfoBarProps
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
-    /** The search query and if any results were found */
+    /** The search query and results */
     query?: string
-    resultsFound: boolean
+    results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
@@ -85,19 +87,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.query]
     )
 
-    const canCreateMonitorFromQuery = useMemo(() => {
-        if (globalTypeFilter) {
-            return false
-        }
-        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
-    }, [globalTypeFilter])
+    const canCreateMonitorFromQuery = useMemo(
+        () => globalTypeFilter === 'diff' || globalTypeFilter === 'commit',
+        [globalTypeFilter]
+    )
 
-    const canCreateBatchChangeFromQuery = useMemo(() => {
-        if (!globalTypeFilter) {
-            return true
-        }
-        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
-    }, [globalTypeFilter])
+    const canCreateBatchChangeFromQuery = useMemo(
+        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
+        [globalTypeFilter]
+    )
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
@@ -173,7 +171,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     <CloudCtaBanner className="mb-0" variant="outlined">
                         To search across your private repositories,{' '}
                         <Link
-                            to="https://signup.sourcegraph.com"
+                            to={buildCloudTrialURL(props.authenticatedUser)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
@@ -226,7 +224,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         createActions={createActions}
                         createCodeMonitorAction={createCodeMonitorAction}
                         canCreateMonitor={canCreateMonitorFromQuery}
-                        resultsFound={props.resultsFound}
+                        results={props.results}
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}

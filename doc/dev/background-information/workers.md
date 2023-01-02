@@ -10,7 +10,7 @@ Examples:
 
 ## Overview
 
-A **worker** is an generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
+A **worker** is a generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
 
 The **store** is responsible for selecting the next available job from the backing persistence layer and suitably _locking_ it from other consumers as well as updating the job records as they make progress in the handler. Generally, this will be an instance of [dbworker/store.Store](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/workerutil/dbworker/store/store%5C.go+NewStore&patternType=standard), although there are [other implementations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v4.1.3/-/blob/enterprise/cmd/executor/internal/apiclient/baseclient.go?L47:6).
 
@@ -365,25 +365,33 @@ Now that we have all of our constituent parts ready, we can finally construct ou
 ```go
 import (
   "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*ExampleJob], myOwnStore MyOwnStore) *workerutil.Worker[*ExampleJob] {
-  handler := &handler{
-    myOwnStore: myOwnStore,
-  }
+func makeWorker(
+	ctx context.Context,
+	observationCtx *observation.Context,
+	workerStore dbworkerstore.Store[*ExampleJob],
+	myOwnStore MyOwnStore,
+) *workerutil.Worker[*ExampleJob] {
+	handler := &handler{
+		myOwnStore: myOwnStore,
+	}
 
-  return dbworker.NewWorker[*ExampleJob](ctx, workerStore, handler, workerutil.WorkerOptions{
-    Name:              "example_job_worker",
+	return dbworker.NewWorker[*ExampleJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+		Name:              "example_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
 		NumHandlers:       1,           // Process only one job at a time (per instance)
 		HeartbeatInterval: 10 * time.Second,
-  })
+		Metrics:           workerutil.NewMetrics(observationCtx, "example_job_worker"),
+	})
 }
 
-func makeResetter(logger log.Logger, workerStore dbworkerstore.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
-  return dbworker.NewResetter[*ExampleJob](logger, workerStore, dbworker.ResetterOptions{
+func makeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
+  return dbworker.NewResetter[*ExampleJob](observationCtx.logger, workerStore, dbworker.ResetterOptions{
     Name:     "example_job_worker_resetter",
     Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
+    Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, "example_job_worker")
   })
 }
 ```

@@ -1,8 +1,6 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useRef } from 'react'
 
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
-import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
@@ -10,7 +8,6 @@ import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -19,11 +16,9 @@ import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { RouteDescriptor } from '../util/contributions'
 
-import { overviewGroup } from './sidebaritems'
-import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
 
@@ -69,111 +64,8 @@ interface SiteAdminAreaProps
     isSourcegraphDotCom: boolean
 }
 
-export const analyticsGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Analytics',
-        icon: ChartLineVariantIcon,
-    },
-    items: [
-        {
-            label: 'Overview',
-            to: '/site-admin/',
-            exact: true,
-        },
-        {
-            label: 'Search',
-            to: '/site-admin/analytics/search',
-        },
-        {
-            label: 'Code navigation',
-            to: '/site-admin/analytics/code-intel',
-        },
-        {
-            label: 'Users',
-            to: '/site-admin/analytics/users',
-        },
-        {
-            label: 'Insights',
-            to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Batch changes',
-            to: '/site-admin/analytics/batch-changes',
-        },
-        {
-            label: 'Notebooks',
-            to: '/site-admin/analytics/notebooks',
-        },
-        {
-            label: 'Extensions',
-            to: '/site-admin/analytics/extensions',
-        },
-        {
-            label: 'Feedback survey',
-            to: '/site-admin/surveys',
-        },
-    ],
-}
-
-export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
-    {
-        path: '/analytics/search',
-        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsExtensionsPage'), 'AnalyticsExtensionsPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
-        exact: true,
-    },
-    {
-        path: '/',
-        render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
-        exact: true,
-    },
-]
-
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
-
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
-
-    const adminSideBarGroups = useMemo(() => {
-        if (isAdminAnalyticsDisabled) {
-            return props.sideBarGroups
-        }
-        return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
-    }, [isAdminAnalyticsDisabled, props.sideBarGroups])
-
-    const routes = useMemo(
-        () => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes),
-        [isAdminAnalyticsDisabled, props.routes]
-    )
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -204,7 +96,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
-                    groups={adminSideBarGroups}
+                    groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
@@ -214,7 +106,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
-                                {routes.map(
+                                {props.routes.map(
                                     ({ render, path, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route

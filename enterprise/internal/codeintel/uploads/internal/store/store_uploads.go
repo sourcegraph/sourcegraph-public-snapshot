@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -58,10 +59,9 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(
-		log.Int("totalCount", totalCount),
-		log.Int("numUploads", len(uploads)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("totalCount", totalCount),
+		attribute.Int("numUploads", len(uploads)))
 
 	return uploads, totalCount, nil
 }
@@ -331,7 +331,7 @@ func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (
 	if err != nil {
 		return nil, err
 	}
-	logger.Log(log.Int("numUploads", len(uploads)))
+	logger.AddEvent("scanUploadComplete", attribute.Int("numUploads", len(uploads)))
 
 	groupedUploads := make([]shared.UploadsWithRepositoryNamespace, 1, len(uploads)+1)
 	for _, index := range uploads {
@@ -474,10 +474,9 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	for _, numDeleted := range repositories {
 		count += numDeleted
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	return repositories, nil
 }
@@ -522,7 +521,7 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	if err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("count", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
 
 	return count, nil
 }
@@ -576,10 +575,9 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (co
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
@@ -745,10 +743,9 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
@@ -1150,10 +1147,9 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
-		log.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+		attribute.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()))
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
@@ -1161,10 +1157,9 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-		log.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
+		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
@@ -1307,10 +1302,9 @@ func (s *store) GetUploadIDsWithReferences(
 		filtered[packageReference.DumpID] = struct{}{}
 	}
 
-	trace.Log(
-		log.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
-		log.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+		attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {
@@ -1360,7 +1354,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
 	query := sqlf.Sprintf(referenceIDsQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds, limit, offset)
 	rows, err := s.db.Query(ctx, query)
@@ -1598,11 +1592,10 @@ func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
-		log.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
-		log.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
+		attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
+		attribute.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)))
 
 	return nil
 }
@@ -1623,11 +1616,10 @@ func (s *store) persistNearestUploads(ctx context.Context, repositoryID int, tx 
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_nearest_uploads.ins", rowsInserted),
-		log.Int("lsif_nearest_uploads.upd", rowsUpdated),
-		log.Int("lsif_nearest_uploads.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_nearest_uploads.ins", rowsInserted),
+		attribute.Int("lsif_nearest_uploads.upd", rowsUpdated),
+		attribute.Int("lsif_nearest_uploads.del", rowsDeleted))
 
 	return nil
 }
@@ -1672,11 +1664,10 @@ func (s *store) persistNearestUploadsLinks(ctx context.Context, repositoryID int
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_nearest_uploads_links.ins", rowsInserted),
-		log.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
-		log.Int("lsif_nearest_uploads_links.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_nearest_uploads_links.ins", rowsInserted),
+		attribute.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
+		attribute.Int("lsif_nearest_uploads_links.del", rowsDeleted))
 
 	return nil
 }
@@ -1719,11 +1710,10 @@ func (s *store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
-		log.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
-		log.Int("lsif_uploads_visible_at_tip.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
+		attribute.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
+		attribute.Int("lsif_uploads_visible_at_tip.del", rowsDeleted))
 
 	return nil
 }
@@ -1977,7 +1967,7 @@ func nilTimeToString(t *time.Time) string {
 }
 
 func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
-	conds := make([]*sqlf.Query, 0, 12)
+	conds := make([]*sqlf.Query, 0, 13)
 
 	allowDeletedUploads := opts.AllowDeletedUpload && (opts.State == "" || opts.State == "deleted")
 

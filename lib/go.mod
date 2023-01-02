@@ -25,7 +25,7 @@ require (
 	github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9
 	github.com/sourcegraph/scip v0.2.3
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli/v2 v2.23.5
+	github.com/urfave/cli/v2 v2.23.7
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/atomic v1.10.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c

@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,26 +27,15 @@ func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (ExtensionRegist
 	return reg, nil
 }
 
-// ExtensionRegistry is the implementation of the GraphQL types ExtensionRegistry and
-// ExtensionRegistryMutation.
+// ExtensionRegistry is the implementation of the GraphQL type ExtensionRegistry.
 var ExtensionRegistry func(db database.DB) ExtensionRegistryResolver
 
-// ExtensionRegistryResolver is the interface for the GraphQL types ExtensionRegistry and
-// ExtensionRegistryMutation.
+// ExtensionRegistryResolver is the interface for the GraphQL type ExtensionRegistry.
 //
 // Some methods are only implemented if there is a local extension registry. For these methods, the
 // implementation (if one exists) is set on the XyzFunc struct field.
 type ExtensionRegistryResolver interface {
 	Extensions(context.Context, *RegistryExtensionConnectionArgs) (RegistryExtensionConnection, error)
-	Extension(context.Context, *ExtensionRegistryExtensionArgs) (RegistryExtension, error)
-	ViewerPublishers(context.Context) ([]RegistryPublisher, error)
-	Publishers(context.Context, *graphqlutil.ConnectionArgs) (RegistryPublisherConnection, error)
-	CreateExtension(context.Context, *ExtensionRegistryCreateExtensionArgs) (ExtensionRegistryMutationResult, error)
-	UpdateExtension(context.Context, *ExtensionRegistryUpdateExtensionArgs) (ExtensionRegistryMutationResult, error)
-	PublishExtension(context.Context, *ExtensionRegistryPublishExtensionArgs) (ExtensionRegistryMutationResult, error)
-	DeleteExtension(context.Context, *ExtensionRegistryDeleteExtensionArgs) (*EmptyResponse, error)
-	LocalExtensionIDPrefix() *string
-	FeaturedExtensions(context.Context) (FeaturedExtensionsConnection, error)
 
 	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
 	// FilterRemoteExtensions enforces `allowRemoteExtensions` by returning a
@@ -59,43 +47,7 @@ type ExtensionRegistryResolver interface {
 
 type RegistryExtensionConnectionArgs struct {
 	graphqlutil.ConnectionArgs
-	Query                  *string
-	Publisher              *graphql.ID
-	Local                  bool
-	Remote                 bool
-	ExtensionIDs           *[]string
-	PrioritizeExtensionIDs *[]string
-}
-
-type ExtensionRegistryExtensionArgs struct {
-	ExtensionID string
-}
-
-type ExtensionRegistryCreateExtensionArgs struct {
-	Publisher graphql.ID
-	Name      string
-}
-
-type ExtensionRegistryUpdateExtensionArgs struct {
-	Extension graphql.ID
-	Name      *string
-}
-
-type ExtensionRegistryPublishExtensionArgs struct {
-	ExtensionID string
-	Manifest    string
-	Bundle      *string
-	SourceMap   *string
-	Force       bool
-}
-
-type ExtensionRegistryDeleteExtensionArgs struct {
-	Extension graphql.ID
-}
-
-// ExtensionRegistryMutationResult is the interface for the GraphQL type ExtensionRegistryMutationResult.
-type ExtensionRegistryMutationResult interface {
-	Extension(context.Context) (RegistryExtension, error)
+	ExtensionIDs *[]string
 }
 
 // NodeToRegistryExtension is called to convert GraphQL node values to values of type
@@ -109,58 +61,17 @@ var RegistryExtensionByID func(context.Context, database.DB, graphql.ID) (Regist
 // RegistryExtension is the interface for the GraphQL type RegistryExtension.
 type RegistryExtension interface {
 	ID() graphql.ID
-	UUID() string
 	ExtensionID() string
-	ExtensionIDWithoutRegistry() string
-	Publisher(ctx context.Context) (RegistryPublisher, error)
-	Name() string
 	Manifest(ctx context.Context) (ExtensionManifest, error)
-	CreatedAt() *gqlutil.DateTime
-	UpdatedAt() *gqlutil.DateTime
-	PublishedAt(context.Context) (*gqlutil.DateTime, error)
-	URL() string
-	RemoteURL() *string
-	RegistryName() (string, error)
-	IsLocal() bool
-	IsWorkInProgress() bool
-	ViewerCanAdminister(ctx context.Context) (bool, error)
 }
 
 // ExtensionManifest is the interface for the GraphQL type ExtensionManifest.
 type ExtensionManifest interface {
 	Raw() string
 	JSONFields(*struct{ Fields []string }) JSONValue
-	Description() (*string, error)
-	BundleURL() (*string, error)
-}
-
-// RegistryPublisher is the interface for the GraphQL type RegistryPublisher.
-type RegistryPublisher interface {
-	ToUser() (*UserResolver, bool)
-	ToOrg() (*OrgResolver, bool)
-
-	// Helpers that are not GraphQL fields.
-	RegistryExtensionConnectionURL() (*string, error)
 }
 
 // RegistryExtensionConnection is the interface for the GraphQL type RegistryExtensionConnection.
 type RegistryExtensionConnection interface {
 	Nodes(context.Context) ([]RegistryExtension, error)
-	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
-	URL(context.Context) (*string, error)
-	Error(context.Context) *string
-}
-
-// RegistryPublisherConnection is the interface for the GraphQL type RegistryPublisherConnection.
-type RegistryPublisherConnection interface {
-	Nodes(context.Context) ([]RegistryPublisher, error)
-	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
-}
-
-// FeaturedExtensions is the interface for the GraphQL type FeaturedExtensionsConnection.
-type FeaturedExtensionsConnection interface {
-	Nodes(context.Context) ([]RegistryExtension, error)
-	Error(context.Context) *string
 }

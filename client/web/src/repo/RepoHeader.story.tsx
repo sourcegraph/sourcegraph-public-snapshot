@@ -2,12 +2,11 @@ import { mdiSourceRepository } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { CopyPathAction } from '@sourcegraph/search-ui'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -16,6 +15,7 @@ import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
 
+import webStyles from '../SourcegraphWebApp.scss'
 import repoRevisionContainerStyles from './RepoRevisionContainer.module.scss'
 
 const mockUser = {

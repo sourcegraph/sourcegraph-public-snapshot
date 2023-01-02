@@ -66,28 +66,23 @@ Tracks the range of `schema_versions` values associated with each SCIP index in 
 
 # Table "public.codeintel_scip_documents"
 ```
-      Column       |  Type   | Collation | Nullable |                                     Default                                      
--------------------+---------+-----------+----------+----------------------------------------------------------------------------------
- id                | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
- payload_hash      | bytea   |           | not null | 
- schema_version    | integer |           | not null | 
- raw_scip_payload  | bytea   |           | not null | 
- metadata_shard_id | integer |           | not null | (floor(((random() * (128)::double precision) + (1)::double precision)))::integer
+      Column      |  Type   | Collation | Nullable |                       Default                        
+------------------+---------+-----------+----------+------------------------------------------------------
+ id               | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
+ payload_hash     | bytea   |           | not null | 
+ schema_version   | integer |           | not null | 
+ raw_scip_payload | bytea   |           | not null | 
 Indexes:
     "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
 Referenced by:
     TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
-Triggers:
-    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
 
 ```
 
 A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payloads by their hash.
 
 **id**: An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full payload hash value.
-
-**metadata_shard_id**: A randomly generated integer used to arbitrarily bucket groups of documents for things like expiration checks and data migrations.
 
 **payload_hash**: A deterministic hash of the raw SCIP payload. We use this as a unique value to enforce deduplication between indexes with the same document data.
 
@@ -118,21 +113,21 @@ A list of document rows that were recently dereferenced by the deletion of an in
 ```
        Column       |  Type   | Collation | Nullable | Default 
 --------------------+---------+-----------+----------+---------
- metadata_shard_id  | integer |           | not null | 
+ upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
 Indexes:
-    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (metadata_shard_id)
+    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 
-Tracks the range of `schema_versions` values associated with each document metadata shard in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.
+Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
 
-**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.
+**max_schema_version**: An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**metadata_shard_id**: The identifier of the associated document metadata shard.
+**min_schema_version**: A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `metadata_shard_id` column matches the associated document metadata shard.
+**upload_id**: The identifier of the associated SCIP index.
 
 # Table "public.codeintel_scip_metadata"
 ```
@@ -166,20 +161,45 @@ Global metadatadata about a single processed upload.
 
 **upload_id**: The identifier of the upload that provided this SCIP index.
 
+# Table "public.codeintel_scip_symbol_names"
+```
+    Column    |  Type   | Collation | Nullable | Default 
+--------------+---------+-----------+----------+---------
+ id           | integer |           | not null | 
+ upload_id    | integer |           | not null | 
+ name_segment | text    |           | not null | 
+ prefix_id    | integer |           |          | 
+Indexes:
+    "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
+    "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
+    "codeisdntel_scip_symbol_names_upload_id_children" btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL
+
+```
+
+Stores a prefix tree of symbol names within a particular upload.
+
+**id**: An identifier unique within the index for this symbol name segment.
+
+**name_segment**: The portion of the symbol name that is unique to this symbol and its children.
+
+**prefix_id**: The identifier of the segment that forms the prefix of this symbol, if any.
+
+**upload_id**: The identifier of the upload that provided this SCIP index.
+
 # Table "public.codeintel_scip_symbols"
 ```
          Column         |  Type   | Collation | Nullable | Default 
 ------------------------+---------+-----------+----------+---------
  upload_id              | integer |           | not null | 
- symbol_name            | text    |           | not null | 
  document_lookup_id     | bigint  |           | not null | 
  schema_version         | integer |           | not null | 
  definition_ranges      | bytea   |           |          | 
  reference_ranges       | bytea   |           |          | 
  implementation_ranges  | bytea   |           |          | 
  type_definition_ranges | bytea   |           |          | 
+ symbol_id              | integer |           | not null | 
 Indexes:
-    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_name, document_lookup_id)
+    "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
@@ -200,7 +220,7 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of denormalized data.
 
-**symbol_name**: The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&amp;patternType=standard).
+**symbol_id**: The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.
 
 **type_definition_ranges**: An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.
 

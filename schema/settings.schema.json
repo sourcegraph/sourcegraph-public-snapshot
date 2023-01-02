@@ -5,12 +5,13 @@
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "allowComments": true,
   "type": "object",
+  "additionalProperties": true,
   "properties": {
     "experimentalFeatures": {
       "title": "SettingsExperimentalFeatures",
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features and settings.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "homePanelsComputeSuggestions": {
           "type": "boolean",
@@ -49,6 +50,15 @@
           "description": "DEPRECATED: Enables code insights landing page layout.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsRepoUI": {
+          "description": "Specifies which (code insight repo) editor to use for repo query UI",
+          "type": "string",
+          "default": "single-search-query",
+          "enum": ["old-strict-list", "single-search-query", "search-query-or-strict-list"],
           "!go": {
             "pointer": true
           }
@@ -462,6 +472,15 @@
           "description": "Show the initial letter of the symbol kind instead of icons.",
           "type": "boolean",
           "default": false
+        },
+        "searchQueryInput": {
+          "description": "Specify which version of the search query input to use",
+          "type": "string",
+          "default": "v1",
+          "enum": ["v1", "experimental"],
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"

@@ -3,10 +3,8 @@ import React, { useCallback, useState } from 'react'
 import { Meta } from '@storybook/react'
 import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H1 } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid'
 
 import { TextArea } from './TextArea'
@@ -16,7 +14,7 @@ const config: Meta = {
 
     decorators: [
         (story: () => StoryFnReactReturnType): StoryFnReactReturnType => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+            <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
         ),
     ],
 

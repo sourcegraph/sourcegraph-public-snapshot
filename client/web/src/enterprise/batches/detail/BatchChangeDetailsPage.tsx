@@ -3,13 +3,12 @@ import React, { useEffect, useMemo } from 'react'
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -147,13 +146,13 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <MissingCredentialsAlert
                     authenticatedUser={authenticatedUser}
                     viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
                 />
             )}
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             )}
             <ActiveExecutionNotice
@@ -170,7 +169,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice history={history} location={location} />
-            <WebhookAlert batchChange={batchChange} />
+            {batchChange.currentSpec && (
+                <WebhookAlert
+                    batchChangeID={batchChange.id}
+                    codeHostsWithoutWebhooks={batchChange.currentSpec.codeHostsWithoutWebhooks}
+                />
+            )}
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

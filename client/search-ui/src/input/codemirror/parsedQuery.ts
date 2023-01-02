@@ -1,6 +1,6 @@
-import { Extension, Facet, StateEffect, StateField } from '@codemirror/state'
+import { EditorState, Extension, Facet, StateEffect, StateField } from '@codemirror/state'
 
-import { SearchPatternType } from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -45,6 +45,24 @@ export const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>(
         return input[0] ?? []
     },
 })
+
+/**
+ * Returns the token at the current position (if any)
+ */
+export function tokenAt(tokens: Token[], position: number): Token | undefined {
+    // We do a exclusive end check for whitespace tokens so that the token that
+    // possibly follows the whitespace token is picked instead.
+    return tokens.find(({ range, type }) =>
+        range.start <= position && type === 'whitespace' ? range.end > position : range.end >= position
+    )
+}
+
+/**
+ * Returns the current query tokens
+ */
+export function tokens(state: EditorState): Token[] {
+    return state.facet(queryTokens).tokens
+}
 
 interface ParseOptions {
     patternType: SearchPatternType

@@ -592,7 +592,6 @@ func renderQuery(definition definition.Definition, up bool) string {
 	}
 
 	return query.Query(sqlf.PostgresBindVar)
-
 }
 
 // hashDefinitionIDs returns a deterministic hash of the given definition IDs.

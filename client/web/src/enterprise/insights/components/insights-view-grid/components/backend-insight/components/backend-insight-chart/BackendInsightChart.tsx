@@ -42,17 +42,17 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
+    seriesToggleState: UseSeriesToggleReturn
     className?: string
     onDatumClick: () => void
-    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { data, isFetchingHistoricalData, locked, zeroYAxisMin, seriesToggleState, className, onDatumClick } = props
+
     const { ref, width = 0 } = useResizeObserver()
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
-
     const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
@@ -181,7 +181,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <Button
                         role="checkbox"
                         aria-checked={isSeriesSelected(`${item.id}`)}
-                        className={styles.legendListItem}
+                        className={classNames(styles.legendListItem, styles.legendListItemInteractive)}
                         onPointerEnter={() => setHoveredId(`${item.id}`)}
                         onPointerLeave={() => setHoveredId(undefined)}
                         onFocus={() => setHoveredId(`${item.id}`)}
@@ -196,7 +196,9 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    {item.alerts.length > 0 && <InsightSeriesIncompleteAlert series={item} />}
+                    {item.alerts.length > 0 && (
+                        <InsightSeriesIncompleteAlert series={item} className={styles.legendIncompleteAlert} />
+                    )}
                 </LegendItem>
             ))}
         </LegendList>

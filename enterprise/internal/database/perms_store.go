@@ -1768,7 +1768,7 @@ func (s *permsStore) observe(ctx context.Context, family, title string) (context
 
 		fs = append(fs, otlog.String("Duration", took.String()))
 
-		tr.LogFields(fs...)
+		tr.LogFields(fs...) //nolint:staticcheck // TODO when updating the observation package
 
 		success := err == nil || *err == nil
 		if !success {

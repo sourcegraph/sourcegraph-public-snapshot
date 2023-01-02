@@ -21,6 +21,7 @@ export interface ResultContainerProps {
     resultType?: SearchMatch['type']
     repoName: string
     className?: string
+    rankingDebug?: string
     onResultClicked?: () => void
 }
 
@@ -49,6 +50,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         resultType,
         repoName,
         className,
+        rankingDebug,
         as: Component = 'div',
         onResultClicked,
     } = props
@@ -84,6 +86,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                         </span>
                     )}
                 </div>
+                {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.result, resultClassName)}>{children}</div>
             </article>
         </Component>

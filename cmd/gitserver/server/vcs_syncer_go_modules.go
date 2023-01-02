@@ -108,7 +108,7 @@ func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 	err = unpack.Zip(br, int64(br.Len()), workDir, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
 			_, ok := valid[path]
 			return ok && !malicious
 		},

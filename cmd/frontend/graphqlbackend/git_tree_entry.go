@@ -124,10 +124,10 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		if !ok {
 			fullContentBytes, contentErr := r.gitserverClient.ReadFile(
 				ctx,
+				authz.DefaultSubRepoPermsChecker,
 				r.commit.repoResolver.RepoName(),
 				api.CommitID(r.commit.OID()),
 				r.Path(),
-				authz.DefaultSubRepoPermsChecker,
 			)
 			r.contentErr = contentErr
 			if r.contentErr != nil {
@@ -215,7 +215,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
+	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
@@ -280,10 +280,10 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName")
+	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
 	}

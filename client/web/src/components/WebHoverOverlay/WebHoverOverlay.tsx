@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { fromEvent, Observable } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -36,6 +37,8 @@ export interface WebHoverOverlayProps
      */
     hoveredTokenClick?: Observable<unknown>
     nav?: (url: string) => void
+
+    hoverOverlayContainerClassName?: string
 }
 
 export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
@@ -130,7 +133,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
     return (
         <HoverOverlay
             {...propsToUse}
-            className={styles.webHoverOverlay}
+            className={classNames(styles.webHoverOverlay, props.hoverOverlayContainerClassName)}
             closeButtonClassName={styles.webHoverOverlayCloseButton}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}

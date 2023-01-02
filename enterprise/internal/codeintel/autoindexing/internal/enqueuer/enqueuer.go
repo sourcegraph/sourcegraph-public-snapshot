@@ -4,6 +4,7 @@ import (
 	"context"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
@@ -63,9 +64,9 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	trace.Log(otlog.String("commit", commit))
+	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit, nil) // trace)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit)
 }
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
@@ -85,8 +86,9 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	trace.Log(otlog.String("repoName", string(repoName)))
-	trace.Log(otlog.String("revision", revision))
+	trace.AddEvent("InferRepositoryAndRevision",
+		attribute.String("repoName", string(repoName)),
+		attribute.String("revision", revision))
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
@@ -106,7 +108,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false)
 	return err
 }
 
@@ -115,7 +117,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool) ([]types.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {

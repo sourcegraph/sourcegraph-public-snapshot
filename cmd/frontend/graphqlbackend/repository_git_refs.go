@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -67,7 +66,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, db, r.gitserverClient, r.RepoName(), args.Interactive, branches)
+			ok, err := hydrateBranchCommits(ctx, r.gitserverClient, r.RepoName(), args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -145,11 +144,10 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	return &gitRefConnectionResolver{
 		first: args.First,
 		refs:  refs,
-		repo:  r,
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, db database.DB, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
@@ -161,7 +159,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, gitserverClient g
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout
@@ -177,8 +175,6 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, gitserverClient g
 type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
-
-	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {

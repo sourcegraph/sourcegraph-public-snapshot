@@ -39,7 +39,7 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi fs.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
+	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)

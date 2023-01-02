@@ -9,8 +9,8 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
@@ -34,7 +34,7 @@ describe('SurveyToast', () => {
     const mockClient = createMockClient(
         { contents: JSON.stringify({}) },
         gql`
-            query {
+            query TemporarySettings {
                 temporarySettings {
                     contents
                 }

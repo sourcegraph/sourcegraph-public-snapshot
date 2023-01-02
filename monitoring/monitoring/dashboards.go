@@ -48,6 +48,9 @@ const (
 	// Seconds for representing time.
 	Seconds UnitType = "s"
 
+	// Minutes for representing time.
+	Minutes UnitType = "m"
+
 	// Percentage in the range of 0-100.
 	Percentage UnitType = "percent"
 
