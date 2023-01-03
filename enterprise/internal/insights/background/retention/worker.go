@@ -15,8 +15,7 @@ import (
 
 var _ workerutil.Handler[*DataPruningJob] = &dataPruningHandler{}
 
-type dataPruningHandler struct {
-}
+type dataPruningHandler struct{}
 
 func (h *dataPruningHandler) Handle(ctx context.Context, logger log.Logger, record *DataPruningJob) error {
 	logger.Debug("data pruning handler called", log.Int("seriesID", record.SeriesID))

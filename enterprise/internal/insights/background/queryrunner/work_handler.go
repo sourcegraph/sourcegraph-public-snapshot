@@ -116,7 +116,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 	// enqueue this insight series for data pruning in parallel
 	_, err = retention.EnqueueJob(ctx, ss, &retention.DataPruningJob{SeriesID: series.ID})
 	if err != nil {
-		r.logger.Error("could not enqueue data pruning job", log.Int("seriesID", series.ID), log.Error(err))
+		logger.Error("could not enqueue data pruning job", log.Int("seriesID", series.ID), log.Error(err))
 	}
 
 	recordTime := time.Now()
