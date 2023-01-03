@@ -18,7 +18,7 @@ func getHostname(rawURL string) (string, error) {
 	// Best effort at finding a hostname. For example if rawURL is sourcegraph.com, then u.Host is
 	// empty but Path is sourcegraph.com. Use that as a result.
 	//
-	// 👉 Also, we need to use u.Hostname() here because we want to strip any port numbers if they
+	// Also, we need to use u.Hostname() here because we want to strip any port numbers if they
 	// are present in u.Host.
 	hostname := u.Hostname()
 	if hostname == "" {
