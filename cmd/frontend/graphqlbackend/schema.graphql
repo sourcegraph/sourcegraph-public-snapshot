@@ -4618,7 +4618,7 @@ type GitCommit implements Node {
         Return blob content ending at line "endLine".
         """
         endLine: Int
-     ): File2
+    ): File2
     """
     Lists the programming languages present in the tree at this commit.
     """

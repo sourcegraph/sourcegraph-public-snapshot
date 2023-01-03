@@ -202,7 +202,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         useMemo(
             () =>
                 createActiveSpan(reactManualTracer, { name: 'formattedBlobInfoOrError', parentSpan: span }, fetchSpan =>
-
                     fetchBlob({
                         repoName,
                         revision,

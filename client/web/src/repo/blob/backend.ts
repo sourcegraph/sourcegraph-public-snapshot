@@ -26,7 +26,6 @@ const applyDefaultValuesToFetchBlobOptions = ({
     startLine = 0,
     endLine = -1,
     ...options
-
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
@@ -52,7 +51,8 @@ interface FetchBlobOptions {
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } = applyDefaultValuesToFetchBlobOptions(options)
+    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
+        applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
