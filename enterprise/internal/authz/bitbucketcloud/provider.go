@@ -161,17 +161,19 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		users = append(users, nextUsers...)
 	}
 
-	owner, err := p.client.CurrentUser(ctx)
+	// Bitbucket Cloud API does not return the owner of the repository as part
+	// of the explicit permissions list, so we need to fetch and add them.
+	bbCloudRepo, err := p.client.Repo(ctx, repoOwner, repoName)
 	if err != nil {
 		return nil, err
 	}
 
 	userIDs := make([]extsvc.AccountID, 0, len(users)+1)
 	for i := range users {
-		userIDs = append(userIDs, extsvc.AccountID(users[i].AccountID))
+		userIDs = append(userIDs, extsvc.AccountID(users[i].UUID))
 	}
 
-	userIDs = append(userIDs, extsvc.AccountID(owner.AccountID))
+	userIDs = append(userIDs, extsvc.AccountID(bbCloudRepo.Owner.UUID))
 
 	return userIDs, nil
 }
