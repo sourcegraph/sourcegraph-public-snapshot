@@ -1,22 +1,25 @@
 # codebot
 
+# Usage and features
+
+- Autocomplete: `alt-\` to show autocompletion suggestions
+- Chatbot: Click the robot icon in the primary side panel
+
+Coming soon:
+
+- Inline autocompletion
+- Unit test generation
+- Context-aware chatbot
+- Instruction-driven refactoring
+
 ## Dev
 
-Proxy:
+There are three separate components within one node workspace:
+- `vscode-codegen`: the VS Code extension
+- `server`: the server that speaks to the VS Code extension and in turn speaks to the LLM API
+- `common`: a library shared by the extension and server with common types
 
-```
-gow run proxy.go --remote "http://129.146.104.152:5000"
-```
-
-The proxy in the long-term is probably unnecessary. Right now, it
-makes some modifications to talk to https://github.com/moyix/fauxpilot
-to make things work.
-
-Frontend:
-
-```
-code ./vscode-codegen
-```
-
-Then run the extension. Pause for autocomplete or hit `alt-\` to
-generate a few examples.
+To run in development,
+- `cd server && CLAUDE_KEY=<claude api key> OPENAI_KEY=<openai api key> npm run dev`
+- `cd vscode-codegen && npm run watch`
+- `cd common && npm run dev`
