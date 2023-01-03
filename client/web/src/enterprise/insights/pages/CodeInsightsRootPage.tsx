@@ -20,11 +20,10 @@ import {
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 import { useQueryParameters } from '../hooks'
 import { encodeDashboardIdQueryParam } from '../routers.constant'
 
-import { DashboardInsights } from './dashboards/dashboard-view/components/dashboards-content/components/dashboard-inisghts/DashboardInsights'
+import { AllInsightsView } from './all-insights-view'
 import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
 import styles from './CodeInsightsRootPage.module.scss'
@@ -99,10 +98,7 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
                         <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
-                        <DashboardInsights
-                            currentDashboard={ALL_INSIGHTS_DASHBOARD}
-                            telemetryService={telemetryService}
-                        />
+                        <AllInsightsView telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>

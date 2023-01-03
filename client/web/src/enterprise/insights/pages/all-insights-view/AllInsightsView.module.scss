@@ -1,0 +1,17 @@
+.empty-card {
+    width: 320px;
+    height: 320px;
+    max-height: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    padding: 1rem;
+    color: var(--text-color);
+
+    &:hover {
+        background: var(--color-bg-2);
+        text-decoration: none;
+    }
+}

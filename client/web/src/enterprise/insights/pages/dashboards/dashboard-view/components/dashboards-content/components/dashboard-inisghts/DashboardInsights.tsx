@@ -5,11 +5,11 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../../../stores'
 import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
-import { CodeInsightsBackendContext, InsightDashboard } from '../../../../../../../core'
-import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
+import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../../../core'
+import { EmptyCustomDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 interface DashboardInsightsProps extends TelemetryProps {
-    currentDashboard: InsightDashboard
+    currentDashboard: CustomInsightDashboard
     className?: string
     onAddInsightRequest?: () => void
 }
@@ -42,7 +42,7 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
             {insights.length > 0 ? (
                 <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
             ) : (
-                <EmptyInsightDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
+                <EmptyCustomDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
             )}
         </InsightContext.Provider>
     )
