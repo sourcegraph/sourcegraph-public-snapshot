@@ -357,11 +357,11 @@ func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
 	// Options for annotations
 	var annotateOpts string
 	if opts.Annotations != nil {
-		// if opts.Annotations.Type == "" {
-		// 	annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
-		// } else {
-		// 	annotateOpts += fmt.Sprintf(" -t %s", opts.Annotations.Type)
-		// }
+		if opts.Annotations.Type == "" {
+			annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
+		} else {
+			annotateOpts += fmt.Sprintf(" -t %s", opts.Annotations.Type)
+		}
 		if opts.Annotations.MultiJobContext != "" {
 			annotateOpts += fmt.Sprintf(" -c %q", opts.Annotations.MultiJobContext)
 		}
