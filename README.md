@@ -23,3 +23,6 @@ To run in development,
 - `cd server && CLAUDE_KEY=<claude api key> OPENAI_KEY=<openai api key> npm run dev`
 - `cd vscode-codegen && npm run watch`
 - `cd common && npm run dev`
+- Launch the extension by opening VS Code to the `vscode-codegen`
+  directory (`code vscode-codegen`) and selecting the "Run Extension"
+  target.
