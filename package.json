@@ -1,0 +1,10 @@
+{
+  "name": "codebot",
+  "workspaces": [
+    "vscode-codegen",
+    "common"
+  ],
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
