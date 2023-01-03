@@ -28,24 +28,8 @@
             "pointer": true
           }
         },
-        "codeMonitoring": {
-          "description": "Enables code monitoring.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContext": {
-          "description": "Enables the search context dropdown.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -64,14 +48,6 @@
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchNotebook": {
-          "description": "Enables the search notebook at search/notebook",
-          "type": "boolean",
-          "default": true,
           "!go": {
             "pointer": true
           }
