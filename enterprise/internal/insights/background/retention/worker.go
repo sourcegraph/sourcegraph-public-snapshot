@@ -57,7 +57,7 @@ func CreateDBWorkerStore(observationCtx *observation.Context, dbHandle basestore
 		TableName:         "insights_data_retention_jobs",
 		ColumnExpressions: dataRetentionJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanDataRetentionJob),
-		OrderByExpression: sqlf.Sprintf("queued_at", "id"),
+		OrderByExpression: sqlf.Sprintf("queued_at, id"),
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 5,
 	})

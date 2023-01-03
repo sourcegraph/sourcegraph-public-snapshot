@@ -76,20 +76,17 @@ func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 
 	if err := s.Scan(
+		&job.SeriesID,
+
 		&job.ID,
 		&job.State,
 		&job.FailureMessage,
-		&job.QueuedAt,
 		&job.StartedAt,
 		&job.FinishedAt,
 		&job.ProcessAfter,
 		&job.NumResets,
 		&job.NumFailures,
-		&job.LastHeartbeatAt,
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
-		&job.SeriesID,
+		pq.Array(&job.ExecutionLogs),
 	); err != nil {
 		return nil, err
 	}
