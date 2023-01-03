@@ -1,11 +1,11 @@
 import { gql } from '@apollo/client'
 
 export const ORG_MEMBERS_QUERY = gql`
-    query OrganizationMembers($id: ID!) {
+    query OrganizationMembers($id: ID!, $last: Int, $after: String, $before: String) {
         node(id: $id) {
             ... on Org {
                 viewerCanAdminister
-                members {
+                members(first: 10, last: $last, after: $after, before: $before) {
                     nodes {
                         ...OrganizationMemberNode
                     }

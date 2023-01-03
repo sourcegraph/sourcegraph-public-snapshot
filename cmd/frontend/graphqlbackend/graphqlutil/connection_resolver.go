@@ -4,15 +4,13 @@ import (
 	"context"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const DEFAULT_MAX_PAGE_SIZE = 100
 
-type ConnectionResolver[N ConnectionNode] struct {
+type ConnectionResolver[N any] struct {
 	store   ConnectionResolverStore[N]
 	args    *ConnectionResolverArgs
 	options *ConnectionResolverOptions
@@ -20,11 +18,7 @@ type ConnectionResolver[N ConnectionNode] struct {
 	once    resolveOnce
 }
 
-type ConnectionNode interface {
-	ID() graphql.ID
-}
-
-type ConnectionResolverStore[N ConnectionNode] interface {
+type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 	ComputeTotal(context.Context) (*int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
@@ -92,7 +86,7 @@ func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
 	return maxPageSize
 }
 
-type connectionData[N ConnectionNode] struct {
+type connectionData[N any] struct {
 	total      *int32
 	totalError error
 
@@ -217,7 +211,7 @@ func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageIn
 	}, nil
 }
 
-type ConnectionPageInfo[N ConnectionNode] struct {
+type ConnectionPageInfo[N any] struct {
 	pageSize          int
 	fetchedNodesCount int
 	nodes             []*N
@@ -274,11 +268,7 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 }
 
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
-func NewConnectionResolver[N ConnectionNode](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
-	if args == nil || (args.First == nil && args.Last == nil) {
-		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
-	}
-
+func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
 	if options == nil {
 		options = &ConnectionResolverOptions{}
 	}
