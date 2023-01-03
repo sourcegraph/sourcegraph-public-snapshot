@@ -34,6 +34,7 @@ import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
+import { setBlobEditView } from './use-blob-store'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -235,6 +236,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateOnExtensionChange: false,
     })
     editorRef.current = editor
+
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editor ?? null), [editor])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
