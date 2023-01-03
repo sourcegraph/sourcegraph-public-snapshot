@@ -39,6 +39,7 @@ import {
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
 import { FuzzySearch, FuzzySearchResult } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
@@ -46,7 +47,6 @@ import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './F
 import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
-import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 
 const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 

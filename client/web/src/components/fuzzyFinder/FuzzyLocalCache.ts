@@ -43,7 +43,7 @@ export class FuzzyStorageCache implements FuzzyLocalCache {
         const fromCache = this.storage.getItem(this.cacheKey) ?? '[]'
         try {
             return Promise.resolve(JSON.parse(fromCache) as PersistableQueryResult[])
-        } catch (error) {
+        } catch {
             return Promise.resolve([])
         }
     }

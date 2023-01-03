@@ -7,10 +7,10 @@ import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sour
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/SearchValue'
 import { FuzzyFinderRepoResult, FuzzyFinderRepoVariables } from '../../graphql-operations'
+import { UserHistory } from '../useUserHistory'
 
 import { FuzzyStorageCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { UserHistory } from '../useUserHistory'
 
 export const FUZZY_REPOS_QUERY = gql`
     query FuzzyFinderRepo($query: String!) {

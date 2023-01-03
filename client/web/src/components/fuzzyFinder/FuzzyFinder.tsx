@@ -75,7 +75,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 }
             }
         },
-        [setActiveTab, setIsVisible, toggleScope]
+        [setActiveTab, setIsVisible, toggleScope, setQuery]
     )
 
     const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)

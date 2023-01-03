@@ -1,6 +1,7 @@
-import { useLocalStorage } from '@sourcegraph/wildcard'
+import { useMemo } from 'react'
+
 import * as H from 'history'
-import { useEffect, useMemo, useRef } from 'react'
+
 import { parseBrowserRepoURL } from '../util/url'
 
 export interface UserHistoryEntry {
@@ -23,7 +24,9 @@ export class UserHistory {
     private storage = window.localStorage
     private storageKey = 'user-history'
     constructor() {
-        this.loadEntries().forEach(entry => this.onEntry(entry))
+        for (const entry of this.loadEntries()) {
+            this.onEntry(entry)
+        }
     }
     private saveEntries(entries: UserHistoryEntry[]): void {
         this.storage.setItem(this.storageKey, JSON.stringify(entries))
@@ -67,9 +70,9 @@ export class UserHistory {
             this.onEntry({ repoName, filePath, lastAccessed: Date.now() })
             this.persist()
             return true
-        } catch (error) {
-            console.log(location, error)
-        } // Ignore errors
+        } catch {
+            // continue regardless of error
+        }
         return false
     }
     public visitedRepos(): string[] {

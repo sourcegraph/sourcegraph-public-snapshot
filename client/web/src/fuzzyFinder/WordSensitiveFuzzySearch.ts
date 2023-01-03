@@ -3,8 +3,8 @@ import { BloomFilter } from 'bloomfilter'
 import { HighlightedLinkProps, offsetSum, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
 import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
-import { SearchValue } from './SearchValue'
 import { Hasher } from './Hasher'
+import { SearchValue } from './SearchValue'
 
 /**
  * We don't index filenames with length larger than this value.
