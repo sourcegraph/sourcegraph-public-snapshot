@@ -1,7 +1,7 @@
 {
   "name": "vscode-codegen",
   "displayName": "vscode-codegen",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "engines": {
     "vscode": "^1.73.0"
   },
@@ -68,7 +68,6 @@
     }
   },
   "scripts": {
-    "copy-shims": "rm -rf ./out/claudeapi && cp -r ./src/claudeapi ./out/claudeapi && rm -rf ./out/openai && cp -r ./src/openai ./out/openai",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
@@ -82,7 +81,6 @@
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
-    "@types/vscode": "^1.73.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
@@ -94,8 +92,8 @@
   },
   "dependencies": {
     "@completion/sampling": "^0.1.1",
+    "@sourcegraph/cody-common": "^0.0.0",
     "chai": "^4.3.7",
-    "common": "^1.0.0",
     "isomorphic-ws": "^5.0.0",
     "openai": "^3.1.0",
     "vscode-uri": "^3.0.7",

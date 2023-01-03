@@ -1,6 +1,6 @@
 {
-  "name": "common",
-  "version": "1.0.0",
+  "name": "@sourcegraph/cody-common",
+  "version": "0.0.0",
   "main": "out/index.js",
   "scripts": {
     "build": "tsc --declaration",
@@ -25,6 +25,6 @@
   "homepage": "https://github.com/sourcegraph/codebot#readme",
   "description": "",
   "devDependencies": {
-    "@types/vscode": "^1.74.0"
+    "@types/vscode": "^1.73.0"
   }
 }
