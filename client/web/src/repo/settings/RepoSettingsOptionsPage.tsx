@@ -81,9 +81,8 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                         ))}
                         {services.length > 1 && (
                             <>
-                                <Text>
-                                    This repository is mirrored by multiple code hosts. To change access, disable, or
-                                    remove this repository, the configuration must be updated on all code hosts.
+                                <Text className="text-muted">
+                                    This repository is mirrored from multiple code hosts. To remove the repository from this Sourcegraph instance, all code host configurations need to be updated.
                                 </Text>
                             </>
                         )}
