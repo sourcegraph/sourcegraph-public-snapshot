@@ -1373,7 +1373,7 @@ func TestZoektQueryPatternsAsRegexps(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoRevs := search.ParseRepositoryRevisions(repospec)
+		repoRevs := query.ParseRepositoryRevisions(repospec)
 		revs := make([]string, 0, len(repoRevs.Revs))
 		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)

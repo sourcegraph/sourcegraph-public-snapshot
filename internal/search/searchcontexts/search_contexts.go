@@ -209,7 +209,7 @@ func validateSearchContextQuery(contextQuery string) error {
 				return
 			}
 
-			repoRevs := search.ParseRepositoryRevisions(value)
+			repoRevs := query.ParseRepositoryRevisions(value)
 			for _, rev := range repoRevs.Revs {
 				if rev.HasRefGlob() {
 					errs = errors.Append(errs,
@@ -488,7 +488,7 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 		}
 
 		for _, r := range repoFilters {
-			repoRevs := search.ParseRepositoryRevisions(r)
+			repoRevs := query.ParseRepositoryRevisions(r)
 			for _, rev := range repoRevs.Revs {
 				if !rev.HasRefGlob() {
 					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)

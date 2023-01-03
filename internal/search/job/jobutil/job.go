@@ -403,13 +403,13 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					return opts, true
 				}
 
-				opts.RepoFilters = append(make([]search.ParsedRepoFilter, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.RepoFilters = append(make([]query.ParsedRepoFilter, 0, len(opts.RepoFilters)), opts.RepoFilters...)
 				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
 					// No "@" in pattern? We're good.
-					repoFilter := search.ParseRepositoryRevisions(pattern)
+					repoFilter := query.ParseRepositoryRevisions(pattern)
 					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
@@ -428,7 +428,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					repoFilter := search.ParseRepositoryRevisions(patternPrefix[0])
+					repoFilter := query.ParseRepositoryRevisions(patternPrefix[0])
 					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
@@ -649,9 +649,9 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := b.Repositories()
 
-	parsedRepoFilters := make([]search.ParsedRepoFilter, len(repoFilters))
+	parsedRepoFilters := make([]query.ParsedRepoFilter, len(repoFilters))
 	for i, r := range repoFilters {
-		parsedRepoFilters[i] = search.ParseRepositoryRevisions(r)
+		parsedRepoFilters[i] = query.ParseRepositoryRevisions(r)
 	}
 
 	var settingForks, settingArchived bool

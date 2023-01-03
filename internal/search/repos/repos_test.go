@@ -37,10 +37,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func toParsedRepoFilters(repoRevs ...string) []search.ParsedRepoFilter {
-	repoFilters := make([]search.ParsedRepoFilter, len(repoRevs))
+func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
+	repoFilters := make([]query.ParsedRepoFilter, len(repoRevs))
 	for i, r := range repoRevs {
-		repoFilters[i] = search.ParseRepositoryRevisions(r)
+		repoFilters[i] = query.ParseRepositoryRevisions(r)
 	}
 	return repoFilters
 }
@@ -104,7 +104,7 @@ func TestRevisionValidation(t *testing.T) {
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{{
+				Revs: []query.RevisionSpecifier{{
 					RevSpec: "^revQux",
 				}},
 			}},
@@ -175,8 +175,8 @@ func TestSearchRevspecs(t *testing.T) {
 		specs    []string
 		repo     string
 		err      error
-		matched  []search.RevisionSpecifier
-		clashing []search.RevisionSpecifier
+		matched  []query.RevisionSpecifier
+		clashing []query.RevisionSpecifier
 	}
 
 	tests := []testCase{
@@ -185,7 +185,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{"foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
+			matched:  []query.RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
 		{
@@ -193,7 +193,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -201,7 +201,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -209,7 +209,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -218,14 +218,14 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  nil,
-			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
+			clashing: []query.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
 		{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
 		{
@@ -233,7 +233,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
 		{
@@ -383,7 +383,7 @@ func TestResolverIterator(t *testing.T) {
 					MissingRepoRevs: []RepoRevSpecs{
 						{
 							Repo: all.RepoRevs[0].Repo, // corresponds to foo/bar5
-							Revs: []search.RevisionSpecifier{
+							Revs: []query.RevisionSpecifier{
 								{
 									RevSpec: "rev",
 								},
