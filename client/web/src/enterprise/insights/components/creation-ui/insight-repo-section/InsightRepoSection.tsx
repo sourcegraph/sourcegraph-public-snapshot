@@ -4,7 +4,8 @@ import { gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { EditorHint, QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import {
     Button,

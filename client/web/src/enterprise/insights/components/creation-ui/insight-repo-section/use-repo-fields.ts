@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import { ApolloClient, gql, useApolloClient } from '@apollo/client'
 
-import { QueryState } from '@sourcegraph/search'
+import { QueryState } from '@sourcegraph/shared/src/search'
 
 import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'

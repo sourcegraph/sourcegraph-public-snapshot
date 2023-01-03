@@ -1,4 +1,4 @@
-import { QueryState } from '@sourcegraph/search'
+import { QueryState } from '@sourcegraph/shared/src/search'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
