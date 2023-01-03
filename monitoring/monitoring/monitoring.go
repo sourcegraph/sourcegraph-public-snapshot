@@ -52,7 +52,7 @@ type Dashboard struct {
 }
 
 func (c *Dashboard) validate() error {
-	if err := grafana.ValidateGrafanaUID(c.Name); err != nil {
+	if err := grafana.ValidateUID(c.Name); err != nil {
 		return errors.Wrapf(err, "Name %q is invalid", c.Name)
 	}
 
@@ -102,7 +102,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	uid := c.Name
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
-		if err := grafana.ValidateGrafanaUID(uid); err != nil {
+		if err := grafana.ValidateUID(uid); err != nil {
 			return nil, errors.Wrapf(err, "generated UID %q is invalid", uid)
 		}
 	}

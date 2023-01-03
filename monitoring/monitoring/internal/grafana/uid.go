@@ -7,14 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ValidateGrafanaUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
+// ValidateUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
 // primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
 // static URLs we can document like:
 //
 //	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
 //
 // Instead of having to describe all the steps to navigate there because the UID is random.
-func ValidateGrafanaUID(s string) error {
+func ValidateUID(s string) error {
 	const lengthLimit = 40
 	if len(s) > lengthLimit {
 		return errors.Newf("UID must be less than %d characters", lengthLimit)

@@ -94,7 +94,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
 
 			// we also use the name for the UID
-			if err := grafana.ValidateGrafanaUID(opts.GrafanaFolder); err != nil {
+			if err := grafana.ValidateUID(opts.GrafanaFolder); err != nil {
 				return errors.Wrapf(err, "Grafana folder name %q does not make a valid UID", opts.GrafanaFolder)
 			}
 
