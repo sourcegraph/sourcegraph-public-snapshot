@@ -319,8 +319,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at,
-    gr.corruption_logs
+	gr.corrupted_at,
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
@@ -351,8 +351,8 @@ SELECT
 	last_changed,
 	repo_size_bytes,
 	updated_at,
-    corrupted_at,
-    corruption_logs
+	corrupted_at,
+	corruption_logs
 FROM gitserver_repos
 WHERE repo_id = %s
 `
@@ -380,8 +380,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at,
-    gr.corruption_logs
+	gr.corrupted_at,
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
@@ -403,8 +403,8 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at,
-    gr.corrupted_at,
-    gr.corruption_logs
+	gr.corrupted_at,
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
