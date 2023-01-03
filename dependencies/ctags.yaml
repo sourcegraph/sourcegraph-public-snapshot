@@ -17,7 +17,6 @@ package:
       license: GPL-2.0
   dependencies:
     runtime:
-      # - jansson
 
 environment:
   contents:
@@ -33,6 +32,7 @@ environment:
       - pkgconf-dev
       - busybox
       - ca-certificates-bundle
+      - jansson-dev
 
 pipeline:
   - uses: fetch
@@ -42,7 +42,11 @@ pipeline:
   - name: Autogen
     runs: |
       ./autogen.sh
-  - uses: autoconf/configure # TODO: Use ./configure --program-prefix=universal- --enable-json
+  - uses: autoconf/configure
+    with:
+      opts: |
+        --program-prefix=universal- \
+        --enable-json
   - uses: autoconf/make
   - uses: autoconf/make-install
   - uses: strip
