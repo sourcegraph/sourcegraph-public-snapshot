@@ -787,7 +787,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		ExcludedRepos
 	}
 
-	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
@@ -807,7 +807,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		})
 	}
 
-	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
@@ -834,10 +834,9 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 // delineated by regex anchors ^ and $. This function helps determine whether we
 // should return results for a single repo regardless of whether it is a fork or
 // archive.
-func ExactlyOneRepo(repoFilters []string) bool {
+func ExactlyOneRepo(repoFilters []query.ParsedRepoFilter) bool {
 	if len(repoFilters) == 1 {
-		repoRevs := query.ParseRepositoryRevisions(repoFilters[0])
-		repo := repoRevs.Repo
+		repo := repoFilters[0].Repo
 		if strings.HasPrefix(repo, "^") && strings.HasSuffix(repo, "$") {
 			filter := strings.TrimSuffix(strings.TrimPrefix(repo, "^"), "$")
 			r, err := regexpsyntax.Parse(filter, regexpFlags)

@@ -649,11 +649,6 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := b.Repositories()
 
-	parsedRepoFilters := make([]query.ParsedRepoFilter, len(repoFilters))
-	for i, r := range repoFilters {
-		parsedRepoFilters[i] = query.ParseRepositoryRevisions(r)
-	}
-
 	var settingForks, settingArchived bool
 	if v := userSettings.SearchIncludeForks; v != nil {
 		settingForks = *v
@@ -688,7 +683,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:         parsedRepoFilters,
+		RepoFilters:         repoFilters,
 		MinusRepoFilters:    minusRepoFilters,
 		DescriptionPatterns: b.RepoHasDescription(),
 		SearchContextSpec:   searchContextSpec,
