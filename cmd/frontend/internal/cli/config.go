@@ -511,6 +511,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	})
 
 	gitAddrs, err := gitservers().Endpoints()
+	fmt.Println(gitAddrs)
 	if err != nil {
 		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
@@ -523,6 +524,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
+	fmt.Println(zoektAddrs)
 	if err != nil {
 		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
 	}
