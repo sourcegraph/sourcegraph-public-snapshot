@@ -20,7 +20,17 @@ const LAST_REPO_ACCESS_FILEPATH = 'sourcegraph-last-repo-access.timestamp'
  */
 export class UserHistory {
     private repos: Map<string, Map<string, number>> = new Map()
-    constructor(private setEntries: React.Dispatch<React.SetStateAction<UserHistoryEntry[]>>) {}
+    private storage = window.localStorage
+    private storageKey = 'user-history'
+    constructor() {
+        this.loadEntries().forEach(entry => this.onEntry(entry))
+    }
+    private saveEntries(entries: UserHistoryEntry[]): void {
+        this.storage.setItem(this.storageKey, JSON.stringify(entries))
+    }
+    private loadEntries(): UserHistoryEntry[] {
+        return JSON.parse(this.storage.getItem(this.storageKey) ?? '[]')
+    }
     public onEntry(entry: UserHistoryEntry): void {
         let repo = this.repos.get(entry.repoName)
         if (!repo) {
@@ -44,7 +54,7 @@ export class UserHistory {
                 }
             }
         }
-        this.setEntries(entries)
+        this.saveEntries(entries)
     }
     public onLocation(location: H.Location): boolean {
         try {
@@ -55,6 +65,7 @@ export class UserHistory {
                 return false
             }
             this.onEntry({ repoName, filePath, lastAccessed: Date.now() })
+            this.persist()
             return true
         } catch (error) {
             console.log(location, error)
@@ -73,9 +84,7 @@ export class UserHistory {
 }
 
 export function useUserHistory(history: H.History, isRepositoryRelatedPage: boolean): UserHistory {
-    const [entries, setEntries] = useLocalStorage<UserHistoryEntry[]>('user-history', [])
-    const userHistory = useMemo(() => new UserHistory(setEntries), [setEntries])
-    useEffect(() => entries.forEach(entry => userHistory.onEntry(entry)), [])
+    const userHistory = useMemo(() => new UserHistory(), [])
     if (isRepositoryRelatedPage) {
         userHistory.onLocation(history.location)
     }
