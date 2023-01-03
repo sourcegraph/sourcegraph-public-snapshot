@@ -1777,8 +1777,8 @@ func TestLogIfCorrupt(t *testing.T) {
 		if !strings.Contains(fromDB.CorruptionLogs[0].Reason, stdErr) {
 			t.Errorf("corruption log reason does not contain git corruption output - got %q, wanted %q", fromDB.CorruptionLogs[0].Reason, stdErr)
 		}
-
 	})
+
 	t.Run("non corruption output does not create corruption log", func(t *testing.T) {
 		repoName := api.RepoName("example.com/bar/foo")
 		dbRepo := &types.Repo{
