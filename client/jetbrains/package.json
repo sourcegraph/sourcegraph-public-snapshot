@@ -15,12 +15,25 @@
   "scripts": {
     "build": "pnpm task:gulp esbuild",
     "lint": "pnpm run lint:js && pnpm run lint:css",
-    "lint:js": "pnpm run -T eslint --cache 'webview/**/*.[jt]s?(x)'",
-    "lint:css": "pnpm run -T stylelint 'webview/**/*.scss'",
-    "standalone": "pnpm run -T ts-node standalone/src/server.ts",
-    "storybook": "STORIES_GLOB='client/jetbrains/webview/src/**/*.story.tsx' pnpm workspace @sourcegraph/storybook run start",
-    "task:gulp": "pnpm run -T cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "typecheck": "pnpm run -T tsc -b",
+    "lint:js": "pnpm eslint --cache 'webview/**/*.[jt]s?(x)'",
+    "lint:css": "pnpm stylelint 'webview/**/*.scss'",
+    "standalone": "pnpm ts-node standalone/src/server.ts",
+    "storybook": "STORIES_GLOB='client/jetbrains/webview/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "task:gulp": "pnpm cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "typecheck": "pnpm tsc -b",
     "watch": "WATCH=true pnpm task:gulp esbuild"
+  },
+  "devDependencies": {
+    "@sourcegraph/build-config": "workspace:*",
+    "@sourcegraph/storybook": "workspace:*",
+    "@sourcegraph/eslint-plugin-wildcard": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/branded": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/search-ui": "workspace:*"
   }
 }

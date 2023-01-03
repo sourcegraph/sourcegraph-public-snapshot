@@ -7,8 +7,18 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "storybook": "STORIES_GLOB='client/search-ui/src/**/*.story.tsx' pnpm workspace @sourcegraph/storybook run start",
-    "lint:js": "pnpm run -T eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "pnpm run -T jest"
+    "storybook": "STORIES_GLOB='client/search-ui/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "lint:js": "pnpm eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "pnpm jest"
+  },
+  "devDependencies": {
+    "@sourcegraph/testing": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/branded": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/observability-client": "workspace:*"
   }
 }

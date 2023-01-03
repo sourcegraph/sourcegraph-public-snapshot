@@ -4,9 +4,20 @@
   "version": "1.0.0",
   "license": "Apache-2.0",
   "scripts": {
-    "storybook": "STORIES_GLOB='client/branded/src/**/*.story.tsx' pnpm workspace @sourcegraph/storybook run start",
-    "lint:js": "pnpm run -T eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "pnpm run -T stylelint 'src/**/*.scss' --quiet",
-    "test": "pnpm run -T jest"
+    "storybook": "STORIES_GLOB='client/branded/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "lint:js": "pnpm eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "pnpm stylelint 'src/**/*.scss' --quiet",
+    "test": "pnpm jest"
+  },
+  "devDependencies": {
+    "@sourcegraph/extension-api-types": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/client-api": "workspace:*",
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/search-ui": "workspace:*"
   }
 }
