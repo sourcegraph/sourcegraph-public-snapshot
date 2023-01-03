@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
@@ -45,6 +47,7 @@ type GitTreeEntryResolver struct {
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
+	path string
 
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
@@ -334,11 +337,57 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
-func (r *GitTreeEntryResolver) Ownership() []Ownership {
-	return []Ownership{{
-		owners: []string{"@sqs"},
-		reason: "TESTING",
-	}}
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
+	s := backend.NewOwnService(r.gitserverClient)
+	if s == nil {
+		// just for testing
+		return []Ownership{{
+			owners: []string{"@cbart"},
+			reason: "No own service",
+		}}
+	}
+	repo := r.Repository()
+	if repo == nil {
+		// just for testing
+		return []Ownership{{
+			owners: []string{"@cbart"},
+			reason: "No repo information",
+		}}
+	}
+	commit := r.commit
+	if commit == nil {
+		// just for testing
+		return []Ownership{{
+			owners: []string{"@cbart"},
+			reason: "No commit information",
+		}}
+	}
+	f, err := s.OwnersFile(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid))
+	if err != nil {
+		// just for testing
+		return []Ownership{{
+			owners: []string{"@cbart"},
+			reason: fmt.Sprintf("Error: %s", err),
+		}}
+	}
+	var ship []Ownership
+	for _, o := range f.FindOwners(r.path) {
+		owner := o.GetEmail()
+		if h := o.GetHandle(); h != "" {
+			owner = "@" + h
+		}
+		ship = append(ship, Ownership{
+			owners: []string{owner},
+			reason: "CODEOWNERS file",
+		})
+	}
+	if len(ship) == 0 {
+		return []Ownership{{
+			owners: []string{"@cbart"},
+			reason: "No matching entries in codeowners",
+		}}
+	}
+	return ship
 }
 
 type Ownership struct {

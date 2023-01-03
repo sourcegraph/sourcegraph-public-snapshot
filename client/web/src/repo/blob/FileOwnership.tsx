@@ -18,19 +18,22 @@ export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Prop
     }
 
     if (error) {
+        console.log(error)
         return <div>Error...</div>
     }
 
     if (data) {
-        return data.node.commit.blob.ownership.map(
-            (own: FetchOwnershipResult['node']['commit']['blob']['ownership'][0]) => (
-                <Grid columnCount={4} className="mt-2">
-                    <Card>
-                        <CardHeader>{own.owners.join(', ')}</CardHeader>
-                        <CardBody>{own.reason}</CardBody>
-                    </Card>
-                </Grid>
-            )
+        return (
+            <Grid columnCount={4} className="mt-2">
+                {data.node.commit.blob.ownership.map(
+                    (own: FetchOwnershipResult['node']['commit']['blob']['ownership'][0]) => (
+                        <Card>
+                            <CardHeader>{own.owners.join(', ')}</CardHeader>
+                            <CardBody>{own.reason}</CardBody>
+                        </Card>
+                    )
+                )}
+            </Grid>
         )
     }
 
