@@ -30,6 +30,11 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
   shift 1
   # shellcheck disable=SC2124
   annotate_opts="$@"
+  auto_type=false
+  if [[ "$annotate_opts" == *"-t auto"* ]]; then
+    auto_type=true
+    annotate_opts=${annotate_opts/"-t auto"//}
+  fi
 
   echo "~~~ Uploading annotations"
   echo "include_names=$include_names, annotate_opts=$annotate_opts"
@@ -47,13 +52,15 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
       *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
     esac
 
-    case "$name" in
-      WARN_*) annotate_file_opts="$annotate_file_opts -t warning" ;;
-      ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
-      INFO_*) annotate_file_opts="$annotate_file_opts -t info" ;;
-      SUCCESS_*) annotate_file_opts="$annotate_file_opts -t success" ;;
-      *) annotate_file_opts="$annotate_file_opts -t error" ;;
-    esac
+    if [ "$auto_type" = true ]; then
+      case "$name" in
+        WARN_*) annotate_file_opts="$annotate_file_opts -t warning" ;;
+        ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
+        INFO_*) annotate_file_opts="$annotate_file_opts -t info" ;;
+        SUCCESS_*) annotate_file_opts="$annotate_file_opts -t success" ;;
+        *) annotate_file_opts="$annotate_file_opts -t error" ;;
+      esac
+    fi
 
     if [ "$include_names" = "true" ]; then
       # Set the name of the file as the title of this annotation section
@@ -62,7 +69,7 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
     fi
 
     # Generate annotation from file contents
-    eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
+    # eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
   done
 fi
 
