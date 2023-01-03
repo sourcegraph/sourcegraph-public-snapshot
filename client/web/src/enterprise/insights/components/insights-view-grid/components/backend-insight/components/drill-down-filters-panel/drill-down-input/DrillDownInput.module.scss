@@ -2,7 +2,8 @@
     flex-shrink: 0;
     padding: 0.25rem 0.5rem;
     border: 1px solid var(--input-border-color);
-    background: var(--input-border-color);
+    border-right: none;
+    background: var(--subtle-bg);
     border-top-left-radius: var(--border-radius);
     border-bottom-left-radius: var(--border-radius);
     color: var(--link-color);
