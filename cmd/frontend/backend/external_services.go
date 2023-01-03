@@ -3,14 +3,21 @@ package backend
 import (
 	"context"
 	json "encoding/json"
-	"strconv"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -71,12 +78,16 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 // - finds an external service by ID and checks if it supports repo exclusion
 // - adds repo to `exclude` config parameter and updates an external service
 // - triggers external service sync
-func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, externalServiceID int64, repoID api.RepoID) (err error) {
+func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, externalServiceID int64, repoID api.RepoID) error {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, e.db); err != nil {
+		return err
+	}
+
 	tx, err := e.db.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
 
 	externalServices := tx.ExternalServices()
 	externalService, err := externalServices.GetByID(ctx, externalServiceID)
@@ -100,13 +111,17 @@ func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, e
 		return err
 	}
 
-	updatedConfig, err := addRepoToExclude(ctx, externalService, repository)
+	updatedConfig, err := addRepoToExclude(ctx, logger, externalService, repository)
 	if err != nil {
 		return err
 	}
 
 	err = externalServices.Update(ctx, conf.Get().AuthProviders, externalServiceID, &database.ExternalServiceUpdate{Config: &updatedConfig})
 	if err != nil {
+		return err
+	}
+
+	if err = tx.Done(err); err != nil {
 		return err
 	}
 
@@ -120,47 +135,49 @@ func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, e
 	return nil
 }
 
-func addRepoToExclude(ctx context.Context, externalService *types.ExternalService, repository *types.Repo) (string, error) {
+func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *types.ExternalService, repository *types.Repo) (string, error) {
 	config, err := externalService.Configuration(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	// we need to use a `org/repo` repo name format in `exclude` section of code host
-	// config, hence trimming the host: `github.com/sourcegraph/sourcegraph` becomes
-	// `sourcegraph/sourcegraph`.
-	repoName := trimHostFromRepoName(string(repository.Name))
+	// We need to use a name different from `types.Repo.Name` in order for repo to be
+	// excluded.
+	excludableName := ExcludableRepoName(repository, logger)
+	if excludableName == "" {
+		return "", errors.New("repository lacks metadata to compose excludable name")
+	}
 
 	switch c := config.(type) {
 	case *schema.AWSCodeCommitConnection:
-		exclusion := &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
+		exclusion := &schema.ExcludedAWSCodeCommitRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Name: excludableName})
 		}
 	case *schema.BitbucketCloudConnection:
-		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: repoName}
+		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: excludableName})
 		}
 	case *schema.BitbucketServerConnection:
-		exclusion := &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName}
+		exclusion := &schema.ExcludedBitbucketServerRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Name: excludableName})
 		}
 	case *schema.GitHubConnection:
-		exclusion := &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
+		exclusion := &schema.ExcludedGitHubRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Name: excludableName})
 		}
 	case *schema.GitLabConnection:
-		exclusion := &schema.ExcludedGitLabProject{Name: repoName}
+		exclusion := &schema.ExcludedGitLabProject{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: excludableName})
 		}
 	case *schema.GitoliteConnection:
-		exclusion := &schema.ExcludedGitoliteRepo{Name: repoName}
+		exclusion := &schema.ExcludedGitoliteRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repoName})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: excludableName})
 		}
 	}
 
@@ -171,15 +188,54 @@ func addRepoToExclude(ctx context.Context, externalService *types.ExternalServic
 	return string(strConfig), nil
 }
 
-// trimHostFromRepoName removes host from full repo name. It does it in the same
-// way as it is done before rendering repo name on the UI. See RepoLink
-// component.
-func trimHostFromRepoName(name string) string {
-	parts := strings.Split(name, "/")
-	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
-		return strings.Join(parts[1:], "/")
+// ExcludableRepoName returns repo name which should be specified in code host
+// config `exclude` section in order to be excluded from syncing.
+func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string) {
+	typ, _ := extsvc.ParseServiceType(repository.ExternalRepo.ServiceType)
+	switch typ {
+	case extsvc.TypeAWSCodeCommit:
+		if repo, ok := repository.Metadata.(*awscodecommit.Repository); ok {
+			name = repo.Name
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAWSCodeCommit))
+			return
+		}
+	case extsvc.TypeBitbucketCloud:
+		if repo, ok := repository.Metadata.(*bitbucketcloud.Repo); ok {
+			name = repo.FullName
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketCloud))
+		}
+	case extsvc.TypeBitbucketServer:
+		if repo, ok := repository.Metadata.(*bitbucketserver.Repo); ok {
+			if repo.Project == nil {
+				return
+			}
+			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
+		}
+
+	case extsvc.TypeGitHub:
+		if repo, ok := repository.Metadata.(*github.Repository); ok {
+			name = repo.NameWithOwner
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGitHub))
+		}
+	case extsvc.TypeGitLab:
+		if project, ok := repository.Metadata.(*gitlab.Project); ok {
+			name = project.PathWithNamespace
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGitLab))
+		}
+	case extsvc.TypeGitolite:
+		if repo, ok := repository.Metadata.(*gitolite.Repo); ok {
+			name = repo.Name
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGitolite))
+		}
 	}
-	return strings.Join(parts, "/")
+	return
 }
 
 func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) bool {
