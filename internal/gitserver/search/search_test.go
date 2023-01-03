@@ -41,7 +41,7 @@ func initGitRepository(t testing.TB, cmds ...string) string {
 func gitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1")
 	return c
 }
 
@@ -241,9 +241,7 @@ func TestCommitScanner(t *testing.T) {
 	cmds := []string{
 		"echo lorem ipsum dolor sit amet > file1",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden1 " +
+		"GIT_COMMITTER_NAME=camden1 " +
 			"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden1 " +
@@ -253,9 +251,7 @@ func TestCommitScanner(t *testing.T) {
 		"echo consectetur adipiscing elit > file2",
 		"echo consectetur adipiscing elit again > file3",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden2 " +
+		"GIT_COMMITTER_NAME=camden2 " +
 			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden2 " +
@@ -264,9 +260,7 @@ func TestCommitScanner(t *testing.T) {
 			"git commit -m commit2",
 		"mv file1 file1a",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden3 " +
+		"GIT_COMMITTER_NAME=camden3 " +
 			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden3 " +
