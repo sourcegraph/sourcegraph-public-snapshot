@@ -47,7 +47,7 @@ type Client interface {
 	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string) ([]*Account, *PageToken, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
-	CurrentUserEmails(ctx context.Context) ([]*UserEmail, error)
+	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
 }
 
 // client access a Bitbucket Cloud via the REST API 2.0.

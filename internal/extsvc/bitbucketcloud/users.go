@@ -34,16 +34,12 @@ type UserEmail struct {
 	IsPrimary   bool   `json:"is_primary"`
 }
 
-func (c *client) CurrentUserEmails(ctx context.Context) ([]*UserEmail, error) {
-	req, err := http.NewRequest("GET", "/2.0/user/emails", nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+func (c *client) CurrentUserEmails(ctx context.Context, pageToken *PageToken) (emails []*UserEmail, next *PageToken, err error) {
+	if pageToken.HasMore() {
+		next, err = c.reqPage(ctx, pageToken.Next, &emails)
+		return
 	}
 
-	var emails []*UserEmail
-	if err := c.do(ctx, req, &emails); err != nil {
-		return nil, errors.Wrap(err, "sending request")
-	}
-
-	return emails, nil
+	next, err = c.page(ctx, "/user/emails", nil, pageToken, &emails)
+	return
 }

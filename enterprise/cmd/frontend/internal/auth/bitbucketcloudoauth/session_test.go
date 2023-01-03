@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,14 +29,8 @@ func init() {
 	spew.Config.SpewKeys = true
 }
 
-type bitbucketEmail struct {
-	Email       string `json:"email"`
-	IsConfirmed bool   `json:"is_confirmed"`
-	IsPrimary   bool   `json:"is_primary"`
-}
-
 type emailResponse struct {
-	Values []bitbucketEmail `json:"values"`
+	Values []bitbucketcloud.UserEmail `json:"values"`
 }
 
 var returnUsername string
@@ -46,11 +41,11 @@ func createTestServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/user") {
 			json.NewEncoder(w).Encode(struct {
-				Username  string `json:"username"`
-				AccountID string `json:"account_id"`
+				Username string `json:"username"`
+				UUID     string `json:"uuid"`
 			}{
-				Username:  returnUsername,
-				AccountID: returnAccountID,
+				Username: returnUsername,
+				UUID:     returnAccountID,
 			})
 			return
 		}
@@ -79,7 +74,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	type input struct {
 		description     string
 		bbUser          *bitbucketlogin.User
-		bbUserEmails    []bitbucketEmail
+		bbUserEmails    []bitbucketcloud.UserEmail
 		bbUserEmailsErr error
 		allowSignup     bool
 	}
@@ -93,7 +88,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "bbUser, verified email -> session created",
 				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketEmail{
+				bbUserEmails: []bitbucketcloud.UserEmail{
 					{
 						Email:       "alice@example.com",
 						IsConfirmed: true,
@@ -111,7 +106,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "bbUser, primary email not verified but another is -> no session created",
 				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketEmail{
+				bbUserEmails: []bitbucketcloud.UserEmail{
 					{
 						Email:       "alice@example1.com",
 						IsPrimary:   true,
@@ -132,8 +127,9 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "bbUser, no emails -> no session created",
-				bbUser:      &bitbucketlogin.User{Username: "alice"},
+				description:  "bbUser, no emails -> no session created",
+				bbUser:       &bitbucketlogin.User{Username: "alice"},
+				bbUserEmails: []bitbucketcloud.UserEmail{},
 			}, {
 				description:     "bbUser, email fetching err -> no session created",
 				bbUser:          &bitbucketlogin.User{Username: "alice"},
@@ -141,7 +137,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			}, {
 				description: "bbUser, plenty of emails but none verified -> no session created",
 				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketEmail{
+				bbUserEmails: []bitbucketcloud.UserEmail{
 					{
 						Email:       "alice@example1.com",
 						IsPrimary:   true,
@@ -225,7 +221,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	server := createTestServer()
 	defer server.Close()
 
-	returnEmails = emailResponse{Values: []bitbucketEmail{
+	returnEmails = emailResponse{Values: []bitbucketcloud.UserEmail{
 		{
 			Email:       "primary@example.com",
 			IsPrimary:   true,

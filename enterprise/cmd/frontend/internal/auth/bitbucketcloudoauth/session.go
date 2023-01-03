@@ -39,8 +39,8 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	conf := &schema.BitbucketCloudConnection{
-		Url:    s.BaseURL.String(),
-		ApiURL: s.BaseURL.String(),
+		Url:    s.CodeHost.BaseURL.String(),
+		ApiURL: s.CodeHost.BaseURL.String(),
 	}
 	bbClient, err := bitbucketcloud.NewClient(s.BaseURL.String(), conf, nil)
 	if err != nil {
@@ -59,9 +59,18 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 
-	emails, err := bbClient.CurrentUserEmails(ctx)
+	emails, next, err := bbClient.CurrentUserEmails(ctx, nil)
 	if err != nil {
 		return nil, "", err
+	}
+
+	for next.HasMore() {
+		var nextEmails []*bitbucketcloud.UserEmail
+		nextEmails, next, err = bbClient.CurrentUserEmails(ctx, next)
+		if err != nil {
+			return nil, "", err
+		}
+		emails = append(emails, nextEmails...)
 	}
 
 	type attemptConfig struct {
