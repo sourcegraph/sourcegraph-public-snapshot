@@ -1,0 +1,13 @@
+.grid {
+    display: grid;
+    grid-template-columns: max-content 1fr max-content;
+    row-gap: 1rem;
+}
+
+.card {
+    grid-column: 1 / 2;
+}
+
+.button {
+    grid-column: 3;
+}
