@@ -1745,11 +1745,11 @@ func TestLogIfCorrupt(t *testing.T) {
 	reposDir := t.TempDir()
 	hostname := "test"
 
+	repoName := api.RepoName("example.com/bar/foo")
 	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
 	s.Hostname = hostname
 
 	t.Run("git corruption output creates corruption log", func(t *testing.T) {
-		repoName := api.RepoName("example.com/foo/bar")
 		dbRepo := &types.Repo{
 			Name:        repoName,
 			URI:         string(repoName),
@@ -1780,7 +1780,6 @@ func TestLogIfCorrupt(t *testing.T) {
 	})
 
 	t.Run("non corruption output does not create corruption log", func(t *testing.T) {
-		repoName := api.RepoName("example.com/bar/foo")
 		dbRepo := &types.Repo{
 			Name:        repoName,
 			URI:         string(repoName),
