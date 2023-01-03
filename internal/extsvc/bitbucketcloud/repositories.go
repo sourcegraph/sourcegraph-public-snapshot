@@ -61,17 +61,17 @@ func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 	return repos, next, err
 }
 
-type explicitUserPermsResponse struct {
-	User       *User  `json:"user"`
-	Permission string `json:"permission"`
+type ExplicitUserPermsResponse struct {
+	User       *Account `json:"user"`
+	Permission string   `json:"permission"`
 }
 
-func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string) (users []*User, next *PageToken, err error) {
-	var resp []explicitUserPermsResponse
+func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string) (users []*Account, next *PageToken, err error) {
+	var resp []ExplicitUserPermsResponse
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &resp)
 	} else {
-		userPermsURL := fmt.Sprintf("/2.0/repositories/{}/{}/permissions-config/users", namespace, slug)
+		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", namespace, slug)
 		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
 	}
 
@@ -79,7 +79,7 @@ func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *Pa
 		return
 	}
 
-	users = make([]*User, len(resp))
+	users = make([]*Account, len(resp))
 	for i, r := range resp {
 		users[i] = r.User
 	}

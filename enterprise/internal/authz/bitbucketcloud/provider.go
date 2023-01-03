@@ -153,7 +153,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	}
 
 	for next.HasMore() {
-		var nextUsers []*bitbucketcloud.User
+		var nextUsers []*bitbucketcloud.Account
 		nextUsers, next, err = p.client.ListExplicitUserPermsForRepo(ctx, next, repoOwner, repoName)
 		if err != nil {
 			return nil, err

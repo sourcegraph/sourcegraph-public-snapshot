@@ -44,7 +44,7 @@ type Client interface {
 	Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) ([]*Repo, *PageToken, error)
 	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
 
-	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string) ([]*User, *PageToken, error)
+	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string) ([]*Account, *PageToken, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
 }

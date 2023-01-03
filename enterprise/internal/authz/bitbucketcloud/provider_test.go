@@ -50,6 +50,26 @@ func createTestServer() *httptest.Server {
 			})
 			return
 		}
+
+		if strings.HasSuffix(r.URL.Path, "/permissions-config/users") {
+			json.NewEncoder(w).Encode(struct {
+				Values []bitbucketcloud.ExplicitUserPermsResponse `json:"values"`
+			}{
+				Values: []bitbucketcloud.ExplicitUserPermsResponse{
+					{User: &bitbucketcloud.Account{UUID: "1"}},
+					{User: &bitbucketcloud.Account{UUID: "2"}},
+					{User: &bitbucketcloud.Account{UUID: "3"}},
+				},
+			})
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/repositories/user/repo") {
+			json.NewEncoder(w).Encode(bitbucketcloud.Repo{
+				Owner: &bitbucketcloud.Account{UUID: "4"},
+			})
+			return
+		}
 	}))
 }
 
@@ -155,4 +175,35 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatal(diff)
 		}
 	})
+}
+
+func TestProvider_FetchRepoPerms(t *testing.T) {
+	server := createTestServer()
+	defer server.Close()
+
+	conn := &schema.BitbucketCloudConnection{
+		ApiURL: server.URL,
+		Url:    server.URL,
+	}
+	client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	p := NewProvider(&types.BitbucketCloudConnection{
+		BitbucketCloudConnection: conn,
+	}, ProviderOptions{BitbucketCloudClient: client})
+
+	perms, err := p.FetchRepoPerms(context.Background(), &extsvc.Repository{
+		URI: "bitbucket.org/user/repo",
+	}, authz.FetchPermsOptions{})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expUserIDs := []extsvc.AccountID{"1", "2", "3", "4"}
+	if diff := cmp.Diff(expUserIDs, perms); diff != "" {
+		t.Fatal(diff)
+	}
 }
