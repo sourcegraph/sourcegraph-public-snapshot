@@ -486,6 +486,12 @@ func TestCreatingSearchContexts(t *testing.T) {
 			userID:        user1.ID,
 		},
 		{
+			name:          "cannot create search context with unsupported repo field predicate in query",
+			searchContext: &types.SearchContext{Name: "unsupported_repo_predicate", Query: "repo:has.content(foo)"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported repo field predicate in search context query: %q", "has.content(foo)"),
+		},
+		{
 			name:          "can create search context query with empty revision",
 			searchContext: &types.SearchContext{Name: "empty_revision", Query: "repo:foo/bar@"},
 			userID:        user1.ID,
