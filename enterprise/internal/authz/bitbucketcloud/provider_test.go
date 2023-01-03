@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
@@ -53,7 +55,12 @@ func createTestServer() *httptest.Server {
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider(mustURL(t, "https://bitbucket.org"), "", nil)
+		p := NewProvider(&types.BitbucketCloudConnection{
+			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				ApiURL: "https://bitbucket.org",
+				Url:    "https://bitbucket.org",
+			},
+		}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -63,7 +70,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider(mustURL(t, "https://bitbucket.org"), "", nil)
+		p := NewProvider(&types.BitbucketCloudConnection{
+			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				ApiURL: "https://bitbucket.org",
+				Url:    "https://bitbucket.org",
+			},
+		}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -81,7 +93,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no account data provided", func(t *testing.T) {
-		p := NewProvider(mustURL(t, "https://bitbucket.org"), "", nil)
+		p := NewProvider(&types.BitbucketCloudConnection{
+			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				ApiURL: "https://bitbucket.org",
+				Url:    "https://bitbucket.org",
+			},
+		}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -102,10 +119,21 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	defer server.Close()
 
 	t.Run("fetch user permissions", func(t *testing.T) {
-		p := NewProvider(mustURL(t, server.URL), "", nil)
+		conn := &schema.BitbucketCloudConnection{
+			ApiURL: server.URL,
+			Url:    server.URL,
+		}
+		client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		p := NewProvider(&types.BitbucketCloudConnection{
+			BitbucketCloudConnection: conn,
+		}, ProviderOptions{BitbucketCloudClient: client})
 
 		var acctData extsvc.AccountData
-		err := bitbucketcloud.SetExternalAccountData(&acctData, &bitbucket.User{}, &oauth2.Token{AccessToken: "my-access-token"})
+		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucket.User{}, &oauth2.Token{AccessToken: "my-access-token"})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
-	"github.com/ktrysmt/go-bitbucket"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,8 +40,7 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, authProviders []
 	}
 
 	for _, c := range conns {
-		bbURL, _ := url.Parse(c.Url)
-		p, err := newAuthzProvider(c, bbURL, c.URN, c.Username, c.AppPassword)
+		p, err := newAuthzProvider(c)
 		if err != nil {
 			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketCloud)
 			problems = append(problems, err.Error())
@@ -68,10 +66,6 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, authProviders []
 
 func newAuthzProvider(
 	c *types.BitbucketCloudConnection,
-	url *url.URL,
-	urn string,
-	username string,
-	appPassword string,
 ) (authz.Provider, error) {
 	if c.Authorization == nil {
 		return nil, nil
@@ -80,9 +74,7 @@ func newAuthzProvider(
 		return nil, err
 	}
 
-	bbClient := bitbucket.NewBasicAuth(username, appPassword)
-
-	return NewProvider(url, urn, bbClient), nil
+	return NewProvider(c, ProviderOptions{}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

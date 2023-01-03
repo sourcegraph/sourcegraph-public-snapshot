@@ -3693,7 +3693,7 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
 				return
 			},
 		},
@@ -3770,7 +3770,7 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.Repos")
 			},
 		},
@@ -5069,24 +5069,24 @@ func (c BitbucketCloudClientRepoFuncCall) Results() []interface{} {
 // BitbucketCloudClientReposFunc describes the behavior when the Repos
 // method of the parent MockBitbucketCloudClient instance is invoked.
 type BitbucketCloudClientReposFunc struct {
-	defaultHook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
-	hooks       []func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	defaultHook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
 	history     []BitbucketCloudClientReposFuncCall
 	mutex       sync.Mutex
 }
 
 // Repos delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
-	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2)
-	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string, v3 *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2, v3)
+	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Repos method of the
 // parent MockBitbucketCloudClient instance is invoked and the hook queue is
 // empty.
-func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.defaultHook = hook
 }
 
@@ -5094,7 +5094,7 @@ func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context
 // Repos method of the parent MockBitbucketCloudClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5103,19 +5103,19 @@ func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bit
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *BitbucketCloudClientReposFunc) SetDefaultReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *BitbucketCloudClientReposFunc) PushReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5157,6 +5157,9 @@ type BitbucketCloudClientReposFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *bitbucketcloud.ReposOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*bitbucketcloud.Repo
@@ -5171,7 +5174,7 @@ type BitbucketCloudClientReposFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BitbucketCloudClientReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

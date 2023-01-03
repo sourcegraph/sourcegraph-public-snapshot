@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,21 +26,38 @@ func (c *client) Repo(ctx context.Context, namespace, slug string) (*Repo, error
 	return &repo, nil
 }
 
+type ReposOptions struct {
+	Role string `url:"role,omitempty"`
+}
+
 // Repos returns a list of repositories that are fetched and populated based on given account
 // name and pagination criteria. If the account requested is a team, results will be filtered
 // down to the ones that the app password's user has access to.
 // If the argument pageToken.Next is not empty, it will be used directly as the URL to make
 // the request. The PageToken it returns may also contain the URL to the next page for
 // succeeding requests if any.
-func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	var next *PageToken
-	var err error
+// If the argument accountName is empty, it will return all repositories for
+// the authenticated user.
+func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) (repos []*Repo, next *PageToken, err error) {
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &repos)
-	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
+		return
 	}
+
+	var reposURL string
+	if accountName == "" {
+		reposURL = "/2.0/repositories"
+	} else {
+		reposURL = fmt.Sprintf("/2.0/repositories/%s", accountName)
+	}
+
+	var urlValues url.Values
+	if opts != nil && opts.Role != "" {
+		urlValues = make(url.Values)
+		urlValues.Set("role", opts.Role)
+	}
+
+	next, err = c.page(ctx, reposURL, urlValues, pageToken, &repos)
 	return repos, next, err
 }
 

@@ -4,12 +4,12 @@ package bitbucketcloud
 import (
 	"context"
 	"net/url"
-	"strings"
 
-	"github.com/ktrysmt/go-bitbucket"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,8 +19,12 @@ import (
 type Provider struct {
 	urn      string
 	codeHost *extsvc.CodeHost
-	client   *bitbucket.Client
+	client   bitbucketcloud.Client
 	pageSize int // Page size to use in paginated requests.
+}
+
+type ProviderOptions struct {
+	BitbucketCloudClient bitbucketcloud.Client
 }
 
 var _ authz.Provider = (*Provider)(nil)
@@ -29,11 +33,20 @@ var _ authz.Provider = (*Provider)(nil)
 // the given bitbucket.Client to talk to the Bitbucket Cloud API that is
 // the source of truth for permissions. Sourcegraph users will need a valid
 // Bitbucket Cloud external account for permissions to sync correctly.
-func NewProvider(url *url.URL, urn string, client *bitbucket.Client) *Provider {
+func NewProvider(conn *types.BitbucketCloudConnection, opts ProviderOptions) *Provider {
+	baseURL, err := url.Parse(conn.Url)
+	if err != nil {
+		return nil
+	}
+
+	if opts.BitbucketCloudClient == nil {
+		opts.BitbucketCloudClient, err = bitbucketcloud.NewClient(conn.Url, conn.BitbucketCloudConnection, httpcli.ExternalClient)
+	}
+
 	return &Provider{
-		urn:      urn,
-		codeHost: extsvc.NewCodeHost(url, extsvc.TypeBitbucketCloud),
-		client:   client,
+		urn:      conn.URN,
+		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeBitbucketCloud),
+		client:   opts.BitbucketCloudClient,
 		pageSize: 1000,
 	}
 }
@@ -91,20 +104,28 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	if err != nil {
 		return nil, err
 	}
-	bbClient := bitbucket.NewOAuthbearerToken(tok.AccessToken)
-	bbClient.Pagelen = 100
-	bbClient.SetApiBaseURL(*p.codeHost.BaseURL)
-
-	repos, err := bbClient.Repositories.ListForAccount(&bitbucket.RepositoriesOptions{
-		Role: "member",
-	})
+	oauthToken := &auth.OAuthBearerToken{
+		Token:        tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
+	}
+	client := p.client.WithAuthenticator(oauthToken)
+	repos, next, err := client.Repos(ctx, nil, "", &bitbucketcloud.ReposOptions{Role: "member"})
 	if err != nil {
 		return nil, err
 	}
+	for next != nil && next.Next != "" {
+		var nextRepos []*bitbucketcloud.Repo
+		nextRepos, next, err = client.Repos(ctx, next, "", &bitbucketcloud.ReposOptions{Role: "member"})
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, nextRepos...)
+	}
 
-	extIDs := make([]extsvc.RepoID, 0, len(repos.Items))
-	for _, repo := range repos.Items {
-		extIDs = append(extIDs, extsvc.RepoID(repo.Uuid))
+	extIDs := make([]extsvc.RepoID, 0, len(repos))
+	for _, repo := range repos {
+		extIDs = append(extIDs, extsvc.RepoID(repo.UUID))
 	}
 
 	return &authz.ExternalUserPermissions{
@@ -122,28 +143,29 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	repoNameParts := strings.Split(repo.URI, "/")
-	repoOwner := repoNameParts[1]
-	repoName := repoNameParts[2]
-	perms, err := p.client.Repositories.Repository.ListUserPermissions(&bitbucket.RepositoryOptions{
-		Owner:    repoOwner,
-		RepoSlug: repoName,
-	})
-	if err != nil {
-		return nil, err
-	}
+	return nil, nil
+	//repoNameParts := strings.Split(repo.URI, "/")
+	//repoOwner := repoNameParts[1]
+	//repoName := repoNameParts[2]
+	//perms, err := p.client.Repositories.Repository.ListUserPermissions(&bitbucket.RepositoryOptions{
+	//	Owner:    repoOwner,
+	//	RepoSlug: repoName,
+	//})
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	owner, err := p.client.User.Profile()
-	if err != nil {
-		return nil, err
-	}
+	//owner, err := p.client.User.Profile()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	userIDs := make([]extsvc.AccountID, 0, len(perms.UserPermissions)+1)
-	for i := range perms.UserPermissions {
-		userIDs = append(userIDs, extsvc.AccountID(perms.UserPermissions[i].User.AccountId))
-	}
+	//userIDs := make([]extsvc.AccountID, 0, len(perms.UserPermissions)+1)
+	//for i := range perms.UserPermissions {
+	//	userIDs = append(userIDs, extsvc.AccountID(perms.UserPermissions[i].User.AccountId))
+	//}
 
-	userIDs = append(userIDs, extsvc.AccountID(owner.AccountId))
+	//userIDs = append(userIDs, extsvc.AccountID(owner.AccountId))
 
-	return userIDs, nil
+	//return userIDs, nil
 }

@@ -179,7 +179,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 		var err error
 		var repos []*bitbucketcloud.Repo
 		for page.HasMore() || page.Page == 0 {
-			if repos, page, err = s.client.Repos(ctx, page, s.config.Username); err != nil {
+			if repos, page, err = s.client.Repos(ctx, page, s.config.Username, nil); err != nil {
 				ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.repos: item=%q, page=%+v", s.config.Username, page)}
 				break
 			}
@@ -198,7 +198,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			var err error
 			var repos []*bitbucketcloud.Repo
 			for page.HasMore() || page.Page == 0 {
-				if repos, page, err = s.client.Repos(ctx, page, t); err != nil {
+				if repos, page, err = s.client.Repos(ctx, page, t, nil); err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.teams: item=%q, page=%+v", t, page)}
 					break
 				}

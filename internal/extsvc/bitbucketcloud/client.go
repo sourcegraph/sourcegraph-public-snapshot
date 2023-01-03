@@ -41,7 +41,7 @@ type Client interface {
 	MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error)
 
 	Repo(ctx context.Context, namespace, slug string) (*Repo, error)
-	Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error)
+	Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) ([]*Repo, *PageToken, error)
 	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
