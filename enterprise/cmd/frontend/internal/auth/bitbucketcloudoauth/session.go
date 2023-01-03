@@ -2,14 +2,12 @@ package bitbucketcloudoauth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"golang.org/x/oauth2"
 
-	"github.com/ktrysmt/go-bitbucket"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -18,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type sessionIssuerHelper struct {
@@ -38,42 +38,30 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
-	bbClient := bitbucket.NewOAuthbearerToken(token.AccessToken)
-	bbClient.SetApiBaseURL(*s.BaseURL)
-	bbUser, err := bbClient.User.Profile()
+	conf := &schema.BitbucketCloudConnection{
+		Url:    s.BaseURL.String(),
+		ApiURL: s.BaseURL.String(),
+	}
+	bbClient, err := bitbucketcloud.NewClient(s.BaseURL.String(), conf, nil)
+	if err != nil {
+		return nil, "Could not initialize Bitbucket Cloud client", err
+	}
+
+	auther := &esauth.OAuthBearerToken{Token: token.AccessToken, RefreshToken: token.RefreshToken, Expiry: token.Expiry}
+	bbClient = bbClient.WithAuthenticator(auther)
+	bbUser, err := bbClient.CurrentUser(ctx)
 	if err != nil {
 		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
 	}
 
 	var data extsvc.AccountData
-	if err := bitbucketcloud.SetExternalAccountData(&data, bbUser, token); err != nil {
+	if err := bitbucketcloud.SetExternalAccountData(&data, &bbUser.Account, token); err != nil {
 		return nil, "", err
 	}
 
-	emailResp, err := bbClient.User.Emails()
+	emails, err := bbClient.CurrentUserEmails(ctx)
 	if err != nil {
 		return nil, "", err
-	}
-
-	// emailResp is a actually a map. First marshal it to json,
-	// then unmarshal it to struct.
-	jsonString, err := json.Marshal(emailResp)
-	if err != nil {
-		return nil, "", err
-	}
-
-	type emailResponse struct {
-		Values []struct {
-			Email       string `json:"email"`
-			IsConfirmed bool   `json:"is_confirmed"`
-			IsPrimary   bool   `json:"is_primary"`
-		} `json:"values"`
-	}
-
-	var emails emailResponse
-	err = json.Unmarshal(jsonString, &emails)
-	if err != nil {
-		return nil, "", errors.New("could not parse email response")
 	}
 
 	type attemptConfig struct {
@@ -82,7 +70,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 	attempts := []attemptConfig{}
 	verifiedEmails := []string{}
-	for _, email := range emails.Values {
+	for _, email := range emails {
 		if email.IsConfirmed {
 			attempts = append(attempts, attemptConfig{
 				email:            email.Email,
@@ -100,7 +88,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// existing account we return early and don't attempt to create a new account.
 	if s.allowSignup {
 		attempts = append(attempts, attemptConfig{
-			email:            emails.Values[0].Email,
+			email:            emails[0].Email,
 			createIfNotExist: true,
 		})
 	}
@@ -123,7 +111,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientKey,
-				AccountID:   bbUser.AccountId,
+				AccountID:   bbUser.UUID,
 			},
 			ExternalAccountData: data,
 			CreateIfNotExist:    attempt.createIfNotExist,

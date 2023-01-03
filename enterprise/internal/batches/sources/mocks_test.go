@@ -3601,6 +3601,9 @@ type MockBitbucketCloudClient struct {
 	// CurrentUserFunc is an instance of a mock function object controlling
 	// the behavior of the method CurrentUser.
 	CurrentUserFunc *BitbucketCloudClientCurrentUserFunc
+	// CurrentUserEmailsFunc is an instance of a mock function object
+	// controlling the behavior of the method CurrentUserEmails.
+	CurrentUserEmailsFunc *BitbucketCloudClientCurrentUserEmailsFunc
 	// DeclinePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method DeclinePullRequest.
 	DeclinePullRequestFunc *BitbucketCloudClientDeclinePullRequestFunc
@@ -3658,6 +3661,11 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 		},
 		CurrentUserFunc: &BitbucketCloudClientCurrentUserFunc{
 			defaultHook: func(context.Context) (r0 *bitbucketcloud.User, r1 error) {
+				return
+			},
+		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: func(context.Context) (r0 []*bitbucketcloud.UserEmail, r1 error) {
 				return
 			},
 		},
@@ -3743,6 +3751,11 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 				panic("unexpected invocation of MockBitbucketCloudClient.CurrentUser")
 			},
 		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+				panic("unexpected invocation of MockBitbucketCloudClient.CurrentUserEmails")
+			},
+		},
 		DeclinePullRequestFunc: &BitbucketCloudClientDeclinePullRequestFunc{
 			defaultHook: func(context.Context, *bitbucketcloud.Repo, int64) (*bitbucketcloud.PullRequest, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.DeclinePullRequest")
@@ -3817,6 +3830,9 @@ func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketClou
 		},
 		CurrentUserFunc: &BitbucketCloudClientCurrentUserFunc{
 			defaultHook: i.CurrentUser,
+		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: i.CurrentUserEmails,
 		},
 		DeclinePullRequestFunc: &BitbucketCloudClientDeclinePullRequestFunc{
 			defaultHook: i.DeclinePullRequest,
@@ -4294,6 +4310,115 @@ func (c BitbucketCloudClientCurrentUserFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BitbucketCloudClientCurrentUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BitbucketCloudClientCurrentUserEmailsFunc describes the behavior when the
+// CurrentUserEmails method of the parent MockBitbucketCloudClient instance
+// is invoked.
+type BitbucketCloudClientCurrentUserEmailsFunc struct {
+	defaultHook func(context.Context) ([]*bitbucketcloud.UserEmail, error)
+	hooks       []func(context.Context) ([]*bitbucketcloud.UserEmail, error)
+	history     []BitbucketCloudClientCurrentUserEmailsFuncCall
+	mutex       sync.Mutex
+}
+
+// CurrentUserEmails delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBitbucketCloudClient) CurrentUserEmails(v0 context.Context) ([]*bitbucketcloud.UserEmail, error) {
+	r0, r1 := m.CurrentUserEmailsFunc.nextHook()(v0)
+	m.CurrentUserEmailsFunc.appendCall(BitbucketCloudClientCurrentUserEmailsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CurrentUserEmails
+// method of the parent MockBitbucketCloudClient instance is invoked and the
+// hook queue is empty.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) SetDefaultHook(hook func(context.Context) ([]*bitbucketcloud.UserEmail, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CurrentUserEmails method of the parent MockBitbucketCloudClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) PushHook(hook func(context.Context) ([]*bitbucketcloud.UserEmail, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) SetDefaultReturn(r0 []*bitbucketcloud.UserEmail, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) PushReturn(r0 []*bitbucketcloud.UserEmail, r1 error) {
+	f.PushHook(func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+		return r0, r1
+	})
+}
+
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) nextHook() func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) appendCall(r0 BitbucketCloudClientCurrentUserEmailsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketCloudClientCurrentUserEmailsFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) History() []BitbucketCloudClientCurrentUserEmailsFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketCloudClientCurrentUserEmailsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketCloudClientCurrentUserEmailsFuncCall is an object that describes
+// an invocation of method CurrentUserEmails on an instance of
+// MockBitbucketCloudClient.
+type BitbucketCloudClientCurrentUserEmailsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*bitbucketcloud.UserEmail
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketCloudClientCurrentUserEmailsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketCloudClientCurrentUserEmailsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

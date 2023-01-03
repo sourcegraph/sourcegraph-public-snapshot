@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/ktrysmt/go-bitbucket"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -40,12 +39,12 @@ func createTestServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/repositories") {
 			json.NewEncoder(w).Encode(struct {
-				Values []bitbucket.Repository `json:"values"`
+				Values []bitbucketcloud.Repo `json:"values"`
 			}{
-				Values: []bitbucket.Repository{
-					{Uuid: "1"},
-					{Uuid: "2"},
-					{Uuid: "3"},
+				Values: []bitbucketcloud.Repo{
+					{UUID: "1"},
+					{UUID: "2"},
+					{UUID: "3"},
 				},
 			})
 			return
@@ -153,7 +152,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}, ProviderOptions{BitbucketCloudClient: client})
 
 		var acctData extsvc.AccountData
-		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucket.User{}, &oauth2.Token{AccessToken: "my-access-token"})
+		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucketcloud.Account{}, &oauth2.Token{AccessToken: "my-access-token"})
 		if err != nil {
 			t.Fatal(err)
 		}
