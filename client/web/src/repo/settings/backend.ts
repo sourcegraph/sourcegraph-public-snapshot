@@ -78,9 +78,9 @@ export function fetchSettingsAreaRepository(name: string): Observable<SettingsAr
     )
 }
 
-export const EXCLUDE_REPO_FROM_EXTERNAL_SERVICE = gql`
-    mutation ExcludeRepoFromExternalService($externalService: ID!, $repo: ID!) {
-        excludeRepoFromExternalService(externalService: $externalService, repo: $repo) {
+export const EXCLUDE_REPO_FROM_EXTERNAL_SERVICES = gql`
+    mutation ExcludeRepoFromExternalServices($externalServices: [ID!]!, $repo: ID!) {
+        excludeRepoFromExternalServices(externalServices: $externalServices, repo: $repo) {
             alwaysNil
         }
     }

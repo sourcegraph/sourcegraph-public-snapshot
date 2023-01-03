@@ -158,20 +158,24 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 }
 
 type excludeRepoFromExternalServiceArgs struct {
-	ExternalService graphql.ID
-	Repo            graphql.ID
+	ExternalServices []graphql.ID
+	Repo             graphql.ID
 }
 
-// ExcludeRepoFromExternalService excludes given repo from given external service config.
-func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
+// ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.
+func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	extSvcID, err := UnmarshalExternalServiceID(args.ExternalService)
-	if err != nil {
-		return nil, err
+	extSvcIDs := make([]int64, 0, len(args.ExternalServices))
+	for _, externalServiceID := range args.ExternalServices {
+		extSvcID, err := UnmarshalExternalServiceID(externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		extSvcIDs = append(extSvcIDs, extSvcID)
 	}
 
 	repositoryID, err := UnmarshalRepositoryID(args.Repo)
@@ -179,7 +183,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 		return nil, err
 	}
 
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalService(ctx, extSvcID, repositoryID); err != nil {
+	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

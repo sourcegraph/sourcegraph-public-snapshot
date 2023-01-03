@@ -131,9 +131,9 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!, async: Boolean = false): EmptyResponse!
     """
-    Excludes a repo from external service config. Only site admins may perform this mutation.
+    Excludes a repo from external services configs. Only site admins may perform this mutation.
     """
-    excludeRepoFromExternalService(externalService: ID!, repo: ID!): EmptyResponse!
+    excludeRepoFromExternalServices(externalServices: [ID!]!, repo: ID!): EmptyResponse!
     """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.

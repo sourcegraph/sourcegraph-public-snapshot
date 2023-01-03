@@ -10,12 +10,12 @@ import { Alert, Button, ErrorAlert, LoadingSpinner, renderError, Tooltip } from 
 import { ExternalServiceCard } from '../../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import {
-    ExcludeRepoFromExternalServiceResult,
-    ExcludeRepoFromExternalServiceVariables,
+    ExcludeRepoFromExternalServicesResult,
+    ExcludeRepoFromExternalServicesVariables,
     SettingsAreaExternalServiceFields,
     SettingsAreaRepositoryFields,
 } from '../../../graphql-operations'
-import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICE } from '../backend'
+import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES } from '../backend'
 
 import styles from './ExternalServiceEntry.module.scss'
 
@@ -47,9 +47,9 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
 }) => {
     const [ttl, setTtl] = useState<number | undefined>(3)
     const [excludeRepo, { error, data, loading: isExcluding }] = useMutation<
-        ExcludeRepoFromExternalServiceResult,
-        ExcludeRepoFromExternalServiceVariables
-    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICE, {
+        ExcludeRepoFromExternalServicesResult,
+        ExcludeRepoFromExternalServicesVariables
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, {
         onCompleted: () => {
             let count = 3
             setInterval(() => {
@@ -97,7 +97,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                                 updateExclusionLoading(true)
                                 excludeRepo({
                                     variables: {
-                                        externalService: service.id,
+                                        externalServices: [service.id],
                                         repo: repo.id,
                                     },
                                 })
