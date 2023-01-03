@@ -39,7 +39,7 @@ export class CodeIntelTooltip implements Tooltip {
     public readonly create: () => TooltipView
     constructor(
         private readonly view: EditorView,
-        public readonly occurrence: Occurrence,
+        private readonly occurrence: Occurrence,
         private readonly hover: HoverResult
     ) {
         const range = rangeToCmSelection(view.state, occurrence.range)

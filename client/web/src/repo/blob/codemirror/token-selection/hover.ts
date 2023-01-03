@@ -1,9 +1,8 @@
-import { countColumn, Extension, StateEffect, StateField } from '@codemirror/state'
+import { countColumn, Extension, SelectionRange, StateEffect, StateField } from '@codemirror/state'
 import {
     closeHoverTooltips,
     Decoration,
     EditorView,
-    getTooltip,
     PluginValue,
     showTooltip,
     Tooltip,
@@ -11,7 +10,7 @@ import {
     ViewUpdate,
 } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounceTime, filter, map, switchMap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
@@ -20,7 +19,7 @@ import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { pin } from '../hovercard'
+import { HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin, selectionHighlightDecoration } from '../hovercard'
 import {
     isInteractiveOccurrence,
     occurrenceAtMouseEvent,
@@ -29,10 +28,10 @@ import {
 } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
-import { warmupOccurrence } from './selections'
+import { isEqual } from 'lodash'
 
 export function hoverExtension(): Extension {
-    return [hoverCache, hoveredOccurrenceField, hoverTooltipField, hoverManager, tooltipStyles, hoverField, pinManager]
+    return [hoverCache, hoveredOccurrenceField, hoverTooltip, hoverManager, tooltipStyles, hoverField, pinManager]
 }
 export const hoverCache = StateField.define<Map<Occurrence, Promise<HoverResult>>>({
     create: () => new Map(),
@@ -78,42 +77,6 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
             }
         }
         return value
-    },
-})
-
-/**
- * Effect for setting the hovercard for the currently hovered token.
- */
-const setHoverTooltip = StateEffect.define<CodeIntelTooltip | null>()
-const hoverTooltipField = StateField.define<CodeIntelTooltip | null>({
-    create() {
-        return null
-    },
-
-    update(state, transaction) {
-        for (const effect of transaction.effects) {
-            if (effect.is(setHoverTooltip)) {
-                return effect.value
-            }
-        }
-        return state
-    },
-
-    provide(field) {
-        return [
-            showTooltip.computeN([field], state => [state.field(field)]),
-
-            EditorView.decorations.compute([field], state => {
-                const tooltip = state.field(field)
-                if (tooltip === null) {
-                    return Decoration.none
-                }
-
-                const range = rangeToCmSelection(state, tooltip.occurrence.range)
-
-                return Decoration.set(Decoration.mark({ class: 'selection-highlight' }).range(range.from, range.to))
-            }),
-        ]
     },
 })
 
@@ -260,110 +223,131 @@ const tooltipStyles = EditorView.theme({
 })
 
 /**
- * The MouseEvent uses numbers to indicate which button was pressed.
- * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
+ * Effect for setting the tooltip for the currently hovered token.
  */
-const MOUSE_NO_BUTTON = 0
+const setHoverTooltip = StateEffect.define<{ tooltip: Tooltip | null; range: SelectionRange } | null>()
 
-const HOVER_DEBOUNCE_TIME = 25 // ms
+/**
+ * Field for storing visible hovered occurrence range and visible code-intel tooltip for this occurrence.
+ */
+const hoverTooltip = StateField.define<{ tooltip: Tooltip | null; range: SelectionRange } | null>({
+    create() {
+        return null
+    },
+
+    update(state, transaction) {
+        for (const effect of transaction.effects) {
+            if (effect.is(setHoverTooltip)) {
+                return effect.value
+            }
+        }
+        return state
+    },
+
+    provide(field) {
+        return [
+            // show code-intel tooltip
+            showTooltip.computeN([field], state => [state.field(field)?.tooltip ?? null]),
+
+            // highlight occurrence with tooltip
+            EditorView.decorations.compute([field], state => {
+                const value = state.field(field)
+
+                if (!value?.tooltip || !value?.range) {
+                    return Decoration.none
+                }
+
+                return Decoration.set(selectionHighlightDecoration.range(value.range.from, value.range.to))
+            }),
+        ]
+    },
+})
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
- * cursor is eligible (whether a "word" is under the mouse cursor), fetches
- * hover information as necessary and updates {@link hoverTooltipField}.
+ * cursor is a valid {@link Occurrence}, fetches hover information as necessary and updates {@link hoverTooltip}.
  */
 const hoverManager = ViewPlugin.fromClass(
     class HoverManager implements PluginValue {
-        private subscription: Subscription
+        private subscription: Subscription = new Subscription()
 
         constructor(private readonly view: EditorView) {
-            this.subscription = fromEvent<MouseEvent>(this.view.dom, 'mousemove')
-                .pipe(
-                    tap(event => {
-                        const atEvent = occurrenceAtMouseEvent(view, event)
-                        const hoveredOccurrence = atEvent ? atEvent.occurrence : null
-                        if (hoveredOccurrence && isInteractiveOccurrence(hoveredOccurrence)) {
-                            warmupOccurrence(view, hoveredOccurrence)
-                        }
-                    }),
+            this.subscription.add(
+                fromEvent<MouseEvent>(this.view.dom, 'mousemove')
+                    .pipe(
+                        // Debounce events so that users can move over tokens without triggering hovercards immediately
+                        debounceTime(HOVER_DEBOUNCE_TIME),
 
-                    // Debounce events so that users can move over tokens without triggering hovercards immediately
-                    debounceTime(HOVER_DEBOUNCE_TIME),
+                        // Ignore some events
+                        filter(event => {
+                            // Ignore events when hovering over an existing hovercard.
+                            // This causes existing hovercards to stay open.
+                            if (
+                                (event.target as HTMLElement | null)?.closest(
+                                    '.cm-code-intel-hovercard:not(.cm-code-intel-hovercard-pinned)'
+                                )
+                            ) {
+                                return false
+                            }
 
-                    // Ignore some events
-                    filter(event => {
-                        // Ignore events when hovering over an existing hovercard.
-                        // This causes existing hovercards to stay open.
-                        if (
-                            (event.target as HTMLElement | null)?.closest(
-                                '.cm-code-intel-hovercard:not(.cm-code-intel-hovercard-pinned)'
+                            // We have to forward any move events that also have a
+                            // button pressed. User is probably selecting text and
+                            // hovercards should be hidden.
+                            if (event.buttons !== MOUSE_NO_BUTTON) {
+                                return true
+                            }
+
+                            // Ignore events inside the current hover range. Without this
+                            // hovercards flicker when the active range is wider than the
+                            // word-under-cursor range. For example, hovering over
+                            //
+                            // import ( "io/fs" )
+                            //
+                            // will detect `io` and `fs` as separate words (and would
+                            // therefore trigger two individual word lookups), but the
+                            // hover information returned by the server is for the whole
+                            // `io/fs` range.
+                            const offset = preciseOffsetAtCoords(view, event)
+                            if (offset === null) {
+                                return true
+                            }
+
+                            const currentTooltip = view.state.field(hoverTooltip)
+                            if (!currentTooltip) {
+                                return true
+                            }
+
+                            return !isOffsetInHoverRange(offset, currentTooltip.range)
+                        }),
+
+                        switchMap(event => {
+                            const occurrence = occurrenceAtMouseEvent(view, event)?.occurrence
+                            if (!occurrence) {
+                                // not an occurrence - reset {@link hoverTooltip} state and return
+                                return of(null)
+                            }
+
+                            const current = view.state.field(hoverTooltip)
+                            const nextRange = rangeToCmSelection(view.state, occurrence.range)
+                            if (current && !isEqual(current.range, nextRange)) {
+                                // different occurrence is hovered - hide the tooltip for the previous one and fetch the new one
+                                view.dispatch({ effects: setHoverTooltip.of(null) })
+                            }
+
+                            return of(nextRange).pipe(
+                                switchMap(range =>
+                                    from(getHoverTooltip(view, range.from)).pipe(
+                                        catchError(() => of(null)),
+                                        map(tooltip => ({ tooltip, range }))
+                                    )
+                                )
                             )
-                        ) {
-                            return false
-                        }
-
-                        // We have to forward any move events that also have a
-                        // button pressed. User is probably selecting text and
-                        // hovercards should be hidden.
-                        if (event.buttons !== MOUSE_NO_BUTTON) {
-                            return true
-                        }
-
-                        // Ignore events inside the current hover range. Without this
-                        // hovercards flicker when the active range is wider than the
-                        // word-under-cursor range. For example, hovering over
-                        //
-                        // import ( "io/fs" )
-                        //
-                        // will detect `io` and `fs` as separate words (and would
-                        // therefore trigger two individual word lookups), but the
-                        // hover information returned by the server is for the whole
-                        // `io/fs` range.
-                        const offset = preciseOffsetAtCoords(view, event)
-                        if (offset === null) {
-                            return true
-                        }
-                        const tooltip = view.state.field(hoverTooltipField)
-                        if (!tooltip) {
-                            return true
-                        }
-                        const wordWithTooltip = view.state.wordAt(tooltip.pos)
-                        if (!wordWithTooltip) {
-                            return true
-                        }
-                        return !isOffsetInHoverRange(offset, wordWithTooltip)
-                    }),
-
-                    // Determine the precise location of the word under the cursor.
-                    switchMap(position => {
-                        // Hide any hovercard when
-                        // - the mouse is over an element that is not part of
-                        //   the content. This seems necessary to make hovercards
-                        //   not appear and hide open hovercards when the mouse
-                        //   moves over the editor's search panel.
-                        // - the user starts to select text
-                        if (
-                            position.buttons !== MOUSE_NO_BUTTON ||
-                            !position.target ||
-                            !this.view.contentDOM.contains(position.target as Node)
-                        ) {
-                            return of(null)
-                        }
-
-                        return of(position).pipe(
-                            map(position => preciseOffsetAtCoords(view, position)),
-                            switchMap(pos =>
-                                typeof pos === 'number'
-                                    ? from(getHoverTooltip(view, pos)).pipe(catchError(() => of(null)))
-                                    : of(null)
-                            )
-                        )
+                        })
+                    )
+                    .subscribe(next => {
+                        view.dispatch({ effects: setHoverTooltip.of(next) })
                     })
-                )
-                .subscribe(value => {
-                    console.log({ value })
-                    view.dispatch({ effects: setHoverTooltip.of(value) })
-                })
+            )
         }
 
         public destroy(): void {

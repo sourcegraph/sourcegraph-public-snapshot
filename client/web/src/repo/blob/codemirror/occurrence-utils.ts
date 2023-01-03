@@ -153,7 +153,7 @@ export function positionAtCmPosition(view: EditorView, position: number): Positi
     const cmLine = view.state.doc.lineAt(position)
     const line = cmLine.number - 1
     // The lack of "- 1" at the end of the line below is intentional because it
-    // makes clicking on the first charcter of a token have no effect.
+    // makes clicking on the first character of a token have no effect.
     const character = position - cmLine.from
     return new Position(line, character)
 }
