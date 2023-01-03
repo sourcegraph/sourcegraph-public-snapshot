@@ -12,14 +12,18 @@ import (
 
 // GitCommandError is a Git command that encountered an error.
 type GitCommandError struct {
-	// Msg is the error message that descibes what failed.
-	Msg string
+	// Err is the error message that descibes what failed.
+	Err error
 	// Output is the std error output of the command that failed.
 	Output string
 }
 
 func (e *GitCommandError) Error() string {
-	return fmt.Sprintf("%s - output: %q", e.Msg, e.Output)
+	return fmt.Sprintf("%s - output: %q", e.Err, e.Output)
+}
+
+func (e *GitCommandError) Unwrap() error {
+	return e.Err
 }
 
 // GitRepoSyncer is a syncer for Git repositories.
@@ -50,7 +54,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 		}
 		if len(out) > 0 {
 			err = &GitCommandError{
-				Msg:    err.Error(),
+				Err:    err,
 				Output: string(out),
 			}
 		}
@@ -68,7 +72,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 	cmd = exec.CommandContext(ctx, "git", "init", "--bare", ".")
 	cmd.Dir = tmpPath
 	if err := cmd.Run(); err != nil {
-		return nil, errors.CombineErrors(err, &GitCommandError{Msg: "clone setup failed"})
+		return nil, errors.Wrapf(&GitCommandError{Err: err}, "clone setup failed")
 	}
 
 	cmd, _ = s.fetchCommand(ctx, remoteURL)
@@ -81,10 +85,7 @@ func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDi
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		return errors.CombineErrors(err, &GitCommandError{
-			Msg:    "failed to update",
-			Output: newURLRedactor(remoteURL).redact(string(output)),
-		})
+		return errors.Wrapf(&GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}, "failed to update")
 	}
 	return nil
 }
