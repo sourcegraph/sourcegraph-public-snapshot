@@ -12,7 +12,6 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 		await Promise.race([
 			new Promise<void>((resolve) =>
 				ws.on("open", () => {
-					console.log("# OPENED");
 					resolve();
 				})
 			),

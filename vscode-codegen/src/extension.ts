@@ -7,7 +7,7 @@ import { WSCompletionsClient, fetchAndShowCompletions } from "./completions";
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-	console.log("# extension activated");
+	console.log("codebot extension activated");
 	const settings = vscode.workspace.getConfiguration();
 	const documentProvider = new CompletionsDocumentProvider();
 	const history = new History();

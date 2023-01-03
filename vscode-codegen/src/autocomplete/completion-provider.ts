@@ -18,7 +18,6 @@ export async function getReferences(
 	);
 
 	const searchText = document.getText(range);
-	console.log(`# defSearchText\n${searchText}`);
 	const matches = [...searchText.matchAll(/\w+/g)];
 	const refPositions: Position[] = [];
 	const ignoreWords = ["string", "Promise", "console", "log"]; // TODO(beyang): formalize
