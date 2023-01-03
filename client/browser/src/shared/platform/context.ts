@@ -1,19 +1,13 @@
 import { combineLatest, ReplaySubject, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { asError, LocalStorageSubject } from '@sourcegraph/common'
+import { asError } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import {
-    EMPTY_SETTINGS_CASCADE,
-    gqlToCascade,
-    SettingsSubject,
-    SubjectSettingsContents,
-} from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
@@ -59,7 +53,7 @@ export function createPlatformContext(
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<{
         final: string
-        subjects: (SettingsSubject & SubjectSettingsContents)[]
+        subjects: SettingsSubject[]
     }>(1)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
@@ -162,9 +156,6 @@ export function createPlatformContext(
         },
         sourcegraphURL,
         clientApplication: 'other',
-        sideloadedExtensionURL: isInPage
-            ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
-            : new ExtensionStorageSubject('sideloadedExtensionURL', null),
         getStaticExtensions: () =>
             shouldUseInlineExtensionsObservable.pipe(
                 switchMap(shouldUseInline => (shouldUseInline ? getInlineExtensions() : of(undefined)))

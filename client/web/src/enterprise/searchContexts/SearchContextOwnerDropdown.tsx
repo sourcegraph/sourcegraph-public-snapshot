@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import { mdiMenuDown } from '@mdi/js'
 
-import { SearchContextFields } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

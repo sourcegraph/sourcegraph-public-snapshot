@@ -2,7 +2,7 @@
 
 > NOTE: Sourcegraph is [open source](https://github.com/sourcegraph/sourcegraph). Pricing documentation below applies to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
 
-Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, access to code navigation and intelligence and other Sourcegraph extensions, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
+Organizations using Sourcegraph can [upgrade to Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) to get the features that large organizations need (single sign-on, backups and recovery, cluster deployment, access to code navigation and intelligence, etc.). These additional features in Sourcegraph Enterprise are paid and not open source.
 
 You can [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to purchase a subscription. This entitles you to a license key (provided immediately after your purchase), which activates Enterprise features on your Sourcegraph instance.
 

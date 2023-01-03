@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,7 +33,6 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,

@@ -19,7 +19,6 @@
     { "path": "../shared" },
     { "path": "../common" },
     { "path": "../branded" },
-    { "path": "../search" },
     { "path": "../search-ui" },
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],

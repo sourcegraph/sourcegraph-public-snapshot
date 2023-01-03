@@ -5,8 +5,8 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
@@ -64,7 +64,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         : undefined
                 }
                 className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
-                isKeyboardSelectable={true}
             />
             <CopyPathAction
                 filePath={result.path}

@@ -13,10 +13,11 @@ import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
-import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
+
+import styles from './RepositoryFileTreePage.module.scss'
 
 export interface RepositoryFileTreePageProps
     extends RepoRevisionContainerContext,
@@ -93,9 +94,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
             />
             {!hideRepoRevisionContent && (
-                // Add `.blob-status-bar__container` because this is the
-                // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                <BlobStatusBarContainer>
+                <>
                     <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={location}>
                         {objectType === 'blob' ? (
@@ -114,6 +113,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                                    className={styles.pageContent}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
@@ -128,12 +128,13 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                 match={match}
                                 useActionItemsBar={context.useActionItemsBar}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
+                                className={styles.pageContent}
                             />
                         ) : (
                             <LoadingSpinner />
                         )}
                     </ErrorBoundary>
-                </BlobStatusBarContainer>
+                </>
             )}
         </>
     )

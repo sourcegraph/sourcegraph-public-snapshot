@@ -3,12 +3,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiAlertCircle, mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     EventStatus,
     MonitorActionEvents,

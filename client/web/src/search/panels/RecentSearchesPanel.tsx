@@ -4,13 +4,13 @@ import { gql } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link, useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { Timestamp } from '../../components/time/Timestamp'
 import { RecentSearchesPanelFragment, SearchPatternType } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 

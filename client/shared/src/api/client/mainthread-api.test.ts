@@ -1,4 +1,4 @@
-import { BehaviorSubject, EMPTY, of, Subject } from 'rxjs'
+import { EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
 
 import { getGraphQLClient as getGraphQLClientBase, SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -26,7 +26,6 @@ describe('MainThreadAPI', () => {
                 | 'getGraphQLClient'
                 | 'requestGraphQL'
                 | 'getScriptURLForExtension'
-                | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
                 settings: EMPTY,
@@ -34,7 +33,6 @@ describe('MainThreadAPI', () => {
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
-                sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
                 clientApplication: 'other',
             }
 
@@ -67,7 +65,6 @@ describe('MainThreadAPI', () => {
                 | 'getGraphQLClient'
                 | 'requestGraphQL'
                 | 'getScriptURLForExtension'
-                | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
                 settings: EMPTY,
@@ -75,7 +72,6 @@ describe('MainThreadAPI', () => {
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
-                sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
                 clientApplication: 'other',
             }
 
@@ -101,7 +97,6 @@ describe('MainThreadAPI', () => {
                 | 'requestGraphQL'
                 | 'getGraphQLClient'
                 | 'getScriptURLForExtension'
-                | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
                 settings: of({
@@ -109,13 +104,25 @@ describe('MainThreadAPI', () => {
                         {
                             settings: null,
                             lastID: null,
-                            subject: { id: 'id1', __typename: 'DefaultSettings', viewerCanAdminister: true },
+                            subject: {
+                                id: 'id1',
+                                __typename: 'DefaultSettings',
+                                viewerCanAdminister: true,
+                                settingsURL: null,
+                                latestSettings: null,
+                            },
                         },
                         {
                             settings: null,
                             lastID: null,
 
-                            subject: { id: 'id2', __typename: 'DefaultSettings', viewerCanAdminister: true },
+                            subject: {
+                                id: 'id2',
+                                __typename: 'DefaultSettings',
+                                viewerCanAdminister: true,
+                                settingsURL: null,
+                                latestSettings: null,
+                            },
                         },
                     ],
                     final: { a: 'value' },
@@ -124,7 +131,6 @@ describe('MainThreadAPI', () => {
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
-                sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
                 clientApplication: 'other',
             }
 
@@ -159,7 +165,6 @@ describe('MainThreadAPI', () => {
                 | 'getGraphQLClient'
                 | 'requestGraphQL'
                 | 'getScriptURLForExtension'
-                | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
                 getGraphQLClient,
@@ -167,7 +172,6 @@ describe('MainThreadAPI', () => {
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
-                sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
                 clientApplication: 'other',
             }
 
@@ -193,7 +197,6 @@ describe('MainThreadAPI', () => {
                 | 'getGraphQLClient'
                 | 'requestGraphQL'
                 | 'getScriptURLForExtension'
-                | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
                 settings: values.asObservable(),
@@ -201,7 +204,6 @@ describe('MainThreadAPI', () => {
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
-                sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
                 clientApplication: 'other',
             }
             const passedToExtensionHost: SettingsCascade<object>[] = []

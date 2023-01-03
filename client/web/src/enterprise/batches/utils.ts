@@ -1,14 +1,3 @@
-import { HoveredToken } from '@sourcegraph/codeintellify'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import {
-    RepoSpec,
-    RevisionSpec,
-    FileSpec,
-    ResolvedRevisionSpec,
-    UIPositionSpec,
-    ModeSpec,
-} from '@sourcegraph/shared/src/util/url'
-
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -22,19 +11,6 @@ export function isValidChangesetReviewState(input: string): input is ChangesetRe
 
 export function isValidChangesetCheckState(input: string): input is ChangesetCheckState {
     return Object.values<string>(ChangesetCheckState).includes(input)
-}
-
-export function getLSPTextDocumentPositionParameters(
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
-    return {
-        repoName: hoveredToken.repoName,
-        revision: hoveredToken.revision,
-        filePath: hoveredToken.filePath,
-        commitID: hoveredToken.commitID,
-        position: hoveredToken,
-        mode: getModeFromPath(hoveredToken.filePath || ''),
-    }
 }
 
 export function isValidChangesetSpecOperation(input: string): input is ChangesetSpecOperation {

@@ -2,9 +2,9 @@ import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

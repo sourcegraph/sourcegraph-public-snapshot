@@ -108,6 +108,9 @@ Available commands in `sg.config.yaml`:
 * loki
 * monitoring-generator
 * oss-frontend
+* oss-gitserver-0
+* oss-gitserver-1
+* oss-gitserver-template
 * oss-repo-updater
 * oss-symbols
 * oss-web: Open source version of the web app
@@ -484,6 +487,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--quiet, -q`: Suppress all output but errors from generate tasks
+
+### sg generate buf
+
+Re-generate protcol buffer bindings using buf.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg generate go
 

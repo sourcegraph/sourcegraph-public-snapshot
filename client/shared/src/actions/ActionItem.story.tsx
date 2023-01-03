@@ -3,8 +3,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { subtypeOf } from '@sourcegraph/common'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 

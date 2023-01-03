@@ -3,21 +3,22 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
+
+import type { NotificationType, Progress } from '../codeintel/legacy-extensions/api'
 
 import { Notification } from './notification'
 
 import styles from './NotificationItem.module.scss'
 
 export interface UnbrandedNotificationItemStyleProps {
-    notificationItemClassNames: Record<sourcegraph.NotificationType, string>
+    notificationItemClassNames: Record<NotificationType, string>
 }
 
 export interface BrandedNotificationItemStyleProps {
-    notificationItemVariants: Record<sourcegraph.NotificationType, AlertProps['variant']>
+    notificationItemVariants: Record<NotificationType, AlertProps['variant']>
 }
 
 /**
@@ -34,7 +35,7 @@ export interface NotificationItemProps {
 }
 
 interface NotificationItemState {
-    progress?: Required<sourcegraph.Progress>
+    progress?: Required<Progress>
 }
 
 /**
@@ -62,7 +63,7 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
                         from(progress || []).pipe(
                             // Hide progress bar and update message if error occurred
                             // Merge new progress updates with previous
-                            scan<sourcegraph.Progress, Required<sourcegraph.Progress>>(
+                            scan<Progress, Required<Progress>>(
                                 (current, { message = current.message, percentage = current.percentage }) => ({
                                     message,
                                     percentage,

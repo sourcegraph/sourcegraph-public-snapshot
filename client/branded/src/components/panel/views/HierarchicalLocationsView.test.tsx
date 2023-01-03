@@ -11,7 +11,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 

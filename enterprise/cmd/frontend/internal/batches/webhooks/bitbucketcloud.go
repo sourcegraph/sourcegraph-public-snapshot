@@ -48,7 +48,7 @@ func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Clie
 	}
 }
 
-func (h *BitbucketCloudWebhook) Register(router *fewebhooks.WebhookRouter) {
+func (h *BitbucketCloudWebhook) Register(router *fewebhooks.Router) {
 	router.Register(
 		h.handleEvent,
 		extsvc.KindBitbucketCloud,

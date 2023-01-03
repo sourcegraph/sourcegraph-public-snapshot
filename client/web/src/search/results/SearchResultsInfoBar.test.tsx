@@ -5,7 +5,7 @@ import { NEVER } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -17,7 +17,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     history,
     location: createLocation('/search'),
-    authenticatedUser: { id: 'userID' },
+    authenticatedUser: { id: 'userID', displayName: 'Chuck Cheese', email: 'chuck@chuckeecheese.com' },
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,

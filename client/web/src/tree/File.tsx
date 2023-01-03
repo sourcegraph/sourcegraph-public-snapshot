@@ -7,9 +7,9 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -165,9 +165,9 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                     {index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
-                            variant="warning"
+                            variant="note"
                             style={getTreeItemOffset(depth + 1)}
-                            error="Too many entries. Use search to find a specific file."
+                            error="Full list of files is too long to display. Use search to find specific file."
                         />
                     )}
                 </TreeLayerCell>

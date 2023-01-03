@@ -97,7 +97,10 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	}
 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	return nil, repos.Paginate(ctx, j.RepoOpts, func(page *searchrepos.Resolved) error {
+	it := repos.Iterator(ctx, j.RepoOpts)
+
+	for it.Next() {
+		page := it.Current()
 		page.MaybeSendStats(stream)
 
 		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
@@ -109,8 +112,12 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			})
 		}
 
-		return g.Wait()
-	})
+		if err := g.Wait(); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, it.Err()
 }
 
 func (j SearchJob) Name() string {

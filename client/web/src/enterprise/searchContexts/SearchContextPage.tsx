@@ -6,13 +6,14 @@ import { debounce } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
-import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
@@ -30,7 +31,7 @@ import {
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
+import { Scalars, SearchPatternType } from '../../graphql-operations'
 
 import { useDefaultContext } from './hooks/useDefaultContext'
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'

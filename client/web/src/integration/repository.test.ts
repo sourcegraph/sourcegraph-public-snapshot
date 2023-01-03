@@ -2,9 +2,9 @@ import assert from 'assert'
 import * as path from 'path'
 
 import { subDays } from 'date-fns'
-import type * as sourcegraph from 'sourcegraph'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
+import { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -1027,7 +1027,7 @@ describe('Repository', () => {
 
                         const vowels = 'aeiouAEIOU'
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.app.registerFileDecorationProvider({
                                     provideFileDecorations: ({ files }) =>

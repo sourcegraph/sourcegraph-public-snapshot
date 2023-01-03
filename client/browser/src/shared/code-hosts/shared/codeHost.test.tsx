@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
-import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, NEVER, of, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -31,7 +31,6 @@ import { MutationRecordLike } from '../../util/dom'
 
 import {
     CodeIntelligenceProps,
-    createGlobalDebugMount,
     getExistingOrCreateOverlayMount,
     handleCodeHost,
     observeHoverOverlayMountLocation,
@@ -82,7 +81,6 @@ const createMockPlatformContext = (
 ): CodeIntelligenceProps['platformContext'] => ({
     urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
-    sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
     refreshSettings: () => Promise.resolve(),
     sourcegraphURL: '',
@@ -92,7 +90,6 @@ const createMockPlatformContext = (
 const commonArguments = () =>
     subtypeOf<Partial<HandleCodeHostOptions>>()({
         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
-        showGlobalDebug: false,
         platformContext: createMockPlatformContext(),
         sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
         telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -132,14 +129,6 @@ describe('codeHost', () => {
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
-        })
-    })
-
-    describe('createGlobalDebugMount()', () => {
-        it('should create the debug menu mount', () => {
-            createGlobalDebugMount()
-            const mount = document.body.querySelector('[data-global-debug]')
-            expect(mount).toBeDefined()
         })
     })
 
@@ -196,28 +185,6 @@ describe('codeHost', () => {
             expect(renderedCommandPalette).not.toBeUndefined()
         })
 
-        test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
-            const { extensionHostAPI } = await integrationTestContext()
-            subscriptions.add(
-                await handleCodeHost({
-                    ...commonArguments(),
-                    codeHost: {
-                        type: 'github',
-                        name: 'GitHub',
-                        check: () => true,
-                        codeViewResolvers: [],
-                        notificationClassNames,
-                    },
-                    extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
-                })
-            )
-            const globalDebugMount = document.body.querySelector('[data-global-debug]')
-            expect(globalDebugMount).toBeDefined()
-            const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
-            expect(renderedDebugElement).toBeDefined()
-        })
-
         test('detects code views based on selectors', async () => {
             const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
                 roots: [],
@@ -256,7 +223,6 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
                     platformContext: createMockPlatformContext({
                         // Simulate an instance with repositoryPathPattern
                         requestGraphQL: mockRequestGraphQL({
@@ -333,7 +299,6 @@ describe('codeHost', () => {
                             ],
                         },
                         extensionsController: createMockController(extensionHostAPI),
-                        showGlobalDebug: true,
                     })
                 )
                 // const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -449,7 +414,6 @@ describe('codeHost', () => {
                             ],
                         },
                         extensionsController: createMockController(extensionHostAPI),
-                        showGlobalDebug: true,
                         platformContext: createMockPlatformContext({}),
                     })
                 )
@@ -622,7 +586,6 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                 })
             )
@@ -705,7 +668,6 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
                 })
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
@@ -755,7 +717,6 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
                     platformContext: {
                         ...createMockPlatformContext(),
                         settings: of({
@@ -819,7 +780,6 @@ describe('codeHost', () => {
                         ],
                     },
                     extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
                     platformContext: {
                         ...createMockPlatformContext(),
                         settings: of({

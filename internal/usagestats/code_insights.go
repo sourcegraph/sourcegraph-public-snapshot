@@ -416,7 +416,7 @@ func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) (
 }
 
 func groupAggregationModeClicked(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "groupAggregationModeClicked")
+	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeClicked")
 	if err != nil {
 		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
 	}
@@ -425,7 +425,7 @@ func groupAggregationModeClicked(ctx context.Context, db database.DB, stats *typ
 }
 
 func groupAggregationModeDisabledHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "groupAggregationModeDisabledHover")
+	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeDisabledHover")
 	if err != nil {
 		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
 	}
@@ -434,7 +434,7 @@ func groupAggregationModeDisabledHover(ctx context.Context, db database.DB, stat
 }
 
 func groupResultsChartBarClick(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "groupResultsChartBarClick")
+	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarClick")
 	if err != nil {
 		return errors.Wrap(err, "groupResultsChartBarClick")
 	}
@@ -443,7 +443,7 @@ func groupResultsChartBarClick(ctx context.Context, db database.DB, stats *types
 }
 
 func groupResultsChartBarHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "groupResultsChartBarHover")
+	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarHover")
 	if err != nil {
 		return errors.Wrap(err, "groupResultsChartBarHover")
 	}
@@ -451,7 +451,7 @@ func groupResultsChartBarHover(ctx context.Context, db database.DB, stats *types
 	return nil
 }
 func groupResultsExpandedViewOpen(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "groupResultsExpandedViewOpen")
+	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewOpen")
 	if err != nil {
 		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
 	}
@@ -459,7 +459,7 @@ func groupResultsExpandedViewOpen(ctx context.Context, db database.DB, stats *ty
 	return nil
 }
 func groupResultsExpandedViewCollapse(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "groupResultsExpandedViewCollapse")
+	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewCollapse")
 	if err != nil {
 		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
 	}

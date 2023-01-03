@@ -73,7 +73,6 @@ const (
 	routeCncf                    = "community-search-contexts.cncf"
 	routeSnippets                = "snippets"
 	routeSubscriptions           = "subscriptions"
-	routeStats                   = "stats"
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
@@ -166,7 +165,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
-	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
@@ -277,7 +275,6 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
-	router.Get(routeStats).Handler(brandedNoIndex("Stats"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 

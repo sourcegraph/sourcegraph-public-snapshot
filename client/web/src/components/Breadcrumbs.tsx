@@ -4,7 +4,7 @@ import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { sortBy } from 'lodash'
-import { Unsubscribable } from 'sourcegraph'
+import { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'

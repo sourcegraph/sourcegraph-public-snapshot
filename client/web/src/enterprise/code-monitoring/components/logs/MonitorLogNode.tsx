@@ -4,10 +4,10 @@ import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronU
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
 import { TriggerEvent } from './TriggerEvent'

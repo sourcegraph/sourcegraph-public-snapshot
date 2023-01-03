@@ -37,7 +37,6 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { HoverAlert } from 'sourcegraph'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import {
@@ -67,11 +66,11 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
-import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -107,7 +106,6 @@ import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } fr
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
-import { featureFlags } from '../../util/featureFlags'
 import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
@@ -117,9 +115,8 @@ import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
-import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
+import { applyDecorations, initializeExtensions, renderCommandPalette } from './extensions'
 import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
@@ -169,7 +166,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
 /** Information for adding code navigation to code views on arbitrary code hosts. */
-export interface CodeHost extends ApplyLinkPreviewOptions {
+export interface CodeHost {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
      * Use {@link CodeHost#name} if you need a human-readable name for the code host to display in the UI.
@@ -224,11 +221,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
-
-    /**
-     * Resolve {@link ContentView}s from the DOM.
-     */
-    contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
      * Resolves {@link NativeTooltip}s from the DOM.
@@ -332,11 +324,10 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
+        'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
-    showGlobalDebug?: boolean
 }
 
 export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
@@ -348,13 +339,6 @@ export const getExistingOrCreateOverlayMount = (codeHostName: string, container:
         container.append(mount)
     }
 
-    return mount
-}
-
-export const createGlobalDebugMount = (): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.dataset.globalDebug = 'true'
-    document.body.append(mount)
     return mount
 }
 
@@ -830,7 +814,6 @@ export async function handleCodeHost({
     codeHost,
     extensionsController,
     platformContext,
-    showGlobalDebug,
     telemetryService,
     render,
     minimalUI,
@@ -941,14 +924,6 @@ export async function handleCodeHost({
                 })
             )
         )
-    }
-
-    // Render extension debug menu
-    // This renders to document.body, which we can assume is never removed,
-    // so we don't need to subscribe to mutations.
-    if (showGlobalDebug && extensionsController !== null) {
-        const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     const signInCloses = new Subject<void>()
@@ -1477,21 +1452,8 @@ export async function handleCodeHost({
         })
     )
 
-    // Show link previews on content views (feature-flagged).
-    subscriptions.add(
-        handleContentViews(
-            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
-                switchMap(enabled => (enabled ? mutations : []))
-            ),
-            { extensionsController },
-            codeHost
-        )
-    )
-
     return subscriptions
 }
-
-const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [
     bitbucketServerCodeHost,
@@ -1566,8 +1528,7 @@ export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    isExtension: boolean,
-    showGlobalDebug = SHOW_DEBUG()
+    isExtension: boolean
 ): Subscription {
     const subscriptions = new Subscription()
     const { platformContext, extensionsController } = initializeExtensions(
@@ -1636,7 +1597,6 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHost,
                     extensionsController,
                     platformContext,
-                    showGlobalDebug,
                     telemetryService,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,

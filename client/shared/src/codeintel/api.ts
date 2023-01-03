@@ -1,8 +1,6 @@
 import { castArray } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
-import * as sglegacy from 'sourcegraph'
-import { DocumentSelector, TextDocument } from 'sourcegraph'
 
 import {
     fromHoverMerged,
@@ -10,21 +8,18 @@ import {
     TextDocumentIdentifier,
     TextDocumentPositionParameters,
 } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 // eslint-disable-next-line no-restricted-imports
 import { isDefined } from '@sourcegraph/common/src/types'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { match } from '../api/client/types/textDocument'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
-import { PanelViewData } from '../api/extension/extensionHostApi'
 import { getModeFromPath } from '../languages'
 import type { PlatformContext } from '../platform/context'
 import { isSettingsValid, Settings, SettingsCascade } from '../settings/settings'
 import { parseRepoURI } from '../util/url'
 
+import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
 import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
@@ -40,7 +35,7 @@ interface CodeIntelAPI {
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
-    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
+    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
 }
 
 function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
@@ -121,13 +116,11 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 .pipe(map(result => fromHoverMerged([result])))
         )
     }
-    public getDocumentHighlights(
-        textParameters: TextDocumentPositionParameters
-    ): Observable<sglegacy.DocumentHighlight[]> {
+    public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]> {
         const request = requestFor(textParameters)
         return request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
             defaultIfEmpty(),
-            map(result => (result ? (result as sglegacy.DocumentHighlight[]) : []))
+            map(result => result || [])
         )
     }
 }
@@ -198,90 +191,4 @@ function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
 function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): sourcegraph.SettingsGetter {
     return <T>(setting: string): T | undefined =>
         settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
-}
-
-// Replaces codeintel functions from the "old" extension/webworker extension API
-// with new implementations of code that lives in this repository. The old
-// implementation invoked codeintel functions via webworkers, and the codeintel
-// implementation lived in a separate repository
-// https://github.com/sourcegraph/code-intel-extensions Ideally, we should
-// update all the usages of `comlink.Remote<FlatExtensionHostAPI>` with the new
-// `CodeIntelAPI` interfaces, but that would require refactoring a lot of files.
-// To minimize the risk of breaking changes caused by the deprecation of
-// extensions, we monkey patch the old implementation with new implementations.
-// The benefit of monkey patching is that we can optionally disable if for
-// customers that choose to enable the legacy extensions.
-export function injectNewCodeintel(
-    old: FlatExtensionHostAPI,
-    codeintelContext: sourcegraph.CodeIntelContext
-): FlatExtensionHostAPI {
-    const codeintel = createCodeIntelAPI(codeintelContext)
-    function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
-        return promise.pipe(
-            map(result => {
-                const maybeLoadingResult: MaybeLoadingResult<T> = { isLoading: false, result }
-                return maybeLoadingResult
-            })
-        )
-    }
-
-    const codeintelOverrides: Pick<
-        FlatExtensionHostAPI,
-        | 'getHover'
-        | 'getDocumentHighlights'
-        | 'getReferences'
-        | 'getDefinition'
-        | 'getLocations'
-        | 'hasReferenceProvidersForDocument'
-        | 'getPanelViews'
-    > = {
-        getPanelViews() {
-            const panels: PanelViewData[] = []
-            for (const spec of languageSpecs) {
-                if (spec.textDocumentImplemenationSupport) {
-                    const id = `implementations_${spec.languageID}`
-                    panels.push({
-                        id,
-                        content: '',
-                        component: { locationProvider: id },
-                        selector: selectorForSpec(spec),
-                        priority: 160,
-                        title: 'Implementations',
-                    })
-                }
-            }
-            return proxySubscribable(of(panels))
-        },
-        hasReferenceProvidersForDocument(textParameters) {
-            return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
-        },
-        getLocations(id, parameters) {
-            if (!id.startsWith('implementations_')) {
-                return proxySubscribable(thenMaybeLoadingResult(of([])))
-            }
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
-        },
-        getDefinition(parameters) {
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getDefinition(parameters)))
-        },
-        getReferences(parameters, context) {
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getReferences(parameters, context)))
-        },
-        getDocumentHighlights: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(codeintel.getDocumentHighlights(textParameters)),
-        getHover: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(thenMaybeLoadingResult(codeintel.getHover(textParameters))),
-    }
-
-    return new Proxy(old, {
-        get(target, prop) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-            const codeintelFunction = (codeintelOverrides as any)[prop]
-            if (codeintelFunction) {
-                return codeintelFunction
-            }
-            // eslint-disable-next-line prefer-rest-params
-            return Reflect.get(target, prop, ...arguments)
-        },
-    })
 }

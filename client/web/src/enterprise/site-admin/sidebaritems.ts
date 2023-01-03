@@ -1,14 +1,13 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
+    analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    overviewGroup,
     repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
@@ -44,19 +43,6 @@ const executorsGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors/secrets',
             label: 'Secrets',
-        },
-    ],
-}
-
-const extensionsGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Extensions',
-        icon: PuzzleOutlineIcon,
-    },
-    items: [
-        {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
         },
     ],
 }
@@ -142,14 +128,13 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
-    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,

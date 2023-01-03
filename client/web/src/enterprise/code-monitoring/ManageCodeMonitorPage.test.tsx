@@ -4,9 +4,9 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
     FetchCodeMonitorResult,
