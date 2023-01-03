@@ -40,6 +40,6 @@ func (c *client) CurrentUserEmails(ctx context.Context, pageToken *PageToken) (e
 		return
 	}
 
-	next, err = c.page(ctx, "/user/emails", nil, pageToken, &emails)
+	next, err = c.page(ctx, "/2.0/user/emails", nil, pageToken, &emails)
 	return
 }

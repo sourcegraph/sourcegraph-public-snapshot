@@ -27,6 +27,7 @@ type sessionIssuerHelper struct {
 	clientKey   string
 	db          database.DB
 	allowSignup bool
+	client      bitbucketcloud.Client
 }
 
 func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
@@ -38,18 +39,20 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
-	conf := &schema.BitbucketCloudConnection{
-		Url:    s.CodeHost.BaseURL.String(),
-		ApiURL: s.CodeHost.BaseURL.String(),
-	}
-	bbClient, err := bitbucketcloud.NewClient(s.BaseURL.String(), conf, nil)
-	if err != nil {
-		return nil, "Could not initialize Bitbucket Cloud client", err
+	if s.client == nil {
+		conf := &schema.BitbucketCloudConnection{
+			Url: s.CodeHost.BaseURL.String(),
+		}
+		bbClient, err := bitbucketcloud.NewClient(s.BaseURL.String(), conf, nil)
+		if err != nil {
+			return nil, "Could not initialize Bitbucket Cloud client", err
+		}
+		s.client = bbClient
 	}
 
 	auther := &esauth.OAuthBearerToken{Token: token.AccessToken, RefreshToken: token.RefreshToken, Expiry: token.Expiry}
-	bbClient = bbClient.WithAuthenticator(auther)
-	bbUser, err := bbClient.CurrentUser(ctx)
+	s.client = s.client.WithAuthenticator(auther)
+	bbUser, err := s.client.CurrentUser(ctx)
 	if err != nil {
 		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
 	}
@@ -59,14 +62,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 
-	emails, next, err := bbClient.CurrentUserEmails(ctx, nil)
+	emails, next, err := s.client.CurrentUserEmails(ctx, nil)
 	if err != nil {
 		return nil, "", err
 	}
 
 	for next.HasMore() {
 		var nextEmails []*bitbucketcloud.UserEmail
-		nextEmails, next, err = bbClient.CurrentUserEmails(ctx, next)
+		nextEmails, next, err = s.client.CurrentUserEmails(ctx, next)
 		if err != nil {
 			return nil, "", err
 		}

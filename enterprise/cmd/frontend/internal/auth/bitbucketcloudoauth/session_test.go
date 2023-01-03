@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -191,10 +192,19 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}()
 
 				ctx := bitbucketlogin.WithUser(context.Background(), ci.bbUser)
+				conf := &schema.BitbucketCloudConnection{
+					Url:    server.URL,
+					ApiURL: server.URL,
+				}
+				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
 				s := &sessionIssuerHelper{
 					CodeHost:    codeHost,
 					clientKey:   clientID,
 					allowSignup: ci.allowSignup,
+					client:      bbClient,
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
@@ -262,13 +272,22 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	}
 
 	ctx := bitbucketlogin.WithUser(context.Background(), bbUser)
+	conf := &schema.BitbucketCloudConnection{
+		Url:    server.URL,
+		ApiURL: server.URL,
+	}
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
 		clientKey:   clientID,
 		allowSignup: true,
+		client:      bbClient,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
