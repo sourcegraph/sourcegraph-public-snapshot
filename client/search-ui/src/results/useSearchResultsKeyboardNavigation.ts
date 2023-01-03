@@ -19,7 +19,7 @@ export function useSearchResultsKeyboardNavigation(
                 return
             }
             // Do not run keyboard shortcuts if any modifier key is pressed to avoid hijacking default browser actions.
-            if (event.ctrlKey || event.metaKey || event.altKey) {
+            if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
                 return
             }
 
