@@ -1761,6 +1761,9 @@ func TestLogIfCorrupt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() {
+			db.Repos().Delete(ctx, dbRepo.ID)
+		}()
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
@@ -1791,6 +1794,9 @@ func TestLogIfCorrupt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() {
+			db.Repos().Delete(ctx, dbRepo.ID)
+		}()
 
 		stdErr := "Brought to you by Horsegraph"
 
