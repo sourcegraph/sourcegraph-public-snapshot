@@ -6,9 +6,6 @@ import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
-    ExcludeRepoFromExternalServiceResult,
-    ExcludeRepoFromExternalServiceVariables,
-    Scalars,
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
@@ -78,19 +75,6 @@ export function fetchSettingsAreaRepository(name: string): Observable<SettingsAr
             }
             return data.repository
         })
-    )
-}
-
-export function excludeRepoFromExternalService(args: {
-    externalService: Scalars['ID']
-    repo: Scalars['ID']
-}): Observable<void> {
-    return requestGraphQL<ExcludeRepoFromExternalServiceResult, ExcludeRepoFromExternalServiceVariables>(
-        EXCLUDE_REPO_FROM_EXTERNAL_SERVICE,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
     )
 }
 

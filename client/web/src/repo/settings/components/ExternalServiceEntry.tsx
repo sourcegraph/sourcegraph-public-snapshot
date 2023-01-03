@@ -51,9 +51,14 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
         ExcludeRepoFromExternalServiceVariables
     >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICE, {
         onCompleted: () => {
-            setTimeout(() => setTtl(2), 1000)
-            setTimeout(() => setTtl(1), 2000)
-            setTimeout(() => history.push(`/site-admin/external-services/${service.id}`), 3000)
+            let count = 3
+            setInterval(() => {
+                if (count === 0) {
+                    history.push(`/site-admin/external-services/${service.id}`)
+                }
+                setTtl(count)
+                count--
+            }, 700)
         },
     })
 
