@@ -1,0 +1,30 @@
+{
+  "name": "common",
+  "version": "1.0.0",
+  "main": "out/index.js",
+  "scripts": {
+    "build": "tsc --declaration",
+    "dev": "concurrently \"tsc --declaration -w\" \"nodemon out/index.js\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodemon": "^2.0.20",
+    "typescript": "^4.9.4"
+  },
+  "types": "./out/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sourcegraph/codebot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/codebot/issues"
+  },
+  "homepage": "https://github.com/sourcegraph/codebot#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/vscode": "^1.74.0"
+  }
+}
