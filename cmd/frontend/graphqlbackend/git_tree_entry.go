@@ -386,6 +386,11 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 			owners: []string{"@cbart"},
 			reason: "No matching entries in codeowners",
 		}}
+	} else {
+		ship = append(ship, Ownership{
+			owners: []string{"@cbart"},
+			reason: "More owners go here...",
+		})
 	}
 	return ship
 }
