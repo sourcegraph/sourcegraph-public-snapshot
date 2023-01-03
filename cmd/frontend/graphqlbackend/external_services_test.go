@@ -270,7 +270,7 @@ func TestExcludeRepoFromExternalService_NoExistingExcludedRepos_NewExcludedRepoA
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"}, nil
+		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -330,7 +330,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_AnotherExcludedRepoAd
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -389,7 +389,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "sourcegraph/horsegraph"}, nil
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
 	})
 	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
 		return &EmptyResponse{}, nil
@@ -425,6 +425,25 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 
 	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
 	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+}
+
+func TestTrimHostFromRepoName(t *testing.T) {
+	testCases := map[string]struct {
+		inputRepoName       string
+		expectedTrimmedName string
+	}{
+		"repo has a hostname":               {inputRepoName: "github.com/sourcegraph/sourcegraph", expectedTrimmedName: "sourcegraph/sourcegraph"},
+		"repo doesn't have a hostname":      {inputRepoName: "sourcegraph/horsegraph", expectedTrimmedName: "sourcegraph/horsegraph"},
+		"non-hostname prefix isn't trimmed": {inputRepoName: "source/graph/horsegraph", expectedTrimmedName: "source/graph/horsegraph"},
+		"GitLab nested project is trimmed":  {inputRepoName: "gitlab.com/source/graph/horsegraph", expectedTrimmedName: "source/graph/horsegraph"},
+	}
+
+	for testName, testCase := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			actualTrimmedName := trimHostFromRepoName(testCase.inputRepoName)
+			assert.Equal(t, testCase.expectedTrimmedName, actualTrimmedName)
+		})
+	}
 }
 
 func TestAddRepoToExclude(t *testing.T) {
