@@ -14,19 +14,19 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-var _ workerutil.Handler[*DataPruningJob] = &dataPruningHandler{}
+var _ workerutil.Handler[*DataRetentionJob] = &dataRetentionHandler{}
 
-type dataPruningHandler struct {
-	baseWorkerStore dbworkerstore.Store[*DataPruningJob]
+type dataRetentionHandler struct {
+	baseWorkerStore dbworkerstore.Store[*DataRetentionJob]
 }
 
-func (h *dataPruningHandler) Handle(ctx context.Context, logger log.Logger, record *DataPruningJob) error {
+func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) error {
 	logger.Debug("data pruning handler called", log.Int("seriesID", record.SeriesID))
 	return nil
 }
 
 // NewWorker returns a worker that will find what data to prune and separate for a series.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataPruningJob], metrics workerutil.WorkerObservability) *workerutil.Worker[*DataPruningJob] {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "insights_data_retention_worker",
 		NumHandlers:       5,
@@ -35,14 +35,14 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Metrics:           metrics,
 	}
 
-	return dbworker.NewWorker[*DataPruningJob](ctx, workerStore, &dataPruningHandler{
+	return dbworker.NewWorker[*DataRetentionJob](ctx, workerStore, &dataRetentionHandler{
 		baseWorkerStore: workerStore,
 	}, options)
 }
 
 // NewResetter returns a resetter that will reset pending data retention jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataPruningJob], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*DataPruningJob] {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*DataRetentionJob] {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_data_retention_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -51,19 +51,19 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateDBWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*DataPruningJob] {
-	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*DataPruningJob]{
-		Name:              "insights_data_pruning_job_worker_store",
-		TableName:         "insights_data_pruning_jobs",
-		ColumnExpressions: dataPruningJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanDataPruningJob),
+func CreateDBWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*DataRetentionJob] {
+	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*DataRetentionJob]{
+		Name:              "insights_data_retention_job_worker_store",
+		TableName:         "insights_data_retention_jobs",
+		ColumnExpressions: dataRetentionJobColumns,
+		Scan:              dbworkerstore.BuildWorkerScan(scanDataRetentionJob),
 		OrderByExpression: sqlf.Sprintf("queued_at", "id"),
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 5,
 	})
 }
 
-func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *DataPruningJob) (id int, err error) {
+func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *DataRetentionJob) (id int, err error) {
 	tx, err := workerBaseStore.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -85,6 +85,6 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Data
 }
 
 const enqueueJobFmtStr = `
-INSERT INTO insights_data_pruning_jobs (series_id) VALUES (%s)
+INSERT INTO insights_data_retention_jobs (series_id) VALUES (%s)
 RETURNING id
 `

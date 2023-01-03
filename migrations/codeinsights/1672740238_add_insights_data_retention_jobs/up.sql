@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS  insights_data_pruning_jobs (
+CREATE TABLE IF NOT EXISTS insights_data_retention_jobs (
        id                SERIAL PRIMARY KEY,
        state             text DEFAULT 'queued',
        failure_message   text,

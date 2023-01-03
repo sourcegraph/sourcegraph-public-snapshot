@@ -13,7 +13,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type DataPruningJob struct {
+type DataRetentionJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
@@ -31,8 +31,8 @@ type DataPruningJob struct {
 	SeriesID int
 }
 
-var dataPruningJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("insights_data_pruning_jobs.series_id"),
+var dataRetentionJobColumns = []*sqlf.Query{
+	sqlf.Sprintf("insights_data_retention_jobs.series_id"),
 
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
@@ -45,18 +45,18 @@ var dataPruningJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("execution_logs"),
 }
 
-func (j *DataPruningJob) RecordID() int {
+func (j *DataRetentionJob) RecordID() int {
 	return j.ID
 }
 
-func scanDataPruningJobs(rows *sql.Rows, err error) ([]*DataPruningJob, error) {
+func scanDataRetentionJobs(rows *sql.Rows, err error) ([]*DataRetentionJob, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
-	var jobs []*DataPruningJob
+	var jobs []*DataRetentionJob
 	for rows.Next() {
-		job, err := scanDataPruningJob(rows)
+		job, err := scanDataRetentionJob(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +71,8 @@ func scanDataPruningJobs(rows *sql.Rows, err error) ([]*DataPruningJob, error) {
 	return jobs, nil
 }
 
-func scanDataPruningJob(s dbutil.Scanner) (*DataPruningJob, error) {
-	var job DataPruningJob
+func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
+	var job DataRetentionJob
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 
 	if err := s.Scan(
