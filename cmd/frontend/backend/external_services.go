@@ -91,7 +91,7 @@ func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, e
 
 	// If external service doesn't support repo exclusion, then return.
 	if !externalService.SupportsRepoExclusion() {
-		logger.Warn("Tried to exclude repo from external service, but its config does not support repo exclusion.")
+		logger.Warn("external service does not support repo exclusion")
 		return nil
 	}
 
