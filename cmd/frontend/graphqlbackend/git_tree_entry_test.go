@@ -16,12 +16,13 @@ import (
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	db := database.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
-	got := NewGitTreeEntryResolver(db, gitserverClient,
-		&GitCommitResolver{
+	opts := GitTreeEntryResolverOpts{
+		commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		CreateFileInfo("a/b", true)).
-		RawZipArchiveURL()
+		stat: CreateFileInfo("a/b", true),
+	}
+	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RawZipArchiveURL()
 	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -41,12 +42,13 @@ func TestGitTreeEntry_Content(t *testing.T) {
 		}
 		return []byte(wantContent), nil
 	})
-
-	gitTree := NewGitTreeEntryResolver(db, gitserverClient,
-		&GitCommitResolver{
+	opts := GitTreeEntryResolverOpts{
+		commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		CreateFileInfo(wantPath, true))
+		stat: CreateFileInfo(wantPath, true),
+	}
+	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
 	newFileContent, err := gitTree.Content(context.Background())
 	if err != nil {
