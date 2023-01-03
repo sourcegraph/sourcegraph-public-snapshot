@@ -86,7 +86,7 @@ export async function getHoverTooltip(view: EditorView, pos: number): Promise<To
     const line = cmLine.number - 1
     const character = countColumn(cmLine.text, 1, pos - cmLine.from)
     const occurrence = occurrenceAtPosition(view.state, new Position(line, character))
-    if (!occurrence || !isInteractiveOccurrence(occurrence)) {
+    if (!occurrence) {
         return null
     }
     const result = await hoverAtOccurrence(view, occurrence)
