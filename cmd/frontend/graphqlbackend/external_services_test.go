@@ -435,6 +435,7 @@ func TestTrimHostFromRepoName(t *testing.T) {
 		"repo has a hostname":               {inputRepoName: "github.com/sourcegraph/sourcegraph", expectedTrimmedName: "sourcegraph/sourcegraph"},
 		"repo doesn't have a hostname":      {inputRepoName: "sourcegraph/horsegraph", expectedTrimmedName: "sourcegraph/horsegraph"},
 		"non-hostname prefix isn't trimmed": {inputRepoName: "source/graph/horsegraph", expectedTrimmedName: "source/graph/horsegraph"},
+		"GitLab nested project is trimmed":  {inputRepoName: "gitlab.com/source/graph/horsegraph", expectedTrimmedName: "source/graph/horsegraph"},
 	}
 
 	for testName, testCase := range testCases {
