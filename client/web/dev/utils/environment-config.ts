@@ -58,9 +58,10 @@ export const ENVIRONMENT_CONFIG = {
     // Sentry project
     SENTRY_PROJECT: process.env.SENTRY_PROJECT,
 
-    //  Webpack is the default web build tool, and esbuild is an experimental option (see
-    //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
-    DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,
+    // esbuild is the default web build tool
+    // (https://docs.sourcegraph.com/dev/background-information/web/build#esbuild). Webpack is
+    // deprecated and will be removed soon.
+    DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'webpack' ? 'webpack' : 'esbuild') as WEB_BUILDER,
 
     /**
      * Omit slow deps (such as Monaco and GraphiQL) in the build to get a ~40% reduction in esbuild
@@ -68,13 +69,6 @@ export const ENVIRONMENT_CONFIG = {
      * (Esbuild only.)
      */
     DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
-
-    /**
-     * Force tree-shaking in esbuild. Currently unsafe due to
-     * https://github.com/evanw/esbuild/pull/1458; see the other comments in this repository
-     * mentioning that PR for more information. (Esbuild only.)
-     */
-    DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING: Boolean(process.env.DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING),
 
     /**
      * ----------------------------------------
