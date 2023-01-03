@@ -18,13 +18,16 @@ export function useSearchResultsKeyboardNavigation(
             if (!enableKeyboardNavigation) {
                 return
             }
+            // Do not run keyboard shortcuts if any modifier key is pressed to avoid hijacking default browser actions.
+            if (event.ctrlKey || event.metaKey || event.altKey) {
+                return
+            }
 
             const selectableResults = Array.from(
                 root.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
             )
             const selectedResult = getSelectedResult(root)
 
-            const isMetaKeyModifierPressed = isMetaKey(event, isMacPlatform())
             switch (event.key) {
                 case 'ArrowUp':
                 case 'ArrowDown':
@@ -40,7 +43,7 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 case 'ArrowLeft':
                 case 'h':
-                    if (selectedResult && !isMetaKeyModifierPressed) {
+                    if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('collapseSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
@@ -49,7 +52,7 @@ export function useSearchResultsKeyboardNavigation(
                     break
                 case 'ArrowRight':
                 case 'l':
-                    if (selectedResult && !isMetaKeyModifierPressed) {
+                    if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
