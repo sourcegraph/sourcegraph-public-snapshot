@@ -12,7 +12,7 @@ import (
 
 // GitCommandError is a Git command that encountered an error.
 type GitCommandError struct {
-	// Err is the error message that descibes what failed.
+	// Err is the original error produced by the git command that failed
 	Err error
 	// Output is the std error output of the command that failed.
 	Output string
@@ -53,10 +53,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = &GitCommandError{
-				Err:    err,
-				Output: string(out),
-			}
+			err = &GitCommandError{Err: err, Output: string(out)}
 		}
 		return err
 	}
