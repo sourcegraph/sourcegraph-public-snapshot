@@ -171,6 +171,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 	}
 
 	ps, err := store.BulkCreate(ctx, perms)
+	assert.NoError(t, err)
 
 	var permsToBeDeleted []DeletePermissionOpts
 	for _, p := range ps {
