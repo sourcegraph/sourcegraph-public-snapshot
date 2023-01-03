@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 
@@ -429,88 +428,6 @@ func TestResolverIterator(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
-	const (
-		wantName   = "alice"
-		wantUserID = 123
-	)
-
-	repos := database.NewMockRepoStore()
-	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-		if op.UserID != wantUserID {
-			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
-		}
-		return []types.MinimalRepo{
-			{
-				ID:   1,
-				Name: "example.com/a",
-			},
-			{
-				ID:   2,
-				Name: "example.com/b",
-			},
-			{
-				ID:   3,
-				Name: "example.com/c",
-			},
-			{
-				ID:   4,
-				Name: "external.com/a",
-			},
-			{
-				ID:   5,
-				Name: "external.com/b",
-			},
-			{
-				ID:   6,
-				Name: "external.com/c",
-			},
-		}, nil
-	})
-
-	ns := database.NewMockNamespaceStore()
-	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-		if name != wantName {
-			t.Fatalf("got %q, want %q", name, wantName)
-		}
-		return &database.Namespace{Name: wantName, User: wantUserID}, nil
-	})
-
-	db := database.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.NamespacesFunc.SetDefaultReturn(ns)
-
-	op := search.RepoOptions{
-		SearchContextSpec: "@" + wantName,
-	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
-	resolved, err := repositoryResolver.Resolve(context.Background(), op)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var got []api.RepoName
-	for _, rev := range resolved.RepoRevs {
-		got = append(got, rev.Repo.Name)
-	}
-	sort.Slice(got, func(i, j int) bool {
-		return got[i] < got[j]
-	})
-	want := []api.RepoName{
-		"example.com/a",
-		"example.com/b",
-		"example.com/c",
-		"external.com/a",
-		"external.com/b",
-		"external.com/c",
-	}
-	if diff := cmp.Diff(got, want, nil); diff != "" {
-		t.Errorf("unexpected diff: %s", diff)
-	}
-
-	mockrequire.Called(t, ns.GetByNameFunc)
-	mockrequire.Called(t, repos.ListMinimalReposFunc)
 }
 
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {

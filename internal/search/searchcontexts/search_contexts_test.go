@@ -32,8 +32,6 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		searchContextSpec     string
 		wantSearchContextName string
 	}{
-		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
-		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 		{name: "resolve global search context", searchContextSpec: "global", wantSearchContextName: "global"},
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 		{name: "resolve namespaced search context", searchContextSpec: "@user/test", wantSearchContextName: "test"},
@@ -70,46 +68,6 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 
 	mockrequire.Called(t, ns.GetByNameFunc)
 	mockrequire.Called(t, sc.GetSearchContextFunc)
-}
-
-func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	tests := []struct {
-		name                  string
-		searchContextSpec     string
-		wantSearchContextName string
-	}{
-		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
-	}
-
-	ns := database.NewMockNamespaceStore()
-	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-		if name == "org" {
-			return &database.Namespace{Name: name, Organization: 1}, nil
-		}
-		return nil, errors.Errorf(`want "org", got %q`, name)
-	})
-
-	orgs := database.NewMockOrgMemberStore()
-	orgs.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
-
-	db := database.NewMockDB()
-	db.NamespacesFunc.SetDefaultReturn(ns)
-	db.OrgMembersFunc.SetDefaultReturn(orgs)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantSearchContextName, searchContext.Name)
-		})
-	}
-
-	mockrequire.Called(t, ns.GetByNameFunc)
-	mockrequire.Called(t, orgs.GetByOrgIDAndUserIDFunc)
 }
 
 func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
@@ -630,7 +588,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	autoDefinedSearchContext := GetUserSearchContext(user1.ID, user1.Username)
+	autoDefinedSearchContext := GetGlobalSearchContext()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
 	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
 

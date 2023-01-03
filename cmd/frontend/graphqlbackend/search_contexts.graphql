@@ -52,11 +52,6 @@ extend type Mutation {
 
 extend type Query {
     """
-    DEPRECATED: Auto-defined contexts are now included in the searchContexts query.
-    Auto-defined search contexts available to the current user.
-    """
-    autoDefinedSearchContexts: [SearchContext!]!
-    """
     All available user-defined search contexts. Excludes auto-defined contexts.
     """
     searchContexts(
@@ -134,9 +129,8 @@ type SearchContext implements Node {
     """
     spec: String!
     """
-    Whether the search context is autodefined by Sourcegraph. Current examples include:
-    global search context ("global"), default user search context ("@user"), and
-    default organization search context ("@org").
+    Whether the search context is autodefined by Sourcegraph.
+    The only autodefined context currently is the global search context ("global").
     """
     autoDefined: Boolean!
     """
