@@ -16854,7 +16854,7 @@ Query: `histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duratio
 
 <p class="subtitle">Amount of in-flight indexed search requests (aggregate)</p>
 
-This dashboards shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
 
 In-flight search requests include both running and queued requests.
 
@@ -16879,7 +16879,7 @@ Query: `sum by (name) (zoekt_search_running)`
 
 <p class="subtitle">Amount of in-flight indexed search requests (per instance)</p>
 
-This dashboards shows the current number of indexed search requests that are-flight, broken out per instance.
+This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
 
 In-flight search requests include both running and queued requests.
 
@@ -16906,12 +16906,11 @@ Query: `sum by (instance, name) (zoekt_search_running{instance=~`${instance:rege
 
 This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
 
-This metric gives a notion of how fast the indexed-search system is processing it`s request load`,
-taking into account the request arrival rate and 
-
 In-flight search requests include both running and queued requests.
 
-The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+This metric gives a notion of how quickly the indexed-search backend is working through its request load
+(taking into account the request arrival rate and processing time). A sustained high rate of growth
+can indicate that the indexed-search backend is saturated.
 
 This panel has no related alerts.
 
@@ -16932,11 +16931,13 @@ Query: `sum by (name) (deriv(zoekt_search_running[1m]))`
 
 <p class="subtitle">Rate of growth of in-flight indexed search requests over 1m (per instance)</p>
 
-This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+This dashboard shows the rate of growth of in-flight requests, broken out per instance.
 
 In-flight search requests include both running and queued requests.
 
-The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+This metric gives a notion of how quickly the indexed-search backend is working through its request load
+(taking into account the request arrival rate and processing time). A sustained high rate of growth
+can indicate that the indexed-search backend is saturated.
 
 This panel has no related alerts.
 
