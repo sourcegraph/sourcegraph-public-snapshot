@@ -106,7 +106,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
-        disableDecorations,
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
@@ -205,7 +204,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      disableDecorations,
                       enableSelectionDrivenCodeNavigation,
                   })
                 : [],
@@ -227,7 +225,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableDecorations]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView>()
