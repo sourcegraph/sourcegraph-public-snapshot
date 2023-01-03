@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { DocumentSymbol, SymbolKind } from "vscode";
+import { DocumentSymbol } from "vscode";
 
 export interface InflatedSymbol {
 	symbol: DocumentSymbol;
@@ -12,7 +12,7 @@ export interface InflatedHistoryItem {
 	symbols: InflatedSymbol[];
 }
 
-interface HistoryItem {
+export interface HistoryItem {
 	uri: vscode.Uri;
 	selection: vscode.Selection;
 }

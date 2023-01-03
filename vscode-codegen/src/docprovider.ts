@@ -1,90 +1,102 @@
 import * as vscode from "vscode";
-import { TextDocumentContentProvider } from "vscode";
+import { LLMDebugInfo } from "common";
 
-export class CodegenDocumentProvider implements TextDocumentContentProvider {
-  loadedDocuments: { [name: string]: string } = {};
+export class CompletionsDocumentProvider
+	implements vscode.TextDocumentContentProvider, vscode.HoverProvider
+{
+	completionsByUri: { [uri: string]: CompletionGroup[] } = {};
 
-  fireDocumentChanged(uri: vscode.Uri): void {
-    this.onDidChangeEmitter.fire(uri);
-  }
+	private fireDocumentChanged(uri: vscode.Uri): void {
+		this.onDidChangeEmitter.fire(uri);
+	}
 
-  setDocument(uri: vscode.Uri, contents: Promise<string> | null): void {
-    const uriStr = uri.toString();
-    delete this.loadedDocuments[uriStr];
-    this.fireDocumentChanged(uri);
-    if (!contents) {
-      return;
-    }
-    contents.then((loadedContents) => {
-      this.loadedDocuments[uriStr] = loadedContents;
-      this.fireDocumentChanged(uri);
-    });
-  }
+	clearCompletions(uri: vscode.Uri) {
+		delete this.completionsByUri[uri.toString()];
+		this.fireDocumentChanged(uri);
+	}
 
-  onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-  onDidChange = this.onDidChangeEmitter.event;
+	addCompletions(
+		uri: vscode.Uri,
+		name: string,
+		completions: string[],
+		debug?: LLMDebugInfo
+	) {
+		if (!this.completionsByUri[uri.toString()]) {
+			this.completionsByUri[uri.toString()] = [];
+		}
+		this.completionsByUri[uri.toString()].push({
+			name,
+			completions: completions.map((c) => ({ insertText: c })),
+			debug,
+		});
+		this.fireDocumentChanged(uri);
+	}
 
-  provideTextDocumentContent(
-    uri: vscode.Uri,
-    token: vscode.CancellationToken
-  ): string {
-    if (!this.loadedDocuments[uri.toString()]) {
-      return `// ${randomFrom(waitPhrases)}, ${randomFrom(
-        waitPhraseSuffixes
-      )}...`;
-    }
+	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+	onDidChange = this.onDidChangeEmitter.event;
 
-    return this.loadedDocuments[uri.toString()];
-  }
+	provideTextDocumentContent(uri: vscode.Uri): string {
+		const completionGroups = this.completionsByUri[uri.toString()];
+		if (!completionGroups) {
+			return "// Loading...";
+		}
+		return completionGroups
+			.map(({ name: modelName, completions }) =>
+				completions
+					.map((completion, i) => {
+						const titleLine = `*** ${modelName} (${i + 1}/${
+							completions.length
+						}) ***`;
+						return `/*${"*".repeat(Math.max(0, titleLine.length - 1))}
+ ${titleLine}
+ ${"*".repeat(Math.max(0, titleLine.length - 1))}*/
+${completion.insertText}`;
+					})
+					.join(`\n\n`)
+			)
+			.join(`\n\n`);
+	}
+
+	provideHover(
+		document: vscode.TextDocument,
+		position: vscode.Position
+	): vscode.ProviderResult<vscode.Hover> {
+		const completionGroups = this.completionsByUri[document.uri.toString()];
+		if (!completionGroups) {
+			return null;
+		}
+
+		const wordRange = document.getWordRangeAtPosition(position, /[\w\-:]+/);
+		if (!wordRange) {
+			return null;
+		}
+		const word = document.getText(wordRange);
+		for (const { name: modelName, debug } of completionGroups) {
+			if (!debug) {
+				continue;
+			}
+
+			if (modelName === word) {
+				const rawPrompt = new vscode.MarkdownString(
+					`<pre>${debug.prompt}</pre>`
+				);
+				rawPrompt.supportHtml = true;
+				return new vscode.Hover([
+					"Options:",
+					new vscode.MarkdownString(
+						`\`\`\`\n${JSON.stringify(debug.llmOptions, null, 2)}\n\`\`\``
+					),
+					"Prompt:",
+					rawPrompt,
+				]);
+			}
+		}
+		return null;
+	}
 }
 
-const waitPhrases = [
-  "Spelunking through latent space",
-  "Reticulating neural splines",
-  "Conferring with the robots",
-  "Rummaging through tensors",
-  "Rousting the neural nets",
-  "Munging the perceptrons",
-  "Rectifying the sigmoids",
-  "Monkeying around with bits",
-  "Bitlifying your monkey language",
-];
-const waitPhraseSuffixes = [
-  "wait a sec",
-  "just a moment",
-  "hold tight",
-  "almost ready",
-  "thank you for your patience",
-];
-const randomFrom = (arr: string[]): string => {
-  return arr[Math.floor(Math.random() * arr.length)];
-};
-
-export function completionsDisplayString(
-  completions:
-    | { name: string; completions: vscode.InlineCompletionItem[] }[]
-    | null
-): string {
-  if (!completions) {
-    return `// ${randomFrom(waitPhrases)}, ${randomFrom(
-      waitPhraseSuffixes
-    )}...`;
-  }
-  const modelSeparator =
-    "// ==============================================================";
-  const completionSeparator =
-    "// --------------------------------------------------------------";
-
-  return (
-    `/**\n * Suggestions:\n */\n\n` +
-    completions
-      .map(
-        ({ name: modelName, completions }) =>
-          `// Model ${modelName}\n\n` +
-          completions
-            .map((completion) => completion.insertText)
-            .join(`\n\n${completionSeparator}\n\n`)
-      )
-      .join(`\n\n${modelSeparator}\n\n`)
-  );
+export interface CompletionGroup {
+	name: string;
+	completions: vscode.InlineCompletionItem[];
+	debug?: LLMDebugInfo;
 }

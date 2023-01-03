@@ -1,7 +1,6 @@
 {
   "name": "vscode-codegen",
   "displayName": "vscode-codegen",
-  "description": "",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.73.0"
@@ -14,6 +13,24 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cody",
+          "title": "Cody",
+          "icon": "resources/cody.svg"
+        }
+      ]
+    },
+    "views": {
+      "cody": [
+        {
+          "type": "webview",
+          "id": "cody.chat",
+          "name": "Chat"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "vscode-codegen.ai-suggest",
@@ -26,6 +43,14 @@
       {
         "command": "codebot.generate-test",
         "title": "Generate a unit test"
+      },
+      {
+        "command": "codebot.refactor",
+        "title": "Refactor a selection of code with AI"
+      },
+      {
+        "command": "codebot.claude",
+        "title": "wip: claude"
       }
     ],
     "keybindings": [
@@ -40,23 +65,33 @@
       "properties": {
         "conf.codebot.openai.apiKey": {
           "type": "string"
+        },
+        "conf.codebot.claude.apiKey": {
+          "type": "string"
+        },
+        "conf.codebot.claude.modelName": {
+          "type": "string"
         }
       }
     }
   },
   "scripts": {
+    "copy-shims": "rm -rf ./out/claudeapi && cp -r ./src/claudeapi ./out/claudeapi && rm -rf ./out/openai && cp -r ./src/openai ./out/openai",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "unittest": "mocha ./out/test/unittest"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.4",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.73.0",
+    "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "@vscode/test-electron": "^2.2.0",
@@ -66,7 +101,24 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
+    "@completion/sampling": "^0.1.1",
+    "chai": "^4.3.7",
+    "common": "^1.0.0",
+    "isomorphic-ws": "^5.0.0",
     "openai": "^3.1.0",
-    "vscode-uri": "^3.0.7"
-  }
+    "vscode-uri": "^3.0.7",
+    "ws": "^8.11.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sourcegraph/codebot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sourcegraph/codebot/issues"
+  },
+  "homepage": "https://github.com/sourcegraph/codebot#readme",
+  "description": ""
 }

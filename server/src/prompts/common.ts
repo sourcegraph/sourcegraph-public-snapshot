@@ -1,4 +1,4 @@
-import { InflatedHistoryItem, InflatedSymbol, LLMDebugInfo, ReferenceInfo, CompletionsArgs } from "common";
+import { InflatedSymbol, LLMDebugInfo, CompletionsArgs } from "common";
 
 
 export interface CompletionsBackend {
