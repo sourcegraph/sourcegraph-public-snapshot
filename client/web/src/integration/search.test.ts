@@ -2,8 +2,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchGraphQlOperations,
     commitHighlightResult,
     commitSearchStreamEvents,
     diffSearchStreamEvents,
@@ -11,8 +11,7 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
-} from '@sourcegraph/search'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -55,16 +54,14 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
     }),
 }
 
-const commonSearchGraphQLResultsWithUser: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonSearchGraphQLResults,
     UserAreaUserProfile: () => ({
         user: {

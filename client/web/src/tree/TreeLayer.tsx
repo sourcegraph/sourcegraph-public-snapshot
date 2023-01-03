@@ -13,11 +13,11 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { FileDecoration } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
+import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { getFileDecorations } from '../backend/features'

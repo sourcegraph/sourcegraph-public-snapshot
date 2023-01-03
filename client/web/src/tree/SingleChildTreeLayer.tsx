@@ -1,9 +1,8 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 
-import { FileDecoration } from 'sourcegraph'
-
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable } from './components'

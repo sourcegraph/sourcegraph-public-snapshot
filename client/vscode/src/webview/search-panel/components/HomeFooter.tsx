@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, Text } from '@sourcegraph/wildcard'

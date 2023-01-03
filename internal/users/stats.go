@@ -220,7 +220,7 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	}
 
 	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
-	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
+	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, events_count FROM aggregated_stats WHERE %s ORDER BY %s NULLS LAST LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 

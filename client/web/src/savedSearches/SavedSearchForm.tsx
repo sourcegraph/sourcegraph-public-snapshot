@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { QueryState, SearchPatternType } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Container,
@@ -23,7 +23,7 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { Scalars } from '../graphql-operations'
+import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { useExperimentalFeatures } from '../stores'
 

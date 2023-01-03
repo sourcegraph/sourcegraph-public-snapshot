@@ -2,9 +2,9 @@ import React from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { FileDecoration } from 'sourcegraph'
 
 import { fileDecorationColorForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import type { FileDecoration } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './FileDecorator.module.scss'

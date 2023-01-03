@@ -34,7 +34,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           To search across your private repositories, 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
+            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -141,7 +141,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           To search across your private repositories, 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
+            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -248,7 +248,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           To search across your private repositories, 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
+            href="https://signup.sourcegraph.com/"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -355,7 +355,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           To search across your private repositories, 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
+            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -462,7 +462,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           To search across your private repositories, 
           <a
             class="anchorLink"
-            href="https://signup.sourcegraph.com"
+            href="https://signup.sourcegraph.com/"
             rel="noopener noreferrer"
             target="_blank"
           >

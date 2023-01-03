@@ -1,8 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../../../../../stories/BrandedStory'
 import { H2 } from '../../../../../Typography'
 import { Series } from '../../../../types'
 import { getSeriesData, SeriesWithData } from '../../utils'
@@ -11,11 +9,7 @@ import { MinimumPointInfo, TooltipContent } from './TooltipContent'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts/Core',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 }
 
 export default StoryConfig

@@ -75,7 +75,9 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-func Main() {
+type EnterpriseInit func(db database.DB)
+
+func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
 
 	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
@@ -127,7 +129,10 @@ func Main() {
 		logger.Fatal("failed to initialise keyring", log.Error(err))
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
+	if enterpriseInit != nil {
+		enterpriseInit(db)
+	}
+
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}

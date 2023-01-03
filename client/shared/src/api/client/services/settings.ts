@@ -1,16 +1,10 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 
+import { KeyPath } from '@sourcegraph/client-api'
+
 import { PlatformContext } from '../../../platform/context'
 import { isSettingsValid } from '../../../settings/settings'
-
-/**
- * A key path that refers to a location in a JSON document.
- *
- * Each successive array element specifies an index in an object or array to descend into. For example, in the
- * object `{"a": ["x", "y"]}`, the key path `["a", 1]` refers to the value `"y"`.
- */
-export type KeyPath = (string | number)[]
 
 /**
  * An edit to apply to settings.

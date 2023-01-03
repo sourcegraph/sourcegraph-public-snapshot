@@ -1,7 +1,6 @@
 import { Remote } from 'comlink'
 import { Observable, from, concat, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { DocumentHighlight } from 'sourcegraph'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -9,6 +8,7 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import type { DocumentHighlight } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     FileSpec,

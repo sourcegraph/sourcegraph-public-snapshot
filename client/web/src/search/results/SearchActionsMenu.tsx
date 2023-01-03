@@ -3,8 +3,8 @@ import React, { useCallback } from 'react'
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
     Position,

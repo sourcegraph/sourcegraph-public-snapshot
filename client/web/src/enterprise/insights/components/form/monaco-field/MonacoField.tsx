@@ -4,9 +4,9 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 
-import { QueryChangeSource } from '@sourcegraph/search'
 import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QueryChangeSource } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'

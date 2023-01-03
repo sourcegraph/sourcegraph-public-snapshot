@@ -1,4 +1,4 @@
-import { AggregableBadge, Badge as ExtensionBadgeType } from 'sourcegraph'
+import type { AggregableBadge, Badge as ExtensionBadgeType } from '../../codeintel/legacy-extensions/api'
 
 /**
  * Interface for different ranking algorithms that determine how to display search results in the client.
