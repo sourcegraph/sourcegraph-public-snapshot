@@ -89,10 +89,8 @@ func NewReplicas(urlspec string, service string, replicas string, port string, p
 			return Empty(errors.New("error parsing replicas value for " + service))
 		}
 		switch urlspec {
-		case "docker-compose":
-			return DockerReplicas(service, r, port, protocol)
-		case "kubernetes":
-			return K8sReplicas(service, r, port, protocol)
+		case "docker-compose", "kubernetes":
+			return makeReplicasEndpoints(urlspec, service, r, port, protocol)
 		default:
 			return Empty(errors.New("unrecognized url value to enable replica endpoints " + urlspec))
 		}
@@ -105,19 +103,29 @@ func NewReplicas(urlspec string, service string, replicas string, port string, p
 	return Empty(errors.New(service + " service has not been configured"))
 }
 
-func DockerReplicas(service string, replicas int, port string, protocol string) *Map {
+func makeReplicasEndpoints(deployment string, service string, replicas int, port string, protocol string) *Map {
 	var buffer bytes.Buffer
-	for i := range make([]int, replicas) {
-		buffer.WriteString(fmt.Sprintf("%s%s-%d:%s ", protocol, service, i, port))
+	switch deployment {
+	case "kubernetes":
+		for i := range make([]int, replicas) {
+			buffer.WriteString(fmt.Sprintf("%s%s-%d.%s:%s ", protocol, service, i, service, port))
+		}
+	case "docker-compose":
+		for i := range make([]int, replicas) {
+			buffer.WriteString(fmt.Sprintf("%s%s-%d:%s ", protocol, service, i, port))
+		}
+	default:
+		return Empty(errors.New("unrecognized deployment type " + deployment))
 	}
-	return Static(strings.Fields(buffer.String())...)
-}
 
-func K8sReplicas(service string, replicas int, port string, protocol string) *Map {
-	var buffer bytes.Buffer
-	for i := range make([]int, replicas) {
-		buffer.WriteString(fmt.Sprintf("%s%s-%d.%s:%s ", protocol, service, i, service, port))
-	}
+	logger := log.Scoped("newreplicas", "service endpoints generated based on replica count")
+	logger.Info(
+		"a list of replica-endpoints created",
+		log.String("deployment", deployment),
+		log.String("service", service),
+		log.Int("count", replicas),
+	)
+
 	return Static(strings.Fields(buffer.String())...)
 }
 

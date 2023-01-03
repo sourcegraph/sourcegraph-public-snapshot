@@ -47,6 +47,7 @@ var defaultDoer = func() httpcli.Doer {
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
 	URL:                 symbolsURL,
+	ReplicaCount:        symbolsReplicas,
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -56,6 +57,9 @@ var DefaultClient = &Client{
 type Client struct {
 	// URL to symbols service.
 	URL string
+
+	// replica number of symbols service.
+	ReplicaCount string
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -83,7 +87,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		h = "http://"
 	)
 	c.endpointOnce.Do(func() {
-		c.endpoint = endpoint.NewReplicas(c.URL, s, symbolsReplicas, p, h)
+		c.endpoint = endpoint.NewReplicas(c.URL, s, c.ReplicaCount, p, h)
 	})
 
 	return c.endpoint.Get(string(repo))

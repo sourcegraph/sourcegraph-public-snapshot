@@ -25,6 +25,20 @@ func TestStatic(t *testing.T) {
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 
+func TestNewReplicas(t *testing.T) {
+	m := NewReplicas("kubernetes", "gitserver", "3", "3180", "")
+	expectEndpoints(t, m, "gitserver-0.gitserver:3180", "gitserver-1.gitserver:3180", "gitserver-2.gitserver:3180")
+
+	m = NewReplicas("docker-compose", "symbols", "2", "3184", "http://")
+	expectEndpoints(t, m, "http://symbols-0:3184", "http://symbols-1:3184")
+
+	m = NewReplicas("kubernetes", "indexed-search", "5", "6070", "")
+	expectEndpoints(t, m, "indexed-search-0.indexed-search:6070", "indexed-search-1.indexed-search:6070", "indexed-search-2.indexed-search:6070", "indexed-search-3.indexed-search:6070", "indexed-search-4.indexed-search:6070")
+
+	m = NewReplicas("kubernetes", "searcher", "1", "3181", "http://")
+	expectEndpoints(t, m, "http://searcher-0.searcher:3181")
+}
+
 func TestGetN(t *testing.T) {
 	endpoints := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
 	m := Static(endpoints...)
