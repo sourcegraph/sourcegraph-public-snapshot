@@ -2,7 +2,6 @@ package searchcontexts
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -104,13 +103,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 			})
 		}
 
-		if namespace.User == 0 && namespace.Organization == 0 {
-			return nil, errors.Errorf("search context %q not found", searchContextSpec)
-		}
-		if namespace.User > 0 {
-			return GetUserSearchContext(namespace.User, parsedSearchContextSpec.NamespaceName), nil
-		}
-		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
+		return nil, errors.Errorf("search context %q not found", searchContextSpec)
 	}
 
 	// Check if instance-level context
@@ -377,22 +370,6 @@ func DeleteSearchContext(ctx context.Context, db database.DB, searchContext *typ
 	return db.SearchContexts().DeleteSearchContext(ctx, searchContext.ID)
 }
 
-func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types.SearchContext, error) {
-	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
-		return searchContexts, nil
-	}
-
-	user, err := db.Users().GetByID(ctx, a.UID)
-	if err != nil {
-		return nil, err
-	}
-	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
-
-	return searchContexts, nil
-}
-
 // RepoRevs returns all the revisions for the given repo IDs defined across all search contexts.
 func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 	if a := actor.FromContext(ctx); !a.IsInternal() {
@@ -558,14 +535,6 @@ func IsGlobalSearchContextSpec(searchContextSpec string) bool {
 
 func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 	return searchContext != nil && searchContext.Name == GlobalSearchContextName
-}
-
-func GetUserSearchContext(userID int32, name string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID, AutoDefined: true}
-}
-
-func GetOrganizationSearchContext(orgID int32, name string, displayName string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID, AutoDefined: true}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
