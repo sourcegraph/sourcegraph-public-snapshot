@@ -21,7 +21,7 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) error {
-	logger.Debug("data pruning handler called", log.Int("seriesID", record.SeriesID))
+	logger.Debug("data retention handler called", log.Int("seriesID", record.SeriesID))
 	return nil
 }
 
@@ -53,7 +53,7 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 
 func CreateDBWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*DataRetentionJob] {
 	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*DataRetentionJob]{
-		Name:              "insights_data_retention_job_worker_store",
+		Name:              "insights_data_retention_worker_store",
 		TableName:         "insights_data_retention_jobs",
 		ColumnExpressions: dataRetentionJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanDataRetentionJob),
