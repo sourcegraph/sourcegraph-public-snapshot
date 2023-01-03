@@ -56,7 +56,7 @@ func scanDataPruningJobs(rows *sql.Rows, err error) ([]*DataPruningJob, error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
 	var jobs []*DataPruningJob
 	for rows.Next() {
-		job, err := scanSingleJob(rows)
+		job, err := scanDataPruningJob(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func scanDataPruningJobs(rows *sql.Rows, err error) ([]*DataPruningJob, error) {
 	return jobs, nil
 }
 
-func scanSingleJob(s dbutil.Scanner) (*DataPruningJob, error) {
+func scanDataPruningJob(s dbutil.Scanner) (*DataPruningJob, error) {
 	var job DataPruningJob
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 
