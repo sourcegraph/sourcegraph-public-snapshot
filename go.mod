@@ -94,7 +94,6 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kljensen/snowball v0.6.0
 	github.com/kr/text v0.2.0
-	github.com/ktrysmt/go-bitbucket v0.9.55
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.2
