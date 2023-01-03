@@ -101,6 +101,30 @@ func TestFilterRepositories(t *testing.T) {
 			want: []string{"gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 		},
 		{
+			name:         "test context include with revision",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*$ rev:v1.0.0"},
+			},
+			want: []string{"github.com/sourcegraph/sourcegraph"},
+		},
+		{
+			name:         "test context include with repo revision",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*$@:v1.0.0"},
+			},
+			want: []string{"github.com/sourcegraph/sourcegraph"},
+		},
+		{
 			name:         "test context exclude include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
