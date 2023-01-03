@@ -24,6 +24,7 @@ export function useSearchResultsKeyboardNavigation(
             )
             const selectedResult = getSelectedResult(root)
 
+            const isMetaKeyModifierPressed = isMetaKey(event, isMacPlatform())
             switch (event.key) {
                 case 'ArrowUp':
                 case 'ArrowDown':
@@ -39,7 +40,7 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 case 'ArrowLeft':
                 case 'h':
-                    if (selectedResult) {
+                    if (selectedResult && !isMetaKeyModifierPressed) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('collapseSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
@@ -48,7 +49,7 @@ export function useSearchResultsKeyboardNavigation(
                     break
                 case 'ArrowRight':
                 case 'l':
-                    if (selectedResult) {
+                    if (selectedResult && !isMetaKeyModifierPressed) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
