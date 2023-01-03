@@ -41,7 +41,7 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observatio
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(startupCtx, observationCtx.Logger, db, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), observationCtx.Logger, db, insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {

@@ -35,7 +35,7 @@ func (s *insightsDataRetentionJob) Routines(startupCtx context.Context, observat
 		return nil, err
 	}
 
-	return background.GetBackgroundDataRetentionJob(startupCtx, observationCtx, insightsDB), nil
+	return background.GetBackgroundDataRetentionJob(context.Background(), observationCtx, insightsDB), nil
 }
 
 func NewInsightsDataRetentionJob() job.Job {
