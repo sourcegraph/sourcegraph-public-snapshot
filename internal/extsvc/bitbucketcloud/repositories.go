@@ -61,6 +61,32 @@ func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 	return repos, next, err
 }
 
+type explicitUserPermsResponse struct {
+	User       *User  `json:"user"`
+	Permission string `json:"permission"`
+}
+
+func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string) (users []*User, next *PageToken, err error) {
+	var resp []explicitUserPermsResponse
+	if pageToken.HasMore() {
+		next, err = c.reqPage(ctx, pageToken.Next, &resp)
+	} else {
+		userPermsURL := fmt.Sprintf("/2.0/repositories/{}/{}/permissions-config/users", namespace, slug)
+		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
+	}
+
+	if err != nil {
+		return
+	}
+
+	users = make([]*User, len(resp))
+	for i, r := range resp {
+		users[i] = r.User
+	}
+
+	return
+}
+
 type ForkInputProject struct {
 	Key string `json:"key"`
 }

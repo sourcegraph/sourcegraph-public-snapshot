@@ -4,6 +4,7 @@ package bitbucketcloud
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -114,7 +115,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	if err != nil {
 		return nil, err
 	}
-	for next != nil && next.Next != "" {
+	for next.HasMore() {
 		var nextRepos []*bitbucketcloud.Repo
 		nextRepos, next, err = client.Repos(ctx, next, "", &bitbucketcloud.ReposOptions{Role: "member"})
 		if err != nil {
@@ -143,29 +144,34 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, nil
-	//repoNameParts := strings.Split(repo.URI, "/")
-	//repoOwner := repoNameParts[1]
-	//repoName := repoNameParts[2]
-	//perms, err := p.client.Repositories.Repository.ListUserPermissions(&bitbucket.RepositoryOptions{
-	//	Owner:    repoOwner,
-	//	RepoSlug: repoName,
-	//})
-	//if err != nil {
-	//	return nil, err
-	//}
+	repoNameParts := strings.Split(repo.URI, "/")
+	repoOwner := repoNameParts[1]
+	repoName := repoNameParts[2]
+	users, next, err := p.client.ListExplicitUserPermsForRepo(ctx, nil, repoOwner, repoName)
+	if err != nil {
+		return nil, err
+	}
 
-	//owner, err := p.client.User.Profile()
-	//if err != nil {
-	//	return nil, err
-	//}
+	for next.HasMore() {
+		var nextUsers []*bitbucketcloud.User
+		nextUsers, next, err = p.client.ListExplicitUserPermsForRepo(ctx, next, repoOwner, repoName)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, nextUsers...)
+	}
 
-	//userIDs := make([]extsvc.AccountID, 0, len(perms.UserPermissions)+1)
-	//for i := range perms.UserPermissions {
-	//	userIDs = append(userIDs, extsvc.AccountID(perms.UserPermissions[i].User.AccountId))
-	//}
+	owner, err := p.client.CurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	//userIDs = append(userIDs, extsvc.AccountID(owner.AccountId))
+	userIDs := make([]extsvc.AccountID, 0, len(users)+1)
+	for i := range users {
+		userIDs = append(userIDs, extsvc.AccountID(users[i].AccountID))
+	}
 
-	//return userIDs, nil
+	userIDs = append(userIDs, extsvc.AccountID(owner.AccountID))
+
+	return userIDs, nil
 }
