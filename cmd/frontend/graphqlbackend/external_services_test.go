@@ -427,6 +427,24 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 }
 
+func TestTrimHostFromRepoName(t *testing.T) {
+	testCases := map[string]struct {
+		inputRepoName       string
+		expectedTrimmedName string
+	}{
+		"repo has a hostname":               {inputRepoName: "github.com/sourcegraph/sourcegraph", expectedTrimmedName: "sourcegraph/sourcegraph"},
+		"repo doesn't have a hostname":      {inputRepoName: "sourcegraph/horsegraph", expectedTrimmedName: "sourcegraph/horsegraph"},
+		"non-hostname prefix isn't trimmed": {inputRepoName: "source/graph/horsegraph", expectedTrimmedName: "source/graph/horsegraph"},
+	}
+
+	for testName, testCase := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			actualTrimmedName := trimHostFromRepoName(testCase.inputRepoName)
+			assert.Equal(t, testCase.expectedTrimmedName, actualTrimmedName)
+		})
+	}
+}
+
 func TestAddRepoToExclude(t *testing.T) {
 	ctx := context.Background()
 

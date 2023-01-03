@@ -238,6 +238,9 @@ func addRepoToExclude(ctx context.Context, externalService *types.ExternalServic
 		return "", err
 	}
 
+	// we need to use a `org/repo` repo name format in `exclude` section of code host
+	// config, hence trimming the host: `github.com/sourcegraph/sourcegraph` becomes
+	// `sourcegraph/sourcegraph`.
 	repoName := trimHostFromRepoName(string(repository.Name))
 
 	switch c := config.(type) {
