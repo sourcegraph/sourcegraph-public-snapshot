@@ -5,7 +5,8 @@ import { getReferences } from "./autocomplete/completion-provider";
 import {
 	CompletionsArgs,
 	LLMDebugInfo,
-	WSCompletionResponse, WSCompletionsRequest
+	WSCompletionResponse,
+	WSCompletionsRequest,
 } from "common";
 import { WSClient } from "./wsclient";
 
@@ -32,28 +33,36 @@ export class WSCompletionsClient {
 		>
 	) {}
 
-	async getCompletions(args: CompletionsArgs, callbacks: CompletionCallbacks) {
-		this.wsclient.sendRequest(
+	async getCompletions(
+		args: CompletionsArgs,
+		callbacks: CompletionCallbacks
+	): Promise<void> {
+		await this.wsclient.sendRequest(
 			{
 				kind: "getCompletions",
 				args,
 			},
 			(resp) => {
-				switch (resp.kind) {
-					case "completion":
-						callbacks.onCompletions(resp.completions, resp.debugInfo);
-						return false;
-					case "metadata":
-						callbacks.onMetadata(resp.metadata);
-						return false;
-					case "error":
-						callbacks.onError(resp.error);
-						return false;
-					case "done":
-						callbacks.onDone();
-						return true;
-					default:
-						return false;
+				try {
+					switch (resp.kind) {
+						case "completion":
+							callbacks.onCompletions(resp.completions, resp.debugInfo);
+							return false;
+						case "metadata":
+							callbacks.onMetadata(resp.metadata);
+							return false;
+						case "error":
+							callbacks.onError(resp.error);
+							return false;
+						case "done":
+							callbacks.onDone();
+							return true;
+						default:
+							return false;
+					}
+				} catch (error: any) {
+					vscode.window.showErrorMessage(error);
+					return false;
 				}
 			}
 		);
@@ -107,7 +116,7 @@ export async function fetchAndShowCompletions(
 		});
 	documentProvider.clearCompletions(completionsUri);
 
-	wsclient.getCompletions(await getCompletionsArgs(history), {
+	await wsclient.getCompletions(await getCompletionsArgs(history), {
 		onCompletions: function (
 			completions: string[],
 			debug?: LLMDebugInfo | undefined

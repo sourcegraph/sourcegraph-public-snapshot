@@ -8,10 +8,66 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 	): Promise<WSClient<T1, T2>> {
 		const ws = new WebSocket(addr);
 		const c = new WSClient<T1, T2>(ws);
-		const openTimeout = 30 * 1000; // 30 seconds
+		await c.waitForConnection(30 * 1000); // 30 seconds
+		return c;
+	}
+
+	private nextRequestId = 1;
+	private ws: WebSocket;
+	private readonly responseListeners: {
+		[id: number]: (resp: TResponse) => boolean;
+	} = {};
+
+	constructor(ws: WebSocket) {
+		this.ws = ws;
+		this.addHandlers();
+	}
+
+	private addHandlers() {
+		this.ws.on("message", (rawMsg) => {
+			const msg: TResponse = JSON.parse(rawMsg.toString());
+			if (!msg.requestId) {
+				return;
+			}
+			const handler = this.responseListeners[msg.requestId];
+			if (!handler) {
+				console.error(`did not find handler for requestId ${msg.requestId}`);
+				return;
+			}
+			const isLastResponse = handler(msg);
+			if (isLastResponse) {
+				delete this.responseListeners[msg.requestId];
+			}
+		});
+		this.ws.on("error", (err) => {
+			vscode.window.showErrorMessage(`websocket error: ${err}`);
+		});
+	}
+
+	async ensureConnected(): Promise<void> {
+		const readyState = this.ws.readyState;
+		switch (readyState) {
+			case WebSocket.OPEN:
+				return;
+			case WebSocket.CONNECTING:
+				await this.waitForConnection(30 * 1000);
+				return;
+			case WebSocket.CLOSED:
+			case WebSocket.CLOSING:
+				console.log(`reconnecting to ${this.ws.url}`);
+				this.ws = new WebSocket(this.ws.url);
+				this.addHandlers();
+				await this.waitForConnection(30 * 1000);
+				return;
+			default:
+				throw new Error(`unrecognized websocket ready state: ${readyState}`);
+		}
+	}
+
+	private async waitForConnection(openTimeout: number): Promise<void> {
 		await Promise.race([
 			new Promise<void>((resolve) =>
-				ws.on("open", () => {
+				this.ws.on("open", () => {
 					resolve();
 				})
 			),
@@ -23,44 +79,21 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 				}, openTimeout);
 			}),
 		]);
-		return c;
 	}
 
-	private nextRequestId = 1;
-	private readonly ws: WebSocket;
-	private readonly responseListeners: {
-		[id: number]: (resp: TResponse) => boolean;
-	} = {};
-
-	constructor(ws: WebSocket) {
-		ws.on("message", (rawMsg) => {
-			const msg: TResponse = JSON.parse(rawMsg.toString());
-			if (!msg.requestId) {
-				return;
-			}
-			const handler = this.responseListeners[msg.requestId];
-			if (!handler) {
-				return;
-			}
-			const isLastResponse = handler(msg);
-			if (isLastResponse) {
-				delete this.responseListeners[msg.requestId];
-			}
-		});
-		ws.on("error", (err) => {
-			vscode.window.showErrorMessage(`websocket error: ${err}`);
-		});
-		this.ws = ws;
-	}
-
-	sendRequest(req: TRequest, handleResponse: (resp: TResponse) => boolean) {
+	async sendRequest(
+		req: TRequest,
+		handleResponse: (resp: TResponse) => boolean
+	): Promise<void> {
 		const requestId = this.nextRequestId++;
 		this.responseListeners[requestId] = handleResponse;
 		const reqWithId = {
 			...req,
 			requestId,
 		};
-		this.ws.send(JSON.stringify(reqWithId), (err) => {
+		await this.ensureConnected();
+
+		this.ws.send(JSON.stringify(reqWithId), async (err) => {
 			if (err) {
 				throw new Error(`failed to send websocket request: ${err}`);
 			}
