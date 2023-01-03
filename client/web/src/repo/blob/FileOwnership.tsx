@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
+import { Card, CardBody, CardHeader, Grid } from '@sourcegraph/wildcard'
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
 
 export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
@@ -23,10 +24,12 @@ export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Prop
     if (data) {
         return data.node.commit.blob.ownership.map(
             (own: FetchOwnershipResult['node']['commit']['blob']['ownership'][0]) => (
-                <>
-                    <div>{own.owners.join(', ')}</div>
-                    <div>{own.reason}</div>
-                </>
+                <Grid columnCount={4} className="mt-2">
+                    <Card>
+                        <CardHeader>{own.owners.join(', ')}</CardHeader>
+                        <CardBody>{own.reason}</CardBody>
+                    </Card>
+                </Grid>
             )
         )
     }
