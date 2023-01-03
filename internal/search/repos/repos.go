@@ -836,9 +836,10 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 // archive.
 func ExactlyOneRepo(repoFilters []string) bool {
 	if len(repoFilters) == 1 {
-		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
-		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
-			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
+		repoRevs := search.ParseRepositoryRevisions(repoFilters[0])
+		repo := repoRevs.Repo
+		if strings.HasPrefix(repo, "^") && strings.HasSuffix(repo, "$") {
+			filter := strings.TrimSuffix(strings.TrimPrefix(repo, "^"), "$")
 			r, err := regexpsyntax.Parse(filter, regexpFlags)
 			if err != nil {
 				return false

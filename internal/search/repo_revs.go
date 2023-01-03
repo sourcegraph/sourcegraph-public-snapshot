@@ -111,7 +111,7 @@ func (p ParsedRepoFilter) String() string {
 //   - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //     because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //     section on the --glob flag)
-func ParseRepositoryRevisions(repoAndOptionalRev string) (string, []RevisionSpecifier) {
+func ParseRepositoryRevisions(repoAndOptionalRev string) ParsedRepoFilter {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
 		// return an empty slice to indicate that there's no revisions; callers
@@ -119,7 +119,7 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (string, []RevisionSpec
 		// cases where two repo specs both match the same repository, and only one
 		// specifies a revspec, which normally implies "master" but in that case
 		// really means "didn't specify"
-		return repoAndOptionalRev, []RevisionSpecifier{}
+		return ParsedRepoFilter{Repo: repoAndOptionalRev, Revs: []RevisionSpecifier{}}
 	}
 
 	repo := repoAndOptionalRev[:i]
@@ -133,7 +133,7 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (string, []RevisionSpec
 	if len(revs) == 0 {
 		revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
 	}
-	return repo, revs
+	return ParsedRepoFilter{Repo: repo, Revs: revs}
 }
 
 func parseRev(spec string) RevisionSpecifier {

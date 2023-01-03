@@ -40,8 +40,7 @@ func TestMain(m *testing.M) {
 func toParsedRepoFilters(repoRevs ...string) []search.ParsedRepoFilter {
 	repoFilters := make([]search.ParsedRepoFilter, len(repoRevs))
 	for i, r := range repoRevs {
-		repo, revs := search.ParseRepositoryRevisions(r)
-		repoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+		repoFilters[i] = search.ParseRepositoryRevisions(r)
 	}
 	return repoFilters
 }

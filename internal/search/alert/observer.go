@@ -102,8 +102,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	parsedRepoFilters := make([]search.ParsedRepoFilter, len(repoFilters))
 	for i, r := range repoFilters {
-		repo, revs := search.ParseRepositoryRevisions(r)
-		parsedRepoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+		parsedRepoFilters[i] = search.ParseRepositoryRevisions(r)
 	}
 
 	if forksNotSet {

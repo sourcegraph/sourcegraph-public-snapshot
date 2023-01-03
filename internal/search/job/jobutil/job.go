@@ -409,9 +409,8 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
 					// No "@" in pattern? We're good.
-					repo, revs := search.ParseRepositoryRevisions(pattern)
-					opts.RepoFilters = append(opts.RepoFilters,
-						search.ParsedRepoFilter{Repo: repo, Revs: revs})
+					repoFilter := search.ParseRepositoryRevisions(pattern)
+					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
 
@@ -429,9 +428,8 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					repo, revs := search.ParseRepositoryRevisions(patternPrefix[0])
-					opts.RepoFilters = append(opts.RepoFilters,
-						search.ParsedRepoFilter{Repo: repo, Revs: revs})
+					repoFilter := search.ParseRepositoryRevisions(patternPrefix[0])
+					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
 
@@ -653,8 +651,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 
 	parsedRepoFilters := make([]search.ParsedRepoFilter, len(repoFilters))
 	for i, r := range repoFilters {
-		repo, revs := search.ParseRepositoryRevisions(r)
-		parsedRepoFilters[i] = search.ParsedRepoFilter{Repo: repo, Revs: revs}
+		parsedRepoFilters[i] = search.ParseRepositoryRevisions(r)
 	}
 
 	var settingForks, settingArchived bool

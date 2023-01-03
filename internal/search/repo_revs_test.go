@@ -1,28 +1,26 @@
 package search
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {
-	tests := map[string]struct {
-		repo string
-		revs []RevisionSpecifier
-	}{
-		"repo":           {repo: "repo", revs: []RevisionSpecifier{}},
-		"repo@":          {repo: "repo", revs: []RevisionSpecifier{{RevSpec: ""}}},
-		"repo@rev":       {repo: "repo", revs: []RevisionSpecifier{{RevSpec: "rev"}}},
-		"repo@rev1:rev2": {repo: "repo", revs: []RevisionSpecifier{{RevSpec: "rev1"}, {RevSpec: "rev2"}}},
-		"repo@:rev1:":    {repo: "repo", revs: []RevisionSpecifier{{RevSpec: "rev1"}}},
-		"repo@*glob":     {repo: "repo", revs: []RevisionSpecifier{{RefGlob: "glob"}}},
+	tests := map[string]ParsedRepoFilter{
+		"repo":           {Repo: "repo", Revs: []RevisionSpecifier{}},
+		"repo@":          {Repo: "repo", Revs: []RevisionSpecifier{{RevSpec: ""}}},
+		"repo@rev":       {Repo: "repo", Revs: []RevisionSpecifier{{RevSpec: "rev"}}},
+		"repo@rev1:rev2": {Repo: "repo", Revs: []RevisionSpecifier{{RevSpec: "rev1"}, {RevSpec: "rev2"}}},
+		"repo@:rev1:":    {Repo: "repo", Revs: []RevisionSpecifier{{RevSpec: "rev1"}}},
+		"repo@*glob":     {Repo: "repo", Revs: []RevisionSpecifier{{RefGlob: "glob"}}},
 		"repo@rev1:*glob1:^rev2": {
-			repo: "repo",
-			revs: []RevisionSpecifier{{RevSpec: "rev1"}, {RefGlob: "glob1"}, {RevSpec: "^rev2"}},
+			Repo: "repo",
+			Revs: []RevisionSpecifier{{RevSpec: "rev1"}, {RefGlob: "glob1"}, {RevSpec: "^rev2"}},
 		},
 		"repo@rev1:*glob1:*!glob2:rev2:*glob3": {
-			repo: "repo",
-			revs: []RevisionSpecifier{
+			Repo: "repo",
+			Revs: []RevisionSpecifier{
 				{RevSpec: "rev1"},
 				{RefGlob: "glob1"},
 				{ExcludeRefGlob: "glob2"},
@@ -33,12 +31,9 @@ func TestParseRepositoryRevisions(t *testing.T) {
 	}
 	for input, want := range tests {
 		t.Run(input, func(t *testing.T) {
-			repo, revs := ParseRepositoryRevisions(input)
-			if repo != want.repo {
-				t.Fatalf("got %+v, want %+v", repo, want.repo)
-			}
-			if !reflect.DeepEqual(revs, want.revs) {
-				t.Fatalf("got %+v, want %+v", revs, want.revs)
+			repoRevs := ParseRepositoryRevisions(input)
+			if diff := cmp.Diff(want, repoRevs); diff != "" {
+				t.Fatalf("(-want +got):\n%s", diff)
 			}
 		})
 	}
