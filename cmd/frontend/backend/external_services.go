@@ -198,7 +198,6 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			name = repo.Name
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAWSCodeCommit))
-			return
 		}
 	case extsvc.TypeBitbucketCloud:
 		if repo, ok := repository.Metadata.(*bitbucketcloud.Repo); ok {

@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -275,12 +277,14 @@ func TestExcludeRepoFromExternalService_NoExistingExcludedRepos_NewExcludedRepoA
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}, nil
+		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
+		metadata := &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}
+		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
-		return &EmptyResponse{}, nil
+	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+		return nil, nil
 	}
-	t.Cleanup(func() { mockSyncExternalService = nil })
+	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
 	db.TransactFunc.SetDefaultReturn(db, nil)
@@ -315,7 +319,7 @@ func TestExcludeRepoFromExternalService_NoExistingExcludedRepos_NewExcludedRepoA
 		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
 	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 }
 
@@ -334,18 +338,20 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_AnotherExcludedRepoAd
 		return &types.ExternalService{
 			ID:     id,
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
 		}, nil
 	})
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
+		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
+		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
-		return &EmptyResponse{}, nil
+	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+		return nil, nil
 	}
-	t.Cleanup(func() { mockSyncExternalService = nil })
+	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
 	db.TransactFunc.SetDefaultReturn(db, nil)
@@ -378,7 +384,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_AnotherExcludedRepoAd
 		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
 	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 }
 
@@ -397,18 +403,20 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 		return &types.ExternalService{
 			ID:     id,
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
 		}, nil
 	})
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph"}, nil
+		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
+		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
+		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	mockSyncExternalService = func(_ context.Context, _ *syncExternalServiceArgs) (*EmptyResponse, error) {
-		return &EmptyResponse{}, nil
+	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+		return nil, nil
 	}
-	t.Cleanup(func() { mockSyncExternalService = nil })
+	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
 	db.TransactFunc.SetDefaultReturn(db, nil)
@@ -441,7 +449,7 @@ func TestExcludeRepoFromExternalService_ExcludedRepoExists_SameRepoIsNotExcluded
 		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"id":"1","name":"sourcegraph/sourcegraph"},{"id":"2","name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
+	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
 	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
 }
 

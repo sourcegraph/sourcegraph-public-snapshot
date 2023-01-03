@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -26,44 +25,51 @@ func TestAddRepoToExclude(t *testing.T) {
 	testCases := []struct {
 		name           string
 		kind           string
+		repo           *types.Repo
 		initialConfig  string
 		expectedConfig string
 	}{
 		{
 			name:           "second attempt of excluding same repo is ignored for AWSCodeCommit schema",
 			kind:           extsvc.KindAWSCodeCommit,
+			repo:           MakeAWSCodeCommitRepo(),
 			initialConfig:  `{"accessKeyID":"accessKeyID","gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
-			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"name":"sourcegraph/sourcegraph"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
+			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"name":"test"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
 			kind:           extsvc.KindBitbucketCloud,
+			repo:           MakeBitbucketCloudRepo(),
 			initialConfig:  `{"appPassword":"","url":"https://bitbucket.org","username":""}`,
-			expectedConfig: `{"appPassword":"","exclude":[{"name":"sourcegraph/sourcegraph"}],"url":"https://bitbucket.org","username":""}`,
+			expectedConfig: `{"appPassword":"","exclude":[{"name":"sg/sourcegraph"}],"url":"https://bitbucket.org","username":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketServer schema",
 			kind:           extsvc.KindBitbucketServer,
+			repo:           MakeBitbucketServerRepo(),
 			initialConfig:  `{"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
-			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
+			expectedConfig: `{"exclude":[{"name":"SOURCEGRAPH/jsonrpc2"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitHub schema",
 			kind:           extsvc.KindGitHub,
+			repo:           MakeGithubRepo(),
 			initialConfig:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`,
+			expectedConfig: `{"exclude":[{"name":"sourcegraph/conc"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitLab schema",
 			kind:           extsvc.KindGitLab,
+			repo:           MakeGitlabRepo(),
 			initialConfig:  `{"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
-			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
+			expectedConfig: `{"exclude":[{"name":"gitlab-org/gitaly"}],"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for Gitolite schema",
 			kind:           extsvc.KindGitolite,
+			repo:           MakeGitoliteRepo(),
 			initialConfig:  `{"host":"gitolite.com","prefix":""}`,
-			expectedConfig: `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"host":"gitolite.com","prefix":""}`,
+			expectedConfig: `{"exclude":[{"name":"vegeta"}],"host":"gitolite.com","prefix":""}`,
 		},
 	}
 
@@ -74,13 +80,13 @@ func TestAddRepoToExclude(t *testing.T) {
 				DisplayName: fmt.Sprintf("%s #1", test.kind),
 				Config:      extsvc.NewUnencryptedConfig(test.initialConfig),
 			}
-			actualConfig, err := addRepoToExclude(ctx, logger, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
+			actualConfig, err := addRepoToExclude(ctx, logger, extSvc, test.repo)
 			if err != nil {
 				t.Fatal(err)
 			}
 			assert.Equal(t, test.expectedConfig, actualConfig)
 
-			actualConfig, err = addRepoToExclude(ctx, logger, extSvc, &types.Repo{ID: api.RepoID(1), Name: "sourcegraph/sourcegraph"})
+			actualConfig, err = addRepoToExclude(ctx, logger, extSvc, test.repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -101,9 +107,9 @@ func TestRepoExcludableRepoName(t *testing.T) {
 		"Successful parsing of BitbucketServer repo excludable name": {repo: MakeBitbucketServerRepo(), expectedName: "SOURCEGRAPH/jsonrpc2"},
 		"Successful parsing of GitHub repo excludable name":          {repo: MakeGithubRepo(), expectedName: "sourcegraph/conc"},
 		"Successful parsing of GitLab repo excludable name":          {repo: MakeGitlabRepo(), expectedName: "gitlab-org/gitaly"},
-		"Successful parsing of Gitolite repo excludable name":        {repo: MakeGitoliteRepo(true, true), expectedName: "vegeta"},
-		"GitoliteRepo doesn't have a name, empty result":             {repo: MakeGitoliteRepo(true, false), expectedName: ""},
-		"GitoliteRepo doesn't have metadata, empty result":           {repo: MakeGitoliteRepo(false, false), expectedName: ""},
+		"Successful parsing of Gitolite repo excludable name":        {repo: MakeGitoliteRepo(), expectedName: "vegeta"},
+		"GitoliteRepo doesn't have a name, empty result":             {repo: MakeGitoliteRepoParams(true, false), expectedName: ""},
+		"GitoliteRepo doesn't have metadata, empty result":           {repo: MakeGitoliteRepoParams(false, false), expectedName: ""},
 	}
 
 	for testName, testCase := range testCases {
@@ -186,7 +192,7 @@ func MakeGitlabRepo() *types.Repo {
 }
 
 // MakeGitoliteRepo returns a configured Gitolite repository.
-func MakeGitoliteRepo(addMetadata bool, includeName bool) *types.Repo {
+func MakeGitoliteRepoParams(addMetadata bool, includeName bool) *types.Repo {
 	repo := typestest.MakeRepo("gitolite.sgdev.org/vegeta", "git@gitolite.sgdev.org", extsvc.TypeGitolite)
 	if addMetadata {
 		metadata := &gitolite.Repo{
@@ -198,4 +204,8 @@ func MakeGitoliteRepo(addMetadata bool, includeName bool) *types.Repo {
 		repo.Metadata = metadata
 	}
 	return repo
+}
+
+func MakeGitoliteRepo() *types.Repo {
+	return MakeGitoliteRepoParams(true, true)
 }

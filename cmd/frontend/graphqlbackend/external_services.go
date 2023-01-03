@@ -386,13 +386,7 @@ type syncExternalServiceArgs struct {
 	ID graphql.ID
 }
 
-// mockSyncExternalService mocks (*schemaResolver).SyncExternalService.
-var mockSyncExternalService func(context.Context, *syncExternalServiceArgs) (*EmptyResponse, error)
-
 func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
-	if mockSyncExternalService != nil {
-		return mockSyncExternalService(ctx, args)
-	}
 	start := time.Now()
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
