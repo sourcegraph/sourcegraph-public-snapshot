@@ -41,7 +41,7 @@ func initGitRepository(t testing.TB, cmds ...string) string {
 func gitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1")
+	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1", "HOME=/dev/null")
 	return c
 }
 
@@ -49,9 +49,7 @@ func TestSearch(t *testing.T) {
 	cmds := []string{
 		"echo lorem ipsum dolor sit amet > file1",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden1 " +
+		"GIT_COMMITTER_NAME=camden1 " +
 			"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden1 " +
@@ -61,9 +59,7 @@ func TestSearch(t *testing.T) {
 		"echo consectetur adipiscing elit > file2",
 		"echo consectetur adipiscing elit again > file3",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden2 " +
+		"GIT_COMMITTER_NAME=camden2 " +
 			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden2 " +
@@ -72,9 +68,7 @@ func TestSearch(t *testing.T) {
 			"git commit -m commit2",
 		"mv file1 file1a",
 		"git add -A",
-		"GIT_CONFIG_GLOBAL=/dev/null " +
-			"GIT_CONFIG_SYSTEM=/dev/null " +
-			"GIT_COMMITTER_NAME=camden3 " +
+		"GIT_COMMITTER_NAME=camden3 " +
 			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 			"GIT_AUTHOR_NAME=camden3 " +
@@ -288,7 +282,7 @@ func TestCommitScanner(t *testing.T) {
 			expected: []*RawCommit{
 				{
 					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
-					RefNames:       []byte("HEAD -> refs/heads/main"),
+					RefNames:       []byte("HEAD -> refs/heads/master"),
 					SourceRefs:     []byte("HEAD"),
 					AuthorName:     []byte("camden3"),
 					AuthorEmail:    []byte("camden3@ccheek.com"),
@@ -347,7 +341,7 @@ func TestCommitScanner(t *testing.T) {
 			expected: []*RawCommit{
 				{
 					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
-					RefNames:       []byte("HEAD -> refs/heads/main"),
+					RefNames:       []byte("HEAD -> refs/heads/master"),
 					SourceRefs:     []byte("HEAD"),
 					AuthorName:     []byte("camden3"),
 					AuthorEmail:    []byte("camden3@ccheek.com"),
@@ -393,6 +387,7 @@ func TestCommitScanner(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
+			println(dir)
 			scanner := NewCommitScanner(bytes.NewReader(tc.input))
 			var output []*RawCommit
 			for scanner.Scan() {
