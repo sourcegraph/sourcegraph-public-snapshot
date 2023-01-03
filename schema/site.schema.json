@@ -2313,18 +2313,18 @@
     },
     "EmailTemplate": {
       "type": "object",
-      "required": ["subject", "text", "html"],
+      "required": ["subject", "html"],
       "properties": {
         "subject": {
           "description": "Template for email subject header",
           "type": "string"
         },
-        "text": {
-          "description": "Template for plain-text body",
-          "type": "string"
-        },
         "html": {
           "description": "Template for HTML body",
+          "type": "string"
+        },
+        "text": {
+          "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
         }
       }
