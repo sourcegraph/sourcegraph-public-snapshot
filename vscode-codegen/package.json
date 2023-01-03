@@ -43,14 +43,6 @@
       {
         "command": "codebot.generate-test",
         "title": "Generate a unit test"
-      },
-      {
-        "command": "codebot.refactor",
-        "title": "Refactor a selection of code with AI"
-      },
-      {
-        "command": "codebot.claude",
-        "title": "wip: claude"
       }
     ],
     "keybindings": [
