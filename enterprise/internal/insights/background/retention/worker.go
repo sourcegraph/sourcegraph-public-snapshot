@@ -51,8 +51,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateDBWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*DataRetentionJob] {
-	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*DataRetentionJob]{
+func CreateDBWorkerStore(observationCtx *observation.Context, store *basestore.Store) dbworkerstore.Store[*DataRetentionJob] {
+	return dbworkerstore.New(observationCtx, store.Handle(), dbworkerstore.Options[*DataRetentionJob]{
 		Name:              "insights_data_retention_worker_store",
 		TableName:         "insights_data_retention_jobs",
 		ColumnExpressions: dataRetentionJobColumns,

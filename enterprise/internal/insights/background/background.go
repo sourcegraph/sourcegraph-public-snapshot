@@ -142,12 +142,13 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	workerMetrics, resetterMetrics := newWorkerMetrics(observationCtx, "insights_data_retention")
 
-	dbWorkerStore := retention.CreateDBWorkerStore(observationCtx, insightsDB.Handle())
+	workerBaseStore := basestore.NewWithHandle(insightsDB.Handle())
+	dbWorkerStore := retention.CreateDBWorkerStore(observationCtx, workerBaseStore)
 
 	return []goroutine.BackgroundRoutine{
-		retention.NewWorker(ctx, observationCtx.Logger.Scoped("insights_data_retention.Worker", ""), dbWorkerStore, workerMetrics),
-		retention.NewResetter(ctx, observationCtx.Logger.Scoped("insights_data_retention.Resetter", ""), dbWorkerStore, resetterMetrics),
-		// todo(leo): add a cleaner routine
+		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, workerMetrics),
+		retention.NewResetter(ctx, observationCtx.Logger.Scoped("Resetter", ""), dbWorkerStore, resetterMetrics),
+		retention.NewCleaner(ctx, observationCtx, workerBaseStore),
 	}
 }
 
