@@ -42,6 +42,9 @@ func NewProvider(conn *types.BitbucketCloudConnection, opts ProviderOptions) *Pr
 
 	if opts.BitbucketCloudClient == nil {
 		opts.BitbucketCloudClient, err = bitbucketcloud.NewClient(conn.Url, conn.BitbucketCloudConnection, httpcli.ExternalClient)
+		if err != nil {
+			return nil
+		}
 	}
 
 	return &Provider{
