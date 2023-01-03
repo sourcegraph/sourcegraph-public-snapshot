@@ -10,7 +10,7 @@ import {
     ViewUpdate,
 } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, switchMap } from 'rxjs/operators'
+import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
@@ -327,14 +327,14 @@ const hoverManager = ViewPlugin.fromClass(
                                 return of(null)
                             }
 
-                            const current = view.state.field(hoverTooltip)
-                            const nextRange = rangeToCmSelection(view.state, occurrence.range)
-                            if (current && !isEqual(current.range, nextRange)) {
-                                // different occurrence is hovered - hide the tooltip for the previous one and fetch the new one
-                                view.dispatch({ effects: setHoverTooltip.of(null) })
-                            }
-
-                            return of(nextRange).pipe(
+                            return of(rangeToCmSelection(view.state, occurrence.range)).pipe(
+                                tap(range => {
+                                    const currentRange = view.state.field(hoverTooltip)?.range
+                                    if (currentRange && !isEqual(currentRange, range)) {
+                                        // different occurrence is hovered - hide the tooltip for the previous one and fetch the new one
+                                        view.dispatch({ effects: setHoverTooltip.of(null) })
+                                    }
+                                }),
                                 switchMap(range =>
                                     from(getHoverTooltip(view, range.from)).pipe(
                                         catchError(() => of(null)),
