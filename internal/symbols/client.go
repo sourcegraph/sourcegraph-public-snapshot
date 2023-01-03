@@ -83,7 +83,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		h = "http://"
 	)
 	c.endpointOnce.Do(func() {
-		c.endpoint = endpoint.NewReplicas(symbolsURL, s, symbolsReplicas, p, h)
+		c.endpoint = endpoint.NewReplicas(c.URL, s, symbolsReplicas, p, h)
 	})
 
 	return c.endpoint.Get(string(repo))

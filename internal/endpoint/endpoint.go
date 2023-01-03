@@ -68,8 +68,9 @@ func New(urlspec string) *Map {
 	return K8S(logger, urlspec)
 }
 
-// NewReplicas first checks if replica count is empty or not
-// If replica count is empty, it returns endpoints using the service URL
+// NewReplicas generates a list of endpoints based on replica count
+// It first checks if replica count is empty or not
+// If replica count is empty, it returns endpoints using the service URL provided
 //
 // Endpoints will only be generated using the replica count if:
 // 1. replica count is not empty and its value is greater than 0
@@ -84,7 +85,7 @@ func New(urlspec string) *Map {
 func NewReplicas(urlspec string, service string, replicas string, port string, protocol string) *Map {
 	if replicas != "" {
 		r, err := strconv.Atoi(replicas)
-		if err != nil || r == 0 {
+		if err != nil || r < 1 {
 			return Empty(errors.New("error parsing replicas value for " + service))
 		}
 		switch urlspec {
