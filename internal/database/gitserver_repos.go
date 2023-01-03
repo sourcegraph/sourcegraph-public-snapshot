@@ -462,7 +462,7 @@ func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoNa
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-    corrupted_at = DEFAULT,
+	corrupted_at = DEFAULT,
 	clone_status = %s,
 	shard_id = %s,
 	updated_at = NOW()
@@ -487,7 +487,7 @@ SET
 	last_error = %s,
 	shard_id = %s,
 	updated_at = NOW(),
-    corrupted_at = DEFAULT
+	corrupted_at = DEFAULT
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
@@ -541,8 +541,8 @@ func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoNam
 UPDATE gitserver_repos as gtr
 SET
 	corrupted_at = NOW(),
-    -- append the json and then ensure we only keep 10 items in the resulting json array
-    corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
+	-- append the json and then ensure we only keep 10 items in the resulting json array
+	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
     `, rawLog, name))
@@ -573,7 +573,7 @@ func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoNa
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-    corrupted_at = DEFAULT,
+	corrupted_at = DEFAULT,
 	last_fetched = %s,
 	last_changed = %s,
 	shard_id = %s,
