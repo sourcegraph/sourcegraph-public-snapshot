@@ -839,6 +839,9 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			cloneStatus := cloneStatus(cloned, cloning)
 			if repo.CloneStatus != cloneStatus {
 				repo.CloneStatus = cloneStatus
+				// Since the repo has been recloned or is being cloned
+				// we can reset the corruption
+				repo.CorruptedAt = time.Time{}
 				shouldUpdate = true
 			}
 

@@ -588,13 +588,21 @@ func TestLogCorruption(t *testing.T) {
 		}
 	})
 	t.Run("consecutive corruption logs appends", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 			Name:          "github.com/sourcegraph/repo4",
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
 		for i := 0; i < 12; i++ {
 			logRepoCorruption(t, db, repo.Name, fmt.Sprintf("test %d", i))
+			// We set the Clone status so that the 'corrupted_at' time gets cleared
+			// otherwise we cannot log corruption for a repo that is already corrupt
+			gitserverRepo.CloneStatus = types.CloneStatusCloned
+			gitserverRepo.CorruptedAt = time.Time{}
+			if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
+				t.Fatal(err)
+			}
+
 		}
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)

@@ -94,13 +94,14 @@ func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, 
 func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestamp with time zone, %s::timestamp with time zone, %s::bigint, NOW())",
+		values = append(values, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestamp with time zone, %s::timestamp with time zone, %s::timestamp with time zone, %s::bigint, NOW())",
 			gr.RepoID,
 			gr.CloneStatus,
 			gr.ShardID,
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
 			gr.LastChanged,
+			dbutil.NullTimeColumn(gr.CorruptedAt),
 			&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		))
 	}
@@ -118,12 +119,13 @@ SET
 	last_error = tmp.last_error,
 	last_fetched = tmp.last_fetched,
 	last_changed = tmp.last_changed,
+	corrupted_at = tmp.corrupted_at,
 	repo_size_bytes = tmp.repo_size_bytes,
 	updated_at = NOW()
 FROM (VALUES
-	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <repo_size_bytes>),
+	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
 		%s
-	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes)
+	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
 	WHERE
 		tmp.repo_id = gr.repo_id
 `
@@ -553,7 +555,7 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s) AND corrupted_at IS NULL
 	if nrows, err := res.RowsAffected(); err != nil {
 		return errors.Wrapf(err, "getting rows affected")
 	} else if nrows != 1 {
-		return errors.New("repo not found")
+		return errors.New("repo not found or already corrupt")
 	}
 	return nil
 }
