@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"io/fs"
 	"net/url"
 	"os"
@@ -18,12 +16,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -135,7 +135,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 				return
 			}
 
-			r.fullContentBytes = content
+			r.fullContentBytes = fullContentBytes
 			// Split file by lines for easier paging.
 			r.fullContentLines = strings.Split(string(fullContentBytes), "\n")
 
@@ -159,10 +159,11 @@ func pageContent(content []string, startLine, endLine *int32) string {
 	endCursor := totalContentLength
 
 	// If startLine is set and is a legit value, set the cursor to point to it.
-	if startLine != nil && *startLine >= 0 {
-		startCursor = int(*startLine)
+	if startLine != nil && *startLine > 0 {
+		// The left index is inclusive, so we have to shift it back by 1
+		startCursor = int(*startLine) - 1
 	}
-	if startCursor > totalContentLength {
+	if startCursor >= totalContentLength {
 		startCursor = totalContentLength
 	}
 
