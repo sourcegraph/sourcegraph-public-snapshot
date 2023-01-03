@@ -488,13 +488,12 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 		}
 
 		for _, r := range repoFilters {
-			repoRevs := query.ParseRepositoryRevisions(r)
-			for _, rev := range repoRevs.Revs {
+			for _, rev := range r.Revs {
 				if !rev.HasRefGlob() {
 					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
 				}
 			}
-			rq.IncludePatterns = append(rq.IncludePatterns, repoRevs.Repo)
+			rq.IncludePatterns = append(rq.IncludePatterns, r.Repo)
 		}
 
 		qs = append(qs, rq)

@@ -138,7 +138,7 @@ func (q Q) IsCaseSensitive() bool {
 	return q.BoolValue("case")
 }
 
-func (q Q) Repositories() (repos []string, negatedRepos []string) {
+func (q Q) Repositories() (repos []ParsedRepoFilter, negatedRepos []string) {
 	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
 		if a.Labels.IsSet(IsPredicate) {
 			return
@@ -147,7 +147,8 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 		if negated {
 			negatedRepos = append(negatedRepos, value)
 		} else {
-			repos = append(repos, value)
+			repoFilter := ParseRepositoryRevisions(value)
+			repos = append(repos, repoFilter)
 		}
 	})
 	return repos, negatedRepos
