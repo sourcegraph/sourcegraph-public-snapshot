@@ -2027,8 +2027,6 @@ type SettingsExperimentalFeatures struct {
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
 	CodeInsightsRepoUI       *string                   `json:"codeInsightsRepoUI,omitempty"`
 	CodeIntelRepositoryBadge *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
-	// CodeMonitoring description: Enables code monitoring.
-	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// CodeNavigation description: What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.
@@ -2085,10 +2083,6 @@ type SettingsExperimentalFeatures struct {
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowSearchContext description: Enables the search context dropdown.
-	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
-	// ShowSearchNotebook description: Enables the search notebook at search/notebook
-	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
 	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
@@ -2130,7 +2124,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeIntelRepositoryBadge")
-	delete(m, "codeMonitoring")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "codeNavigation")
 	delete(m, "editor")
@@ -2159,8 +2152,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showEnterpriseHomePanels")
 	delete(m, "showMultilineSearchConsole")
-	delete(m, "showSearchContext")
-	delete(m, "showSearchNotebook")
 	delete(m, "symbolKindTags")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
