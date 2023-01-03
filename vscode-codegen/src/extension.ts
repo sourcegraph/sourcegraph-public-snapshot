@@ -13,10 +13,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	const history = new History();
 	history.register(context);
 
+	const serverAddr = settings.get("conf.codebot.serverEndpoint");
+	if (!serverAddr) {
+		throw new Error("need to set server endpoint");
+	}
+
 	const wsCompletionsClient = await WSCompletionsClient.new(
-		"ws://localhost:8080/completions"
+		`ws://${serverAddr}/completions`
 	);
-	const wsChatClient = await WSChatClient.new("ws://localhost:8080/chat");
+	const wsChatClient = await WSChatClient.new(`ws://${serverAddr}/chat`);
 
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider(
