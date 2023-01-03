@@ -110,7 +110,7 @@
   deprecated_version_minor: 4
 - id: 19
   team: batch-changes
-  component: db.role_assigner_existing_users
+  component: db.user_roles
   description: Assigns roles to existing users
   non_destructive: true
   is_enterprise: true
