@@ -9,6 +9,7 @@ import {
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view'
+import { isEqual } from 'lodash'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators'
 
@@ -28,7 +29,6 @@ import {
 } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
-import { isEqual } from 'lodash'
 
 export function hoverExtension(): Extension {
     return [hoverCache, hoveredOccurrenceField, hoverTooltip, hoverManager, tooltipStyles, hoverField, pinManager]
