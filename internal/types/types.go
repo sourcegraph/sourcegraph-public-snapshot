@@ -569,7 +569,7 @@ type GitserverRepo struct {
 // RepoCorruptionLog represents a corruption event that has been detected on a repo.
 type RepoCorruptionLog struct {
 	// When the corruption event was detected
-	Timestamp time.Time `json:"ts"`
+	Timestamp time.Time `json:"time"`
 	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
 	Reason string `json:"reason"`
 }

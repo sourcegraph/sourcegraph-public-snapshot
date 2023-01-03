@@ -260,7 +260,10 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 			return false, err
 		}
 
-		s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason))
+		err = s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason))
+		if err != nil {
+			return true, err
+		}
 
 		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
 		if err := s.removeRepoDirectory(dir, true); err != nil {
@@ -319,8 +322,9 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
-			reason = maybeCorrupt
-			s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), "git detected repo corruption: could not read object or pack file(s). See log for more details")
+			// We don't log the corruption here, since the corruption *should* have already been
+			// logged when this config setting was set in the repo.
+			//
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}

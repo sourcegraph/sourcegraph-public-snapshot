@@ -443,7 +443,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.LastChanged,
 		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		&gr.UpdatedAt,
-		&gr.CorruptedAt,
+		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
 	)
 	if err != nil {
@@ -462,7 +462,7 @@ func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoNa
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	corrupted_at = DEFAULT,
+	corrupted_at = NULL,
 	clone_status = %s,
 	shard_id = %s,
 	updated_at = NOW()
@@ -487,7 +487,7 @@ SET
 	last_error = %s,
 	shard_id = %s,
 	updated_at = NOW(),
-	corrupted_at = DEFAULT
+	corrupted_at = NULL
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
@@ -544,7 +544,7 @@ SET
 	-- append the json and then ensure we only keep 10 items in the resulting json array
 	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
 	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
+WHERE repo_id = (SELECT id FROM repo WHERE name = %s) AND corrupted_at IS NULL
     `, rawLog, name))
 	if err != nil {
 		return errors.Wrapf(err, "logging repo corruption")
@@ -573,7 +573,7 @@ func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoNa
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	corrupted_at = DEFAULT,
+	corrupted_at = NULL,
 	last_fetched = %s,
 	last_changed = %s,
 	shard_id = %s,
