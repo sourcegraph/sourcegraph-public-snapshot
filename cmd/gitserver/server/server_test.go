@@ -1805,7 +1805,6 @@ func TestLogIfCorrupt(t *testing.T) {
 		if len(fromDB.CorruptionLogs) != 0 {
 			t.Fatalf("got %d CorruptionLogs, wanted %d", len(fromDB.CorruptionLogs), 1)
 		}
-
 	})
 }
 
