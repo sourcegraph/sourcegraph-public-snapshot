@@ -5,12 +5,12 @@ import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     SearchMatch,

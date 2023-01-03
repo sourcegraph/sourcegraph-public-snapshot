@@ -83,13 +83,13 @@ func TestMergeSettings(t *testing.T) {
 		},
 		right: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchContextManagement: boolPtr(false),
+				ShowMultilineSearchConsole: boolPtr(false),
 			},
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchNotebook:          boolPtr(true),
-				ShowSearchContextManagement: boolPtr(false),
+				ShowSearchNotebook:         boolPtr(true),
+				ShowMultilineSearchConsole: boolPtr(false),
 			},
 		},
 	}, {
@@ -115,17 +115,6 @@ func TestMergeSettings(t *testing.T) {
 			SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
 		},
 	}, {
-		name: "no deep merge slice",
-		left: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test1"}},
-		},
-		right: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test2"}},
-		},
-		expected: &schema.Settings{
-			Notices: []*schema.Notice{{Message: "test2"}},
-		},
-	}, {
 		name: "deep merge map",
 		left: &schema.Settings{
 			SearchRepositoryGroups: map[string][]any{
@@ -146,31 +135,8 @@ func TestMergeSettings(t *testing.T) {
 				"test3": {"merged", 4},
 			},
 		},
-	}, {
-		name: "deep merge insightsDashboards",
-		left: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"1": {Id: "1"},
-				"2": {Id: "2"},
-				"3": {Id: "3"},
-			},
-		},
-		right: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"2": {Id: "overridden", Title: "overridden"},
-				"3": {Title: "overridden"},
-				"4": {Id: "merged"},
-			},
-		},
-		expected: &schema.Settings{
-			InsightsDashboards: map[string]schema.InsightDashboard{
-				"1": {Id: "1"},
-				"2": {Id: "overridden", Title: "overridden"},
-				"3": {Title: "overridden"},
-				"4": {Id: "merged"},
-			},
-		},
-	}}
+	},
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

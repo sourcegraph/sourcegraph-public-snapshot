@@ -2,7 +2,6 @@ import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo
 
 import { mdiInformationOutline } from '@mdi/js'
 
-import { QueryStateUpdate, QueryUpdate, SearchPatternType } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
@@ -14,6 +13,7 @@ import {
     getFiltersOfKind,
     useLastRepoName,
 } from '@sourcegraph/search-ui'
+import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -21,6 +21,7 @@ import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSide
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../graphql-operations'
 import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 

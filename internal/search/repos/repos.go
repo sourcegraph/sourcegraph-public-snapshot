@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type Resolved struct {
@@ -88,43 +89,31 @@ type Resolver struct {
 	searcher  *endpoint.Map
 }
 
-func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
+func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
 	}
 
 	var errs error
+	done := false
+	return iterator.New(func() ([]Resolved, error) {
+		if done {
+			return nil, errs
+		}
 
-	for {
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			// For missing repo revs, just collect the error and keep paging
 			if !errors.Is(err, &MissingRepoRevsError{}) {
-				break
+				return nil, errs
 			}
 		}
-		tr.LazyPrintf("resolved %d repos, %d missing, %d backends missing", len(page.RepoRevs), len(page.MissingRepoRevs), page.BackendsMissing)
 
-		if err = handle(&page); err != nil {
-			errs = errors.Append(errs, err)
-			break
-		}
-
-		if page.Next == nil {
-			break
-		}
-
+		done = page.Next == nil
 		opts.Cursors = page.Next
-	}
-
-	return errs
+		return []Resolved{page}, nil
+	})
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {

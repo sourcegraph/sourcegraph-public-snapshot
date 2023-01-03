@@ -1,10 +1,10 @@
 import { Remote, proxy } from 'comlink'
-import { Subscription, from, Observable, Subject, of } from 'rxjs'
+import { Unsubscribable, Subscription, from, Observable, Subject, of } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { asError, logger } from '@sourcegraph/common'
 
+import { InputBoxOptions } from '../../codeintel/legacy-extensions/api'
 import { registerBuiltinClientCommands } from '../../commands/commands'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
@@ -46,7 +46,7 @@ function messageFromExtension(message: string): string {
  * Returned to Controller for access by client applications.
  */
 export interface ExposedToClient {
-    registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
+    registerCommand: (entryToRegister: CommandEntry) => Unsubscribable
     executeCommand: (parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean) => Promise<any>
 
     /**
@@ -65,7 +65,6 @@ export const initMainThreadAPI = (
         | 'requestGraphQL'
         | 'showMessage'
         | 'showInputBox'
-        | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
@@ -89,7 +88,7 @@ export const initMainThreadAPI = (
 
     // Commands
     const commands = new Map<string, CommandEntry>()
-    const registerCommand = ({ command, run }: CommandEntry): sourcegraph.Unsubscribable => {
+    const registerCommand = ({ command, run }: CommandEntry): Unsubscribable => {
         if (commands.has(command)) {
             throw new Error(`command is already registered: ${JSON.stringify(command)}`)
         }
@@ -150,7 +149,6 @@ export const initMainThreadAPI = (
         showInputBox: options =>
             platformContext.showInputBox ? platformContext.showInputBox(options) : defaultShowInputBox(options),
 
-        getSideloadedExtensionURL: () => proxySubscribable(platformContext.sideloadedExtensionURL),
         getScriptURLForExtension: () => {
             const getScriptURL = platformContext.getScriptURLForExtension()
             if (!getScriptURL) {
@@ -190,7 +188,7 @@ function defaultShowMessage(message: string): Promise<void> {
     })
 }
 
-function defaultShowInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined> {
+function defaultShowInputBox(options?: InputBoxOptions): Promise<string | undefined> {
     return new Promise<string | undefined>(resolve => {
         const response = prompt(messageFromExtension(options?.prompt ?? ''), options?.value)
         resolve(response ?? undefined)

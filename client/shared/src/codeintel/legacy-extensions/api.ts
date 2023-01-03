@@ -1,15 +1,11 @@
 /* eslint-disable etc/no-deprecated */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Observable } from 'rxjs'
+import type { Observable, Unsubscribable } from 'rxjs'
 
-import { GraphQLResult } from '@sourcegraph/http-client'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
-import { PlatformContext } from '../../platform/context'
-import { Settings, SettingsCascade } from '../../settings/settings'
-
-export interface Unsubscribable {
-    unsubscribe(): void
-}
+import type { PlatformContext } from '../../platform/context'
+import type { Settings, SettingsCascade } from '../../settings/settings'
 
 /**
  * Represents a location inside a resource, such as a line
@@ -734,6 +730,41 @@ export interface Hover {
      * position or the current position itself.
      */
     range?: Range
+
+    /**
+     * Alerts that should be shown in this hover.
+     */
+    alerts?: HoverAlert[]
+}
+
+export interface HoverAlert {
+    /**
+     * Text content to be shown on hovers. Since the alert is displayed inline,
+     * multiparagraph content will be rendered on one line. It's recommended to
+     * provide a brief message here, and place futher details in the badge or
+     * provide a link.
+     */
+    summary: MarkupContent
+
+    /**
+     * When an alert has a dismissal type, dismissing it will prevent all alerts
+     * of that type from being shown. If no type is provided, the alert is not
+     * dismissible.
+     */
+    type?: string
+
+    /** Predefined icons to display next ot the summary. */
+    iconKind?: 'info' | 'error' | 'warning'
+
+    /**
+     * When set, this renders a row of button underneath the content. Note
+     * that this was added after the extension deprecation and will only
+     * work with newer clients.
+     *
+     * When buttons are rendered this way, an eventual dismiss button is
+     * appended to this list.
+     */
+    buttons?: React.ReactNode[]
 }
 
 export interface HoverProvider {
@@ -804,68 +835,6 @@ export interface LocationProvider {
 }
 
 /**
- * A completion item is a suggestion to complete text that the user has typed.
- *
- * @see {@link CompletionItemProvider#provideCompletionItems}
- *
- * @deprecated
- */
-export interface CompletionItem {
-    /**
-     * The label of this completion item, which is rendered prominently. If no
-     * {@link CompletionItem#insertText} is specified, the label is the text inserted when the
-     * user selects this completion.
-     */
-    label: string
-
-    /**
-     * The description of this completion item, which is rendered less prominently but still
-     * alongside the {@link CompletionItem#label}.
-     */
-    description?: string
-
-    /**
-     * A string to insert in a document when the user selects this completion. When not set, the
-     * {@link CompletionItem#label} is used.
-     */
-    insertText?: string
-}
-
-/**
- * A collection of [completion items](#CompletionItem) to be presented in the editor.
- *
- * @deprecated
- */
-export interface CompletionList {
-    /**
-     * The list of completions.
-     */
-    items: CompletionItem[]
-}
-
-/**
- * A completion item provider provides suggestions to insert or apply at the cursor as the user
- * is typing.
- *
- * Providers are queried for completions as the user types in any document matching the document
- * selector specified at registration time.
- *
- * @deprecated
- */
-export interface CompletionItemProvider {
-    /**
-     * Provide completion items for the given position and document.
-     *
-     * @param document The document in which the command was invoked.
-     * @param position The position at which the command was invoked.
-     *
-     * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
-     * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
-     */
-    provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
-}
-
-/**
  * A document highlight is a range inside a text document which deserves special attention.
  * Usually a document highlight is visualized by changing the background color of its range.
  */
@@ -919,7 +888,7 @@ export interface Position {
 export interface Range {
     readonly start: Position
     readonly end: Position
-    contains(position: Position): boolean
+    contains(position: Position | Range): boolean
 }
 
 // NOTE(2022-09-08) We store global state at the module level because that was

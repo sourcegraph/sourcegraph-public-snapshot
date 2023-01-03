@@ -4,10 +4,8 @@ import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 import { createRectangle, Point, Strategy } from '../tether'
 
@@ -16,7 +14,7 @@ import styles from './Popover.story.module.scss'
 const config: Meta = {
     title: 'wildcard/Popover',
     component: Popover,
-    decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
+    decorators: [story => <BrandedStory>{() => story()}</BrandedStory>],
     parameters: {
         design: [
             {

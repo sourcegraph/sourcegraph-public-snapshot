@@ -23,6 +23,7 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
         webhookURL: null,
+        hasConnectionCheck: true,
     }
 }
 

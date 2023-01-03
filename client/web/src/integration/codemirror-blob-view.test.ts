@@ -1,8 +1,10 @@
 import assert from 'assert'
 
 import { ElementHandle, MouseButton } from 'puppeteer'
-import type * as sourcegraph from 'sourcegraph'
+import { Unsubscribable } from 'rxjs'
+import type { CodeEditor } from 'sourcegraph'
 
+import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
@@ -310,7 +312,7 @@ describe('CodeMirror blob view', () => {
                             // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                             const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                            function activate(context: sourcegraph.ExtensionContext): void {
+                            function activate(context: ExtensionContext): void {
                                 context.subscriptions.add(
                                     sourcegraph.languages.registerHoverProvider([{ language: 'typescript' }], {
                                         provideHover: () => ({
@@ -437,7 +439,7 @@ describe('CodeMirror blob view', () => {
 
                         const fixedLineDecorationType = sourcegraph.app.createDecorationType()
 
-                        function decorateLineTwo(editor: sourcegraph.CodeEditor) {
+                        function decorateLineTwo(editor: CodeEditor) {
                             // Always decorate line 2
                             editor.setDecorations(fixedLineDecorationType, [
                                 {
@@ -453,7 +455,7 @@ describe('CodeMirror blob view', () => {
                             ])
                         }
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             // check initial viewer in case it was already emitted before extension was activated
                             const initialViewer = sourcegraph.app.activeWindow?.activeViewComponent
                             if (initialViewer?.type === 'CodeEditor') {
@@ -461,7 +463,7 @@ describe('CodeMirror blob view', () => {
                             }
 
                             // subscribe to viewer changes
-                            let previousViewerSubscription: sourcegraph.Unsubscribable | undefined
+                            let previousViewerSubscription: Unsubscribable | undefined
                             context.subscriptions.add(
                                 sourcegraph.app.activeWindowChanges.subscribe(activeWindow => {
                                     const viewerSubscription = activeWindow?.activeViewComponentChanges.subscribe(
@@ -499,15 +501,15 @@ describe('CodeMirror blob view', () => {
 
                         const selectedLineDecorationType = sourcegraph.app.createDecorationType()
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
-                            let previousViewerSubscription: sourcegraph.Unsubscribable | undefined
-                            let previousSelectionsSubscription: sourcegraph.Unsubscribable | undefined
+                        function activate(context: ExtensionContext): void {
+                            let previousViewerSubscription: Unsubscribable | undefined
+                            let previousSelectionsSubscription: Unsubscribable | undefined
 
                             context.subscriptions.add(
                                 sourcegraph.app.activeWindowChanges.subscribe(activeWindow => {
                                     const viewerSubscription = activeWindow?.activeViewComponentChanges.subscribe(
                                         viewer => {
-                                            let selectionsSubscription: sourcegraph.Unsubscribable | undefined
+                                            let selectionsSubscription: Unsubscribable | undefined
                                             if (viewer?.type === 'CodeEditor') {
                                                 selectionsSubscription = viewer.selectionsChanges.subscribe(
                                                     selections => {
@@ -661,7 +663,7 @@ describe('CodeMirror blob view', () => {
                         const fixedLineDecorationType = sourcegraph.app.createDecorationType()
 
                         // Match all occurrences of 'word', decorate lines
-                        function decorateWordLines(editor: sourcegraph.CodeEditor) {
+                        function decorateWordLines(editor: CodeEditor) {
                             const text = editor.document.text ?? ''
 
                             const wordPattern = /word/g
@@ -692,7 +694,7 @@ describe('CodeMirror blob view', () => {
                             )
                         }
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             // check initial viewer in case it was already emitted before extension was activated
                             const initialViewer = sourcegraph.app.activeWindow?.activeViewComponent
                             if (initialViewer?.type === 'CodeEditor') {
@@ -700,7 +702,7 @@ describe('CodeMirror blob view', () => {
                             }
 
                             // subscribe to viewer changes
-                            let previousViewerSubscription: sourcegraph.Unsubscribable | undefined
+                            let previousViewerSubscription: Unsubscribable | undefined
                             context.subscriptions.add(
                                 sourcegraph.app.activeWindowChanges.subscribe(activeWindow => {
                                     const viewerSubscription = activeWindow?.activeViewComponentChanges.subscribe(

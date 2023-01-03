@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,6 +36,7 @@ func Init(
 	enterpriseServices.ReposGithubWebhook = NewGitHubHandler()
 	enterpriseServices.ReposGitLabWebhook = NewGitLabHandler()
 	enterpriseServices.ReposBitbucketServerWebhook = NewBitbucketServerHandler()
+	enterpriseServices.ReposBitbucketCloudWebhook = NewBitbucketCloudHandler()
 
 	enterpriseServices.WebhooksResolver = resolvers.NewWebhooksResolver(db)
 	return nil
@@ -126,6 +128,37 @@ func bitbucketServerCloneURLFromEvent(event *bitbucketserver.PushEvent) (string,
 		return link.Href, nil
 	}
 	return "", errors.New("no ssh URLs found")
+}
+
+type BitbucketCloudHandler struct {
+	logger log.Logger
+}
+
+func NewBitbucketCloudHandler() *BitbucketCloudHandler {
+	return &BitbucketCloudHandler{
+		logger: log.Scoped("webhooks.BitbucketCloudHandler", "bitbucket cloud webhook handler"),
+	}
+}
+
+func (g *BitbucketCloudHandler) Register(router *webhooks.Router) {
+	router.Register(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, db, payload)
+	}, extsvc.KindBitbucketCloud, "repo:push")
+}
+
+func (g *BitbucketCloudHandler) handlePushEvent(ctx context.Context, db database.DB, payload any) error {
+	return handlePushEvent[*bitbucketcloud.PushEvent](ctx, db, g.logger, payload, bitbucketCloudCloneURLFromEvent)
+}
+
+func bitbucketCloudCloneURLFromEvent(event *bitbucketcloud.PushEvent) (string, error) {
+	if event == nil {
+		return "", errors.New("nil PushEvent received")
+	}
+	href := event.Repository.Links.HTML.Href
+	if href == "" {
+		return "", errors.New("clone url is empty")
+	}
+	return href, nil
 }
 
 // handlePushEvent takes a push payload and a function to extract the repo

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

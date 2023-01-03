@@ -39,8 +39,18 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
+	t.Run("valid with additionalProperties", func(t *testing.T) {
+		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":123}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Errors()) != 0 {
+			t.Errorf("errors: %v", res.Errors())
+		}
+	})
+
 	t.Run("invalid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":1}`))
+		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"maxReposToSearch":true}`))
 		if err != nil {
 			t.Fatal(err)
 		}

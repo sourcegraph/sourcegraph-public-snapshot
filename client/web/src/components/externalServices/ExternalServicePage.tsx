@@ -184,9 +184,9 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     return (
         <div>
             {externalService ? (
-                <PageTitle title={`External service - ${externalService.displayName}`} />
+                <PageTitle title={`Code host - ${externalService.displayName}`} />
             ) : (
-                <PageTitle title="External service" />
+                <PageTitle title="Code host" />
             )}
             <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}

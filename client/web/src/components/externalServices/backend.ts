@@ -1,9 +1,9 @@
-import { MutationTuple } from '@apollo/client'
+import { QueryTuple, MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -17,6 +17,8 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServiceCheckConnectionByIdResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
@@ -124,6 +126,40 @@ export async function deleteExternalService(externalService: Scalars['ID']): Pro
     dataOrThrowErrors(result)
 }
 
+export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
+    query ExternalServiceCheckConnectionById($id: ID!) {
+        node(id: $id) {
+            __typename
+            ... on ExternalService {
+                id
+                hasConnectionCheck
+                checkConnection {
+                    __typename
+                    ... on ExternalServiceAvailable {
+                        lastCheckedAt
+                    }
+                    ... on ExternalServiceUnavailable {
+                        suspectedReason
+                    }
+                    ... on ExternalServiceAvailabilityUnknown {
+                        implementationNote
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const useExternalServiceCheckConnectionByIdLazyQuery = (
+    id: string
+): QueryTuple<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables> =>
+    useLazyQuery<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables>(
+        EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID,
+        {
+            variables: { id },
+        }
+    )
+
 export const listExternalServiceFragment = gql`
     fragment ListExternalServiceFields on ExternalService {
         id
@@ -138,6 +174,7 @@ export const listExternalServiceFragment = gql`
         updatedAt
         createdAt
         webhookURL
+        hasConnectionCheck
     }
 `
 export const EXTERNAL_SERVICES = gql`

@@ -1,4 +1,3 @@
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
@@ -7,9 +6,7 @@ import { VSCodeGraphQlOperations } from '../src/graphql-operations'
 /**
  * Predefined results for GraphQL requests that are made on almost every user flow.
  */
-export const commonVSCodeGraphQlResults: Partial<
-    VSCodeGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+export const commonVSCodeGraphQlResults: Partial<VSCodeGraphQlOperations & SharedGraphQlOperations> = {
     ...sharedGraphQlResults,
     LogEvents: () => ({
         __typename: 'Mutation',

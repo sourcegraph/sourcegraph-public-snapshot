@@ -1,6 +1,6 @@
 import { isErrorLike } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../auth'

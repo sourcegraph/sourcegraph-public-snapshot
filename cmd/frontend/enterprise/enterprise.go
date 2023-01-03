@@ -31,6 +31,7 @@ type Services struct {
 	ReposGithubWebhook          webhooks.Registerer
 	ReposGitLabWebhook          webhooks.Registerer
 	ReposBitbucketServerWebhook webhooks.Registerer
+	ReposBitbucketCloudWebhook  webhooks.Registerer
 
 	PermissionsGitHubWebhook    webhooks.Registerer
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
@@ -81,6 +82,7 @@ func DefaultServices() Services {
 		ReposGithubWebhook:              &emptyWebhookHandler{name: "github sync webhook"},
 		ReposGitLabWebhook:              &emptyWebhookHandler{name: "gitlab sync webhook"},
 		ReposBitbucketServerWebhook:     &emptyWebhookHandler{name: "bitbucket server sync webhook"},
+		ReposBitbucketCloudWebhook:      &emptyWebhookHandler{name: "bitbucket cloud sync webhook"},
 		PermissionsGitHubWebhook:        &emptyWebhookHandler{name: "permissions github webhook"},
 		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
 		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
