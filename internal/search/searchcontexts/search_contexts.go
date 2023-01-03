@@ -219,7 +219,7 @@ func validateSearchContextQuery(contextQuery string) error {
 			repoRegex, revs := search.ParseRepositoryRevisions(value)
 
 			for _, rev := range revs {
-				if rev.RevSpec == "" {
+				if rev.HasRefGlob() {
 					errs = errors.Append(errs,
 						errors.Errorf("unsupported rev glob in search context query: %q", value))
 					return
@@ -514,7 +514,7 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 		for _, r := range repoFilters {
 			repoFilter, revs := search.ParseRepositoryRevisions(r)
 			for _, rev := range revs {
-				if rev.RevSpec != "" {
+				if !rev.HasRefGlob() {
 					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
 				}
 			}

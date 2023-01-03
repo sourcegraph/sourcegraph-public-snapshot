@@ -49,6 +49,10 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 	return r1.ExcludeRefGlob < r2.ExcludeRefGlob
 }
 
+func (r1 RevisionSpecifier) HasRefGlob() bool {
+	return r1.RefGlob != "" || r1.ExcludeRefGlob != ""
+}
+
 // RepositoryRevisions specifies a repository and 0 or more revspecs and ref
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
