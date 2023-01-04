@@ -435,7 +435,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
 func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) error {
-	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -477,22 +477,27 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 		return errors.Wrap(scanner.Err(), "scan")
 	})
 
-	p.Go(func() error {
-		err = comby.StartAndWaitForCompletion(cmd)
-		if ctx.Err() != nil {
-			// context has been canceled, ignore any "process killed" errors from the subprocess
-			err = nil
-		}
-		return err
-	})
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "start comby")
+	}
 
-	return p.Wait()
+	// Wait for readers and writers to complete before calling Wait
+	// because Wait closes the pipes.
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return comby.InterpretCombyError(err, stderr)
+	}
+
+	return nil
 }
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
 // attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
 func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
-	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -528,11 +533,21 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 		return errors.Wrap(scanner.Err(), "scan")
 	})
 
-	p.Go(func() error {
-		return comby.StartAndWaitForCompletion(cmd)
-	})
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "start comby")
+	}
 
-	return p.Wait()
+	// Wait for readers and writers to complete before calling Wait
+	// because Wait closes the pipes.
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return comby.InterpretCombyError(err, stderr)
+	}
+
+	return nil
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

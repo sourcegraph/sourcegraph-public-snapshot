@@ -110,7 +110,7 @@ func toOutput(b []byte) Result {
 }
 
 func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
-	cmd, stdin, stdout, err := SetupCmdWithPipes(ctx, args)
+	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -141,23 +141,45 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		return errors.Wrap(scanner.Err(), "scan")
 	})
 
-	p.Go(func() error {
-		return StartAndWaitForCompletion(cmd)
-	})
+	if err := cmd.Start(); err != nil {
+		return nil, errors.Wrap(err, "start comby")
+	}
 
+	// Wait for readers and writers to complete before calling Wait
+	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
 		return nil, err
 	}
+
+	if err := cmd.Wait(); err != nil {
+		return nil, InterpretCombyError(err, stderr)
+	}
+
 	if len(results) > 0 {
 		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
 	}
 	return results, nil
 }
 
-func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.ReadCloser, err error) {
+func InterpretCombyError(err error, stderr *bytes.Buffer) error {
+	if len(stderr.Bytes()) > 0 {
+		log15.Error("failed to execute comby command", "error", stderr.String())
+		msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", stderr.String())
+		return errors.Wrap(err, msg)
+	}
+	var stderrString string
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		stderrString = string(e.Stderr)
+	}
+	log15.Error("failed to wait for executing comby command", "error", stderrString)
+	return errors.Wrap(err, "failed to wait for executing comby command")
+}
+
+func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.ReadCloser, stderr *bytes.Buffer, err error) {
 	if !Exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
-		return nil, nil, nil, errors.New("comby is not installed")
+		return nil, nil, nil, nil, errors.New("comby is not installed")
 	}
 
 	rawArgs := rawArgs(args)
@@ -170,43 +192,18 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdin", "error", err.Error())
-		return nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
 	}
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
 	}
 
-	return cmd, stdin, stdout, nil
-}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
-func StartAndWaitForCompletion(cmd *exec.Cmd) error {
-	log15.Info("starting comby")
-
-	var b bytes.Buffer
-	cmd.Stderr = &b
-
-	if err := cmd.Start(); err != nil {
-		log15.Error("failed to start comby command", "error", err.Error())
-		return errors.Wrap(err, "failed to start comby command")
-	}
-
-	if err := cmd.Wait(); err != nil {
-		if len(b.Bytes()) > 0 {
-			log15.Error("failed to execute comby command", "error", b.String())
-			msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", b.String())
-			return errors.Wrap(err, msg)
-		}
-		var stderr string
-		var e *exec.ExitError
-		if errors.As(err, &e) {
-			stderr = string(e.Stderr)
-		}
-		log15.Error("failed to wait for executing comby command", "error", stderr)
-		return errors.Wrap(err, "failed to wait for executing comby command")
-	}
-	return nil
+	return cmd, stdin, stdout, &stderrBuf, nil
 }
 
 // Matches returns all matches in all files for which comby finds matches.
