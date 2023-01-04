@@ -16,12 +16,6 @@ type operations struct {
 	scanResultChunks            *observation.Operation
 	scanLocations               *observation.Operation
 	insertMetadata              *observation.Operation
-	writeMeta                   *observation.Operation
-	writeDocuments              *observation.Operation
-	writeResultChunks           *observation.Operation
-	writeDefinitions            *observation.Operation
-	writeReferences             *observation.Operation
-	writeImplementations        *observation.Operation
 	deleteUnreferencedDocuments *observation.Operation
 }
 
@@ -54,12 +48,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		scanResultChunks:            op("ScanResultChunks"),
 		scanLocations:               op("ScanLocations"),
 		insertMetadata:              op("InsertMetadata"),
-		writeMeta:                   op("WriteMeta"),
-		writeDocuments:              op("WriteDocuments"),
-		writeResultChunks:           op("WriteResultChunks"),
-		writeDefinitions:            op("WriteDefinitions"),
-		writeReferences:             op("WriteReferences"),
-		writeImplementations:        op("WriteImplementations"),
 		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
 	}
 }
