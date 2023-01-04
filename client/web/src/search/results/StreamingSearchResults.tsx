@@ -75,7 +75,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         extensionsController,
         searchAggregationEnabled,
         codeMonitoringEnabled,
-        searchContextsEnabled,
     } = props
 
     const history = useHistory()
@@ -439,7 +438,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             {...props}
                             results={results}
                             allExpanded={allExpanded}
-                            showSearchContext={searchContextsEnabled}
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}

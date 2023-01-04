@@ -203,7 +203,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                showSearchContext={searchContextsEnabled}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}

@@ -504,7 +504,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         {...props}
                         markdown={blobInfoOrError.content}
                         onCopyNotebook={onCopyNotebook}
-                        showSearchContext={props.searchContextsEnabled}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
                     />

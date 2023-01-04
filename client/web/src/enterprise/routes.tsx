@@ -82,11 +82,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         render: props => {
             const { showSearchNotebook } = useExperimentalFeatures.getState()
 
-            return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={props.searchContextsEnabled ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },
