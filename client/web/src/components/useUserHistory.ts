@@ -53,19 +53,7 @@ export class UserHistory {
         }
         repo.delete(entry.filePath)
     }
-    public onEntry(entry: UserHistoryEntry): void {
-        let repo = this.repos.get(entry.repoName)
-        if (!repo) {
-            repo = new Map()
-            this.repos.set(entry.repoName, repo)
-        }
-        repo.set(LAST_REPO_ACCESS_FILEPATH, entry.lastAccessed)
-        if (!entry.filePath) {
-            return
-        }
-        repo.set(entry.filePath, entry.lastAccessed)
-    }
-    public persist(): void {
+    private persist(): void {
         const entries: UserHistoryEntry[] = []
         for (const repoName of this.repos.keys()) {
             const repoMap = this.repos.get(repoName) ?? new Map<string, number>()
@@ -78,11 +66,21 @@ export class UserHistory {
         }
         this.saveEntries(entries)
     }
+    private onEntry(entry: UserHistoryEntry): void {
+        let repo = this.repos.get(entry.repoName)
+        if (!repo) {
+            repo = new Map()
+            this.repos.set(entry.repoName, repo)
+        }
+        repo.set(LAST_REPO_ACCESS_FILEPATH, entry.lastAccessed)
+        if (!entry.filePath) {
+            return
+        }
+        repo.set(entry.filePath, entry.lastAccessed)
+    }
     public onLocation(location: H.Location): boolean {
         try {
-            const { repoName = '', filePath = '' } = parseBrowserRepoURL(
-                location.pathname + location.search + location.hash
-            )
+            const { repoName, filePath } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
             if (!repoName) {
                 return false
             }

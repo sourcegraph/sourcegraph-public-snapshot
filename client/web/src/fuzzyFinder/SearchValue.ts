@@ -1,8 +1,7 @@
 export interface SearchValue {
     text: string
     // Score for previously visited results. History ranking is a callback
-    // to allow the
-    //
+    // to allow flexible caching with `SearchValueRankingCache`.
     historyRanking?: () => number | undefined
     ranking?: number
     url?: string

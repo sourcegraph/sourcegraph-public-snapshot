@@ -1,8 +1,9 @@
 import { SearchValue } from './SearchValue'
 
-// Helper to cache the result of `SearchValue.historyRanking()`.  This
-// optimization helps in large repositories where we sort a large number of
-// files by their rank.
+// Helper to cache the result of `SearchValue.historyRanking()`, which is both
+// useful for 1) good UX to keep the ranking stable as long as the query is
+// unchanged and 2) performance in large repositories where we sort a large
+// number of files by their rank score.
 export class SearchValueRankingCache {
     private cache: Map<SearchValue, number> = new Map()
     public rank(value: SearchValue): number {

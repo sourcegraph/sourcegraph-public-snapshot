@@ -12,7 +12,7 @@ export abstract class FuzzyQuery {
     protected queryResults: Map<string, PersistableQueryResult> = new Map()
 
     constructor(private readonly onNamesChanged: () => void, private readonly cache: FuzzyLocalCache) {
-        this.addQuery('FuzzyQuery.fromCache()-constructor', this.cache.initialValues())
+        this.addQueryResults(this.cache.initialValues())
     }
 
     protected abstract searchValues(): SearchValue[]
@@ -20,7 +20,7 @@ export abstract class FuzzyQuery {
     protected abstract handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]>
 
     public async removeStaleResults(): Promise<void> {
-        const fromCache = await this.cache.initialValues()
+        const fromCache = this.cache.initialValues()
         if (fromCache.length === 0) {
             // Nothing to invalidate.
             return

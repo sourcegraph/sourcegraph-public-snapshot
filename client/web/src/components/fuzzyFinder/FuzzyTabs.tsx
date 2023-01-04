@@ -218,11 +218,6 @@ export interface FuzzyTabsProps extends FuzzyActionProps {
     userHistory: UserHistory
 }
 
-interface FuzzyVisibility {
-    isVisible: boolean
-    activeTab: keyof Tabs
-}
-
 export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     const {
         themeState,
@@ -260,7 +255,6 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         getFuzzyFinderFeatureFlags(props.settingsCascade.final)
 
     const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
-    const isVisibleHistory = useRef<FuzzyVisibility>({ isVisible, activeTab })
 
     // NOTE: the query is cached in session storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
@@ -272,10 +266,6 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     // is cycling through results by repeatedly activating the fuzzy finder
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const rankingCache = useMemo(() => new SearchValueRankingCache(), [query])
-
-    useEffect(() => {
-        isVisibleHistory.current = { isVisible, activeTab }
-    }, [isVisible, activeTab])
 
     const queryRef = useRef(query)
     queryRef.current = query
