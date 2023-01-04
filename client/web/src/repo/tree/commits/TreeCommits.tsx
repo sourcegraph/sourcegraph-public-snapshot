@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import formatISO from 'date-fns/formatISO'
+import startOfDay from 'date-fns/startOfDay'
 import subYears from 'date-fns/subYears'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -41,7 +42,10 @@ const DEFAULT_FIRST = 10
  */
 export const TreeCommits: React.FunctionComponent<Props> = ({ repo, commitID, filePath, className }) => {
     const [showOlderCommits, setShowOlderCommits] = useState(false)
-    const after = useMemo(() => (showOlderCommits ? null : formatISO(subYears(Date.now(), 1))), [showOlderCommits])
+    const after = useMemo(
+        () => (showOlderCommits ? null : formatISO(startOfDay(subYears(Date.now(), 1)))),
+        [showOlderCommits]
+    )
 
     const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useShowMorePagination<
         TreeCommitsResult,
@@ -100,7 +104,7 @@ export const TreeCommits: React.FunctionComponent<Props> = ({ repo, commitID, fi
             return node.commit.ancestors
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'cache-and-network',
             useAlternateAfterCursor: true,
         },
     })

@@ -165,12 +165,6 @@
             display: inline-block;
         }
 
-        [data-line-decoration-attachment-portal] {
-            span::before {
-                content: attr(data-contents);
-            }
-        }
-
         :global(.top-spacer),
         :global(.bottom-spacer) {
             margin: 0 0 0 -1rem;

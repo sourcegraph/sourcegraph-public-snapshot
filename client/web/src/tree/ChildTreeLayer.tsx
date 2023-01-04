@@ -2,8 +2,6 @@ import React from 'react'
 
 import { mdiFolderOutline } from '@mdi/js'
 
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-
 import { dirname } from '../util/path'
 
 import { TreeLayerTable } from './components'
@@ -16,8 +14,6 @@ import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, NOOP, SingleChildGitTree, TreeEntryInfo } from './util'
 
 interface ChildTreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
-    fileDecorationsByPath: FileDecorationsByPath
-
     entries: TreeEntryInfo[]
     /** The entry information for a SingleChildTreeLayer. Will be a SingleChildGitTree with fields populated, or be an empty object if there is no SingleChildTreeLayer to render. */
     singleChildTreeEntry: SingleChildGitTree
@@ -49,8 +45,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
         setActiveNode: props.setActiveNode,
         onSelect: props.onSelect,
         commitID: props.commitID,
-        extensionsController: props.extensionsController,
-        isLightTheme: props.isLightTheme,
     }
 
     // Only show ".." (go up) for non-root file trees
@@ -78,7 +72,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                     }}
                                                     depth={sharedProps.depth}
                                                     index={0}
-                                                    isLightTheme={sharedProps.isLightTheme}
                                                     handleTreeClick={NOOP}
                                                     noopRowClick={NOOP}
                                                     linkRowClick={() => props.telemetryService.log('FileTreeClick')}
@@ -106,8 +99,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                     parentPath={props.singleChildTreeEntry.path}
                                     entryInfo={props.singleChildTreeEntry}
                                     childrenEntries={props.singleChildTreeEntry.children}
-                                    fileDecorationsByPath={props.fileDecorationsByPath}
-                                    fileDecorations={props.fileDecorationsByPath[props.singleChildTreeEntry.path]}
                                     telemetryService={props.telemetryService}
                                     enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                 />
@@ -120,7 +111,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                         isExpanded={props.expandedTrees.includes(item.path)}
                                         parentPath={item.path}
                                         entryInfo={item}
-                                        fileDecorations={props.fileDecorationsByPath[item.path]}
                                         telemetryService={props.telemetryService}
                                         enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                     />

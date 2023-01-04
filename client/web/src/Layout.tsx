@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -32,7 +32,6 @@ import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -172,22 +171,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     //     setTosAccepted(true)
     // }, [])
 
-    useEffect(() => {
-        if (
-            props.isSourcegraphDotCom &&
-            props.authenticatedUser &&
-            !document.cookie.includes('displayName=' || 'email=')
-        ) {
-            const tomorrow = new Date(Date.now() + 86400 * 1000).toUTCString()
-            // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `displayName=${
-                props.authenticatedUser.displayName || ''
-            }; expires=${tomorrow}; domain=.sourcegraph.com`
-            // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `email=${props.authenticatedUser.email}; expires=${tomorrow}; domain=.sourcegraph.com`
-        }
-    }, [props.authenticatedUser, props.isSourcegraphDotCom])
-
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -300,9 +283,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            {props.extensionsController !== null ? (
-                <GlobalDebug {...props} extensionsController={props.extensionsController} />
-            ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}

@@ -6,9 +6,15 @@ import { map, retry } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { createLinkUrl } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../../backend/graphql'
-import { LangStatsInsightContentResult, LangStatsInsightContentVariables } from '../../../../../graphql-operations'
+import {
+    LangStatsInsightContentResult,
+    LangStatsInsightContentVariables,
+    SearchPatternType,
+} from '../../../../../graphql-operations'
 import { CategoricalChartContent } from '../../backend/code-insights-backend-types'
 
 import { LivePreviewStatus, State } from './types'
@@ -121,17 +127,22 @@ async function getLangStats(inputs: GetInsightContentInputs): Promise<Categorica
     }
 
     const totalLines = sum(stats.languages.map(language => language.totalLines))
-    const linkURL = new URL('/stats', window.location.origin)
-
-    linkURL.searchParams.set('q', query)
 
     const [notOther, other] = partition(stats.languages, language => language.totalLines / totalLines >= otherThreshold)
+    const OTHER_NAME = 'Other'
     const data = await Promise.all(
         [...notOther, { name: 'Other', totalLines: sum(other.map(language => language.totalLines)) }].map(
             async language => ({
                 ...language,
                 fill: await getLangColor(language.name),
-                linkURL: linkURL.href,
+                linkURL: createLinkUrl({
+                    pathname: '/search',
+                    search: buildSearchURLQuery(
+                        language.name === OTHER_NAME ? query : `${query} lang:${quoteIfNeeded(language.name)}`,
+                        SearchPatternType.standard,
+                        false
+                    ),
+                }),
             })
         )
     )
@@ -143,6 +154,10 @@ async function getLangStats(inputs: GetInsightContentInputs): Promise<Categorica
         getDatumName: datum => datum.name,
         getDatumValue: datum => datum.totalLines,
     }
+}
+
+function quoteIfNeeded(value: string): string {
+    return value.includes(' ') ? `"${value}"` : value
 }
 
 export const GET_LANG_STATS_GQL = gql`

@@ -314,7 +314,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             })
         }
 
-        const filtersWithExternalServices = FILTERS
+        const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
         filtersWithExternalServices.push({
             id: 'codeHost',
             label: 'Code Host',

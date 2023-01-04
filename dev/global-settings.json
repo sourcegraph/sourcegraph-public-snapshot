@@ -2,12 +2,9 @@
   // This is set from an environment variable
   "experimentalFeatures": {
     "batchChangesExecution": true,
-    "showRepogroupHomepage": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeInsights": true,
     "codeIntelRepositoryBadge": { "enabled": true },
-    "coolCodeIntel": true,
     "enableLazyBlobSyntaxHighlighting": true,
     "enableLazyFileResultSyntaxHighlighting": true,
     "enableSearchFilePrefetch": true,
