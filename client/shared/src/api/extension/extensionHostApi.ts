@@ -1,6 +1,6 @@
 import { proxy } from 'comlink'
-import { castArray, groupBy, identity, isEqual } from 'lodash'
-import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable, throwError } from 'rxjs'
+import { castArray, isEqual } from 'lodash'
+import { combineLatest, concat, from, Observable, of, Subscribable, throwError } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -10,7 +10,7 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import { FileDecorationContext, ProviderResult } from 'sourcegraph'
+import { ProviderResult } from 'sourcegraph'
 
 import {
     fromHoverMerged,
@@ -36,7 +36,6 @@ import { Context } from '@sourcegraph/template-parser'
 import type {
     ReferenceContext,
     DocumentSelector,
-    FileDecoration,
     NotificationType as LegacyNotificationType,
     Progress,
     DirectoryViewContext,
@@ -58,7 +57,6 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './api/contribution'
-import { validateFileDecoration } from './api/decorations'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
 import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
@@ -237,29 +235,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             )
         },
 
-        // Decorations
-        getFileDecorations: (parameters: FileDecorationContext) =>
-            proxySubscribable(
-                parameters.files.length === 0
-                    ? EMPTY // Don't call providers when there are no files in the directory
-                    : callProviders(
-                          state.fileDecorationProviders,
-                          identity,
-                          // No need to filter
-                          provider => provider.provideFileDecorations(parameters),
-                          mergeProviderResults
-                      ).pipe(
-                          map(({ result }) =>
-                              groupBy(
-                                  result.filter(validateFileDecoration),
-                                  // Get path from uri to key by path.
-                                  // Path should always exist, but fall back to uri just in case
-                                  ({ uri }) => parseRepoURI(uri).filePath || uri
-                              )
-                          )
-                      )
-            ),
-
         // MODELS
 
         //  TODO(tj): if not exists? doesn't seem that we can guarantee that just based on uri
@@ -309,11 +284,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
             viewer.update({ selections })
-        },
-        getTextDecorations: ({ viewerId }) => {
-            const viewer = getViewer(viewerId)
-            assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.mergedDecorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
@@ -614,9 +584,6 @@ export function mergeProviderResults<TProviderResultElement>(
         .flatMap(castArray)
         .filter(isDefined)
 }
-
-/** Object of array of file decorations keyed by path relative to repo root uri */
-export type FileDecorationsByPath = Record<string, FileDecoration[] | undefined>
 
 // Viewers + documents
 

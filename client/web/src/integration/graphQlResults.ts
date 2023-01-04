@@ -90,7 +90,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             authProviders: {
                 nodes: [builtinAuthProvider],
             },
-            disableBuiltInSearches: false,
             sendsEmailVerificationEmails: true,
             updateCheck: {
                 pending: false,

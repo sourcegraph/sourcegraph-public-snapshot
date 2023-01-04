@@ -1491,6 +1491,7 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
+github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5/go.mod h1:W54LbzXuIE0boCoNJfwqpmkKJ1O4TCTZMetAt6jGk7Q=
 github.com/juju/loggo v0.0.0-20180524022052-584905176618/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
@@ -1498,6 +1499,8 @@ github.com/juju/testing v0.0.0-20180920084828-472a3e8b2073/go.mod h1:63prj8cnj0t
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213/go.mod h1:vNUNkEQ1e29fT/6vq2aBdFsgNPmy8qMdSay1npru+Sw=
+github.com/k3a/html2text v1.1.0 h1:ks4hKSTdiTRsLr0DM771mI5TvsoG6zH7m1Ulv7eJRHw=
+github.com/k3a/html2text v1.1.0/go.mod h1:ieEXykM67iT8lTvEWBh6fhpH4B23kB9OMKPdIBmgUqA=
 github.com/karlseguin/expect v1.0.7/go.mod h1:lXdI8iGiQhmzpnnmU/EGA60vqKs8NbRNFnhhrJGoD5g=
 github.com/karlseguin/typed v1.1.7/go.mod h1:329jL66F7EH9O3xIBv2GAIFnMHIxH55NCQ78LUbZoJM=
 github.com/karlseguin/typed v1.1.8 h1:ND0eDpwiUFIrm/n1ehxUyh/XNGs9zkYrLxtGqENSalY=
@@ -2053,9 +2056,11 @@ github.com/slack-go/slack v0.10.1/go.mod h1:wWL//kk0ho+FcQXcBTmEafUI5dz4qz5f4mMk
 github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3 h1:WrsSqod9T70HFyq8hjL6wambOKb4ISUXzFUuNTJHDwo=
 github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3/go.mod h1:EiUuVMUfLQj8Sul+S8aKWJwQy7FRYnJCO2EWzf8F5hk=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
+github.com/smartystreets/assertions v1.0.0 h1:UVQPSSmc3qtTi+zPPkCXvZX9VvW/xT/NsRvKfwY81a8=
 github.com/smartystreets/assertions v1.0.0/go.mod h1:kHHU4qYBaI3q23Pp3VPrmWhuIUrLW/7eUrw0BU5VaoM=
 github.com/smartystreets/go-aws-auth v0.0.0-20180515143844-0c1422d1fdb9/go.mod h1:SnhjPscd9TpLiy1LpzGSKh3bXCfxxXuqd9xmQJy3slM=
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
+github.com/smartystreets/goconvey v1.6.4 h1:fv0U8FUIMPNf1L9lnHLvLhgicrIVChEkdzIKYqbNC9s=
 github.com/smartystreets/goconvey v1.6.4/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/smartystreets/gunit v1.0.0/go.mod h1:qwPWnhz6pn0NnRBP++URONOVyNkPyr4SauJk4cUOwJs=
 github.com/snabb/diagio v1.0.0 h1:kovhQ1rDXoEbmpf/T5N2sUp2iOdxEg+TcqzbYVHV2V0=
@@ -2073,8 +2078,6 @@ github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34c
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
 github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3 h1:11miag7hlORpW7ici5mL7T9PyiEsmVmf+8PFOvJ/ZrA=
 github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
-github.com/sourcegraph/go-jsonschema v0.0.0-20221228090406-5f704b86591e h1:R0vCd1/CDIbm/iypLujq3Z1uq4arsy4Iw72GqF7K/pM=
-github.com/sourcegraph/go-jsonschema v0.0.0-20221228090406-5f704b86591e/go.mod h1:goP7pT11h9c+Si536Xljl1xWYEEXUhp0pBEtM++plHc=
 github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac h1:Bq9XPdAOBkA9NWeNEh2VeIlGlizg9rL5VkYFZje2S+4=
 github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac/go.mod h1:goP7pT11h9c+Si536Xljl1xWYEEXUhp0pBEtM++plHc=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=

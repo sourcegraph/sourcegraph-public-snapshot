@@ -774,6 +774,11 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
 				folder := app
+				if app == "gitserver-ms-git" {
+					// experimental, build a git-ms fork flavored version
+					// Hack owners: @jhchabran, @varsanojidan
+					folder = "gitserver"
+				}
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
 					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
@@ -793,7 +798,11 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				// Allow all
 				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
+			if app == "gitserver-ms-git" {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
+			} else {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			}
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
@@ -853,6 +862,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
+
+		if app == "gitserver-ms-git" && !c.RunType.Is(runtype.MainBranch) {
+			// Just NOP if we're not on main, we don't want to publish anything involving this experiment.
+			return
+		}
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {

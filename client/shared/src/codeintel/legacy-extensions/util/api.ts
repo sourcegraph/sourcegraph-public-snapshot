@@ -510,6 +510,7 @@ type LocalCodeIntelResponse = GenericBlobResponse<{ localCodeIntel: string }>
 const localCodeIntelQuery = gql`
     query LocalCodeIntel($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
                 blob(path: $path) {
                     localCodeIntel

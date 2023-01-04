@@ -80,12 +80,10 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 className="repo-revision-container__sidebar"
                 history={context.history}
                 revision={context.revision}
-                isLightTheme={context.isLightTheme}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
-                extensionsController={context.extensionsController}
                 commitID={resolvedRevision?.commitID}
                 filePath={filePath}
                 repoID={repo?.id}

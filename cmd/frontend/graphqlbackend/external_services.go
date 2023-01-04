@@ -238,36 +238,41 @@ func addRepoToExclude(ctx context.Context, externalService *types.ExternalServic
 		return "", err
 	}
 
+	// we need to use a `org/repo` repo name format in `exclude` section of code host
+	// config, hence trimming the host: `github.com/sourcegraph/sourcegraph` becomes
+	// `sourcegraph/sourcegraph`.
+	repoName := trimHostFromRepoName(string(repository.Name))
+
 	switch c := config.(type) {
 	case *schema.AWSCodeCommitConnection:
-		exclusion := &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)}
+		exclusion := &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
 		}
 	case *schema.BitbucketCloudConnection:
-		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: string(repository.Name)}
+		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: repoName})
 		}
 	case *schema.BitbucketServerConnection:
-		exclusion := &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: string(repository.Name)}
+		exclusion := &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName})
 		}
 	case *schema.GitHubConnection:
-		exclusion := &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)}
+		exclusion := &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
 		}
 	case *schema.GitLabConnection:
-		exclusion := &schema.ExcludedGitLabProject{Name: string(repository.Name)}
+		exclusion := &schema.ExcludedGitLabProject{Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: repoName})
 		}
 	case *schema.GitoliteConnection:
-		exclusion := &schema.ExcludedGitoliteRepo{Name: string(repository.Name)}
+		exclusion := &schema.ExcludedGitoliteRepo{Name: repoName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: string(repository.Name)})
+			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repoName})
 		}
 	}
 
@@ -276,6 +281,17 @@ func addRepoToExclude(ctx context.Context, externalService *types.ExternalServic
 		return "", err
 	}
 	return string(strConfig), nil
+}
+
+// trimHostFromRepoName removes host from full repo name. It does it in the same
+// way as it is done before rendering repo name on the UI. See RepoLink
+// component.
+func trimHostFromRepoName(name string) string {
+	parts := strings.Split(name, "/")
+	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
+		return strings.Join(parts[1:], "/")
+	}
+	return strings.Join(parts, "/")
 }
 
 func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) bool {

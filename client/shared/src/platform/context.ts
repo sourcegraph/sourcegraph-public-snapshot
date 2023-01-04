@@ -1,6 +1,6 @@
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
-import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
+import { Observable, Subscribable, Subscription } from 'rxjs'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { ErrorLike, hasProperty } from '@sourcegraph/common'
@@ -187,12 +187,6 @@ export interface PlatformContext {
      * fixed.
      */
     clientApplication: 'sourcegraph' | 'other'
-
-    /**
-     * The URL to the Parcel dev server for a single extension.
-     * Used for extension development purposes, to run an extension that isn't on the registry.
-     */
-    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
 
     /**
      * A telemetry service implementation to log events.

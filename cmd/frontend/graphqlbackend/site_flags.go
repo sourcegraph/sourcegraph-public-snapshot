@@ -42,10 +42,6 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 	return count == 0, nil
 }
 
-func (*siteResolver) DisableBuiltInSearches() bool {
-	return conf.Get().DisableBuiltInSearches
-}
-
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }
 
 func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
