@@ -24,7 +24,12 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
     isSourcegraphDotCom: boolean
 }
@@ -34,6 +39,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
+
+    const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
@@ -46,6 +53,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
+        if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
+            return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
         if (provider.serviceType === 'sourcegraph-operator') {

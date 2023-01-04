@@ -38,7 +38,6 @@ func newTest(t *testing.T) *httptestutil.Client {
 			GitHubSyncWebhook:             enterpriseServices.ReposGithubWebhook,
 			GitLabSyncWebhook:             enterpriseServices.ReposGitLabWebhook,
 			BitbucketServerSyncWebhook:    enterpriseServices.ReposBitbucketServerWebhook,
-			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
 			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
 			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
