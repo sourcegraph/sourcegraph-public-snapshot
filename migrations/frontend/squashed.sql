@@ -5335,7 +5335,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'DEFAULT', '2023-01-03 19:43:59.232924+00', NULL, true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-03 19:43:59.232924+00', NULL, true);
+INSERT INTO roles VALUES (1, 'DEFAULT', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);
