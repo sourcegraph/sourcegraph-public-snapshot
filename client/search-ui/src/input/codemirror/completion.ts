@@ -49,6 +49,7 @@ import * as H from 'history'
 import { isEqual, startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createFilterSuggestions,
@@ -321,6 +322,7 @@ export interface DefaultSuggestionSourcesOptions {
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
     showWhenEmpty?: boolean
+    userHistory?: UserHistory
 }
 
 /**
@@ -447,6 +449,7 @@ export function createDefaultSuggestionSources(
                 if (results.length === 0) {
                     return null
                 }
+                sortSearchMatchesByUserHistory(options.userHistory, results)
 
                 const filteredResults = results
                     .filter(match => match.type === resolvedFilter.definition.suggestions)
@@ -455,7 +458,7 @@ export function createDefaultSuggestionSources(
                     )
                     .filter(isDefined)
 
-                const insidePredicate = token.value ? PREDICATE_REGEX.test(token.value.value) : false
+                const insidePredicate: boolean = token.value ? PREDICATE_REGEX.test(token.value.value) : false
 
                 return {
                     from: token.value?.range.start ?? token.range.end,
@@ -483,6 +486,7 @@ export function createDefaultSuggestionSources(
                 if (results.length === 0) {
                     return null
                 }
+                sortSearchMatchesByUserHistory(options.userHistory, results)
 
                 return {
                     from: token.range.start,
@@ -501,6 +505,30 @@ export function createDefaultSuggestionSources(
     return sources
 }
 
+// Reorders search suggestions by how recently they have been visited by the user.
+function sortSearchMatchesByUserHistory(userHistory: UserHistory | undefined, matches: SearchMatch[]): void {
+    if (!userHistory) {
+        return
+    }
+    matches.sort((a, b) => {
+        if (a.type === 'repo' && b.type === 'repo') {
+            return (userHistory.lastAccessedRepo(b.repository) ?? 0) - (userHistory.lastAccessedRepo(a.repository) ?? 0)
+        }
+        if (a.type === 'symbol' && b.type === 'symbol') {
+            return (
+                (userHistory.lastAccessedFilePath(b.repository, b.path) ?? 0) -
+                (userHistory.lastAccessedFilePath(a.repository, a.path) ?? 0)
+            )
+        }
+        if (a.type === 'path' && b.type === 'path') {
+            return (
+                (userHistory.lastAccessedFilePath(b.repository, b.path) ?? 0) -
+                (userHistory.lastAccessedFilePath(a.repository, a.path) ?? 0)
+            )
+        }
+        return 0
+    })
+}
 // Returns what kind of type to query for based on existing tokens in the query
 export function suggestionTypeFromTokens(
     tokens: Token[],

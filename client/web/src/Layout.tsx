@@ -178,6 +178,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     }
 
     const context: LayoutRouteComponentProps<any> = {
+        userHistory,
         ...props,
         ...themeProps,
         ...breadcrumbProps,
@@ -226,6 +227,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchNotebooksPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
+                    userHistory={userHistory}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}

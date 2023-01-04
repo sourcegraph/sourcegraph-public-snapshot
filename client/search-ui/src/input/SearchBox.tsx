@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef } from 'react'
 import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -67,6 +68,8 @@ export interface SearchBoxProps
     showSearchHistory?: boolean
 
     recentSearches?: RecentSearch[]
+
+    userHistory?: UserHistory
 }
 
 export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
@@ -78,6 +81,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         onChange,
         selectedSearchContextSpec,
         recentSearches,
+        userHistory,
     } = props
 
     const [usedInlineHistory, setUsedInlineHistory] = useTemporarySetting('search.input.usedInlineHistory', false)
@@ -199,6 +203,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
+                        userHistory={userHistory}
                     />
                     <Toggles
                         patternType={props.patternType}

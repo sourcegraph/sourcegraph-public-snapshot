@@ -3,12 +3,12 @@ import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graph
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import { UserHistory } from '../useUserHistory'
 
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
@@ -52,7 +52,7 @@ export class FuzzySymbols extends FuzzyQuery {
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
         private readonly isGlobalSymbols: boolean,
         private readonly settingsCascade: SettingsCascadeOrError,
-        private readonly userHistory: UserHistory
+        private readonly userHistory?: UserHistory
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -72,7 +72,10 @@ export class FuzzySymbols extends FuzzyQuery {
         return values.map<SearchValue>(({ text, url, symbolKind, repoName, filePath }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            ranking: repoName && filePath ? this.userHistory.lastAccessedFilePath(repoName, filePath) : undefined,
+            ranking:
+                repoName && filePath && this.userHistory
+                    ? this.userHistory.lastAccessedFilePath(repoName, filePath)
+                    : undefined,
             icon: symbolKind ? (
                 <SymbolKind kind={symbolKind} className="mr-1" symbolKindTags={symbolKindTags} />
             ) : undefined,

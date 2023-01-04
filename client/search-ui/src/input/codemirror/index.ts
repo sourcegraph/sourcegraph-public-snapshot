@@ -72,6 +72,7 @@ export const createDefaultSuggestions = ({
     history,
     applyOnEnter,
     showWhenEmpty,
+    userHistory,
 }: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
     history?: H.History
@@ -89,6 +90,7 @@ export const createDefaultSuggestions = ({
             disableFilterCompletion,
             showWhenEmpty,
             applyOnEnter,
+            userHistory,
         }),
         history,
         applyOnEnter

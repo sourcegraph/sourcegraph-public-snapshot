@@ -3,6 +3,7 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useS
 import { ApolloClient } from '@apollo/client'
 import * as H from 'history'
 
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -11,7 +12,6 @@ import { useSessionStorage } from '@sourcegraph/wildcard'
 import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 import { parseBrowserRepoURL } from '../../util/url'
 import { Keybindings, plaintextKeybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
-import { UserHistory } from '../useUserHistory'
 
 import { createActionsFSM, FuzzyActionProps, getAllFuzzyActions } from './FuzzyActions'
 import { FuzzyFiles, FuzzyRepoFiles } from './FuzzyFiles'
@@ -215,7 +215,7 @@ export interface FuzzyTabsProps extends FuzzyActionProps {
     client?: ApolloClient<object>
     initialQuery?: string
     isVisible: boolean
-    userHistory: UserHistory
+    userHistory?: UserHistory
 }
 
 export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {

@@ -3,12 +3,13 @@ import { MockedResponse } from '@apollo/client/testing'
 import * as H from 'history'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FileNamesResult, FuzzyFinderRepoResult, FuzzyFinderSymbolsResult, SymbolKind } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
-import { UserHistory } from '../useUserHistory'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
@@ -42,7 +43,7 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
                 },
             }}
             initialQuery={props.initialQuery}
-            userHistory={new UserHistory()}
+            userHistory={new UserHistory(parseBrowserRepoURL)}
         />
     )
 }

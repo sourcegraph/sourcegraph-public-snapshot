@@ -1,3 +1,4 @@
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import {
     CaseSensitivityProps,
     QueryState,
@@ -47,4 +48,6 @@ export interface QueryInputProps
 
     ariaLabel?: string
     ariaLabelledby?: string
+
+    userHistory?: UserHistory
 }

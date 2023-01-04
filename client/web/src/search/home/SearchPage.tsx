@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -44,6 +45,7 @@ export interface SearchPageProps
 
     // Whether globbing is enabled for filters.
     globbing: boolean
+    userHistory?: UserHistory
 }
 
 /**

@@ -131,6 +131,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     onCompletionItemSelected,
+    userHistory,
 }) => {
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
@@ -160,6 +161,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
                 isSourcegraphDotCom,
                 history,
                 applyOnEnter: applySuggestionsOnEnter,
+                userHistory,
             }),
         [
             globbing,
@@ -168,6 +170,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             applySuggestionsOnEnter,
             fetchStreamSuggestions,
             selectedSearchContextSpec,
+            userHistory,
         ]
     )
 

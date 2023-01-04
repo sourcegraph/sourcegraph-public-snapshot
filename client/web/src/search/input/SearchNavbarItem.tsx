@@ -4,6 +4,7 @@ import * as H from 'history'
 import shallow from 'zustand/shallow'
 
 import { SearchBox } from '@sourcegraph/search-ui'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -30,6 +31,7 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    userHistory?: UserHistory
 }
 
 const selectQueryState = ({

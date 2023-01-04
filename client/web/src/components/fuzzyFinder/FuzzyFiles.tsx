@@ -2,6 +2,7 @@ import { ApolloClient } from '@apollo/client'
 import { mdiFileDocumentOutline } from '@mdi/js'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
@@ -13,7 +14,6 @@ import {
     FuzzyFinderFilesResult,
     FuzzyFinderFilesVariables,
 } from '../../graphql-operations'
-import { UserHistory } from '../useUserHistory'
 
 import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
@@ -111,7 +111,7 @@ export class FuzzyRepoFiles {
         private readonly createURL: createUrlFunction,
         private readonly onNamesChanged: () => void,
         private readonly repoRevision: FuzzyRepoRevision,
-        private readonly userHistory: UserHistory
+        private readonly userHistory?: UserHistory
     ) {}
     public fuzzyFSM(): FuzzyFSM {
         return this.fsm
@@ -138,7 +138,7 @@ export class FuzzyRepoFiles {
         const values: SearchValue[] = filenames.map<SearchValue>(text => ({
             text,
             icon: fileIcon(text),
-            historyRanking: () => this.userHistory.lastAccessedFilePath(this.repoRevision.repositoryName, text),
+            historyRanking: () => this.userHistory?.lastAccessedFilePath(this.repoRevision.repositoryName, text),
         }))
         this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
         this.loopIndexing()
@@ -173,7 +173,7 @@ export class FuzzyFiles extends FuzzyQuery {
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
-        private readonly userHistory: UserHistory
+        private readonly userHistory?: UserHistory
     ) {
         super(onNamesChanged, emptyFuzzyCache)
     }
@@ -184,8 +184,10 @@ export class FuzzyFiles extends FuzzyQuery {
             url,
             icon: fileIcon(text),
             historyRanking: () =>
-                repoName && filePath ? this.userHistory.lastAccessedFilePath(repoName, filePath) : undefined,
-            ranking: repoName ? this.userHistory.lastAccessedRepo(repoName) : undefined,
+                repoName && filePath && this.userHistory
+                    ? this.userHistory.lastAccessedFilePath(repoName, filePath)
+                    : undefined,
+            ranking: repoName && this.userHistory ? this.userHistory.lastAccessedRepo(repoName) : undefined,
         }))
     }
 

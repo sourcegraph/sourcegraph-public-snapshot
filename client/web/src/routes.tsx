@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -37,6 +38,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
+    userHistory?: UserHistory
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {

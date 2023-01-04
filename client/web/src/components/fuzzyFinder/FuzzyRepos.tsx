@@ -3,11 +3,11 @@ import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
+import { UserHistory } from '@sourcegraph/shared/src/components/UserHistory'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/SearchValue'
 import { FuzzyFinderRepoResult, FuzzyFinderRepoVariables } from '../../graphql-operations'
-import { UserHistory } from '../useUserHistory'
 
 import { FuzzyStorageCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
@@ -29,7 +29,7 @@ export class FuzzyRepos extends FuzzyQuery {
     constructor(
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
-        private userHistory: UserHistory
+        private userHistory?: UserHistory
     ) {
         super(
             onNamesChanged,
@@ -51,9 +51,11 @@ export class FuzzyRepos extends FuzzyQuery {
         // present in the local cache. This happens when the user has visited a
         // repository that they haven't searched for in the fuzzy finder.
         const fromHistory = this.userHistory
-            .visitedRepos()
-            .filter(repoName => !queryResultRepos.has(repoName))
-            .map<PersistableQueryResult>(repoName => ({ text: repoName, url: `/${repoName}` }))
+            ? this.userHistory
+                  .visitedRepos()
+                  .filter(repoName => !queryResultRepos.has(repoName))
+                  .map<PersistableQueryResult>(repoName => ({ text: repoName, url: `/${repoName}` }))
+            : []
         return [...queryResults, ...fromHistory].map<SearchValue>(({ text, url, stars }) => {
             const formattedRepositoryStarCount = formatRepositoryStarCount(stars)
             const icon = <CodeHostIcon repoName={text} />
@@ -69,7 +71,7 @@ export class FuzzyRepos extends FuzzyQuery {
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     ) : undefined,
-                historyRanking: () => this.userHistory.lastAccessedRepo(text),
+                historyRanking: () => this.userHistory?.lastAccessedRepo(text),
                 ranking: stars,
             }
         })
