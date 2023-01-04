@@ -41,6 +41,7 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 
 	if len(oldestRecordingTimes.RecordingTimes) == 0 {
 		// this series does not have any data beyond the max sample size
+		logger.Info("data retention procedure not needed", log.Int("seriesID", record.SeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
 	}
 
@@ -48,7 +49,7 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 }
 
 // NewWorker returns a worker that will find what data to prune and separate for a series.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], insightsStore *store.Store, metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "insights_data_retention_worker",
 		NumHandlers:       5,
@@ -59,6 +60,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 	return dbworker.NewWorker[*DataRetentionJob](ctx, workerStore, &dataRetentionHandler{
 		baseWorkerStore: workerStore,
+		insightsStore:   insightsStore,
 	}, options)
 }
 
