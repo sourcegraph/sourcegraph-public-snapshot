@@ -158,6 +158,9 @@ func pageContent(content []string, startLine, endLine *int32) string {
 	startCursor := 0
 	endCursor := totalContentLength
 
+	// Any nil or illegal value for startLine or endLine gets set to either the start or
+	// end of the file respectively.
+
 	// If startLine is set and is a legit value, set the cursor to point to it.
 	if startLine != nil && *startLine > 0 {
 		// The left index is inclusive, so we have to shift it back by 1
@@ -174,6 +177,12 @@ func pageContent(content []string, startLine, endLine *int32) string {
 	if endCursor > totalContentLength {
 		endCursor = totalContentLength
 	}
+
+	// Final failsafe in case someone is really messing around with this API.
+	if endCursor < startCursor {
+		return strings.Join(content[0:totalContentLength], "\n")
+	}
+
 	return strings.Join(content[startCursor:endCursor], "\n")
 }
 

@@ -4596,11 +4596,11 @@ type GitCommit implements Node {
     blob(
         path: String!
         """
-        Return blob content starting at line "startLine".
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
         """
         startLine: Int
         """
-        Return blob content ending at line "endLine".
+        Return blob content ending at line "endLine". A value < 0 will set endLine to the end of the file.
         """
         endLine: Int
     ): GitBlob
@@ -4611,11 +4611,11 @@ type GitCommit implements Node {
     file(
         path: String!
         """
-        Return blob content starting at line "startLine".
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
         """
         startLine: Int
         """
-        Return blob content ending at line "endLine".
+        Return blob content ending at line "endLine". A value < 0 will set endLine to the end of the file.
         """
         endLine: Int
     ): File2

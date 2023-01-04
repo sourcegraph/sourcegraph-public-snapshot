@@ -123,6 +123,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 			endLine:     int32(7),
 			wantContent: "",
 		},
+		{
+			startLine:   int32(5),
+			endLine:     int32(2),
+			wantContent: "1\n2\n3\n4\n5\n6",
+		},
 	}
 
 	for _, tc := range tests {
