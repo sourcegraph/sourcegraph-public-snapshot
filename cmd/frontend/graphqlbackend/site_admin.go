@@ -177,7 +177,7 @@ func (r *schemaResolver) hardDelete(ctx context.Context, org graphql.ID) (*Empty
 func (r *schemaResolver) softDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
 	// For Cloud, orgs can only be hard deleted.
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("soft deleting organization in not supported on Sourcegraph.com")
+		return nil, errors.New("soft deleting organization is not supported on Sourcegraph.com")
 	}
 
 	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
