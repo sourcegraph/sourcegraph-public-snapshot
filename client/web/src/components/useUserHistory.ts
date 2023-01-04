@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import * as H from 'history'
 
@@ -11,6 +11,9 @@ export interface UserHistoryEntry {
 }
 
 const LAST_REPO_ACCESS_FILEPATH = 'sourcegraph-last-repo-access.timestamp'
+const LOCAL_STORAGE_KEY = 'user-history'
+/** Maximum number of browser history entries to persist in local storage */
+const MAX_LOCAL_STORAGE_COUNT = 100
 
 /**
  * Collects all browser history events and stores which repos/files are visited
@@ -22,17 +25,33 @@ const LAST_REPO_ACCESS_FILEPATH = 'sourcegraph-last-repo-access.timestamp'
 export class UserHistory {
     private repos: Map<string, Map<string, number>> = new Map()
     private storage = window.localStorage
-    private storageKey = 'user-history'
     constructor() {
         for (const entry of this.loadEntries()) {
             this.onEntry(entry)
         }
     }
     private saveEntries(entries: UserHistoryEntry[]): void {
-        this.storage.setItem(this.storageKey, JSON.stringify(entries))
+        entries.sort((a, b) => b.lastAccessed - a.lastAccessed)
+        const truncated = entries.slice(0, MAX_LOCAL_STORAGE_COUNT)
+        this.storage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(truncated))
+        for (let index = MAX_LOCAL_STORAGE_COUNT; index < entries.length; index++) {
+            // Synchronize persisted entries with in-memory entries so that
+            // reloading the page doesn't change which entries are available.
+            this.deleteEntry(entries[index])
+        }
     }
     private loadEntries(): UserHistoryEntry[] {
-        return JSON.parse(this.storage.getItem(this.storageKey) ?? '[]')
+        return JSON.parse(this.storage.getItem(LOCAL_STORAGE_KEY) ?? '[]')
+    }
+    private deleteEntry(entry: UserHistoryEntry): void {
+        if (!entry.filePath) {
+            return
+        }
+        const repo = this.repos.get(entry.repoName)
+        if (!repo) {
+            return
+        }
+        repo.delete(entry.filePath)
     }
     public onEntry(entry: UserHistoryEntry): void {
         let repo = this.repos.get(entry.repoName)
@@ -87,9 +106,14 @@ export class UserHistory {
 }
 
 export function useUserHistory(history: H.History, isRepositoryRelatedPage: boolean): UserHistory {
+    const {
+        location: { pathname },
+    } = history
     const userHistory = useMemo(() => new UserHistory(), [])
-    if (isRepositoryRelatedPage) {
-        userHistory.onLocation(history.location)
-    }
+    useEffect(() => {
+        if (isRepositoryRelatedPage) {
+            userHistory.onLocation(history.location)
+        }
+    }, [pathname])
     return userHistory
 }
