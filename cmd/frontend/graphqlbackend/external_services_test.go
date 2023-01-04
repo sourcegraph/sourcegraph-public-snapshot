@@ -243,14 +243,14 @@ func TestExcludeRepoFromExternalService_ExternalServiceDoesntSupportRepoExclusio
 				}
 			}
 		`,
-		ExpectedResult: `
+		ExpectedErrors: []*gqlerrors.QueryError{
 			{
-				"excludeRepoFromExternalService": {
-					"alwaysNil": null
-				}
-			}
-		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Path:    []any{"excludeRepoFromExternalService"},
+				Message: "external service does not support repo exclusion",
+			},
+		},
+		ExpectedResult: "null",
+		Context:        actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
 	assert.Nil(t, cachedUpdate)

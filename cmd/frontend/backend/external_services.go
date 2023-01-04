@@ -39,7 +39,7 @@ type externalServices struct {
 
 func NewExternalServices(logger log.Logger, db database.DB, repoupdaterClient *repoupdater.Client) ExternalServicesService {
 	return &externalServices{
-		logger:            logger,
+		logger:            logger.Scoped("ExternalServices", "service related to external service functionality"),
 		db:                db,
 		repoupdaterClient: repoupdaterClient,
 	}
@@ -84,55 +84,65 @@ func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, e
 		return err
 	}
 
-	tx, err := e.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-
-	externalServices := tx.ExternalServices()
-	externalService, err := externalServices.GetByID(ctx, externalServiceID)
-	if err != nil {
-		return err
-	}
-
 	logger := e.logger.Scoped("ExcludeRepoFromExternalService", "excluding a repo from external service config").With(
 		log.Int64("externalServiceID", externalServiceID),
 		log.Int32("repoID", int32(repoID)),
 	)
 
+	externalService, err := e.updateExternalServiceToExcludeRepo(ctx, logger, externalServiceID, repoID)
+	if err != nil {
+		return err
+	}
+	// Error during triggering a sync is omitted, because this should not prevent
+	// from excluding the repo. The repo stays excluded and the sync will come
+	// eventually.
+	if err := e.SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
+		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+	}
+	return nil
+}
+
+func (e *externalServices) updateExternalServiceToExcludeRepo(
+	ctx context.Context,
+	logger log.Logger,
+	externalServiceID int64,
+	repoID api.RepoID,
+) (*types.ExternalService, error) {
+	tx, err := e.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	externalServices := tx.ExternalServices()
+	externalService, err := externalServices.GetByID(ctx, externalServiceID)
+	if err != nil {
+		return nil, err
+	}
+
 	// If external service doesn't support repo exclusion, then return.
 	if !externalService.SupportsRepoExclusion() {
 		logger.Warn("external service does not support repo exclusion")
-		return nil
+		return nil, errors.New("external service does not support repo exclusion")
 	}
 
 	repository, err := tx.Repos().Get(ctx, repoID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	updatedConfig, err := addRepoToExclude(ctx, logger, externalService, repository)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = externalServices.Update(ctx, conf.Get().AuthProviders, externalServiceID, &database.ExternalServiceUpdate{Config: &updatedConfig})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	if err = tx.Done(err); err != nil {
-		return err
-	}
-
-	// Error during triggering a sync is omitted, because this should not prevent
-	// from excluding the repo. The repo stays excluded and the sync will come
-	// eventually.
-	err = e.SyncExternalService(ctx, externalService, syncExternalServiceTimeout)
-	if err != nil {
-		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
-	}
-	return nil
+	return externalService, nil
 }
 
 func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *types.ExternalService, repository *types.Repo) (string, error) {

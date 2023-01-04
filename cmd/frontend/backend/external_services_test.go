@@ -32,42 +32,42 @@ func TestAddRepoToExclude(t *testing.T) {
 		{
 			name:           "second attempt of excluding same repo is ignored for AWSCodeCommit schema",
 			kind:           extsvc.KindAWSCodeCommit,
-			repo:           MakeAWSCodeCommitRepo(),
+			repo:           makeAWSCodeCommitRepo(),
 			initialConfig:  `{"accessKeyID":"accessKeyID","gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"name":"test"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
 			kind:           extsvc.KindBitbucketCloud,
-			repo:           MakeBitbucketCloudRepo(),
+			repo:           makeBitbucketCloudRepo(),
 			initialConfig:  `{"appPassword":"","url":"https://bitbucket.org","username":""}`,
 			expectedConfig: `{"appPassword":"","exclude":[{"name":"sg/sourcegraph"}],"url":"https://bitbucket.org","username":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketServer schema",
 			kind:           extsvc.KindBitbucketServer,
-			repo:           MakeBitbucketServerRepo(),
+			repo:           makeBitbucketServerRepo(),
 			initialConfig:  `{"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 			expectedConfig: `{"exclude":[{"name":"SOURCEGRAPH/jsonrpc2"}],"repositoryQuery":["none"],"token":"abc","url":"https://bitbucket.sg.org","username":""}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitHub schema",
 			kind:           extsvc.KindGitHub,
-			repo:           MakeGithubRepo(),
+			repo:           makeGithubRepo(),
 			initialConfig:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			expectedConfig: `{"exclude":[{"name":"sourcegraph/conc"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for GitLab schema",
 			kind:           extsvc.KindGitLab,
-			repo:           MakeGitlabRepo(),
+			repo:           makeGitlabRepo(),
 			initialConfig:  `{"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
 			expectedConfig: `{"exclude":[{"name":"gitlab-org/gitaly"}],"projectQuery":null,"token":"abc","url":"https://gitlab.com"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for Gitolite schema",
 			kind:           extsvc.KindGitolite,
-			repo:           MakeGitoliteRepo(),
+			repo:           makeGitoliteRepo(),
 			initialConfig:  `{"host":"gitolite.com","prefix":""}`,
 			expectedConfig: `{"exclude":[{"name":"vegeta"}],"host":"gitolite.com","prefix":""}`,
 		},
@@ -102,14 +102,14 @@ func TestRepoExcludableRepoName(t *testing.T) {
 		repo         *types.Repo
 		expectedName string
 	}{
-		"Successful parsing of AWSCodeCommit repo excludable name":   {repo: MakeAWSCodeCommitRepo(), expectedName: "test"},
-		"Successful parsing of BitbucketCloud repo excludable name":  {repo: MakeBitbucketCloudRepo(), expectedName: "sg/sourcegraph"},
-		"Successful parsing of BitbucketServer repo excludable name": {repo: MakeBitbucketServerRepo(), expectedName: "SOURCEGRAPH/jsonrpc2"},
-		"Successful parsing of GitHub repo excludable name":          {repo: MakeGithubRepo(), expectedName: "sourcegraph/conc"},
-		"Successful parsing of GitLab repo excludable name":          {repo: MakeGitlabRepo(), expectedName: "gitlab-org/gitaly"},
-		"Successful parsing of Gitolite repo excludable name":        {repo: MakeGitoliteRepo(), expectedName: "vegeta"},
-		"GitoliteRepo doesn't have a name, empty result":             {repo: MakeGitoliteRepoParams(true, false), expectedName: ""},
-		"GitoliteRepo doesn't have metadata, empty result":           {repo: MakeGitoliteRepoParams(false, false), expectedName: ""},
+		"Successful parsing of AWSCodeCommit repo excludable name":   {repo: makeAWSCodeCommitRepo(), expectedName: "test"},
+		"Successful parsing of BitbucketCloud repo excludable name":  {repo: makeBitbucketCloudRepo(), expectedName: "sg/sourcegraph"},
+		"Successful parsing of BitbucketServer repo excludable name": {repo: makeBitbucketServerRepo(), expectedName: "SOURCEGRAPH/jsonrpc2"},
+		"Successful parsing of GitHub repo excludable name":          {repo: makeGithubRepo(), expectedName: "sourcegraph/conc"},
+		"Successful parsing of GitLab repo excludable name":          {repo: makeGitlabRepo(), expectedName: "gitlab-org/gitaly"},
+		"Successful parsing of Gitolite repo excludable name":        {repo: makeGitoliteRepo(), expectedName: "vegeta"},
+		"GitoliteRepo doesn't have a name, empty result":             {repo: makeGitoliteRepoParams(true, false), expectedName: ""},
+		"GitoliteRepo doesn't have metadata, empty result":           {repo: makeGitoliteRepoParams(false, false), expectedName: ""},
 	}
 
 	for testName, testCase := range testCases {
@@ -120,8 +120,8 @@ func TestRepoExcludableRepoName(t *testing.T) {
 	}
 }
 
-// MakeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
-func MakeAWSCodeCommitRepo() *types.Repo {
+// makeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
+func makeAWSCodeCommitRepo() *types.Repo {
 	repo := typestest.MakeRepo("git-codecommit.us-est-1.amazonaws.com/test", "arn:aws:codecommit:us-west-1:133780085999:", extsvc.TypeAWSCodeCommit)
 	repo.Metadata = &awscodecommit.Repository{
 		ARN:          "arn:aws:codecommit:us-west-1:133780085999:test",
@@ -133,8 +133,8 @@ func MakeAWSCodeCommitRepo() *types.Repo {
 	return repo
 }
 
-// MakeBitbucketCloudRepo returns a configured Bitbucket Cloud repository.
-func MakeBitbucketCloudRepo() *types.Repo {
+// makeBitbucketCloudRepo returns a configured Bitbucket Cloud repository.
+func makeBitbucketCloudRepo() *types.Repo {
 	repo := typestest.MakeRepo("bitbucket.org/sg/sourcegraph", "https://bitbucket.org/", extsvc.TypeBitbucketCloud)
 	mdStr := &bitbucketcloud.Repo{
 		FullName: "sg/sourcegraph",
@@ -143,8 +143,8 @@ func MakeBitbucketCloudRepo() *types.Repo {
 	return repo
 }
 
-// MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
-func MakeBitbucketServerRepo() *types.Repo {
+// makeBitbucketServerRepo returns a configured Bitbucket Server repository.
+func makeBitbucketServerRepo() *types.Repo {
 	repo := typestest.MakeRepo("bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2", "https://bitbucket.sgdev.org/", extsvc.TypeBitbucketServer)
 	repo.Metadata = `{"id": 10066, "name": "jsonrpc2", "slug": "jsonrpc2", "links": {"self": [{"href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/jsonrpc2/browse"}], "clone": [{"href": "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/jsonrpc2.git", "name": "ssh"}, {"href": "https://bitbucket.sgdev.org/scm/sourcegraph/jsonrpc2.git", "name": "http"}]}, "scmId": "git", "state": "AVAILABLE", "origin": null, "public": false, "project": {"id": 28, "key": "SOURCEGRAPH", "name": "Sourcegraph e2e testing", "type": "NORMAL", "links": {"self": [{"href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}, "public": false}, "forkable": true, "statusMessage": "Available"}`
 	repo.Metadata = &bitbucketserver.Repo{
@@ -160,8 +160,8 @@ func MakeBitbucketServerRepo() *types.Repo {
 	return repo
 }
 
-// MakeGithubRepo returns a configured Github repository.
-func MakeGithubRepo() *types.Repo {
+// makeGithubRepo returns a configured Github repository.
+func makeGithubRepo() *types.Repo {
 	repo := typestest.MakeRepo("github.com/sourcegraph/conc", "https://github.com/", extsvc.TypeGitHub)
 	repo.Metadata = &github.Repository{
 		ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
@@ -173,8 +173,8 @@ func MakeGithubRepo() *types.Repo {
 	return repo
 }
 
-// MakeGitlabRepo returns a configured Gitlab repository.
-func MakeGitlabRepo() *types.Repo {
+// makeGitlabRepo returns a configured Gitlab repository.
+func makeGitlabRepo() *types.Repo {
 	repo := typestest.MakeRepo("gitlab.com/gitlab-org/gitaly", "https://gitlab.com/", extsvc.TypeGitLab)
 	repo.Metadata = &gitlab.Project{
 		ProjectCommon: gitlab.ProjectCommon{
@@ -191,8 +191,8 @@ func MakeGitlabRepo() *types.Repo {
 	return repo
 }
 
-// MakeGitoliteRepo returns a configured Gitolite repository.
-func MakeGitoliteRepoParams(addMetadata bool, includeName bool) *types.Repo {
+// makeGitoliteRepo returns a configured Gitolite repository.
+func makeGitoliteRepoParams(addMetadata bool, includeName bool) *types.Repo {
 	repo := typestest.MakeRepo("gitolite.sgdev.org/vegeta", "git@gitolite.sgdev.org", extsvc.TypeGitolite)
 	if addMetadata {
 		metadata := &gitolite.Repo{
@@ -206,6 +206,6 @@ func MakeGitoliteRepoParams(addMetadata bool, includeName bool) *types.Repo {
 	return repo
 }
 
-func MakeGitoliteRepo() *types.Repo {
-	return MakeGitoliteRepoParams(true, true)
+func makeGitoliteRepo() *types.Repo {
+	return makeGitoliteRepoParams(true, true)
 }
