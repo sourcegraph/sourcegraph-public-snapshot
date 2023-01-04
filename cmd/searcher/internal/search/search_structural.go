@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"path/filepath"
 	"sort"
@@ -445,6 +444,8 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
 
+	logger := log.Scoped("comby", "runCombyAgainstTar")
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -454,11 +455,11 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 		defer tw.Close()
 		for tb := range tarInput.TarInputEventC {
 			if err := tw.WriteHeader(&tb.Header); err != nil {
-				log.NamedError(fmt.Sprintf("failed to write tar header for file %s", tb.Header.Name), err)
+				logger.Error("failed to write tar header", log.String("file", tb.Header.Name), log.Error(err))
 				continue
 			}
 			if _, err := tw.Write(tb.Content); err != nil {
-				log.NamedError(fmt.Sprintf("failed to write file content to tar format for file %s", tb.Header.Name), err)
+				logger.Error("failed to write file content to tar", log.String("file", tb.Header.Name), log.Error(err))
 				continue
 			}
 		}
@@ -482,7 +483,7 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 		if err := scanner.Err(); err != nil {
 			// warn on scanner errors and skip
-			log.NamedError("comby error: skipping scanner error line", err)
+			logger.Error("failed to scan", log.Error(err))
 		}
 	}()
 
@@ -509,6 +510,8 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	}
 	defer zipReader.Close()
 
+	logger := log.Scoped("comby", "runCombyAgainstZip")
+
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
 
@@ -527,7 +530,7 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 			if cfm != nil {
 				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
 				if err != nil {
-					log.NamedError("error converting comby match to FileMatch, skipping", err)
+					logger.Error("failed to convert comby match to FileMatch, skipping", log.Error(err))
 					continue
 				}
 				sender.Send(fm)
@@ -536,7 +539,7 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 
 		if err := scanner.Err(); err != nil {
 			// warn on scanner errors and skip
-			log.NamedError("comby error: skipping scanner error line", err)
+			logger.Error("scan failed", log.Error(err))
 		}
 	}()
 
