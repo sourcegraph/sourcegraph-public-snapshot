@@ -18,16 +18,6 @@ func TestGetPackageInformation(t *testing.T) {
 		expectedData         precise.PackageInformationData
 	}{
 		{
-			name:                 "lsif",
-			uploadID:             testLSIFUploadID,
-			path:                 "protocol/protocol.go",
-			packageInformationID: "114",
-			expectedData: precise.PackageInformationData{
-				Name:    "https://github.com/sourcegraph/lsif-go",
-				Version: "ad3507cbeb18",
-			},
-		},
-		{
 			name:                 "scip",
 			uploadID:             testSCIPUploadID,
 			path:                 "protocol/protocol.go",
