@@ -33,7 +33,7 @@ const config = {
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
   transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/comlink|monaco-editor|monaco-yaml|marked|date-fns|react-sticky-box|uuid)',
+    '/node_modules/(?!(?:.pnpm/)?(abortable-rx|@sourcegraph/comlink|monaco-editor|monaco-yaml|marked|date-fns|react-sticky-box|uuid))',
   ],
 
   moduleNameMapper: {

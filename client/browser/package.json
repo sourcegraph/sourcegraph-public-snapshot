@@ -7,7 +7,7 @@
     "pnpm": ">1.10.0"
   },
   "scripts": {
-    "storybook": "STORIES_GLOB='client/browser/src/**/*.story.tsx' pnpm workspace @sourcegraph/storybook run start",
+    "storybook": "STORIES_GLOB='client/browser/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "predev": "pnpm run build-inline-extensions",
     "dev": "pnpm run predev && NODE_ENV=development NODE_OPTIONS=--max_old_space_size=8192 node -r ts-node/register scripts/development",
@@ -16,21 +16,34 @@
     "dev:chrome": "TARGETS=chrome pnpm run dev",
     "dev:edge": "TARGETS=edge pnpm run dev",
     "dev:safari": "TARGETS=safari pnpm run build",
-    "prebuild": "pnpm -T run generate && pnpm run build-inline-extensions",
+    "prebuild": "pnpm -w run generate && pnpm run build-inline-extensions",
     "build": "pnpm run prebuild && NODE_ENV=production NODE_OPTIONS=--max_old_space_size=8192 node -r ts-node/register scripts/build",
     "release": "pnpm release:chrome",
-    "release:chrome": "pnpm run -T webstore upload --auto-publish --source build/bundles/chrome-bundle.zip --extension-id dgjhfomjieaadpoljlnidmbgkdffpack --client-id $GOOGLE_CLIENT_ID --client-secret $GOOGLE_CLIENT_SECRET --refresh-token $GOOGLE_REFRESH_TOKEN",
+    "release:chrome": "pnpm webstore upload --auto-publish --source build/bundles/chrome-bundle.zip --extension-id dgjhfomjieaadpoljlnidmbgkdffpack --client-id $GOOGLE_CLIENT_ID --client-secret $GOOGLE_CLIENT_SECRET --refresh-token $GOOGLE_REFRESH_TOKEN",
     "release:firefox": "./scripts/release-firefox.sh",
-    "release:npm": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" pnpm run -T ts-node ./scripts/publish-npm.ts",
-    "lint": "pnpm run  -T eslint && pnpm run -T stylelint",
-    "lint:js": "pnpm run -T eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "pnpm run -T stylelint 'src/**/*.scss'",
+    "release:npm": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" pnpm ts-node ./scripts/publish-npm.ts",
+    "lint": "pnpm eslint && pnpm stylelint",
+    "lint:js": "pnpm eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "pnpm stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
-    "test": "pnpm run -T jest --testPathIgnorePatterns end-to-end integration",
-    "test-e2e": "pnpm run -T mocha './src/end-to-end/**/*.test.ts'",
-    "run-integration": "TS_NODE_PROJECT=src/integration/tsconfig.json SOURCEGRAPH_BASE_URL=https://sourcegraph.com pnpm run -T mocha --parallel=${CI:-\"false\"} --retries=2 ./src/integration/**/*.test.ts",
+    "test": "pnpm jest --testPathIgnorePatterns end-to-end integration",
+    "test-e2e": "pnpm mocha './src/end-to-end/**/*.test.ts'",
+    "run-integration": "TS_NODE_PROJECT=src/integration/tsconfig.json SOURCEGRAPH_BASE_URL=https://sourcegraph.com pnpm mocha --parallel=${CI:-\"false\"} --retries=2 ./src/integration/**/*.test.ts",
     "test-integration": "node scripts/test-integration",
     "record-integration": "node scripts/record-integration",
     "create-source-zip": "node scripts/create-source-zip"
+  },
+  "devDependencies": {
+    "@sourcegraph/build-config": "workspace:*",
+    "@sourcegraph/extension-api-types": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/branded": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/client-api": "workspace:*",
+    "@sourcegraph/codeintellify": "workspace:*"
   }
 }

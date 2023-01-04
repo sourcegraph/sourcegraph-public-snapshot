@@ -73,6 +73,7 @@ importers:
       '@slack/web-api': ^5.15.0
       '@sourcegraph/eslint-config': 0.32.0
       '@sourcegraph/eslint-plugin-sourcegraph': ^1.0.5
+      '@sourcegraph/eslint-plugin-wildcard': workspace:*
       '@sourcegraph/extension-api-classes': ^1.1.0
       '@sourcegraph/extension-api-stubs': ^1.6.1
       '@sourcegraph/extension-api-types': workspace:*
@@ -565,6 +566,7 @@ importers:
       '@slack/web-api': 5.15.0
       '@sourcegraph/eslint-config': 0.32.0_4htfruiy2bgjslzgmagy6rfrsq
       '@sourcegraph/eslint-plugin-sourcegraph': 1.0.5_el7ggvuufxftzwvu6wsrutnxdi
+      '@sourcegraph/eslint-plugin-wildcard': link:client/eslint-plugin-wildcard
       '@sourcegraph/extension-api-stubs': 1.6.1
       '@sourcegraph/prettierrc': 3.0.3
       '@sourcegraph/stylelint-config': 1.4.0_7st3jml4hcu4j5zt4zxvlqp4du
@@ -779,22 +781,73 @@ importers:
       yauzl: 2.10.0
 
   client/branded:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/search-ui': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/search-ui': link:../search-ui
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/browser:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/build-config:
     specifiers: {}
 
   client/client-api:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/template-parser': workspace:*
+    dependencies:
+      '@sourcegraph/template-parser': link:../template-parser
+    devDependencies:
+      '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/codeintellify:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
+    devDependencies:
+      '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/common:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/extension-api-types': workspace:*
+    devDependencies:
+      '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/eslint-plugin-wildcard:
     specifiers:
@@ -818,26 +871,102 @@ importers:
       sourcegraph: link:../extension-api
 
   client/http-client:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/shared': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/shared': link:../shared
 
   client/jetbrains:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/eslint-plugin-wildcard': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/search-ui': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/storybook': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/search-ui': link:../search-ui
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/eslint-plugin-wildcard': link:../eslint-plugin-wildcard
+      '@sourcegraph/storybook': link:../storybook
 
   client/observability-client:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/common': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
 
   client/observability-server:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/build-config': workspace:*
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
 
   client/search-ui:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/observability-client': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/testing': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/observability-client': link:../observability-client
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/testing': link:../testing
 
   client/shared:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/browser': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/template-parser': workspace:*
+      '@sourcegraph/testing': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/browser': link:../browser
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/template-parser': link:../template-parser
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/extension-api-types': link:../extension-api-types
+      '@sourcegraph/testing': link:../testing
 
   client/storybook:
     specifiers:
-      '@sourcegraph/build-config': workspace:^0.0.1
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
       '@sourcegraph/build-config': link:../build-config
 
@@ -849,15 +978,72 @@ importers:
 
   client/vscode:
     specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/search-ui': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
       vsce: ^2.7.0
+    dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/search-ui': link:../search-ui
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/extension-api-types': link:../extension-api-types
       vsce: 2.7.0
 
   client/web:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/observability-client': workspace:*
+      '@sourcegraph/search-ui': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/storybook': workspace:*
+      '@sourcegraph/testing': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/observability-client': link:../observability-client
+      '@sourcegraph/search-ui': link:../search-ui
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/extension-api-types': link:../extension-api-types
+      '@sourcegraph/storybook': link:../storybook
+      '@sourcegraph/testing': link:../testing
 
   client/wildcard:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/storybook': workspace:*
+      '@sourcegraph/testing': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
+    devDependencies:
+      '@sourcegraph/storybook': link:../storybook
+      '@sourcegraph/testing': link:../testing
 
   dev/release:
     specifiers: {}
@@ -19315,7 +19501,7 @@ packages:
       '@babel/plugin-proposal-optional-chaining': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-syntax-dynamic-import': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-syntax-export-default-from': 7.12.1_@babel+core@7.20.5
-      '@babel/plugin-syntax-flow': 7.12.1_@babel+core@7.20.5
+      '@babel/plugin-syntax-flow': 7.18.6_@babel+core@7.20.5
       '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-syntax-optional-chaining': 7.8.3_@babel+core@7.20.5
       '@babel/plugin-transform-arrow-functions': 7.18.6_@babel+core@7.20.5
@@ -19325,7 +19511,7 @@ packages:
       '@babel/plugin-transform-computed-properties': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-destructuring': 7.20.2_@babel+core@7.20.5
       '@babel/plugin-transform-exponentiation-operator': 7.18.6_@babel+core@7.20.5
-      '@babel/plugin-transform-flow-strip-types': 7.12.1_@babel+core@7.20.5
+      '@babel/plugin-transform-flow-strip-types': 7.19.0_@babel+core@7.20.5
       '@babel/plugin-transform-function-name': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-literals': 7.18.9_@babel+core@7.20.5
       '@babel/plugin-transform-modules-commonjs': 7.19.6_@babel+core@7.20.5
@@ -22002,7 +22188,7 @@ packages:
     resolution: {integrity: sha512-Rw7FzYOOzcfyUPaAm9P3g0tFdGqGq2LLiAI+wjYcp6CsF3DeeMrRS3HZAho4s273C29G/DJhx0e8BpRE/QZNGg==}
     dependencies:
       shell-quote: 1.7.4
-      ws: 7.4.6
+      ws: 7.5.9
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
