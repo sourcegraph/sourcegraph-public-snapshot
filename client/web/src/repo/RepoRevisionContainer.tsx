@@ -21,6 +21,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
+import { NotebookProps } from '../notebooks'
 import { SearchStreamingProps } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
@@ -56,7 +57,8 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        NotebookProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined
 
@@ -92,7 +94,8 @@ interface RepoRevisionContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        NotebookProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
