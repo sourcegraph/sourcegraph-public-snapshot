@@ -15,6 +15,7 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
                 endCursor
                 hasNextPage
             }
+            totalCount
         }
     }
 
