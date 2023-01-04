@@ -480,7 +480,7 @@ var (
 
 func gitservers() *endpoint.Map {
 	const (
-		s = "gitserverh"
+		s = "gitserver"
 		p = "3178"
 		h = ""
 	)
