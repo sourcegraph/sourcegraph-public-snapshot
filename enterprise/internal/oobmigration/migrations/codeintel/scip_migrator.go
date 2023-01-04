@@ -128,6 +128,14 @@ func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
 		return false, nil
 	}
 
+	defer func() {
+		if err != nil {
+			// Wrap any error after this point with the associated upload ID. This will present
+			// itself in the database/UI for site-admins/engineers to locate a poisonous record.
+			err = errors.Wrapf(err, "failed to migrate upload %d", uploadID)
+		}
+	}()
+
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
 		return false, err
