@@ -1,4 +1,4 @@
-.card-header {
+:where(.card-header) {
     padding: 0.5rem;
     background-color: var(--color-bg-2);
     border-bottom: 1px solid var(--card-border-color);
