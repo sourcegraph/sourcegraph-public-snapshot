@@ -29,10 +29,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
-        path: EnterprisePageRoutes.Stats,
-        render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
-    },
-    {
         path: EnterprisePageRoutes.CodeMonitoring,
         render: lazyComponent(
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),

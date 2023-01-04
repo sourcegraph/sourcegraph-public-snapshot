@@ -62,8 +62,6 @@ export function createExtensionHostState(
             readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
         >([]),
 
-        fileDecorationProviders: new BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>([]),
-
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
 
@@ -101,10 +99,6 @@ export function createExtensionHostState(
         globalPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>([]),
         directoryViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>([]),
 
-        linkPreviewProviders: new BehaviorSubject<
-            readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
-        >([]),
-
         activeExtensions,
         activeLoggers: new Set<string>(),
     }
@@ -131,9 +125,6 @@ export interface ExtensionHostState {
     locationProviders: BehaviorSubject<
         readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
     >
-
-    // Decorations
-    fileDecorationProviders: BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>
 
     // Context + Contributions
     context: BehaviorSubject<Context>
@@ -163,11 +154,6 @@ export interface ExtensionHostState {
     homepageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>
     globalPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>
     directoryViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>
-
-    // Content
-    linkPreviewProviders: BehaviorSubject<
-        readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
-    >
 
     // Extensions
     activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]>

@@ -20,7 +20,6 @@ const (
 
 type SearchContextsResolver interface {
 	SearchContexts(ctx context.Context, args *ListSearchContextsArgs) (SearchContextConnectionResolver, error)
-	AutoDefinedSearchContexts(ctx context.Context) ([]SearchContextResolver, error)
 
 	SearchContextByID(ctx context.Context, id graphql.ID) (SearchContextResolver, error)
 	SearchContextBySpec(ctx context.Context, args SearchContextBySpecArgs) (SearchContextResolver, error)

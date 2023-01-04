@@ -1,10 +1,10 @@
-import { GetInsightPreviewResult, SearchResultsStatsResult } from '../../../graphql-operations'
+import { GetInsightPreviewResult, LangStatsInsightContentResult } from '../../../graphql-operations'
 
 /**
  * For code-stats insight we have 1 step just in time processing. This fixture provides mock
  * data for this single step.
  */
-export const LANG_STATS_INSIGHT_DATA_FIXTURE: SearchResultsStatsResult = {
+export const LANG_STATS_INSIGHT_DATA_FIXTURE: LangStatsInsightContentResult = {
     search: {
         results: { limitHit: false },
         stats: {

@@ -41,19 +41,19 @@ Sourcegraph is a code search and intelligence platform. Devs use it to search, u
 </div>
 <div class="grid">
   <!-- Azure -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script">
     <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
     <h3>Azure</h3>
     <p>Deploy onto Microsoft Azure<br/>(install script)</p>
   </a>
   <!-- Digital Ocean -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script">
     <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
     <h3>DigitalOcean</h3>
     <p>Deploy onto DigitalOcean<br/>(install script)</p>
   </a>
   <!-- Others -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script.md">
+  <a class="btn-app btn" href="/admin/deploy/single-node/script">
     <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
     <h3>Script install</h3>
     <p>Deploy on any Linux machine using our script</p>

@@ -1036,6 +1036,15 @@ const GITOLITE: AddExternalServiceOptions = {
                 return { edits, selectText: value }
             },
         },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: (config: string) => {
+                const value = { name: '<name>' }
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+                return { edits, selectText: '<name>' }
+            },
+        },
     ],
 }
 const PHABRICATOR_SERVICE: AddExternalServiceOptions = {

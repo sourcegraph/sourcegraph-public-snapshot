@@ -16,7 +16,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { buildGetStartedURL, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -291,7 +291,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
                             className={styles.signUp}
-                            to="https://signup.sourcegraph.com"
+                            to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                         >
@@ -337,7 +337,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Button>
                                     <ButtonLink
                                         className={styles.signUp}
-                                        to={buildGetStartedURL(isSourcegraphDotCom)}
+                                        to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >
