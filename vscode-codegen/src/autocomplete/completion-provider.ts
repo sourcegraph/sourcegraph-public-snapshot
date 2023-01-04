@@ -33,13 +33,18 @@ export async function getReferences(
 	const refLocations = (
 		await Promise.all(
 			refPositions.map(async (pos) => {
-				const res = await vscode.commands.executeCommand(
-					"vscode.executeReferenceProvider",
-					document.uri,
-					pos
-				);
-				let locations = res as vscode.Location[];
-				return locations.length > 3 ? locations.slice(0, 3) : locations;
+				try {
+					const res = await vscode.commands.executeCommand(
+						"vscode.executeReferenceProvider",
+						document.uri,
+						pos
+					);
+					let locations = res as vscode.Location[];
+					return locations.length > 3 ? locations.slice(0, 3) : locations;
+				} catch (error) {
+					console.error(`failed to fetch references: ${error}`);
+					return [];
+				}
 			})
 		)
 	).flatMap((d) => d);

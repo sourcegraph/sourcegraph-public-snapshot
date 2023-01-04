@@ -13,7 +13,7 @@ export class OpenAIBackend {
   defaultCompletionParams: CreateCompletionRequest;
   oa: OpenAIApi;
   createPrompt: (opt: PromptOpt) => string;
-  stopStrings: (uri: string) => string[];
+  stopStrings: (uri: string) => string[] | undefined;
   extractFromResponse?: (responseText: string) => string;
 
   readonly expectedResponses: number;
@@ -22,7 +22,7 @@ export class OpenAIBackend {
     config: Configuration,
     defaultCompletionParams: CreateCompletionRequest,
     createPrompt: (opt: PromptOpt) => string,
-    stopStrings: (uri: string) => string[],
+    stopStrings: (uri: string) => string[] | undefined,
     extractFromResponse?: (responseText: string) => string
   ) {
     this.defaultCompletionParams = defaultCompletionParams;
@@ -42,41 +42,41 @@ export class OpenAIBackend {
     debug: LLMDebugInfo;
     completions: string[];
   }> {
-    const startTime = performance.now();
-    const prompt = this.createPrompt({
-      prefix,
-      history,
-      references,
-      maxTokens: this.maxTokens,
-      tokenCost,
-    });
-    const opt = {
-      ...this.defaultCompletionParams,
-      stop: this.stopStrings(uri),
-    };
+		const startTime = performance.now();
+		const prompt = this.createPrompt({
+			prefix,
+			history,
+			references,
+			maxTokens: this.maxTokens,
+			tokenCost,
+		});
+		const opt = {
+			...this.defaultCompletionParams,
+			stop: this.stopStrings(uri),
+		};
 
-    // using createCompletion instead of this.oa.createCompletion to ensure openai requests happen serial (see function docs)
-    const response = await createCompletion(this.oa, {
-      ...opt,
-      prompt,
-    });
+		// using createCompletion instead of this.oa.createCompletion to ensure openai requests happen serial (see function docs)
+		const response = await createCompletion(this.oa, {
+			...opt,
+			prompt,
+		});
 
-    const endTime = performance.now();
-    return {
-      debug: {
-        prompt,
-        llmOptions: opt,
-        elapsedMillis: endTime - startTime,
-      },
-      completions: (
-        (response.data as any).choices
-          ?.map((choice: any) => choice.text)
-          .filter((e: any) => e) as string[]
-      ).map((e) =>
-        this.extractFromResponse ? this.extractFromResponse(e) : e
-      ),
-    };
-  }
+		const endTime = performance.now();
+		return {
+			debug: {
+				prompt,
+				llmOptions: opt,
+				elapsedMillis: endTime - startTime,
+			},
+			completions: (
+				(response.data as any).choices
+					?.map((choice: any) => choice.text)
+					.filter((e: any) => e) as string[]
+			).map((e) =>
+				this.extractFromResponse ? this.extractFromResponse(e) : e
+			),
+		};
+	}
 }
 
 interface PromptOpt {
@@ -312,7 +312,7 @@ export function endCodeBlockStopStrings(): string[] {
   return ["```"];
 }
 
-export function langKeywordStopStrings(uri: string): string[] {
+export function langKeywordStopStrings(uri: string): string[] | undefined {
   const ext = uri.split(".").pop()?.toLowerCase();
   // switch statement on ext
   switch (ext) {
@@ -320,8 +320,8 @@ export function langKeywordStopStrings(uri: string): string[] {
       return ["\nfunction ", "\nclass ", "\nexport ", "\n```"];
     case "go":
       return ["\nfunc ", "\ntype "];
+		default:
+			console.error(`no stopwords defined for language ${ext}, defaulting to no stopwords`)
+			return undefined
   }
-  throw new Error(
-    `no stop sequences implemented for files with extension ${ext}`
-  );
 }

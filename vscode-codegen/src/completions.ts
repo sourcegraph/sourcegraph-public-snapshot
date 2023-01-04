@@ -106,32 +106,39 @@ export async function fetchAndShowCompletions(
 	const filename = currentEditor.document.fileName;
 	const ext = filename.split(".").pop();
 	const completionsUri = vscode.Uri.parse(`codegen:completions.${ext}`);
-	const docOpener = vscode.workspace
-		.openTextDocument(completionsUri)
-		.then((doc) => {
-			vscode.window.showTextDocument(doc, {
-				preview: false,
-				viewColumn: 2,
-			});
-		});
 	documentProvider.clearCompletions(completionsUri);
-
-	await wsclient.getCompletions(await getCompletionsArgs(history), {
-		onCompletions: function (
-			completions: string[],
-			debug?: LLMDebugInfo | undefined
-		): void {
-			const name = "todo-name";
-			documentProvider.addCompletions(completionsUri, name, completions, debug);
-		},
-		onMetadata: function (metadata: any): void {
-			throw new Error("Function not implemented.");
-		},
-		onDone: function (): void {
-			throw new Error("Function not implemented.");
-		},
-		onError: function (err: string): void {
-			throw new Error("Function not implemented.");
-		},
+	vscode.workspace.openTextDocument(completionsUri).then((doc) => {
+		vscode.window.showTextDocument(doc, {
+			preview: false,
+			viewColumn: 2,
+		});
 	});
+
+	try {
+		await wsclient.getCompletions(await getCompletionsArgs(history), {
+			onCompletions: function (
+				completions: string[],
+				debug?: LLMDebugInfo | undefined
+			): void {
+				const name = "openai-completions";
+				documentProvider.addCompletions(
+					completionsUri,
+					name,
+					completions,
+					debug
+				);
+			},
+			onMetadata: function (metadata: any): void {
+				console.log(`received metadata ${metadata}`);
+			},
+			onDone: function (): void {
+				console.log("received done");
+			},
+			onError: function (err: string): void {
+				console.error(`received error ${err}`);
+			},
+		});
+	} catch (error: any) {
+		vscode.window.showErrorMessage(error);
+	}
 }
