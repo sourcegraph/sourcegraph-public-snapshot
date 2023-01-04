@@ -35,11 +35,19 @@ type (
 	GetUserRoleOpts    UserRoleOpts
 )
 
+type CreateMultipleUserRolesForUserOpts struct {
+	UserID  int32
+	RoleIDs []int32
+}
+
 type UserRoleStore interface {
 	basestore.ShareableStore
 
 	// Create inserts the given user and role relationship into the database.
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
+	// CreateMultipleUserRolesForUser assigns multiple role to a single user. THis is useful
+	// when we want to assign a user more than one role.
+	CreateMultipleUserRolesForUser(ctx context.Context, opts CreateMultipleUserRolesForUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -76,10 +84,7 @@ func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
 const userRoleCreateQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
-VALUES (
-	%s,
-	%s
-)
+VALUES %s
 RETURNING %s;
 `
 
@@ -95,8 +100,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	q := sqlf.Sprintf(
 		userRoleCreateQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
-		opts.UserID,
-		opts.RoleID,
+		sqlf.Sprintf("( %s, %s )", opts.UserID, opts.RoleID),
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
@@ -105,6 +109,46 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 		return nil, errors.Wrap(err, "scanning user role")
 	}
 	return rm, nil
+}
+
+func (r *userRoleStore) CreateMultipleUserRolesForUser(ctx context.Context, opts CreateMultipleUserRolesForUserOpts) ([]*types.UserRole, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if len(opts.RoleIDs) == 0 {
+		return nil, errors.New("missing role ids")
+	}
+
+	var urs []*sqlf.Query
+
+	for _, roleId := range opts.RoleIDs {
+		urs = append(urs, sqlf.Sprintf("(%s, %s)", opts.UserID, roleId))
+	}
+
+	q := sqlf.Sprintf(
+		userRoleCreateQueryFmtStr,
+		sqlf.Join(userRoleInsertColumns, ", "),
+		sqlf.Join(urs, ", "),
+		sqlf.Join(userRoleColumns, ", "),
+	)
+
+	rows, err := r.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+
+	var userRoles []*types.UserRole
+	for rows.Next() {
+		ur, err := scanUserRole(rows)
+		if err != nil {
+			return userRoles, err
+		}
+		userRoles = append(userRoles, ur)
+	}
+
+	return userRoles, nil
 }
 
 type UserRoleNotFoundErr struct {

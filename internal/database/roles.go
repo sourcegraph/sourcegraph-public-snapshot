@@ -32,6 +32,11 @@ var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("readonly"),
 }
 
+var (
+	DefaultRole           string = "DEFAULT"
+	SiteAdministratorRole string = "SITE_ADMINISTRATOR"
+)
+
 type RoleStore interface {
 	basestore.ShareableStore
 
@@ -41,6 +46,9 @@ type RoleStore interface {
 	Create(ctx context.Context, name string, readonly bool) (*types.Role, error)
 	// Delete removes an existing role from the database.
 	Delete(ctx context.Context, opts DeleteRoleOpts) error
+	// Get returns the role matching the given ID or name provided. If no such role exists,
+	// a RoleNotFoundErr is returned.
+	Get(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
 	// GetByID returns the role matching the given ID, or RoleNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
 	// List returns all roles matching the given options.
@@ -54,7 +62,8 @@ func RolesWith(other basestore.ShareableStore) RoleStore {
 }
 
 type RoleOpts struct {
-	ID int32
+	ID   int32
+	Name string
 }
 
 type (
@@ -64,6 +73,7 @@ type (
 
 type RolesListOptions struct {
 	*LimitOffset
+	ReadOnly bool
 }
 
 type RoleNotFoundErr struct {
@@ -89,6 +99,33 @@ SELECT %s FROM roles
 WHERE %s
 LIMIT 1;
 `
+
+func (r *roleStore) Get(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
+	if opts.ID == 0 && opts.Name == "" {
+		return nil, errors.New("missing id or name")
+	}
+
+	if opts.ID > 0 {
+		return r.GetByID(ctx, opts)
+	}
+
+	whereClause := sqlf.Sprintf("name = %s AND deleted_at IS NULL", opts.Name)
+	q := sqlf.Sprintf(
+		getRoleFmtStr,
+		sqlf.Join(roleColumns, ", "),
+		whereClause,
+	)
+
+	role, err := scanRole(r.QueryRow(ctx, q))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &RoleNotFoundErr{ID: opts.ID}
+		}
+		return nil, errors.Wrap(err, "scanning role")
+	}
+
+	return role, nil
+}
 
 func (r *roleStore) GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
 	if opts.ID <= 0 {
@@ -134,6 +171,7 @@ SELECT
 	%s
 FROM roles
 WHERE %s
+ORDER BY created_at
 `
 
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
@@ -153,9 +191,13 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 }
 
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var whereClause = sqlf.Sprintf("deleted_at IS NULL")
+	var whereClause = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, whereClause)
+	if opts.ReadOnly {
+		whereClause = append(whereClause, sqlf.Sprintf("readonly IS TRUE"))
+	}
+
+	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(whereClause, " AND "))
 
 	if opts.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())

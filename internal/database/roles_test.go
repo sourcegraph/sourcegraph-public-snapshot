@@ -147,10 +147,10 @@ func TestRoleDelete(t *testing.T) {
 		role, err := createTestRole(ctx, "TEST ROLE 1", false, t, store)
 		assert.NoError(t, err)
 
-		err = store.Delete(ctx, DeleteRoleOpts{role.ID})
+		err = store.Delete(ctx, DeleteRoleOpts{ID: role.ID})
 		assert.NoError(t, err)
 
-		r, err := store.GetByID(ctx, GetRoleOpts{role.ID})
+		r, err := store.GetByID(ctx, GetRoleOpts{ID: role.ID})
 		assert.Error(t, err)
 		assert.Equal(t, err, &RoleNotFoundErr{role.ID})
 		assert.Nil(t, r)
@@ -158,7 +158,7 @@ func TestRoleDelete(t *testing.T) {
 
 	t.Run("non-existent role", func(t *testing.T) {
 		nonExistentRoleID := int32(2381)
-		err := store.Delete(ctx, DeleteRoleOpts{nonExistentRoleID})
+		err := store.Delete(ctx, DeleteRoleOpts{ID: nonExistentRoleID})
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "failed to delete role")
 	})
