@@ -60,6 +60,15 @@ const config: Meta = {
 }
 
 export default config
+export const CloudAuthedHome: Story = () => (
+    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
+)
+
+CloudAuthedHome.storyName = 'Cloud authenticated home'
+
+export const ServerHome: Story = () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>
+
+ServerHome.storyName = 'Server home'
 
 export const CloudMarketingHome: Story = () => (
     <WebStory>

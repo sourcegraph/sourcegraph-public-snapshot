@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -27,24 +28,17 @@ func TestSavedSearches(t *testing.T) {
 	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
-	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (*int32, error) {
-		totalCount := int32(1)
-		return &totalCount, nil
+	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
+		return 1, nil
 	})
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
-	args := struct {
-		Namespace graphql.ID
-		First     *int32
-		Last      *int32
-		After     *string
-		Before    *string
-	}{
-		Namespace: MarshalUserID(key),
-		First:     &key,
+	args := savedSearchesArgs{
+		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{First: &key},
+		Namespace:              MarshalUserID(key),
 	}
 
 	resolver, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
@@ -67,6 +61,117 @@ func TestSavedSearches(t *testing.T) {
 	}}}
 	if !reflect.DeepEqual(nodes, wantNodes) {
 		t.Errorf("got %v+, want %v+", nodes[0], wantNodes[0])
+	}
+}
+
+func TestSavedSearchesForSameUser(t *testing.T) {
+	key := int32(1)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
+
+	ss := database.NewMockSavedSearchStore()
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
+	})
+	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
+		return 1, nil
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SavedSearchesFunc.SetDefaultReturn(ss)
+
+	args := savedSearchesArgs{
+		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{First: &key},
+		Namespace:              MarshalUserID(key),
+	}
+
+	resolver, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nodes, err := resolver.Nodes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantNodes := []*savedSearchResolver{{db, types.SavedSearch{
+		ID:              key,
+		Description:     "test query",
+		Query:           "test type:diff patternType:regexp",
+		UserID:          &key,
+		OrgID:           nil,
+		SlackWebhookURL: nil,
+	}}}
+	if !reflect.DeepEqual(nodes, wantNodes) {
+		t.Errorf("got %v+, want %v+", nodes[0], wantNodes[0])
+	}
+}
+
+func TestSavedSearchesForDifferentUser(t *testing.T) {
+	key := int32(1)
+	userID := int32(2)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: userID}, nil)
+
+	ss := database.NewMockSavedSearchStore()
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
+	})
+	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
+		return 1, nil
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SavedSearchesFunc.SetDefaultReturn(ss)
+
+	args := savedSearchesArgs{
+		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{First: &key},
+		Namespace:              MarshalUserID(key),
+	}
+
+	_, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(userID)), args)
+	if err == nil {
+		t.Error("got nil, want error to be returned for accessing saved searches of different user by non site admin.")
+	}
+}
+
+func TestSavedSearchesForDifferentOrg(t *testing.T) {
+	key := int32(1)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
+
+	om := database.NewMockOrgMemberStore()
+	om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
+		return nil, nil
+	})
+
+	ss := database.NewMockSavedSearchStore()
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: nil, OrgID: &key}}, nil
+	})
+	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
+		return 1, nil
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(om)
+	db.SavedSearchesFunc.SetDefaultReturn(ss)
+
+	args := savedSearchesArgs{
+		ConnectionResolverArgs: graphqlutil.ConnectionResolverArgs{First: &key},
+		Namespace:              MarshalOrgID(key),
+	}
+
+	if _, err := newSchemaResolver(db, gitserver.NewClient(db)).SavedSearches(actor.WithActor(context.Background(), actor.FromUser(key)), args); err != auth.ErrNotAnOrgMember {
+		t.Errorf("got %v+, want %v+", err, auth.ErrNotAnOrgMember)
 	}
 }
 
