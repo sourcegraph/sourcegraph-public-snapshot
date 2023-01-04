@@ -181,7 +181,18 @@
     }
 }
 
-.card-header {
+// The nested selector is required to bump the selector specificity and resolve the issue
+// with different selector-order in the production bundle.
+// See https://github.com/sourcegraph/sourcegraph/issues/46081.
+//
+// It's not possible to use the `:where()` selector in the `CardHeader` CSS module because the
+// `typed-scss-modules` package that generates Typescript type definitions for CSS modules
+// relies on the outdated PostCSS version, which doesn't generate `:exports` statements for pseudo selectors correctly.
+// See related issues:
+// - https://github.com/skovy/typed-scss-modules/pull/166
+// - https://github.com/css-modules/css-modules-loader-core/pull/231
+/* stylelint-disable-next-line selector-max-compound-selectors */
+.panel .card-header {
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;
     padding-left: 1rem;
