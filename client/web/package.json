@@ -30,7 +30,7 @@
     "lint:css": "pnpm stylelint 'src/**/*.scss' --quiet",
     "browserslist": "pnpm exec browserslist",
     "analyze-bundle": "WEBPACK_USE_NAMED_CHUNKS=true NODE_ENV=production ENTERPRISE=1 WEBPACK_BUNDLE_ANALYZER=1 pnpm build",
-    "bundlesize": "pnpm bundlesize --config=./bundlesize.config.js",
+    "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js",
     "report-bundle-diff": "pnpm ts-node scripts/report-bundle-diff"
   },
   "devDependencies": {
