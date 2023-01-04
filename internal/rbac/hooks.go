@@ -8,7 +8,6 @@ import (
 )
 
 func AssignRolesForUser(ctx context.Context, db database.DB, user *types.User) error {
-
 	// We fetch all read only roles (DEFAULT and SITE_ADMINISTRATOR)
 	roles, err := db.Roles().List(ctx, database.RolesListOptions{
 		ReadOnly: true,
@@ -36,7 +35,7 @@ func AssignRolesForUser(ctx context.Context, db database.DB, user *types.User) e
 		}
 	}
 
-	_, err = db.UserRoles().CreateMultipleUserRolesForUser(ctx, database.CreateMultipleUserRolesForUserOpts{
+	_, err = db.UserRoles().BulkCreateForUser(ctx, database.BulkCreateForUserOpts{
 		UserID:  user.ID,
 		RoleIDs: roleIDs,
 	})
