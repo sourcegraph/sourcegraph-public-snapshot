@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -68,11 +69,19 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
 `
 
+func getEnv(name string, defaultValue int) int {
+	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
+		return value
+	}
+
+	return defaultValue
+}
+
 var (
 	// NOTE: modified in tests
-	scipMigratorUploadBatchSize             = 64
-	scipMigratorDocumentBatchSize           = 128
-	scipMigratorResultChunkDefaultCacheSize = 1024
+	scipMigratorUploadBatchSize             = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigratorDocumentBatchSize           = 64
+	scipMigratorResultChunkDefaultCacheSize = 8192
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
