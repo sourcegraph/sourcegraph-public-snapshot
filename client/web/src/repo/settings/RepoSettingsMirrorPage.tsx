@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import { mdiLock } from '@mdi/js'
+import { mdiChevronDown, mdiChevronRight, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
@@ -20,6 +20,9 @@ import {
     Text,
     Code,
     ErrorAlert,
+    CollapseHeader,
+    Collapse,
+    CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -209,39 +212,38 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
 
 // Add interface for props then create component
 interface CorruptionLogProps {
-    corruptedAt: any
+    isCorrupted: boolean
     logItems: any[]
     history: H.History
 }
 
 const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
-    let health = (
+    const health = props.isCorrupted ? (
+        <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+            The repository is corrupt, check the log entries below for more info and consider recloning.
+        </Alert>
+    ) : (
         <Alert className={classNames('mb-0', styles.alert)} variant="success">
             The repository is currently not corrupt
         </Alert>
     )
-    if (props.corruptedAt) {
-        health = (
-            <Alert className={classNames('mb-0', styles.alert)} variant="warning">
-                The repository is corrupt, check the log entries below for more info and consider recloning.
-            </Alert>
-        )
-    }
 
-    const logEvents = []
-    for (let log of props.logItems) {
-        logEvents.push(
-            <li className="list-group-item px-2 py-1">
-                <div className="d-flex flex-column align-items-center justify-content-between">
-                    <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
-                    <small className="text-muted mb-0">
-                        <Timestamp date={log.timestamp} />
-                    </small>
-                </div>
-            </li>
-        )
-    }
-    // create log item list
+    const logEvents: any[] = props.logItems.map(log => (
+        <li className="list-group-item px-2 py-1">
+            <div className="d-flex flex-column align-items-center justify-content-between">
+                <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
+                <small className="text-muted mb-0">
+                    <Timestamp date={log.timestamp} />
+                </small>
+            </div>
+        </li>
+    ))
+
+    const [isOpened, setIsOpened] = useState(false)
+
+    const handleOpenChange = useCallback((next: boolean) => {
+        setIsOpened(next)
+    }, [])
     return (
         <BaseActionContainer
             title="Repository corruption"
@@ -250,8 +252,26 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
                 <div className="flex-1">
                     {health}
                     <br />
-                    <h4>Corruption log entries</h4>
-                    <ul className="list-group">{logEvents}</ul>
+                    <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
+                        <CollapseHeader
+                            as={Button}
+                            outline={true}
+                            focusLocked={true}
+                            variant="secondary"
+                            className="w-100"
+                            disabled={logEvents.length === 0}
+                        >
+                            Show log entries
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isOpened ? mdiChevronDown : mdiChevronRight}
+                                className="mr-1"
+                            />
+                        </CollapseHeader>
+                        <CollapsePanel>
+                            <ul className="list-group">{logEvents}</ul>
+                        </CollapsePanel>
+                    </Collapse>
                 </div>
             }
         />
@@ -397,7 +417,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                     </Alert>
                 )}
                 <CorruptionLogsContainer
-                    corruptedAt={repo.mirrorInfo.corruptedAt}
+                    isCorrupted={repo.mirrorInfo.isCorrupted}
                     logItems={repo.mirrorInfo.corruptionLogs}
                     history={props.history}
                 />

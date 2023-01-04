@@ -88,9 +88,9 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 </Alert>
             </div>
         )}
-        {node.mirrorInfo.corruptedAt && (
+        {node.mirrorInfo.isCorrupted && (
             <div className={styles.alertWrapper}>
-                <Alert variant="warning">
+                <Alert variant="danger">
                     Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
