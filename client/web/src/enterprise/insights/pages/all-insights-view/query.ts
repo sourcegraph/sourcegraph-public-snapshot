@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client'
+import { gql } from '@sourcegraph/http-client'
 
 /**
  * GQL query for getting all insight views that are accessible for a user.
@@ -6,10 +6,14 @@ import { gql } from '@apollo/client'
  * Insight model in this case contains only meta and presentation chart data.
  */
 export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
-    query GetAllInsightConfigurations {
-        insightViews {
+    query GetAllInsightConfigurations($first: Int, $after: String) {
+        insightViews(first: $first, after: $after) {
             nodes {
                 ...InsightViewNode
+            }
+            pageInfo {
+                endCursor
+                hasNextPage
             }
         }
     }

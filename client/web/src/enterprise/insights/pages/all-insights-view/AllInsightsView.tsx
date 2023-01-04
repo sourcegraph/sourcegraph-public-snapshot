@@ -7,7 +7,8 @@ import { isDefined } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, ErrorAlert, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { GetAllInsightConfigurationsResult } from '../../../../graphql-operations'
+import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination';
+import { GetAllInsightConfigurationsResult, GetAllInsightConfigurationsVariables } from '../../../../graphql-operations'
 import { SmartInsightsViewGrid } from '../../components'
 import { createInsightView } from '../../core/backend/gql-backend'
 
@@ -18,6 +19,17 @@ import styles from './AllInsightsView.module.scss'
 interface AllInsightsViewProps extends TelemetryProps {}
 
 export const AllInsightsView: FC<AllInsightsViewProps> = props => {
+    const {} = useShowMorePagination<
+        GetAllInsightConfigurationsResult,
+        GetAllInsightConfigurationsVariables,
+        any
+    >({
+        query: GET_ALL_INSIGHT_CONFIGURATIONS,
+        variables: { first: 15, after: null, },
+        getConnection: result => {},
+        options: { fetchPolicy: 'cache-first' }
+    })
+
     const { data, error } = useQuery<GetAllInsightConfigurationsResult>(GET_ALL_INSIGHT_CONFIGURATIONS, {
         nextFetchPolicy: 'cache-first',
         errorPolicy: 'all',
@@ -34,20 +46,13 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
     const insightConfigurations = data.insightViews.nodes.filter(isDefined).map(createInsightView)
 
     return insightConfigurations.length > 0 ? (
-        <SmartInsightsViewGrid insights={insightConfigurations} telemetryService={props.telemetryService} />
+        <div>
+            <SmartInsightsViewGrid insights={insightConfigurations} telemetryService={props.telemetryService} />
+        </div>
     ) : (
-        <EmptyVirtualDashboard />
+        <Card as={Link} to="/insights/create" className={styles.emptyCard}>
+            <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
+            <span>It seems that you don't have any insights yet, you can create your first insight from here.</span>
+        </Card>
     )
 }
-
-/**
- * Virtual empty dashboard state provides link to create a new code insight via creation UI.
- * Since all insights within virtual dashboards are calculated there's no ability to add insight to
- * this type of dashboard manually.
- */
-export const EmptyVirtualDashboard: FC = () => (
-    <Card as={Link} to="/insights/create" className={styles.emptyCard}>
-        <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
-        <span>It seems that you don't have any insights yet, you can create your first insight from here.</span>
-    </Card>
-)
