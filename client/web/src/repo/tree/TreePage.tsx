@@ -29,6 +29,7 @@ import {
     ButtonGroup,
     Button,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -205,71 +206,83 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 </div>
                 <div className={styles.menu}>
                     <ButtonGroup>
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/branches`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
-                            <span className={styles.text}>Branches</span>
-                        </Button>
-                        <Button
-                            className="flex-shrink-0"
-                            to={`/${encodeURIPathComponent(repoName)}/-/tags`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
-                        </Button>
-                        <Button
-                            className="flex-shrink-0"
-                            to={
-                                revision
-                                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
-                                          revision
-                                      )}`
-                                    : `/${encodeURIPathComponent(repoName)}/-/compare`
-                            }
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
-                            <span className={styles.text}>Compare</span>
-                        </Button>
-                        {codeIntelligenceEnabled && (
+                        <Tooltip content="Branches">
                             <Button
                                 className="flex-shrink-0"
-                                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
+                                to={`/${encodeURIPathComponent(repoName)}/-/branches`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
-                                <span className={styles.text}>Code graph data</span>
+                                <Icon aria-hidden={true} svgPath={mdiSourceBranch} />{' '}
+                                <span className={styles.text}>Branches</span>
                             </Button>
+                        </Tooltip>
+                        <Tooltip content="Tags">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/tags`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiTag} /> <span className={styles.text}>Tags</span>
+                            </Button>
+                        </Tooltip>
+                        <Tooltip content="Compare">
+                            <Button
+                                className="flex-shrink-0"
+                                to={
+                                    revision
+                                        ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(
+                                              revision
+                                          )}`
+                                        : `/${encodeURIPathComponent(repoName)}/-/compare`
+                                }
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiHistory} />{' '}
+                                <span className={styles.text}>Compare</span>
+                            </Button>
+                        </Tooltip>
+                        {codeIntelligenceEnabled && (
+                            <Tooltip content="Code graph data">
+                                <Button
+                                    className="flex-shrink-0"
+                                    to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
+                                    variant="secondary"
+                                    outline={true}
+                                    as={Link}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
+                                    <span className={styles.text}>Code graph data</span>
+                                </Button>
+                            </Tooltip>
                         )}
                         {batchChangesEnabled && (
-                            <RepoBatchChangesButton
-                                className="flex-shrink-0"
-                                textClassName={styles.text}
-                                repoName={repoName}
-                            />
+                            <Tooltip content="Batch changes">
+                                <RepoBatchChangesButton
+                                    className="flex-shrink-0"
+                                    textClassName={styles.text}
+                                    repoName={repoName}
+                                />
+                            </Tooltip>
                         )}
                         {repo?.viewerCanAdminister && (
-                            <Button
-                                className="flex-shrink-0"
-                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
-                                variant="secondary"
-                                outline={true}
-                                as={Link}
-                                aria-label="Repository settings"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiCog} />
-                            </Button>
+                            <Tooltip content="Settings">
+                                <Button
+                                    className="flex-shrink-0"
+                                    to={`/${encodeURIPathComponent(repoName)}/-/settings`}
+                                    variant="secondary"
+                                    outline={true}
+                                    as={Link}
+                                    aria-label="Repository settings"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiCog} />
+                                </Button>
+                            </Tooltip>
                         )}
                     </ButtonGroup>
                 </div>

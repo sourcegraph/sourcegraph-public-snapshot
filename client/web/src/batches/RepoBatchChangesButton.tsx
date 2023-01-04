@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import React, { FC, forwardRef } from 'react'
 
 import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -15,11 +15,10 @@ interface RepoBatchChangesButtonProps {
     repoName: string
 }
 
-export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
-    className,
-    textClassName,
-    repoName,
-}) => {
+export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = forwardRef<
+    HTMLAnchorElement,
+    RepoBatchChangesButtonProps
+>(({ className, textClassName, repoName }, forwardedRef) => {
     const { data } = useQuery<RepoChangesetsStatsResult, RepoChangesetsStatsVariables>(REPO_CHANGESETS_STATS, {
         variables: { name: repoName },
         fetchPolicy: 'cache-first',
@@ -33,6 +32,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
 
     return (
         <Button
+            ref={forwardedRef}
             className={className}
             to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
             variant="secondary"
@@ -60,4 +60,4 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             )}
         </Button>
     )
-}
+})
