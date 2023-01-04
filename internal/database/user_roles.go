@@ -35,7 +35,7 @@ type (
 	GetUserRoleOpts    UserRoleOpts
 )
 
-type CreateMultipleUserRolesForUserOpts struct {
+type BulkCreateForUserOpts struct {
 	UserID  int32
 	RoleIDs []int32
 }
@@ -47,7 +47,7 @@ type UserRoleStore interface {
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
 	// CreateMultipleUserRolesForUser assigns multiple role to a single user. THis is useful
 	// when we want to assign a user more than one role.
-	CreateMultipleUserRolesForUser(ctx context.Context, opts CreateMultipleUserRolesForUserOpts) ([]*types.UserRole, error)
+	BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -111,7 +111,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	return rm, nil
 }
 
-func (r *userRoleStore) CreateMultipleUserRolesForUser(ctx context.Context, opts CreateMultipleUserRolesForUserOpts) ([]*types.UserRole, error) {
+func (r *userRoleStore) BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error) {
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
 	}

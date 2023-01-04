@@ -13,8 +13,6 @@ import (
 )
 
 func TestRoleGetByID(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -51,6 +49,41 @@ func TestRoleGetByID(t *testing.T) {
 	})
 }
 
+func TestRoleGet(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Roles()
+
+	roleName := "OPERATOR"
+	createdRole, err := store.Create(ctx, roleName, true)
+	assert.NoError(t, err)
+
+	t.Run("without userID and roleID", func(t *testing.T) {
+		_, err := store.Get(ctx, GetRoleOpts{})
+		assert.Error(t, err)
+		assert.Equal(t, err.Error(), "missing id or name")
+	})
+
+	t.Run("with role ID", func(t *testing.T) {
+		role, err := store.Get(ctx, GetRoleOpts{
+			ID: createdRole.ID,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, role.ID, createdRole.ID)
+		assert.Equal(t, role.Name, createdRole.Name)
+	})
+
+	t.Run("with role name", func(t *testing.T) {
+		role, err := store.Get(ctx, GetRoleOpts{
+			Name: roleName,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, role.ID, createdRole.ID)
+		assert.Equal(t, role.Name, createdRole.Name)
+	})
+}
+
 func TestRoleList(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -59,10 +92,22 @@ func TestRoleList(t *testing.T) {
 
 	total := createTestRoles(ctx, t, store)
 
+	// This refers to the DEFAULT and SITE_ADMINISTRATOR roles that are already
+	// seeded into the database using the migrator tool.
+	var numberOfDefaultRoles = 2
+
 	t.Run("basic no opts", func(t *testing.T) {
 		allRoles, err := store.List(ctx, RolesListOptions{})
 		assert.NoError(t, err)
-		assert.Len(t, allRoles, total)
+		assert.Len(t, allRoles, total+numberOfDefaultRoles)
+	})
+
+	t.Run("readonly roles", func(t *testing.T) {
+		allReadOnlyRoles, err := store.List(ctx, RolesListOptions{
+			ReadOnly: true,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, allReadOnlyRoles, numberOfDefaultRoles)
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
@@ -71,8 +116,6 @@ func TestRoleList(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Len(t, roles, 2)
-		assert.Equal(t, roles[0].ID, int32(2))
-		assert.Equal(t, roles[1].ID, int32(3))
 	})
 }
 
