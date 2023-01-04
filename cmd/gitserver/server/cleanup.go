@@ -323,8 +323,12 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+			// Set the reason so that the repo cleaned up
+			reason = maybeCorrupt
 			// We don't log the corruption here, since the corruption *should* have already been
 			// logged when this config setting was set in the repo.
+			// When the repo is recloned, the corrupted_at status should be cleared, which means
+			// the repo is not considered corrupted anymore.
 			//
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
