@@ -10,10 +10,10 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -115,24 +115,17 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		return nil, err
 	}
 
-	wg := sync.WaitGroup{}
+	p := pool.New().WithErrors()
 
 	if bts, ok := args.Input.(FileContent); ok && len(bts) > 0 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		p.Go(func() error {
 			defer stdin.Close()
-
 			_, err := stdin.Write(bts)
-			if err != nil {
-				log15.Error("failed to write comby input to stdin", "error", err.Error())
-			}
-		}()
+			return errors.Wrap(err, "write to stdin")
+		})
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.Go(func() error {
 		defer stdout.Close()
 
 		scanner := bufio.NewScanner(stdout)
@@ -145,19 +138,16 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
-			// warn on scanner errors and skip
-			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
-		}
-	}()
+		return errors.Wrap(scanner.Err(), "scan")
+	})
 
-	err = StartAndWaitForCompletion(cmd)
-	if err != nil {
+	p.Go(func() error {
+		return StartAndWaitForCompletion(cmd)
+	})
+
+	if err := p.Wait(); err != nil {
 		return nil, err
 	}
-
-	wg.Wait()
-
 	if len(results) > 0 {
 		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
 	}
