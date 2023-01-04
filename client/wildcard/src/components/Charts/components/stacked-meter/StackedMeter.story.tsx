@@ -58,13 +58,7 @@ export const StackedMeterDemo: Story = () => {
                     getDatumName={getDatumName}
                     getDatumValue={getDatumValue}
                     rightToLeft={true}
-                >
-                    {({ path, datum }) => (
-                        <path fill={getDatumColor(datum)} d={path}>
-                            <title>{`${getDatumName(datum)}: ${getDatumValue(datum)} LoC`}</title>
-                        </path>
-                    )}
-                </StackedMeter>
+                />
             )}
         </ParentSize>
     )
