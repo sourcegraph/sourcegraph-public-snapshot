@@ -18,25 +18,31 @@ import (
 func TestGetUploadDocumentsForPath(t *testing.T) {
 	store := populateTestStore(t)
 
-	if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), testBundleID, "%%"); err != nil {
-		t.Fatalf("unexpected error %s", err)
-	} else if count != 7 || len(paths) != 7 {
-		t.Errorf("expected %d document paths but got none: count=%d len=%d", 7, count, len(paths))
-	} else {
-		expected := []string{
-			"cmd/lsif-go/main.go",
-			"internal/gomod/module.go",
-			"internal/index/helper.go",
-			"internal/index/indexer.go",
-			"internal/index/types.go",
-			"protocol/protocol.go",
-			"protocol/writer.go",
-		}
+	t.Run("lsif", func(t *testing.T) {
+		if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), testBundleID, "%%"); err != nil {
+			t.Fatalf("unexpected error %s", err)
+		} else if count != 7 || len(paths) != 7 {
+			t.Errorf("expected %d document paths but got none: count=%d len=%d", 7, count, len(paths))
+		} else {
+			expected := []string{
+				"cmd/lsif-go/main.go",
+				"internal/gomod/module.go",
+				"internal/index/helper.go",
+				"internal/index/indexer.go",
+				"internal/index/types.go",
+				"protocol/protocol.go",
+				"protocol/writer.go",
+			}
 
-		if diff := cmp.Diff(expected, paths); diff != "" {
-			t.Errorf("unexpected document paths (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expected, paths); diff != "" {
+				t.Errorf("unexpected document paths (-want +got):\n%s", diff)
+			}
 		}
-	}
+	})
+
+	t.Run("scip", func(t *testing.T) {
+		// TODO
+	})
 }
 
 const testBundleID = 1
