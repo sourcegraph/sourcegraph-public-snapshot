@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -10,12 +10,12 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
-    useCurrentSpan,
-    TraceSpanProvider,
     createActiveSpan,
     reactManualTracer,
+    TraceSpanProvider,
+    useCurrentSpan,
 } from '@sourcegraph/observability-client'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
@@ -27,17 +27,17 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,
     ButtonLink,
+    ErrorMessage,
     Icon,
     LoadingSpinner,
     Text,
     useEventObservable,
     useObservable,
-    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -49,7 +49,7 @@ import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
-import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -73,6 +73,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import ShowOwnersAction from './ShowOwnersAction'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -397,6 +398,21 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         repoName={repoName}
                         revision={props.revision}
                         filePath={filePath}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={30}
+                id="toggle-ownership-panel"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {context => (
+                    <ShowOwnersAction
+                        {...context}
+                        key="toggle-ownership-panel"
+                        location={props.location}
+                        history={props.history}
                     />
                 )}
             </RepoHeaderContributionPortal>
