@@ -5,7 +5,7 @@ import express from "express";
 import * as bodyParser from 'body-parser';
 import { OpenAIBackend, langKeywordStopStrings, prompt_refs_history_inlinecomments } from "./prompts/openai";
 import * as openai from "openai";
-import { WSChatRequest, WSChatResponseChange, WSChatResponseComplete, WSChatResponseError, WSCompletionResponseCompletion, WSCompletionsRequest, WSCompletionResponse } from "common";
+import { WSChatRequest, WSChatResponseChange, WSChatResponseComplete, WSChatResponseError, WSCompletionResponseCompletion, WSCompletionsRequest, WSCompletionResponse } from "@sourcegraph/cody-common";
 import { ClaudeBackend } from "./prompts/claude";
 import { defaultModelParams } from "@completion/sampling";
 

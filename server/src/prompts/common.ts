@@ -1,4 +1,4 @@
-import { InflatedSymbol, LLMDebugInfo, CompletionsArgs } from "common";
+import { InflatedSymbol, LLMDebugInfo, CompletionsArgs } from "@sourcegraph/cody-common";
 
 
 export interface CompletionsBackend {

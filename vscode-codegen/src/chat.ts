@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { Message, WSChatRequest, WSChatResponse } from "common";
+import {
+	Message,
+	WSChatRequest,
+	WSChatResponse,
+} from "@sourcegraph/cody-common";
 import { WSClient } from "./wsclient";
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {

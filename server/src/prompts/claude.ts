@@ -5,7 +5,7 @@ import {
   createSimpleSamplingStream,
 } from "@completion/sampling";
 import { extractUntilTripleBacktick } from "./extract";
-import { CompletionsArgs, InflatedHistoryItem, LLMDebugInfo, Message, ReferenceInfo } from "common";
+import { CompletionsArgs, InflatedHistoryItem, LLMDebugInfo, Message, ReferenceInfo } from "@sourcegraph/cody-common";
 import {
   getCondensedText,
 } from "./common";

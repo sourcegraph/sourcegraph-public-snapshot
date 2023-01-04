@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { WSResponse } from "common";
+import { WSResponse } from "@sourcegraph/cody-common";
 import { WebSocket } from "ws";
 
 export class WSClient<TRequest, TResponse extends WSResponse> {

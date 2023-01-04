@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { LLMDebugInfo } from "common";
+import { LLMDebugInfo } from "@sourcegraph/cody-common";
 
 export class CompletionsDocumentProvider
 	implements vscode.TextDocumentContentProvider, vscode.HoverProvider

@@ -1,5 +1,5 @@
 import { Configuration, CreateCompletionRequest, OpenAIApi } from "openai";
-import { CompletionsArgs, InflatedHistoryItem, LLMDebugInfo, ReferenceInfo } from "common";
+import { CompletionsArgs, InflatedHistoryItem, LLMDebugInfo, ReferenceInfo } from "@sourcegraph/cody-common";
 import {
   getCondensedText,
   tokenCost,

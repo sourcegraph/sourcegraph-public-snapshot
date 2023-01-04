@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { TextDocument, Position } from "vscode";
 
-import { ReferenceInfo } from "common";
+import { ReferenceInfo } from "@sourcegraph/cody-common";
 
 // Get definitions of likely referenced symbols
 export async function getReferences(

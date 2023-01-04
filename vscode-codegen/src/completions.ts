@@ -7,7 +7,7 @@ import {
 	LLMDebugInfo,
 	WSCompletionResponse,
 	WSCompletionsRequest,
-} from "common";
+} from "@sourcegraph/cody-common";
 import { WSClient } from "./wsclient";
 
 interface CompletionCallbacks {
