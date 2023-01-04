@@ -7,21 +7,43 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ workerutil.Handler[*DataRetentionJob] = &dataRetentionHandler{}
 
 type dataRetentionHandler struct {
 	baseWorkerStore dbworkerstore.Store[*DataRetentionJob]
+	insightsStore   *store.Store
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) error {
-	logger.Debug("data retention handler called", log.Int("seriesID", record.SeriesID))
+	logger.Info("data retention handler called", log.Int("seriesID", record.SeriesID))
+
+	maximumSampleSize := 1
+	if configured := conf.Get().InsightsMaximumSampleSize; configured != 0 {
+		maximumSampleSize = configured
+	}
+	logger.Info("maximum sample size", log.Int("value", maximumSampleSize))
+
+	oldestRecordingTimes, err := selectRecordingTimesAfterMax(ctx, h.insightsStore, record.SeriesID, maximumSampleSize)
+	if err != nil {
+		return errors.Wrap(err, "selectRecordingTimesAfterMax")
+	}
+
+	if len(oldestRecordingTimes.RecordingTimes) == 0 {
+		// this series does not have any data beyond the max sample size
+		return nil
+	}
+
 	return nil
 }
 
@@ -87,4 +109,30 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Data
 const enqueueJobFmtStr = `
 INSERT INTO insights_data_retention_jobs (series_id) VALUES (%s)
 RETURNING id
+`
+
+func selectRecordingTimesAfterMax(ctx context.Context, tx *store.Store, seriesID int, maxSampleSize int) (_ *types.InsightSeriesRecordingTimes, err error) {
+	rows, err := tx.Query(ctx, sqlf.Sprintf(selectOldestRecordingTimesSql, seriesID, maxSampleSize, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var oldestSamples []types.RecordingTime
+	for rows.Next() {
+		var recordingTime time.Time
+		if err := rows.Scan(&recordingTime); err != nil {
+			return nil, err
+		}
+		oldestSamples = append(oldestSamples, types.RecordingTime{Timestamp: recordingTime})
+	}
+
+	return &types.InsightSeriesRecordingTimes{InsightSeriesID: seriesID, RecordingTimes: oldestSamples}, nil
+}
+
+const selectOldestRecordingTimesSql = `
+SELECT recording_time FROM insight_series_recording_times
+WHERE insight_series_id = %s AND snapshot IS FALSE
+ORDER BY recording_time ASC
+LIMIT (SELECT GREATEST(count(*) - %s, 0) FROM insight_series_recording_times WHERE insight_series_id = %s);
 `
