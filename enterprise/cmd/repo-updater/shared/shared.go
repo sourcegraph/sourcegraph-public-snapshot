@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -62,8 +63,15 @@ func EnterpriseInit(
 			return nil
 		}
 
-		opts := ossDB.PermissionSyncJobOpts{HighPriority: true}
-		return permsJobStore.CreateRepoSyncJob(ctx, int32(repo), opts)
+		// If the feature flag is enabled, create job...
+		if permssync.PermissionSyncWorkerEnabled(ctx) {
+			opts := ossDB.PermissionSyncJobOpts{HighPriority: true}
+			return permsJobStore.CreateRepoSyncJob(ctx, int32(repo), opts)
+		} else {
+			// .. otherwise we just call the PermsSyncer
+			permsSyncer.ScheduleRepos(ctx, repo)
+			return nil
+		}
 	}
 
 	workerStore := authz.MakeStore(observationCtx, db.Handle())
