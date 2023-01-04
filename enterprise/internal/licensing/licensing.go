@@ -3,7 +3,6 @@ package licensing
 import (
 	"log"
 	"sync"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -40,6 +39,8 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
+var FreeLicenseKey string
+
 // toInfo converts from the return type of license.ParseSignedKey to the return type of this
 // package's methods (which use the Info wrapper type).
 func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *Info, signature string, err error) {
@@ -55,8 +56,8 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
 }
 
-func GetFreeLicenseInfo() (info *Info) {
-	return &Info{license.Info{Tags: []string{"plan:free-0"}, UserCount: 10, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
+func GetFreeLicenseInfo() (*Info, string, error) {
+	return toInfo(license.ParseSignedKey(FreeLicenseKey, publicKey))
 }
 
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
@@ -134,7 +135,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 		return info, signature, nil
 	} else {
 		// If no license key, default to free tier
-		return GetFreeLicenseInfo(), "", nil
+		return GetFreeLicenseInfo()
 	}
 }
 
