@@ -1,6 +1,6 @@
 # codebot
 
-# Usage and features
+## Usage and features
 
 - Autocomplete: `alt-\` to show autocompletion suggestions
 - Chatbot: Click the robot icon in the primary side panel
