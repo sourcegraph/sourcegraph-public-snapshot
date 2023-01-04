@@ -359,7 +359,6 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 
 	for i := range new {
 		parsed, err := url.Parse(new[i])
-
 		if err != nil {
 			return err
 		}
@@ -426,9 +425,7 @@ func unredactedString(new, old string) string {
 }
 
 func redactedURL(rawURL string) (string, error) {
-
 	parsed, err := url.Parse(rawURL)
-
 	if err != nil {
 		return "", err
 	}
@@ -443,7 +440,6 @@ func redactedURL(rawURL string) (string, error) {
 
 func unredactedURL(new, old string) (string, error) {
 	newURL, err := url.Parse(new)
-
 	if err != nil {
 		return new, err
 	}
