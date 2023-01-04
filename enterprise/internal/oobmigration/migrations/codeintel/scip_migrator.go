@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type scipMigrator struct {
@@ -68,27 +70,51 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
 `
 
+func getEnv(name string, defaultValue int) int {
+	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
+		return value
+	}
+
+	return defaultValue
+}
+
 var (
 	// NOTE: modified in tests
+	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
 	scipMigratorUploadBatchSize             = 64
 	scipMigratorDocumentBatchSize           = 128
 	scipMigratorResultChunkDefaultCacheSize = 1024
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
+	ch := make(chan struct{}, scipMigratorUploadBatchSize)
 	for i := 0; i < scipMigratorUploadBatchSize; i++ {
-		if err := m.upSingle(ctx); err != nil {
-			return err
-		}
+		ch <- struct{}{}
+	}
+	close(ch)
+
+	g := group.New().WithContext(ctx)
+	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
+		g.Go(func(ctx context.Context) error {
+			for range ch {
+				if ok, err := m.upSingle(ctx); err != nil {
+					return err
+				} else if !ok {
+					break
+				}
+			}
+
+			return nil
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
-func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
+func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
 	tx, err := m.codeintelStore.Transact(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -96,31 +122,31 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 	// compete with other migrator routines that may be running.
 	uploadID, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scipMigratorSelectForMigrationQuery)))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return nil
+		return false, nil
 	}
 
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err := migrateUpload(ctx, m.store, tx, m.serializer, scipWriter, uploadID); err != nil {
-		return err
+		return false, err
 	}
 	if err := scipWriter.Flush(ctx); err != nil {
-		return err
+		return false, err
 	}
 	if err := deleteLSIFData(ctx, tx, uploadID); err != nil {
-		return err
+		return false, err
 	}
 
 	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 const scipMigratorSelectForMigrationQuery = `
