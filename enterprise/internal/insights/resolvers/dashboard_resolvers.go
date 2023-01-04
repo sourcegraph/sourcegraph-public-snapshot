@@ -196,6 +196,20 @@ func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (d *DashboardInsightViewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
+
+	var err error
+	viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
+	if err != nil {
+		d.err = err
+		return 0, err
+	}
+
+	views := d.insightStore.GroupByView(ctx, viewSeries)
+	return int32(len(views)), nil
+}
+
 func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
 	d.once.Do(func() {
 		args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}

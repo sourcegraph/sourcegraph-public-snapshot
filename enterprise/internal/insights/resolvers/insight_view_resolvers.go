@@ -1224,6 +1224,23 @@ func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gra
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (r *InsightViewQueryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	orgStore := r.postgresDB.Orgs()
+	args := store.InsightQueryArgs{}
+
+	var err error
+	args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+
+	if err != nil {
+		r.err = errors.Wrap(err, "getUserPermissions")
+		return 0, err
+	}
+
+	insights, err := r.insightStore.GetAllMapped(ctx, args)
+
+	return int32(len(insights)), err
+}
+
 func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
 		orgStore := r.postgresDB.Orgs()
