@@ -95,7 +95,7 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	recentRunCount := 5 // Magic value for now
 
 	var jobName string
-	err := relay.UnmarshalSpec(id, jobName)
+	err := relay.UnmarshalSpec(id, &jobName)
 	if err != nil {
 		return nil, err
 	}
