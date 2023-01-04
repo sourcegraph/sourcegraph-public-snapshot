@@ -5,8 +5,9 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Input, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Text, ErrorAlert, H2 } from '@sourcegraph/wildcard'
 
+import { CopyableText } from '../../components/CopyableText'
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { PageTitle } from '../../components/PageTitle'
@@ -67,6 +68,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <PageHeader path={[{ text: 'Settings' }]} headingElement="h2" className="mb-3" />
                 <Container className="repo-settings-options-page">
+                    <H2 className="mb-3">Code hosts</H2>
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     {services.length > 0 && (
@@ -79,6 +81,8 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                                         title={service.displayName}
                                         shortDescription="Update this external service configuration to manage repository mirroring."
                                         to={`/site-admin/external-services/${service.id}`}
+                                        toIcon={null}
+                                        bordered={false}
                                     />
                                 </div>
                             ))}
@@ -91,20 +95,8 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             )}
                         </div>
                     )}
-                    <Form>
-                        <Input
-                            id="repo-settings-options-page__name"
-                            readOnly={true}
-                            disabled={true}
-                            value={this.state.repo.name}
-                            required={true}
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            autoCorrect="off"
-                            label="Repository name"
-                            className="mb-0"
-                        />
-                    </Form>
+                    <H2 className="mb-3">Repository name</H2>
+                    <CopyableText text={this.state.repo.name} size={this.state.repo.name.length} />
                 </Container>
             </>
         )

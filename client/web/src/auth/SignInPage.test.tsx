@@ -41,7 +41,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />
@@ -53,39 +52,30 @@ describe('SignInPage', () => {
         ).toMatchSnapshot()
     })
 
-    describe('with Sourcegraph auth provider', () => {
-        it('renders page with 3 providers (experimentalFeature disabled)', () => {
-            const rendered = render(false, '/sign-in')
-
+    describe('with Sourcegraph operator auth provider', () => {
+        it('renders page with 2 providers', () => {
+            const rendered = render('/sign-in')
             expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
-            ).toBeInTheDocument()
-            expect(rendered.asFragment()).toMatchSnapshot()
-        })
-
-        it('renders page with 2 providers (experimentalFeature enabled)', () => {
-            const rendered = render(true, '/sign-in')
-            expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).not.toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
 
-        it('renders page with 3 providers (experimentalFeature enabled & url-param present)', () => {
-            const rendered = render(true, '/sign-in?sourcegraph-operator')
+        it('renders page with 3 providers (url-param present)', () => {
+            const rendered = render('/sign-in?sourcegraph-operator')
             expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
 
-        function render(hideSourcegraphOperatorLogin: boolean, route: string) {
+        function render(route: string) {
             const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
                 ...authProviders,
                 {
-                    displayName: 'Sourcegraph Employee',
+                    displayName: 'Sourcegraph Operators',
                     isBuiltin: false,
-                    serviceType: 'openidconnect',
+                    serviceType: 'sourcegraph-operator',
                     authenticationURL: '',
                     serviceID: '',
                 },
@@ -104,7 +94,6 @@ describe('SignInPage', () => {
                                     authProviders: withSourcegraphOperator,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
-                                    experimentalFeatures: { hideSourcegraphOperatorLogin },
                                 }}
                                 isSourcegraphDotCom={false}
                             />
@@ -131,7 +120,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />
@@ -166,7 +154,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     xhrHeaders: {},
                                     resetPasswordEnabled: true,
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />
