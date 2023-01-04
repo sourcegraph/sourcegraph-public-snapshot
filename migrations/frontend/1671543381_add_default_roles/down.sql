@@ -1,1 +1,1 @@
--- Undo the changes made in the up migration
+DELETE FROM roles WHERE name IN ('DEFAULT', 'SITE_ADMINISTRATOR');
