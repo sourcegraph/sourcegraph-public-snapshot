@@ -38,7 +38,7 @@ import (
 )
 
 const addr = ":3189"
-const monitorCacheTTLSeconds = 604800 // 7 days
+const jobLoggerCacheTTLSeconds = 604800 // 7 days
 
 type EnterpriseInit = func(ossDB database.DB)
 
@@ -122,17 +122,17 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: server, JobName: "health-server"}
 	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
 
-	// Register monitor in all routines that support it
-	monitorCache := goroutine.GetMonitorCache(monitorCacheTTLSeconds)
-	monitor := goroutine.NewRedisMonitor(observationCtx.Logger, env.MyName, monitorCache)
+	// Register jobLogger in all routines that support it
+	jobLoggerCache := goroutine.GetLoggerCache(jobLoggerCacheTTLSeconds)
+	jobLogger := goroutine.NewJobLogger(observationCtx.Logger, env.MyName, jobLoggerCache)
 	for _, r := range allRoutinesWithJobNames {
-		if monitorable, ok := r.Routine.(goroutine.Monitorable); ok {
-			monitorable.SetJobName(r.JobName)
-			monitorable.RegisterMonitor(monitor)
-			monitor.Register(monitorable)
+		if loggable, ok := r.Routine.(goroutine.Loggable); ok {
+			loggable.SetJobName(r.JobName)
+			loggable.RegisterJobLogger(jobLogger)
+			jobLogger.Register(loggable)
 		}
 	}
-	monitor.RegistrationDone()
+	jobLogger.RegistrationDone()
 
 	// We're all set up now
 	// Respond positively to ready checks

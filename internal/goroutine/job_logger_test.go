@@ -13,23 +13,23 @@ import (
 func TestGetBackgroundJobInfos(t *testing.T) {
 	rcache.SetupForTest(t)
 
-	// Create monitor
-	c := GetMonitorCache(1)
-	monitor := NewRedisMonitor(log.NoOp(), "test", c)
+	// Create logger
+	c := GetLoggerCache(1)
+	jobLogger := NewJobLogger(log.NoOp(), "test", c)
 
 	// Create and register routines
 	ctx := context.Background()
 	emptyHandler := HandlerFunc(func(ctx context.Context) error { return nil })
 	routine1 := NewPeriodicGoroutine(ctx, "routine1", "a routine", 2*time.Minute, emptyHandler)
 	routine1.SetJobName("job-1")
-	monitor.Register(routine1)
+	jobLogger.Register(routine1)
 	routine2 := NewPeriodicGoroutine(ctx, "routine2", "another routine", 2*time.Minute, emptyHandler)
 	routine2.SetJobName("job-1")
-	monitor.Register(routine2)
+	jobLogger.Register(routine2)
 	routine3 := NewPeriodicGoroutine(ctx, "routine3", "a third routine", 2*time.Minute, emptyHandler)
 	routine3.SetJobName("job-2")
-	monitor.Register(routine3)
-	monitor.RegistrationDone()
+	jobLogger.Register(routine3)
+	jobLogger.RegistrationDone()
 
 	// Get infos
 	jobInfos, err := GetBackgroundJobInfos(c, "", 5, 7)

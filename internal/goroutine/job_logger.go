@@ -13,20 +13,20 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-type Monitorable interface {
+type Loggable interface {
 	BackgroundRoutine
 	Name() string
 	Type() types.BackgroundRoutineType
 	Description() string
 	JobName() string
 	SetJobName(string)
-	RegisterMonitor(monitor *RedisMonitor)
+	RegisterJobLogger(jobLogger *JobLogger)
 }
 
-type RedisMonitor struct {
+type JobLogger struct {
 	rcache   *rcache.Cache
 	logger   log.Logger
-	routines []Monitorable
+	routines []Loggable
 	hostName string
 }
 
@@ -34,7 +34,7 @@ type RedisMonitor struct {
 // After this time, we consider them nonexistent, and they'll be removed
 const seenTimeout = 5 * 24 * time.Hour // 5 days
 
-const keyPrefix = "background-routine-monitor:"
+const keyPrefix = "background-job-logger:"
 
 // backgroundRoutineForRedis represents a single routine in a background job, and is used for serialization to/from Redis.
 type backgroundRoutineForRedis struct {
@@ -45,15 +45,15 @@ type backgroundRoutineForRedis struct {
 	LastSeen    string                      `json:"lastSeen"`
 }
 
-func NewRedisMonitor(logger log.Logger, hostName string, cache *rcache.Cache) *RedisMonitor {
-	return &RedisMonitor{rcache: cache, logger: logger, hostName: hostName}
+func NewJobLogger(logger log.Logger, hostName string, cache *rcache.Cache) *JobLogger {
+	return &JobLogger{rcache: cache, logger: logger, hostName: hostName}
 }
 
-func (m *RedisMonitor) Register(r Monitorable) {
+func (m *JobLogger) Register(r Loggable) {
 	m.routines = append(m.routines, r)
 }
 
-func (m *RedisMonitor) RegistrationDone() {
+func (m *JobLogger) RegistrationDone() {
 	// Save/update all known job names
 	err := saveKnownJobNames(m.rcache, m.routines)
 	if err != nil {
@@ -73,7 +73,7 @@ func (m *RedisMonitor) RegistrationDone() {
 	}
 }
 
-func saveKnownJobNames(c *rcache.Cache, routines []Monitorable) error {
+func saveKnownJobNames(c *rcache.Cache, routines []Loggable) error {
 	// Collect all job names
 	var allJobNames []string
 	for _, routine := range routines {
@@ -154,7 +154,7 @@ func GetKnownHostNames(c *rcache.Cache) ([]string, error) {
 	return values, nil
 }
 
-func saveKnownRoutines(c *rcache.Cache, routines []Monitorable) error {
+func saveKnownRoutines(c *rcache.Cache, routines []Loggable) error {
 	for _, r := range routines {
 		routine := backgroundRoutineForRedis{
 			Name:        r.Name(),
@@ -221,7 +221,7 @@ func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutineForRedis, error) {
 	return routines, nil
 }
 
-func (m *RedisMonitor) LogRun(r Monitorable, duration time.Duration, runErr error) {
+func (m *JobLogger) LogRun(r Loggable, duration time.Duration, runErr error) {
 	durationMs := int32(duration.Milliseconds())
 	err := saveRun(m.rcache, r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
@@ -364,12 +364,12 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 	return stats, nil
 }
 
-func (m *RedisMonitor) LogStart(r Monitorable) {
+func (m *JobLogger) LogStart(r Loggable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just started! 🚀")
 }
 
-func (m *RedisMonitor) LogStop(r Monitorable) {
+func (m *JobLogger) LogStop(r Loggable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStop", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just stopped! 🛑")
 }
@@ -507,6 +507,6 @@ func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string
 	}, nil
 }
 
-func GetMonitorCache(ttlSeconds int) *rcache.Cache {
+func GetLoggerCache(ttlSeconds int) *rcache.Cache {
 	return rcache.NewWithTTL(keyPrefix, ttlSeconds)
 }

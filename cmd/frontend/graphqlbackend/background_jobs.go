@@ -99,7 +99,7 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := goroutine.GetBackgroundJobInfo(goroutine.GetMonitorCache(1), jobName, int32(recentRunCount), dayCountForStats)
+	item, err := goroutine.GetBackgroundJobInfo(goroutine.GetLoggerCache(1), jobName, int32(recentRunCount), dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqluti
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
 	r.once.Do(func() {
-		jobInfos, err := goroutine.GetBackgroundJobInfos(goroutine.GetMonitorCache(1), r.after, *r.recentRunCount, dayCountForStats)
+		jobInfos, err := goroutine.GetBackgroundJobInfos(goroutine.GetLoggerCache(1), r.after, *r.recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 		}

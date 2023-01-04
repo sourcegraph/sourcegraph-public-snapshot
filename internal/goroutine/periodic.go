@@ -31,10 +31,10 @@ type PeriodicGoroutine struct {
 	ctx         context.Context    // root context passed to the handler
 	cancel      context.CancelFunc // cancels the root context
 	finished    chan struct{}      // signals that Start has finished
-	monitor     *RedisMonitor
+	monitor *JobLogger
 }
 
-var _ Monitorable = &PeriodicGoroutine{}
+var _ Loggable = &PeriodicGoroutine{}
 
 type unifiedHandler interface {
 	Handler
@@ -202,7 +202,7 @@ func (r *PeriodicGoroutine) SetJobName(jobName string) {
 	r.jobName = jobName
 }
 
-func (r *PeriodicGoroutine) RegisterMonitor(monitor *RedisMonitor) {
+func (r *PeriodicGoroutine) RegisterJobLogger(monitor *JobLogger) {
 	r.monitor = monitor
 }
 
