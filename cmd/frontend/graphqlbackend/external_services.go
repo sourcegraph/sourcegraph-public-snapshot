@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,8 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -79,7 +76,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.SyncExternalService(ctx, r.logger, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -152,8 +149,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
 	if oldConfig != newConfig {
-		err = backend.SyncExternalService(ctx, r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient)
-		if err != nil {
+		if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
 	}
@@ -167,19 +163,12 @@ type excludeRepoFromExternalServiceArgs struct {
 }
 
 // ExcludeRepoFromExternalService excludes given repo from given external service config.
-//
-// Function is pretty beefy, what it does is:
-// - checks whether current user is site-admin and returns if not
-// - finds an external service by ID and checks if it supports repo exclusion
-// - adds repo to `exclude` config parameter and updates an external service
-// - triggers external service sync
-//
-// Note: Failing to trigger an external service sync doesn't fail the whole update.
 func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
+
 	extSvcID, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
 		return nil, err
@@ -190,117 +179,10 @@ func (r *schemaResolver) ExcludeRepoFromExternalService(ctx context.Context, arg
 		return nil, err
 	}
 
-	externalServices := r.db.ExternalServices()
-	externalService, err := externalServices.GetByID(ctx, extSvcID)
-	if err != nil {
+	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalService(ctx, extSvcID, repositoryID); err != nil {
 		return nil, err
-	}
-
-	logger := r.logger.Scoped("ExcludeRepoFromExternalService", "excluding a repo from external service config").With(
-		log.Int64("externalServiceID", extSvcID),
-		log.Int32("repoID", int32(repositoryID)),
-	)
-
-	// If external service doesn't support repo exclusion, then return.
-	if !externalService.SupportsRepoExclusion() {
-		logger.Warn("Tried to exclude repo from external service, but its config does not support repo exclusion.")
-		return &EmptyResponse{}, nil
-	}
-
-	repository, err := r.db.Repos().Get(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	updatedConfig, err := addRepoToExclude(ctx, externalService, repository)
-	if err != nil {
-		return nil, err
-	}
-
-	err = externalServices.Update(ctx, conf.Get().AuthProviders, extSvcID, &database.ExternalServiceUpdate{Config: &updatedConfig})
-	if err != nil {
-		return nil, err
-	}
-
-	// Error during triggering a sync is omitted, because this should not prevent
-	// from excluding the repo. The repo stays excluded and the sync will come
-	// eventually.
-	_, err = r.SyncExternalService(ctx, &syncExternalServiceArgs{ID: args.ExternalService})
-	if err != nil {
-		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
 	}
 	return &EmptyResponse{}, nil
-}
-
-func addRepoToExclude(ctx context.Context, externalService *types.ExternalService, repository *types.Repo) (string, error) {
-	config, err := externalService.Configuration(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	// we need to use a `org/repo` repo name format in `exclude` section of code host
-	// config, hence trimming the host: `github.com/sourcegraph/sourcegraph` becomes
-	// `sourcegraph/sourcegraph`.
-	repoName := trimHostFromRepoName(string(repository.Name))
-
-	switch c := config.(type) {
-	case *schema.AWSCodeCommitConnection:
-		exclusion := &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
-		}
-	case *schema.BitbucketCloudConnection:
-		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketCloudRepo{Name: repoName})
-		}
-	case *schema.BitbucketServerConnection:
-		exclusion := &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedBitbucketServerRepo{Id: int(repository.ID), Name: repoName})
-		}
-	case *schema.GitHubConnection:
-		exclusion := &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitHubRepo{Id: strconv.FormatInt(int64(repository.ID), 10), Name: repoName})
-		}
-	case *schema.GitLabConnection:
-		exclusion := &schema.ExcludedGitLabProject{Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitLabProject{Name: repoName})
-		}
-	case *schema.GitoliteConnection:
-		exclusion := &schema.ExcludedGitoliteRepo{Name: repoName}
-		if !schemaContainsExclusion(c.Exclude, exclusion) {
-			c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repoName})
-		}
-	}
-
-	strConfig, err := json.Marshal(config)
-	if err != nil {
-		return "", err
-	}
-	return string(strConfig), nil
-}
-
-// trimHostFromRepoName removes host from full repo name. It does it in the same
-// way as it is done before rendering repo name on the UI. See RepoLink
-// component.
-func trimHostFromRepoName(name string) string {
-	parts := strings.Split(name, "/")
-	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
-		return strings.Join(parts[1:], "/")
-	}
-	return strings.Join(parts, "/")
-}
-
-func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) bool {
-	for _, exclusion := range exclusions {
-		if *exclusion == *newExclusion {
-			return true
-		}
-	}
-	return false
 }
 
 type deleteExternalServiceArgs struct {
@@ -504,13 +386,7 @@ type syncExternalServiceArgs struct {
 	ID graphql.ID
 }
 
-// mockSyncExternalService mocks (*schemaResolver).SyncExternalService.
-var mockSyncExternalService func(context.Context, *syncExternalServiceArgs) (*EmptyResponse, error)
-
 func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
-	if mockSyncExternalService != nil {
-		return mockSyncExternalService(ctx, args)
-	}
 	start := time.Now()
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
