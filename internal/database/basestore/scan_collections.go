@@ -33,6 +33,7 @@ func NewCallbackScanner(f func(dbutil.Scanner) error) func(rows *sql.Rows, query
 func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) (T, bool, error) {
 	return func(rows *sql.Rows, queryErr error) (value T, called bool, _ error) {
 		scanner := func(s dbutil.Scanner) (err error) {
+			defer func() { err = CloseRows(rows, err) }()
 			called = true
 			value, err = f(s)
 			return err
