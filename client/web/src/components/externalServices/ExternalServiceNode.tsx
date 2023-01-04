@@ -145,7 +145,11 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                 </div>
                 <div className="flex-shrink-0 ml-3">
                     <Tooltip
-                        content={node.hasConnectionCheck ? 'Test code host connection' : 'Connection check unavailable'}
+                        content={
+                            node.hasConnectionCheck
+                                ? 'Test if code host is reachable from Sourcegraph'
+                                : 'Connection check unavailable'
+                        }
                     >
                         <Button
                             className="test-connection-external-service-button"

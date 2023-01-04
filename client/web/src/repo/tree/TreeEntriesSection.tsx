@@ -2,14 +2,9 @@ import React from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { identity } from 'lodash'
 
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon } from '@sourcegraph/wildcard'
-
-import { FileDecorator } from '../../tree/FileDecorator'
 
 import styles from './TreeEntriesSection.module.scss'
 
@@ -26,10 +21,9 @@ const TreeEntry: React.FunctionComponent<
         parentPath: string
         url: string
         isColumnLayout: boolean
-        renderedFileDecorations: React.ReactNode
         path: string
     }>
-> = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
+> = ({ isDirectory, name, url, isColumnLayout, path }) => (
     <li>
         <Link
             to={url}
@@ -57,55 +51,24 @@ const TreeEntry: React.FunctionComponent<
                     {name}
                     {isDirectory && '/'}
                 </span>
-                {renderedFileDecorations}
             </div>
         </Link>
     </li>
 )
 
-interface TreeEntriesSectionProps extends ThemeProps {
+interface TreeEntriesSectionProps {
     parentPath: string
     entries: Pick<TreeEntryFields, 'name' | 'isDirectory' | 'url' | 'path'>[]
-    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export const TreeEntriesSection: React.FunctionComponent<React.PropsWithChildren<TreeEntriesSectionProps>> = ({
     parentPath,
     entries,
-    fileDecorationsByPath,
-    isLightTheme,
 }) => {
     const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
     if (directChildren.length === 0) {
         return null
     }
-
-    // Render file decorations for all files in parent so we know how many total file decorations exist
-    // and can decide whether or not to render dividers
-    // No need to memoize decorations, since this component should only rerender when entries change
-    const renderedDecorationsByIndex = directChildren.map(entry => (
-        <FileDecorator
-            key={entry.path}
-            // If component is not specified, or it is 'page', render it.
-            fileDecorations={fileDecorationsByPath[entry.path]?.filter(decoration => decoration?.where !== 'sidebar')}
-            isLightTheme={isLightTheme}
-        />
-    ))
-
-    // If there are no file decorations, we want to hide column-rule.
-    // TODO(tj): turn 4 iterations over directChildren in this component into 1
-    const noDecorations = !directChildren
-        // Return whether or not each child has decorations
-        .map(entry => {
-            const decorations = fileDecorationsByPath[entry.path]?.filter(decoration => decoration?.where !== 'sidebar')
-            if (!decorations) {
-                return false
-            }
-
-            return decorations.length > 0
-        })
-        // If any child has decorations, the result is true
-        .find(identity)
 
     const isColumnLayout = directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT
 
@@ -113,12 +76,7 @@ export const TreeEntriesSection: React.FunctionComponent<React.PropsWithChildren
         <ul
             className={classNames(
                 'list-unstyled',
-                isColumnLayout &&
-                    classNames(
-                        'pr-2',
-                        styles.treeEntriesSectionColumns,
-                        noDecorations && styles.treeEntriesSectionNoDecorations
-                    )
+                isColumnLayout && classNames('pr-2', styles.treeEntriesSectionColumns)
             )}
         >
             {directChildren.map((entry, index) => (
@@ -126,7 +84,6 @@ export const TreeEntriesSection: React.FunctionComponent<React.PropsWithChildren
                     key={entry.name + String(index)}
                     parentPath={parentPath}
                     isColumnLayout={isColumnLayout}
-                    renderedFileDecorations={renderedDecorationsByIndex[index]}
                     {...entry}
                 />
             ))}

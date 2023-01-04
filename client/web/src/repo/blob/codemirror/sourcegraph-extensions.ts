@@ -6,7 +6,7 @@
  * more information.
  */
 
-import { Extension, StateEffectType } from '@codemirror/state'
+import { Extension } from '@codemirror/state'
 import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { Remote } from 'comlink'
 import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
@@ -14,12 +14,11 @@ import { catchError, filter, map, shareReplay, switchMap } from 'rxjs/operators'
 
 import { DocumentHighlight, emitLoading, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
-import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { Position } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -29,7 +28,6 @@ import { getHover } from '../../../backend/features'
 import { BlobInfo } from '../Blob'
 
 import { documentHighlightsSource } from './document-highlights'
-import { showTextDocumentDecorations } from './extensions-decorations'
 import { hovercardSource } from './hovercard'
 import { SelectedLineRange, selectedLines } from './linenumbers'
 
@@ -50,7 +48,6 @@ interface Context {
  * Enables integration with Sourcegraph extensions:
  * - Document highlights
  * - Hovercards (partially)
- * - Text document decorations
  * - Selection updates
  * - Reference panel warmup
  */
@@ -58,13 +55,11 @@ export function sourcegraphExtensions({
     blobInfo,
     initialSelection,
     extensionsController,
-    disableDecorations,
     enableSelectionDrivenCodeNavigation,
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
     extensionsController: RequiredExtensionsControllerProps['extensionsController']
-    disableDecorations?: boolean
     enableSelectionDrivenCodeNavigation?: boolean
 }): Extension {
     const subscriptions = new Subscription()
@@ -129,7 +124,6 @@ export function sourcegraphExtensions({
         // hover logic in the file 'token-selection/hover.ts'.
         enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
         enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
-        disableDecorations ? [] : textDocumentDecorations(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
         ViewPlugin.define(() => new WarmupReferencesManager(contextObservable)),
     ]
@@ -168,44 +162,6 @@ function documentHighlightsDataSource(context: Observable<Context>): Extension {
 //
 // Text document decorations
 //
-
-/**
- * This integration doesn't require any input from CodeMirror. Rendering text
- * document decorations is done independently on the CodeMirror side.
- * TextDecorationManager manages the subscription to the extension host and uses
- * a state field to provide input values for the {@link showTextDocumentDecorations}
- * facet.
- */
-class TextDecorationManager implements PluginValue {
-    private subscription: Subscription
-
-    constructor(
-        view: EditorView,
-        context: Observable<Context>,
-        setDecorations: StateEffectType<TextDocumentDecoration[]>
-    ) {
-        this.subscription = context
-            .pipe(
-                switchMap(context =>
-                    wrapRemoteObservable(context.extensionHostAPI.getTextDecorations(context.viewerId))
-                )
-            )
-            .subscribe(decorations => {
-                view.dispatch({ effects: setDecorations.of(decorations) })
-            })
-    }
-
-    public destroy(): void {
-        this.subscription.unsubscribe()
-    }
-}
-
-function textDocumentDecorations(context: Observable<Context>): Extension {
-    const [decorationsField, , setDecorations] = createUpdateableField<TextDocumentDecoration[]>([], field =>
-        showTextDocumentDecorations.from(field)
-    )
-    return [decorationsField, ViewPlugin.define(view => new TextDecorationManager(view, context, setDecorations))]
-}
 
 //
 // Selection change notifier

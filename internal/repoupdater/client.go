@@ -241,8 +241,14 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 	return errors.New(res.Error)
 }
 
+// MockSyncExternalService mocks (*Client).SyncExternalService for tests.
+var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
+
 // SyncExternalService requests the given external service to be synced.
 func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
+	if MockSyncExternalService != nil {
+		return MockSyncExternalService(ctx, externalServiceID)
+	}
 	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {

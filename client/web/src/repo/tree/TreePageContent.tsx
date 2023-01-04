@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -6,15 +6,12 @@ import * as H from 'history'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Heading, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../backend/features'
 import { TreePageRepositoryFields } from '../../graphql-operations'
 
 import { TreeCommits } from './commits/TreeCommits'
@@ -22,7 +19,7 @@ import { TreeEntriesSection } from './TreeEntriesSection'
 
 import styles from './TreePage.module.scss'
 
-interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     repo: TreePageRepositoryFields
@@ -39,21 +36,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     revision,
     ...props
 }) => {
-    const fileDecorationsByPath =
-        useObservable<FileDecorationsByPath>(
-            useMemo(
-                () =>
-                    getFileDecorations({
-                        files: tree.entries,
-                        extensionsController: props.extensionsController,
-                        repoName: repo.name,
-                        commitID,
-                        parentNodeUri: tree.url,
-                    }),
-                [commitID, props.extensionsController, repo.name, tree.entries, tree.url]
-            )
-        ) ?? {}
-
     const { extensionsController } = props
 
     return (
@@ -62,12 +44,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 <Heading as="h3" styleAs="h2">
                     Files and directories
                 </Heading>
-                <TreeEntriesSection
-                    parentPath={filePath}
-                    entries={tree.entries}
-                    fileDecorationsByPath={fileDecorationsByPath}
-                    isLightTheme={props.isLightTheme}
-                />
+                <TreeEntriesSection parentPath={filePath} entries={tree.entries} />
             </section>
             {extensionsController !== null && window.context.enableLegacyExtensions ? (
                 <ActionsContainer

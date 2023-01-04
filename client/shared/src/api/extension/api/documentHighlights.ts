@@ -1,12 +1,12 @@
-import * as sourcegraph from 'sourcegraph'
+import type { DocumentHighlightKind as LegacyDocumentHighlightKind } from '../../../codeintel/legacy-extensions/api'
 
 /**
  * The type of a document highlight.
- * This is needed because if sourcegraph.DocumentHighlightKind enum values are referenced,
+ * This is needed because if DocumentHighlightKind enum values are referenced,
  * the `sourcegraph` module import at the top of the file is emitted in the generated code.
  */
-export const DocumentHighlightKind: typeof sourcegraph.DocumentHighlightKind = {
-    Text: 'text' as sourcegraph.DocumentHighlightKind.Text,
-    Read: 'read' as sourcegraph.DocumentHighlightKind.Read,
-    Write: 'write' as sourcegraph.DocumentHighlightKind.Write,
+export const DocumentHighlightKind: typeof LegacyDocumentHighlightKind = {
+    Text: 'text' as LegacyDocumentHighlightKind.Text,
+    Read: 'read' as LegacyDocumentHighlightKind.Read,
+    Write: 'write' as LegacyDocumentHighlightKind.Write,
 }

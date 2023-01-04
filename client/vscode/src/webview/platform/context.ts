@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 import * as Comlink from 'comlink'
 import { print } from 'graphql'
-import { BehaviorSubject, from, Observable } from 'rxjs'
+import { from, Observable } from 'rxjs'
 
 import { checkOk, GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -26,7 +26,6 @@ export interface VSCodePlatformContext
         | 'getGraphQLClient'
         | 'showMessage'
         | 'showInputBox'
-        | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
@@ -60,7 +59,6 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         // TODO: implement GQL mutation, settings refresh (called by extensions, impl w/ ext. host).
         updateSettings: () => Promise.resolve(),
         telemetryService: new EventLogger(extensionCoreAPI),
-        sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,
         // TODO showInputBox

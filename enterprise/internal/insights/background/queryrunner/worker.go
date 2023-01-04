@@ -530,7 +530,7 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("execution_logs"),
 }
 
-// ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
+// ToQueueJob converts the query execution into a queueable job with its relevant dependent times.
 func ToQueueJob(q compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
 	return &Job{
 		SearchJob: SearchJob{

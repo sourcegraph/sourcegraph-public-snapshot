@@ -25,16 +25,6 @@ export interface FeatureFlags {
     sendTelemetry: boolean
 
     /**
-     * Support link previews from extensions in content views (such as GitHub issues).
-     */
-    experimentalLinkPreviews: boolean
-
-    /**
-     * Support completion in text fields (such as on GitHub issues).
-     */
-    experimentalTextFieldCompletion: boolean
-
-    /**
      * Token single click takes user to variable definition.
      */
     clickToGoToDefinition: boolean
@@ -43,8 +33,6 @@ export interface FeatureFlags {
 export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
     sendTelemetry: true,
-    experimentalLinkPreviews: false,
-    experimentalTextFieldCompletion: false,
     clickToGoToDefinition: false,
 }
 
@@ -76,9 +64,7 @@ export interface SyncStorageItems extends SourcegraphURL {
     dismissedHoverAlerts: Record<string, boolean | undefined>
 }
 
-export interface LocalStorageItems {
-    sideloadedExtensionURL: string | null
-}
+export interface LocalStorageItems {}
 
 export interface ManagedStorageItems extends SourcegraphURL {
     phabricatorMappings: PhabricatorMapping[]
