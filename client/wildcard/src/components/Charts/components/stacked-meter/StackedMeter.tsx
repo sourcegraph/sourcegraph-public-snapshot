@@ -42,6 +42,7 @@ export function StackedMeter<Datum>({
         range: [0, width],
     })
 
+    // ensure the bars have some minimum width, for aesthetic reasons
     const adjustedGetDatumValue: (datum: Datum) => number = minBarWidth
         ? (datum: Datum): number => Math.max(getDatumValue(datum), ((minMax[1] - minMax[0]) * minBarWidth) / width)
         : getDatumValue
