@@ -227,8 +227,8 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
         </Alert>
     )
 
-    const logEvents: any[] = props.repo.mirrorInfo.corruptionLogs.map(log => (
-        <li className="list-group-item px-2 py-1">
+    const logEvents: any[] = props.repo.mirrorInfo.corruptionLogs.map((log, index) => (
+        <li key={`${props.repo.name}#${index}`} className="list-group-item px-2 py-1">
             <div className="d-flex flex-column align-items-center justify-content-between">
                 <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
                 <small className="text-muted mb-0">
