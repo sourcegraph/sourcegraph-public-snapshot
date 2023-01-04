@@ -26,9 +26,10 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 		want autogold.Value
 	}{
 		{
+			// TODO: We should display an error in search describing why the result is empty.
 			name: "filters all matches if we include an owner and have no code owners file",
 			args: args{
-				includeOwners: []string{"@sqs"},
+				includeOwners: []string{"@test"},
 				excludeOwners: []string{},
 				matches: []result.Match{
 					&result.FileMatch{
@@ -41,9 +42,9 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			want: autogold.Want("no results", []result.Match{}),
 		},
 		{
-			name: "filters results based on code owners file",
+			name: "selects only results matching owners",
 			args: args{
-				includeOwners: []string{"@sqs"},
+				includeOwners: []string{"@test"},
 				excludeOwners: []string{},
 				matches: []result.Match{
 					&result.FileMatch{
@@ -58,7 +59,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 					},
 				},
 				repoContent: map[string]string{
-					"CODEOWNERS": "README.md @sqs\n",
+					"CODEOWNERS": "README.md @test\n",
 				},
 			},
 			want: autogold.Want("results matching ownership", []result.Match{
@@ -70,10 +71,10 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
-			name: "filters results based on code owners file in a subdirectory",
+			name: "selects only results without excluded owners",
 			args: args{
-				includeOwners: []string{"@sqs"},
-				excludeOwners: []string{},
+				includeOwners: []string{},
+				excludeOwners: []string{"@test"},
 				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
@@ -87,19 +88,18 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 					},
 				},
 				repoContent: map[string]string{
-					".github/CODEOWNERS": "README.md @sqs\n",
+					"CODEOWNERS": "README.md @test\n",
 				},
 			},
 			want: autogold.Want("results matching ownership", []result.Match{
 				&result.FileMatch{
 					File: result.File{
-						Path: "README.md",
+						Path: "package.json",
 					},
 				},
 			}),
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()

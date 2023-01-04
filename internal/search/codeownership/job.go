@@ -118,6 +118,11 @@ matchesLoop:
 				continue matchesLoop
 			}
 		}
+		for _, notOwner := range excludeOwners {
+			if containsOwner(owners, notOwner) {
+				continue matchesLoop
+			}
+		}
 
 		filtered = append(filtered, m)
 	}
