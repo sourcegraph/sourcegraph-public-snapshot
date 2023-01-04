@@ -789,19 +789,23 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 }
 
 func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
-	return basestore.NewCallbackScanner(func(s dbutil.Scanner) error {
+	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte
 		if err := s.Scan(&idx, &rawData); err != nil {
-			return err
+			return false, err
 		}
 
 		data, err := serializer.UnmarshalResultChunkData(rawData)
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		return f(idx, data)
+		if err := f(idx, data); err != nil {
+			return false, err
+		}
+
+		return true, nil
 	})
 }
 
