@@ -58,6 +58,9 @@ var (
 	// The following arguments are deprecated which is why they are no longer documented
 	configPath = flag.String("config", "", "")
 	endpoint   = flag.String("endpoint", "", "")
+
+	errConfigMerge                 = errors.New("when using a configuration file, zero or all environment variables must be set")
+	errConfigAuthorizationConflict = errors.New("when passing an 'Authorization' additional headers, SRC_ACCESS_TOKEN must never be set")
 )
 
 // commands contains all registered subcommands.
@@ -154,6 +157,11 @@ func readConfig() (*config, error) {
 	}
 
 	cfg.AdditionalHeaders = parseAdditionalHeaders()
+	// Ensure that we're not clashing additonal headers
+	_, hasAuthorizationAdditonalHeader := cfg.AdditionalHeaders["authorization"]
+	if cfg.AccessToken != "" && hasAuthorizationAdditonalHeader {
+		return nil, errConfigAuthorizationConflict
+	}
 
 	// Lastly, apply endpoint flag if set
 	if endpoint != nil && *endpoint != "" {
@@ -168,5 +176,3 @@ func readConfig() (*config, error) {
 func cleanEndpoint(urlStr string) string {
 	return strings.TrimSuffix(urlStr, "/")
 }
-
-var errConfigMerge = errors.New("when using a configuration file, zero or all environment variables must be set")

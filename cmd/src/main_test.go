@@ -151,6 +151,13 @@ func TestReadConfig(t *testing.T) {
 				AdditionalHeaders: map[string]string{"foo-bar": "bar-baz", "foo": "bar"},
 			},
 		},
+		{
+			name:        "additional headers SRC_HEADERS_AUTHORIZATION and SRC_ACCESS_TOKEN",
+			envToken:    "abc",
+			envEndpoint: "https://override.com",
+			envHeaders:  "Authorization:Bearer",
+			wantErr:     errConfigAuthorizationConflict.Error(),
+		},
 	}
 
 	for _, test := range tests {
