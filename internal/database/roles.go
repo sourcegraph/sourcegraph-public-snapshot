@@ -21,12 +21,6 @@ var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.deleted_at"),
 }
 
-var permissionColumnsForRole = []*sqlf.Query{
-	sqlf.Sprintf("permissions.id AS permission_id"),
-	sqlf.Sprintf("permissions.action"),
-	sqlf.Sprintf("permissions.namespace"),
-}
-
 var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("readonly"),
@@ -166,14 +160,6 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 	return &role, nil
 }
 
-const roleListQueryFmtstr = `
-SELECT
-	%s
-FROM roles
-WHERE %s
-ORDER BY created_at
-`
-
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
 	roles := make([]*types.Role, 0, 20)
 
@@ -186,18 +172,26 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 		return nil
 	}
 
-	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), scanFunc)
+	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), sqlf.Sprintf("ORDER BY roles.created_at ASC"), scanFunc)
 	return roles, err
 }
 
-func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
+const roleListQueryFmtstr = `
+SELECT
+	%s
+FROM roles
+WHERE %s
+%s
+`
+
+func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
 	var whereClause = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
 	if opts.ReadOnly {
 		whereClause = append(whereClause, sqlf.Sprintf("readonly IS TRUE"))
 	}
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(whereClause, " AND "))
+	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(whereClause, " AND "), orderByQuery)
 
 	if opts.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
@@ -248,7 +242,7 @@ func (r *roleStore) Create(ctx context.Context, name string, readonly bool) (_ *
 
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
 	opts.LimitOffset = nil
-	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
+	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), sqlf.Sprintf(""), func(rows *sql.Rows) error {
 		return rows.Scan(&c)
 	})
 	return c, err

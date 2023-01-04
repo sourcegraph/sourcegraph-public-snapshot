@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// This refers to the DEFAULT and SITE_ADMINISTRATOR roles that are already
+// seeded into the database using the migrator tool.
+var numberOfDefaultRoles = 2
+
 func TestRoleGetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -92,10 +96,6 @@ func TestRoleList(t *testing.T) {
 
 	total := createTestRoles(ctx, t, store)
 
-	// This refers to the DEFAULT and SITE_ADMINISTRATOR roles that are already
-	// seeded into the database using the migrator tool.
-	var numberOfDefaultRoles = 2
-
 	t.Run("basic no opts", func(t *testing.T) {
 		allRoles, err := store.List(ctx, RolesListOptions{})
 		assert.NoError(t, err)
@@ -140,7 +140,7 @@ func TestRoleCount(t *testing.T) {
 
 	count, err := store.Count(ctx, RolesListOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, count, total)
+	assert.Equal(t, count, total+numberOfDefaultRoles)
 }
 
 func TestRoleUpdate(t *testing.T) {
