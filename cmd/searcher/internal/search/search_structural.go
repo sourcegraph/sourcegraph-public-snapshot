@@ -475,14 +475,14 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if err := scanner.Err(); err != nil {
-				// warn on scanner errors and skip
-				log.NamedError("comby error: skipping scanner error line", err)
-				break
-			}
 			if r := comby.ToCombyFileMatchWithChunks(b); r != nil {
 				sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
 			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			// warn on scanner errors and skip
+			log.NamedError("comby error: skipping scanner error line", err)
 		}
 	}()
 
@@ -523,12 +523,6 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if err := scanner.Err(); err != nil {
-				// warn on scanner errors and skip
-				log.NamedError("comby error: skipping scanner error line", err)
-				break
-			}
-
 			cfm := comby.ToFileMatch(b)
 			if cfm != nil {
 				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
@@ -538,6 +532,11 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 				}
 				sender.Send(fm)
 			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			// warn on scanner errors and skip
+			log.NamedError("comby error: skipping scanner error line", err)
 		}
 	}()
 

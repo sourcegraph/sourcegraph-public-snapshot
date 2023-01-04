@@ -140,14 +140,14 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if err := scanner.Err(); err != nil {
-				// warn on scanner errors and skip
-				log15.Warn("comby error: skipping scanner error line", "err", err.Error())
-				continue
-			}
 			if r := unmarshal(b); r != nil {
 				results = append(results, r)
 			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			// warn on scanner errors and skip
+			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
 		}
 	}()
 
