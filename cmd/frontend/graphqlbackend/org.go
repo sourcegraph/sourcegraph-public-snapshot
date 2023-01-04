@@ -14,9 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -349,11 +351,9 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, err
 	}
 
-	permJobs := r.db.PermissionSyncJobs()
-	err = permJobs.CreateUserSyncJob(ctx, userID, database.PermissionSyncJobOpts{HighPriority: true})
-	if err != nil {
-		return nil, err
-	}
+	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+
 	return nil, nil
 }
 
@@ -397,11 +397,8 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	// Schedule permission sync for newly added user
-	permJobs := r.db.PermissionSyncJobs()
-	err = permJobs.CreateUserSyncJob(ctx, userToInvite.ID, database.PermissionSyncJobOpts{HighPriority: true})
-	if err != nil {
-		return nil, err
-	}
+	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+
 	return &EmptyResponse{}, nil
 }
