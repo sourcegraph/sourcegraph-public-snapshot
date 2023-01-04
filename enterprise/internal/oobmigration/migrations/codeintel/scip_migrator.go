@@ -248,18 +248,22 @@ func migrateUpload(
 		}
 
 		for path, document := range documentsByPath {
-			if err := processDocument(
+			scipDocument, err := processDocument(
 				ctx,
 				codeintelTx,
 				serializer,
-				scipWriter,
 				resultChunkCache,
 				uploadID,
 				numResultChunks,
 				indexerName,
 				path,
 				document,
-			); err != nil {
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
 				return err
 			}
 		}
@@ -313,14 +317,13 @@ func processDocument(
 	ctx context.Context,
 	tx *basestore.Store,
 	serializer *serializer,
-	scipWriter *scipWriter,
 	resultChunkCache *lru.Cache,
 	uploadID int,
 	numResultChunks int,
 	indexerName,
 	path string,
 	document DocumentData,
-) error {
+) (*ogscip.Document, error) {
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -335,7 +338,7 @@ func processDocument(
 		extractDefinitionResultIDs(document.Ranges),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	definitionMatcher := func(
@@ -365,11 +368,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
-		return err
-	}
-
-	return nil
+	return scipDocument, nil
 }
 
 // fetchResultChunks queries for the set of result chunks containing one of the given result set
