@@ -203,6 +203,12 @@ func migrateUpload(
 	}
 	resultChunkCache := lru.New(resultChunkCacheSize)
 
+	scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+		resultChunkCache.Add(idx, resultChunk)
+		return nil
+	})
+	scanDocuments := makeDocumentScanner(serializer)
+
 	// Warm result chunk cache if it will all fit in the cache
 	if numResultChunks <= resultChunkCacheSize {
 		ids := make([]ID, 0, numResultChunks)
@@ -210,10 +216,6 @@ func migrateUpload(
 			ids = append(ids, ID(strconv.Itoa(i)))
 		}
 
-		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunkCache.Add(idx, resultChunk)
-			return nil
-		})
 		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanResultChunksQuery,
 			uploadID,
@@ -224,7 +226,7 @@ func migrateUpload(
 	}
 
 	for page := 0; ; page++ {
-		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
+		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
 			scipMigratorDocumentBatchSize,
