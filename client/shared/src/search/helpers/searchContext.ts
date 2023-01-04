@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { PlatformContext } from '../../platform/context'
 
 import {
     fetchSearchContexts,

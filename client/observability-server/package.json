@@ -7,9 +7,12 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "bundlesize:web:upload": "NODE_ENV=production pnpm run -T ts-node-transpile-only ./src/webBundleSize",
-    "honeycomb:clone-boards": "pnpm run -T ts-node-transpile-only ./src/honeycomb/clone-boards.ts",
-    "lint:js": "pnpm run -T eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "pnpm run -T jest"
+    "bundlesize:web:upload": "NODE_ENV=production pnpm ts-node-transpile-only ./src/webBundleSize",
+    "honeycomb:clone-boards": "pnpm ts-node-transpile-only ./src/honeycomb/clone-boards.ts",
+    "lint:js": "pnpm eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "pnpm jest"
+  },
+  "devDependencies": {
+    "@sourcegraph/build-config": "workspace:*"
   }
 }

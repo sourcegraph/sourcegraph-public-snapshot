@@ -14,7 +14,9 @@ export interface HoverMerged {
 }
 
 /** Create a merged hover from the given individual hovers. */
-export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
+export function fromHoverMerged(
+    values: (Badged<Hover | (PlainHover & { alerts?: HoverAlert[] })> | null | undefined)[]
+): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     const alerts: HoverMerged['alerts'] = []
     const aggregatedBadges = new Map<string, AggregableBadge>()

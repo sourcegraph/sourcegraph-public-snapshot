@@ -35,7 +35,7 @@ pipeline.AddStep(":jest::chrome: Test browser extension",
     RestoreKeys: []string{"cache-node_modules-yarn_v3-{{ checksum 'yarn.lock' }}"},
     Paths:       []string{"node_modules", ".yarn/cache"},
   }),
-  bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+  bk.Cmd("dev/ci/pnpm-test.sh client/browser"),
   bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 ```
 

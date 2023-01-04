@@ -2,19 +2,19 @@
 
 set -e
 
-echo "--- yarn in root"
-./dev/ci/yarn-install-with-retry.sh
+echo "--- pnpm install in root"
+./dev/ci/pnpm-install-with-retry.sh
 
 # Save the absolute path to the script before changing directories.
-abs_yarn="$(pwd)/dev/ci/yarn-install-with-retry.sh"
+abs_pnpm="$(pwd)/dev/ci/pnpm-install-with-retry.sh"
 
 cd "$1"
-echo "--- yarn"
-"$abs_yarn"
+echo "--- pnpm install"
+"$abs_pnpm"
 
 echo "--- test"
 
 # Limit the number of workers to prevent the default of 1 worker per core from
 # causing OOM on the buildkite nodes that have 96 CPUs. 4 matches the CPU limits
 # in infrastructure/kubernetes/ci/buildkite/buildkite-agent/buildkite-agent.Deployment.yaml
-yarn -s run test --maxWorkers 4
+pnpm -s run test --maxWorkers 4

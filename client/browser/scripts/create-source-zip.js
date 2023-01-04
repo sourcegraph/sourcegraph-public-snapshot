@@ -68,8 +68,8 @@ signale.success('Downloaded and unzipped sourcegraph/sourcegraph repository')
 
 if (includeCodeIntelExtensions) {
   shelljs.pushd(rootDirectoryNameForZip)
-  shelljs.exec('yarn install')
-  shelljs.exec('yarn workspace @sourcegraph/browser run build-inline-extensions')
+  shelljs.exec('pnpm install')
+  shelljs.exec('pnpm --filter @sourcegraph/browser run build-inline-extensions')
   shelljs.popd()
 }
 

@@ -30,7 +30,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				"root": "/",
 				"image": "node:12",
 				"commands": [
-					"yarn install --frozen-lockfile --non-interactive",
+					"pnpm install --frozen-lockfile",
 				],
 			}
 		],
@@ -104,7 +104,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 				{
 					Image:    "go:latest",
@@ -122,7 +122,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 			},
 			Root:        "web/",
@@ -146,7 +146,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 					"root": "/",
 					"image": "node:12",
 					"commands": [
-						"yarn install --frozen-lockfile --non-interactive",
+						"pnpm install --frozen-lockfile",
 					],
 				}
 			],
@@ -236,7 +236,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 				{
 					Image:    "go:latest",
@@ -254,7 +254,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 			},
 			Root:        "web/",
@@ -273,7 +273,7 @@ shared_steps:
   - root: /
     image: node:12
     commands:
-      - yarn install --frozen-lockfile --non-interactive
+      - pnpm install --frozen-lockfile
 
 index_jobs:
   -
@@ -348,7 +348,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 				{
 					Image:    "go:latest",
@@ -366,7 +366,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 				{
 					Root:     "/",
 					Image:    "node:12",
-					Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					Commands: []string{"pnpm install --frozen-lockfile"},
 				},
 			},
 			Root:        "web/",

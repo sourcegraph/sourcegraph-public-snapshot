@@ -84,7 +84,7 @@ func ParseDiff(files []string) (diff Diff) {
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			diff |= Client
 		}
-		if strings.HasSuffix(p, "dev/ci/yarn-test.sh") {
+		if strings.HasSuffix(p, "dev/ci/pnpm-test.sh") {
 			diff |= Client
 		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be

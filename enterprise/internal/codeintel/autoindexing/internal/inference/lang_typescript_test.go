@@ -46,7 +46,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    expectedIndexerImage,
-							Commands: []string{"yarn --ignore-scripts"},
+							Commands: []string{"pnpm --ignore-scripts"},
 						},
 					},
 					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
