@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -506,14 +504,9 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	}
 	defer zipReader.Close()
 
-	logger := log.Scoped("comby", "runCombyAgainstZip")
+	p := pool.New().WithErrors()
 
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.Go(func() error {
 		defer stdout.Close()
 
 		scanner := bufio.NewScanner(stdout)
@@ -526,20 +519,20 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 			if cfm != nil {
 				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
 				if err != nil {
-					logger.Error("failed to convert comby match to FileMatch, skipping", log.Error(err))
-					continue
+					return errors.Wrap(err, "convert comby match to FileMatch")
 				}
 				sender.Send(fm)
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
-			// warn on scanner errors and skip
-			logger.Error("scan failed", log.Error(err))
-		}
-	}()
+		return errors.Wrap(scanner.Err(), "scan")
+	})
 
-	return comby.StartAndWaitForCompletion(cmd)
+	p.Go(func() error {
+		return comby.StartAndWaitForCompletion(cmd)
+	})
+
+	return p.Wait()
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
