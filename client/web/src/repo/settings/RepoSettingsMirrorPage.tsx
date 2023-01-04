@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { mdiChevronDown, mdiChevronRight, mdiLock } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
@@ -212,13 +212,12 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
 
 // Add interface for props then create component
 interface CorruptionLogProps {
-    isCorrupted: boolean
-    logItems: any[]
+    repo: SettingsAreaRepositoryFields
     history: H.History
 }
 
 const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
-    const health = props.isCorrupted ? (
+    const health = props.repo.mirrorInfo.isCorrupted ? (
         <Alert className={classNames('mb-0', styles.alert)} variant="danger">
             The repository is corrupt, check the log entries below for more info and consider recloning.
         </Alert>
@@ -228,7 +227,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
         </Alert>
     )
 
-    const logEvents: any[] = props.logItems.map(log => (
+    const logEvents: any[] = props.repo.mirrorInfo.corruptionLogs.map(log => (
         <li className="list-group-item px-2 py-1">
             <div className="d-flex flex-column align-items-center justify-content-between">
                 <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
@@ -241,9 +240,6 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
 
     const [isOpened, setIsOpened] = useState(false)
 
-    const handleOpenChange = useCallback((next: boolean) => {
-        setIsOpened(next)
-    }, [])
     return (
         <BaseActionContainer
             title="Repository corruption"
@@ -252,7 +248,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
                 <div className="flex-1">
                     {health}
                     <br />
-                    <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
+                    <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
                         <CollapseHeader
                             as={Button}
                             outline={true}
@@ -264,7 +260,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
                             Show log entries
                             <Icon
                                 aria-hidden={true}
-                                svgPath={isOpened ? mdiChevronDown : mdiChevronRight}
+                                svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
                                 className="mr-1"
                             />
                         </CollapseHeader>
@@ -416,11 +412,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                         </ul>
                     </Alert>
                 )}
-                <CorruptionLogsContainer
-                    isCorrupted={repo.mirrorInfo.isCorrupted}
-                    logItems={repo.mirrorInfo.corruptionLogs}
-                    history={props.history}
-                />
+                <CorruptionLogsContainer repo={repo} history={props.history} />
             </Container>
         </>
     )
