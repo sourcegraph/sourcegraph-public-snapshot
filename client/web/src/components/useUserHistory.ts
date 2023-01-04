@@ -106,14 +106,12 @@ export class UserHistory {
 }
 
 export function useUserHistory(history: H.History, isRepositoryRelatedPage: boolean): UserHistory {
-    const {
-        location: { pathname },
-    } = history
+    const { location } = history
     const userHistory = useMemo(() => new UserHistory(), [])
     useEffect(() => {
         if (isRepositoryRelatedPage) {
-            userHistory.onLocation(history.location)
+            userHistory.onLocation(location)
         }
-    }, [pathname])
+    }, [userHistory, location, isRepositoryRelatedPage])
     return userHistory
 }

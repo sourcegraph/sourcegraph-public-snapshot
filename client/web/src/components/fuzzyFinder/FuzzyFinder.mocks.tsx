@@ -8,12 +8,12 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { FileNamesResult, FuzzyFinderRepoResult, FuzzyFinderSymbolsResult, SymbolKind } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
+import { UserHistory } from '../useUserHistory'
 
 import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
 import { FUZZY_REPOS_QUERY } from './FuzzyRepos'
 import { FUZZY_SYMBOLS_QUERY } from './FuzzySymbols'
-import { UserHistory } from '../useUserHistory'
 
 export interface FuzzyWrapperProps {
     url: string
