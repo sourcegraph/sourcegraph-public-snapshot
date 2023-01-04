@@ -70,7 +70,11 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 			}
 			inc, exc := plan.ToQ().Repositories()
 			for _, repoFilter := range inc {
-				repo, _ := search.ParseRepositoryRevisions(repoFilter)
+				repo, repoRevs := search.ParseRepositoryRevisions(repoFilter)
+
+				if len(repoRevs) > 0 {
+					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
+				}
 				include = append(include, repo)
 			}
 			exclude = append(exclude, exc...)
