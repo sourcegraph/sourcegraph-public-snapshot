@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -92,18 +91,13 @@ func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileRes
 	return nil, false
 }
 
-func (r *GitTreeEntryResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
 	// We only care about the full content length here, so we just need content to be set.
 	_, err := r.Content(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-
-	if r.endLine == nil || int(*r.endLine) >= len(r.fullContentLines) {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
-	return graphqlutil.NextPageCursor(strconv.Itoa(int(*r.endLine) + 1)), nil
+	return int32(len(r.fullContentLines)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {

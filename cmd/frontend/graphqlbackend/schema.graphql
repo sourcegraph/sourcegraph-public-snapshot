@@ -5197,6 +5197,10 @@ type GitBlob implements TreeEntry & File2 {
     """
     byteSize: Int!
     """
+    Total line count for the Blob.
+    """
+    totalLines: Int!
+    """
     Whether or not it is binary.
     """
     binary: Boolean!
@@ -5300,10 +5304,6 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo
 }
 
 """

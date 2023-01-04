@@ -97,10 +97,6 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                         url
                         serviceKind
                     }
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
                 }
             }
         `,

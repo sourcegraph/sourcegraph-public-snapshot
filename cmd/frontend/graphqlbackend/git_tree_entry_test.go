@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -155,6 +156,15 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 		}
 
 		if have, want := newByteSize, int32(len([]byte(fullContent))); have != want {
+			t.Fatalf("wrong file size, want=%d have=%d", want, have)
+		}
+
+		newTotalLines, err := gitTree.TotalLines(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := newTotalLines, int32(len(strings.Split(fullContent, "\n"))); have != want {
 			t.Fatalf("wrong file size, want=%d have=%d", want, have)
 		}
 	}
