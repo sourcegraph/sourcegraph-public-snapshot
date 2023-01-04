@@ -3428,9 +3428,9 @@ type MirrorRepositoryInfo {
     """
     cloned: Boolean!
     """
-    When the repository was detected to be corrupt. If this is null, it's not corrupt.
+    Whether the repository is currently corrupt.
     """
-    corruptedAt: DateTime
+    isCorrupted: Boolean!
     """
     A Log of the corruption events that have been detected on this repository. Only 10 events are kept and the events
     are ordered from most recent to least.

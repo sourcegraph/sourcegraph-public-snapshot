@@ -160,16 +160,16 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
-func (r *repositoryMirrorInfoResolver) CorruptedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	if info.CorruptedAt.IsZero() {
-		return nil, err
+		return false, err
 	}
-	return &gqlutil.DateTime{Time: info.CorruptedAt}, nil
+	return true, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CorruptionLogs(ctx context.Context) ([]*corruptionLogResolver, error) {
@@ -190,12 +190,12 @@ type corruptionLogResolver struct {
 	log types.RepoCorruptionLog
 }
 
-func (r *corruptionLogResolver) Timestamp() (*gqlutil.DateTime, error) {
-	return &gqlutil.DateTime{Time: r.log.Timestamp}, nil
+func (r *corruptionLogResolver) Timestamp() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.log.Timestamp}, nil
 }
 
-func (r *corruptionLogResolver) Reason() (*string, error) {
-	return &r.log.Reason, nil
+func (r *corruptionLogResolver) Reason() (string, error) {
+	return r.log.Reason, nil
 }
 
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {

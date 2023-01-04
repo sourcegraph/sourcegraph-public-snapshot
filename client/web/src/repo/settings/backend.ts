@@ -31,7 +31,7 @@ export const settingsAreaRepositoryFragment = gql`
             cloneProgress
             cloned
             updatedAt
-            corruptedAt
+            isCorrupted
             corruptionLogs {
                 timestamp
                 reason
