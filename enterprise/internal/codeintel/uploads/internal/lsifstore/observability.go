@@ -13,8 +13,6 @@ type operations struct {
 	reconcileCandidates         *observation.Operation
 	getUploadDocumentsForPath   *observation.Operation
 	scanDocuments               *observation.Operation
-	scanResultChunks            *observation.Operation
-	scanLocations               *observation.Operation
 	insertMetadata              *observation.Operation
 	writeMeta                   *observation.Operation
 	writeDocuments              *observation.Operation
@@ -51,8 +49,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		reconcileCandidates:         op("ReconcileCandidates"),
 		getUploadDocumentsForPath:   op("GetUploadDocumentsForPath"),
 		scanDocuments:               op("ScanDocuments"),
-		scanResultChunks:            op("ScanResultChunks"),
-		scanLocations:               op("ScanLocations"),
 		insertMetadata:              op("InsertMetadata"),
 		writeMeta:                   op("WriteMeta"),
 		writeDocuments:              op("WriteDocuments"),
