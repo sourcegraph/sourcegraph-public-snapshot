@@ -469,9 +469,11 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if r := comby.ToCombyFileMatchWithChunks(b); r != nil {
-				sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
+			r, err := comby.ToCombyFileMatchWithChunks(b)
+			if err != nil {
+				return errors.Wrap(err, "ToCombyFileMatchWithChunks")
 			}
+			sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
 		}
 
 		return errors.Wrap(scanner.Err(), "scan")
@@ -520,14 +522,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			cfm := comby.ToFileMatch(b)
-			if cfm != nil {
-				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
-				if err != nil {
-					return errors.Wrap(err, "convert comby match to FileMatch")
-				}
-				sender.Send(fm)
+
+			cfm, err := comby.ToFileMatch(b)
+			if err != nil {
+				return errors.Wrap(err, "ToFileMatch")
 			}
+
+			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+			if err != nil {
+				return errors.Wrap(err, "toFileMatch")
+			}
+
+			sender.Send(fm)
 		}
 
 		return errors.Wrap(scanner.Err(), "scan")
