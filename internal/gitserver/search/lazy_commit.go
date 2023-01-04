@@ -91,7 +91,7 @@ func (l *LazyCommit) ModifiedFiles() []string {
 	for i < len(l.RawCommit.ModifiedFiles) {
 		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
 			// SAFETY: don't trust input
-			break
+			return files
 		}
 		switch l.RawCommit.ModifiedFiles[i][0] {
 		case 'R':
