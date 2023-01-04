@@ -1,7 +1,6 @@
 import assert from 'assert'
 
-import type * as sourcegraph from 'sourcegraph'
-
+import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
@@ -402,7 +401,7 @@ describe('GitHub', () => {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
+                        function activate(context: ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.languages.registerHoverProvider(['*'], {
                                     provideHover: (document, position) => {

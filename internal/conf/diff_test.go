@@ -58,12 +58,12 @@ func TestDiff(t *testing.T) {
 		{
 			name: "experimental_features",
 			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				ApidocsSearchIndexing: "enabled",
+				StructuralSearch: "enabled",
 			}}},
 			after: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				ApidocsSearchIndexing: "disabled",
+				StructuralSearch: "disabled",
 			}}},
-			want: []string{"experimentalFeatures::apidocs.search.indexing"},
+			want: []string{"experimentalFeatures::structuralSearch"},
 		},
 		{
 			name:   "experimental_features_noop",

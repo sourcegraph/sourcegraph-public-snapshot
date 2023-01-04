@@ -1,6 +1,6 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, EMPTY, ReplaySubject, Unsubscribable } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
@@ -11,7 +11,6 @@ import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
 import { proxySubscribable } from './api/common'
-import { createDecorationType } from './api/decorations'
 import { DocumentHighlightKind } from './api/documentHighlights'
 import { InitData, updateContext } from './extensionHost'
 import { NotificationType, PanelViewData } from './extensionHostApi'
@@ -30,7 +29,6 @@ export interface InitResult {
         registerImplementationProvider: any
     }
     graphQL: typeof sourcegraph['graphQL']
-    content: typeof sourcegraph['content']
     app: typeof sourcegraph['app']
 }
 
@@ -170,8 +168,6 @@ export function createExtensionAPIFactory(
         get windows() {
             return [window]
         },
-        registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
-            addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
             const panelViewData = new BehaviorSubject<PanelViewData>({
                 id,
@@ -238,7 +234,6 @@ export function createExtensionAPIFactory(
                     return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
             }
         },
-        createDecorationType,
         // `log` is implemented on extension activation
         log: noop,
     }
@@ -259,25 +254,24 @@ export function createExtensionAPIFactory(
         registerHoverProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.HoverProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
         registerDocumentHighlightProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DocumentHighlightProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
         registerDefinitionProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.DefinitionProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
         registerReferenceProvider: (
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.ReferenceProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
+        ): Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
         registerLocationProvider: (
             id: string,
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.LocationProvider
-        ): sourcegraph.Unsubscribable =>
-            addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
+        ): Unsubscribable => addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
 
         // These were removed, but keep them here so that calls from old extensions do not throw
         // an exception and completely break.
@@ -293,7 +287,7 @@ export function createExtensionAPIFactory(
             )
             return { unsubscribe: () => undefined }
         },
-        registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
+        registerCompletionItemProvider: (): Unsubscribable => {
             logger.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
             return { unsubscribe: () => undefined }
         },
@@ -302,12 +296,6 @@ export function createExtensionAPIFactory(
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
         execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
-    }
-
-    // Content
-    const content: typeof sourcegraph['content'] = {
-        registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-            addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
     }
 
     // For debugging/tests.
@@ -347,7 +335,6 @@ export function createExtensionAPIFactory(
             search,
             commands,
             graphQL,
-            content,
 
             internal: {
                 sync: () => sync(),
