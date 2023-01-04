@@ -295,31 +295,3 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
         </Card>
     )
 }
-const formatNumber = (value: number): string => Intl.NumberFormat('en', { notation: 'compact' }).format(value)
-
-export const DiffMeter: React.FunctionComponent<{
-    added: number
-    deleted: number
-    totalWidth: number
-}> = ({ added, deleted, totalWidth }) => (
-    <div title={`${formatNumber(added)} lines added, -${formatNumber(deleted)} deleted`}>
-        {added > 0 && (
-            <div
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{
-                    display: 'inline-block',
-                    width: `${Math.max(2, (100 * added) / totalWidth)}%`,
-                }}
-            />
-        )}
-        {deleted > 0 && (
-            <div
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{
-                    display: 'inline-block',
-                    width: `${Math.max(2, (100 * deleted) / totalWidth)}%`,
-                }}
-            />
-        )}
-    </div>
-)
