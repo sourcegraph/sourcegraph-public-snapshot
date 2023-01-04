@@ -3435,7 +3435,7 @@ type MirrorRepositoryInfo {
     A Log of the corruption events that have been detected on this repository. Only 10 events are kept and the events
     are ordered from most recent to least.
     """
-    corruptionLogs: [RepoCorruptionLog]!
+    corruptionLogs: [RepoCorruptionLog!]!
     """
     When the repository was last successfully updated from the remote source repository..
     """
