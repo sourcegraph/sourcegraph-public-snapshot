@@ -12,9 +12,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/conc/pool"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,8 +70,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	case Tar:
 		rawArgs = append(rawArgs, "-tar", "-chunk-matches", "0")
 	default:
-		log15.Error("unrecognized input type", "type", i)
-		panic("unreachable")
+		panic(fmt.Sprintf("unknown input type %T", i))
 	}
 
 	return rawArgs
@@ -101,6 +101,14 @@ func toOutput(b []byte) (Result, error) {
 }
 
 func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
+	tr, ctx := trace.New(ctx, "comby", "Run")
+	tr.TagFields(log.Object("args", args))
+	defer func() {
+		tr.LogFields(log.Int("num_matches", len(results)))
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	cmd, stdin, stdout, err := SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return nil, err
@@ -138,23 +146,15 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		return StartAndWaitForCompletion(cmd)
 	})
 
-	if err := p.Wait(); err != nil {
-		return nil, err
-	}
-	if len(results) > 0 {
-		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
-	}
-	return results, nil
+	return results, p.Wait()
 }
 
 func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.ReadCloser, err error) {
 	if !Exists() {
-		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return nil, nil, nil, errors.New("comby is not installed")
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("preparing to run comby", "args", args.String())
 
 	cmd = exec.CommandContext(ctx, combyPath, rawArgs...)
 	// Ensure forked child processes are killed
@@ -162,12 +162,10 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
-		log15.Error("could not connect to comby command stdin", "error", err.Error())
 		return nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
 	}
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
-		log15.Error("could not connect to comby command stdout", "error", err.Error())
 		return nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
 	}
 
@@ -175,29 +173,23 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 }
 
 func StartAndWaitForCompletion(cmd *exec.Cmd) error {
-	log15.Info("starting comby")
-
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
 	if err := cmd.Start(); err != nil {
-		log15.Error("failed to start comby command", "error", err.Error())
 		return errors.Wrap(err, "failed to start comby command")
 	}
 
 	if err := cmd.Wait(); err != nil {
 		if len(b.Bytes()) > 0 {
-			log15.Error("failed to execute comby command", "error", b.String())
-			msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", b.String())
-			return errors.Wrap(err, msg)
+			return errors.Wrapf(err, "failed to wait for comby command: stderr: %s", b.String())
 		}
 		var stderr string
 		var e *exec.ExitError
 		if errors.As(err, &e) {
 			stderr = string(e.Stderr)
 		}
-		log15.Error("failed to wait for executing comby command", "error", stderr)
-		return errors.Wrap(err, "failed to wait for executing comby command")
+		return errors.Wrapf(err, "failed to wait for executing comby command: stderr: %s", stderr)
 	}
 	return nil
 }
