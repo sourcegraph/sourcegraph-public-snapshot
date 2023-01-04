@@ -3,13 +3,13 @@ import React, { useEffect } from 'react'
 import { mdiAccountHardHat, mdiAlert, mdiCached, mdiNumeric, mdiRunFast, mdiText } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Icon, LoadingSpinner, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
 
 import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backend'
