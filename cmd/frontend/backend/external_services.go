@@ -214,7 +214,6 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
 		}
-
 	case extsvc.TypeGitHub:
 		if repo, ok := repository.Metadata.(*github.Repository); ok {
 			name = repo.NameWithOwner
