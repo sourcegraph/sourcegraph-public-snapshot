@@ -12,6 +12,15 @@ Coming soon:
 - Context-aware chatbot
 - Instruction-driven refactoring
 
+## Install
+
+1. Set the following in your VS Code user settings JSON:
+
+	```
+	"conf.codebot.serverEndpoint": "sourcegraph-650f.ngrok.io",
+	```
+1. [Install the extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) from the [latest VSIX file](https://github.com/sourcegraph/codebot/releases).
+
 ## Dev
 
 There are three separate components within one node workspace:

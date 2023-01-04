@@ -17,6 +17,7 @@ const claudeKey = process.env.CLAUDE_KEY;
 if (!claudeKey) {
 	throw new Error("CLAUDE_KEY missing");
 }
+const port = process.env.CODY_PORT || '8080';
 
 const openaiConfig = new openai.Configuration({
 	apiKey: openaiKey,
@@ -142,5 +143,5 @@ httpServer.on('upgrade', (request, socket, head) => {
 	}
 })
 
-console.log("Server listening on :8080");
-httpServer.listen(8080);
+console.log(`Server listening on :${port}`);
+httpServer.listen(port);

@@ -55,13 +55,7 @@
       "type": "object",
       "title": "Codebot extension settings",
       "properties": {
-        "conf.codebot.openai.apiKey": {
-          "type": "string"
-        },
-        "conf.codebot.claude.apiKey": {
-          "type": "string"
-        },
-        "conf.codebot.claude.modelName": {
+        "conf.codebot.serverEndpoint": {
           "type": "string"
         }
       }
