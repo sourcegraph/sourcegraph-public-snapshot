@@ -69,7 +69,7 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
     fi
 
     # Generate annotation from file contents
-    # eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
+    eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
   done
 fi
 
