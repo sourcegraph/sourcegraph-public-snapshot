@@ -47,7 +47,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
-        showSearchContext,
         settingsCascade,
         platformContext,
         outlineContainerElement,
@@ -88,7 +87,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}
-                showSearchContext={showSearchContext}
                 settingsCascade={settingsCascade}
                 platformContext={platformContext}
                 isReadOnly={!viewerCanManage}

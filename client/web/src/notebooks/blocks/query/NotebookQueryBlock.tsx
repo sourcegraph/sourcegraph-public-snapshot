@@ -72,9 +72,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         onRunBlock,
         globbing,
         isSourcegraphDotCom,
+        searchContextsEnabled,
         ...props
     }) => {
-        const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
@@ -196,14 +196,13 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                searchContextsEnabled={props.searchContextsEnabled}
+                                searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}
                                 isLightTheme={isLightTheme}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
