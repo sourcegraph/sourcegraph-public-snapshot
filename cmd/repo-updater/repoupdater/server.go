@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -378,7 +379,11 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check feature flag. If database-backed perm syncer is turned on, drop request.
+	if permssync.PermissionSyncWorkerEnabled(r.Context()) {
+		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
+		s.respond(w, http.StatusOK, nil)
+		return
+	}
 
 	if s.PermsSyncer == nil {
 		s.respond(w, http.StatusForbidden, nil)

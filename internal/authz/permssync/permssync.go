@@ -13,7 +13,7 @@ import (
 
 const featureFlagName = "database-permission-sync-worker"
 
-func permissionSyncWorkerEnabled(ctx context.Context) bool {
+func PermissionSyncWorkerEnabled(ctx context.Context) bool {
 	return featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false)
 }
 
@@ -26,7 +26,7 @@ func permissionSyncWorkerEnabled(ctx context.Context) bool {
 // sync the user anyway, so we just log any errors and don't return them here.
 func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, req protocol.PermsSyncRequest) {
 	// If the new permission sync worker is enabled, we create sync jobs, otherwise we send a request to repo-updater
-	if permissionSyncWorkerEnabled(ctx) {
+	if PermissionSyncWorkerEnabled(ctx) {
 		for _, userID := range req.UserIDs {
 			opts := database.PermissionSyncJobOpts{
 				HighPriority:     true,
