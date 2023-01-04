@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// NewCallbackScanner returns a basestore scanner function that invokes
-// the given function on every SQL row object in the given query result
-// set.
+// NewCallbackScanner returns a basestore scanner function that invokes the given
+// function on every SQL row object in the given query result set. If the callback
+// function returns a false-valued flag, the remaining rows are discarded.
 func NewCallbackScanner(f func(dbutil.Scanner) (bool, error)) func(rows *sql.Rows, queryErr error) error {
 	return func(rows *sql.Rows, queryErr error) (err error) {
 		if queryErr != nil {
