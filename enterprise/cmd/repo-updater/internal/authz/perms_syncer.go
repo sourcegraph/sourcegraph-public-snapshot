@@ -45,6 +45,11 @@ func PermissionSyncingDisabled() bool {
 		conf.Get().DisableAutoCodeHostSyncs
 }
 
+// TODO: Implement this and actually check a feature flag
+func DatabaseBackedPermSyncerIsEnabled() bool {
+	return false
+}
+
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
@@ -106,6 +111,106 @@ func NewPermsSyncer(
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
 		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store")),
+	}
+}
+
+// ScheduleUsers schedules new permissions syncing requests for given users.
+// By design, all schedules triggered by user actions are in high priority.
+//
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32) {
+	if len(userIDs) == 0 {
+		return
+	} else if s.isDisabled() {
+		s.logger.Debug("PermsSyncer.ScheduleUsers.disabled", log.Int("userIDs", len(userIDs)))
+		return
+	}
+
+	users := make([]scheduledUser, len(userIDs))
+	for i := range userIDs {
+		users[i] = scheduledUser{
+			priority: priorityHigh,
+			userID:   userIDs[i],
+			options:  opts,
+			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// as the request is most likely triggered by a user action from OSS namespace.
+		}
+	}
+
+	s.scheduleUsers(ctx, users...)
+	metricsItemsSyncScheduled.WithLabelValues("manualUsersTrigger", "high").Set(float64(len(userIDs)))
+	s.collectQueueSize()
+}
+
+func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
+	logger := s.logger.Scoped("scheduledUsers", "routine for adding users to a queue for sync")
+	for _, u := range users {
+		select {
+		case <-ctx.Done():
+			s.logger.Debug("canceled")
+			return
+		default:
+		}
+
+		updated := s.queue.enqueue(&requestMeta{
+			Priority:   u.priority,
+			Type:       requestTypeUser,
+			ID:         u.userID,
+			Options:    u.options,
+			NextSyncAt: u.nextSyncAt,
+			NoPerms:    u.noPerms,
+		})
+		logger.Debug("queue.enqueued", log.Int32("userID", u.userID), log.Bool("updated", updated))
+	}
+}
+
+// ScheduleRepos schedules new permissions syncing requests for given repositories.
+// By design, all schedules triggered by user actions are in high priority.
+//
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+	numberOfRepos := len(repoIDs)
+	if numberOfRepos == 0 {
+		return
+	} else if s.isDisabled() {
+		s.logger.Debug("ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
+		return
+	}
+
+	repos := make([]scheduledRepo, numberOfRepos)
+	for i := range repoIDs {
+		repos[i] = scheduledRepo{
+			priority: priorityHigh,
+			repoID:   repoIDs[i],
+			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// as the request is most likely triggered by a user action from OSS namespace.
+		}
+	}
+
+	scheduleReposCounter.Add(float64(numberOfRepos))
+	s.scheduleRepos(ctx, repos...)
+	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
+	s.collectQueueSize()
+}
+
+func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
+	logger := s.logger.Scoped("scheduleRepos", "")
+	for _, r := range repos {
+		select {
+		case <-ctx.Done():
+			logger.Debug("canceled")
+			return
+		default:
+		}
+
+		updated := s.queue.enqueue(&requestMeta{
+			Priority:   r.priority,
+			Type:       requestTypeRepo,
+			ID:         int32(r.repoID),
+			NextSyncAt: r.nextSyncAt,
+			NoPerms:    r.noPerms,
+		})
+		logger.Debug("queue.enqueued", log.Int32("repoID", int32(r.repoID)), log.Bool("updated", updated))
 	}
 }
 
@@ -833,6 +938,61 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 	// desired to abort and give up any running jobs ASAP upon quitting the program.
 }
 
+func (s *PermsSyncer) runSync(ctx context.Context) {
+	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
+	defer logger.Info("stopped")
+
+	userMaxConcurrency := syncUsersMaxConcurrency()
+	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
+
+	syncGroups := map[requestType]group.ContextGroup{
+		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(userMaxConcurrency),
+
+		// NOTE: This is not strictly needed as part of effort for
+		// https://github.com/sourcegraph/sourcegraph/issues/37918, but doing it this way
+		// has much simpler code logic and is much easier to reason about the behavior.
+		//
+		// It is also worth noting that naively increasing the max concurrency of
+		// repo-centric syncing for GitHub may not work as intended because all sync jobs
+		// derived from the same code host connection is sharing the same personal access
+		// token and its concurrency throttled to 1 by the github-proxy in the current
+		// architecture.
+		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
+	}
+
+	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
+	notifyDequeued := make(chan struct{}, 1)
+	for {
+		select {
+		case <-notifyDequeued:
+		case <-s.queue.notifyEnqueue:
+		case <-ctx.Done():
+			return
+		}
+
+		request := s.queue.acquireNext()
+		if request == nil {
+			// No waiting request is in the queue
+			continue
+		}
+
+		// Check if it's the time to sync the request
+		if wait := request.NextSyncAt.Sub(s.clock()); wait > 0 {
+			s.queue.release(request.Type, request.ID)
+			time.AfterFunc(wait, func() {
+				notify(s.queue.notifyEnqueue)
+			})
+
+			logger.Debug("waitForNextSync", log.Duration("duration", wait))
+			continue
+		}
+
+		notify(notifyDequeued)
+
+		s.syncPerms(ctx, syncGroups, request)
+	}
+}
+
 // scheduleUsersWithNoPerms returns computed schedules for users who have no
 // permissions found in database.
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
@@ -1031,20 +1191,26 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 
 		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
-		for _, u := range schedule.Users {
-			opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
-			if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
-				logger.Error("failed to create user sync job", log.Error(err))
-				continue
+		// TODO: make this nicer
+		if DatabaseBackedPermSyncerIsEnabled() {
+			for _, u := range schedule.Users {
+				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
+				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
+					logger.Error("failed to create user sync job", log.Error(err))
+					continue
+				}
 			}
-		}
 
-		for _, u := range schedule.Repos {
-			opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
-			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), opts); err != nil {
-				logger.Error("failed to create repo sync job", log.Error(err))
-				continue
+			for _, u := range schedule.Repos {
+				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
+				if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), opts); err != nil {
+					logger.Error("failed to create repo sync job", log.Error(err))
+					continue
+				}
 			}
+		} else {
+			s.scheduleUsers(ctx, schedule.Users...)
+			s.scheduleRepos(ctx, schedule.Repos...)
 		}
 
 		s.collectMetrics(ctx)
@@ -1176,7 +1342,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
-	// go s.runSync(ctx)
+	go s.runSync(ctx)
 	go s.runSchedule(ctx)
 	go s.recordsStore.Watch(conf.DefaultClient())
 
