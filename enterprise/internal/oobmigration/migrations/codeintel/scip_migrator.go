@@ -171,14 +171,14 @@ func migrateUpload(
 		return nil
 	}
 
-	cacheSize := scipMigratorResultChunkDefaultCacheSize
-	if numResultChunks < cacheSize {
-		cacheSize = numResultChunks
+	resultChunkCacheSize := scipMigratorResultChunkDefaultCacheSize
+	if numResultChunks < resultChunkCacheSize {
+		resultChunkCacheSize = numResultChunks
 	}
-	resultChunkCache := lru.New(cacheSize)
+	resultChunkCache := lru.New(resultChunkCacheSize)
 
 	// Warm result chunk cache if it will all fit in the cache
-	if numResultChunks <= cacheSize {
+	if numResultChunks <= resultChunkCacheSize {
 		ids := make([]ID, 0, numResultChunks)
 		for i := 0; i < numResultChunks; i++ {
 			ids = append(ids, ID(strconv.Itoa(i)))
