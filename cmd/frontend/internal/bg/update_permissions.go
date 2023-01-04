@@ -9,6 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 )
 
+// UpdatePermissions is a startup process that compares the permissions in the database against those
+// in the rbac schema config located in internal/rbac/schema.yaml. It ensures the permissions in the
+// database are always up to date, using the schema config as it's source of truth.
+
+// This method is called as part of the background process by the `frontend` service.
 func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
 	tx, err := db.Transact(ctx)

@@ -27,7 +27,7 @@ var schemaYaml = func() Schema {
 	return parsedSchema
 }()
 
-// comparePermissions takes two slices of permissions (one from the database and another from the schema file)
+// ComparePermissions takes two slices of permissions (one from the database and another from the schema file)
 // and extracts permissions that need to be added / deleted in the database based on those contained in the schema file.
 func ComparePermissions(dbPerms []*types.Permission) (added []database.CreatePermissionOpts, deleted []database.DeletePermissionOpts) {
 	// Create map to hold the items in both arrays

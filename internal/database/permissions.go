@@ -182,7 +182,7 @@ func (p *permissionStore) Delete(ctx context.Context, opts DeletePermissionOpts)
 
 func (p *permissionStore) BulkDelete(ctx context.Context, opts []DeletePermissionOpts) error {
 	if len(opts) == 0 {
-		return nil
+		return errors.New("missing ids from sql query")
 	}
 
 	var ids []*sqlf.Query
