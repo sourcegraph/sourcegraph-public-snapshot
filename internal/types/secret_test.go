@@ -491,20 +491,21 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			ctx := context.Background()
 			err = in.UnredactConfig(ctx, &old)
 
-			if err != nil && tc.wantErr == nil {
-				t.Fatal(err)
-			}
-
-			if err == nil && tc.wantErr != nil {
-				t.Fatal("expected an error, got nil")
-			}
-
 			if err != nil {
-				if tc.wantErr.Error() != err.Error() {
+				if tc.wantErr == nil {
+					t.Fatal(err)
+				} else if tc.wantErr.Error() != err.Error() {
 					t.Fatal("received error, but not equals to expected one")
+				} else {
+					// we expected an error, so we're done here
+					return
 				}
+			}
 
-				return
+			if err == nil {
+				if tc.wantErr != nil {
+					t.Fatal("expected an error, got nil")
+				}
 			}
 
 			cfg, err := in.Config.Decrypt(ctx)
@@ -516,6 +517,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			assert.JSONEq(t, string(want), cfg)
 		})
 	}
