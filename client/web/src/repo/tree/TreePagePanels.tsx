@@ -23,18 +23,18 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
     readmeURL,
     location,
 }) => {
-    const fileRef = useRef<HTMLDivElement>(null)
+    const [fileElement, setFileElement] = useState<HTMLDivElement | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const shouldHideReadmeTail = !(
-        fileRef.current &&
+        fileElement &&
         containerRef.current &&
-        fileRef.current.clientHeight > 0 &&
-        containerRef.current.clientHeight >= fileRef.current.clientHeight - 4
+        fileElement.clientHeight > 0 &&
+        containerRef.current.clientHeight >= fileElement.clientHeight - 4
     )
     return (
         <>
             <div className={classNames(styles.readmeContainer)} ref={containerRef}>
-                <div ref={fileRef}>
+                <div ref={setFileElement}>
                     <RenderedFile className={styles.readme} dangerousInnerHTML={readmeHTML} location={location} />
                 </div>
                 <div
