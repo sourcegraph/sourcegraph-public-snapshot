@@ -131,15 +131,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 								(message) =>
 									`<div class="message-container">
                     <span class="message-speaker">${message.speaker}:</span>
-                    <span class="message-text">${message.text}</span>
+                    <span class="message-text">
+						${formatCodeBlocks(message.text)}
+					</span>
                   </div>`
 							)
 							.join("\n")}
               ${
 								this.messageInProgress
 									? `<div class="message-container message-in-progress">
-                    <span class="message-speaker">${this.messageInProgress.speaker}:</span>
-                    <span class="message-text">${this.messageInProgress.text}█</span>
+                    <span class="message-speaker">${
+											this.messageInProgress.speaker
+										}:</span>
+                    <span class="message-text">${formatCodeBlocks(
+											this.messageInProgress.text
+										)}█</span>
                 </div>`
 									: ""
 							}
@@ -219,4 +225,30 @@ export class WSChatClient {
 			}
 		);
 	}
+}
+
+function formatCodeBlocks(s: string) {
+	const components = [];
+	let remaining = s;
+	let codeblockDelimiterCount = 0;
+	while (remaining.length > 0) {
+		const foundIndex = remaining.indexOf("```");
+		if (foundIndex === -1) {
+			components.push(remaining);
+			if (codeblockDelimiterCount % 2 === 1) {
+				components.push("</pre>");
+			}
+			break;
+		}
+		components.push(
+			remaining.substring(0, foundIndex),
+			codeblockDelimiterCount % 2 === 0 ? "<pre>" : "</pre>"
+		);
+		remaining = remaining.substring(foundIndex + 3) || "";
+		codeblockDelimiterCount++;
+	}
+	const ret = components.join("");
+	console.log(`original: ${s}`);
+	console.log(`formatted: ${ret}`);
+	return ret;
 }
