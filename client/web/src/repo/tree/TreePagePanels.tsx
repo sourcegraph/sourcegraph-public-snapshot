@@ -25,12 +25,12 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
 }) => {
     const [fileElement, setFileElement] = useState<HTMLDivElement | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
-    const shouldHideReadmeTail = !(
+    const showReadmeTail =
         fileElement &&
         containerRef.current &&
         fileElement.clientHeight > 0 &&
         containerRef.current.clientHeight >= fileElement.clientHeight - 4
-    )
+    const hideReadmeTail = !showReadmeTail
     return (
         <>
             <div className={classNames(styles.readmeContainer)} ref={containerRef}>
@@ -39,17 +39,21 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
                 </div>
                 <div
                     className={
-                        shouldHideReadmeTail
+                        hideReadmeTail
                             ? classNames(styles.readmeFader)
                             : classNames(styles.readmeFader, styles.readmeFaderInvisible)
                     }
                 />
             </div>
-            {shouldHideReadmeTail && (
-                <div className={styles.readmeMore}>
-                    <Link to={readmeURL}>View full README</Link>
-                </div>
-            )}
+            {hideReadmeTail && // don't show "View full README" until the height is known
+                fileElement &&
+                fileElement.clientHeight > 0 &&
+                containerRef.current &&
+                containerRef.current.clientHeight > 0 && (
+                    <div className={styles.readmeMore}>
+                        <Link to={readmeURL}>View full README</Link>
+                    </div>
+                )}
         </>
     )
 }
