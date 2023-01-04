@@ -205,7 +205,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/sourcegraph/conc v0.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
 	go.opentelemetry.io/otel/metric v0.33.0 // indirect
@@ -224,6 +223,7 @@ require (
 	github.com/google/go-github/v47 v47.1.0
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	github.com/sourcegraph/conc v0.1.0
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/xanzy/go-gitlab v0.76.0
