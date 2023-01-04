@@ -2,7 +2,7 @@ package backend
 
 import (
 	"context"
-	json "encoding/json"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -28,7 +28,7 @@ const syncExternalServiceTimeout = 15 * time.Second
 
 type ExternalServicesService interface {
 	SyncExternalService(context.Context, *types.ExternalService, time.Duration) error
-	ExcludeRepoFromExternalService(context.Context, int64, api.RepoID) error
+	ExcludeRepoFromExternalServices(context.Context, []int64, api.RepoID) error
 }
 
 type externalServices struct {
@@ -78,26 +78,29 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 // - finds an external service by ID and checks if it supports repo exclusion
 // - adds repo to `exclude` config parameter and updates an external service
 // - triggers external service sync
-func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, externalServiceID int64, repoID api.RepoID) error {
+func (e *externalServices) ExcludeRepoFromExternalServices(ctx context.Context, externalServiceIDs []int64, repoID api.RepoID) error {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, e.db); err != nil {
 		return err
 	}
 
-	logger := e.logger.Scoped("ExcludeRepoFromExternalService", "excluding a repo from external service config").With(
-		log.Int64("externalServiceID", externalServiceID),
-		log.Int32("repoID", int32(repoID)),
-	)
+	logger := e.logger.Scoped("ExcludeRepoFromExternalServices", "excluding a repo from external service config").With(log.Int32("repoID", int32(repoID)))
+	for _, extSvcID := range externalServiceIDs {
+		logger = logger.With(log.Int64("externalServiceID", extSvcID))
+	}
 
-	externalService, err := e.updateExternalServiceToExcludeRepo(ctx, logger, externalServiceID, repoID)
+	externalServices, err := e.updateExternalServiceToExcludeRepo(ctx, logger, externalServiceIDs, repoID)
 	if err != nil {
 		return err
 	}
 	// Error during triggering a sync is omitted, because this should not prevent
 	// from excluding the repo. The repo stays excluded and the sync will come
 	// eventually.
-	if err := e.SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
-		logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+	for _, externalService := range externalServices {
+		err = e.SyncExternalService(ctx, externalService, syncExternalServiceTimeout)
+		if err != nil {
+			logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
+		}
 	}
 	return nil
 }
@@ -105,9 +108,9 @@ func (e *externalServices) ExcludeRepoFromExternalService(ctx context.Context, e
 func (e *externalServices) updateExternalServiceToExcludeRepo(
 	ctx context.Context,
 	logger log.Logger,
-	externalServiceID int64,
+	externalServiceIDs []int64,
 	repoID api.RepoID,
-) (*types.ExternalService, error) {
+) ([]*types.ExternalService, error) {
 	tx, err := e.db.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -116,16 +119,18 @@ func (e *externalServices) updateExternalServiceToExcludeRepo(
 		err = tx.Done(err)
 	}()
 
-	externalServices := tx.ExternalServices()
-	externalService, err := externalServices.GetByID(ctx, externalServiceID)
+	extSvcStore := tx.ExternalServices()
+	externalServices, err := extSvcStore.List(ctx, database.ExternalServicesListOptions{IDs: externalServiceIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	// If external service doesn't support repo exclusion, then return.
-	if !externalService.SupportsRepoExclusion() {
-		logger.Warn("external service does not support repo exclusion")
-		return nil, errors.New("external service does not support repo exclusion")
+	for _, externalService := range externalServices {
+		// If external service doesn't support repo exclusion, then return.
+		if !externalService.SupportsRepoExclusion() {
+			logger.Warn("external service does not support repo exclusion")
+			return nil, errors.New("external service does not support repo exclusion")
+		}
 	}
 
 	repository, err := tx.Repos().Get(ctx, repoID)
@@ -133,16 +138,16 @@ func (e *externalServices) updateExternalServiceToExcludeRepo(
 		return nil, err
 	}
 
-	updatedConfig, err := addRepoToExclude(ctx, logger, externalService, repository)
-	if err != nil {
-		return nil, err
+	for _, externalService := range externalServices {
+		updatedConfig, err := addRepoToExclude(ctx, logger, externalService, repository)
+		if err != nil {
+			return nil, err
+		}
+		if err = extSvcStore.Update(ctx, conf.Get().AuthProviders, externalService.ID, &database.ExternalServiceUpdate{Config: &updatedConfig}); err != nil {
+			return nil, err
+		}
 	}
-
-	err = externalServices.Update(ctx, conf.Get().AuthProviders, externalServiceID, &database.ExternalServiceUpdate{Config: &updatedConfig})
-	if err != nil {
-		return nil, err
-	}
-	return externalService, nil
+	return externalServices, nil
 }
 
 func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *types.ExternalService, repository *types.Repo) (string, error) {
