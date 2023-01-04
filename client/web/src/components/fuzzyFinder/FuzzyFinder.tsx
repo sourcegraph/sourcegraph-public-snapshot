@@ -30,7 +30,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     const isVisibleRef = useRef(isVisible)
     isVisibleRef.current = isVisible
     const state = useFuzzyState(props)
-    const { tabs, activeTab, setActiveTab, repoRevision, scope, isScopeToggleDisabled, toggleScope } = state
+    const { tabs, setQuery, activeTab, setActiveTab, repoRevision, scope, isScopeToggleDisabled, toggleScope } = state
     const isScopeToggleDisabledRef = useRef(isScopeToggleDisabled)
     isScopeToggleDisabledRef.current = isScopeToggleDisabled
 
@@ -52,6 +52,13 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
             const activeTab = activeTabRef.current
             const isVisible = isVisibleRef.current
             if (!isVisible) {
+                if (activeTabRef.current !== tab) {
+                    // Reset the query when the user activates a different tab.
+                    // For example, if the user had "Repos" open, opens a repo,
+                    // and then triggers Cmd+P to activate the "Files" tab then
+                    // we discard the previous query from the "Repos" tab.
+                    setQuery('')
+                }
                 setIsVisible(true)
             }
             if (!isScopeToggleDisabledRef.current && isVisible && tab === activeTab) {
@@ -68,7 +75,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 }
             }
         },
-        [setActiveTab, setIsVisible, toggleScope]
+        [setActiveTab, setIsVisible, toggleScope, setQuery]
     )
 
     const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)
