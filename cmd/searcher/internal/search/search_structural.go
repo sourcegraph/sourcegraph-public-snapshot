@@ -18,6 +18,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
@@ -435,39 +436,33 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 // runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
+func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) error {
 	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
 
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
+	p := pool.New().WithErrors()
 
-	logger := log.Scoped("comby", "runCombyAgainstTar")
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.Go(func() error {
 		defer stdin.Close()
 
 		tw := tar.NewWriter(stdin)
 		defer tw.Close()
+
 		for tb := range tarInput.TarInputEventC {
 			if err := tw.WriteHeader(&tb.Header); err != nil {
-				logger.Error("failed to write tar header", log.String("file", tb.Header.Name), log.Error(err))
-				continue
+				return errors.Wrap(err, "WriteHeader")
 			}
 			if _, err := tw.Write(tb.Content); err != nil {
-				logger.Error("failed to write file content to tar", log.String("file", tb.Header.Name), log.Error(err))
-				continue
+				return errors.Wrap(err, "Write")
 			}
 		}
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		return nil
+	})
+
+	p.Go(func() error {
 		defer stdout.Close()
 
 		scanner := bufio.NewScanner(stdout)
@@ -481,18 +476,19 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
-			// warn on scanner errors and skip
-			logger.Error("failed to scan", log.Error(err))
-		}
-	}()
+		return errors.Wrap(scanner.Err(), "scan")
+	})
 
-	err = comby.StartAndWaitForCompletion(cmd)
-	if ctx.Err() != nil {
-		// context has been canceled, ignore any "process killed" errors from the subprocess
-		return nil
-	}
-	return err
+	p.Go(func() error {
+		err = comby.StartAndWaitForCompletion(cmd)
+		if ctx.Err() != nil {
+			// context has been canceled, ignore any "process killed" errors from the subprocess
+			err = nil
+		}
+		return err
+	})
+
+	return p.Wait()
 }
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
