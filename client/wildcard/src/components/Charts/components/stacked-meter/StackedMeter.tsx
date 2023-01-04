@@ -17,7 +17,6 @@ interface StackedMeterProps<Datum> {
     getDatumClassName?: (datum: Datum) => string
     className?: string
     rightToLeft?: boolean
-    children?: ({ path, datum }: { path: string; datum: Datum }) => React.ReactNode
 }
 
 export function StackedMeter<Datum>({
