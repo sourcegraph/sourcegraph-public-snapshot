@@ -183,7 +183,7 @@ type DeleteInsightsDashboardArgs struct {
 
 type InsightViewConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightViewResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
+	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
