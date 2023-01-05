@@ -7,7 +7,7 @@ func withYarnCache() buildkite.StepOpt {
 		ID:          "node_modules_pnpm",
 		Key:         "cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}",
 		RestoreKeys: []string{"cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}"},
-		Paths:       []string{"node_modules},
+		Paths:       []string{"node_modules"},
 		// Compressing really slows down the process, as the node modules folder is huge. It's faster to just DL it.
 		Compress: false,
 	})
