@@ -56,13 +56,6 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
 }
 
-func GetFreeLicenseInfo() (*Info, string, error) {
-	if FreeLicenseKey == "" {
-		panic("Sourcegraph free license has not been initialised!")
-	}
-	return toInfo(license.ParseSignedKey(FreeLicenseKey, publicKey))
-}
-
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
 
 // ParseProductLicenseKeyWithBuiltinOrGenerationKey is like ParseProductLicenseKey, except it tries
@@ -109,37 +102,40 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 		return toInfo(MockGetConfiguredProductLicenseInfo())
 	}
 
-	if keyText := conf.Get().LicenseKey; keyText != "" {
-		mu.Lock()
-		defer mu.Unlock()
-
-		var (
-			info      *Info
-			signature string
-		)
-		if keyText == lastKeyText {
-			info = lastInfo
-			signature = lastSignature
-		} else {
-			var err error
-			info, signature, err = ParseProductLicenseKey(keyText)
-			if err != nil {
-				return nil, "", err
-			}
-
-			if err = info.hasUnknownPlan(); err != nil {
-				return nil, "", err
-			}
-
-			lastKeyText = keyText
-			lastInfo = info
-			lastSignature = signature
+	keyText := conf.Get().LicenseKey
+	if keyText == "" {
+		if FreeLicenseKey == "" {
+			return nil, "", errors.New("no product license key configured")
 		}
-		return info, signature, nil
-	} else {
 		// If no license key, default to free tier
-		return GetFreeLicenseInfo()
+		keyText = FreeLicenseKey
 	}
+	mu.Lock()
+	defer mu.Unlock()
+
+	var (
+		info      *Info
+		signature string
+	)
+	if keyText == lastKeyText {
+		info = lastInfo
+		signature = lastSignature
+	} else {
+		var err error
+		info, signature, err = ParseProductLicenseKey(keyText)
+		if err != nil {
+			return nil, "", err
+		}
+
+		if err = info.hasUnknownPlan(); err != nil {
+			return nil, "", err
+		}
+
+		lastKeyText = keyText
+		lastInfo = info
+		lastSignature = signature
+	}
+	return info, signature, nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for
