@@ -135,14 +135,8 @@ export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
                 hasConnectionCheck
                 checkConnection {
                     __typename
-                    ... on ExternalServiceAvailable {
-                        lastCheckedAt
-                    }
                     ... on ExternalServiceUnavailable {
                         suspectedReason
-                    }
-                    ... on ExternalServiceAvailabilityUnknown {
-                        implementationNote
                     }
                 }
             }
