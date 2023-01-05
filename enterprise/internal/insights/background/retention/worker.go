@@ -49,11 +49,11 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 		return nil
 	}
 
-	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
 		return err
 	}
 
-	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
 		return err
 	}
 

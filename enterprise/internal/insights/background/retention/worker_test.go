@@ -10,8 +10,11 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func Test_selectOldestRecordingTimeBeforeMax(t *testing.T) {
@@ -155,7 +158,69 @@ func Test_archiveOldRecordingTimes(t *testing.T) {
 
 func TestHandle_ErrorDuringTransaction(t *testing.T) {
 	// This tests that if we error at any point during sql execution we will roll back, and we will not lose any data.
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 
+	insightStore := store.NewInsightStore(insightsDB)
+	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
+
+	baseWorkerStore := basestore.NewWithHandle(insightsDB.Handle())
+	workerStore := CreateDBWorkerStore(observation.TestContextTB(t), baseWorkerStore)
+
+	handler := &dataRetentionHandler{
+		baseWorkerStore: workerStore,
+		insightsStore:   seriesStore,
+	}
+
+	setupSeries(ctx, insightStore, t)
+
+	// setup recording times
+	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
+	newTime := time.Now().Truncate(time.Hour)
+	for i := 1; i <= 12; i++ {
+		newTime = newTime.Add(time.Hour)
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
+	// drop a table. create chaos
+	_, err := insightsDB.ExecContext(context.Background(), `
+DROP TABLE IF EXISTS series_points
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	job := &DataRetentionJob{SeriesID: "series1", InsightSeriesID: 1}
+	id, err := EnqueueJob(ctx, baseWorkerStore, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	job.ID = id
+
+	conf.Get().InsightsMaximumSampleSize = 2
+	t.Cleanup(func() {
+		conf.Get().InsightsMaximumSampleSize = 0
+	})
+
+	err = handler.Handle(ctx, logger, job)
+	if err == nil {
+		t.Fatal("expected error got nil")
+	}
+
+	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.RecordingTimes) != 12 {
+		t.Errorf("expected 12 recording times still remaining after rollback, got %d", len(got.RecordingTimes))
+	}
 }
 
 func setupSeries(ctx context.Context, tx *store.InsightStore, t *testing.T) {
