@@ -97,6 +97,8 @@ func CreateDBWorkerStore(observationCtx *observation.Context, store *basestore.S
 		ColumnExpressions: dataRetentionJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanDataRetentionJob),
 		OrderByExpression: sqlf.Sprintf("queued_at, id"),
+		RetryAfter:        15 * time.Minute,
+		MaxNumRetries:     5,
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 5,
 	})
@@ -185,5 +187,5 @@ ON CONFLICT DO NOTHING
 
 const deleteRecordingTimesSql = `
 DELETE FROM insight_series_recording_times 
-WHERE insight_series_id = %s AND snapshot IS FALSE and record_timestamp < %s
+WHERE insight_series_id = %s AND snapshot IS FALSE and recording_time < %s
 `
