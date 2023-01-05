@@ -52,7 +52,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-
+		// Register the background goroutine which runs data retention logic
+		newRetentionEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
 
