@@ -52,7 +52,7 @@ WITH scip_candidates AS (
 )
 INSERT INTO codeintel_last_reconcile
 SELECT upload_id, %s FROM scip_candidates
-ON CONFLICT (upload_id) DO UPDATE
+ON CONFLICT (dump_id) DO UPDATE
 SET last_reconcile_at = %s
-RETURNING upload_id
+RETURNING dump_id
 `
