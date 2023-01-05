@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -42,15 +41,24 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 	defer func() { err = tx.Done(err) }()
 
-	oldestRecordingTimes, err := selectRecordingTimesAfterMax(ctx, tx, record.SeriesID, maximumSampleSize)
+	oldestRecordingTime, err := selectOldestRecordingTimeBeforeMax(ctx, tx, record.SeriesID, maximumSampleSize)
 	if err != nil {
-		return errors.Wrap(err, "selectRecordingTimesAfterMax")
+		return errors.Wrap(err, "selectOldestRecordingTimeBeforeMax")
 	}
 
-	if len(oldestRecordingTimes.RecordingTimes) == 0 {
+	if oldestRecordingTime == nil {
 		// this series does not have any data beyond the max sample size
 		logger.Info("data retention procedure not needed", log.Int("seriesID", record.SeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
+	}
+
+	//// todo pass seriesID string info
+	//if err := archiveOldSeriesPoints(ctx, tx, string(record.SeriesID), *oldestRecordingTime); err != nil {
+	//	return errors.Wrap(err, "archiveOldSeriesPoints")
+	//}
+
+	if err := archiveOldRecordingTimes(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+		return err
 	}
 
 	return nil
@@ -121,40 +129,46 @@ INSERT INTO insights_data_retention_jobs (series_id) VALUES (%s)
 RETURNING id
 `
 
-func selectRecordingTimesAfterMax(ctx context.Context, tx *store.Store, seriesID int, maxSampleSize int) (_ *types.InsightSeriesRecordingTimes, err error) {
-	rows, err := tx.Query(ctx, sqlf.Sprintf(selectOldestRecordingTimesSql, seriesID, maxSampleSize, seriesID))
+func selectOldestRecordingTimeBeforeMax(ctx context.Context, tx *store.Store, seriesID int, maxSampleSize int) (_ *time.Time, err error) {
+	oldestTime, got, err := basestore.ScanFirstTime(tx.Query(ctx, sqlf.Sprintf(selectOldestRecordingTimeSql, seriesID, maxSampleSize-1)))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var oldestSamples []types.RecordingTime
-	for rows.Next() {
-		var recordingTime time.Time
-		if err := rows.Scan(&recordingTime); err != nil {
-			return nil, err
-		}
-		oldestSamples = append(oldestSamples, types.RecordingTime{Timestamp: recordingTime})
+	if !got || oldestTime.IsZero() {
+		return nil, nil
 	}
-
-	return &types.InsightSeriesRecordingTimes{InsightSeriesID: seriesID, RecordingTimes: oldestSamples}, nil
+	return &oldestTime, nil
 }
 
-const selectOldestRecordingTimesSql = `
+const selectOldestRecordingTimeSql = `
 SELECT recording_time FROM insight_series_recording_times
 WHERE insight_series_id = %s AND snapshot IS FALSE
-ORDER BY recording_time ASC
-LIMIT (SELECT GREATEST(count(*) - %s, 0) FROM insight_series_recording_times WHERE insight_series_id = %s);
+ORDER BY recording_time DESC OFFSET %s LIMIT 1;`
+
+//// archiveOldSeriesPoints will insert old series points from the series_points table to a separate table.
+//func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
+//	return nil
+//}
+//
+
+// archiveOldRecordingTimes will insert old recording times from the recording times table in a separate table.
+func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertRecordingTimesSql, seriesID, oldestTimestamp)); err != nil {
+		return errors.Wrap(err, "insertRecordingTimes")
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteRecordingTimesSql, seriesID, oldestTimestamp)); err != nil {
+		return errors.Wrap(err, "deleteRecordingTimes")
+	}
+	return nil
+}
+
+const insertRecordingTimesSql = `
+INSERT INTO archived_insight_series_recording_times 
+(SELECT * FROM insight_series_recording_times WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s)
+ON CONFLICT DO NOTHING
 `
 
-// archiveOldSeriesPoints will delete old series points from the series_points table and move them to a separate
-// table.
-func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
-	return nil
-}
-
-// archiveOldRecordingTimes will delete old recording times from the recording times table and move them to a separate
-// table.
-func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
-	return nil
-}
+const deleteRecordingTimesSql = `
+DELETE FROM insight_series_recording_times 
+WHERE insight_series_id = %s AND snapshot IS FALSE and record_timestamp < %s
+`
