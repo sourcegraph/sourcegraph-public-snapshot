@@ -33,7 +33,7 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
   auto_type=false
   if [[ "$annotate_opts" == *"-t auto"* ]]; then
     auto_type=true
-    annotate_opts=${annotate_opts/"-t auto"//}
+    annotate_opts=${annotate_opts/"-t auto"/}
   fi
 
   echo "~~~ Uploading annotations"
@@ -52,7 +52,7 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
       *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
     esac
 
-    if [ "$auto_type" = true ]; then
+    if [ "$auto_type" = "true" ]; then
       case "$name" in
         WARN_*) annotate_file_opts="$annotate_file_opts -t warning" ;;
         ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
