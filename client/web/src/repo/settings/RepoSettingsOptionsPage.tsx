@@ -52,9 +52,12 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
         { variables: { name: repo.name } }
     )
 
+    // This state shows that any of possible "exclude" buttons (in this or child components) were pushed.
+    // It is used to disable all the "exclude" buttons except the button which was actually clicked.
     const [exclusionInProgress, setExclusionInProgress] = useState<boolean>(false)
     const [ttl, setTtl] = useState<number>(3)
 
+    // Callback used in child components (ExternalServiceEntry) to update the state in current component.
     const updateExclusion = useCallback((updatedExclusionState: boolean) => {
         setExclusionInProgress(updatedExclusionState)
     }, [])
@@ -72,8 +75,9 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
     >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, {
         onCompleted: () => {
             let count = 3
-            setInterval(() => {
+            const interval = setInterval(() => {
                 if (count === 0) {
+                    clearInterval(interval)
                     history.push('/site-admin/external-services')
                 }
                 setTtl(count)
@@ -148,7 +152,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                     <ErrorAlert error={`Failed to exclude repository: ${renderError(excludeError)}`} />
                                 )}
                                 {excludeData && (
-                                    <Alert className={'mt-2'} variant="success">
+                                    <Alert className="mt-2" variant="success">
                                         {`Code host configurations updated. You will be redirected in ${ttl}...`}
                                     </Alert>
                                 )}
