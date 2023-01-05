@@ -247,17 +247,32 @@ func migrateUpload(
 			break
 		}
 
-		for path, document := range documentsByPath {
+		paths := make([]string, 0, len(documentsByPath))
+		for path := range documentsByPath {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+
+		definitionResultIDs := make([][]ID, 0, len(paths))
+		for _, path := range paths {
+			definitionResultIDs = append(definitionResultIDs, extractDefinitionResultIDs(documentsByPath[path].Ranges))
+		}
+		for i, path := range paths {
 			scipDocument, err := processDocument(
 				ctx,
 				codeintelTx,
 				serializer,
 				resultChunkCache,
+				resultChunkCacheSize,
 				uploadID,
 				numResultChunks,
 				indexerName,
 				path,
-				document,
+				documentsByPath[path],
+				// Load all of the definitions for this document
+				definitionResultIDs[i],
+				// Load as many definitions from the next document as possible
+				definitionResultIDs[i+1:],
 			)
 			if err != nil {
 				return err
@@ -318,11 +333,14 @@ func processDocument(
 	tx *basestore.Store,
 	serializer *serializer,
 	resultChunkCache *lru.Cache,
+	resultChunkCacheSize int,
 	uploadID int,
 	numResultChunks int,
 	indexerName,
 	path string,
 	document DocumentData,
+	definitionResultIDs []ID,
+	preloadDefinitionResultIDs [][]ID,
 ) (*ogscip.Document, error) {
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
@@ -333,9 +351,11 @@ func processDocument(
 		tx,
 		serializer,
 		resultChunkCache,
+		resultChunkCacheSize,
 		uploadID,
 		numResultChunks,
-		extractDefinitionResultIDs(document.Ranges),
+		definitionResultIDs,
+		preloadDefinitionResultIDs,
 	)
 	if err != nil {
 		return nil, err
@@ -378,30 +398,53 @@ func fetchResultChunks(
 	tx *basestore.Store,
 	serializer *serializer,
 	resultChunkCache *lru.Cache,
+	resultChunkCacheSize int,
 	uploadID int,
 	numResultChunks int,
 	ids []ID,
+	preloadDefinitionResultIDs [][]ID,
 ) (map[int]ResultChunkData, error) {
+	// Stores a set of indexes that need to be loaded from the database. The value associated
+	// with an index is true if the result chunk should be returned to the caller and false if
+	// it should only be preloaded and written to the cache.
+	indexMap := map[int]bool{}
+
+	// The map from result chunk index to data payload we'll return. We first populate what
+	// we already have from the cache, then we fetch (and cache) the remaining indexes from
+	// the database.
 	resultChunks := map[int]ResultChunkData{}
-	indexMap := map[int]struct{}{}
 
-	for _, id := range ids {
-		// Calculate result chunk index that this identifier belongs to
-		idx := precise.HashKey(precise.ID(id), numResultChunks)
+outer:
+	for i, ids := range append([][]ID{ids}, preloadDefinitionResultIDs...) {
+		for _, id := range ids {
+			if len(indexMap) >= resultChunkCacheSize && i != 0 {
+				// Only add fetch preload IDs if we have more room in our request
+				break outer
+			}
 
-		// Skip if we already loaded this result chunk from the cache
-		if _, ok := resultChunks[idx]; ok {
-			continue
-		}
+			// Calculate result chunk index that this identifier belongs to
+			idx := precise.HashKey(precise.ID(id), numResultChunks)
 
-		// Attempt to load result chunk data from the cache. If it's present then we can add it to
-		// the output map immediately. If it's not present in the cache, then we'll need to fetch it
-		// from the database. Collect each such result chunk index so we can do a batch load.
+			// Skip if we already loaded this result chunk from the cache
+			if _, ok := resultChunks[idx]; ok {
+				continue
+			}
 
-		if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
-			resultChunks[idx] = rawResultChunk.(ResultChunkData)
-		} else {
-			indexMap[idx] = struct{}{}
+			// Attempt to load result chunk data from the cache. If it's present then we can add it to
+			// the output map immediately. If it's not present in the cache, then we'll need to fetch it
+			// from the database. Collect each such result chunk index so we can do a batch load.
+
+			if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
+				if i == 0 {
+					// Don't stash preloaded result chunks for return
+					resultChunks[idx] = rawResultChunk.(ResultChunkData)
+				}
+			} else {
+				// Store true if it's not _only_ a preload; note that a definition ID and a preloaded ID
+				// can hash to the same index. In this case we do need to return it from this call as well
+				// as the call when processing the next document.
+				indexMap[idx] = i == 0 || indexMap[idx]
+			}
 		}
 	}
 
@@ -415,7 +458,12 @@ func fetchResultChunks(
 		// the cache shared while processing this particular upload.
 
 		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunks[idx] = resultChunk
+			if indexMap[idx] {
+				// Don't stash preloaded result chunks for return
+				resultChunks[idx] = resultChunk
+			}
+
+			// Always cache
 			resultChunkCache.Add(idx, resultChunk)
 			return nil
 		})
