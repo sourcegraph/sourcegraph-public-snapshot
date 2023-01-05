@@ -31,6 +31,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 4.3.1
+
+### Changed
+
+- A bug that broke the site-admin page when no repositories have been added to the Sourcegraph instance has been fixed. [#46123](https://github.com/sourcegraph/sourcegraph/pull/46123)
+
 ## 4.3.0
 
 ### Added
