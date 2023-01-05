@@ -263,7 +263,7 @@ func migrateUpload(
 				codeintelTx,
 				serializer,
 				resultChunkCache,
-				cacheSize,
+				resultChunkCacheSize,
 				uploadID,
 				numResultChunks,
 				indexerName,
