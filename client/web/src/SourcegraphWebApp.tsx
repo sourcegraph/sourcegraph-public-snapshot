@@ -8,7 +8,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
+import { first, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
@@ -80,8 +80,6 @@ import {
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
-    observeStore,
-    useExperimentalFeatures,
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
@@ -276,13 +274,7 @@ export class SourcegraphWebApp extends React.Component<
         this.subscriptions.add(
             getQueryStateFromLocation({
                 location: observeLocation(history).pipe(startWith(history.location)),
-                showSearchContext: observeStore(useExperimentalFeatures).pipe(
-                    // We use true here because search contexts are enabled by
-                    // default
-                    map(([features]) => features.showSearchContext ?? true),
-                    startWith(true),
-                    distinctUntilChanged()
-                ),
+                showSearchContext: this.props.searchContextsEnabled,
                 isSearchContextAvailable: (searchContext: string) =>
                     this.props.searchContextsEnabled
                         ? isSearchContextSpecAvailable({ spec: searchContext, platformContext: this.platformContext })

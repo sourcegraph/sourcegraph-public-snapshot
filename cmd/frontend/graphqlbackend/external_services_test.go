@@ -148,29 +148,29 @@ func TestUpdateExternalService(t *testing.T) {
 		}
 	})
 
-	var cachedUpdate *database.ExternalServiceUpdate
-
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-		cachedUpdate = update
 		return nil
 	})
 	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-		if cachedUpdate == nil {
+		invocations := externalServices.UpdateFunc.History()
+		invocationsNumber := len(invocations)
+		if invocationsNumber == 0 {
 			return &types.ExternalService{
 				ID:     id,
 				Kind:   extsvc.KindGitHub,
 				Config: extsvc.NewEmptyConfig(),
 			}, nil
 		}
+		update := invocations[invocationsNumber-1].Arg3
 		return &types.ExternalService{
 			ID:          id,
 			Kind:        extsvc.KindGitHub,
-			DisplayName: *cachedUpdate.DisplayName,
-			Config:      extsvc.NewUnencryptedConfig(*cachedUpdate.Config),
+			DisplayName: *update.DisplayName,
+			Config:      extsvc.NewUnencryptedConfig(*update.Config),
 		}, nil
 	})
 
@@ -206,13 +206,11 @@ func TestUpdateExternalService(t *testing.T) {
 }
 
 func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusion(t *testing.T) {
-	var cachedUpdate *database.ExternalServiceUpdate
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-		cachedUpdate = update
 		return nil
 	})
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -254,18 +252,15 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 		Context:        actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 
-	assert.Nil(t, cachedUpdate)
+	assert.Empty(t, externalServices.UpdateFunc.History())
 }
 
 func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepoAdded(t *testing.T) {
-	var cachedUpdate *database.ExternalServiceUpdate
-
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-		cachedUpdate = update
 		return nil
 	})
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -321,18 +316,15 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	})
 
 	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoAdded(t *testing.T) {
-	var cachedUpdate *database.ExternalServiceUpdate
-
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-		cachedUpdate = update
 		return nil
 	})
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -386,18 +378,15 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	})
 
 	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExcludedAgain(t *testing.T) {
-	var cachedUpdate *database.ExternalServiceUpdate
-
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-		cachedUpdate = update
 		return nil
 	})
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -451,7 +440,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	})
 
 	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *cachedUpdate.Config)
+	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *testing.T) {

@@ -1,9 +1,10 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { ExternalServiceKind } from '../../graphql-operations'
+import { ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
@@ -41,6 +42,26 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 namespace: null,
                 webhookURL: null,
                 hasConnectionCheck: true,
+                syncJobs: {
+                    totalCount: 1,
+                    pageInfo: { endCursor: null, hasNextPage: false },
+                    nodes: [
+                        {
+                            __typename: 'ExternalServiceSyncJob',
+                            failureMessage: null,
+                            startedAt: subMinutes(new Date(), 25).toISOString(),
+                            finishedAt: null,
+                            id: 'SYNCJOB1',
+                            state: ExternalServiceSyncJobState.PROCESSING,
+                            reposSynced: 5,
+                            repoSyncErrors: 0,
+                            reposAdded: 5,
+                            reposDeleted: 0,
+                            reposModified: 0,
+                            reposUnmodified: 0,
+                        },
+                    ],
+                },
             },
             {
                 id: 'service2',
@@ -61,6 +82,26 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 },
                 webhookURL: null,
                 hasConnectionCheck: false,
+                syncJobs: {
+                    totalCount: 1,
+                    pageInfo: { endCursor: null, hasNextPage: false },
+                    nodes: [
+                        {
+                            __typename: 'ExternalServiceSyncJob',
+                            failureMessage: null,
+                            startedAt: subMinutes(new Date(), 25).toISOString(),
+                            finishedAt: null,
+                            id: 'SYNCJOB1',
+                            state: ExternalServiceSyncJobState.COMPLETED,
+                            reposSynced: 5,
+                            repoSyncErrors: 0,
+                            reposAdded: 5,
+                            reposDeleted: 0,
+                            reposModified: 0,
+                            reposUnmodified: 0,
+                        },
+                    ],
+                },
             },
         ],
     })

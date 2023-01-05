@@ -34,7 +34,7 @@ import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -154,10 +154,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
-    const showSearchContext =
-        useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled
+    const showSearchNotebook = notebooksEnabled
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in

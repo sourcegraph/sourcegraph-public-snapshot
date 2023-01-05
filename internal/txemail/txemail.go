@@ -131,7 +131,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 
 	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
 	// our current email dependency "github.com/jordan-wright/email" has no option
-	// for it and always echoes "localhost" which makes it unusable.
+	// for it and always echoes "localhost" which makes it unusable. (CI:LOCALHOST_OK)
 	heloHostname := conf.EmailSmtp.Domain
 	if heloHostname == "" {
 		heloHostname = "localhost" // CI:LOCALHOST_OK

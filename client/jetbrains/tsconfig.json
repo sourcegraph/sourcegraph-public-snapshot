@@ -20,6 +20,7 @@
     { "path": "../common" },
     { "path": "../branded" },
     { "path": "../search-ui" },
+    { "path": "../wildcard" },
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "src", "gradle"],

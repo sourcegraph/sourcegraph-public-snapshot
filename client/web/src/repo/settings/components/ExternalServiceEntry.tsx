@@ -45,8 +45,8 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
     updateExclusionLoading,
     history,
 }) => {
-    const [ttl, setTtl] = useState<number | undefined>(3)
-    const [excludeRepo, { error, data, loading: isExcluding }] = useMutation<
+    const [ttl, setTtl] = useState<number>(3)
+    const [excludeRepo, { data, error, loading: isExcluding }] = useMutation<
         ExcludeRepoFromExternalServicesResult,
         ExcludeRepoFromExternalServicesVariables
     >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, {
