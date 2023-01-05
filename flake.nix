@@ -2,7 +2,7 @@
   description = "The Sourcegraph developer environment Nix Flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?rev=6f38b43c8c84c800f93465b2241156419fd4fd52";
+    nixpkgs.url = "github:NixOS/nixpkgs?rev=4d2b37a84fad1091b9de401eb450aae66f1a741e";
   };
 
   outputs = { self, nixpkgs }:
