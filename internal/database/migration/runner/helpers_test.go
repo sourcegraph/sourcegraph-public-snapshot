@@ -35,7 +35,6 @@ func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 	return &schemas.Schema{
 		Name:                name,
 		MigrationsTableName: fmt.Sprintf("%s_migrations_table", name),
-		FS:                  fs,
 		Definitions:         definitions,
 	}
 }
