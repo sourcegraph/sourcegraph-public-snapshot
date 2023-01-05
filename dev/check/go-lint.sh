@@ -42,10 +42,12 @@ run() {
   OUT=$("$lint_script" --config "$config_file_warn" run "$LINTER_ARG")
   EXIT_CODE_WARN=$?
   set -e
+  echo "--- golangci-lint (failing issues)"
   echo -e "$OUT"
 
   if [ $EXIT_CODE_WARN -ne 0 ]; then
     mkdir -p "$base/annotations"
+    echo "--- golangci-lint (warning issues)"
     echo -e "$OUT" >>"$base/annotations/WARN_go-lint"
     echo "^^^ +++"
   fi
