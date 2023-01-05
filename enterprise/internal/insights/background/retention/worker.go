@@ -65,7 +65,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	options := workerutil.WorkerOptions{
 		Name:              "insights_data_retention_worker",
 		NumHandlers:       5,
-		Interval:          5 * time.Second,
+		Interval:          12 * time.Hour,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics,
 	}
