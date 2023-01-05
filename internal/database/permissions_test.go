@@ -148,3 +148,61 @@ func TestPermissionBulkCreate(t *testing.T) {
 	assert.NotNil(t, ps)
 	assert.Len(t, ps, 5)
 }
+
+func TestPermissionBulkDelete(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Permissions()
+
+	var perms []CreatePermissionOpts
+	for i := 1; i <= 5; i++ {
+		var action string
+		if i%2 == 0 {
+			action = "READ"
+		} else {
+			action = "WRITE"
+		}
+		perms = append(perms, CreatePermissionOpts{
+			Action:    action,
+			Namespace: fmt.Sprintf("namespace-for-deletion-%d", i),
+		})
+	}
+
+	ps, err := store.BulkCreate(ctx, perms)
+	assert.NoError(t, err)
+
+	var permsToBeDeleted []DeletePermissionOpts
+	for _, p := range ps {
+		permsToBeDeleted = append(permsToBeDeleted, DeletePermissionOpts{
+			ID: p.ID,
+		})
+	}
+
+	t.Run("no options provided", func(t *testing.T) {
+		err = store.BulkDelete(ctx, []DeletePermissionOpts{})
+		assert.Error(t, err)
+		assert.Equal(t, err.Error(), "missing ids from sql query")
+	})
+
+	t.Run("non existent roles", func(t *testing.T) {
+		err = store.BulkDelete(ctx, []DeletePermissionOpts{
+			{ID: 109},
+		})
+		assert.Error(t, err)
+		assert.Equal(t, err.Error(), "failed to delete permissions")
+	})
+
+	t.Run("existing roles", func(t *testing.T) {
+		err = store.BulkDelete(ctx, permsToBeDeleted)
+		assert.NoError(t, err)
+
+		// check if the first permission exists in the database
+		deleted, err := store.GetByID(ctx, GetPermissionOpts{ID: ps[0].ID})
+		assert.Nil(t, deleted)
+		assert.Error(t, err)
+		assert.Equal(t, err, &PermissionNotFoundErr{ps[0].ID})
+	})
+}
