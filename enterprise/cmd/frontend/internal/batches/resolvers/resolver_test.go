@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -831,6 +833,12 @@ func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	currentKey := os.Getenv("SOURCEGRAPH_LICENSE_GENERATION_KEY")
+	os.Setenv("SOURCEGRAPH_LICENSE_GENERATION_KEY", "")
+	defer func() {
+		os.Setenv("SOURCEGRAPH_LICENSE_GENERATION_KEY", currentKey)
+	}()
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
