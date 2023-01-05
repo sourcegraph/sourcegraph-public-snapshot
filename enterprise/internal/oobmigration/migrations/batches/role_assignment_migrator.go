@@ -10,25 +10,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-type roleAssignerMigrator struct {
+type roleAssignmentMigrator struct {
 	store     *basestore.Store
 	batchSize int
 }
 
-func NewRoleAssignmentMigrator(store *basestore.Store, batchSize int) *roleAssignerMigrator {
-	return &roleAssignerMigrator{
+func NewRoleAssignmentMigrator(store *basestore.Store, batchSize int) *roleAssignmentMigrator {
+	return &roleAssignmentMigrator{
 		store:     store,
 		batchSize: batchSize,
 	}
 }
 
-var _ oobmigration.Migrator = &roleAssignerMigrator{}
+var _ oobmigration.Migrator = &roleAssignmentMigrator{}
 
-func (m *roleAssignerMigrator) ID() int                 { return 19 }
-func (m *roleAssignerMigrator) Interval() time.Duration { return time.Second * 10 }
+func (m *roleAssignmentMigrator) ID() int                 { return 19 }
+func (m *roleAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
 
 // Progress returns the percentage (ranged [0, 1]) of users wuthout a readonly (DEFAULT or SITE_ADMINISTRATOR) role.
-func (m *roleAssignerMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
+func (m *roleAssignmentMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(roleAssignmentMigratorProgressQuery)))
 	return progress, err
 }
@@ -36,7 +36,7 @@ func (m *roleAssignerMigrator) Progress(ctx context.Context, _ bool) (float64, e
 // This query checks the total number of user_roles in the database and compares them against the sum of users in the database and site_administrator.
 // We use a CTE here to only check for readonly roles (e.g DEFAULT and SITE_ADMINISTRATOR) since those are the two default roles everyone should have.
 const roleAssignmentMigratorProgressQuery = `
-WITH default_roles AS MATERIALIZED (
+WITH readonly_roles AS MATERIALIZED (
 	SELECT id FROM roles WHERE readonly
 )
 SELECT 
@@ -45,14 +45,14 @@ SELECT
 	END
 FROM 
 	(SELECT COUNT(1) AS regular_count, COUNT(1) FILTER (WHERE site_admin) AS siteadmin_count from users u) u1,
-	(SELECT COUNT(1) AS count FROM user_roles WHERE role_id IN (SELECT id FROM default_roles)) ur1
+	(SELECT COUNT(1) AS count FROM user_roles WHERE role_id IN (SELECT id FROM readonly_roles)) ur1
 `
 
-func (m *roleAssignerMigrator) Up(ctx context.Context) (err error) {
+func (m *roleAssignmentMigrator) Up(ctx context.Context) (err error) {
 	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, m.batchSize))
 }
 
-func (m *roleAssignerMigrator) Down(ctx context.Context) error {
+func (m *roleAssignmentMigrator) Down(ctx context.Context) error {
 	// non-destructive
 	return nil
 }
@@ -73,7 +73,7 @@ users_without_roles AS MATERIALIZED (
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 )
-INSERT INTO user_roles 
+INSERT INTO user_roles (user_id, role_id)
 	SELECT id, (SELECT id FROM default_role) FROM users_without_roles
 		UNION ALL
 	SELECT id, (SELECT id FROM site_admin_role) FROM users_without_roles uwr WHERE uwr.site_admin

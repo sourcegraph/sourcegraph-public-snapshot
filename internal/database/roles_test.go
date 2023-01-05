@@ -12,8 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// This refers to the DEFAULT and SITE_ADMINISTRATOR roles that are already
-// seeded into the database using the migrator tool.
+// The database is already seeded with two roles:
+// - DEFAULT
+// - SITE_ADMINISTRATOR
+//
+// These roles come by default on all sourcegraph instance and will always exist in the database,
+// so we need to account for these roles when accessing the database.
 var numberOfDefaultRoles = 2
 
 func TestRoleGetByID(t *testing.T) {
