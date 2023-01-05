@@ -46,7 +46,6 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
@@ -85,7 +84,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    showSearchContext,
     assetsRoot,
     platformContext,
     openMatchesInNewTab,
@@ -285,7 +283,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
-                                showSearchContext={showSearchContext}
+                                showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}
                             />
                         )}

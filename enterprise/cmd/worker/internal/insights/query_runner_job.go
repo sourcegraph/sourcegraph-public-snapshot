@@ -12,28 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type insightsQueryRunnerBaseConfig struct {
-	env.BaseConfig
-
-	enabled bool
-}
-
-func (i *insightsQueryRunnerBaseConfig) Load() {
-	i.enabled = insights.IsEnabled()
-}
-
 type insightsQueryRunnerJob struct {
 	env.BaseConfig
 }
-
-var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
 
 func (s *insightsQueryRunnerJob) Description() string {
 	return ""
 }
 
 func (s *insightsQueryRunnerJob) Config() []env.Config {
-	return []env.Config{insightsQueryRunnerConfigInst}
+	return nil
 }
 
 func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {

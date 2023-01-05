@@ -12,7 +12,7 @@ import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService, useExternalServiceCheckConnectionByIdLazyQuery } from './backend'
-import { defaultExternalServices } from './externalServices'
+import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
 
@@ -82,7 +82,13 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="align-self-start">
-                    {node.lastSyncError === null && (
+                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs.nodes[0].state) ? (
+                        <Tooltip content="Sync is running">
+                            <div aria-label="Sync is running">
+                                <LoadingSpinner className="mr-2" inline={true} />
+                            </div>
+                        </Tooltip>
+                    ) : node.lastSyncError === null ? (
                         <Tooltip content="All good, no errors!">
                             <Icon
                                 svgPath={mdiCircle}
@@ -90,8 +96,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 className="text-success mr-2"
                             />
                         </Tooltip>
-                    )}
-                    {node.lastSyncError !== null && (
+                    ) : (
                         <Tooltip content="Syncing failed, check the error message for details!">
                             <Icon
                                 svgPath={mdiCircle}

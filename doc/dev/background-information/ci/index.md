@@ -123,14 +123,16 @@ Typical reasons why a test may be flaky:
 - Unreliable test infrastructure (such as CI)
 - Reliance on third-party services that are inconsistent
 
-If a flaky test is discovered, immediately use language-specific functionality to skip a test and open a PR to disable the test:
+**If a flaky test is discovered:**
 
-- Go: [`testing.T.Skip`](https://pkg.go.dev/testing#hdr-Skipping)
-- Typescript: [`.skip()`](https://mochajs.org/#inclusive-tests)
+1. Immediately use language-specific functionality to skip a test and open a PR to disable the test:
 
-If the language or framework allows for a skip reason, include a link to the issue track re-enabling the test, or leave a docstring with a link.
+    - Go: [`testing.T.Skip`](https://pkg.go.dev/testing#hdr-Skipping)
+    - Typescript: [`.skip()`](https://mochajs.org/#inclusive-tests)
 
-Then open an issue to investigate the flaky test (use the [flaky test issue template](https://github.com/sourcegraph/sourcegraph/issues/new/choose)), and assign it to the most likely owner.
+   If the language or framework allows for a skip reason, include a link to the issue track re-enabling the test, or leave a docstring with a link.
+
+2. Open an issue to investigate the flaky test (use the [flaky test issue template](https://github.com/sourcegraph/sourcegraph/issues/new/choose)), and assign it to the most likely owner.
 
 ##### Flaky steps
 
