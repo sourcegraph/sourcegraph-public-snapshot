@@ -341,6 +341,7 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 	if s == nil {
 		// just for testing
 		return []Ownership{{
+			gitTree: r,
 			handle:  "@error",
 			reasons: []string{"No own service"},
 		}}
@@ -349,6 +350,7 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 	if repo == nil {
 		// just for testing
 		return []Ownership{{
+			gitTree: r,
 			handle:  "@error",
 			reasons: []string{"No repo information"},
 		}}
@@ -357,6 +359,7 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 	if commit == nil {
 		// just for testing
 		return []Ownership{{
+			gitTree: r,
 			handle:  "@error",
 			reasons: []string{"No commit information"},
 		}}
@@ -365,6 +368,7 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 	if err != nil {
 		// just for testing
 		return []Ownership{{
+			gitTree: r,
 			handle:  "@error",
 			reasons: []string{err.Error()},
 		}}
@@ -376,18 +380,21 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 			owner = "@" + h
 		}
 		ship = append(ship, Ownership{
+			gitTree: r,
 			handle:  owner,
 			reasons: []string{"CODEOWNERS"},
 		})
 	}
 	if len(ship) == 0 {
 		return []Ownership{{
-			handle:  "@cbart",
+			gitTree: r,
+			handle:  "@test",
 			reasons: []string{"STUB"},
 		}}
 	} else {
 		ship = append(ship, Ownership{
-			handle:  "@cbart",
+			gitTree: r,
+			handle:  "@test",
 			reasons: []string{"TESTING"},
 		})
 	}
@@ -395,12 +402,20 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 }
 
 type Ownership struct {
+	// TODO: This is here just to construct a PersonResolver. We probably need just something
+	// that can produce one - or we can inject one directly.
+	gitTree *GitTreeEntryResolver
 	handle  string
 	reasons []string
 }
 
 func (o Ownership) Handle() string {
 	return o.handle
+}
+
+func (o Ownership) Person() *PersonResolver {
+	// TODO this does not work at all. Just there to satisfy the API requirements.
+	return &PersonResolver{db: o.gitTree.db, name: "John Doe", email: "johndoe@example.com"}
 }
 
 func (o Ownership) Reasons() []string {

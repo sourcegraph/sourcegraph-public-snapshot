@@ -58,7 +58,7 @@ export const FileOwnership: React.FunctionComponent<
                                 </div>
                             </td>
                             <td>{own.handle}</td>
-                            <td>test@example.com</td>
+                            <td>{own.person.email}</td>
                             <td>{own.reasons.join(', ')}</td>
                         </tr>
                     ))}
@@ -79,6 +79,9 @@ const FETCH_OWNERS = gql`
                         ownership {
                             ... on Ownership {
                                 handle
+                                person {
+                                    email
+                                }
                                 reasons
                             }
                         }
