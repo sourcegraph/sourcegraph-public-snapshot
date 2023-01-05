@@ -81,9 +81,9 @@ func getEnv(name string, defaultValue int) int {
 var (
 	// NOTE: modified in tests
 	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
-	scipMigratorUploadBatchSize             = 64
-	scipMigratorDocumentBatchSize           = 128
-	scipMigratorResultChunkDefaultCacheSize = 1024
+	scipMigratorUploadBatchSize             = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigratorDocumentBatchSize           = 64
+	scipMigratorResultChunkDefaultCacheSize = 8192
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
