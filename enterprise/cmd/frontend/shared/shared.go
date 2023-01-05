@@ -31,7 +31,6 @@ import (
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
-	enterpriselicensing "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -67,14 +66,10 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 
 	enterpriseDB := edb.NewEnterpriseDB(db)
 
-	key, err := enterpriseDB.FreeLicense().Get(context.Background())
+	_, err := enterpriseDB.FreeLicense().Init(context.Background())
 	if err != nil {
-		key, err = enterpriseDB.FreeLicense().Init(context.Background())
-		if err != nil {
-			logger.Error("failed to initialize free license", log.Error(err))
-		}
+		logger.Fatal("failed to initialize free license", log.Error(err))
 	}
-	enterpriselicensing.FreeLicenseKey = key.LicenseKey
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()

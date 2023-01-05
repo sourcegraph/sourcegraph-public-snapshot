@@ -2,16 +2,17 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type FreeLicenseStore interface {
 	basestore.ShareableStore
 	Init(ctx context.Context) (*FreeLicense, error)
-	Get(ctx context.Context) (*FreeLicense, error)
 }
 
 type freeLicenseStore struct {
@@ -30,28 +31,39 @@ var defaultFreeLicense = &FreeLicense{
 	Version:    1,
 }
 
+// Init initializes the Sourcegraph free license. This license is
+// used when no license key is configured in the site configuration.
+// The first time Init is called, the current free license is stored in
+// the database. Subsequent calls to Init will return that same license for
+// as long as the entry remains in the database, even if the free license
+// plan changes.
+// This function must be called before any code that needs to do license checks,
+// otherwise the free license check will panic.
 func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
-	err := s.Exec(ctx, sqlf.Sprintf(
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT license_key, version FROM free_license LIMIT 1"))
+	var license FreeLicense
+	defer func() {
+		licensing.FreeLicenseKey = license.LicenseKey
+	}()
+	err := row.Scan(&license.LicenseKey, &license.Version)
+	if err == nil {
+		return &license, nil
+	}
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	license = *defaultFreeLicense
+	err = s.Exec(ctx, sqlf.Sprintf(
 		"INSERT INTO free_license (id, license_key, license_version) VALUES (%s, %s, %d)",
 		uuid.New().String(),
-		defaultFreeLicense.LicenseKey,
-		defaultFreeLicense.Version,
+		license.LicenseKey,
+		license.Version,
 	))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return defaultFreeLicense, nil
-}
-
-func (s *freeLicenseStore) Get(ctx context.Context) (*FreeLicense, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT license_key, license_version FROM free_license"))
-
-	var freeLicense FreeLicense
-	if err := row.Scan(&freeLicense.LicenseKey, &freeLicense.Version); err != nil {
-		return nil, err
-	}
-
-	return &freeLicense, nil
+	return &license, nil
 }

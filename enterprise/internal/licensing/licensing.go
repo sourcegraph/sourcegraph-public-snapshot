@@ -57,6 +57,9 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 }
 
 func GetFreeLicenseInfo() (*Info, string, error) {
+	if FreeLicenseKey == "" {
+		panic("Sourcegraph free license has not been initialised!")
+	}
 	return toInfo(license.ParseSignedKey(FreeLicenseKey, publicKey))
 }
 

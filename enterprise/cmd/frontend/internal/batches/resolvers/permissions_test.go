@@ -22,7 +22,6 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -66,12 +65,10 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	enterpriseDB := edb.NewEnterpriseDB(db)
-	freeLicense, err := enterpriseDB.FreeLicense().Init(ctx)
+	_, err = enterpriseDB.FreeLicense().Init(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	licensing.FreeLicenseKey = freeLicense.LicenseKey
 
 	// Global test data that we reuse in every test
 	adminID := bt.CreateTestUser(t, db, true).ID
