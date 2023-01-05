@@ -25,7 +25,7 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
-	logger.Info("data retention handler called", log.Int("seriesID", record.SeriesID))
+	logger.Info("data retention handler called", log.Int("seriesID", record.InsightSeriesID))
 
 	// Default should match what is shown in the schema not to be confusing
 	maximumSampleSize := 90
@@ -41,14 +41,14 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 	defer func() { err = tx.Done(err) }()
 
-	oldestRecordingTime, err := selectOldestRecordingTimeBeforeMax(ctx, tx, record.SeriesID, maximumSampleSize)
+	oldestRecordingTime, err := selectOldestRecordingTimeBeforeMax(ctx, tx, record.InsightSeriesID, maximumSampleSize)
 	if err != nil {
 		return errors.Wrap(err, "selectOldestRecordingTimeBeforeMax")
 	}
 
 	if oldestRecordingTime == nil {
 		// this series does not have any data beyond the max sample size
-		logger.Info("data retention procedure not needed", log.Int("seriesID", record.SeriesID), log.Int("maxSampleSize", maximumSampleSize))
+		logger.Info("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
 	}
 
@@ -57,7 +57,7 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	//	return errors.Wrap(err, "archiveOldSeriesPoints")
 	//}
 
-	if err := archiveOldRecordingTimes(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
 		return err
 	}
 
@@ -114,6 +114,7 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Data
 		ctx,
 		sqlf.Sprintf(
 			enqueueJobFmtStr,
+			job.InsightSeriesID,
 			job.SeriesID,
 		),
 	))
@@ -125,7 +126,7 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Data
 }
 
 const enqueueJobFmtStr = `
-INSERT INTO insights_data_retention_jobs (series_id) VALUES (%s)
+INSERT INTO insights_data_retention_jobs (series_id, series_id_string) VALUES (%s, %s)
 RETURNING id
 `
 
