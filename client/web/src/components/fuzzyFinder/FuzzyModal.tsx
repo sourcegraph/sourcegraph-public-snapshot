@@ -324,6 +324,9 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 case event.key === 'Escape':
                     onClose()
                     break
+                case event.key === 'g' && event.ctrlKey: // common Emacs binding to close things
+                    onClose()
+                    break
                 case event.key === 'n' && event.ctrlKey:
                     event.preventDefault()
                     setRoundedFocusIndex(1)
