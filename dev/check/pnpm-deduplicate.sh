@@ -7,6 +7,9 @@ echo "--- check pnpm-lock.yaml for duplicates"
 
 ./dev/ci/pnpm-install-with-retry.sh
 
+echo "Installing pnpm-deduplicate"
+pnpm install -g pnpm-deduplicate
+
 echo "Checking for duplicate dependencies in pnpm-lock.yaml"
 pnpm-deduplicate --list || {
   echo 'pnpm-lock.yaml contains duplicate dependencies. Please run "pnpm-deduplicate" and commit the result.'

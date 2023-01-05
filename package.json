@@ -123,7 +123,6 @@
     "@slack/web-api": "^5.15.0",
     "@sourcegraph/eslint-config": "0.32.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "^1.0.5",
-    "@sourcegraph/eslint-plugin-wildcard": "workspace:*",
     "@sourcegraph/extension-api-stubs": "^1.6.1",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.4.0",
@@ -335,7 +334,8 @@
     "webpack-stats-plugin": "^1.1.1",
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "@sourcegraph/eslint-plugin-wildcard": "workspace:*"
   },
   "dependencies": {
     "@apollo/client": "^3.5.0",
@@ -438,7 +438,6 @@
     "ordinal": "^1.0.3",
     "original": "^1.0.0",
     "path-browserify": "^1.0.1",
-    "pnpm-deduplicate": "^0.4.1",
     "postcss-inset": "^1.0.0",
     "pretty-bytes": "^5.3.0",
     "prop-types": "^15.7.2",
