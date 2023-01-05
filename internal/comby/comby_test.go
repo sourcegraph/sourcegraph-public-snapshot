@@ -249,7 +249,7 @@ func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Run(); err != nil {
-		errors.Wrapf(err, "failed with stdout %s", stderrBuf.String())
+		return errors.Wrapf(err, "failed with stdout %s", stderrBuf.String())
 	}
 	return nil
 }
