@@ -62,7 +62,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 					// We should parse the configuration to see if that's the case and only log if it's
 					// not defined over there.
 					logger.Warn(
-						"ignoring unrecognized Authorization header",
+						"ignoring unrecognized Authorization header, passing it down",
 						log.String("redacted_value", redactedValue),
 						log.Error(err),
 					)
