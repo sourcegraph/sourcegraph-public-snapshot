@@ -2,6 +2,7 @@ import { countColumn, Extension, SelectionRange, StateEffect, StateField } from 
 import {
     closeHoverTooltips,
     Decoration,
+    DecorationSet,
     EditorView,
     PluginValue,
     showTooltip,
@@ -25,6 +26,7 @@ import {
     isInteractiveOccurrence,
     occurrenceAtMouseEvent,
     occurrenceAtPosition,
+    positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
@@ -115,6 +117,7 @@ export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Pro
 // anywhere on the file to dismiss the pinned popover.
 const pinManager = ViewPlugin.fromClass(
     class implements PluginValue {
+        public decorations: DecorationSet = Decoration.none
         private nextPin: Subject<LineOrPositionOrRange | null>
         private subscription: Subscription
 
@@ -127,9 +130,30 @@ const pinManager = ViewPlugin.fromClass(
                             return null
                         }
 
-                        return uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
+                        const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
+                        if (offset === null) {
+                            return null
+                        }
+
+                        const occurrence = occurrenceAtPosition(view.state, positionAtCmPosition(view, offset))
+                        if (!occurrence) {
+                            return null
+                        }
+
+                        return rangeToCmSelection(view.state, occurrence.range)
                     }),
-                    switchMap(pos => (pos ? from(getHoverTooltip(view, pos)) : of(null)))
+                    tap(range => {
+                        if (!range) {
+                            this.computeDecorations(null)
+                        }
+                    }),
+                    switchMap(range =>
+                        range
+                            ? from(getHoverTooltip(view, range.from)).pipe(
+                                  tap(tooltip => this.computeDecorations(tooltip ? range : null))
+                              )
+                            : of(null)
+                    )
                 )
                 .subscribe(tooltip =>
                     // Scheduling the update for the next loop is necessary at the
@@ -162,6 +186,15 @@ const pinManager = ViewPlugin.fromClass(
         public destroy(): void {
             this.subscription.unsubscribe()
         }
+
+        private computeDecorations(range: SelectionRange | null): void {
+            this.decorations = range
+                ? Decoration.set(selectionHighlightDecoration.range(range.from, range.to))
+                : Decoration.none
+        }
+    },
+    {
+        decorations: ({ decorations }) => decorations,
     }
 )
 
