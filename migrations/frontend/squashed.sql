@@ -2119,6 +2119,13 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE free_license (
+    id uuid NOT NULL,
+    license_key text NOT NULL,
+    license_version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE gitserver_relocator_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,

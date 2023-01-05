@@ -1438,6 +1438,17 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.free_license"
+```
+     Column      |           Type           | Collation | Nullable | Default 
+-----------------+--------------------------+-----------+----------+---------
+ id              | uuid                     |           | not null | 
+ license_key     | text                     |           | not null | 
+ license_version | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+
+```
+
 # Table "public.gitserver_relocator_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                       Default                        
