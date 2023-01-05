@@ -56,14 +56,6 @@ func (r *Resolver) SearchContextsToResolvers(searchContexts []*types.SearchConte
 	return searchContextResolvers
 }
 
-func (r *Resolver) AutoDefinedSearchContexts(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	searchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	return r.SearchContextsToResolvers(searchContexts), nil
-}
-
 func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.SearchContextBySpecArgs) (graphqlbackend.SearchContextResolver, error) {
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
 	if err != nil {

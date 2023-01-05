@@ -3,7 +3,9 @@ import React, { useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
@@ -12,7 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
 interface CodeMonitoringGettingStartedProps extends ThemeProps {
-    isSignedIn: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface ExampleCodeMonitor {
@@ -64,7 +66,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ isLightTheme, isSignedIn }) => {
+> = ({ isLightTheme, authenticatedUser }) => {
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
@@ -92,7 +94,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
-                    {isSignedIn && (
+                    {authenticatedUser && (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
@@ -105,7 +107,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 <CloudCtaBanner variant="filled">
                     To monitor changes across your team's private repositories,{' '}
                     <Link
-                        to="https://signup.sourcegraph.com/?p=monitoring"
+                        to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => eventLogger.log('ClickedOnCloudCTA')}

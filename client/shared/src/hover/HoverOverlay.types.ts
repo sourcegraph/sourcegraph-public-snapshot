@@ -1,10 +1,9 @@
-import { NotificationType } from 'sourcegraph'
-
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { AlertProps } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
+import type { NotificationType } from '../codeintel/legacy-extensions/api'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../util/url'
 
 export type HoverContext = RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec

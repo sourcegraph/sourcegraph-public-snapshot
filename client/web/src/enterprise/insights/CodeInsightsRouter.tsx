@@ -21,7 +21,12 @@ export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
     const { authenticatedUser, isSourcegraphDotCom, telemetryService } = props
 
     if (isSourcegraphDotCom) {
-        return <CodeInsightsDotComGetStartedLazy telemetryService={telemetryService} />
+        return (
+            <CodeInsightsDotComGetStartedLazy
+                telemetryService={telemetryService}
+                authenticatedUser={authenticatedUser}
+            />
+        )
     }
 
     return <CodeInsightsAppLazyRouter authenticatedUser={authenticatedUser} telemetryService={telemetryService} />

@@ -213,6 +213,7 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
                             content
                         }
                         repository {
+                            id
                             name
                         }
                         symbols {
@@ -250,6 +251,7 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
 export const LOCAL_CODE_INTEL_QUERY = gql`
     query LocalCodeIntel($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
                 blob(path: $path) {
                     localCodeIntel

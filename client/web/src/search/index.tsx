@@ -1,6 +1,6 @@
 import { Location } from 'history'
 import { escapeRegExp, memoize } from 'lodash'
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -245,10 +245,10 @@ export function getQueryStateFromLocation({
 }: {
     location: Observable<Location>
     /**
-     * Whether or not the search context should be shown or not. This is usually
-     * controlled by user settings.
+     * Whether or not the search context should be shown or not.
+     * This is enabled on enterprise instances
      */
-    showSearchContext: Observable<boolean>
+    showSearchContext: boolean
     /**
      * Resolves to true if the provided search context exists for the user.
      */
@@ -272,25 +272,19 @@ export function getQueryStateFromLocation({
 
     // This subscription handles updating the global query state store from
     // the URL.
-    return combineLatest([
-        // Extract information from URL and validate search context if
-        // available.
-        location.pipe(
-            switchMap(
-                (location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
-                    const parsedSearchURL = parseSearchURL(location.search)
-                    if (parsedSearchURL.query !== undefined) {
-                        return memoizedIsSearchContextAvailable(
-                            memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
-                        ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
-                    }
-                    return of({ parsedSearchURL, isSearchContextAvailable: false })
-                }
-            )
-        ),
-        showSearchContext.pipe(distinctUntilChanged()),
-    ]).pipe(
-        map(([locationAndContextInformation, showSearchContext]) => {
+    // Extract information from URL and validate search context if
+    // available.
+    return location.pipe(
+        switchMap((location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
+            const parsedSearchURL = parseSearchURL(location.search)
+            if (parsedSearchURL.query !== undefined) {
+                return memoizedIsSearchContextAvailable(
+                    memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
+                ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
+            }
+            return of({ parsedSearchURL, isSearchContextAvailable: false })
+        }),
+        map(locationAndContextInformation => {
             const { parsedSearchURL, isSearchContextAvailable } = locationAndContextInformation
             const query = parsedSearchURL.query ?? ''
             const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)

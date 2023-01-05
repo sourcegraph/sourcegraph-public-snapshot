@@ -12,5 +12,5 @@ export default {
 } as Meta
 
 export const CodeInsightsDotComGetStartedStory = () => (
-    <CodeInsightsDotComGetStarted telemetryService={NOOP_TELEMETRY_SERVICE} />
+    <CodeInsightsDotComGetStarted telemetryService={NOOP_TELEMETRY_SERVICE} authenticatedUser={null} />
 )

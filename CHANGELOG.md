@@ -19,12 +19,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added a button "Reindex now" to the index status page. Admins can now force an immediate reindex of a repository. [#45533](https://github.com/sourcegraph/sourcegraph/pull/45533)
 - Added an option "Unlock user" to the actions dropdown on the Site Admin Users page. Admins can unlock user accounts that wer locked after too many sign-in attempts. [#45650](https://github.com/sourcegraph/sourcegraph/pull/45650)
-- Templates for certain emails sent by Sourcegraph are now configurable via `email.templates` in site configuration. [#45671](https://github.com/sourcegraph/sourcegraph/pull/45671)
+- Templates for certain emails sent by Sourcegraph are now configurable via `email.templates` in site configuration. [#45671](https://github.com/sourcegraph/sourcegraph/pull/45671), [#46085](https://github.com/sourcegraph/sourcegraph/pull/46085)
 - Keyboard navigation for search results is now enabled by default. Use Arrow Up/Down keys to navigate between search results, Arrow Left/Right to collapse and expand file matches, Enter to open the search result in the current tab, Ctrl/Cmd+Enter to open the result in a separate tab, / to refocus the search input, and Ctrl/Cmd+Arrow Down to jump from the search input to the first result. Arrow Left/Down/Up/Right in previous examples can be substituted with h/j/k/l for Vim-style bindings. Keyboard navigation can be disabled by creating the `search-results-keyboard-navigation` feature flag and setting it to false. [#45890](https://github.com/sourcegraph/sourcegraph/pull/45890)
 - Added support for receiving GitLab webhook `push` events. [#45856](https://github.com/sourcegraph/sourcegraph/pull/45856)
 - Added support for receiving Bitbucket Server / Datacenter webhook `push` events. [#45909](https://github.com/sourcegraph/sourcegraph/pull/45909)
+- Monitoring: Indexed-Search's dashboard now has new graphs for search request durations and "in-flight" search request workloads [#45966](https://github.com/sourcegraph/sourcegraph/pull/45966)
 - The GraphQL API now supports listing single-file commit history across renames (with `GitCommit.ancestors(follow: true, path: "<some-path>")`). [#45882](https://github.com/sourcegraph/sourcegraph/pull/45882)
 - Added support for receiving Bitbucket Cloud webhook `push` events. [#45960](https://github.com/sourcegraph/sourcegraph/pull/45960)
+- Added a way to test code host connection from the `Manage code hosts` page. [#45972](https://github.com/sourcegraph/sourcegraph/pull/45972)
 
 ### Changed
 
@@ -43,6 +45,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The extension registry no longer supports browsing, creating, or updating legacy extensions. Existing extensions may still be enabled or disabled in user settings and may be listed via the API. (The extension API was deprecated in 2022-09 but is still available if the `enableLegacyExtensions` site config experimental features flag is enabled.)
+- User and organization auto-defined search contexts have been permanently removed along with the `autoDefinedSearchContexts` GraphQL query. The only auto-defined context now is the `global` context. [#46083](https://github.com/sourcegraph/sourcegraph/pull/46083)
+- The settings `experimentalFeatures.showSearchContext`, `experimentalFeatures.showSearchNotebook`, and `experimentalFeatures.codeMonitoring` have been removed and these features are now permanently enabled when available. [#46086](https://github.com/sourcegraph/sourcegraph/pull/46086)
 
 ## 4.3.0
 

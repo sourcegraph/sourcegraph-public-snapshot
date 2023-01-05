@@ -10,6 +10,7 @@ import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
@@ -74,7 +75,10 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         Search millions of open source repositories
                     </div>
                     <div className="mt-3">
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                        <Link
+                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
                             Search private code
                         </Link>
                     </div>
@@ -120,6 +124,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                             queryState={queryState}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            authenticatedUser={props.authenticatedUser}
                         />
                     )}
                 </>
