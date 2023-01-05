@@ -29,6 +29,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
+import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
@@ -47,7 +48,7 @@ import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
-import { HomePanelsProps, parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
+import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -68,7 +69,6 @@ export interface LayoutProps
         ExtensionsControllerProps,
         TelemetryProps,
         SearchContextProps,
-        HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
         BatchChangesProps,
@@ -127,6 +127,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
+    const userHistory = useUserHistory(props.history, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -295,6 +296,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    userHistory={userHistory}
                 />
             )}
         </div>

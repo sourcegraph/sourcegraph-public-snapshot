@@ -8,6 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { FileNamesResult, FuzzyFinderRepoResult, FuzzyFinderSymbolsResult, SymbolKind } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
+import { UserHistory } from '../useUserHistory'
 
 import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
@@ -41,6 +42,7 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
                 },
             }}
             initialQuery={props.initialQuery}
+            userHistory={new UserHistory()}
         />
     )
 }

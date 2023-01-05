@@ -5,10 +5,11 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValue } from '../../fuzzyFinder/SearchValue'
 import { FuzzyFinderRepoResult, FuzzyFinderRepoVariables } from '../../graphql-operations'
+import { UserHistory } from '../useUserHistory'
 
-import { FuzzyWebCache, PersistableQueryResult } from './FuzzyLocalCache'
+import { FuzzyStorageCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
 
 export const FUZZY_REPOS_QUERY = gql`
@@ -25,8 +26,17 @@ export const FUZZY_REPOS_QUERY = gql`
 `
 
 export class FuzzyRepos extends FuzzyQuery {
-    constructor(private readonly client: ApolloClient<object> | undefined, onNamesChanged: () => void) {
-        super(onNamesChanged, new FuzzyWebCache('fuzzy-finder.repository-names', values => this.staleResults(values)))
+    constructor(
+        private readonly client: ApolloClient<object> | undefined,
+        onNamesChanged: () => void,
+        private userHistory: UserHistory
+    ) {
+        super(
+            onNamesChanged,
+            new FuzzyStorageCache(window.localStorage, 'fuzzy-finder.repository-names', values =>
+                this.staleResults(values)
+            )
+        )
     }
 
     /* override */ protected rawQuery(query: string): string {
@@ -34,7 +44,17 @@ export class FuzzyRepos extends FuzzyQuery {
     }
 
     /* override */ protected searchValues(): SearchValue[] {
-        return [...this.queryResults.values()].map(({ text, url, stars }) => {
+        const queryResults = [...this.queryResults.values()]
+        const queryResultRepos = new Set(queryResults.map(({ text }) => text))
+
+        // Include repositories from the user history even if they are not
+        // present in the local cache. This happens when the user has visited a
+        // repository that they haven't searched for in the fuzzy finder.
+        const fromHistory = this.userHistory
+            .visitedRepos()
+            .filter(repoName => !queryResultRepos.has(repoName))
+            .map<PersistableQueryResult>(repoName => ({ text: repoName, url: `/${repoName}` }))
+        return [...queryResults, ...fromHistory].map<SearchValue>(({ text, url, stars }) => {
             const formattedRepositoryStarCount = formatRepositoryStarCount(stars)
             const icon = <CodeHostIcon repoName={text} />
 
@@ -49,6 +69,7 @@ export class FuzzyRepos extends FuzzyQuery {
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     ) : undefined,
+                historyRanking: () => this.userHistory.lastAccessedRepo(text),
                 ranking: stars,
             }
         })

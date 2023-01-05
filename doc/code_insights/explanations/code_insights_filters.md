@@ -11,6 +11,7 @@ Filters take effect immediately, without needing to re-process the data series o
 ### `repo:` Repo filters
 
 You can include or exclude repositories from your insight using regular expressions, the same way you can with the `repo:` filter in [Sourcegraph searches](../../code_search/reference/queries.md#keywords-all-searches).
+Only repository regex expressions are supported: unlike search, you cannot specify repository revisions using the syntax `repo:regexp-pattern@rev`. Predicate filters like `repo:has.path(...)` are also not supported. 
 
 For inclusion, only repositories that have a repository name matching the regular expression will be counted.
 
@@ -23,6 +24,7 @@ If you combine both filters, the inclusion pattern will be applied first, then t
 You can use a [query-based search context](../../code_search/how-to/search_contexts.md#beta-query-based-search-contexts) to filter your insights to only results matching repositories that match the `repo:` or `-repo:` filter of the query-based context. 
 
 You can use this to filter multiple insights to a group of repositories that need only be maintained in one location. When you update a context that's being used as a filter, the next time you load the page, the filtered insight will reflect the updated context. 
+As with explicit `repo:` filters, only repository regex expressions are allowed: you cannot specify repository revisions or predicate filters.
 
 At this time, all other filter keywords are not yet supported – only the `repo:` and `-repo:` keywords of a context are recognized. When creating your context, you can define any group of repos using the syntax `repo:(^github\.com/sourcegraph/sourcegraph$|^github\.com/sourcegraph/about$...)`. 
 
