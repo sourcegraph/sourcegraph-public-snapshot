@@ -1,11 +1,22 @@
 import * as React from 'react'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { mdiChat, mdiEmail } from '@mdi/js'
 
-import { Card, CardBody, CardHeader, Grid } from '@sourcegraph/wildcard'
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { Button, Icon } from '@sourcegraph/wildcard'
+
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
 
-export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+import styles from './FileOwnership.module.scss'
+import { logger } from '@sourcegraph/common'
+
+export const FileOwnership: React.FunctionComponent<
+    React.PropsWithChildren<{
+        repoID: string
+        revision?: string
+        filePath: string
+    }>
+> = props => {
     const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: props.repoID,
@@ -18,22 +29,41 @@ export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Prop
     }
 
     if (error) {
-        console.log(error)
+        logger.log(error)
         return <div>Error...</div>
     }
 
-    if (data) {
+    if (data?.node && data.node.__typename === 'Repository' && data.node.commit) {
         return (
-            <Grid columnCount={4} className="mt-2">
-                {data.node.commit.blob.ownership.map(
-                    (own: FetchOwnershipResult['node']['commit']['blob']['ownership'][0]) => (
-                        <Card>
-                            <CardHeader>{own.owners.join(', ')}</CardHeader>
-                            <CardBody>{own.reason}</CardBody>
-                        </Card>
-                    )
-                )}
-            </Grid>
+            <table className={styles.table}>
+                <thead className="sr-only">
+                    <tr>
+                        <th>Contact</th>
+                        <th>Owner</th>
+                        <th>Email</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.node.commit.blob?.ownership.map((own, index) => (
+                        <tr key={index}>
+                            <td>
+                                <div className="d-flex">
+                                    <Button variant="icon" className="mr-2">
+                                        <Icon svgPath={mdiEmail} aria-label="email" />
+                                    </Button>
+                                    <Button variant="icon">
+                                        <Icon svgPath={mdiChat} aria-label="chat" />
+                                    </Button>
+                                </div>
+                            </td>
+                            <td>{own.owners.join(', ')}</td>
+                            <td>test@example.com</td>
+                            <td>{own.reason}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         )
     }
 
@@ -43,7 +73,6 @@ export const FileOwnership: React.FunctionComponent<React.PropsWithChildren<Prop
 const FETCH_OWNERS = gql`
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
-            __typename
             ... on Repository {
                 commit(rev: $revision) {
                     blob(path: $currentPath) {

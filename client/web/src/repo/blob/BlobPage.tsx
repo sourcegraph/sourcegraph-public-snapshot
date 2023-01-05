@@ -72,9 +72,9 @@ import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
+import { ShowOwnersAction } from './ShowOwnersAction'
 
 import styles from './BlobPage.module.scss'
-import ShowOwnersAction from './ShowOwnersAction'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -407,14 +407,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 id="toggle-ownership-panel"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {context => (
-                    <ShowOwnersAction
-                        {...context}
-                        key="toggle-ownership-panel"
-                        location={props.location}
-                        history={props.history}
-                    />
-                )}
+                {context => <ShowOwnersAction actionType={context.actionType} key="toggle-ownership-panel" />}
             </RepoHeaderContributionPortal>
         </>
     )

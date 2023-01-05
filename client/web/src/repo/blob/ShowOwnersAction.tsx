@@ -1,7 +1,7 @@
 import { FunctionComponent, useEffect, useState } from 'react'
 
 import { mdiAccountOutline } from '@mdi/js'
-import { History, Location } from 'history'
+import { useHistory, useLocation } from 'react-router'
 
 import {
     addLineRangeQueryParameter,
@@ -15,29 +15,28 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
+
 import { BlobPanelTabID } from './panel/BlobPanel'
 
-const ShowOwnersAction: FunctionComponent<
-    {
-        location: Location
-        history: History
-    } & RepoHeaderContext
-> = props => {
+export const ShowOwnersAction: FunctionComponent<Pick<RepoHeaderContext, 'actionType'>> = ({ actionType }) => {
+    const location = useLocation()
+    const history = useHistory()
+
     const [visible, setVisible] = useState<boolean>(false)
     useEffect(() => {
-        const parsedQuery = parseQueryAndHash<BlobPanelTabID>(props.location.search, props.location.hash)
+        const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         setVisible(parsedQuery.viewState === 'ownership')
-    }, [props.location.search, props.location.hash])
+    }, [location.search, location.hash])
 
     const toggle = (): void => {
-        const parsedQuery = parseQueryAndHash<BlobPanelTabID>(props.location.search, props.location.hash)
+        const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         if (!visible) {
             parsedQuery.viewState = 'ownership' // defaults to last-viewed tab, or first tab
         } else {
             delete parsedQuery.viewState
         }
         const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
-        props.history.push({
+        history.push({
             search: formatSearchParameters(
                 addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
             ),
@@ -47,7 +46,7 @@ const ShowOwnersAction: FunctionComponent<
 
     const descriptiveText = `${visible ? 'Hide' : 'Show'} ownership`
 
-    if (props.actionType === 'dropdown') {
+    if (actionType === 'dropdown') {
         return (
             <RepoHeaderActionMenuItem file={true} onSelect={toggle}>
                 <Icon aria-hidden={true} svgPath={mdiAccountOutline} />
@@ -69,4 +68,3 @@ const ShowOwnersAction: FunctionComponent<
         </Tooltip>
     )
 }
-export default ShowOwnersAction
