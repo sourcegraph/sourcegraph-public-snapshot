@@ -40,7 +40,7 @@ var defaultFreeLicense = &FreeLicense{
 // This function must be called before any code that needs to do license checks,
 // otherwise the free license check will panic.
 func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT license_key, version FROM free_license LIMIT 1"))
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT license_key, license_version FROM free_license LIMIT 1"))
 	var license FreeLicense
 	defer func() {
 		licensing.FreeLicenseKey = license.LicenseKey
