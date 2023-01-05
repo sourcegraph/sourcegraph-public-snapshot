@@ -11,5 +11,5 @@ pnpm gulp generate
 
 for cmd in "$@"; do
   echo "--- $cmd"
-  pnpm -s run "$cmd"
+  pnpm run "$cmd"
 done
