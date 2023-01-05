@@ -19,26 +19,41 @@ func main() {
 }
 
 func mainErr() error {
-	// This script is invoked via a go:generate directive in
-	// internal/database/migration/shared (embed.go)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-
+	// This script is invoked via a go:generate directive in internal/database/migration/shared (embed.go)
 	repoRoot := filepath.Join(wd, "..", "..", "..", "..")
-	filepath := filepath.Join(wd, "upgradedata", "stitched-migration-graph.json")
+
+	//
+	// Write stitched migrations
 
 	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
 	if err != nil {
 		return err
 	}
-
 	versionTags := make([]string, 0, len(versions))
 	for _, version := range versions {
 		versionTags = append(versionTags, version.GitTag())
 	}
+	if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "stitched-migration-graph.json"), versionTags); err != nil {
+		return err
+	}
 
+	//
+	// Write frozen migrations
+
+	for _, rev := range FrozenRevisions {
+		if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func stitchAndWrite(repoRoot, filepath string, versionTags []string) error {
 	stitchedMigrationBySchemaName := map[string]shared.StitchedMigration{}
 	for _, schemaName := range schemas.SchemaNames {
 		stitched, err := stitch.StitchDefinitions(schemaName, repoRoot, versionTags)
