@@ -47,6 +47,15 @@ func TestPermissionLevels(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	enterpriseDB := edb.NewEnterpriseDB(db)
+
+	ctx := context.Background()
+	_, err := enterpriseDB.FreeLicense().Init(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	key := et.TestKey{}
 
 	bstore := store.New(db, &observation.TestContext, key)
@@ -61,14 +70,6 @@ func TestPermissionLevels(t *testing.T) {
 		return nil
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
-
-	ctx := context.Background()
-
-	enterpriseDB := edb.NewEnterpriseDB(db)
-	_, err = enterpriseDB.FreeLicense().Init(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Global test data that we reuse in every test
 	adminID := bt.CreateTestUser(t, db, true).ID
