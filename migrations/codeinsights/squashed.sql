@@ -394,7 +394,8 @@ CREATE TABLE insights_data_retention_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    series_id integer NOT NULL
+    series_id integer NOT NULL,
+    series_id_string text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE insights_data_retention_jobs_id_seq

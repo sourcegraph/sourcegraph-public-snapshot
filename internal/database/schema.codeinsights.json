@@ -2403,6 +2403,19 @@
           "Comment": ""
         },
         {
+          "Name": "series_id_string",
+          "Index": 15,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "started_at",
           "Index": 5,
           "TypeName": "timestamp with time zone",

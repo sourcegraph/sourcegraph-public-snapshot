@@ -418,6 +418,7 @@ Foreign-key constraints:
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
  series_id         | integer                  |           | not null | 
+ series_id_string  | text                     |           | not null | ''::text
 Indexes:
     "insights_data_retention_jobs_pkey" PRIMARY KEY, btree (id)
 
