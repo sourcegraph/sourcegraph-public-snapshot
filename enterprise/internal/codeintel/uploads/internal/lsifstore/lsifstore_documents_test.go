@@ -22,7 +22,7 @@ func TestGetUploadDocumentsForPath(t *testing.T) {
 		if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), lsifTestBundleID, "%%"); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if expected := 7; count != expected || len(paths) != expected {
-			t.Errorf("expected %d document paths but got none: count=%d len=%d", expected, count, len(paths))
+			t.Errorf("unexpected number of paths: want=%d have=%d (%d total)", expected, len(paths), count)
 		} else {
 			expected := []string{
 				"cmd/lsif-go/main.go",
@@ -44,7 +44,7 @@ func TestGetUploadDocumentsForPath(t *testing.T) {
 		if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), scipTestBundleID, "template/src/util/%%"); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if expected := 8; count != expected || len(paths) != expected {
-			t.Errorf("expected %d document paths but got none: count=%d len=%d", expected, count, len(paths))
+			t.Errorf("unexpected number of paths: want=%d have=%d (%d total)", expected, len(paths), count)
 		} else {
 			expected := []string{
 				"template/src/util/api.ts",
