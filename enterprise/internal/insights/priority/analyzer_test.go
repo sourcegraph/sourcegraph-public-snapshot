@@ -1,7 +1,6 @@
 package priority
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -122,78 +121,4 @@ func TestQueryAnalyzerCost(t *testing.T) {
 
 		})
 	}
-}
-
-func TestQueryAnalyzerCostSamples(t *testing.T) {
-	defaultHandlers := []CostHeuristic{QueryCost, RepositoriesCost}
-
-	type cost struct {
-		query    string
-		numRepos int
-		cost     float64
-	}
-
-	cases := []struct {
-		name     string
-		query    string
-		handlers []CostHeuristic
-	}{
-		{
-			name:     "terraform versions",
-			query:    `app.terraform.io/(.*)\n version =(.*)1.1.0 patternType:regexp lang:Terraform`,
-			handlers: defaultHandlers,
-		},
-		{
-			name:     "component useage",
-			query:    "from '@sourceLibrary/component' patternType:literal",
-			handlers: defaultHandlers,
-		},
-		{
-			name:     "structural pattern",
-			query:    "try {:[_]} catch (:[e]) { } finally {:[_]} patternType:structural",
-			handlers: defaultHandlers,
-		},
-		{
-			name:     "commits with reverts",
-			query:    "type:commit revert",
-			handlers: defaultHandlers,
-		},
-		{
-			name:     "diff",
-			query:    "type:diff insights",
-			handlers: defaultHandlers,
-		},
-	}
-
-	costs := []cost{}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			queryAnalyzer := NewQueryAnalyzer(tc.handlers...)
-			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
-			if err != nil {
-				t.Fatal(err)
-			}
-			sizes := []int{1, 10, 500, 5000, 25000, 100000}
-			for _, size := range sizes {
-				queryCost := queryAnalyzer.Cost(&QueryObject{
-					Query:                queryPlan,
-					NumberOfRepositories: int64(size),
-				})
-				costs = append(costs, cost{
-					cost:     queryCost,
-					query:    tc.query,
-					numRepos: size,
-				})
-			}
-		})
-	}
-
-	sort.SliceStable(costs, func(i, j int) bool {
-		return costs[i].cost < costs[j].cost
-	})
-	for _, qc := range costs {
-		t.Logf("| %d | %d | %s |", qc.numRepos, int(qc.cost), qc.query)
-	}
-	//t.Fail()
 }
