@@ -11,8 +11,8 @@
 {
     // Captain information
     // To get your slack username, navigate to Profile -> More -> Account settings -> Username (at the bottom) -> Expand
-    "captainSlackUsername": "bolaji.olajide",
-    "captainGitHubUsername": "BolajiOlajide",
+    "captainSlackUsername": "geoffrey",
+    "captainGitHubUsername": "geoffrey",
     // Release versions
     "previousRelease": "4.3.0",
     "upcomingRelease": "4.3.1",
