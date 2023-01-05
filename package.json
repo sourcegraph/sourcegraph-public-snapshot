@@ -87,12 +87,6 @@
       "**/assets"
     ]
   },
-  "workspaces": {
-    "packages": [
-      "client/*",
-      "dev/release"
-    ]
-  },
   "devDependencies": {
     "@atlassian/aui": "^7.10.3",
     "@axe-core/puppeteer": "^4.4.2",

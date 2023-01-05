@@ -1,5 +1,5 @@
 npm-debug.log
-yarn-error.log
+pnpm-error.log
 .DS_Store
 
 # Ignore build/ except for the Phabricator package.json
