@@ -1,4 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -8,7 +9,6 @@ import { WebStory } from '../WebStory'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServicesPage } from './ExternalServicesPage'
-import { subMinutes } from 'date-fns'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
