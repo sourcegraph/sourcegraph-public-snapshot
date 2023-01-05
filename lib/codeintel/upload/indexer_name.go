@@ -50,8 +50,7 @@ func ReadIndexerName(r io.Reader) (string, error) {
 // and version are read from the contents of the index.
 func ReadIndexerNameAndVersion(r io.Reader) (name string, verison string, _ error) {
 	var buf bytes.Buffer
-	reader := io.TeeReader(r, &buf)
-	line, isPrefix, err := bufio.NewReaderSize(reader, MaxBufferSize).ReadLine()
+	line, isPrefix, err := bufio.NewReaderSize(io.TeeReader(r, &buf), MaxBufferSize).ReadLine()
 	if err == nil {
 		if !isPrefix {
 			meta := metaDataVertex{}
@@ -63,15 +62,14 @@ func ReadIndexerNameAndVersion(r io.Reader) (name string, verison string, _ erro
 		}
 	}
 
-	reader = io.MultiReader(bytes.NewReader(buf.Bytes()), r)
-	content, err := io.ReadAll(reader)
+	content, err := io.ReadAll(io.MultiReader(bytes.NewReader(buf.Bytes()), r))
 	if err != nil {
-		return "", "", err
+		return "", "", ErrInvalidMetaDataVertex
 	}
 
 	var index scip.Index
 	if err := proto.Unmarshal(content, &index); err != nil {
-		return "", "", err
+		return "", "", ErrInvalidMetaDataVertex
 	}
 
 	return index.Metadata.ToolInfo.Name, index.Metadata.ToolInfo.Version, nil
