@@ -5,9 +5,9 @@
   "license": "Apache-2.0",
   "scripts": {
     "storybook": "STORIES_GLOB='client/branded/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
-    "lint:js": "pnpm eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "pnpm stylelint 'src/**/*.scss' --quiet",
-    "test": "pnpm jest"
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest"
   },
   "devDependencies": {
     "@sourcegraph/extension-api-types": "workspace:*"

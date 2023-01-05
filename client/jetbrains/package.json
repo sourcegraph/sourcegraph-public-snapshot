@@ -15,12 +15,12 @@
   "scripts": {
     "build": "pnpm task:gulp esbuild",
     "lint": "pnpm run lint:js && pnpm run lint:css",
-    "lint:js": "pnpm eslint --cache 'webview/**/*.[jt]s?(x)'",
-    "lint:css": "pnpm stylelint 'webview/**/*.scss'",
-    "standalone": "pnpm ts-node standalone/src/server.ts",
+    "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'webview/**/*.scss'",
+    "standalone": "ts-node standalone/src/server.ts",
     "storybook": "STORIES_GLOB='client/jetbrains/webview/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
-    "task:gulp": "pnpm cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "typecheck": "pnpm tsc -b",
+    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "typecheck": "tsc -b",
     "watch": "WATCH=true pnpm task:gulp esbuild"
   },
   "devDependencies": {

@@ -5,12 +5,12 @@
   "license": "Apache-2.0",
   "scripts": {
     "storybook": "STORIES_GLOB='client/shared/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
-    "lint:js": "pnpm eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "pnpm stylelint 'src/**/*.scss' --quiet",
-    "test": "pnpm jest",
-    "schema": "pnpm gulp schema",
-    "graphql-operations": "pnpm gulp graphQlOperations",
-    "watch-schema": "pnpm gulp watchSchema"
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest",
+    "schema": "gulp schema",
+    "graphql-operations": "gulp graphQlOperations",
+    "watch-schema": "gulp watchSchema"
   },
   "devDependencies": {
     "@sourcegraph/testing": "workspace:*",
