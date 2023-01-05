@@ -46,16 +46,16 @@ func (s *store) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pat
 }
 
 const documentsCountQuery = `
-SELECT (
-	SELECT COUNT(*)
+SELECT SUM(count) FROM ((
+	SELECT COUNT(*) AS count
 	FROM codeintel_scip_document_lookup sid
 	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 	WHERE sid.upload_id = %s AND sid.document_path ILIKE %s
 ) UNION (
-	SELECT COUNT(*)
+	SELECT COUNT(*) AS count
 	FROM lsif_data_documents
 	WHERE dump_id = %s AND path ILIKE %s
-)
+)) s
 `
 
 const documentsQuery = `
