@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func addrStr(input string) *string {
@@ -35,6 +36,7 @@ func TestFilterRepositories(t *testing.T) {
 		repositories   []string
 		filters        types.InsightViewFilters
 		want           []string
+		wantErr        error
 		searchContexts []struct {
 			name  string
 			query string
@@ -101,6 +103,30 @@ func TestFilterRepositories(t *testing.T) {
 			want: []string{"gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 		},
 		{
+			name:         "test context include with revision",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*$ rev:v1.0.0"},
+			},
+			wantErr: errors.New("search context filters cannot include repo revisions: @dev/mycontext123"),
+		},
+		{
+			name:         "test context include with repo revision",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*$@:v1.0.0"},
+			},
+			wantErr: errors.New("search context filters cannot include repo revisions: @dev/mycontext123"),
+		},
+		{
 			name:         "test context exclude include",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
@@ -157,15 +183,16 @@ func TestFilterRepositories(t *testing.T) {
 			}
 
 			got, err := filterRepositories(ctx, test.filters, test.repositories, &fakeSearchContextLoader{mocks: mocks})
-			if err != nil {
-				t.Error(err)
+			if !errors.Is(err, test.wantErr) {
+				t.Errorf("unexpected error, want: %v, got: %v", test.wantErr, err)
 			}
+
 			// sort for test determinism
 			sort.Slice(got, func(i, j int) bool {
 				return got[i] < got[j]
 			})
 			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("unexpected repository result (want/got): %v", diff)
+				t.Errorf("unexpected repository result (want/got):\n%s", diff)
 			}
 		})
 	}
