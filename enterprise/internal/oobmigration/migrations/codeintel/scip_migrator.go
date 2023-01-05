@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type scipMigrator struct {
@@ -68,27 +70,51 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
 `
 
+func getEnv(name string, defaultValue int) int {
+	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
+		return value
+	}
+
+	return defaultValue
+}
+
 var (
 	// NOTE: modified in tests
+	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
 	scipMigratorUploadBatchSize             = 64
 	scipMigratorDocumentBatchSize           = 128
 	scipMigratorResultChunkDefaultCacheSize = 1024
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
+	ch := make(chan struct{}, scipMigratorUploadBatchSize)
 	for i := 0; i < scipMigratorUploadBatchSize; i++ {
-		if err := m.upSingle(ctx); err != nil {
-			return err
-		}
+		ch <- struct{}{}
+	}
+	close(ch)
+
+	g := group.New().WithContext(ctx)
+	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
+		g.Go(func(ctx context.Context) error {
+			for range ch {
+				if ok, err := m.upSingle(ctx); err != nil {
+					return err
+				} else if !ok {
+					break
+				}
+			}
+
+			return nil
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
-func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
+func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
 	tx, err := m.codeintelStore.Transact(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -96,31 +122,39 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 	// compete with other migrator routines that may be running.
 	uploadID, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scipMigratorSelectForMigrationQuery)))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return nil
+		return false, nil
 	}
+
+	defer func() {
+		if err != nil {
+			// Wrap any error after this point with the associated upload ID. This will present
+			// itself in the database/UI for site-admins/engineers to locate a poisonous record.
+			err = errors.Wrapf(err, "failed to migrate upload %d", uploadID)
+		}
+	}()
 
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err := migrateUpload(ctx, m.store, tx, m.serializer, scipWriter, uploadID); err != nil {
-		return err
+		return false, err
 	}
 	if err := scipWriter.Flush(ctx); err != nil {
-		return err
+		return false, err
 	}
 	if err := deleteLSIFData(ctx, tx, uploadID); err != nil {
-		return err
+		return false, err
 	}
 
 	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 const scipMigratorSelectForMigrationQuery = `
@@ -171,23 +205,25 @@ func migrateUpload(
 		return nil
 	}
 
-	cacheSize := scipMigratorResultChunkDefaultCacheSize
-	if numResultChunks < cacheSize {
-		cacheSize = numResultChunks
+	resultChunkCacheSize := scipMigratorResultChunkDefaultCacheSize
+	if numResultChunks < resultChunkCacheSize {
+		resultChunkCacheSize = numResultChunks
 	}
-	resultChunkCache := lru.New(cacheSize)
+	resultChunkCache := lru.New(resultChunkCacheSize)
+
+	scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+		resultChunkCache.Add(idx, resultChunk)
+		return nil
+	})
+	scanDocuments := makeDocumentScanner(serializer)
 
 	// Warm result chunk cache if it will all fit in the cache
-	if numResultChunks <= cacheSize {
+	if numResultChunks <= resultChunkCacheSize {
 		ids := make([]ID, 0, numResultChunks)
 		for i := 0; i < numResultChunks; i++ {
 			ids = append(ids, ID(strconv.Itoa(i)))
 		}
 
-		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunkCache.Add(idx, resultChunk)
-			return nil
-		})
 		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanResultChunksQuery,
 			uploadID,
@@ -198,7 +234,7 @@ func migrateUpload(
 	}
 
 	for page := 0; ; page++ {
-		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
+		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
 			scipMigratorDocumentBatchSize,
@@ -222,11 +258,10 @@ func migrateUpload(
 			definitionResultIDs = append(definitionResultIDs, extractDefinitionResultIDs(documentsByPath[path].Ranges))
 		}
 		for i, path := range paths {
-			if err := processDocument(
+			scipDocument, err := processDocument(
 				ctx,
 				codeintelTx,
 				serializer,
-				scipWriter,
 				resultChunkCache,
 				cacheSize,
 				uploadID,
@@ -238,7 +273,12 @@ func migrateUpload(
 				definitionResultIDs[i],
 				// Load as many definitions from the next document as possible
 				definitionResultIDs[i+1:],
-			); err != nil {
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
 				return err
 			}
 		}
@@ -292,7 +332,6 @@ func processDocument(
 	ctx context.Context,
 	tx *basestore.Store,
 	serializer *serializer,
-	scipWriter *scipWriter,
 	resultChunkCache *lru.Cache,
 	resultChunkCacheSize int,
 	uploadID int,
@@ -302,7 +341,7 @@ func processDocument(
 	document DocumentData,
 	definitionResultIDs []ID,
 	preloadDefinitionResultIDs [][]ID,
-) error {
+) (*ogscip.Document, error) {
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -319,7 +358,7 @@ func processDocument(
 		preloadDefinitionResultIDs,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	definitionMatcher := func(
@@ -349,11 +388,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
-		return err
-	}
-
-	return nil
+	return scipDocument, nil
 }
 
 // fetchResultChunks queries for the set of result chunks containing one of the given result set
@@ -837,19 +872,23 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 }
 
 func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
-	return basestore.NewCallbackScanner(func(s dbutil.Scanner) error {
+	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte
 		if err := s.Scan(&idx, &rawData); err != nil {
-			return err
+			return false, err
 		}
 
 		data, err := serializer.UnmarshalResultChunkData(rawData)
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		return f(idx, data)
+		if err := f(idx, data); err != nil {
+			return false, err
+		}
+
+		return true, nil
 	})
 }
 

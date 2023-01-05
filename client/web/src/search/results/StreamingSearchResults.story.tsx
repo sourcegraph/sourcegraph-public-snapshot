@@ -14,7 +14,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -58,10 +58,10 @@ const defaultProps: StreamingSearchResultsProps = {
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
     searchAggregationEnabled: true,
+    codeMonitoringEnabled: true,
 }
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
     useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
     return <Story />
 }

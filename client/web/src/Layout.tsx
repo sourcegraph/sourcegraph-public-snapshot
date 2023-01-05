@@ -29,6 +29,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
+import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
@@ -127,6 +128,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
+    const userHistory = useUserHistory(props.history, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -295,6 +297,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    userHistory={userHistory}
                 />
             )}
         </div>

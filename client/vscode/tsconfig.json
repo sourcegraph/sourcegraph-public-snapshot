@@ -20,6 +20,7 @@
     { "path": "../common" },
     { "path": "../branded" },
     { "path": "../search-ui" },
+    { "path": "../wildcard" },
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
