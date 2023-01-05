@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -31,6 +32,11 @@ var defaultFreeLicense = &FreeLicense{
 	Version:    1,
 }
 
+var defaultLicenseInfo = license.Info{
+	Tags:      []string{"plan:free-0"},
+	UserCount: 10,
+}
+
 // Init initializes the Sourcegraph free license. This license is
 // used when no license key is configured in the site configuration.
 // The first time Init is called, the current free license is stored in
@@ -51,7 +57,13 @@ func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
 		return nil, err
 	}
 
-	license = *defaultFreeLicense
+	// Try to generate a free license first in case a custom generation key is set.
+	license.LicenseKey, license.Version, err = licensing.GenerateProductLicenseKey(defaultLicenseInfo)
+	if err != nil {
+		// If that does not work, fall back to the default free license.
+		license.LicenseKey = defaultFreeLicense.LicenseKey
+		license.Version = defaultFreeLicense.Version
+	}
 	err = s.Exec(ctx, sqlf.Sprintf(
 		"INSERT INTO free_license (id, license_key, license_version) VALUES (%s, %s, %d)",
 		uuid.New().String(),
