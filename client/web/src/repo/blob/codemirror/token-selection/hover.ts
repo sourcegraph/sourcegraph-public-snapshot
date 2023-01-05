@@ -117,11 +117,12 @@ export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Pro
 // anywhere on the file to dismiss the pinned popover.
 const pinManager = ViewPlugin.fromClass(
     class implements PluginValue {
-        public decorations: DecorationSet = Decoration.none
+        public decorations: DecorationSet
         private nextPin: Subject<LineOrPositionOrRange | null>
         private subscription: Subscription
 
         constructor(view: EditorView) {
+            this.decorations = Decoration.none
             this.nextPin = new BehaviorSubject(view.state.field(pin))
             this.subscription = this.nextPin
                 .pipe(
