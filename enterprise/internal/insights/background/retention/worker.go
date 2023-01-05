@@ -25,14 +25,11 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
-	logger.Info("data retention handler called", log.Int("seriesID", record.InsightSeriesID))
-
 	// Default should match what is shown in the schema not to be confusing
 	maximumSampleSize := 90
 	if configured := conf.Get().InsightsMaximumSampleSize; configured != 0 {
 		maximumSampleSize = configured
 	}
-	logger.Info("maximum sample size", log.Int("value", maximumSampleSize))
 
 	// All the retention operations need to be completed in the same transaction
 	tx, err := h.insightsStore.Transact(ctx)
@@ -48,7 +45,7 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 
 	if oldestRecordingTime == nil {
 		// this series does not have any data beyond the max sample size
-		logger.Info("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
+		logger.Debug("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
 	}
 
