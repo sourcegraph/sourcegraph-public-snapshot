@@ -131,6 +131,8 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.New("User or Organisation namespace must be provided.")
 	}
 
 	connectionStore := &savedSearchesConnectionStore{

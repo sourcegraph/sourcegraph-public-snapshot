@@ -255,7 +255,15 @@ func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, use
 		return nil, err
 	}
 
-	where := []*sqlf.Query{sqlf.Sprintf("(user_id=%v OR org_id=%v)", userID, orgID)}
+	var where []*sqlf.Query
+
+	if userID != nil && *userID != 0 {
+		where = append(where, sqlf.Sprintf("user_id = %v", *userID))
+	} else if orgID != nil && *orgID != 0 {
+		where = append(where, sqlf.Sprintf("org_id = %v", *orgID))
+	} else {
+		return nil, errors.New("userID or orgID must be provided.")
+	}
 
 	if p.Where != nil {
 		where = append(where, p.Where)
