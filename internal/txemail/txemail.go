@@ -67,11 +67,17 @@ func render(message Message) (*email.Email, error) {
 	return &m, nil
 }
 
-// Send sends a transactional email. Source is used to categorize metrics, and should
-// indicate the product feature that is sending this email.
+// Send sends a transactional email if SMTP is configured. All services within the frontend
+// should use this directly to send emails.  Source is used to categorize metrics, and
+// should indicate the product feature that is sending this email.
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
-// instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
+// instead.
+//
+// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
+// the email should be verified or not, and conduct the appropriate checks before sending.
+// This helps reduce the chance that we damage email sender reputations when attempting to
+// send emails to nonexistent email addresses.
 func Send(ctx context.Context, source string, message Message) (err error) {
 	if MockSend != nil {
 		return MockSend(ctx, message)
