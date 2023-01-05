@@ -29,7 +29,7 @@ type ConfStore interface {
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (*SiteConfig, error)
+	SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, authorUserID *int32, isOverride bool) (*SiteConfig, error)
 
 	// SiteGetLatest returns the site config that was most recently saved to the database.
 	// This returns nil, nil if there is not yet a site config in the database.
@@ -53,14 +53,17 @@ type confStore struct {
 
 // SiteConfig contains the contents of a site config along with associated metadata.
 type SiteConfig struct {
-	ID        int32     // the unique ID of this config
-	Contents  string    // the raw JSON content (with comments and trailing commas allowed)
+	ID           int32  // the unique ID of this config
+	AuthorUserID int32  // the user id of the author that updated this config
+	Contents     string // the raw JSON content (with comments and trailing commas allowed)
+
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
 }
 
 var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
+	sqlf.Sprintf("critical_and_site_config.author_user_id"),
 	sqlf.Sprintf("critical_and_site_config.contents"),
 	sqlf.Sprintf("critical_and_site_config.created_at"),
 	sqlf.Sprintf("critical_and_site_config.updated_at"),
@@ -78,21 +81,21 @@ func (s *confStore) transact(ctx context.Context) (*confStore, error) {
 	return &confStore{Store: txBase}, nil
 }
 
-func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
+func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, authorUserID *int32, isOverride bool) (_ *SiteConfig, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	newLastID, err := tx.addDefault(ctx, confdefaults.Default.Site)
+	newLastID, err := tx.addDefault(ctx, confdefaults.Default.Site, authorUserID)
 	if err != nil {
 		return nil, err
 	}
 	if newLastID != nil {
 		lastID = newLastID
 	}
-	return tx.createIfUpToDate(ctx, lastID, contents, isOverride)
+	return tx.createIfUpToDate(ctx, lastID, contents, authorUserID, isOverride)
 }
 
 func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error) {
@@ -102,7 +105,7 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	}
 	defer func() { err = tx.Done(err) }()
 
-	_, err = tx.addDefault(ctx, confdefaults.Default.Site)
+	_, err = tx.addDefault(ctx, confdefaults.Default.Site, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +113,7 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	return tx.getLatest(ctx)
 }
 
-func (s *confStore) addDefault(ctx context.Context, contents string) (newLastID *int32, _ error) {
+func (s *confStore) addDefault(ctx context.Context, contents string, authorUserID *int32) (newLastID *int32, _ error) {
 	latest, err := s.getLatest(ctx)
 	if err != nil {
 		return nil, err
@@ -120,7 +123,7 @@ func (s *confStore) addDefault(ctx context.Context, contents string) (newLastID 
 		return nil, nil
 	}
 
-	latest, err = s.createIfUpToDate(ctx, nil, contents, true)
+	latest, err = s.createIfUpToDate(ctx, nil, contents, authorUserID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +131,12 @@ func (s *confStore) addDefault(ctx context.Context, contents string) (newLastID 
 }
 
 const createSiteConfigFmtStr = `
-INSERT INTO critical_and_site_config (type, contents)
-VALUES ('site', %s)
+INSERT INTO critical_and_site_config (type, author_user_id, contents)
+VALUES ('site', %s, %s)
 RETURNING %s -- siteConfigColumns
 `
 
-func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (*SiteConfig, error) {
+func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, contents string, authorUserID *int32, isOverride bool) (*SiteConfig, error) {
 	// Validate config for syntax and by the JSON Schema.
 	var problems []string
 	var err error
@@ -158,11 +161,19 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, content
 		return nil, ErrNewerEdit
 	}
 
+	// This is a little redundant, but dbutil.NutllInt32Column does not work with a pointer.
+	aID := int32(0)
+	if authorUserID != nil {
+		aID = *authorUserID
+	}
+
 	q := sqlf.Sprintf(
 		createSiteConfigFmtStr,
+		dbutil.NullInt32Column(aID),
 		contents,
 		sqlf.Join(siteConfigColumns, ","),
 	)
+
 	row := s.QueryRow(ctx, q)
 	return scanSiteConfigRow(row)
 }
@@ -195,6 +206,7 @@ func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
 	var s SiteConfig
 	err := scanner.Scan(
 		&s.ID,
+		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
 		&s.CreatedAt,
 		&s.UpdatedAt,

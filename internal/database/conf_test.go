@@ -43,7 +43,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON, false)
+	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON, nil, false)
 
 	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
@@ -177,7 +177,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents, false)
+				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents, nil, false)
 				if err != nil {
 					if errors.Is(err, p.expected.err) {
 						continue

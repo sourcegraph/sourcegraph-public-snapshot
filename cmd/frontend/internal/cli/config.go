@@ -122,7 +122,11 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.WriteWithOverride(ctx, raw, raw.ID, true)
+		// NOTE: authorUserID is nil because this code is on the start-up path and we will never
+		// have a non nil actor available here to determine the user ID. This is consistent with the
+		// behaviour of global settings as well. See settings.CreateIfUpToDate in
+		// overrideGlobalSettings below.
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, nil, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -450,11 +454,11 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
-	return c.WriteWithOverride(ctx, input, lastID, false)
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID *int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, authorUserID, false)
 }
 
-func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, isOverride bool) error {
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID *int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
@@ -462,7 +466,7 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 	if site.ID != lastID {
 		return errors.New("site config has been modified by another request, write not allowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site, isOverride)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site, authorUserID, isOverride)
 	if err != nil {
 		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
