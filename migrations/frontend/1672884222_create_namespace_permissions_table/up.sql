@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS namespaces (
+CREATE TABLE IF NOT EXISTS namespace_permissions (
     id SERIAL PRIMARY KEY,
     namespace text NOT NULL,
     resource_id integer NOT NULL,
@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS namespaces (
 
     CONSTRAINT namespace_not_blank CHECK (namespace <> ''::text),
     CONSTRAINT action_not_blank CHECK (action <> ''::text),
+
     CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id)
 );
