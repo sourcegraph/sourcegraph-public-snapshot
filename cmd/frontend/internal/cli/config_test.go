@@ -51,12 +51,13 @@ func TestWriteSiteConfig(t *testing.T) {
 	confSource := newConfigurationSource(logger, db)
 
 	t.Run("error when incorrect last ID", func(t *testing.T) {
-		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID-1)
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID-1, nil)
 		assert.Error(t, err)
 	})
 
+	authorUserID := int32(1)
 	t.Run("no error when correct last ID", func(t *testing.T) {
-		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID)
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID, &authorUserID)
 		assert.NoError(t, err)
 	})
 }
