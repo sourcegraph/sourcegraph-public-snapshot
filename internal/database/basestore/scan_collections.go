@@ -6,10 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// NewCallbackScanner returns a basestore scanner function that invokes
-// the given function on every SQL row object in the given query result
-// set.
-func NewCallbackScanner(f func(dbutil.Scanner) error) func(rows *sql.Rows, queryErr error) error {
+// NewCallbackScanner returns a basestore scanner function that invokes the given
+// function on every SQL row object in the given query result set. If the callback
+// function returns a false-valued flag, the remaining rows are discarded.
+func NewCallbackScanner(f func(dbutil.Scanner) (bool, error)) func(rows *sql.Rows, queryErr error) error {
 	return func(rows *sql.Rows, queryErr error) (err error) {
 		if queryErr != nil {
 			return queryErr
@@ -17,8 +17,10 @@ func NewCallbackScanner(f func(dbutil.Scanner) error) func(rows *sql.Rows, query
 		defer func() { err = CloseRows(rows, err) }()
 
 		for rows.Next() {
-			if err := f(rows); err != nil {
+			if ok, err := f(rows); err != nil {
 				return err
+			} else if !ok {
+				break
 			}
 		}
 
@@ -32,10 +34,10 @@ func NewCallbackScanner(f func(dbutil.Scanner) error) func(rows *sql.Rows, query
 // value.
 func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) (T, bool, error) {
 	return func(rows *sql.Rows, queryErr error) (value T, called bool, _ error) {
-		scanner := func(s dbutil.Scanner) (err error) {
+		scanner := func(s dbutil.Scanner) (_ bool, err error) {
 			called = true
 			value, err = f(s)
-			return err
+			return false, err
 		}
 
 		err := NewCallbackScanner(scanner)(rows, queryErr)
@@ -48,14 +50,14 @@ func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 // times with a SQL rows object to scan a single value.
 func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) ([]T, error) {
 	return func(rows *sql.Rows, queryErr error) (values []T, _ error) {
-		scanner := func(s dbutil.Scanner) error {
+		scanner := func(s dbutil.Scanner) (bool, error) {
 			value, err := f(s)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			values = append(values, value)
-			return nil
+			return true, nil
 		}
 
 		err := NewCallbackScanner(scanner)(rows, queryErr)
@@ -72,15 +74,15 @@ func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 // SELECT u.id, COUNT(*) OVER() as count FROM users LIMIT 10
 func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) func(rows *sql.Rows, queryErr error) ([]T, int, error) {
 	return func(rows *sql.Rows, queryErr error) (values []T, totalCount int, _ error) {
-		scanner := func(s dbutil.Scanner) error {
+		scanner := func(s dbutil.Scanner) (bool, error) {
 			value, count, err := f(s)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			totalCount = count
 			values = append(values, value)
-			return nil
+			return true, nil
 		}
 
 		err := NewCallbackScanner(scanner)(rows, queryErr)
@@ -98,10 +100,10 @@ func NewKeyedCollectionScanner[K comparable, V, Vs any](
 ) func(rows *sql.Rows, queryErr error) (map[K]Vs, error) {
 	return func(rows *sql.Rows, queryErr error) (map[K]Vs, error) {
 		values := map[K]Vs{}
-		scanner := func(s dbutil.Scanner) error {
+		scanner := func(s dbutil.Scanner) (bool, error) {
 			key, value, err := scanPair(s)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			collection, ok := values[key]
@@ -110,7 +112,7 @@ func NewKeyedCollectionScanner[K comparable, V, Vs any](
 			}
 
 			values[key] = reducer.Reduce(collection, value)
-			return nil
+			return true, nil
 		}
 
 		err := NewCallbackScanner(scanner)(rows, queryErr)

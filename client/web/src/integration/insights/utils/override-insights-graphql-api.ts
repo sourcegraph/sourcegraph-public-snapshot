@@ -67,6 +67,16 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
             },
         }),
 
+        GetAllInsightConfigurations: () => ({
+            __typename: 'Query',
+            insightViews: {
+                __typename: 'InsightViewConnection',
+                nodes: [],
+                pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                totalCount: 0,
+            },
+        }),
+
         CurrentAuthState: () => ({
             currentUser: {
                 __typename: 'User',

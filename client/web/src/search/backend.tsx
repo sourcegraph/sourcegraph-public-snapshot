@@ -17,7 +17,6 @@ import {
     Scalars,
     SavedSearchFields,
     ReposByQueryResult,
-    savedSearchesResult,
     SavedSearchResult,
 } from '../graphql-operations'
 
@@ -62,23 +61,23 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
-    return queryGraphQL<savedSearchesResult>(gql`
-        query savedSearches {
-            savedSearches {
+export const savedSearchesQuery = gql`
+    query SavedSearches($namespace: ID!, $first: Int, $last: Int, $after: String, $before: String) {
+        savedSearches(namespace: $namespace, first: $first, last: $last, after: $after, before: $before) {
+            nodes {
                 ...SavedSearchFields
             }
-        }
-        ${savedSearchFragment}
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.savedSearches) {
-                throw createAggregateError(errors)
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                endCursor
+                startCursor
             }
-            return data.savedSearches
-        })
-    )
-}
+        }
+    }
+    ${savedSearchFragment}
+`
 
 export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
     return queryGraphQL<SavedSearchResult>(

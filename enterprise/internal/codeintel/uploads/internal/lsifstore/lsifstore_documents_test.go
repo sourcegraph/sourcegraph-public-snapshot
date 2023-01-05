@@ -18,37 +18,71 @@ import (
 func TestGetUploadDocumentsForPath(t *testing.T) {
 	store := populateTestStore(t)
 
-	if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), testBundleID, "%%"); err != nil {
-		t.Fatalf("unexpected error %s", err)
-	} else if count != 7 || len(paths) != 7 {
-		t.Errorf("expected %d document paths but got none: count=%d len=%d", 7, count, len(paths))
-	} else {
-		expected := []string{
-			"cmd/lsif-go/main.go",
-			"internal/gomod/module.go",
-			"internal/index/helper.go",
-			"internal/index/indexer.go",
-			"internal/index/types.go",
-			"protocol/protocol.go",
-			"protocol/writer.go",
-		}
+	t.Run("lsif", func(t *testing.T) {
+		if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), lsifTestBundleID, "%%"); err != nil {
+			t.Fatalf("unexpected error %s", err)
+		} else if expected := 7; count != expected || len(paths) != expected {
+			t.Errorf("expected %d document paths but got none: count=%d len=%d", expected, count, len(paths))
+		} else {
+			expected := []string{
+				"cmd/lsif-go/main.go",
+				"internal/gomod/module.go",
+				"internal/index/helper.go",
+				"internal/index/indexer.go",
+				"internal/index/types.go",
+				"protocol/protocol.go",
+				"protocol/writer.go",
+			}
 
-		if diff := cmp.Diff(expected, paths); diff != "" {
-			t.Errorf("unexpected document paths (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expected, paths); diff != "" {
+				t.Errorf("unexpected document paths (-want +got):\n%s", diff)
+			}
 		}
-	}
+	})
+
+	t.Run("scip", func(t *testing.T) {
+		if paths, count, err := store.GetUploadDocumentsForPath(context.Background(), scipTestBundleID, "template/src/util/%%"); err != nil {
+			t.Fatalf("unexpected error %s", err)
+		} else if expected := 8; count != expected || len(paths) != expected {
+			t.Errorf("expected %d document paths but got none: count=%d len=%d", expected, count, len(paths))
+		} else {
+			expected := []string{
+				"template/src/util/api.ts",
+				"template/src/util/graphql.ts",
+				"template/src/util/helpers.ts",
+				"template/src/util/ix.test.ts",
+				"template/src/util/ix.ts",
+				"template/src/util/promise.ts",
+				"template/src/util/uri.test.ts",
+				"template/src/util/uri.ts",
+			}
+
+			if diff := cmp.Diff(expected, paths); diff != "" {
+				t.Errorf("unexpected document paths (-want +got):\n%s", diff)
+			}
+		}
+	})
 }
 
-const testBundleID = 1
+const (
+	lsifTestBundleID = 1
+	scipTestBundleID = 2408562
+)
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)
 
-	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
+	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
+	loadTestFile(t, codeIntelDB, "./testdata/lsif-go@ad3507cb.sql")
+	return store
+}
+
+func loadTestFile(t testing.TB, codeIntelDB codeintelshared.CodeIntelDB, filepath string) {
+	contents, err := os.ReadFile(filepath)
 	if err != nil {
-		t.Fatalf("unexpected error reading testdata: %s", err)
+		t.Fatalf("unexpected error reading testdata from %q: %s", filepath, err)
 	}
 
 	tx, err := codeIntelDB.Transact(context.Background())
@@ -75,14 +109,12 @@ func populateTestStore(t testing.TB) LsifStore {
 	// span multiple lines.
 	for _, statement := range strings.Split(string(withoutComments), ";\n") {
 		if strings.Contains(statement, "_schema_versions") {
-			// Statements which insert into *_schema_versions should not be executed, as these are
-			// already inserted during regular DB up migrations.
+			// Statements which insert into lsif_data_*_schema_versions should not be executed, as
+			// these are already inserted during regular DB up migrations.
 			continue
 		}
 		if _, err := tx.ExecContext(context.Background(), statement); err != nil {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
-
-	return store
 }

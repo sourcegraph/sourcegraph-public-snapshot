@@ -2,7 +2,7 @@ import { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
 
-import { isChromatic } from '@sourcegraph/storybook'
+import { isChromatic } from '@sourcegraph/wildcard/src/stories'
 
 import { WebStory } from '../../../components/WebStory'
 

@@ -9,6 +9,7 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { NotebookProps } from '../notebooks'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -25,7 +26,8 @@ export interface RepositoryFileTreePageProps
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
             spec: string
-        }> {}
+        }>,
+        NotebookProps {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')

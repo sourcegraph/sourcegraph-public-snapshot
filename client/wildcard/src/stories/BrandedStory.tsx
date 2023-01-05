@@ -3,15 +3,13 @@ import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
-import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
-
 import { WildcardThemeContext } from '../hooks/useWildcardTheme'
+
+import { usePrependStyles, useTheme } from './hooks'
 
 import brandedStyles from '../global-styles/index.scss'
 
-export interface BrandedProps
-    extends Omit<MemoryRouterProps, 'children'>,
-        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
+export interface BrandedProps extends Omit<MemoryRouterProps, 'children'> {
     children: React.FunctionComponent<
         React.PropsWithChildren<{
             isLightTheme: boolean
@@ -27,22 +25,18 @@ export interface BrandedProps
 export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
     children: Children,
     styles = brandedStyles,
-    mocks,
-    useStrictMocking,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
     usePrependStyles('branded-story-styles', styles)
 
     return (
-        <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
-            <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <MemoryRouter {...memoryRouterProps}>
-                    <CompatRouter>
-                        <Children isLightTheme={isLightTheme} />
-                    </CompatRouter>
-                </MemoryRouter>
-            </WildcardThemeContext.Provider>
-        </MockedStoryProvider>
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <MemoryRouter {...memoryRouterProps}>
+                <CompatRouter>
+                    <Children isLightTheme={isLightTheme} />
+                </CompatRouter>
+            </MemoryRouter>
+        </WildcardThemeContext.Provider>
     )
 }

@@ -90,7 +90,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     isSourcegraphDotCom,
     fetchHighlightedFileLineRanges,
     authenticatedUser,
-    showSearchContext,
     settingsCascade,
     platformContext,
     match,
@@ -319,7 +318,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 authenticatedUser={authenticatedUser}
-                                showSearchContext={showSearchContext}
                                 settingsCascade={settingsCascade}
                                 platformContext={platformContext}
                                 outlineContainerElement={outlineContainerElement.current}
