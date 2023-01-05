@@ -6,7 +6,7 @@ import { getOperationName } from '@apollo/client/utilities'
 
 import { logger } from '@sourcegraph/common'
 
-import { generateCache } from '../graphql/apollo/cache'
+import { generateCache } from '../backend/apolloCache'
 
 /**
  * Intercept each mocked Apollo request and ensure that any request variables match the specified mock.
