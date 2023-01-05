@@ -1,7 +1,7 @@
-import { formatRFC3339 } from 'date-fns'
+import { formatRFC3339, subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
 
 import { queryExternalServices as _queryExternalServices } from '../components/externalServices/backend'
 import { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
@@ -24,6 +24,26 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         createdAt: '2021-03-15T19:39:11Z',
         webhookURL: null,
         hasConnectionCheck: true,
+        syncJobs: {
+            totalCount: 1,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [
+                {
+                    __typename: 'ExternalServiceSyncJob',
+                    failureMessage: null,
+                    startedAt: subMinutes(new Date(), 25).toISOString(),
+                    finishedAt: null,
+                    id: 'SYNCJOB1',
+                    state: ExternalServiceSyncJobState.PROCESSING,
+                    reposSynced: 5,
+                    repoSyncErrors: 0,
+                    reposAdded: 5,
+                    reposDeleted: 0,
+                    reposModified: 0,
+                    reposUnmodified: 0,
+                },
+            ],
+        },
     }
 }
 
