@@ -1,0 +1,1 @@
+export { AllInsightsView } from './AllInsightsView'

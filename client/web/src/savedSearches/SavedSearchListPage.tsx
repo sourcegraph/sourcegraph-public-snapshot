@@ -5,18 +5,29 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    Link,
+    Icon,
+    Tooltip,
+    ErrorAlert,
+    PageSwitcher,
+} from '@sourcegraph/wildcard'
 
+import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../components/PageTitle'
-import { SavedSearchFields } from '../graphql-operations'
+import { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
-import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -121,93 +132,90 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 }
 
-interface State {
-    savedSearchesOrError?: SavedSearchFields[] | ErrorLike
-}
-
 interface Props extends RouteComponentProps, NamespaceProps {}
 
-export class SavedSearchListPage extends React.Component<Props, State> {
-    public subscriptions = new Subscription()
-    private refreshRequests = new Subject<void>()
-
-    public state: State = {}
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.refreshRequests
-                .pipe(
-                    startWith(undefined),
-                    switchMap(() => fetchSavedSearches().pipe(catchError(error => [asError(error)]))),
-                    map(savedSearchesOrError => ({ savedSearchesOrError }))
-                )
-                .subscribe(newState => this.setState(newState as State))
-        )
+export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
+    React.useEffect(() => {
         eventLogger.logViewEvent('SavedSearchListPage')
-    }
+    }, [])
 
-    public render(): JSX.Element | null {
-        return (
-            <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
-                <PageHeader
-                    description="Manage notifications and alerts for specific search queries."
-                    actions={
-                        <Button
-                            to={`${this.props.match.path}/add`}
-                            className="test-add-saved-search-button"
-                            variant="primary"
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
-                        </Button>
-                    }
-                    className="mb-3"
-                >
-                    <PageTitle title="Saved searches" />
-                    <PageHeader.Heading as="h3" styleAs="h2">
-                        <PageHeader.Breadcrumb>Saved searches</PageHeader.Breadcrumb>
-                    </PageHeader.Heading>
-                </PageHeader>
-                <SavedSearchListPageContent onDelete={this.onDelete} {...this.props} {...this.state} />
-            </div>
-        )
-    }
+    const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
+        SavedSearchesResult,
+        SavedSearchesVariables,
+        SavedSearchFields
+    >({
+        query: savedSearchesQuery,
+        variables: { namespace: props.namespace.id },
+        getConnection: ({ data }) => data?.savedSearches || undefined,
+    })
 
-    private onDelete = (): void => {
-        this.refreshRequests.next()
-    }
+    return (
+        <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
+            <PageHeader
+                description="Manage notifications and alerts for specific search queries."
+                actions={
+                    <Button
+                        to={`${props.match.path}/add`}
+                        className="test-add-saved-search-button"
+                        variant="primary"
+                        as={Link}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
+                    </Button>
+                }
+                className="mb-3"
+            >
+                <PageTitle title="Saved searches" />
+                <PageHeader.Heading as="h3" styleAs="h2">
+                    <PageHeader.Breadcrumb>Saved searches</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
+            <SavedSearchListPageContent
+                {...props}
+                onDelete={() => refetch()}
+                savedSearches={connection?.nodes || []}
+                error={error}
+                loading={loading}
+            />
+            <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount || 0} />
+        </div>
+    )
 }
 
-interface SavedSearchListPageContentProps extends Props, State {
+interface SavedSearchListPageContentProps extends Props {
     onDelete: () => void
+    savedSearches: SavedSearchFields[]
+    error: unknown
+    loading: boolean
 }
 
 const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildren<SavedSearchListPageContentProps>> = ({
     namespace,
-    savedSearchesOrError,
+    savedSearches,
+    error,
+    loading,
     ...props
 }) => {
     const location = useLocation<{ description?: string }>()
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
     const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
 
-    if (savedSearchesOrError === undefined) {
+    if (loading) {
         return <LoadingSpinner />
     }
 
-    if (isErrorLike(savedSearchesOrError)) {
-        return <ErrorAlert className="mb-3" error={savedSearchesOrError} />
+    if (error) {
+        return <ErrorAlert className="mb-3" error={error} />
     }
 
-    const namespaceSavedSearches = savedSearchesOrError.filter(search => namespace.id === search.namespace.id)
-    if (namespaceSavedSearches.length === 0) {
+    if (savedSearches.length === 0) {
         return <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
     }
 
     return (
         <Container>
             <div className="list-group list-group-flush">
-                {namespaceSavedSearches.map(search => (
+                {savedSearches.map(search => (
                     <SavedSearchNode
                         key={search.id}
                         linkRef={location.state?.description === search.description ? callbackReference : null}
