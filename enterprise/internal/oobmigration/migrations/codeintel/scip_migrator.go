@@ -234,7 +234,9 @@ func migrateUpload(
 				indexerName,
 				path,
 				documentsByPath[path],
+				// Load all of the definitions for this document
 				definitionResultIDs[i],
+				// Load as many definitions from the next document as possible
 				definitionResultIDs[i+1:],
 			); err != nil {
 				return err
@@ -374,6 +376,7 @@ outer:
 	for i, ids := range append([][]ID{ids}, preloadDefinitionResultIDs...) {
 		for _, id := range ids {
 			if len(indexMap) >= resultChunkCacheSize && i != 0 {
+				// Only add fetch preload IDs if we have more room in our request
 				break outer
 			}
 
@@ -391,6 +394,7 @@ outer:
 
 			if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
 				if i == 0 {
+					// Don't stash preloaded result chunks for return
 					resultChunks[idx] = rawResultChunk.(ResultChunkData)
 				}
 			} else {
