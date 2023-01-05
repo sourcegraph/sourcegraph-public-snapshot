@@ -3,10 +3,11 @@ import React, { useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
+import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/http-client/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { usePrependStyles, useTheme } from '@sourcegraph/wildcard/src/stories'
 
 import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
