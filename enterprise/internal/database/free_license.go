@@ -33,7 +33,7 @@ var defaultFreeLicense = &FreeLicense{
 }
 
 var defaultLicenseInfo = license.Info{
-	Tags:      []string{"plan:free-0"},
+	Tags:      []string{"plan:free-1"},
 	UserCount: 10,
 }
 

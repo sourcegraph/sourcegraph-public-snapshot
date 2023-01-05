@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -15,8 +16,12 @@ func TestFreeLicenseStore_Init(t *testing.T) {
 	ctx := context.Background()
 
 	edb := NewEnterpriseDB(db)
-	_, err := edb.FreeLicense().Init(ctx)
+	license, err := edb.FreeLicense().Init(ctx)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if licensing.FreeLicenseKey != license.LicenseKey {
+		t.Errorf("expected %q but got %q", licensing.FreeLicenseKey, license.LicenseKey)
 	}
 }
