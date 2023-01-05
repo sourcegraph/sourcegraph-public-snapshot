@@ -46,6 +46,7 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
     echo "handling $file"
     name=$(basename "$file")
     annotate_file_opts=$annotate_opts
+    human_level=""
 
     case "$name" in
       # Append markdown annotations as markdown, and remove the suffix from the name
@@ -54,18 +55,33 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
 
     if [ "$auto_type" = "true" ]; then
       case "$name" in
-        WARN_*) annotate_file_opts="$annotate_file_opts -t warning" ;;
-        ERROR_*) annotate_file_opts="$annotate_file_opts -t error" ;;
-        INFO_*) annotate_file_opts="$annotate_file_opts -t info" ;;
-        SUCCESS_*) annotate_file_opts="$annotate_file_opts -t success" ;;
-        *) annotate_file_opts="$annotate_file_opts -t error" ;;
+        WARN_*)
+          annotate_file_opts="$annotate_file_opts -t warning"
+          human_level="⚠️ "
+          ;;
+        ERROR_*)
+          annotate_file_opts="$annotate_file_opts -t error"
+          human_level="❌"
+          ;;
+        INFO_*)
+          annotate_file_opts="$annotate_file_opts -t info"
+          human_level="ℹ️ "
+          ;;
+        SUCCESS_*)
+          annotate_file_opts="$annotate_file_opts -t success"
+          human_level="✅"
+          ;;
+        *) 
+          annotate_file_opts="$annotate_file_opts -t error"
+          human_level="❌"
+          ;;
       esac
     fi
 
     if [ "$include_names" = "true" ]; then
       # Set the name of the file as the title of this annotation section
       human_name=$(echo "$name" | sed -E -e "s/(WARN_)|(ERROR_)|(INFO_)|(SUCCESS_)//")
-      annotate_file_opts="-s '$human_name' $annotate_file_opts"
+      annotate_file_opts="-s '$human_level $human_name' $annotate_file_opts"
     fi
 
     # Generate annotation from file contents
