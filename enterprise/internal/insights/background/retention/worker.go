@@ -52,10 +52,9 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 		return nil
 	}
 
-	//// todo pass seriesID string info
-	//if err := archiveOldSeriesPoints(ctx, tx, string(record.SeriesID), *oldestRecordingTime); err != nil {
-	//	return errors.Wrap(err, "archiveOldSeriesPoints")
-	//}
+	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+		return err
+	}
 
 	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
 		return err
@@ -146,13 +145,28 @@ SELECT recording_time FROM insight_series_recording_times
 WHERE insight_series_id = %s AND snapshot IS FALSE
 ORDER BY recording_time DESC OFFSET %s LIMIT 1;`
 
-//// archiveOldSeriesPoints will insert old series points from the series_points table to a separate table.
-//func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
-//	return nil
-//}
-//
+// archiveOldSeriesPoints will insert old series points in a separate table and then delete them from the main table.
+func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertSeriesPointsSql, seriesID, oldestTimestamp)); err != nil {
+		return errors.Wrap(err, "insertSeriesPoints")
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteSeriesPointsSql, seriesID, oldestTimestamp)); err != nil {
+		return errors.Wrap(err, "deleteSeriesPoints")
+	}
+	return nil
+}
 
-// archiveOldRecordingTimes will insert old recording times from the recording times table in a separate table.
+const insertSeriesPointsSql = `
+INSERT INTO archived_series_points
+(SELECT * FROM series_points WHERE series_id = %s AND time < %s)
+`
+
+const deleteSeriesPointsSql = `
+DELETE FROM series_points 
+WHERE series_id = %s AND time < %s
+`
+
+// archiveOldRecordingTimes will insert old recording times in a separate table and then delete them from the main table.
 func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(insertRecordingTimesSql, seriesID, oldestTimestamp)); err != nil {
 		return errors.Wrap(err, "insertRecordingTimes")
