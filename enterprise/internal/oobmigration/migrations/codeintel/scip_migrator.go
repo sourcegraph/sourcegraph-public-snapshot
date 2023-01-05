@@ -405,7 +405,7 @@ func fetchResultChunks(
 	preloadDefinitionResultIDs [][]ID,
 ) (map[int]ResultChunkData, error) {
 	// Stores a set of indexes that need to be loaded from the database. The value associated
-	// with an index is true if the result chunk should be returned to teh caller and false if
+	// with an index is true if the result chunk should be returned to the caller and false if
 	// it should only be preloaded and written to the cache.
 	indexMap := map[int]bool{}
 
