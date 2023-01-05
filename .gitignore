@@ -44,8 +44,9 @@ grapher/python/pysonar2/tests
 grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
-pnpm-debug.log
+npm-debug.log
 pnpm-error.log
+pnpm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
 
