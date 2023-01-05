@@ -5324,12 +5324,12 @@ type GitBlob implements TreeEntry & File2 {
     """
     Ownership summary for this file.
     """
-    ownership: [Owner!]!
+    ownership: [Ownership!]!
 }
 
-type Owner {
-    owners: [String!]!
-    reason: String!
+type Ownership {
+    handle: String!
+    reasons: [String!]!
 }
 
 """

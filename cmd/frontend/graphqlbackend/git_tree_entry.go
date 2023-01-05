@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -342,32 +341,32 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 	if s == nil {
 		// just for testing
 		return []Ownership{{
-			owners: []string{"@cbart"},
-			reason: "No own service",
+			handle:  "@error",
+			reasons: []string{"No own service"},
 		}}
 	}
 	repo := r.Repository()
 	if repo == nil {
 		// just for testing
 		return []Ownership{{
-			owners: []string{"@cbart"},
-			reason: "No repo information",
+			handle:  "@error",
+			reasons: []string{"No repo information"},
 		}}
 	}
 	commit := r.commit
 	if commit == nil {
 		// just for testing
 		return []Ownership{{
-			owners: []string{"@cbart"},
-			reason: "No commit information",
+			handle:  "@error",
+			reasons: []string{"No commit information"},
 		}}
 	}
 	f, err := s.OwnersFile(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid))
 	if err != nil {
 		// just for testing
 		return []Ownership{{
-			owners: []string{"@cbart"},
-			reason: fmt.Sprintf("Error: %s", err),
+			handle:  "@error",
+			reasons: []string{err.Error()},
 		}}
 	}
 	var ship []Ownership
@@ -377,35 +376,35 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 			owner = "@" + h
 		}
 		ship = append(ship, Ownership{
-			owners: []string{owner},
-			reason: "CODEOWNERS file",
+			handle:  owner,
+			reasons: []string{"CODEOWNERS"},
 		})
 	}
 	if len(ship) == 0 {
 		return []Ownership{{
-			owners: []string{"@cbart"},
-			reason: "No matching entries in codeowners",
+			handle:  "@cbart",
+			reasons: []string{"STUB"},
 		}}
 	} else {
 		ship = append(ship, Ownership{
-			owners: []string{"@cbart"},
-			reason: "More owners go here...",
+			handle:  "@cbart",
+			reasons: []string{"TESTING"},
 		})
 	}
 	return ship
 }
 
 type Ownership struct {
-	owners []string
-	reason string
+	handle  string
+	reasons []string
 }
 
-func (o Ownership) Owners() []string {
-	return o.owners
+func (o Ownership) Handle() string {
+	return o.handle
 }
 
-func (o Ownership) Reason() string {
-	return o.reason
+func (o Ownership) Reasons() []string {
+	return o.reasons
 }
 
 type symbolInfoArgs struct {

@@ -7,8 +7,8 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
 
-import styles from './FileOwnership.module.scss'
 import { logger } from '@sourcegraph/common'
+import styles from './FileOwnership.module.scss'
 
 export const FileOwnership: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -45,8 +45,8 @@ export const FileOwnership: React.FunctionComponent<
                     </tr>
                 </thead>
                 <tbody>
-                    {data.node.commit.blob?.ownership.map((own, index) => (
-                        <tr key={index}>
+                    {data.node.commit.blob?.ownership.map(own => (
+                        <tr key={own.handle}>
                             <td>
                                 <div className="d-flex">
                                     <Button variant="icon" className="mr-2">
@@ -57,9 +57,9 @@ export const FileOwnership: React.FunctionComponent<
                                     </Button>
                                 </div>
                             </td>
-                            <td>{own.owners.join(', ')}</td>
+                            <td>{own.handle}</td>
                             <td>test@example.com</td>
-                            <td>{own.reason}</td>
+                            <td>{own.reasons.join(', ')}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -77,9 +77,9 @@ const FETCH_OWNERS = gql`
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
                         ownership {
-                            ... on Owner {
-                                owners
-                                reason
+                            ... on Ownership {
+                                handle
+                                reasons
                             }
                         }
                     }
