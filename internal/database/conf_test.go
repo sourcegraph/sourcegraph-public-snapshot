@@ -55,14 +55,16 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	type input struct {
-		lastID   int32
-		contents string
+		lastID         int32
+		author_user_id int32
+		contents       string
 	}
 
 	type output struct {
-		ID       int32
-		contents string
-		err      error
+		ID             int32
+		author_user_id int32
+		contents       string
+		err            error
 	}
 
 	type pair struct {
@@ -76,6 +78,23 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	}
 
 	for _, test := range []test{
+		{
+			name: "create_with_author_user_id",
+			sequence: []pair{
+				{
+					input{
+						lastID:         0,
+						author_user_id: 1,
+						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+					},
+					output{
+						ID:             2,
+						author_user_id: 1,
+						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+					},
+				},
+			},
+		},
 		{
 			name: "create_one",
 			sequence: []pair{
