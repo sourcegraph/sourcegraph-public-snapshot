@@ -37,16 +37,14 @@ var defaultFreeLicense = &FreeLicense{
 // the database. Subsequent calls to Init will return that same license for
 // as long as the entry remains in the database, even if the free license
 // plan changes.
-// This function must be called before any code that needs to do license checks,
-// otherwise the free license check will panic.
+// This function must be called before any code that needs to do license checks.
 func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT license_key, license_version FROM free_license LIMIT 1"))
 	var license FreeLicense
-	defer func() {
-		licensing.FreeLicenseKey = license.LicenseKey
-	}()
+
 	err := row.Scan(&license.LicenseKey, &license.Version)
 	if err == nil {
+		licensing.FreeLicenseKey = license.LicenseKey
 		return &license, nil
 	}
 	if err != nil && err != sql.ErrNoRows {
@@ -65,5 +63,6 @@ func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
 		return nil, err
 	}
 
+	licensing.FreeLicenseKey = license.LicenseKey
 	return &license, nil
 }
