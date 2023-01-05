@@ -342,8 +342,8 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 		// just for testing
 		return []Ownership{{
 			gitTree: r,
-			handle:  "@error",
-			reasons: []string{"No own service"},
+			handle:  "@no-own-service",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
 		}}
 	}
 	repo := r.Repository()
@@ -351,8 +351,8 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 		// just for testing
 		return []Ownership{{
 			gitTree: r,
-			handle:  "@error",
-			reasons: []string{"No repo information"},
+			handle:  "@no-repo-information",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
 		}}
 	}
 	commit := r.commit
@@ -360,8 +360,8 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 		// just for testing
 		return []Ownership{{
 			gitTree: r,
-			handle:  "@error",
-			reasons: []string{"No commit information"},
+			handle:  "@no-commit-information",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
 		}}
 	}
 	f, err := s.OwnersFile(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid))
@@ -369,8 +369,8 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 		// just for testing
 		return []Ownership{{
 			gitTree: r,
-			handle:  "@error",
-			reasons: []string{err.Error()},
+			handle:  err.Error(),
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
 		}}
 	}
 	var ship []Ownership
@@ -382,22 +382,15 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
 		ship = append(ship, Ownership{
 			gitTree: r,
 			handle:  owner,
-			reasons: []string{"CODEOWNERS"},
+			reasons: []OwnershipReason{&CodeownersFileEntry{}, &RecentContributor{}},
 		})
 	}
-	if len(ship) == 0 {
-		return []Ownership{{
-			gitTree: r,
-			handle:  "@test",
-			reasons: []string{"STUB"},
-		}}
-	} else {
-		ship = append(ship, Ownership{
-			gitTree: r,
-			handle:  "@test",
-			reasons: []string{"TESTING"},
-		})
-	}
+	// TODO: This is faked, we have no GITLOG backend, but put this just so we can see how it works
+	ship = append(ship, Ownership{
+		gitTree: r,
+		handle:  "@test",
+		reasons: []OwnershipReason{&RecentContributor{}},
+	})
 	return ship
 }
 
@@ -406,7 +399,7 @@ type Ownership struct {
 	// that can produce one - or we can inject one directly.
 	gitTree *GitTreeEntryResolver
 	handle  string
-	reasons []string
+	reasons []OwnershipReason
 }
 
 func (o Ownership) Handle() string {
@@ -418,8 +411,29 @@ func (o Ownership) Person() *PersonResolver {
 	return &PersonResolver{db: o.gitTree.db, name: "John Doe", email: "johndoe@example.com"}
 }
 
-func (o Ownership) Reasons() []string {
+func (o Ownership) Reasons() []OwnershipReason {
 	return o.reasons
+}
+
+type OwnershipReason interface {
+	ToCodeownersFileEntry() (*CodeownersFileEntry, bool)
+	ToRecentContributor() (*RecentContributor, bool)
+}
+
+type CodeownersFileEntry struct{}
+
+func (r *CodeownersFileEntry) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return r, true }
+func (r *CodeownersFileEntry) ToRecentContributor() (*RecentContributor, bool)     { return nil, false }
+func (r *CodeownersFileEntry) Title() string                                       { return "CODEOWNERS" }
+func (r *CodeownersFileEntry) Description() string                                 { return "Matches the foo/bar/baz/ rule." }
+
+type RecentContributor struct{}
+
+func (r *RecentContributor) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return nil, false }
+func (r *RecentContributor) ToRecentContributor() (*RecentContributor, bool)     { return r, true }
+func (r *RecentContributor) Title() string                                       { return "CONTRIBUTOR" }
+func (r *RecentContributor) Description() string {
+	return "Made 6 changes to this file in the last 3 months"
 }
 
 type symbolInfoArgs struct {

@@ -59,7 +59,7 @@ export const FileOwnership: React.FunctionComponent<
                             </td>
                             <td>{own.handle}</td>
                             <td>{own.person.email}</td>
-                            <td>{own.reasons.join(', ')}</td>
+                            <td>{own.reasons.map(r => r.title).join(', ')}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -82,7 +82,14 @@ const FETCH_OWNERS = gql`
                                 person {
                                     email
                                 }
-                                reasons
+                                reasons {
+                                    ... on CodeownersFileEntry {
+                                        title
+                                    }
+                                    ... on RecentContributor {
+                                        title
+                                    }
+                                }
                             }
                         }
                     }

@@ -5330,7 +5330,19 @@ type GitBlob implements TreeEntry & File2 {
 type Ownership {
     handle: String!
     person: Person!
-    reasons: [String!]!
+    reasons: [OwnershipReason!]!
+}
+
+union OwnershipReason = CodeownersFileEntry | RecentContributor
+
+type CodeownersFileEntry {
+    title: String!
+    description: String!
+}
+
+type RecentContributor {
+    title: String!
+    description: String!
 }
 
 """
