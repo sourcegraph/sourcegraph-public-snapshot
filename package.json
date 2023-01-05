@@ -11,6 +11,7 @@
     "pnpm": "^7.20.0"
   },
   "scripts": {
+    "deduplicate-list": "pnpm-deduplicate --list",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "format:changed": "prettier $(git diff --diff-filter=d --name-only origin/main... && git ls-files --other --modified --exclude-standard | grep -E '\\.(js|json|ts|tsx|graphql|md|scss)$' | xargs) --write --list-different --config prettier.config.js",
     "format:check": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --config prettier.config.js --check --write=false",
@@ -294,6 +295,7 @@
     "p-retry": "^4.2.0",
     "p-timeout": "^4.1.0",
     "postcss": "^8.4.19",
+    "pnpm-deduplicate": "^0.4.1",
     "postcss-custom-media": "^8.0.0",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^7.0.2",
