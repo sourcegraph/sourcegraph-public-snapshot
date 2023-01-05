@@ -65,6 +65,15 @@ describe('Code insights empty dashboard', () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
+                GetAllInsightConfigurations: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 0,
+                    },
+                }),
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
                 GetDashboardAccessibleInsights: () => ALL_AVAILABLE_INSIGHTS_LIST,
