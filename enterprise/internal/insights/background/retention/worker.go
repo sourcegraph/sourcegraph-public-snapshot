@@ -25,17 +25,24 @@ type dataRetentionHandler struct {
 	insightsStore   *store.Store
 }
 
-func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) error {
+func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
 	logger.Info("data retention handler called", log.Int("seriesID", record.SeriesID))
 
-	// default should match what is shown in the schema not to be confusing
+	// Default should match what is shown in the schema not to be confusing
 	maximumSampleSize := 90
 	if configured := conf.Get().InsightsMaximumSampleSize; configured != 0 {
 		maximumSampleSize = configured
 	}
 	logger.Info("maximum sample size", log.Int("value", maximumSampleSize))
 
-	oldestRecordingTimes, err := selectRecordingTimesAfterMax(ctx, h.insightsStore, record.SeriesID, maximumSampleSize)
+	// All the retention operations need to be completed in the same transaction
+	tx, err := h.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	oldestRecordingTimes, err := selectRecordingTimesAfterMax(ctx, tx, record.SeriesID, maximumSampleSize)
 	if err != nil {
 		return errors.Wrap(err, "selectRecordingTimesAfterMax")
 	}
@@ -139,3 +146,15 @@ WHERE insight_series_id = %s AND snapshot IS FALSE
 ORDER BY recording_time ASC
 LIMIT (SELECT GREATEST(count(*) - %s, 0) FROM insight_series_recording_times WHERE insight_series_id = %s);
 `
+
+// archiveOldSeriesPoints will delete old series points from the series_points table and move them to a separate
+// table.
+func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
+	return nil
+}
+
+// archiveOldRecordingTimes will delete old recording times from the recording times table and move them to a separate
+// table.
+func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
+	return nil
+}
