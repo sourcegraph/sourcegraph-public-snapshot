@@ -369,8 +369,15 @@ func fetchResultChunks(
 	ids []ID,
 	preloadDefinitionResultIDs [][]ID,
 ) (map[int]ResultChunkData, error) {
+	// Stores a set of indexes that need to be loaded from the database. The value associated
+	// with an index is true if the result chunk should be returned to teh caller and false if
+	// it should only be preloaded and written to the cache.
+	indexMap := map[int]bool{}
+
+	// The map from result chunk index to data payload we'll return. We first populate what
+	// we already have from the cache, then we fetch (and cache) the remaining indexes from
+	// the database.
 	resultChunks := map[int]ResultChunkData{}
-	indexMap := map[int]struct{}{}
 
 outer:
 	for i, ids := range append([][]ID{ids}, preloadDefinitionResultIDs...) {
@@ -398,7 +405,10 @@ outer:
 					resultChunks[idx] = rawResultChunk.(ResultChunkData)
 				}
 			} else {
-				indexMap[idx] = struct{}{}
+				// Store true if it's not _only_ a preload; note that a definition ID and a preloaded ID
+				// can hash to the same index. In this case we do need to return it from this call as well
+				// as the call when processing the next document.
+				indexMap[idx] = i == 0 || indexMap[idx]
 			}
 		}
 	}
@@ -413,7 +423,12 @@ outer:
 		// the cache shared while processing this particular upload.
 
 		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunks[idx] = resultChunk
+			if indexMap[idx] {
+				// Don't stash preloaded result chunks for return
+				resultChunks[idx] = resultChunk
+			}
+
+			// Always cache
 			resultChunkCache.Add(idx, resultChunk)
 			return nil
 		})
