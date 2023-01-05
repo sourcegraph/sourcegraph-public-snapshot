@@ -11,6 +11,7 @@
     "pnpm": "^7.20.0"
   },
   "scripts": {
+    "deduplicate": "pnpm-deduplicate",
     "deduplicate-list": "pnpm-deduplicate --list",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "format:changed": "prettier $(git diff --diff-filter=d --name-only origin/main... && git ls-files --other --modified --exclude-standard | grep -E '\\.(js|json|ts|tsx|graphql|md|scss)$' | xargs) --write --list-different --config prettier.config.js",
