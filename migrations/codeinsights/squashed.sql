@@ -30,6 +30,24 @@ CREATE TYPE time_unit AS ENUM (
     'YEAR'
 );
 
+CREATE TABLE archived_insight_series_recording_times (
+    insight_series_id integer,
+    recording_time timestamp with time zone,
+    snapshot boolean
+);
+
+CREATE TABLE archived_series_points (
+    series_id text NOT NULL,
+    "time" timestamp with time zone NOT NULL,
+    value double precision NOT NULL,
+    metadata_id integer,
+    repo_id integer,
+    repo_name_id integer,
+    original_repo_name_id integer,
+    capture text,
+    CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
+);
+
 CREATE TABLE commit_index (
     committed_at timestamp with time zone NOT NULL,
     repo_id integer NOT NULL,
@@ -587,6 +605,9 @@ ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
 
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT archived_insight_series_recor_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
+
 ALTER TABLE ONLY commit_index_metadata
     ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
 
@@ -729,6 +750,9 @@ ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY archived_insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_series_incomplete_points
