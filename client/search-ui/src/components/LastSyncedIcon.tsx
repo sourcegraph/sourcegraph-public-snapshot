@@ -1,6 +1,6 @@
 import React from 'react'
 
-import {mdiCloudAlert, mdiCloudClock, mdiCloudCheckOutline } from '@mdi/js'
+import { mdiCloudAlert, mdiCloudClock, mdiCloudCheckOutline } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 
@@ -14,7 +14,9 @@ interface Props {
 }
 
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const parsedDate = Date.parse(props.lastSyncedTime)
+    const parsedDate = new Date(Date.parse(props.lastSyncedTime)).setDate(
+        new Date(Date.parse(props.lastSyncedTime)).getDate() - 23
+    )
     const formattedTime = format(parsedDate, 'yyyy-MM-dd pp')
     const oneDayAgo = new Date()
     const oneWeekAgo = new Date()
