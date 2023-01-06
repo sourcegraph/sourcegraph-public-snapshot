@@ -98,7 +98,7 @@ export function highlightingOccurrenceAtPosition(state: EditorState, position: P
 export function inferOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
     const fallback = state.field(fallbackOccurrences)
     const cmLine = state.doc.line(position.line + 1)
-    const cmPosition = cmLine.from + position.character + 1
+    const cmPosition = cmLine.from + position.character
     // We rely on `Occurrence` reference equality in some downstream facets so
     // it's important to reuse instances between invocations.
     const fromCache = fallback.get(cmPosition)
