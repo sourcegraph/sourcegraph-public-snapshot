@@ -47,6 +47,17 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
         return ''
     }
 
+    // Feature request from https://twitter.com/mitchellh/status/1610353274540130304
+    // Fallback to smart search when the token value is a URL.
+    // This condition makes it possible to copy-paste a GitHub URL into the
+    // search bar and get search suggestions for the linked repo or file.
+    if (tokenValue.startsWith('https://')) {
+        if (tokenValue.includes('/blob/')) {
+            suggestionType = 'path'
+        }
+        return `${tokenValue} type:${suggestionType} count:${MAX_SUGGESTION_COUNT} patterntype:lucky`.trimStart()
+    }
+
     if (suggestionType === 'repo') {
         const relevantFilters = !hasAndOrOperators ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
         return `${relevantFilters} repo:${tokenValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
