@@ -196,7 +196,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents, nil, false)
+				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, 0, p.input.contents, false)
 				if err != nil {
 					if errors.Is(err, p.expected.err) {
 						continue
