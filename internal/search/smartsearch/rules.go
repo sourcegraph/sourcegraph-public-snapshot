@@ -43,6 +43,10 @@ var rulesNarrow = []rule{
 		description: "expand URL to filters",
 		transform:   []transform{patternsToCodeHostFilters},
 	},
+	{
+		description: "rewrite repo URLs",
+		transform:   []transform{rewriteRepoFilter},
+	},
 }
 
 var rulesWiden = []rule{
@@ -369,6 +373,52 @@ func symbolPatterns(b query.Basic) *query.Basic {
 		Parameters: append(b.Parameters, selectParam, symbolParam),
 		Pattern:    pattern,
 	}
+}
+
+type repoFilterReplacement struct {
+	match   *regexp.Regexp
+	replace string
+}
+
+var repoFilterReplacements = []repoFilterReplacement{
+	{
+		match:   regexp.MustCompile(`^(?:https?:\/\/)github\.com\/([^\/]+)\/([^\/\?#]+)(?:.+)?$`),
+		replace: "^github.com/$1/$2$",
+	},
+}
+
+func rewriteRepoFilter(b query.Basic) *query.Basic {
+	newParams := make([]query.Parameter, 0, len(b.Parameters))
+	anyParamChanged := false
+	for _, param := range b.Parameters {
+		if param.Field != "repo" {
+			newParams = append(newParams, param)
+			continue
+		}
+
+		changed := false
+		for _, replacer := range repoFilterReplacements {
+			if replacer.match.MatchString(param.Value) {
+				newParams = append(newParams, query.Parameter{
+					Field:      param.Field,
+					Value:      replacer.match.ReplaceAllString(param.Value, replacer.replace),
+					Negated:    param.Negated,
+					Annotation: param.Annotation,
+				})
+				changed = true
+				anyParamChanged = true
+				break
+			}
+		}
+		if !changed {
+			newParams = append(newParams, param)
+		}
+	}
+	if !anyParamChanged {
+		return nil
+	}
+	newQuery := b.MapParameters(newParams)
+	return &newQuery
 }
 
 func langPatterns(b query.Basic) *query.Basic {
