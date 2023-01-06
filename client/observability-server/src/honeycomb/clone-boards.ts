@@ -248,6 +248,6 @@ async function cloneBoards(keys: string[]): Promise<void> {
 
 /**
  * Usage:
- * yarn honeycomb:clone-boards <fromEnvAPIKey> <toEnvAPIKey>
+ * pnpm honeycomb:clone-boards <fromEnvAPIKey> <toEnvAPIKey>
  */
 cloneBoards(process.argv.slice(2)).catch(signale.error)
