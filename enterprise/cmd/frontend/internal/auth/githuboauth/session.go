@@ -111,11 +111,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	for i, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
-				Username:        login,
+				Username: login,
+
+				// This email is coming from an external source, so we can safely assume
+				// that the email is verified elsewhere.
 				Email:           attempt.email,
 				EmailIsVerified: true,
-				DisplayName:     deref(ghUser.Name),
-				AvatarURL:       deref(ghUser.AvatarURL),
+
+				DisplayName: deref(ghUser.Name),
+				AvatarURL:   deref(ghUser.AvatarURL),
 			},
 			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,

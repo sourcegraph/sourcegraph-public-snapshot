@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -11,23 +12,23 @@ import (
 
 // ResetPasswordEnabled reports whether the reset-password flow is enabled (per site config).
 func ResetPasswordEnabled() bool {
-	pc, multiple := getProviderConfig()
-	return pc != nil && !multiple
+	builtin, multiple := getProviderConfig()
+	return builtin != nil && !multiple
 }
 
 // getProviderConfig returns the builtin auth provider config. At most 1 can be specified in
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).
-func getProviderConfig() (pc *schema.BuiltinAuthProvider, multiple bool) {
+func getProviderConfig() (builtin *schema.BuiltinAuthProvider, multiple bool) {
 	for _, p := range conf.Get().AuthProviders {
 		if p.Builtin != nil {
-			if pc != nil {
-				return pc, true // multiple builtin auth providers
+			if builtin != nil {
+				return builtin, true // multiple builtin auth providers
 			}
-			pc = p.Builtin
+			builtin = p.Builtin
 		}
 	}
-	return pc, false
+	return builtin, false
 }
 
 func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {

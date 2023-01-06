@@ -92,7 +92,13 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				}
 			}
 			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
-				UserProps: database.NewUser{Username: username, Email: rawEmail, EmailIsVerified: true},
+				UserProps: database.NewUser{
+					Username: username,
+					Email:    rawEmail,
+					// This email is coming from an external source, so we can safely assume
+					// that the email is verified elsewhere.
+					EmailIsVerified: true,
+				},
 				ExternalAccount: extsvc.AccountSpec{
 					ServiceType: providerType,
 					// Store rawUsername, not normalized username, to prevent two users with distinct
