@@ -1901,7 +1901,7 @@ func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, uploadSize, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, dbutil.NullInt64{N: uploadSize}, id))
 }
 
 const markQueuedQuery = `
