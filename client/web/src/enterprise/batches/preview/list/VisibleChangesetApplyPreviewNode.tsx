@@ -384,7 +384,8 @@ const ExpandedSection: React.FunctionComponent<
                                     node.targets.changeset.author
                                         ? node.targets.changeset.author
                                         : {
-                                              email: authenticatedUser.email,
+                                              email:
+                                                  authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
                                               displayName: authenticatedUser.displayName || authenticatedUser.username,
                                               user: authenticatedUser,
                                           }

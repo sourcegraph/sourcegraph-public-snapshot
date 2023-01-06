@@ -25,7 +25,7 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
 
-export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'emails'>
 
 export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
