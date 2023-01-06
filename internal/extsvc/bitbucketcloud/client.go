@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -203,15 +204,11 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.Auth.Authenticate(req); err != nil {
-		return err
-	}
-
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
 	if err != nil {
 		return err
 	}
