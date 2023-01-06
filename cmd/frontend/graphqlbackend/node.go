@@ -94,6 +94,16 @@ func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToRole() (RoleResolver, bool) {
+	n, ok := r.Node.(RoleResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
+	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
 	n, ok := r.Node.(BatchSpecResolver)
 	return n, ok

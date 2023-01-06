@@ -1,7 +1,7 @@
 """
 A role
 """
-type Role {
+type Role implements Node {
     """
     The globally unique identifier for this role.
     """
@@ -59,7 +59,7 @@ type PermissionConnection {
 """
 A permission
 """
-type Permission {
+type Permission implements Node {
     """
     The globally unique identifier for this permission.
     """
@@ -80,6 +80,14 @@ extend type Query {
     """
     roles(
         """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+        """
         User which this role is assigned to
         """
         user: ID
@@ -97,6 +105,14 @@ extend type Query {
     """
     permissions(
         """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+        """
         Return permissions associated with the role.
         """
         role: ID
@@ -104,5 +120,34 @@ extend type Query {
         Return permissions associated with the user.
         """
         user: ID
+    ): PermissionConnection!
+}
+
+extend type User {
+    """
+    The list of all roles assigned to this user.
+    """
+    roles (
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): RoleConnection!
+    """
+    The list of all permissions belonging to roles assigned to this user.
+    """
+    permissions (
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
     ): PermissionConnection!
 }

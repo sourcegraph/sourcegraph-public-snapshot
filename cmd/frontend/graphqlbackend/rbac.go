@@ -54,10 +54,14 @@ type RoleArgs struct {
 }
 
 type ListRoleArgs struct {
-	User *graphql.ID
+	User  *graphql.ID
+	First int32
+	After *string
 }
 
 type ListPermissionArgs struct {
-	Role *graphql.ID
-	User *graphql.ID
+	Role  *graphql.ID
+	User  *graphql.ID
+	First int32
+	After *string
 }
