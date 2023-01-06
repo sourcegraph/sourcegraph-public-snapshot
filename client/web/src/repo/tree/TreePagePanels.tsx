@@ -262,31 +262,29 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                     <div className={styles.meterContainer}>
                                         <ParentSize>
                                             {({ width }) => (
-                                                <div>
-                                                    <StackedMeter
-                                                        width={width}
-                                                        height={10}
-                                                        viewMinMax={[0, maxLinesChanged]}
-                                                        data={[
-                                                            {
-                                                                name: 'deleted',
-                                                                value: diffStatsByPath[entry.name].deleted,
-                                                                className: styles.diffStatDeleted,
-                                                            },
-                                                            {
-                                                                name: 'added',
-                                                                value: diffStatsByPath[entry.name].added,
-                                                                className: styles.diffStatAdded,
-                                                            },
-                                                        ]}
-                                                        getDatumValue={getDatumValue}
-                                                        getDatumName={getDatumName}
-                                                        getDatumClassName={getDatumClassName}
-                                                        minBarWidth={10}
-                                                        className={styles.barSvg}
-                                                        rightToLeft={true}
-                                                    />
-                                                </div>
+                                                <StackedMeter
+                                                    width={width}
+                                                    height={10}
+                                                    viewMinMax={[0, maxLinesChanged]}
+                                                    data={[
+                                                        {
+                                                            name: 'deleted',
+                                                            value: diffStatsByPath[entry.name].deleted,
+                                                            className: styles.diffStatDeleted,
+                                                        },
+                                                        {
+                                                            name: 'added',
+                                                            value: diffStatsByPath[entry.name].added,
+                                                            className: styles.diffStatAdded,
+                                                        },
+                                                    ]}
+                                                    getDatumValue={getDatumValue}
+                                                    getDatumName={getDatumName}
+                                                    getDatumClassName={getDatumClassName}
+                                                    minBarWidth={10}
+                                                    className={styles.barSvg}
+                                                    rightToLeft={true}
+                                                />
                                             )}
                                         </ParentSize>
                                     </div>
