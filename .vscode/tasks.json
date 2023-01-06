@@ -35,8 +35,8 @@
     },
     {
       "label": "stylelint",
-      "command": "yarn",
-      "args": ["run", "lint:css:all", "--", "--formatter", "compact"],
+      "command": "pnpm",
+      "args": ["-s", "run", "lint:css:all", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",

@@ -48,7 +48,7 @@ const config = {
   },
   modulePaths: ['node_modules', '<rootDir>/src'],
 
-  // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
+  // By default, don't clutter `pnpm run test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],
 
@@ -73,7 +73,7 @@ const config = {
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
   globals: {
-    Uint8Array: Uint8Array,
+    Uint8Array,
   },
 }
 

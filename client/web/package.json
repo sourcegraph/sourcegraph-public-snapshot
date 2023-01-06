@@ -28,9 +28,9 @@
     "lint": "pnpm lint:js && pnpm:lint:css",
     "lint:js": "NODE_OPTIONS=\"--max_old_space_size=16192\" pnpm eslint --cache '**/*.[tj]s?(x)'",
     "lint:css": "pnpm stylelint 'src/**/*.scss' --quiet",
-    "browserslist": "pnpm browserslist",
+    "browserslist": "pnpm exec browserslist",
     "analyze-bundle": "WEBPACK_USE_NAMED_CHUNKS=true NODE_ENV=production ENTERPRISE=1 WEBPACK_BUNDLE_ANALYZER=1 pnpm build",
-    "bundlesize": "pnpm bundlesize --config=./bundlesize.config.js",
+    "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js",
     "report-bundle-diff": "pnpm ts-node scripts/report-bundle-diff"
   },
   "devDependencies": {
