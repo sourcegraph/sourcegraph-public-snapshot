@@ -80,3 +80,12 @@ func deleteQueuedRecords(ctx context.Context, postgres database.DB, seriesId str
 const deleteQueuedForSeries = `
 delete from insights_query_runner_jobs where series_id = %s;
 `
+
+func deleteQueuedRetentionRecords(ctx context.Context, insightsDB edb.InsightsDB, seriesId string) error {
+	queueStore := basestore.NewWithHandle(insightsDB.Handle())
+	return queueStore.Exec(ctx, sqlf.Sprintf(deleteQueuedRetentionRecordsSql, seriesId))
+}
+
+const deleteQueuedRetentionRecordsSql = `
+delete from insights_data_retention_jobs where series_id_string = %s;
+`
