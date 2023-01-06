@@ -1,3 +1,23 @@
+.readme {
+    max-height: 30rem;
+    overflow: hidden;
+    margin-top: 1rem;
+    padding: 0 0.25rem 0 0;
+
+    &-fader {
+        width: 100%;
+        height: 2.5rem;
+        margin-top: -2.5rem;
+        position: relative;
+        background: linear-gradient(to bottom, transparent, var(--code-bg) 50%);
+    }
+
+    &-more-link {
+        display: block;
+        margin-top: 0.25rem;
+    }
+}
+
 .card-col-header-wrapper {
     background-color: var(--color-bg-2);
 
@@ -22,37 +42,6 @@
 
 .diff-stat-deleted {
     fill: var(--diff-remove-fg);
-}
-
-.readme-container {
-    max-height: 30rem;
-    overflow: hidden;
-    position: relative;
-    margin-top: 1rem;
-    padding-left: 0;
-}
-
-.readme-fader {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 2.5rem;
-    transition: ease-in;
-    background: linear-gradient(to bottom, transparent, 75%, var(--code-bg));
-}
-
-.readme-fader-invisible {
-    visibility: hidden;
-}
-
-.readme {
-    padding: 0 0.25rem;
-}
-
-.readme-more {
-    margin-top: 0.75rem;
-    margin-bottom: 1rem;
-    transition: ease-in;
 }
 
 .meter-container {

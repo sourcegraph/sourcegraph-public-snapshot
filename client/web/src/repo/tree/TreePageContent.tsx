@@ -350,15 +350,15 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <div>
-                {readmeInfo && (
-                    <ReadmePreviewCard
-                        readmeHTML={readmeInfo.blob.richHTML}
-                        readmeURL={readmeInfo.entry.url}
-                        location={props.location}
-                    />
-                )}
-            </div>
+            {readmeInfo && (
+                <ReadmePreviewCard
+                    key={readmeInfo.blob.richHTML}
+                    readmeHTML={readmeInfo.blob.richHTML}
+                    readmeURL={readmeInfo.entry.url}
+                    location={props.location}
+                    className="mb-4"
+                />
+            )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <div className="row">
                     <div className="col-12 col-lg-8 mb-3">

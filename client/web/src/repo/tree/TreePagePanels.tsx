@@ -1,12 +1,21 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuUp, mdiMenuDown } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
-import { StackedMeter, Link, Icon, Card, CardHeader, ParentSize, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Card,
+    CardHeader,
+    Icon,
+    Link,
+    ParentSize,
+    StackedMeter,
+    Tooltip,
+    useElementObscuredArea,
+} from '@sourcegraph/wildcard'
 
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -16,45 +25,33 @@ interface ReadmePreviewCardProps {
     readmeHTML: string
     readmeURL: string
     location: H.Location
+    className?: string
 }
 
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({
-    readmeHTML,
-    readmeURL,
-    location,
-}) => {
-    const [fileElement, setFileElement] = useState<HTMLDivElement | null>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const showReadmeTail =
-        fileElement &&
-        containerRef.current &&
-        fileElement.clientHeight > 0 &&
-        containerRef.current.clientHeight >= fileElement.clientHeight - 4
-    const hideReadmeTail = !showReadmeTail
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = props => {
+    const { readmeHTML, readmeURL, location, className } = props
+
+    const renderedFileRef = useRef<HTMLDivElement>(null)
+    const { bottom } = useElementObscuredArea(renderedFileRef)
+
     return (
-        <>
-            <div className={classNames(styles.readmeContainer)} ref={containerRef}>
-                <div ref={setFileElement}>
-                    <RenderedFile className={styles.readme} dangerousInnerHTML={readmeHTML} location={location} />
-                </div>
-                <div
-                    className={
-                        hideReadmeTail
-                            ? classNames(styles.readmeFader)
-                            : classNames(styles.readmeFader, styles.readmeFaderInvisible)
-                    }
-                />
-            </div>
-            {hideReadmeTail && // don't show "View full README" until the height is known
-                fileElement &&
-                fileElement.clientHeight > 0 &&
-                containerRef.current &&
-                containerRef.current.clientHeight > 0 && (
-                    <div className={styles.readmeMore}>
-                        <Link to={readmeURL}>View full README</Link>
-                    </div>
-                )}
-        </>
+        <section className={className}>
+            <RenderedFile
+                key={readmeHTML}
+                ref={renderedFileRef}
+                location={location}
+                dangerousInnerHTML={readmeHTML}
+                className={styles.readme}
+            />
+            {bottom > 0 && (
+                <>
+                    <div className={styles.readmeFader} />
+                    <Link to={readmeURL} className={styles.readmeMoreLink}>
+                        View full README
+                    </Link>
+                </>
+            )}
+        </section>
     )
 }
 
@@ -131,11 +128,13 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
         ({ key }: React.KeyboardEvent<HTMLDivElement>) => key === 'Enter' && sortCallback('Activity'),
         [sortCallback]
     )
+
     interface Datum {
         name: 'deleted' | 'added'
         value: number
         className: string
     }
+
     const getDatumValue = useCallback((datum: Datum) => datum.value, [])
     const getDatumName = useCallback((datum: Datum) => datum.name, [])
     const getDatumClassName = useCallback((datum: Datum) => datum.className, [])
