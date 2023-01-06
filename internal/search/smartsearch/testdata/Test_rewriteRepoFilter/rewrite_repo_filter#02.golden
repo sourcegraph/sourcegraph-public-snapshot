@@ -1,0 +1,4 @@
+{
+  "Input": "repo:https://github.com/sourcegraph/sourcegraph/blob/main/lib/README.md#L50",
+  "Query": "repo:^github.com/sourcegraph/sourcegraph$"
+}

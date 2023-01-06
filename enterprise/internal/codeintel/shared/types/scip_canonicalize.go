@@ -1,12 +1,14 @@
 package types
 
-import "github.com/sourcegraph/scip/bindings/go/scip"
+import (
+	"github.com/sourcegraph/scip/bindings/go/scip"
+)
 
 // CanonicalizeDocument deterministically re-orders the fields of the given document.
 func CanonicalizeDocument(document *scip.Document) *scip.Document {
 	document.Occurrences = CanonicalizeOccurrences(document.Occurrences)
 	document.Symbols = CanonicalizeSymbols(document.Symbols)
-	return document
+	return SanitizeDocument(document)
 }
 
 // CanonicalizeOccurrences deterministically re-orders the fields of the given occurrence slice.
