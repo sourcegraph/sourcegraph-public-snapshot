@@ -201,7 +201,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     onSubmit={handleSubmitFeedback}
                     modal={true}
                     openByDefault={true}
-                    authenticatedUser={props.authenticatedUser}
+                    authenticatedUser={
+                        props.authenticatedUser
+                            ? {
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
+                            : null
+                    }
                     onClose={() => setFeedbackModalOpen(false)}
                 />
             )}

@@ -22,7 +22,13 @@ export const CreateCodeMonitorPageStory: Story = () => (
         {props => (
             <CreateCodeMonitorPage
                 {...props}
-                authenticatedUser={{ id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser}
+                authenticatedUser={
+                    {
+                        id: 'foobar',
+                        username: 'alice',
+                        emails: [{ email: 'alice@alice.com', isPrimary: true, verified: true }],
+                    } as AuthenticatedUser
+                }
                 createCodeMonitor={sinon.fake()}
                 isSourcegraphDotCom={false}
             />
