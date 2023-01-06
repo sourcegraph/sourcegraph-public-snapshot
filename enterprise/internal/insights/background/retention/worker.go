@@ -97,7 +97,7 @@ func CreateDBWorkerStore(observationCtx *observation.Context, store *basestore.S
 		RetryAfter:        15 * time.Minute,
 		MaxNumRetries:     5,
 		MaxNumResets:      5,
-		StalledMaxAge:     time.Second * 5,
+		StalledMaxAge:     time.Second * 60,
 	})
 }
 
