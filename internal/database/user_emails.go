@@ -271,7 +271,7 @@ LIMIT 1
 	if err != nil {
 		return nil, err
 	} else if len(emails) < 1 {
-		return nil, userEmailNotFoundError{[]any{fmt.Sprintf("email %q", email)}}
+		return nil, nil
 	}
 	return emails[0], nil
 }
