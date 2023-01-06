@@ -80,7 +80,7 @@ func Init() {
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			if _, err := licensing.Check(licensing.FeatureSSO); err != nil {
 				logger.Error("Check license for SSO (SAML)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return

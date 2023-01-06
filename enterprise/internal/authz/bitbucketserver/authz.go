@@ -46,7 +46,7 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+	if _, errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
 		return nil, errLicense
 	}
 

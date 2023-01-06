@@ -378,7 +378,7 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 		return emptyResponse, nil
 	}
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	_, licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError != nil {
 		lamDashboardId, err := r.dashboardStore.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
@@ -419,7 +419,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	}
 	defer func() { err = tx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	_, licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError != nil {
 		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
@@ -481,7 +481,7 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	}
 	defer func() { err = tx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	_, licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError != nil {
 		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {

@@ -176,7 +176,7 @@ func TestCreateBatchSpec(t *testing.T) {
 		"batch changes license, over the limit": {
 			changesetSpecs: changesetSpecs,
 			hasLicenseFor: map[string]struct{}{
-				licensing.FeatureBatchChanges.FeatureName(): {},
+				licensing.FeatureBatchChanges{}.FeatureName(): {},
 			},
 			wantErr: false,
 		},
@@ -200,11 +200,11 @@ func TestCreateBatchSpec(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
+			licensing.MockCheckFeature = func(feature licensing.Feature) (licensing.Feature, error) {
 				if _, ok := tc.hasLicenseFor[feature.FeatureName()]; !ok {
-					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
+					return nil, licensing.NewFeatureNotActivatedError("no batch changes for you!")
 				}
-				return nil
+				return feature, nil
 			}
 
 			defer func() {
@@ -500,8 +500,8 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		return nil
+	licensing.MockCheckFeature = func(feature licensing.Feature) (licensing.Feature, error) {
+		return feature, nil
 	}
 
 	defer func() {
@@ -893,8 +893,8 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		return nil
+	licensing.MockCheckFeature = func(feature licensing.Feature) (licensing.Feature, error) {
+		return feature, nil
 	}
 
 	defer func() {
@@ -1159,8 +1159,8 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				return licensing.NewFeatureNotActivatedError("no batch changes for you!")
+			licensing.MockCheckFeature = func(feature licensing.Feature) (licensing.Feature, error) {
+				return nil, licensing.NewFeatureNotActivatedError("no batch changes for you!")
 			}
 			defer func() {
 				licensing.MockCheckFeature = oldMock

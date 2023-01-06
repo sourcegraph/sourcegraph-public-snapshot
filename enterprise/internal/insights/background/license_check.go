@@ -39,7 +39,7 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB, logg
 	dashboardTx := dashboardStore.With(insightTx)
 	defer func() { err = insightTx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	_, licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError == nil {
 		err := insightTx.UnfreezeAllInsights(ctx)
 		if err != nil {

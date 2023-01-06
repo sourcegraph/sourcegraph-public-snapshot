@@ -6,6 +6,7 @@ import "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 // the Grafana endpoints in the debug router.
 func NewPreMountGrafanaHook() func() error {
 	return func() error {
-		return licensing.Check(licensing.FeatureMonitoring)
+		_, err := licensing.Check(licensing.FeatureMonitoring)
+		return err
 	}
 }

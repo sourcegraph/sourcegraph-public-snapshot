@@ -65,9 +65,6 @@ const (
 	// DEPRECATED: See FeatureBatchChanges.
 	FeatureCampaigns BasicFeature = "campaigns"
 
-	// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-	FeatureBatchChanges BasicFeature = "batch-changes"
-
 	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
 	FeatureMonitoring BasicFeature = "monitoring"
 
@@ -78,6 +75,18 @@ const (
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
 )
+
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created. If Unrestricted is true, this is ignored.
+	MaxNumBatchChanges int32
+}
+
+func (FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
 
 // planFeatures defines the features that are enabled for each plan.
 var planFeatures = map[Plan][]Feature{
@@ -90,7 +99,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureRemoteExtensionsAllowDisallow,
 		FeatureBranding,
 		FeatureCampaigns,
-		FeatureBatchChanges,
+		FeatureBatchChanges{Unrestricted: true},
 		FeatureMonitoring,
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
@@ -109,7 +118,7 @@ var planFeatures = map[Plan][]Feature{
 	PlanBusiness0: {
 		FeatureACLs,
 		FeatureCampaigns,
-		FeatureBatchChanges,
+		FeatureBatchChanges{Unrestricted: true},
 		FeatureCodeInsights,
 		FeatureSSO,
 	},
@@ -117,12 +126,13 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureCampaigns,
 		FeatureCodeInsights,
-		FeatureBatchChanges,
+		FeatureBatchChanges{Unrestricted: true},
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
 	},
 	PlanFree0: {
 		FeatureSSO,
 		FeatureMonitoring,
+		FeatureBatchChanges{MaxNumBatchChanges: 5},
 	},
 }

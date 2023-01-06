@@ -62,14 +62,14 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 // checkLicense returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
 func checkLicense() error {
-	batchChangesErr := licensing.Check(licensing.FeatureBatchChanges)
+	_, batchChangesErr := licensing.Check(licensing.FeatureBatchChanges{})
 	if batchChangesErr == nil {
 		return nil
 	}
 
 	if licensing.IsFeatureNotActivated(batchChangesErr) {
 		// Let's fallback and check whether (deprecated) campaigns are enabled:
-		campaignsErr := licensing.Check(licensing.FeatureCampaigns)
+		_, campaignsErr := licensing.Check(licensing.FeatureCampaigns)
 		if campaignsErr == nil {
 			return nil
 		}

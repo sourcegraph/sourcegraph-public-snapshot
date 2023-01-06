@@ -19,34 +19,34 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	}
 	ctx := actor.WithInternalActor(context.Background())
 
-	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) error {
-		return func(feature licensing.Feature) error {
+	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) (licensing.Feature, error) {
+		return func(feature licensing.Feature) (licensing.Feature, error) {
 			for _, allowed := range allow {
 				if feature == allowed {
-					return nil
+					return feature, nil
 				}
 			}
 
-			return licensing.NewFeatureNotActivatedError("feature not allowed")
+			return nil, licensing.NewFeatureNotActivatedError("feature not allowed")
 		}
 	}
 	query := `query HasFeature($feature: String!) { enterpriseLicenseHasFeature(feature: $feature) }`
 
 	for name, tc := range map[string]struct {
 		feature string
-		mock    func(feature licensing.Feature) error
+		mock    func(feature licensing.Feature) (licensing.Feature, error)
 		want    bool
 		wantErr bool
 	}{
 		"real feature, enabled": {
-			feature: string(licensing.FeatureBatchChanges),
-			mock:    buildMock(licensing.FeatureBatchChanges),
+			feature: licensing.FeatureBatchChanges{}.FeatureName(),
+			mock:    buildMock(licensing.FeatureBatchChanges{}),
 			want:    true,
 			wantErr: false,
 		},
 		"real feature, disabled": {
 			feature: string(licensing.FeatureMonitoring),
-			mock:    buildMock(licensing.FeatureBatchChanges),
+			mock:    buildMock(licensing.FeatureBatchChanges{}),
 			want:    false,
 			wantErr: false,
 		},
@@ -64,8 +64,8 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		},
 		"error from check": {
 			feature: string(licensing.FeatureMonitoring),
-			mock: func(feature licensing.Feature) error {
-				return errors.New("this is a different error")
+			mock: func(feature licensing.Feature) (licensing.Feature, error) {
+				return nil, errors.New("this is a different error")
 			},
 			want:    false,
 			wantErr: true,

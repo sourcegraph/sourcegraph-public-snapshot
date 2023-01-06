@@ -24,62 +24,66 @@ func (f BasicFeature) FeatureName() string {
 //
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
-func Check(feature Feature) error {
+func Check(feature Feature) (Feature, error) {
 	if MockCheckFeature != nil {
 		return MockCheckFeature(feature)
 	}
 
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
-		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
+		return nil, errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
 	return checkFeature(info, feature)
 }
 
-func checkFeature(info *Info, feature Feature) error {
+func checkFeature(info *Info, feature Feature) (Feature, error) {
 	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
+		return nil, NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
 
-	featureTrimmed := BasicFeature(strings.TrimSpace(string(feature.FeatureName())))
+	featureTrimmed := BasicFeature(strings.TrimSpace(feature.FeatureName()))
 
 	// Check if the feature is explicitly allowed via license tag.
-	hasFeature := func(want Feature) bool {
+	hasFeature := func(want Feature) Feature {
 		for _, t := range info.Tags {
 			// We have been issuing licenses with trailing spaces in the tags for a while.
 			// Eventually we should be able to remove these `TrimSpace` calls again,
 			// as we now guard against that while generating licenses, but there
 			// are quite a few "wrong" licenses out there as of today (2021-07-19).
 			if BasicFeature(strings.TrimSpace(t)) == want {
-				return true
+				return want
 			}
 		}
-		return false
+		return nil
 	}
-	if !info.Plan().HasFeature(featureTrimmed) && !hasFeature(featureTrimmed) {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
+	planFeature := info.Plan().HasFeature(featureTrimmed)
+	if planFeature == nil {
+		planFeature = hasFeature(featureTrimmed)
 	}
-	return nil // feature is activated for current license
+	if planFeature == nil {
+		return nil, NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
+	}
+	return planFeature, nil // feature is activated for current license
 }
 
 func MockCheckFeatureError(expectedError string) {
-	MockCheckFeature = func(feature Feature) error {
+	MockCheckFeature = func(feature Feature) (Feature, error) {
 		if expectedError == "" {
-			return nil
+			return feature, nil
 		}
-		return errors.New(expectedError)
+		return nil, errors.New(expectedError)
 	}
 }
 
 // MockCheckFeature is for mocking Check in tests.
-var MockCheckFeature func(feature Feature) error
+var MockCheckFeature func(feature Feature) (Feature, error)
 
 // TestingSkipFeatureChecks is for tests that want to mock Check to always return nil (i.e.,
 // behave as though the current license enables all features).
 //
 // It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
 func TestingSkipFeatureChecks() func() {
-	MockCheckFeature = func(Feature) error { return nil }
+	MockCheckFeature = func(feature Feature) (Feature, error) { return feature, nil }
 	return func() { MockCheckFeature = nil }
 }
 
@@ -108,5 +112,6 @@ func IsFeatureNotActivated(err error) bool {
 // prevented from getting to this point if license verification had failed, so it's not necessary to
 // handle license verification errors here).
 func IsFeatureEnabledLenient(feature Feature) bool {
-	return !IsFeatureNotActivated(Check(feature))
+	_, err := Check(feature)
+	return !IsFeatureNotActivated(err)
 }

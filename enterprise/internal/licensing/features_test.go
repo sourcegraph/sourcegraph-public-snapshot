@@ -11,7 +11,8 @@ func TestCheckFeature(t *testing.T) {
 
 	check := func(t *testing.T, feature Feature, info *Info, wantEnabled bool) {
 		t.Helper()
-		got := checkFeature(info, feature) == nil
+		_, err := checkFeature(info, feature)
+		got := err == nil
 		if got != wantEnabled {
 			t.Errorf("got %v, want %v", got, wantEnabled)
 		}
@@ -130,7 +131,7 @@ func TestCheckFeature(t *testing.T) {
 
 	// FeatureCampaigns is deprecated but should behave like BatchChanges.
 	t.Run(string(FeatureCampaigns), testBatchChanges(FeatureCampaigns))
-	t.Run(string(FeatureBatchChanges), testBatchChanges(FeatureBatchChanges))
+	t.Run(string(FeatureBatchChanges{}.FeatureName()), testBatchChanges(FeatureBatchChanges{}))
 
 	testCodeInsights := func(feature Feature) func(*testing.T) {
 		return func(t *testing.T) {

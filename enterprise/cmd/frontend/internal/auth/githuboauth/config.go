@@ -30,7 +30,7 @@ func Init(logger log.Logger, db database.DB) {
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			if _, err := licensing.Check(licensing.FeatureSSO); err != nil {
 				logger.Error("Check license for SSO (GitHub OAuth)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return

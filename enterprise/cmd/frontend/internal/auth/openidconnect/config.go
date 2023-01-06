@@ -75,7 +75,7 @@ func Init() {
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			if _, err := licensing.Check(licensing.FeatureSSO); err != nil {
 				logger.Error("Check license for SSO (OpenID Connect)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return

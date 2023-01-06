@@ -10,13 +10,13 @@ import (
 type Plan string
 
 // HasFeature reports whether the plan has the given feature.
-func (p Plan) HasFeature(feature Feature) bool {
+func (p Plan) HasFeature(feature Feature) Feature {
 	for _, f := range planFeatures[p] {
-		if feature == f {
-			return true
+		if feature.FeatureName() == f.FeatureName() {
+			return f
 		}
 	}
-	return false
+	return nil
 }
 
 const planTagPrefix = "plan:"

@@ -1393,7 +1393,7 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 }
 
 func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	_, licenseError := licensing.Check(licensing.FeatureCodeInsights)
 	if licenseError != nil {
 		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
 		if err != nil {
