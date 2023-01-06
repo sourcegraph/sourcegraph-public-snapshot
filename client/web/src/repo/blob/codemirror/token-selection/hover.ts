@@ -4,6 +4,7 @@ import {
     Decoration,
     DecorationSet,
     EditorView,
+    getTooltip,
     PluginValue,
     showTooltip,
     Tooltip,
@@ -12,7 +13,7 @@ import {
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
@@ -22,16 +23,21 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin, selectionHighlightDecoration } from '../hovercard'
+import {
+    computeMouseDirection,
+    HOVER_DEBOUNCE_TIME,
+    MOUSE_NO_BUTTON,
+    pin,
+    selectionHighlightDecoration,
+} from '../hovercard'
 import {
     isInteractiveOccurrence,
-    occurrenceAtMouseEvent,
     occurrenceAtPosition,
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
-import { preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
+import { preciseOffsetAtCoords, preciseWordAtCoords, uiPositionToOffset } from '../utils'
 
 export function hoverExtension(): Extension {
     return [hoverCache, hoveredOccurrenceField, hoverTooltip, hoverManager, tooltipStyles, hoverField, pinManager]
@@ -261,8 +267,8 @@ const tooltipStyles = EditorView.theme({
  * Field for storing visible hovered occurrence range and visible code-intel tooltip for this occurrence.
  */
 const [hoverTooltip, setHoverTooltip] = createUpdateableField<{
-    tooltip: Tooltip | null
-    range: SelectionRange
+    tooltip: Tooltip
+    range: { from: number; to: number }
 } | null>(null, field => [
     // show code-intel tooltip
     showTooltip.computeN([field], state => [state.field(field)?.tooltip ?? null]),
@@ -336,32 +342,87 @@ const hoverManager = ViewPlugin.fromClass(
                             return !isOffsetInHoverRange(offset, currentTooltip.range)
                         }),
 
-                        switchMap(event => {
-                            const occurrence = occurrenceAtMouseEvent(view, event)?.occurrence
-                            if (!occurrence) {
-                                // not an occurrence - reset {@link hoverTooltip} state and return
-                                return of(null)
+                        // To make it easier to reach the tooltip with the mouse, we determine
+                        // in which direction the mouse moves and only hide the tooltip when
+                        // the mouse moves away from it.
+                        scan(
+                            (
+                                previous: {
+                                    x: number
+                                    y: number
+                                    target: EventTarget | null
+                                    buttons: number
+                                    direction?: 'towards' | 'away' | undefined
+                                },
+                                next
+                            ) => {
+                                const currentTooltip = view.state.field(hoverTooltip)?.tooltip
+                                if (!currentTooltip) {
+                                    return next
+                                }
+
+                                const tooltipView = getTooltip(view, currentTooltip)
+                                if (!tooltipView) {
+                                    return next
+                                }
+
+                                const direction = computeMouseDirection(
+                                    tooltipView.dom.getBoundingClientRect(),
+                                    previous,
+                                    next
+                                )
+                                return { x: next.x, y: next.y, buttons: next.buttons, target: next.target, direction }
+                            }
+                        ),
+
+                        // Determine the precise location of the word under the cursor.
+                        switchMap(position => {
+                            // Hide any tooltip when
+                            // - the mouse is over an element that is not part of
+                            //   the content. This seems necessary to make tooltips
+                            //   not appear and hide open tooltips when the mouse
+                            //   moves over the editor's search panel.
+                            // - the user starts to select text
+                            if (
+                                position.buttons !== MOUSE_NO_BUTTON ||
+                                !position.target ||
+                                !this.view.contentDOM.contains(position.target as Node)
+                            ) {
+                                return of('HIDE' as const)
                             }
 
-                            return of(rangeToCmSelection(view.state, occurrence.range)).pipe(
+                            return of(preciseWordAtCoords(this.view, position)).pipe(
+                                // if the hovered token changed, hide the existing tooltip and proceed with fetching of the new one
                                 tap(range => {
                                     const currentRange = view.state.field(hoverTooltip)?.range
-                                    if (currentRange && !isEqual(currentRange, range)) {
-                                        // different occurrence is hovered - hide the tooltip for the previous one and fetch the new one
+                                    if (range && currentRange && !isEqual(currentRange, range)) {
                                         setHoverTooltip(view, null)
                                     }
                                 }),
                                 switchMap(range =>
-                                    from(getHoverTooltip(view, range.from)).pipe(
-                                        catchError(() => of(null)),
-                                        map(tooltip => ({ tooltip, range }))
-                                    )
-                                )
+                                    range
+                                        ? from(getHoverTooltip(view, range.from)).pipe(
+                                              catchError(() => of(null)),
+                                              map(tooltip => (tooltip ? { tooltip, range } : null))
+                                          )
+                                        : of(null)
+                                ),
+                                map(tooltip => ({ position, tooltip }))
                             )
                         })
                     )
                     .subscribe(next => {
-                        setHoverTooltip(view, next)
+                        if (next === 'HIDE') {
+                            setHoverTooltip(view, null)
+                            return
+                        }
+
+                        // We only change the tooltip when
+                        // a) There is a new tooltip at the position (tooltip !== null)
+                        // b) there is no tooltip and the mouse is moving away from the tooltip
+                        if (next.tooltip || next.position.direction !== 'towards') {
+                            setHoverTooltip(view, next.tooltip)
+                        }
                     })
             )
         }

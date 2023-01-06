@@ -457,7 +457,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 return next
                             }
 
-                            const direction = this.computeMouseDirection(
+                            const direction = computeMouseDirection(
                                 tooltipView.dom.getBoundingClientRect(),
                                 previous,
                                 next
@@ -508,27 +508,6 @@ const hoverManager = ViewPlugin.fromClass(
             this.view.dom.addEventListener('mouseleave', this.mouseleave)
         }
 
-        private computeMouseDirection(
-            rect: DOMRect,
-            position1: { x: number; y: number },
-            position2: { x: number; y: number }
-        ): 'towards' | 'away' {
-            if (
-                // Moves away from the top
-                (position2.y < position1.y && position2.y < rect.top) ||
-                // Moves away from the bottom
-                (position2.y > position1.y && position2.y > rect.bottom) ||
-                // Moves away from the left
-                (position2.x < position1.x && position2.x < rect.left) ||
-                // Moves away from the right
-                (position2.x > position1.x && position2.x > rect.right)
-            ) {
-                return 'away'
-            }
-
-            return 'towards'
-        }
-
         private mouseleave = (): void => {
             this.nextOffset.next(null)
         }
@@ -539,6 +518,27 @@ const hoverManager = ViewPlugin.fromClass(
         }
     }
 )
+
+export function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
