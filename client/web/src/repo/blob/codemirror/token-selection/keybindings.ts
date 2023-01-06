@@ -27,7 +27,10 @@ const keybindings: readonly KeyBinding[] = [
             const position = view.state.selection.main.from
             const spinner = new LoadingTooltip(view, position)
             getHoverTooltip(view, position)
-                .then(value => (value ? showHover(view, value) : closeHover(view)))
+                .then(
+                    value => (value ? showHover(view, value) : closeHover(view)),
+                    () => {}
+                )
                 .finally(() => spinner.stop())
             return true
         },

@@ -34,7 +34,7 @@ interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined>
+    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
 }
 
@@ -106,7 +106,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover

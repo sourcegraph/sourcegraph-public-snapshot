@@ -13,7 +13,7 @@ import {
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
@@ -215,7 +215,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === undefined || hover === null || hover.contents.length === 0
+        hover === null || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)
@@ -227,7 +227,7 @@ async function hoverRequest(
     return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null | undefined): boolean {
+function isPrecise(hover: HoverMerged | null): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
@@ -402,6 +402,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 switchMap(range =>
                                     range
                                         ? from(getHoverTooltip(view, range.from)).pipe(
+                                              catchError(() => of(null)),
                                               map(tooltip => (tooltip ? { tooltip, range } : null))
                                           )
                                         : of(null)
