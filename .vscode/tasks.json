@@ -13,8 +13,15 @@
       "group": "build",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
-      "command": ["node_modules/.bin/tsc"],
-      "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"]
+      "command": [
+        "node_modules/.bin/tsc"
+      ],
+      "args": [
+        "--build",
+        "tsconfig.all.json",
+        "--watch",
+        "--incremental"
+      ]
     },
     {
       "label": "Watch web app",
@@ -36,7 +43,13 @@
     {
       "label": "stylelint",
       "command": "pnpm",
-      "args": ["run", "lint:css:all", "--", "--formatter", "compact"],
+      "args": [
+        "run",
+        "lint:css:all",
+        "--",
+        "--formatter",
+        "compact"
+      ],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",
@@ -78,35 +91,45 @@
       "type": "npm",
       "script": "eslint",
       "path": "client/shared/",
-      "problemMatcher": ["$eslint-stylish"]
+      "problemMatcher": [
+        "$eslint-stylish"
+      ]
     },
     {
       "label": "eslint:browser",
       "type": "npm",
       "script": "eslint",
       "path": "client/browser/",
-      "problemMatcher": ["$eslint-stylish"]
+      "problemMatcher": [
+        "$eslint-stylish"
+      ]
     },
     {
       "label": "eslint:web",
       "type": "npm",
       "script": "eslint",
       "path": "client/web/",
-      "problemMatcher": ["$eslint-stylish"]
+      "problemMatcher": [
+        "$eslint-stylish"
+      ]
     },
     {
       "label": "eslint:release",
       "type": "npm",
       "script": "eslint",
       "path": "dev/release/",
-      "problemMatcher": ["$eslint-stylish"]
+      "problemMatcher": [
+        "$eslint-stylish"
+      ]
     },
     {
       "label": "eslint:extension-api",
       "type": "npm",
       "script": "eslint",
       "path": "client/extension-api/",
-      "problemMatcher": ["$eslint-stylish"]
+      "problemMatcher": [
+        "$eslint-stylish"
+      ]
     }
   ]
 }

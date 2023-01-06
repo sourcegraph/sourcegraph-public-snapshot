@@ -11,6 +11,7 @@
     "pnpm": "^7.20.0"
   },
   "scripts": {
+    "deduplicate": "pnpm pnpm-deduplicate",
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
     "format:changed": "prettier $(git diff --diff-filter=d --name-only origin/main... && git ls-files --other --modified --exclude-standard | grep -E '\\.(js|json|ts|tsx|graphql|md|scss)$' | xargs) --write --list-different --config prettier.config.js",
     "format:check": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --config prettier.config.js --check --write=false",
@@ -288,6 +289,7 @@
     "p-retry": "^4.2.0",
     "p-timeout": "^4.1.0",
     "postcss": "^8.4.19",
+    "pnpm-deduplicate": "^0.4.1",
     "postcss-custom-media": "^8.0.0",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^7.0.2",
@@ -474,13 +476,15 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "resolutions": {
-    "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "webpack": "5",
-    "@types/webpack": "5",
-    "tslib": "2.1.0",
-    "jsprim": "1.4.2"
-  },
-  "packageManager": "pnpm@7.20.0"
+  "packageManager": "pnpm@7.20.0",
+  "pnpm": {
+    "resolutions": {
+      "history": "4.5.1",
+      "cssnano": "4.1.10",
+      "webpack": "5",
+      "@types/webpack": "5",
+      "tslib": "2.1.0",
+      "jsprim": "1.4.2"
+    }
+  }
 }

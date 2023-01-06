@@ -29,7 +29,7 @@ export function fromHoverMerged(
                     kind: result.contents.kind || MarkupKind.PlainText,
                 })
             }
-            if (result.alerts) {
+            if ('alerts' in result && result.alerts) {
                 alerts.push(...result.alerts)
             }
 
