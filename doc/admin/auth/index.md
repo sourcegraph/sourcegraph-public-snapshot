@@ -6,6 +6,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
+- [Bitbucket Cloud](#bitbucket-cloud)
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -309,6 +310,39 @@ You can use the following filters to control how users can create accounts and s
     }
   ```
 
+## Bitbucket Cloud
+
+[Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+Sourcegraph instance:
+
+- Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
+- Permissions: 
+  - `Account`: `Read`
+  - `Repositories`: `Read`
+
+After the consumer is created, you will need the Key and the Secret, which can be found by expanding OAuth consumer in the list.
+
+Then add the following lines to your site configuration:
+
+```json
+{
+    // ...
+    "auth.providers": [
+      {
+        "type": "bitbucketcloud",
+        "displayName": "Bitbucket Cloud",
+        "clientKey": "replace-with-the-oauth-consumer-key",
+        "clientSecret": "replace-with-the-oauth-consumer-secret",
+        "url": "https://bitbucket.org",
+        "allowSignup": false, // If not set, it defaults to true allowing any Bitbucket Cloud user with access to your instance to sign up.
+      }
+    ]
+```
+
+Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
+
+Once you've configured Bitbucket Cloud as a sign-on provider, you may also want to [add Bitbucket Cloud repositories
+to Sourcegraph](../external_service/bitbucket_cloud.md#repository-syncing).
 
 ## OpenID Connect
 
