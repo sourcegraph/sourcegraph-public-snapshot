@@ -165,7 +165,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                                 aria-describedby="site-admin-create-user-page__form-email-help"
                             />
                             <small id="site-admin-create-user-page__form-email-help" className="form-text text-muted">
-                                Optional email for the user - verification will be required if provided.
+                                Optional email for the user that will require verification when provided.
                             </small>
                         </div>
                         {this.state.errorDescription && (
