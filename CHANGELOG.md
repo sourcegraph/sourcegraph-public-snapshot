@@ -27,13 +27,13 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL API now supports listing single-file commit history across renames (with `GitCommit.ancestors(follow: true, path: "<some-path>")`). [#45882](https://github.com/sourcegraph/sourcegraph/pull/45882)
 - Added support for receiving Bitbucket Cloud webhook `push` events. [#45960](https://github.com/sourcegraph/sourcegraph/pull/45960)
 - Added a way to test code host connection from the `Manage code hosts` page. [#45972](https://github.com/sourcegraph/sourcegraph/pull/45972)
-- Added support for handling SCIP uploads as-is instead of translating them to LSIF before uploading. [#45078](https://github.com/sourcegraph/sourcegraph/issues/45078)
 
 ### Changed
 
 - Code Insights no longer uses a custom index of commits to compress historical backfill and instead queries the repository log directly. This allows the compression algorithm to span any arbitrary time frame, and should improve the reliability of the compression in general. [#45644](https://github.com/sourcegraph/sourcegraph/pull/45644)
 - GitHub code host configuration: The error message for non-existent organizations has been clarified to indicate that the organization is one that the user manually specified in their code host configuration. [#45918](https://github.com/sourcegraph/sourcegraph/pull/45918)
 - Git blame view got a user-interface overhaul and now shows data in a more structured way with additional visual hints. [#44397](https://github.com/sourcegraph/sourcegraph/issues/44397)
+- The src-cli package no longer translates SCIP indexes into LSIF. We now have support for handling SCIP uploads as-is instead of translating them to LSIF before uploading. [#45078](https://github.com/sourcegraph/sourcegraph/issues/45078)
 
 ### Fixed
 
