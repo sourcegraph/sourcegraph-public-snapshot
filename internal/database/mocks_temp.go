@@ -3019,7 +3019,7 @@ func NewMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, *int32, bool) (r0 *SiteConfig, r1 error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (r0 *SiteConfig, r1 error) {
 				return
 			},
 		},
@@ -3051,7 +3051,7 @@ func NewStrictMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 				panic("unexpected invocation of MockConfStore.SiteCreateIfUpToDate")
 			},
 		},
@@ -3293,15 +3293,15 @@ func (c ConfStoreHandleFuncCall) Results() []interface{} {
 // SiteCreateIfUpToDate method of the parent MockConfStore instance is
 // invoked.
 type ConfStoreSiteCreateIfUpToDateFunc struct {
-	defaultHook func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error)
-	hooks       []func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error)
+	defaultHook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
+	hooks       []func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
 	history     []ConfStoreSiteCreateIfUpToDateFuncCall
 	mutex       sync.Mutex
 }
 
 // SiteCreateIfUpToDate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 string, v3 *int32, v4 bool) (*SiteConfig, error) {
+func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 int32, v3 string, v4 bool) (*SiteConfig, error) {
 	r0, r1 := m.SiteCreateIfUpToDateFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.SiteCreateIfUpToDateFunc.appendCall(ConfStoreSiteCreateIfUpToDateFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -3310,7 +3310,7 @@ func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 s
 // SetDefaultHook sets function that is called when the SiteCreateIfUpToDate
 // method of the parent MockConfStore instance is invoked and the hook queue
 // is empty.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -3318,7 +3318,7 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Con
 // SiteCreateIfUpToDate method of the parent MockConfStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3327,19 +3327,19 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultReturn(r0 *SiteConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error) {
+	f.SetDefaultHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) PushReturn(r0 *SiteConfig, r1 error) {
-	f.PushHook(func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error) {
+	f.PushHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, string, *int32, bool) (*SiteConfig, error) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3381,10 +3381,10 @@ type ConfStoreSiteCreateIfUpToDateFuncCall struct {
 	Arg1 *int32
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 int32
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 *int32
+	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 bool

@@ -977,6 +977,8 @@ Indexes:
 
 ```
 
+**author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           | Collation | Nullable |                     Default                     
