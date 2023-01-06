@@ -18,6 +18,7 @@ import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
@@ -257,45 +258,26 @@ const tooltipStyles = EditorView.theme({
 })
 
 /**
- * Effect for setting the tooltip for the currently hovered token.
- */
-const setHoverTooltip = StateEffect.define<{ tooltip: Tooltip | null; range: SelectionRange } | null>()
-
-/**
  * Field for storing visible hovered occurrence range and visible code-intel tooltip for this occurrence.
  */
-const hoverTooltip = StateField.define<{ tooltip: Tooltip | null; range: SelectionRange } | null>({
-    create() {
-        return null
-    },
+const [hoverTooltip, setHoverTooltip] = createUpdateableField<{
+    tooltip: Tooltip | null
+    range: SelectionRange
+} | null>(null, field => [
+    // show code-intel tooltip
+    showTooltip.computeN([field], state => [state.field(field)?.tooltip ?? null]),
 
-    update(state, transaction) {
-        for (const effect of transaction.effects) {
-            if (effect.is(setHoverTooltip)) {
-                return effect.value
-            }
+    // highlight occurrence with tooltip
+    EditorView.decorations.compute([field], state => {
+        const value = state.field(field)
+
+        if (!value?.tooltip || !value?.range) {
+            return Decoration.none
         }
-        return state
-    },
 
-    provide(field) {
-        return [
-            // show code-intel tooltip
-            showTooltip.computeN([field], state => [state.field(field)?.tooltip ?? null]),
-
-            // highlight occurrence with tooltip
-            EditorView.decorations.compute([field], state => {
-                const value = state.field(field)
-
-                if (!value?.tooltip || !value?.range) {
-                    return Decoration.none
-                }
-
-                return Decoration.set(selectionHighlightDecoration.range(value.range.from, value.range.to))
-            }),
-        ]
-    },
-})
+        return Decoration.set(selectionHighlightDecoration.range(value.range.from, value.range.to))
+    }),
+])
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -366,7 +348,7 @@ const hoverManager = ViewPlugin.fromClass(
                                     const currentRange = view.state.field(hoverTooltip)?.range
                                     if (currentRange && !isEqual(currentRange, range)) {
                                         // different occurrence is hovered - hide the tooltip for the previous one and fetch the new one
-                                        view.dispatch({ effects: setHoverTooltip.of(null) })
+                                        setHoverTooltip(view, null)
                                     }
                                 }),
                                 switchMap(range =>
@@ -379,7 +361,7 @@ const hoverManager = ViewPlugin.fromClass(
                         })
                     )
                     .subscribe(next => {
-                        view.dispatch({ effects: setHoverTooltip.of(next) })
+                        setHoverTooltip(view, next)
                     })
             )
         }
