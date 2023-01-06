@@ -26,6 +26,14 @@
     }
 }
 
+.file-item {
+    border-bottom: 1px solid var(--border-color);
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
 .card-col-header {
     overflow: hidden;
     white-space: nowrap;

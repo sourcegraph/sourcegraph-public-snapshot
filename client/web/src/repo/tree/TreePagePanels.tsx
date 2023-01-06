@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { FC, useCallback, useRef, useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -64,9 +64,12 @@ export interface DiffStat {
 export interface FilePanelProps {
     entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
     diffStats?: DiffStat[]
+    className?: string
 }
 
-export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePanelProps>> = ({ entries, diffStats }) => {
+export const FilesCard: FC<FilePanelProps> = props => {
+    const { entries, diffStats, className } = props
+
     const [sortColumn, setSortColumn] = useState<{
         column: 'Files' | 'Activity'
         direction: 'asc' | 'desc'
@@ -140,7 +143,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
     const getDatumClassName = useCallback((datum: Datum) => datum.className, [])
 
     return (
-        <Card className="card">
+        <Card className={className}>
             <CardHeader className={styles.cardColHeaderWrapper}>
                 <div className="container-fluid px-2">
                     <div className="row">
@@ -215,8 +218,8 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
             </CardHeader>
             <div className="container-fluid">
                 {sortedEntries.map(entry => (
-                    <div key={entry.name} className="row">
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-9">
+                    <div key={entry.name} className={classNames('row', styles.fileItem)}>
+                        <div className="list-group list-group-flush px-2 py-1 col-9">
                             <LinkOrSpan
                                 to={entry.url}
                                 className={classNames(
@@ -245,7 +248,7 @@ export const FilesCard: React.FunctionComponent<React.PropsWithChildren<FilePane
                                 </div>
                             </LinkOrSpan>
                         </div>
-                        <div className="list-group list-group-flush px-2 py-1 border-bottom col-3">
+                        <div className="list-group list-group-flush px-2 py-1 col-3">
                             {diffStatsByPath[entry.name] && (
                                 <Tooltip
                                     placement="topEnd"
