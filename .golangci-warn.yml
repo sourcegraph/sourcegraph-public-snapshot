@@ -2,57 +2,7 @@
 linters:
   disable-all: true
   enable:
-    - bodyclose
-    - depguard
-    - forbidigo
-    - gocritic
-    - goimports
-    - gosimple
-    - govet
-    - ineffassign
-    - nolintlint
-    - staticcheck
-    - typecheck
-    - unconvert
-    # - unused
-    - unparam
-    - exportloopref
-
-linters-settings:
-  depguard:
-    list-type: denylist
-    include-go-root: true
-    packages-with-error-message:
-      # Deprecated packages
-      - io/ioutil: "The ioutil package has been deprecated"
-      # Blacklisted error packages
-      - errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
-      - github.com/pkg/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
-      - github.com/cockroachdb/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
-      - github.com/hashicorp/go-multierror: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
-      # More performant regexp
-      - regexp: "Use github.com/grafana/regexp instead"
-  gocritic:
-    disabled-checks:
-      - appendAssign # Too many false positives
-      - assignOp # Maybe worth adding, but likely not worth the noise
-      - commentFormatting # No strong benefit
-      - deprecatedComment # Unnecessary
-      - exitAfterDefer # Only occurs in auxiliary tools
-      - ifElseChain # Noisy for not much gain
-      - singleCaseSwitch # Noisy for not much gain
-  unparam:
-
-  govet:
-    disable:
-      - composites
-  staticcheck:
-    checks:
-      - "all"
-  forbidigo:
-    forbid:
-      # Use errors.Newf instead
-      - '^fmt\.Errorf$'
+    - unused
 
 issues:
   exclude-rules:

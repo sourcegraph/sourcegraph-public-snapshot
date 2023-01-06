@@ -131,7 +131,10 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withYarnCache(),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{IncludeNames: true},
+				Annotations: &bk.AnnotationOpts{
+					IncludeNames: true,
+					Type:         bk.AnnotationTypeAuto,
+				},
 			}))
 	}
 }
