@@ -504,24 +504,22 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 		return nil, ErrIDIsZero{}
 	}
 
-	if batchChangesFeature, licenseErr := checkLicense(); licenseErr != nil {
-		if licensing.IsFeatureNotActivated(licenseErr) {
-			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-				RandID: opts.BatchSpecRandID,
-			})
-			if err != nil {
-				return nil, err
-			}
-			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
-			if err != nil {
-				return nil, err
-			}
-			if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumBatchChanges {
-				return nil, ErrBatchChangesUnlicensed{licenseErr}
-			}
-		} else {
-			return nil, licenseErr
+	if batchChangesFeature, licenseErr := checkLicense(); licenseErr == nil {
+		batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+			RandID: opts.BatchSpecRandID,
+		})
+		if err != nil {
+			return nil, err
 		}
+		count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			return nil, err
+		}
+		if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumBatchChanges {
+			return nil, errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)
+		}
+	} else {
+		return nil, ErrBatchChangesUnlicensed{licenseErr}
 	}
 
 	if args.EnsureBatchChange != nil {
@@ -565,12 +563,12 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		return nil, err
 	}
 
-	if batchChangesFeature, err := checkLicense(); err != nil {
+	if batchChangesFeature, err := checkLicense(); err == nil {
 		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumBatchChanges {
-			return nil, ErrBatchChangesUnlicensed{err}
-		} else {
-			return nil, err
+			return nil, errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)
 		}
+	} else {
+		return nil, ErrBatchChangesUnlicensed{err}
 	}
 
 	opts := service.CreateBatchSpecOpts{RawSpec: args.BatchSpec}
