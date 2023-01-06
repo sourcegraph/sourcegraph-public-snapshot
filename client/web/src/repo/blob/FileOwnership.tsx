@@ -1,13 +1,14 @@
 import * as React from 'react'
 
-import { mdiChat, mdiEmail } from '@mdi/js'
+import { Accordion } from '@reach/accordion'
 
+import { logger } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
 
-import { logger } from '@sourcegraph/common'
+import { FileOwnershipReasons } from './FileOwnershipReasons'
+
 import styles from './FileOwnership.module.scss'
 
 export const FileOwnership: React.FunctionComponent<
@@ -44,25 +45,16 @@ export const FileOwnership: React.FunctionComponent<
                         <th>Reason</th>
                     </tr>
                 </thead>
-                <tbody>
+                <Accordion as="tbody" collapsible={true} multiple={true}>
                     {data.node.commit.blob?.ownership.map(own => (
-                        <tr key={own.handle}>
-                            <td>
-                                <div className="d-flex">
-                                    <Button variant="icon" className="mr-2">
-                                        <Icon svgPath={mdiEmail} aria-label="email" />
-                                    </Button>
-                                    <Button variant="icon">
-                                        <Icon svgPath={mdiChat} aria-label="chat" />
-                                    </Button>
-                                </div>
-                            </td>
-                            <td>{own.handle}</td>
-                            <td>{own.person.email}</td>
-                            <td>{own.reasons.map(r => r.title).join(', ')}</td>
-                        </tr>
+                        <FileOwnershipReasons
+                            key={own.handle}
+                            email={own.person.email}
+                            handle={own.handle}
+                            reasons={own.reasons}
+                        />
                     ))}
-                </tbody>
+                </Accordion>
             </table>
         )
     }
@@ -85,9 +77,11 @@ const FETCH_OWNERS = gql`
                                 reasons {
                                     ... on CodeownersFileEntry {
                                         title
+                                        description
                                     }
                                     ... on RecentContributor {
                                         title
+                                        description
                                     }
                                 }
                             }
