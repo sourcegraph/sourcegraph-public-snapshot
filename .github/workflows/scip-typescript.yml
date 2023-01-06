@@ -32,7 +32,7 @@ jobs:
       - name: Install npm dependencies
         run: pnpm install
       - run: pnpm generate
-      - run: pnpm dlx -p @sourcegraph/scip-typescript scip-typescript index --yarn-berry-workspaces
+      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |
