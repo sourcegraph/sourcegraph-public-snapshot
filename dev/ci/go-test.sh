@@ -47,7 +47,7 @@ function go_test() {
   if [ "$test_exit_code" -ne 0 ]; then
     echo "~~~ Creating test failures anotation"
     mkdir -p ./annotations
-    # in $base, because we're this function with a cwd set to where we 
+    # in $base, because we're running this function with a cwd set to where we 
     # found the go.mod.
     sed '0,/=== Failed$/d'<"$tmpfile" >> "${base}/annotations/go-test"
   fi
