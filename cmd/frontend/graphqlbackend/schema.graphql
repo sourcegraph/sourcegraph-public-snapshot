@@ -8245,6 +8245,11 @@ type BackgroundRoutine {
     description: String!
 
     """
+    The interval at which the routine runs, if it is periodic. If it's not periodic, this will be 0.
+    """
+    intervalMs: Int!
+
+    """
     The instances of this routine that are running or ran recently. An instance means one routine on one host.
     """
     instances: [BackgroundRoutineInstance!]!

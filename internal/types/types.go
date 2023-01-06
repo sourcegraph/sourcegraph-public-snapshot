@@ -1801,6 +1801,7 @@ type BackgroundRoutineInfo struct {
 	Type        BackgroundRoutineType `json:"type"`
 	JobName     string                `json:"jobName"`
 	Description string                `json:"description"`
+	IntervalMs  int32                 `json:"intervalMs"` // Assumes that the routine runs at a fixed interval across all hosts.
 	Instances   []BackgroundRoutineInstanceInfo
 	RecentRuns  []BackgroundRoutineRun
 	Stats       BackgroundRoutineRunStats

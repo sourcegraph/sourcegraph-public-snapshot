@@ -194,6 +194,10 @@ func (r *PeriodicGoroutine) Description() string {
 	return r.description
 }
 
+func (r *PeriodicGoroutine) Interval() time.Duration {
+	return r.interval
+}
+
 func (r *PeriodicGoroutine) JobName() string {
 	return r.jobName
 }

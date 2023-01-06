@@ -177,6 +177,8 @@ func (r *RoutineResolver) Type() types.BackgroundRoutineType { return r.routine.
 
 func (r *RoutineResolver) Description() string { return r.routine.Description }
 
+func (r *RoutineResolver) IntervalMs() int32 { return r.routine.IntervalMs }
+
 func (r *RoutineResolver) Instances() []*RoutineInstanceResolver {
 	resolvers := make([]*RoutineInstanceResolver, 0, len(r.routine.Instances))
 	for _, routineInstance := range r.routine.Instances {

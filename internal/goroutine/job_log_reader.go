@@ -128,7 +128,7 @@ func getKnownHostNames(c *rcache.Cache) ([]string, error) {
 }
 
 // getKnownRoutinesForJob returns a list of all known routines for the given job name, ascending.
-func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutineForRedis, error) {
+func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutine, error) {
 	// Get all routines
 	routines, err := getKnownRoutines(c)
 	if err != nil {
@@ -136,7 +136,7 @@ func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutin
 	}
 
 	// Filter by job name
-	var routinesForJob []backgroundRoutineForRedis
+	var routinesForJob []backgroundRoutine
 	for _, routine := range routines {
 		if routine.JobName == jobName {
 			routinesForJob = append(routinesForJob, routine)
@@ -152,15 +152,15 @@ func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutin
 }
 
 // getKnownRoutines returns a list of all known routines, unfiltered, in no particular order.
-func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutineForRedis, error) {
+func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutine, error) {
 	rawItems, err := c.GetHashAll("knownRoutines")
 	if err != nil {
 		return nil, err
 	}
 
-	routines := make([]backgroundRoutineForRedis, 0, len(rawItems))
+	routines := make([]backgroundRoutine, 0, len(rawItems))
 	for _, rawItem := range rawItems {
-		var item backgroundRoutineForRedis
+		var item backgroundRoutine
 		err := json.Unmarshal([]byte(rawItem), &item)
 		if err != nil {
 			return nil, err
@@ -171,12 +171,13 @@ func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutineForRedis, error) {
 }
 
 // getRoutineInfo returns the info for a single routine: its instances, recent runs, and stats.
-func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostNames []string, recentRunCount int32, dayCountForStats int32) (types.BackgroundRoutineInfo, error) {
+func getRoutineInfo(c *rcache.Cache, r backgroundRoutine, allHostNames []string, recentRunCount int32, dayCountForStats int32) (types.BackgroundRoutineInfo, error) {
 	routineInfo := types.BackgroundRoutineInfo{
-		Name:        routine.Name,
-		Type:        routine.Type,
-		JobName:     routine.JobName,
-		Description: routine.Description,
+		Name:        r.Name,
+		Type:        r.Type,
+		JobName:     r.JobName,
+		Description: r.Description,
+		IntervalMs:  int32(r.Interval / time.Millisecond),
 		Instances:   make([]types.BackgroundRoutineInstanceInfo, 0, len(allHostNames)),
 		RecentRuns:  []types.BackgroundRoutineRun{},
 		Stats:       types.BackgroundRoutineRunStats{},
@@ -184,7 +185,7 @@ func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostN
 
 	// Collect instances
 	for _, hostName := range allHostNames {
-		instanceInfo, err := getRoutineInstanceInfo(c, routine.Name, hostName)
+		instanceInfo, err := getRoutineInstanceInfo(c, r.Name, hostName)
 		if err != nil {
 			return types.BackgroundRoutineInfo{}, err
 		}
@@ -194,7 +195,7 @@ func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostN
 
 	// Collect recent runs
 	for _, hostName := range allHostNames {
-		recentRunsForHost, err := loadRecentRuns(c, routine.Name, hostName, recentRunCount)
+		recentRunsForHost, err := loadRecentRuns(c, r.Name, hostName, recentRunCount)
 		if err != nil {
 			return types.BackgroundRoutineInfo{}, err
 		}
@@ -212,7 +213,7 @@ func getRoutineInfo(c *rcache.Cache, routine backgroundRoutineForRedis, allHostN
 	}
 
 	// Collect stats
-	stats, err := loadRunStats(c, routine.Name, time.Now(), dayCountForStats)
+	stats, err := loadRunStats(c, r.Name, time.Now(), dayCountForStats)
 	if err != nil {
 		return types.BackgroundRoutineInfo{}, errors.Wrap(err, "load run stats")
 	}

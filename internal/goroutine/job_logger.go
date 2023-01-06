@@ -16,9 +16,10 @@ type Loggable interface {
 	BackgroundRoutine
 	Name() string
 	Type() types.BackgroundRoutineType
-	Description() string
 	JobName() string
 	SetJobName(string)
+	Description() string
+	Interval() time.Duration
 	RegisterJobLogger(jobLogger *JobLogger)
 }
 
@@ -35,12 +36,13 @@ const seenTimeout = 5 * 24 * time.Hour // 5 days
 
 const keyPrefix = "background-job-logger:"
 
-// backgroundRoutineForRedis represents a single routine in a background job, and is used for serialization to/from Redis.
-type backgroundRoutineForRedis struct {
+// backgroundRoutine represents a single routine in a background job, and is used for serialization to/from Redis.
+type backgroundRoutine struct {
 	Name        string                      `json:"name"`
 	Type        types.BackgroundRoutineType `json:"type"`
 	JobName     string                      `json:"jobName"`
 	Description string                      `json:"description"`
+	Interval    time.Duration               `json:"interval"` // Assumes that the routine runs at a fixed interval across all hosts
 	LastSeen    string                      `json:"lastSeen"`
 }
 
@@ -101,11 +103,12 @@ func saveKnownJobNames(c *rcache.Cache, routines []Loggable) error {
 
 func saveKnownRoutines(c *rcache.Cache, routines []Loggable) error {
 	for _, r := range routines {
-		routine := backgroundRoutineForRedis{
+		routine := backgroundRoutine{
 			Name:        r.Name(),
 			Type:        r.Type(),
 			JobName:     r.JobName(),
 			Description: r.Description(),
+			Interval:    r.Interval(),
 			LastSeen:    time.Now().Format(time.RFC3339),
 		}
 

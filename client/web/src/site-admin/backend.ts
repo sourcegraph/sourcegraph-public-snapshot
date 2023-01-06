@@ -295,6 +295,7 @@ export const BACKGROUND_JOBS = gql`
                     name
                     type
                     description
+                    intervalMs
                     instances {
                         hostName
                         lastStartedAt

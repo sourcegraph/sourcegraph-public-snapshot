@@ -11,6 +11,7 @@ import { Container, ErrorAlert, Icon, LoadingSpinner, PageHeader, Text, Tooltip 
 
 import { PageTitle } from '../components/PageTitle'
 import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
+import { formatMilliseconds } from '../util/time'
 
 import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backend'
 
@@ -104,6 +105,7 @@ const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) 
                                             </Tooltip>
                                         </div>
                                         <Text className="mb-0">{routine.name}</Text>
+                                        <div> | Runs every {formatMilliseconds(routine.intervalMs)}</div>
                                     </div>
                                     <div className="d-flex flex-row">
                                         <Icon aria-hidden={true} svgPath={mdiText} />
