@@ -204,7 +204,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                  username: props.authenticatedUser?.username || '',
+                                  username: props.authenticatedUser.username || '',
                                   email: props.authenticatedUser?.emails.find(email => email.isPrimary)?.email || '',
                               }
                             : null
