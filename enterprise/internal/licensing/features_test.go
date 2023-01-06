@@ -131,7 +131,7 @@ func TestCheckFeature(t *testing.T) {
 
 	// FeatureCampaigns is deprecated but should behave like BatchChanges.
 	t.Run(string(FeatureCampaigns), testBatchChanges(FeatureCampaigns))
-	t.Run(string(FeatureBatchChanges{}.FeatureName()), testBatchChanges(FeatureBatchChanges{}))
+	t.Run(FeatureBatchChanges{}.FeatureName(), testBatchChanges(FeatureBatchChanges{}))
 
 	testCodeInsights := func(feature Feature) func(*testing.T) {
 		return func(t *testing.T) {
