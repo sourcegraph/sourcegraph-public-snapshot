@@ -49,10 +49,19 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
 }) => {
+    const FIFTEEN_SECONDS = 15000
+    const updates = useMemo(() => new Subject<void>(), [])
+
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
-    }, [telemetryService])
-    const updates = useMemo(() => new Subject<void>(), [])
+        const interval = setInterval(() => {
+            updates.next()
+        }, FIFTEEN_SECONDS)
+        return function cleanup() {
+            clearInterval(interval)
+        }
+    }, [updates, telemetryService])
+
     const onDidUpdateExternalServices = useCallback(() => updates.next(), [updates])
 
     const queryConnection = useCallback(
