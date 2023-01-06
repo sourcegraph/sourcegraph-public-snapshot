@@ -14,8 +14,20 @@ interface Props {
 }
 
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const formattedTime = format(Date.parse(props.lastSyncedTime), 'yyyy-MM-dd pp')
+    const parsedDate = Date.parse(props.lastSyncedTime)
+    const formattedTime = format(parsedDate, 'yyyy-MM-dd pp')
+    const oneDayAgo = new Date();
+    const oneWeekAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    oneWeekAgo.setDate(oneWeekAgo.getDate()-7);
 
+    let color ='green';
+    if (new Date(parsedDate) < oneDayAgo) {
+        color = 'yellow';
+    }
+    if (new Date(parsedDate) < oneWeekAgo){
+        color = 'red';
+    }
     return (
         <Tooltip content={`Last synced: ${formattedTime}`}>
             <Icon
@@ -23,6 +35,7 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
                 className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
                 aria-label={`Last synced: ${formattedTime}`}
                 svgPath={mdiWeatherCloudyClock}
+                style={{ fill: color }}
             />
         </Tooltip>
     )
