@@ -88,8 +88,8 @@ func (r *Resolver) Role(ctx context.Context, args *gql.RoleArgs) (gql.RoleResolv
 func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleConnectionResolver, error) {
 	var opts = database.RolesListOptions{}
 
-	if args.UserID != nil {
-		userID, err := gql.UnmarshalUserID(*args.UserID)
+	if args.User != nil {
+		userID, err := gql.UnmarshalUserID(*args.User)
 		if err != nil {
 			return nil, err
 		}
@@ -98,6 +98,33 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleC
 	}
 
 	return &roleConnectionResolver{
+		db:   r.db,
+		opts: opts,
+	}, nil
+}
+
+func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs) (gql.PermissionConnectionResolver, error) {
+	var opts = database.PermissionListOpts{}
+
+	if args.Role != nil {
+		roleID, err := unmarshalRoleID(*args.Role)
+		if err != nil {
+			return nil, err
+		}
+
+		opts.RoleID = roleID
+	}
+
+	if args.User != nil {
+		userID, err := gql.UnmarshalUserID(*args.User)
+		if err != nil {
+			return nil, err
+		}
+
+		opts.UserID = userID
+	}
+
+	return &permissionConnectionResolver{
 		db:   r.db,
 		opts: opts,
 	}, nil

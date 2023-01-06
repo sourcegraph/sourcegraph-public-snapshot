@@ -480,7 +480,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error) {
 	id := r.ID()
-	args.UserID = &id
+	args.User = &id
 	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
 }
 

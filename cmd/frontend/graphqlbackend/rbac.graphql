@@ -82,7 +82,7 @@ extend type Query {
         """
         User which this role is assigned to
         """
-        userID: ID
+        user: ID
     ): RoleConnection!
 
     role(
@@ -91,4 +91,18 @@ extend type Query {
         """
         id: ID!
     ): Role
+
+    """
+    All permissions
+    """
+    permissions(
+        """
+        Return permissions associated with the role.
+        """
+        role: ID
+        """
+        Return permissions associated with the user.
+        """
+        user: ID
+    ): PermissionConnection!
 }

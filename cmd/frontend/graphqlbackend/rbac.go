@@ -44,6 +44,8 @@ type RBACResolver interface {
 	Role(ctx context.Context, args *RoleArgs) (RoleResolver, error)
 	Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error)
 
+	Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -52,5 +54,10 @@ type RoleArgs struct {
 }
 
 type ListRoleArgs struct {
-	UserID *graphql.ID
+	User *graphql.ID
+}
+
+type ListPermissionArgs struct {
+	Role *graphql.ID
+	User *graphql.ID
 }

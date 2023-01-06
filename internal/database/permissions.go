@@ -64,6 +64,7 @@ type (
 type PermissionListOpts struct {
 	*LimitOffset
 	RoleID int32
+	UserID int32
 }
 
 type PermissionNotFoundErr struct {
@@ -283,12 +284,24 @@ func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, sel
 		joins = sqlf.Sprintf("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id")
 	}
 
+	if opts.UserID != 0 {
+		preds = sqlf.Sprintf("user_roles.user_id = %s", opts.UserID)
+		joins = sqlf.Sprintf(`
+INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
+INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
+`)
+	}
+
 	q := sqlf.Sprintf(
 		permissionListQueryFmtStr,
 		selects,
 		joins,
 		preds,
 	)
+
+	if opts.UserID != 0 {
+		q = sqlf.Sprintf("%s\n%s", q, sqlf.Sprintf("GROUP BY permissions.id"))
+	}
 
 	if opts.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
