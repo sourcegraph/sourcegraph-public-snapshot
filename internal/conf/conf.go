@@ -146,7 +146,7 @@ func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnif
 	return *c.entry, nil
 }
 
-func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID *int32) error {
+func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
 	c.entryMu.Lock()
 	defer c.entryMu.Unlock()
 	if err := c.source.Write(ctx, input, lastID, authorUserID); err != nil {
@@ -254,10 +254,12 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				}
 				config.Site = string(newFileContents)
 
-				// NOTE: authorUserID is nil because this code is on the start-up path and we will
+				// NOTE: authorUserID is 0 because this code is on the start-up path and we will
 				// never have a non-nil actor available here to determine the user ID. This is
 				// consistent with the behaviour of site config creation via SITE_CONFIG_FILE.
-				err = c.Write(ctx, config, lastKnownConfigID, nil)
+				//
+				// A value of 0 will be treated as null when writing to the the database for this column.
+				err = c.Write(ctx, config, lastKnownConfigID, 0)
 				if err != nil {
 					logger.Warn("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)

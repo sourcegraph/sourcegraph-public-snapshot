@@ -11,7 +11,7 @@ import (
 // "raw" configuration.
 type ConfigurationSource interface {
 	// Write updates the configuration. The Deployment field is ignored.
-	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID *int32) error
+	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error
 	Read(ctx context.Context) (conftypes.RawUnified, error)
 }
 
@@ -49,7 +49,7 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified, lastID i
 		return err
 	}
 
-	err = s.source.Write(ctx, input, lastID, &authorUserID)
+	err = s.source.Write(ctx, input, lastID, authorUserID)
 	if err != nil {
 		return err
 	}

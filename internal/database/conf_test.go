@@ -43,7 +43,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON, nil, false)
+	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, 0, malformedJSON, false)
 
 	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
