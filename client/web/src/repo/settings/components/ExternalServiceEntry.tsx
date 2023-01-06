@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -16,6 +16,8 @@ import {
     SettingsAreaRepositoryFields,
 } from '../../../graphql-operations'
 import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES } from '../backend'
+
+import { RedirectionAlert } from './RedirectionAlert'
 
 import styles from './ExternalServiceEntry.module.scss'
 
@@ -49,27 +51,11 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
     excludingLoading,
     updateExclusionLoading,
     redirectAfterExclusion,
-    history,
 }) => {
-    const [ttl, setTtl] = useState<number>(3)
-    const mutationOptions = redirectAfterExclusion
-        ? {
-              onCompleted: () => {
-                  let count = 3
-                  setInterval(() => {
-                      if (count === 0) {
-                          history.push(`/site-admin/external-services/${service.id}`)
-                      }
-                      setTtl(count)
-                      count--
-                  }, 700)
-              },
-          }
-        : undefined
     const [excludeRepo, { data, error, loading: isExcluding }] = useMutation<
         ExcludeRepoFromExternalServicesResult,
         ExcludeRepoFromExternalServicesVariables
-    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, mutationOptions)
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES)
 
     return (
         <div className={styles.grid} key={service.id}>
@@ -92,9 +78,10 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 )}
                 {error && <ErrorAlert error={`Failed to exclude repository: ${renderError(error)}`} />}
                 {data && redirectAfterExclusion && (
-                    <Alert variant="success">
-                        {`Code host configuration updated. You will be redirected in ${ttl}...`}
-                    </Alert>
+                    <RedirectionAlert
+                        to={`/site-admin/external-services/${service.id}`}
+                        messagePrefix="Code host configuration updated."
+                    />
                 )}
             </div>
             {service.supportsRepoExclusion && !(data && !error) && (
