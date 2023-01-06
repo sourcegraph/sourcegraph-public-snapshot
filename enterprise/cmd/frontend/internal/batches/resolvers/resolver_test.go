@@ -170,38 +170,38 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*btypes.ChangesetSpec
-		hasLicenseFor  map[licensing.Feature]struct{}
+		hasLicenseFor  map[string]struct{}
 		wantErr        bool
 	}{
 		"batch changes license, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureBatchChanges: {},
+			hasLicenseFor: map[string]struct{}{
+				licensing.FeatureBatchChanges.FeatureName(): {},
 			},
 			wantErr: false,
 		},
 		"campaigns license, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureCampaigns: {},
+			hasLicenseFor: map[string]struct{}{
+				licensing.FeatureCampaigns.FeatureName(): {},
 			},
 			wantErr: false,
 		},
 		"no licence, but under the limit": {
 			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+			hasLicenseFor:  map[string]struct{}{},
 			wantErr:        false,
 		},
 		"no licence, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+			hasLicenseFor:  map[string]struct{}{},
 			wantErr:        true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
 			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if _, ok := tc.hasLicenseFor[feature]; !ok {
+				if _, ok := tc.hasLicenseFor[feature.FeatureName()]; !ok {
 					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
 				}
 				return nil

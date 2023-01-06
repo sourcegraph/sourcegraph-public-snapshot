@@ -121,7 +121,7 @@ func TestCheckFeature(t *testing.T) {
 
 			check(t, feature, license(plan(PlanTeam0)), false)
 			check(t, feature, license(plan(PlanEnterprise0)), false)
-			check(t, feature, license(plan(PlanEnterprise0), string(feature)), true)
+			check(t, feature, license(plan(PlanEnterprise0), feature.FeatureName()), true)
 
 			check(t, feature, license(plan(PlanBusiness0)), true)
 			check(t, feature, license(plan(PlanEnterprise1)), true)
@@ -143,7 +143,7 @@ func TestCheckFeature(t *testing.T) {
 
 			check(t, feature, license(plan(PlanTeam0)), false)
 			check(t, feature, license(plan(PlanEnterprise0)), false)
-			check(t, feature, license(plan(PlanEnterprise0), string(feature)), true)
+			check(t, feature, license(plan(PlanEnterprise0), feature.FeatureName()), true)
 
 			check(t, feature, license(plan(PlanBusiness0)), true)
 			check(t, feature, license(plan(PlanEnterprise1)), true)

@@ -8,8 +8,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Feature is a product feature that is selectively activated based on the current license key.
-type Feature string
+type Feature interface {
+	FeatureName() string
+}
+
+// BasicFeature is a product feature that is selectively activated based on the current license key.
+type BasicFeature string
+
+func (f BasicFeature) FeatureName() string {
+	return string(f)
+}
 
 // Check checks whether the feature is activated based on the current license. If it is
 // disabled, it returns a non-nil error.
@@ -33,7 +41,7 @@ func checkFeature(info *Info, feature Feature) error {
 		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
 
-	featureTrimmed := Feature(strings.TrimSpace(string(feature)))
+	featureTrimmed := BasicFeature(strings.TrimSpace(string(feature.FeatureName())))
 
 	// Check if the feature is explicitly allowed via license tag.
 	hasFeature := func(want Feature) bool {
@@ -42,7 +50,7 @@ func checkFeature(info *Info, feature Feature) error {
 			// Eventually we should be able to remove these `TrimSpace` calls again,
 			// as we now guard against that while generating licenses, but there
 			// are quite a few "wrong" licenses out there as of today (2021-07-19).
-			if Feature(strings.TrimSpace(t)) == want {
+			if BasicFeature(strings.TrimSpace(t)) == want {
 				return true
 			}
 		}

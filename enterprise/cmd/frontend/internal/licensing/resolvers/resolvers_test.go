@@ -52,13 +52,13 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		},
 		"fake feature, enabled": {
 			feature: "foo",
-			mock:    buildMock("foo"),
+			mock:    buildMock(licensing.BasicFeature("foo")),
 			want:    true,
 			wantErr: false,
 		},
 		"fake feature, disabled": {
 			feature: "foo",
-			mock:    buildMock("bar"),
+			mock:    buildMock(licensing.BasicFeature("bar")),
 			want:    false,
 			wantErr: false,
 		},
