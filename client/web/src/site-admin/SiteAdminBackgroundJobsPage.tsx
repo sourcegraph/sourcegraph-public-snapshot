@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccountHardHat, mdiAlert, mdiCached, mdiNumeric, mdiRunFast, mdiText } from '@mdi/js'
+import { addMinutes, format, parseISO } from 'date-fns'
 import { RouteComponentProps } from 'react-router'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,6 +14,7 @@ import { PageTitle } from '../components/PageTitle'
 import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
 import { formatMilliseconds } from '../util/time'
 
+import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backend'
 
 import styles from './SiteAdminBackgroundJobsPage.module.scss'
@@ -53,140 +55,212 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     )
 }
 
+const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) => {
+    const legends = useMemo<ValueLegendListProps['items']>(() => {
+        const routineCount = jobs.reduce((acc, job) => acc + job.routines.length, 0)
+        const hostNames = jobs
+            .map(job => job.routines[0]?.instances[0]?.hostName)
+            .filter((host, index, hosts) => hosts.indexOf(host) === index)
+            .filter(host => !!host)
+        const routineInstanceCount = jobs.reduce(
+            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.instances.length, 0),
+            0
+        )
+        const recentRunCount = jobs.reduce(
+            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.recentRuns.length, 0),
+            0
+        )
+        const recentRunErrors = jobs.reduce(
+            (acc, job) =>
+                acc +
+                job.routines.reduce((acc, routine) => acc + routine.recentRuns.filter(run => run.error).length, 0),
+            0
+        )
+        const runsForStats = jobs.reduce(
+            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.stats.runCount, 0),
+            0
+        )
+        return [
+            {
+                value: jobs.length,
+                description: 'Jobs',
+                color: 'var(--orange)',
+                tooltip: 'The number of known background jobs in the system.',
+            },
+            {
+                value: routineCount,
+                description: 'Routines',
+                color: 'var(--purple)',
+                tooltip: 'The total number of routines across all jobs.',
+            },
+            {
+                value: hostNames.length,
+                description: 'Hosts',
+                color: 'var(--blue)',
+                tooltip: 'The total number of known hosts where jobs run.',
+            },
+            {
+                value: routineInstanceCount,
+                description: 'Instances',
+                color: 'var(--green)',
+                tooltip: 'The total number of routine instances across all jobs and hosts.',
+            },
+            {
+                value: recentRunCount,
+                description: 'Recent runs',
+                color: 'var(--yellow)',
+                tooltip: 'The total number of runs tracked.',
+            },
+            {
+                value: recentRunErrors,
+                description: 'Recent errors',
+                color: 'var(--red)',
+                tooltip: 'The total number of errors across all runs across all routine instances.',
+            },
+            {
+                value: runsForStats,
+                description: 'Runs for stats',
+                color: 'var(--yellow)',
+                tooltip: 'The total number of runs used for stats.',
+            },
+        ]
+    }, [jobs])
+
+    return (
+        <>
+            {legends && <ValueLegendList className="mb-3" items={legends} />}
+            <ul className="list-group list-group-flush">
+                {jobs.map(job => {
+                    const hostNames = [
+                        ...new Set(
+                            job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()
+                        ),
+                    ].sort()
+                    return (
+                        <li key={job.name} className="list-group-item px-0 py-2">
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div className="d-flex flex-row">
+                                    <Icon aria-hidden={true} svgPath={mdiAccountHardHat} /> <Text>{job.name}</Text>
+                                </div>
+                                <div>
+                                    <Text className="mb-0">
+                                        {hostNames.length} {pluralize('running instance', hostNames.length)}
+                                    </Text>
+                                    <Text className="mb-0">
+                                        {job.routines.length} {pluralize('started routine', job.routines.length)}
+                                    </Text>
+                                </div>
+                            </div>
+                            <ul>
+                                {job.routines.map(routine => (
+                                    <RoutineComponent routine={routine} key={routine.name} />
+                                ))}
+                            </ul>
+                        </li>
+                    )
+                })}
+            </ul>
+        </>
+    )
+}
+
 // {color: green/red if running} {type} {Job name} {routine count} {Uptime (relative) OR Min: Avg: Max: relative uptime across instances}
 // - {color: green/red if running} {Routine name} {Description icon} {running instance count, with a list as tooltip} {stats}
 // {color: green/red if successful} {Last run #} {at} {durationMs} {success / error}
-const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) => (
-    <ul>
-        {jobs.map(job => {
-            const hostNames = [
-                ...new Set(job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()),
-            ].sort()
-            return (
-                <li key={job.name} className="list-group-item px-0 py-2">
-                    <div className="d-flex align-items-center justify-content-between">
-                        <div className="d-flex flex-row">
-                            <Icon aria-hidden={true} svgPath={mdiAccountHardHat} /> <Text>{job.name}</Text>
-                        </div>
-                        <div>
-                            <Text className="mb-0">
-                                {hostNames.length} {pluralize('running instance', hostNames.length)}
-                            </Text>
-                            <Text className="mb-0">
-                                {job.routines.length} {pluralize('started routine', job.routines.length)}
-                            </Text>
-                        </div>
-                    </div>
-                    <ul>
-                        {job.routines.map(routine => {
-                            const commonHostName = routine.recentRuns.reduce<string | undefined | null>(
-                                (hostName, run) =>
-                                    hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null,
-                                undefined
-                            )
-                            const routineIcon =
-                                routine.type === 'PERIODIC' ? (
-                                    <Icon aria-hidden={true} svgPath={mdiCached} />
-                                ) : routine.type === 'PERIODIC_WITH_METRICS' ? (
-                                    <>
-                                        <Icon aria-hidden={true} svgPath={mdiCached} />
-                                        <Icon aria-hidden={true} svgPath={mdiNumeric} />
-                                    </>
-                                ) : (
-                                    <>Unknown</>
-                                )
+const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routines'][0] }> = ({ routine }) => {
+    const commonHostName = routine.recentRuns.reduce<string | undefined | null>(
+        (hostName, run) => (hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null),
+        undefined
+    )
+    const routineIcon =
+        routine.type === 'PERIODIC' ? (
+            <Icon aria-hidden={true} svgPath={mdiCached} />
+        ) : routine.type === 'PERIODIC_WITH_METRICS' ? (
+            <>
+                <Icon aria-hidden={true} svgPath={mdiCached} />
+                <Icon aria-hidden={true} svgPath={mdiNumeric} />
+            </>
+        ) : (
+            <>Unknown</>
+        )
 
-                            return (
-                                <li key={routine.name}>
-                                    <div className="d-flex flex-row">
-                                        <div>
-                                            <Tooltip content={routine.type.toLowerCase()} placement="top">
-                                                {routineIcon}
-                                            </Tooltip>
-                                        </div>
-                                        <Text className="mb-0">{routine.name}</Text>
-                                        <div> | Runs every {formatMilliseconds(routine.intervalMs)}</div>
-                                    </div>
-                                    <div className="d-flex flex-row">
-                                        <Icon aria-hidden={true} svgPath={mdiText} />
-                                        <div>Description: {routine.description}</div>
-                                    </div>
-                                    <div>
+    return (
+        <li>
+            <div className="d-flex flex-row">
+                <div>
+                    <Tooltip content={routine.type.toLowerCase()} placement="top">
+                        {routineIcon}
+                    </Tooltip>
+                </div>
+                <Text className="mb-0">{routine.name}</Text>
+                <div> | Runs every {formatMilliseconds(routine.intervalMs)}</div>
+            </div>
+            <div className="d-flex flex-row">
+                <Icon aria-hidden={true} svgPath={mdiText} />
+                <div>Description: {routine.description}</div>
+            </div>
+            <div>
+                <div className="d-flex flex-row">
+                    <Icon aria-hidden={true} svgPath={mdiRunFast} />
+                    <Tooltip
+                        content={
+                            <ul>
+                                {routine.recentRuns.map(run => (
+                                    <li key={run.at}>
                                         <div className="d-flex flex-row">
-                                            <Icon aria-hidden={true} svgPath={mdiRunFast} />
-                                            <Tooltip
-                                                content={
-                                                    <ul>
-                                                        {routine.recentRuns.map(run => (
-                                                            <li key={run.at}>
-                                                                <div className="d-flex flex-row">
-                                                                    <Text className="mb-0">
-                                                                        {run.error ? (
-                                                                            <Icon
-                                                                                aria-hidden={true}
-                                                                                svgPath={mdiAlert}
-                                                                            />
-                                                                        ) : (
-                                                                            ''
-                                                                        )}{' '}
-                                                                        <Timestamp
-                                                                            date={new Date(run.at)}
-                                                                            noAbout={true}
-                                                                        />
-                                                                        {commonHostName
-                                                                            ? ''
-                                                                            : `On host
-                                                            called “${run.hostName}”,`}{' '}
-                                                                        for {run.durationMs}ms.
-                                                                        {run.error
-                                                                            ? ` Error: ${run.error.message}`
-                                                                            : ''}
-                                                                    </Text>
-                                                                </div>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                }
-                                                placement="bottom"
-                                            >
-                                                <Text className="mb-0">
-                                                    {routine.recentRuns.length}{' '}
-                                                    {pluralize('recent run', routine.recentRuns.length)}
-                                                    {commonHostName ? `, all on “${commonHostName}”` : ''}:
-                                                </Text>
-                                            </Tooltip>
+                                            <Text className="mb-0">
+                                                {run.error ? <Icon aria-hidden={true} svgPath={mdiAlert} /> : ''}{' '}
+                                                <Timestamp date={new Date(run.at)} noAbout={true} />
+                                                {commonHostName
+                                                    ? ''
+                                                    : `On host
+                                                        called “${run.hostName}”,`}{' '}
+                                                for {run.durationMs}ms.
+                                                {run.error ? ` Error: ${run.error.message}` : ''}
+                                            </Text>
                                         </div>
-                                    </div>
-                                    <Text className="mb-0">
-                                        📊{' '}
-                                        {routine.stats.since ? (
-                                            <>
-                                                Ran{' '}
-                                                <strong>
-                                                    {routine.stats.runCount !== 1
-                                                        ? `${routine.stats.runCount} times`
-                                                        : 'once'}
-                                                </strong>{' '}
-                                                since{' '}
-                                                <strong>
-                                                    <Timestamp date={new Date(routine.stats.since)} noAbout={true} />
-                                                </strong>{' '}
-                                                with {routine.stats.errorCount}{' '}
-                                                {pluralize('error', routine.stats.errorCount)}. Fastest run:{' '}
-                                                <strong>{routine.stats.minDurationMs}ms</strong>, slowest run:{' '}
-                                                <strong>{routine.stats.maxDurationMs}ms</strong>, average run:{' '}
-                                                <strong>{routine.stats.avgDurationMs}ms</strong>.
-                                            </>
-                                        ) : (
-                                            'No runs recorded, so no stats.'
-                                        )}
-                                    </Text>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                </li>
-            )
-        })}
-    </ul>
-)
+                                    </li>
+                                ))}
+                            </ul>
+                        }
+                        placement="bottom"
+                    >
+                        <Text className="mb-0">
+                            {routine.recentRuns.length} {pluralize('recent run', routine.recentRuns.length)}
+                            {commonHostName ? `, all on “${commonHostName}”` : ''}:
+                        </Text>
+                    </Tooltip>
+                </div>
+            </div>
+            <Text className="mb-0">
+                📊{' '}
+                {routine.stats.since ? (
+                    <>
+                        Ran <strong>{routine.stats.runCount !== 1 ? `${routine.stats.runCount} times` : 'once'}</strong>{' '}
+                        in the last{' '}
+                        <Tooltip
+                            content={`since ${format(
+                                addMinutes(
+                                    parseISO(routine.stats.since),
+                                    parseISO(routine.stats.since).getTimezoneOffset()
+                                ),
+                                TimestampFormat.FULL_DATE_TIME
+                            )}`}
+                            placement="top"
+                        >
+                            <strong>
+                                {formatMilliseconds(new Date().getTime() - new Date(routine.stats.since).getTime())}
+                            </strong>
+                        </Tooltip>{' '}
+                        with {routine.stats.errorCount} {pluralize('error', routine.stats.errorCount)}. Fastest run:{' '}
+                        <strong>{routine.stats.minDurationMs}ms</strong>, slowest run:{' '}
+                        <strong>{routine.stats.maxDurationMs}ms</strong>, average run:{' '}
+                        <strong>{routine.stats.avgDurationMs}ms</strong>.
+                    </>
+                ) : (
+                    'No runs recorded, so no stats.'
+                )}
+            </Text>
+        </li>
+    )
+}
