@@ -51,7 +51,7 @@ function go_test() {
     # in $base, because we're running this function with a cwd set to where we
     # found the go.mod.
     ann_out=$(<"${tmpfile}")
-    if [ "${ann_out}" == " " ]; then
+    if [ "${ann_out}" = "" ]; then
       echo "No annotations available, check for failures above to determine why this failed."
     else
       sed '0,/=== Failed$/d' <"${ann_out}" >>"${base}/annotations/go-test"
