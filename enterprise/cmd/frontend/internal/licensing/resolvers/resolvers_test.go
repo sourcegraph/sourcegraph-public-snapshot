@@ -22,7 +22,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) (licensing.Feature, error) {
 		return func(feature licensing.Feature) (licensing.Feature, error) {
 			for _, allowed := range allow {
-				if feature == allowed {
+				if feature.FeatureName() == allowed.FeatureName() {
 					return feature, nil
 				}
 			}

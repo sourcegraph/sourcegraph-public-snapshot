@@ -90,7 +90,9 @@ func (FeatureBatchChanges) FeatureName() string {
 
 // planFeatures defines the features that are enabled for each plan.
 var planFeatures = map[Plan][]Feature{
-	PlanOldEnterpriseStarter: {},
+	PlanOldEnterpriseStarter: {
+		FeatureBatchChanges{MaxNumBatchChanges: 5},
+	},
 	PlanOldEnterprise: {
 		FeatureSSO,
 		FeatureACLs,
@@ -114,7 +116,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
-		FeatureBatchChanges{MaxNumBatchChanges: 5}, // 5 is the old unlicensed default
+		FeatureBatchChanges{Unrestricted: true},
 	},
 
 	PlanBusiness0: {

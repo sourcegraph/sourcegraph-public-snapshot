@@ -3,6 +3,7 @@ package licensing
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -11,10 +12,12 @@ func TestCheckFeature(t *testing.T) {
 
 	check := func(t *testing.T, feature Feature, info *Info, wantEnabled bool) {
 		t.Helper()
-		_, err := checkFeature(info, feature)
-		got := err == nil
-		if got != wantEnabled {
-			t.Errorf("got %v, want %v", got, wantEnabled)
+		planFeature, err := checkFeature(info, feature)
+		if got := err == nil; got != wantEnabled {
+			t.Errorf("got enabled %v, want %v, for %q", got, wantEnabled, info)
+		}
+		if wantEnabled && cmp.Diff(planFeature, feature) != "" {
+			t.Errorf("got %v, want %v, for %q", planFeature, feature, info)
 		}
 	}
 
@@ -115,17 +118,17 @@ func TestCheckFeature(t *testing.T) {
 		return func(t *testing.T) {
 			check(t, feature, nil, false)
 
-			check(t, feature, license("starter"), false)
-			check(t, feature, license(plan(PlanOldEnterpriseStarter)), false)
-			check(t, feature, license(plan(PlanOldEnterprise)), true)
-			check(t, feature, license(), true)
+			check(t, FeatureBatchChanges{MaxNumBatchChanges: 5}, license("starter"), true)
+			check(t, FeatureBatchChanges{MaxNumBatchChanges: 5}, license(plan(PlanOldEnterpriseStarter)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(plan(PlanOldEnterprise)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(), true)
 
-			check(t, feature, license(plan(PlanTeam0)), false)
-			check(t, feature, license(plan(PlanEnterprise0)), false)
-			check(t, feature, license(plan(PlanEnterprise0), feature.FeatureName()), true)
+			check(t, FeatureBatchChanges{MaxNumBatchChanges: 5}, license(plan(PlanTeam0)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(plan(PlanEnterprise0)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(plan(PlanEnterprise0), feature.FeatureName()), true)
 
-			check(t, feature, license(plan(PlanBusiness0)), true)
-			check(t, feature, license(plan(PlanEnterprise1)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(plan(PlanBusiness0)), true)
+			check(t, FeatureBatchChanges{Unrestricted: true}, license(plan(PlanEnterprise1)), true)
 		}
 	}
 
