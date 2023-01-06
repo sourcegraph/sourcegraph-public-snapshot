@@ -62,7 +62,7 @@ export const FileOwnership: React.FunctionComponent<
     return <div>No data</div>
 }
 
-const FETCH_OWNERS = gql`
+export const FETCH_OWNERS = gql`
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
