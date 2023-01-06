@@ -50,11 +50,11 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 
 	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
-		return err
+		return errors.Wrap(err, "archiveOldRecordingTimes")
 	}
 
 	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
-		return err
+		return errors.Wrap(err, "archiveOldSeriesPoints")
 	}
 
 	return nil
@@ -144,45 +144,32 @@ SELECT recording_time FROM insight_series_recording_times
 WHERE insight_series_id = %s AND snapshot IS FALSE
 ORDER BY recording_time DESC OFFSET %s LIMIT 1;`
 
-// archiveOldSeriesPoints will insert old series points in a separate table and then delete them from the main table.
 func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertSeriesPointsSql, seriesID, oldestTimestamp)); err != nil {
-		return errors.Wrap(err, "insertSeriesPoints")
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(deleteSeriesPointsSql, seriesID, oldestTimestamp)); err != nil {
-		return errors.Wrap(err, "deleteSeriesPoints")
-	}
-	return nil
+	return tx.Exec(ctx, sqlf.Sprintf(archiveOldSeriesPointsSql, seriesID, oldestTimestamp))
 }
 
-const insertSeriesPointsSql = `
+const archiveOldSeriesPointsSql = `
+with moved_rows as (
+	DELETE FROM series_points 
+	WHERE series_id = %s AND time < %s
+	RETURNING * 
+)
 INSERT INTO archived_series_points
-(SELECT * FROM series_points WHERE series_id = %s AND time < %s)
-`
-
-const deleteSeriesPointsSql = `
-DELETE FROM series_points 
-WHERE series_id = %s AND time < %s
-`
-
-// archiveOldRecordingTimes will insert old recording times in a separate table and then delete them from the main table.
-func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertRecordingTimesSql, seriesID, oldestTimestamp)); err != nil {
-		return errors.Wrap(err, "insertRecordingTimes")
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(deleteRecordingTimesSql, seriesID, oldestTimestamp)); err != nil {
-		return errors.Wrap(err, "deleteRecordingTimes")
-	}
-	return nil
-}
-
-const insertRecordingTimesSql = `
-INSERT INTO archived_insight_series_recording_times 
-(SELECT * FROM insight_series_recording_times WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s)
+SELECT * from moved_rows
 ON CONFLICT DO NOTHING
 `
 
-const deleteRecordingTimesSql = `
-DELETE FROM insight_series_recording_times 
-WHERE insight_series_id = %s AND snapshot IS FALSE and recording_time < %s
+func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
+	return tx.Exec(ctx, sqlf.Sprintf(archiveOldRecordingTimesSql, seriesID, oldestTimestamp))
+}
+
+const archiveOldRecordingTimesSql = `
+WITH moved_rows AS (
+	DELETE FROM insight_series_recording_times
+	WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s
+	RETURNING *
+)
+INSERT INTO archived_insight_series_recording_times 
+SELECT * FROM moved_rows
+ON CONFLICT DO NOTHING
 `
