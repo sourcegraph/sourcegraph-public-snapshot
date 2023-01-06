@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,7 +22,7 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	bbcloudAuthProviders := make(map[string]*schema.BitbucketCloudAuthProvider)
 	for _, p := range authProviders {
 		if p.Bitbucketcloud != nil {
@@ -40,7 +41,7 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, authProviders []
 	}
 
 	for _, c := range conns {
-		p, err := newAuthzProvider(c)
+		p, err := newAuthzProvider(db, c)
 		if err != nil {
 			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketCloud)
 			problems = append(problems, err.Error())
@@ -65,6 +66,7 @@ func NewAuthzProviders(conns []*types.BitbucketCloudConnection, authProviders []
 }
 
 func newAuthzProvider(
+	db database.DB,
 	c *types.BitbucketCloudConnection,
 ) (authz.Provider, error) {
 	if c.Authorization == nil {
@@ -74,7 +76,7 @@ func newAuthzProvider(
 		return nil, err
 	}
 
-	return NewProvider(c, ProviderOptions{}), nil
+	return NewProvider(db, c, ProviderOptions{}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

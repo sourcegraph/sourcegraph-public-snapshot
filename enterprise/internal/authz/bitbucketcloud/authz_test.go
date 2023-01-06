@@ -17,6 +17,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 	t.Run("no authorization", func(t *testing.T) {
 		providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			db,
 			[]*types.BitbucketCloudConnection{{
 				URN: "",
 				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
@@ -38,6 +39,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no matching auth provider", func(t *testing.T) {
 		licensing.MockCheckFeatureError("")
 		providers, problems, warnings, invalidConnections := NewAuthzProviders(
+			db,
 			[]*types.BitbucketCloudConnection{
 				{
 					URN: "",
@@ -64,6 +66,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			licensing.MockCheckFeatureError("")
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+				db,
 				[]*types.BitbucketCloudConnection{
 					{
 						URN: "",
@@ -87,6 +90,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			licensing.MockCheckFeatureError("failed")
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
+				db,
 				[]*types.BitbucketCloudConnection{
 					{
 						URN: "",

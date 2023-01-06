@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -22,6 +23,7 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	client   bitbucketcloud.Client
 	pageSize int // Page size to use in paginated requests.
+	db       database.DB
 }
 
 type ProviderOptions struct {
@@ -34,7 +36,7 @@ var _ authz.Provider = (*Provider)(nil)
 // the given bitbucket.Client to talk to the Bitbucket Cloud API that is
 // the source of truth for permissions. Sourcegraph users will need a valid
 // Bitbucket Cloud external account for permissions to sync correctly.
-func NewProvider(conn *types.BitbucketCloudConnection, opts ProviderOptions) *Provider {
+func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts ProviderOptions) *Provider {
 	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return nil
@@ -52,6 +54,7 @@ func NewProvider(conn *types.BitbucketCloudConnection, opts ProviderOptions) *Pr
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeBitbucketCloud),
 		client:   opts.BitbucketCloudClient,
 		pageSize: 1000,
+		db:       db,
 	}
 }
 
@@ -96,14 +99,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no account data provided")
 	}
 
-	// secret := ""
-	// for _, authProvider := range conf.SiteConfig().AuthProviders {
-	// 	if authProvider.Bitbucketcloud != nil &&
-	// 		authProvider.Bitbucketcloud.ClientKey == account.ClientID {
-	// 		secret = authProvider.Bitbucketcloud.ClientSecret
-	// 	}
-	// }
-
 	_, tok, err := bitbucketcloud.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, err
@@ -113,6 +108,10 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
 	}
+
+	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, bitbucketcloud.GetOAuthContext(p.codeHost.BaseURL.String()))
+	oauthToken.NeedsRefreshBuffer = 5
+
 	client := p.client.WithAuthenticator(oauthToken)
 	repos, next, err := client.Repos(ctx, nil, "", &bitbucketcloud.ReposOptions{Role: "member"})
 	if err != nil {

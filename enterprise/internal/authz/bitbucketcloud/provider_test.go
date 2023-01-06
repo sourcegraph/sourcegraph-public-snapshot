@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -73,13 +74,15 @@ func createTestServer() *httptest.Server {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
+	db := database.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider(&types.BitbucketCloudConnection{
-			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-				ApiURL: "https://bitbucket.org",
-				Url:    "https://bitbucket.org",
-			},
-		}, ProviderOptions{})
+		p := NewProvider(db,
+			&types.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+					ApiURL: "https://bitbucket.org",
+					Url:    "https://bitbucket.org",
+				},
+			}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -89,12 +92,13 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider(&types.BitbucketCloudConnection{
-			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-				ApiURL: "https://bitbucket.org",
-				Url:    "https://bitbucket.org",
-			},
-		}, ProviderOptions{})
+		p := NewProvider(db,
+			&types.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+					ApiURL: "https://bitbucket.org",
+					Url:    "https://bitbucket.org",
+				},
+			}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -112,12 +116,13 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no account data provided", func(t *testing.T) {
-		p := NewProvider(&types.BitbucketCloudConnection{
-			BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-				ApiURL: "https://bitbucket.org",
-				Url:    "https://bitbucket.org",
-			},
-		}, ProviderOptions{})
+		p := NewProvider(db,
+			&types.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+					ApiURL: "https://bitbucket.org",
+					Url:    "https://bitbucket.org",
+				},
+			}, ProviderOptions{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -147,9 +152,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p := NewProvider(&types.BitbucketCloudConnection{
-			BitbucketCloudConnection: conn,
-		}, ProviderOptions{BitbucketCloudClient: client})
+		p := NewProvider(db,
+			&types.BitbucketCloudConnection{
+				BitbucketCloudConnection: conn,
+			}, ProviderOptions{BitbucketCloudClient: client})
 
 		var acctData extsvc.AccountData
 		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucketcloud.Account{}, &oauth2.Token{AccessToken: "my-access-token"})
@@ -179,6 +185,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	server := createTestServer()
 	defer server.Close()
+	db := database.NewMockDB()
 
 	conn := &schema.BitbucketCloudConnection{
 		ApiURL: server.URL,
@@ -189,9 +196,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	p := NewProvider(&types.BitbucketCloudConnection{
-		BitbucketCloudConnection: conn,
-	}, ProviderOptions{BitbucketCloudClient: client})
+	p := NewProvider(db,
+		&types.BitbucketCloudConnection{
+			BitbucketCloudConnection: conn,
+		}, ProviderOptions{BitbucketCloudClient: client})
 
 	perms, err := p.FetchRepoPerms(context.Background(), &extsvc.Repository{
 		URI: "bitbucket.org/user/repo",
