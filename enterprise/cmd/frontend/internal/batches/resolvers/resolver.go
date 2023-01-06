@@ -516,7 +516,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 			return nil, err
 		}
 		if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumBatchChanges {
-			return nil, errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)}
 		}
 	} else {
 		return nil, ErrBatchChangesUnlicensed{licenseErr}
@@ -565,7 +565,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 
 	if batchChangesFeature, err := checkLicense(); err == nil {
 		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumBatchChanges {
-			return nil, errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumBatchChanges)}
 		}
 	} else {
 		return nil, ErrBatchChangesUnlicensed{err}

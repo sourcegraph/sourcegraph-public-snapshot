@@ -50,6 +50,8 @@ func (e ErrBatchChangeInvalidName) Extensions() map[string]any {
 // to add an error code.
 type ErrBatchChangesUnlicensed struct{ error }
 
+type ErrBatchChangesOverLimit struct{ error }
+
 func (e ErrBatchChangesUnlicensed) Extensions() map[string]any {
 	return map[string]any{"code": "ErrBatchChangesUnlicensed"}
 }
