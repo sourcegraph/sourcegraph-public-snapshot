@@ -8,6 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -55,6 +56,7 @@ export interface BatchChangeListPageProps
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
     isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
     /** For testing only. */
     openTab?: SelectedTab
 }
@@ -75,6 +77,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    authenticatedUser,
 }) => {
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
@@ -157,7 +160,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     ) : (
                         <Button
                             as={Link}
-                            to="https://signup.sourcegraph.com/?p=batch"
+                            to={buildCloudTrialURL(authenticatedUser, 'batch')}
                             target="_blank"
                             rel="noopener noreferrer"
                             variant="primary"
@@ -181,7 +184,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 isSourcegraphDotCom={isSourcegraphDotCom}
             />
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
+                <GettingStarted
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                    authenticatedUser={authenticatedUser}
+                    className="mb-4"
+                />
             )}
             {selectedTab === 'batchChanges' && (
                 <>
@@ -266,7 +273,14 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<
         [authenticatedUser, namespaceID]
     )
 
-    return <BatchChangeListPage {...props} canCreate={canCreateInThisNamespace} namespaceID={namespaceID} />
+    return (
+        <BatchChangeListPage
+            {...props}
+            canCreate={canCreateInThisNamespace}
+            namespaceID={namespaceID}
+            authenticatedUser={authenticatedUser}
+        />
+    )
 }
 
 interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}

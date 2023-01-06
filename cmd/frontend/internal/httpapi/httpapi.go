@@ -43,6 +43,7 @@ type Handlers struct {
 	GitHubSyncWebhook          webhooks.Registerer
 	GitLabSyncWebhook          webhooks.Registerer
 	BitbucketServerSyncWebhook webhooks.Registerer
+	BitbucketCloudSyncWebhook  webhooks.Registerer
 
 	// Permissions
 	PermissionsGitHubWebhook webhooks.Registerer
@@ -107,6 +108,7 @@ func NewHandler(
 	handlers.BatchesGitHubWebhook.Register(&wh)
 	handlers.BatchesGitLabWebhook.Register(&wh)
 	handlers.BitbucketServerSyncWebhook.Register(&wh)
+	handlers.BitbucketCloudSyncWebhook.Register(&wh)
 	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)

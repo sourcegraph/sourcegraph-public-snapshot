@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { SearchPatternTypeProps } from '@sourcegraph/search'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

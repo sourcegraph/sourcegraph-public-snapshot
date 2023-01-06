@@ -24,8 +24,15 @@ import { Key } from 'ts-key-enum'
 import { isDefined, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
-import { ExternalServiceKind } from '../graphql-operations'
-import { IMutation, IQuery, IRepository } from '../schema'
+import {
+    ExternalServiceKind,
+    ExternalServicesForTestsResult,
+    OverwriteSettingsForTestsResult,
+    RepositoryNameForTestsResult,
+    SiteForTestsResult,
+    UpdateSiteConfigurationForTestsResult,
+    UserSettingsForTestsResult,
+} from '../graphql-operations'
 import { Settings } from '../settings/settings'
 
 import { getConfig } from './config'
@@ -388,7 +395,7 @@ export class Driver {
     }): Promise<void> {
         // Use the graphQL API to query external services on the instance.
         const { externalServices } = dataOrThrowErrors(
-            await this.makeGraphQLRequest<IQuery>({
+            await this.makeGraphQLRequest<ExternalServicesForTestsResult>({
                 request: gql`
                     query ExternalServicesForTests {
                         externalServices(first: 1) {
@@ -571,10 +578,10 @@ export class Driver {
         return response
     }
 
-    public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
-        const response = await this.makeGraphQLRequest<IQuery>({
+    public async getRepository(name: string): Promise<RepositoryNameForTestsResult['repository']> {
+        const response = await this.makeGraphQLRequest<RepositoryNameForTestsResult>({
             request: gql`
-                query ($name: String!) {
+                query RepositoryNameForTests($name: String!) {
                     repository(name: $name) {
                         id
                     }
@@ -593,7 +600,7 @@ export class Driver {
         path: jsonc.JSONPath,
         editFunction: (oldValue: jsonc.Node | undefined) => any
     ): Promise<void> {
-        const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
+        const currentConfigResponse = await this.makeGraphQLRequest<SiteForTestsResult>({
             request: gql`
                 query SiteForTests {
                     site {
@@ -611,7 +618,7 @@ export class Driver {
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
         const newConfig = modifyJSONC(currentConfig, path, editFunction)
-        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+        const updateConfigResponse = await this.makeGraphQLRequest<UpdateSiteConfigurationForTestsResult>({
             request: gql`
                 mutation UpdateSiteConfigurationForTests($lastID: Int!, $input: String!) {
                     updateSiteConfiguration(lastID: $lastID, input: $input)
@@ -634,7 +641,7 @@ export class Driver {
     }
 
     public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
-        const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
+        const currentSettingsResponse = await this.makeGraphQLRequest<UserSettingsForTestsResult>({
             request: gql`
                 query UserSettingsForTests {
                     currentUser {
@@ -654,7 +661,7 @@ export class Driver {
             throw new Error('no currentUser')
         }
 
-        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+        const updateConfigResponse = await this.makeGraphQLRequest<OverwriteSettingsForTestsResult>({
             request: gql`
                 mutation OverwriteSettingsForTests($subject: ID!, $lastID: Int, $contents: String!) {
                     settingsMutation(input: { subject: $subject, lastID: $lastID }) {

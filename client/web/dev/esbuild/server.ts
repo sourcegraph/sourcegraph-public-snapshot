@@ -7,7 +7,7 @@ import signale from 'signale'
 
 import { STATIC_ASSETS_PATH, buildMonaco } from '@sourcegraph/build-config'
 
-import { HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
+import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
 
 import { BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
@@ -20,7 +20,9 @@ export const esbuildDevelopmentServer = async (
 
     // One-time build (these files only change when the monaco-editor npm package is changed, which
     // is rare enough to ignore here).
-    await buildMonaco(STATIC_ASSETS_PATH)
+    if (!ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS) {
+        await buildMonaco(STATIC_ASSETS_PATH)
+    }
 
     // Start esbuild's server on a random local port.
     const {

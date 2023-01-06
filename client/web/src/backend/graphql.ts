@@ -2,8 +2,11 @@ import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
 
 import { WebGraphQlOperations } from '../graphql-operations'
+
+import { persistenceMapper } from './persistenceMapper'
 
 const getHeaders = (): { [header: string]: string } => {
     const headers: { [header: string]: string } = {
@@ -88,6 +91,8 @@ export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
  */
 export const getWebGraphQLClient = memoize(() =>
     getGraphQLClient({
+        cache,
+        persistenceMapper,
         isAuthenticated: window.context.isAuthenticatedUser,
         headers: getHeaders(),
     })

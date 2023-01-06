@@ -1,16 +1,9 @@
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
 import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import {
-    collaboratorsPayload,
-    recentFilesPayload,
-    recentSearchesPayload,
-    savedSearchesPayload,
-} from '../search/panels/utils'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 
@@ -58,9 +51,7 @@ export const createViewerSettingsGraphQLOverride = (
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {
@@ -93,7 +84,6 @@ export const commonWebGraphQlResults: Partial<
             authProviders: {
                 nodes: [builtinAuthProvider],
             },
-            disableBuiltInSearches: false,
             sendsEmailVerificationEmails: true,
             updateCheck: {
                 pending: false,
@@ -127,8 +117,12 @@ export const commonWebGraphQlResults: Partial<
             },
         },
     }),
-    savedSearches: () => ({
-        savedSearches: [],
+    SavedSearches: () => ({
+        savedSearches: {
+            nodes: [],
+            totalCount: 0,
+            pageInfo: { startCursor: null, endCursor: null, hasNextPage: false, hasPreviousPage: false },
+        },
     }),
     LogEvents: () => ({
         logEvents: {
@@ -160,16 +154,6 @@ export const commonWebGraphQlResults: Partial<
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],
-    }),
-    HomePanelsQuery: () => ({
-        node: {
-            __typename: 'User',
-            recentlySearchedRepositoriesLogs: recentSearchesPayload(),
-            recentSearchesLogs: recentSearchesPayload(),
-            recentFilesLogs: recentFilesPayload(),
-            collaborators: collaboratorsPayload(),
-        },
-        savedSearches: savedSearchesPayload(),
     }),
     SearchHistoryEventLogsQuery: () => ({
         currentUser: {

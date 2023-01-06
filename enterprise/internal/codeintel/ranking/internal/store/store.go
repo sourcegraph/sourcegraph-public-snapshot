@@ -115,18 +115,18 @@ ORDER BY r.name
 
 func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error) {
 	pathRanksWithPrecision := map[string][2]float64{}
-	scanner := func(s dbutil.Scanner) error {
+	scanner := func(s dbutil.Scanner) (bool, error) {
 		var (
 			precision  float64
 			serialized string
 		)
 		if err := s.Scan(&precision, &serialized); err != nil {
-			return err
+			return false, err
 		}
 
 		pathRanks := map[string]float64{}
 		if err := json.Unmarshal([]byte(serialized), &pathRanks); err != nil {
-			return err
+			return false, err
 		}
 
 		for path, newRank := range pathRanks {
@@ -137,7 +137,7 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (ma
 			pathRanksWithPrecision[path] = [2]float64{precision, newRank}
 		}
 
-		return nil
+		return true, nil
 	}
 
 	if err := basestore.NewCallbackScanner(scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {

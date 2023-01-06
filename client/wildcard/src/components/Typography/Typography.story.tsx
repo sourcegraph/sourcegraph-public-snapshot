@@ -1,8 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Link } from '../Link'
 
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
@@ -11,7 +9,7 @@ import { Heading } from './Heading'
 import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {

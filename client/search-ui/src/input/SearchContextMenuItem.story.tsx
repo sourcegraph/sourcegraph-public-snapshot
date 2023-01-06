@@ -1,7 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Combobox } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 

@@ -5,9 +5,7 @@ import { of } from 'rxjs'
 import { Location } from '@sourcegraph/extension-api-types'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { BrandedStory } from '../../BrandedStory'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
@@ -89,9 +87,7 @@ const PROPS: HierarchicalLocationsViewProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
-)
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 const config: Meta = {
     title: 'branded/HierarchicalLocationsView',
     decorators: [decorator],

@@ -1,4 +1,4 @@
-import type { SearchPatternType } from '@sourcegraph/search'
+import type { SearchPatternType } from '../graphql-operations'
 
 import type { ActionName } from './java-to-js-bridge'
 import type { Request } from './js-to-java-bridge'

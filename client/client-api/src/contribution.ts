@@ -1,7 +1,14 @@
 import { Primitive } from 'utility-types'
 
-import { KeyPath } from '@sourcegraph/shared/src/api/client/services/settings'
 import { Expression, TemplateExpression } from '@sourcegraph/template-parser'
+
+/**
+ * A key path that refers to a location in a JSON document.
+ *
+ * Each successive array element specifies an index in an object or array to descend into. For example, in the
+ * object `{"a": ["x", "y"]}`, the key path `["a", 1]` refers to the value `"y"`.
+ */
+export type KeyPath = (string | number)[]
 
 /**
  * The given contribution type as it's specified in a package.json (expressions as strings)

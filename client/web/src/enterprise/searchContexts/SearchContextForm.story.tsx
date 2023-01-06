@@ -3,7 +3,7 @@ import { subDays } from 'date-fns'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchContextFields } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'

@@ -49,7 +49,7 @@ import * as H from 'history'
 import { isEqual, startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
-import { SymbolKind } from '@sourcegraph/search'
+import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createFilterSuggestions,
     PREDICATE_REGEX,

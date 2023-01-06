@@ -58,7 +58,10 @@ export type IconProps = HiddenIconProps | ScreenReaderIconProps
  */
 // eslint-disable-next-line react/display-name
 export const Icon = React.memo(
-    React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, ...props }, reference) {
+    React.forwardRef(function Icon(
+        { children, className, size, role = 'img', inline = true, svgPath, ...props },
+        reference
+    ) {
         const iconStyle = classNames(
             'mdi-icon',
             inline && styles.iconInline,
@@ -66,15 +69,8 @@ export const Icon = React.memo(
             className
         )
 
-        if (props.svgPath) {
-            const {
-                svgPath,
-                height = 24,
-                width = 24,
-                viewBox = '0 0 24 24',
-                fill = 'currentColor',
-                ...attributes
-            } = props
+        if (svgPath) {
+            const { height = 24, width = 24, viewBox = '0 0 24 24', fill = 'currentColor', ...attributes } = props
 
             return (
                 <svg

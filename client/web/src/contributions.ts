@@ -7,8 +7,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
-import { registerSearchStatsContributions } from './search/stats/contributions'
-
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     history: H.History
 }
@@ -38,7 +36,6 @@ export class GlobalContributions extends React.Component<Props> {
                 })
             )
         }
-        this.subscriptions.add(registerSearchStatsContributions(this.props))
     }
 
     public componentWillUnmount(): void {

@@ -1,8 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'

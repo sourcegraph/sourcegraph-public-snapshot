@@ -8,8 +8,8 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -25,7 +25,7 @@ import {
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -57,6 +57,7 @@ describe('StreamingSearchResults', () => {
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
         searchAggregationEnabled: false,
+        codeMonitoringEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -88,7 +89,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
         window.context = {
             enableLegacyExtensions: false,
         } as any

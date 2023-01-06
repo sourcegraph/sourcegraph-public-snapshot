@@ -33,7 +33,7 @@ import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
-import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
+import { ExternalRepositoryFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
 /**
@@ -1036,6 +1036,15 @@ const GITOLITE: AddExternalServiceOptions = {
                 return { edits, selectText: value }
             },
         },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: (config: string) => {
+                const value = { name: '<name>' }
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+                return { edits, selectText: '<name>' }
+            },
+        },
     ],
 }
 const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
@@ -1495,3 +1504,9 @@ export const externalRepoIcon = (
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined
 }
+
+export const EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES = new Set<ExternalServiceSyncJobState>([
+    ExternalServiceSyncJobState.QUEUED,
+    ExternalServiceSyncJobState.PROCESSING,
+    ExternalServiceSyncJobState.CANCELING,
+])

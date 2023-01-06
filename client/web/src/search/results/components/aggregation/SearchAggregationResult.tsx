@@ -2,9 +2,10 @@ import { FC, HTMLAttributes, useEffect, useState } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
+
+import { SearchAggregationMode, SearchPatternType } from '../../../../graphql-operations'
 
 import { AggregationLimitLabel, AggregationModeControls } from './components'
 import { AggregationChartCard, getAggregationData } from './components/aggregation-chart-card/AggregationChartCard'

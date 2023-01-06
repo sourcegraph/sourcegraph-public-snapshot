@@ -2,6 +2,8 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -11,11 +13,13 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
+    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'email'> | null
     className?: string
 }
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
+    authenticatedUser,
     className,
 }) => (
     <div className={className} data-testid="test-getting-started">
@@ -77,7 +81,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             <CloudCtaBanner variant="filled">
                 To automate changes across your team's private repos,{' '}
                 <Link
-                    to="https://signup.sourcegraph.com/?p=batch"
+                    to={buildCloudTrialURL(authenticatedUser, 'batch')}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => eventLogger.log('ClickedOnCloudCTA')}

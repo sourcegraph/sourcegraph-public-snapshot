@@ -1,6 +1,5 @@
 import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxyMarker } from 'comlink'
-import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
-import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { Unsubscribable, Subscribable, Observable, Observer, PartialObserver, Subscription } from 'rxjs'
 
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
@@ -71,7 +70,7 @@ export const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
     typeof value === 'object' && value !== null && hasProperty('then')(value) && typeof value.then === 'function'
 
 /**
- * Reports whether value is a {@link sourcegraph.Subscribable}.
+ * Reports whether value is a {@link Subscribable}.
  */
 export const isSubscribable = (value: unknown): value is Subscribable<unknown> =>
     typeof value === 'object' &&

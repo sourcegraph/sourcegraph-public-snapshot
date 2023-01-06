@@ -34,6 +34,7 @@ import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
+import { setBlobEditView } from './use-blob-store'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -105,7 +106,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
-        disableDecorations,
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
@@ -204,7 +204,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      disableDecorations,
                       enableSelectionDrivenCodeNavigation,
                   })
                 : [],
@@ -226,7 +225,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableDecorations]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView>()
@@ -235,6 +234,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateOnExtensionChange: false,
     })
     editorRef.current = editor
+
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editor ?? null), [editor])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {

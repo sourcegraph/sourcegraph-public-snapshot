@@ -39,7 +39,11 @@ import {
 } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { defaultExternalServices, codeHostExternalServices } from './externalServices'
+import {
+    defaultExternalServices,
+    codeHostExternalServices,
+    EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES,
+} from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 import styles from './ExternalServicePage.module.scss'
@@ -67,6 +71,7 @@ function isValidURL(url: string): boolean {
         return false
     }
 }
+
 const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
@@ -164,11 +169,11 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
             isValidURL(parsedConfig.url)
                 ? new URL(parsedConfig.url)
                 : undefined
-        // We have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the URL.
+        // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
         if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
             externalServiceCategory = codeHostExternalServices.ghe
         }
-        // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
+        // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
         if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
             externalServiceCategory = codeHostExternalServices.gitlab
         }
@@ -184,9 +189,9 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     return (
         <div>
             {externalService ? (
-                <PageTitle title={`External service - ${externalService.displayName}`} />
+                <PageTitle title={`Code host - ${externalService.displayName}`} />
             ) : (
-                <PageTitle title="External service" />
+                <PageTitle title="Code host" />
             )}
             <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
@@ -349,12 +354,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         ]
     }, [node])
 
-    const runningStatuses = new Set<ExternalServiceSyncJobState>([
-        ExternalServiceSyncJobState.QUEUED,
-        ExternalServiceSyncJobState.PROCESSING,
-        ExternalServiceSyncJobState.CANCELING,
-    ])
-    const [isExpanded, setIsExpanded] = useState(runningStatuses.has(node.state))
+    const [isExpanded, setIsExpanded] = useState(EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.state))
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
@@ -417,7 +417,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         </>
                     )}
                 </div>
-                {runningStatuses.has(node.state) && (
+                {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.state) && (
                     <LoaderButton
                         label="Cancel"
                         alwaysShowLabel={true}

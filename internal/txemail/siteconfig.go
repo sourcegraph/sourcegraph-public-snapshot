@@ -63,8 +63,8 @@ func FromSiteConfigTemplateWithDefault(customTemplate *schema.EmailTemplate, def
 // FromSiteConfigTemplate validates and converts an email template configured in site
 // configuration to a *txtypes.Templates.
 func FromSiteConfigTemplate(input schema.EmailTemplate) (*txtypes.Templates, error) {
-	if input.Subject == "" || input.Html == "" || input.Text == "" {
-		return nil, errors.New("fields 'subject', 'text', and 'html' are all required")
+	if input.Subject == "" || input.Html == "" {
+		return nil, errors.New("fields 'subject' and 'html' are required")
 	}
 	tpl := txtypes.Templates{
 		Subject: input.Subject,

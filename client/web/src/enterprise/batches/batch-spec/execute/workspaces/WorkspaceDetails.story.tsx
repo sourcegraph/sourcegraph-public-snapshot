@@ -3,10 +3,10 @@ import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'

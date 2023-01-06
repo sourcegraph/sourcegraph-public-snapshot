@@ -16,7 +16,6 @@ vendor/
 .nyc_output/
 out/
 dist/
-client/shared/src/graphqlschema.ts
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata

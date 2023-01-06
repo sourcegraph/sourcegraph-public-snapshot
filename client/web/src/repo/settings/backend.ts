@@ -12,6 +12,13 @@ import {
 } from '../../graphql-operations'
 
 export const settingsAreaRepositoryFragment = gql`
+    fragment SettingsAreaExternalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        supportsRepoExclusion
+    }
+
     fragment SettingsAreaRepositoryFields on Repository {
         id
         name
@@ -38,9 +45,7 @@ export const settingsAreaRepositoryFragment = gql`
         }
         externalServices {
             nodes {
-                id
-                kind
-                displayName
+                ...SettingsAreaExternalServiceFields
             }
         }
     }
@@ -72,3 +77,11 @@ export function fetchSettingsAreaRepository(name: string): Observable<SettingsAr
         })
     )
 }
+
+export const EXCLUDE_REPO_FROM_EXTERNAL_SERVICES = gql`
+    mutation ExcludeRepoFromExternalServices($externalServices: [ID!]!, $repo: ID!) {
+        excludeRepoFromExternalServices(externalServices: $externalServices, repo: $repo) {
+            alwaysNil
+        }
+    }
+`

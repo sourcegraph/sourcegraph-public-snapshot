@@ -281,18 +281,6 @@ const config = {
       },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
-      {
-        test: /\.elm$/,
-        exclude: /elm-stuff/,
-        use: {
-          loader: 'elm-webpack-loader',
-          options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
-            report: 'json',
-            pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
-          },
-        },
-      },
     ],
   },
 }

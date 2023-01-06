@@ -133,7 +133,7 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"search.uppercase": true }`); err != nil {
+	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"search.defaultMode": "smart" }`); err != nil {
 		t.Error(err)
 	}
 
@@ -142,7 +142,7 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if settings.SearchUppercase == nil || !(*settings.SearchUppercase) {
+	if settings.SearchDefaultMode != "smart" {
 		t.Errorf("Got invalid settings: %+v", settings)
 	}
 }

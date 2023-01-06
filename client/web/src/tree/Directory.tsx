@@ -1,9 +1,7 @@
 import * as React from 'react'
 
 import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
-import { FileDecoration } from 'sourcegraph'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import {
@@ -16,12 +14,11 @@ import {
     TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
-import { FileDecorator } from './FileDecorator'
 import { TreeEntryInfo, getTreeItemOffset } from './util'
 
 import styles from './Tree.module.scss'
 
-interface DirectoryProps extends ThemeProps {
+interface DirectoryProps {
     depth: number
     index: number
     className?: string
@@ -31,7 +28,6 @@ interface DirectoryProps extends ThemeProps {
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
-    fileDecorations?: FileDecoration[]
     isActive: boolean
     isSelected: boolean
 }
@@ -81,13 +77,6 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                             {props.entryInfo.name}
                         </TreeRowLabelLink>
                     </div>
-                    <FileDecorator
-                        // If component is not specified, or it is 'sidebar', render it.
-                        fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-                        className="mr-3"
-                        isLightTheme={props.isLightTheme}
-                        isActive={props.isActive}
-                    />
                 </TreeLayerRowContentsText>
                 {props.loading && (
                     <div>

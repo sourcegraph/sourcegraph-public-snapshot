@@ -13,7 +13,7 @@ import (
 )
 
 // NewCleaner returns a background goroutine which will periodically find jobs left in the
-// "completed" or "failed" state that are over 12 hours old and removes them.
+// "completed" state that are over a week old and removes them.
 //
 // This is particularly important because the historical enqueuer can produce e.g.
 // num_series*num_repos*num_timeframes jobs (example: 20*40,000*6 in an average case) which
@@ -29,7 +29,7 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 		Metrics: metrics,
 	})
 
-	// We look for jobs to cleanup every hour.
+	// We look for jobs to clean up every hour.
 	return goroutine.NewPeriodicGoroutineWithMetrics(
 		ctx, "insights.query_runner_cleaner", "removes completed or failed query runner jobs",
 		1*time.Hour, goroutine.HandlerFunc(
@@ -42,7 +42,6 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 	)
 }
 
-// cleanJobs
 func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleaned int, err error) {
 	numCleaned, _, err = basestore.ScanFirstInt(workerBaseStore.Query(
 		ctx,

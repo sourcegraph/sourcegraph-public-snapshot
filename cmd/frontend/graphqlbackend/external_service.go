@@ -225,7 +225,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		return mockCheckConnection(ctx, r)
 	}
 
-	if !r.HasConnectionCheck(ctx) {
+	if !r.HasConnectionCheck() {
 		r.availability = availabilityState{
 			unknown: &externalServiceUnknown{},
 		}
@@ -263,7 +263,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 	return r, nil
 }
 
-func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) bool {
+func (r *externalServiceResolver) HasConnectionCheck() bool {
 	return availabilityCheck[r.externalService.Kind]
 }
 
@@ -290,6 +290,10 @@ func (r *externalServiceResolver) SuspectedReason() (string, error) {
 
 func (r *externalServiceResolver) ImplementationNote() string {
 	return "not implemented"
+}
+
+func (r *externalServiceResolver) SupportsRepoExclusion() bool {
+	return r.externalService.SupportsRepoExclusion()
 }
 
 type externalServiceSyncJobConnectionResolver struct {

@@ -10,13 +10,13 @@ import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -33,6 +33,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
+import { NotebookProps } from '../notebooks'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
 import { RouteDescriptor } from '../util/contributions'
@@ -115,7 +116,8 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        NotebookProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]

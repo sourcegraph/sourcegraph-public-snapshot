@@ -1,7 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { H1, H2, Code, Text } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AlertType } from '../graphql-operations'
 

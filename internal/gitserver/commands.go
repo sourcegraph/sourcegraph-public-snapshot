@@ -1478,7 +1478,7 @@ func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 	return fi, nil
 }
 
-// CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
+// CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
 	Range string // commit range (revspec, "A..B", "A...B", etc.)
 
@@ -1495,6 +1495,8 @@ type CommitsOptions struct {
 	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
+
+	Follow bool // follow the history of the path beyond renames (works only for a single path)
 
 	// When true we opt out of attempting to fetch missing revisions
 	NoEnsureRevision bool
@@ -1703,11 +1705,23 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.Su
 		return false, err
 	}
 
-	n, err := c.commitCount(ctx, repo, CommitsOptions{
+	args, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
 		N:     1,
 		After: date,
 		Range: string(commitid),
 	})
+	if err != nil {
+		return false, err
+	}
+
+	cmd := c.gitCommand(repo, args...)
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	out = bytes.TrimSpace(out)
+	n, err := strconv.Atoi(string(out))
 	return n > 0, err
 }
 
@@ -1903,36 +1917,13 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.NameOnly {
 		args = append(args, "--name-only")
 	}
+	if opt.Follow {
+		args = append(args, "--follow")
+	}
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
 	return args, nil
-}
-
-// commitCount returns the number of commits that would be returned by Commits.
-func (c *clientImplementor) commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
-	if err != nil {
-		return 0, err
-	}
-
-	if opt.Path != "" {
-		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
-		args = append(args, "--", opt.Path)
-	}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	out = bytes.TrimSpace(out)
-	n, err := strconv.ParseUint(string(out), 10, 64)
-	return uint(n), err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.

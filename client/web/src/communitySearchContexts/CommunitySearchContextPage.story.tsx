@@ -4,8 +4,8 @@ import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,

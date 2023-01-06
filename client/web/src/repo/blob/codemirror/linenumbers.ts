@@ -35,7 +35,7 @@ const selectedLineDecoration = Decoration.line({
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
-const setSelectedLines = StateEffect.define<SelectedLineRange>()
+export const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
 /**
@@ -103,14 +103,20 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 })
 
 /**
- * An annotation to indicate where a line selection is comming from.
- * Transactions that set selected lines without this annotion are assumed to be
+ * An annotation to indicate where a line selection is coming from.
+ * Transactions that set selected lines without this annotation are assumed to be
  * "external" (e.g. from syncing with the URL).
  */
 const lineSelectionSource = Annotation.define<'gutter'>()
 
 /**
- * View plugin resonsible for scrolling the selected line(s) into view if/when
+ * An annotation to indicate that we have to scroll the current selected line
+ * into the view regardless of last selected line cache.
+ */
+export const lineScrollEnforcing = Annotation.define<'scroll-enforcing'>()
+
+/**
+ * View plugin responsible for scrolling the selected line(s) into view if/when
  * necessary.
  */
 const scrollIntoView = ViewPlugin.fromClass(
@@ -123,13 +129,19 @@ const scrollIntoView = ViewPlugin.fromClass(
 
         public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
-            if (
-                this.lastSelectedLines !== currentSelectedLines &&
-                update.transactions.some(transaction => transaction.annotation(lineSelectionSource) !== 'gutter')
-            ) {
+            const isForcedScroll = update.transactions.some(
+                transaction => transaction.annotation(lineScrollEnforcing) === 'scroll-enforcing'
+            )
+
+            const hasSelectedLineChanged = isForcedScroll ? true : this.lastSelectedLines !== currentSelectedLines
+            const isExternalTrigger = update.transactions.some(
+                transaction => transaction.annotation(lineSelectionSource) !== 'gutter'
+            )
+
+            if (hasSelectedLineChanged && isExternalTrigger) {
                 // Only scroll selected lines into view when the user isn't
                 // currently selecting lines themselves (as indicated by the
-                // presence of the "gutter" annotation). Otherwise the scroll
+                // presence of the "gutter" annotation). Otherwise, the scroll
                 // position might change while the user is selecting lines.
                 this.lastSelectedLines = currentSelectedLines
                 this.scrollIntoView(currentSelectedLines)

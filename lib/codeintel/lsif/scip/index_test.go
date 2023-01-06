@@ -30,7 +30,7 @@ func TestConvertLSIF(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewReader(input), "root/", "lsif-test")
+	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewReader(input), "root/")
 	if err != nil {
 		t.Fatalf("unexpected error converting LSIF data: %s", err)
 	}

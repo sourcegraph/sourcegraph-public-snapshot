@@ -7,19 +7,20 @@ import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from
 import classNames from 'classnames'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
 import {
     CaseSensitivityProps,
     SearchContextProps,
-    SearchPatternType,
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
     SubmitSearchProps,
-} from '@sourcegraph/search'
-import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
+} from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import styles from './JetBrainsToggles.module.scss'
 
