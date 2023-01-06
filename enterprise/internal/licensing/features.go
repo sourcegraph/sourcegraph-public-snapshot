@@ -20,7 +20,8 @@ func (f BasicFeature) FeatureName() string {
 }
 
 // Check checks whether the feature is activated based on the current license. If it is
-// disabled, it returns a non-nil error.
+// disabled, it returns a non-nil error. If it is enabled, it returns the feature
+// and a nil error.
 //
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.

@@ -145,8 +145,13 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	featureBatchChanges, err := checkLicense()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, featureBatchChanges.MaxNumBatchChanges+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			BaseRepoID: repo.ID,
@@ -188,7 +193,7 @@ func TestCreateBatchSpec(t *testing.T) {
 			wantErr: false,
 		},
 		"no licence, but under the limit": {
-			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
+			changesetSpecs: changesetSpecs[0:featureBatchChanges.MaxNumBatchChanges],
 			hasLicenseFor:  map[string]struct{}{},
 			wantErr:        false,
 		},
@@ -1189,7 +1194,12 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			var response struct{ ApplyBatchChange apitest.BatchChange }
 			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
-			if test.numChangesets > maxUnlicensedChangesets {
+
+			featureBatchChanges, err := checkLicense()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.numChangesets > featureBatchChanges.MaxNumBatchChanges {
 				assert.Len(t, errs, 1)
 				assert.ErrorAs(t, errs[0], &ErrBatchChangesUnlicensed{})
 			} else {

@@ -81,7 +81,7 @@ type FeatureBatchChanges struct {
 	// If true, there is no limit to the number of changesets that can be created.
 	Unrestricted bool
 	// Maximum number of changesets that can be created. If Unrestricted is true, this is ignored.
-	MaxNumBatchChanges int32
+	MaxNumBatchChanges int
 }
 
 func (FeatureBatchChanges) FeatureName() string {
@@ -108,11 +108,13 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
+		FeatureBatchChanges{MaxNumBatchChanges: 5}, // 5 is the old unlicensed default
 	},
 	PlanEnterprise0: {
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
+		FeatureBatchChanges{MaxNumBatchChanges: 5}, // 5 is the old unlicensed default
 	},
 
 	PlanBusiness0: {
@@ -133,6 +135,6 @@ var planFeatures = map[Plan][]Feature{
 	PlanFree0: {
 		FeatureSSO,
 		FeatureMonitoring,
-		FeatureBatchChanges{MaxNumBatchChanges: 5},
+		FeatureBatchChanges{MaxNumBatchChanges: 5}, // 5 is the old unlicensed default
 	},
 }
