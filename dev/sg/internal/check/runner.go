@@ -456,7 +456,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						annotationSummary += fmt.Sprintf("\n\n%s", suggestion)
 					}
 
-					if r.GenerateAnnotations {
+					if r.GenerateAnnotations && !check.LegacyAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)
 					}
 				}

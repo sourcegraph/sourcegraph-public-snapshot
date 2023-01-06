@@ -1,4 +1,4 @@
-import { TextDocument } from 'sourcegraph'
+import type { TextDocument } from '../../codeintel/legacy-extensions/api'
 
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 

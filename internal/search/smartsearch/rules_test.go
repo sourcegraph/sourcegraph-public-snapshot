@@ -165,3 +165,25 @@ func Test_patternsToCodeHostFilters(t *testing.T) {
 		})
 	}
 }
+
+func Test_rewriteRepoFilter(t *testing.T) {
+	rule := []transform{rewriteRepoFilter}
+	test := func(input string) string {
+		return apply(input, rule)
+	}
+
+	cases := []string{
+		`repo:https://github.com/sourcegraph/sourcegraph`,
+		`repo:http://github.com/sourcegraph/sourcegraph`,
+		`repo:https://github.com/sourcegraph/sourcegraph/blob/main/lib/README.md#L50`,
+		`repo:https://github.com/sourcegraph/sourcegraph/tree/main/lib`,
+		`repo:https://github.com/sourcegraph/sourcegraph/tree/2.12`,
+		`repo:https://github.com/sourcegraph/sourcegraph/commit/abc`,
+	}
+
+	for _, c := range cases {
+		t.Run("rewrite repo filter", func(t *testing.T) {
+			autogold.Equal(t, autogold.Raw(test(c)))
+		})
+	}
+}

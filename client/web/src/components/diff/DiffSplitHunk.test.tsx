@@ -24,7 +24,7 @@ describe('DiffSplitHunk', () => {
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
-                    html: '        const decorationType = sourcegraph.app.createDecorationType()',
+                    html: '        const foo = sourcegraph.app.foo()',
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,

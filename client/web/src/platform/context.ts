@@ -1,13 +1,7 @@
 import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
-import {
-    createAggregateError,
-    asError,
-    LocalStorageSubject,
-    appendSubtreeQueryParameter,
-    logger,
-} from '@sourcegraph/common'
+import { createAggregateError, asError, appendSubtreeQueryParameter, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
@@ -83,7 +77,6 @@ export function createPlatformContext(): PlatformContext {
         getScriptURLForExtension: () => undefined,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
         telemetryService: eventLogger,
     }
 

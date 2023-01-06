@@ -2926,6 +2926,27 @@ CREATE TABLE names (
     CONSTRAINT names_check CHECK (((user_id IS NOT NULL) OR (org_id IS NOT NULL)))
 );
 
+CREATE TABLE namespace_permissions (
+    id integer NOT NULL,
+    namespace text NOT NULL,
+    resource_id integer NOT NULL,
+    action text NOT NULL,
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
+    CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
+);
+
+CREATE SEQUENCE namespace_permissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE namespace_permissions_id_seq OWNED BY namespace_permissions.id;
+
 CREATE TABLE notebook_stars (
     notebook_id integer NOT NULL,
     user_id integer NOT NULL,
@@ -3929,6 +3950,8 @@ ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
+
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
 
 ALTER TABLE ONLY org_invitations ALTER COLUMN id SET DEFAULT nextval('org_invitations_id_seq'::regclass);
@@ -4217,6 +4240,9 @@ ALTER TABLE ONLY lsif_uploads_reference_counts
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_pkey PRIMARY KEY (notebook_id, user_id);
 
@@ -4321,6 +4347,9 @@ ALTER TABLE ONLY temporary_settings
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
+
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
@@ -5062,6 +5091,9 @@ ALTER TABLE ONLY names
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_notebook_id_fkey FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE;

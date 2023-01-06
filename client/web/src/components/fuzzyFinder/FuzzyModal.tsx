@@ -34,10 +34,12 @@ import {
     TabPanel,
     TabList,
     Badge,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
 import { FuzzySearch, FuzzySearchResult } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
@@ -114,11 +116,12 @@ function fuzzySearch(
     scope: FuzzyScope,
     maxResults: number,
     tabs: FuzzyTabs,
-    fsmGeneration: number
+    fsmGeneration: number,
+    cache: SearchValueRankingCache
 ): RenderProps {
     const search = newFuzzySearch(query, activeTab, scope, tabs)
     const start = window.performance.now()
-    const result = search.search({ query, maxResults })
+    const result = search.search({ query, maxResults, cache })
     result.elapsedMilliseconds = window.performance.now() - start
     return {
         result,
@@ -231,6 +234,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         onClose,
         onClickItem,
         fsmGeneration,
+        rankingCache,
         query,
         setQuery,
         tabs,
@@ -261,8 +265,8 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     // depend on `focusIndex` so that we avoid re-running the fuzzy finder
     // whenever the user presses up/down to cycle through the results.
     const fuzzySearchResult = useMemo<RenderProps>(
-        () => fuzzySearch(query, activeTab, scope, maxResults, tabs, fsmGeneration),
-        [fsmGeneration, maxResults, query, activeTab, scope, tabs]
+        () => fuzzySearch(query, activeTab, scope, maxResults, tabs, fsmGeneration, rankingCache),
+        [fsmGeneration, maxResults, query, activeTab, scope, tabs, rankingCache]
     )
 
     // Stage 2: render results from the fuzzy matcher.
@@ -609,7 +613,7 @@ const FuzzyResultsSummary: React.FunctionComponent<React.PropsWithChildren<Fuzzy
             {plural('result', queryResult.resultCount, queryResult.isComplete)} out of{' '}
             {plural('total', queryResult.totalFileCount, true)}
             <ProgressBar value={indexedFiles} max={totalFiles} />
-            {/* downloadingTabs.length > 0 && <LoadingSpinner /> */}
+            {downloadingTabs.length > 0 && <LoadingSpinner />}
         </span>
     )
 }

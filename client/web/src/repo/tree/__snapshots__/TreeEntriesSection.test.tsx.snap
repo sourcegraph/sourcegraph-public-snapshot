@@ -31,19 +31,6 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             </svg>
             src/
           </span>
-          <div
-            class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
-          >
-            <div
-              class="d-flex align-items-center fileDecoration"
-            >
-              <small
-                class="text-monospace font-weight-normal test-file-decoration-text after"
-              >
-                src decoration
-              </small>
-            </div>
-          </div>
         </div>
       </a>
     </li>
@@ -73,19 +60,6 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             </svg>
             testdata/
           </span>
-          <div
-            class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
-          >
-            <div
-              class="d-flex align-items-center fileDecoration"
-            >
-              <small
-                class="text-monospace font-weight-normal test-file-decoration-text after"
-              >
-                testdata decoration
-              </small>
-            </div>
-          </div>
         </div>
       </a>
     </li>
@@ -182,19 +156,6 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             </svg>
             testutils/
           </span>
-          <div
-            class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
-          >
-            <div
-              class="d-flex align-items-center fileDecoration"
-            >
-              <small
-                class="text-monospace font-weight-normal test-file-decoration-text after"
-              >
-                testutils decoration
-              </small>
-            </div>
-          </div>
         </div>
       </a>
     </li>
@@ -224,19 +185,6 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             </svg>
             typings/
           </span>
-          <div
-            class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
-          >
-            <div
-              class="d-flex align-items-center fileDecoration"
-            >
-              <small
-                class="text-monospace font-weight-normal test-file-decoration-text after"
-              >
-                typings decoration
-              </small>
-            </div>
-          </div>
         </div>
       </a>
     </li>
@@ -333,19 +281,6 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
             </svg>
             ref/
           </span>
-          <div
-            class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
-          >
-            <div
-              class="d-flex align-items-center fileDecoration"
-            >
-              <small
-                class="text-monospace font-weight-normal test-file-decoration-text after"
-              >
-                ref decoration
-              </small>
-            </div>
-          </div>
         </div>
       </a>
     </li>

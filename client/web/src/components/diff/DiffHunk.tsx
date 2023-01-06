@@ -1,7 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as React from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
@@ -115,8 +115,6 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                 )}
                             </>
                         )}
-
-                        {/* Needed for decorations */}
                         <td className={styles.content} data-diff-marker={diffHunkTypeIndicators[line.kind]}>
                             <VisuallyHidden>{diffHunkTypeDescriptions[line.kind]}</VisuallyHidden>
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />

@@ -15,9 +15,9 @@ export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
-config_file="$(pwd)/.golangci.yml"
-config_file_warn="$(pwd)/.golangci-warn.yml"
-lint_script="$(pwd)/dev/golangci-lint.sh"
+config_file="${base}/.golangci.yml"
+config_file_warn="${base}/.golangci-warn.yml"
+lint_script="${base}/dev/golangci-lint.sh"
 
 run() {
   LINTER_ARG=${1}
@@ -42,6 +42,7 @@ run() {
   OUT=$("$lint_script" --config "$config_file_warn" run "$LINTER_ARG")
   EXIT_CODE_WARN=$?
   set -e
+
   echo -e "$OUT"
 
   if [ $EXIT_CODE_WARN -ne 0 ]; then
