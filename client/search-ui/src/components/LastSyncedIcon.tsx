@@ -21,14 +21,14 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     oneDayAgo.setDate(oneDayAgo.getDate() - 1)
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    let color = 'green'
+    let color = '#17ab52' // Green 400
     let status = `Last synced: ${formattedTime}`
     if (new Date(formattedTime) < oneDayAgo) {
-        color = 'yellow'
+        color = '#ff9933' // Lemon 400
         status = 'Warning: slightly out of date, last synced: ' + formattedTime
     }
     if (new Date(formattedTime) < oneWeekAgo) {
-        color = 'red'
+        color = '#ed2e20' // Vermillion 400
         status = 'Warning: severely out of date, last synced: ' + formattedTime
     }
     return (
