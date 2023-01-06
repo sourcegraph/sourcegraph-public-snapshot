@@ -38,6 +38,11 @@ Each of the deployment types listed below provides a different level of capabili
 
 Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
+
+### [Single-machine install-script](single-node/script.md) 
+
+Quickly install Sourcegraph onto a single Linux machine using our install script.
+
 ### [Machine Images](machine-images/index.md) 
 
 <span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
@@ -50,19 +55,23 @@ Currently available in the following hosts:
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-### [Single-machine install-script](single-node/script.md) 
+### [Kubernetes](kubernetes/index.md)
 
-Quickly install Sourcegraph onto a single Linux machine using our install script.
-
-### [Kubernetes](kubernetes/index.md) or [Kubernetes with Helm](kubernetes/helm.md)
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="kubernetes/kustomize/index"><span>Kustomize</span></a>
+  <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
+</div>
 
 Kubernetes is recommended for non-standard deployments where our Machine Images or install-script is not a viable option.
 
-This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
+We do not recommend this method if you do not have an established infrastructure that is built on Kubernetes.
 
-Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
+There are two ways to deploy Sourcegraph to a Kubernetes cluster:
 
-If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using our other deployments instead.
+- **Kustomize** utilize the built-in feature of the `kubectl` command tool and provides the flexibility to configure your deployment
+- **Helm** provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience
+
+Both paths require extensive Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
 
 ---
 
@@ -74,7 +83,7 @@ For more information, follow the installation and configuration docs for your sp
 
 ## Configuration
 
-Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
+Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. You can find your instance size using the size chart in our [Instance Size docs](instance-size.md). Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
 
 In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
 
@@ -122,3 +131,7 @@ See the following guides to use an external or managed version of each service t
 - Amazon Web Services: [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/), and [S3](https://aws.amazon.com/s3/) for storing user uploads.
 - Google Cloud: [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 - Digital Ocean: [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/), [Redis](https://www.digitalocean.com/products/managed-databases-redis/), and [Spaces](https://www.digitalocean.com/products/spaces/) for storing user uploads.
+
+### ARM / ARM64 support
+
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
