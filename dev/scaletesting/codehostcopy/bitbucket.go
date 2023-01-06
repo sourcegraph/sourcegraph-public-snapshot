@@ -171,16 +171,8 @@ func (bt *BitbucketCodeHost) projectKeyAndNameFrom(name string) (string, string)
 	if len(parts) == 2 {
 		return parts[0], parts[1]
 	}
-	// The name must originate from some other codehost, usually the form is <http|https>://<hostname>/<org>/<repo>.git
-	parts = strings.Split(name, "/")
-	if len(parts) <= 1 {
-		// WHELP, no clue how to deal with this so empty key and repoName
-		return "", ""
-	}
-	// The last two elements should be the org and repo name
-	org := parts[len(parts)-2]
-	repo := strings.TrimRight(parts[len(parts)-1], ".git")
-	return org, repo
+	// The name must originate from some other codehost so now we use the path from the config
+	return bt.def.Path, name
 }
 
 // CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>_-_<repo name>.
