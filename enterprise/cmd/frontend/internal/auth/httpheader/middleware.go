@@ -95,8 +95,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				UserProps: database.NewUser{
 					Username: username,
 					Email:    rawEmail,
-					// This email is coming from an external source, so we can safely assume
-					// that the email is verified elsewhere.
+					// We always only take verified emails from an external source.
 					EmailIsVerified: true,
 				},
 				ExternalAccount: extsvc.AccountSpec{
