@@ -11,10 +11,10 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
@@ -175,11 +175,6 @@ func (b *gcsObjectWriter) Close() error {
 	return errors.Append(b.Flush(), b.c.Close())
 }
 
-type countAndPath struct {
-	documentID int64
-	count      int
-}
-
 func (s *Service) serializeRankingGraphForUpload(
 	ctx context.Context,
 	id int,
@@ -187,35 +182,41 @@ func (s *Service) serializeRankingGraphForUpload(
 	root string,
 	write func(filename string, format string, args ...any) error,
 ) error {
-	localPathLookup := map[string]int64{}
-	definitionIDs := map[precise.ID]countAndPath{}
+	documentsDefiningSymbols := map[string][]int64{}
+	documentsReferencingSymbols := map[string][]int64{}
 
-	if err := s.lsifstore.ScanDocuments(ctx, id, func(path string, ranges map[precise.ID]precise.RangeData) error {
-		id := hash(strings.Join([]string{repo, root, path}, ":"))
-		localPathLookup[path] = id
-		for _, r := range ranges {
-			definitionIDs[r.DefinitionResultID] = countAndPath{id, definitionIDs[r.DefinitionResultID].count + 1}
+	if err := s.lsifstore.ScanDocuments(ctx, id, func(path string, document *scip.Document) error {
+		documentID := hash(strings.Join([]string{repo, root, path}, ":"))
+		documentMonikers := map[string]map[string]struct{}{}
+
+		for _, occurrence := range document.Occurrences {
+			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+				continue
+			}
+
+			if scip.SymbolRole_Definition.Matches(occurrence) {
+				if _, ok := documentMonikers[occurrence.Symbol]; !ok {
+					documentMonikers[occurrence.Symbol] = map[string]struct{}{}
+				}
+				documentMonikers[occurrence.Symbol]["definition"] = struct{}{}
+				documentsDefiningSymbols[occurrence.Symbol] = append(documentsDefiningSymbols[occurrence.Symbol], documentID)
+			} else {
+				if _, ok := documentMonikers[occurrence.Symbol]; !ok {
+					documentMonikers[occurrence.Symbol] = map[string]struct{}{}
+				}
+				documentMonikers[occurrence.Symbol]["reference"] = struct{}{}
+				documentsReferencingSymbols[occurrence.Symbol] = append(documentsReferencingSymbols[occurrence.Symbol], documentID)
+			}
 		}
 
-		return write("documents.csv", "%d,%s,%s\n", id, repo, filepath.Join(root, path))
-	}); err != nil {
-		return err
-	}
+		if err := write("documents.csv", "%d,%s,%s\n", documentID, repo, filepath.Join(root, path)); err != nil {
+			return err
+		}
 
-	if err := s.lsifstore.ScanResultChunks(ctx, id, func(idx int, resultChunk precise.ResultChunkData) error {
-		for id, countAndPath := range definitionIDs {
-			if documentAndRanges, ok := resultChunk.DocumentIDRangeIDs[id]; ok {
-				for _, documentAndRange := range documentAndRanges {
-					pathID, ok := localPathLookup[resultChunk.DocumentPaths[documentAndRange.DocumentID]]
-					if !ok {
-						continue
-					}
-
-					for i := 0; i < countAndPath.count; i++ {
-						if err := write("references.csv", "%d,%d\n", countAndPath.documentID, pathID); err != nil {
-							return err
-						}
-					}
+		for identifier, monikerTypes := range documentMonikers {
+			for monikerType := range monikerTypes {
+				if err := write("monikers.csv", "%d,%s,%s:%s\n", documentID, monikerType, "scip", identifier); err != nil {
+					return err
 				}
 			}
 		}
@@ -225,21 +226,18 @@ func (s *Service) serializeRankingGraphForUpload(
 		return err
 	}
 
-	if err := s.lsifstore.ScanLocations(ctx, id, func(scheme, identifier, monikerType string, locations []precise.LocationData) error {
-		for _, location := range locations {
-			pathID, ok := localPathLookup[location.URI]
-			if !ok {
-				continue
-			}
+	for symbolName, referencingDocumentIDs := range documentsReferencingSymbols {
+		for _, definingDocumentID := range documentsDefiningSymbols[symbolName] {
+			for _, referencingDocumentID := range referencingDocumentIDs {
+				if referencingDocumentID == definingDocumentID {
+					continue
+				}
 
-			if err := write("monikers.csv", "%d,%s,%s:%s\n", pathID, monikerType, scheme, identifier); err != nil {
-				return err
+				if err := write("references.csv", "%d,%d\n", referencingDocumentID, definingDocumentID); err != nil {
+					return err
+				}
 			}
 		}
-
-		return nil
-	}); err != nil {
-		return err
 	}
 
 	if err := write("done", "%s\n", time.Now().Format(time.RFC3339)); err != nil {

@@ -1,9 +1,7 @@
 import { formatRFC3339, subMinutes } from 'date-fns'
-import { of } from 'rxjs'
 
 import { ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { queryExternalServices as _queryExternalServices } from '../components/externalServices/backend'
 import { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
 
 export const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
@@ -69,31 +67,3 @@ export function createWebhookMock(kind: ExternalServiceKind, urn: string): Webho
         },
     }
 }
-
-export const queryExternalServices: typeof _queryExternalServices = () =>
-    of({
-        totalCount: 17,
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        nodes: [
-            createExternalService(ExternalServiceKind.GITHUB, 'https://github.com'),
-            createExternalService(ExternalServiceKind.BITBUCKETCLOUD, 'https://bitbucket.org'),
-            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgdev.bitbucket.org'),
-            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgprod.bitbucket.org'),
-            createExternalService(ExternalServiceKind.GERRIT, 'https://gerrit.com'),
-            createExternalService(ExternalServiceKind.GITLAB, 'https://gitlab.com'),
-            createExternalService(ExternalServiceKind.GITOLITE, 'https://gitolite.com'),
-            createExternalService(ExternalServiceKind.GOMODULES, 'https://gomodules.com'),
-            createExternalService(ExternalServiceKind.JVMPACKAGES, 'https://jvmpackages.com'),
-            createExternalService(ExternalServiceKind.NPMPACKAGES, 'https://npmpackages.com'),
-            createExternalService(ExternalServiceKind.OTHER, 'https://other.com'),
-            createExternalService(ExternalServiceKind.PAGURE, 'https://pagure.com'),
-            createExternalService(ExternalServiceKind.PERFORCE, 'https://perforce.com'),
-            createExternalService(ExternalServiceKind.PHABRICATOR, 'https://phabricator.com'),
-            createExternalService(ExternalServiceKind.PYTHONPACKAGES, 'https://pythonpackages.com'),
-            createExternalService(ExternalServiceKind.RUSTPACKAGES, 'https://rustpackages.com'),
-            createExternalService(ExternalServiceKind.RUBYPACKAGES, 'https://rubypackages.com'),
-        ],
-    })
