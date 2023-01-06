@@ -260,7 +260,7 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 
 	userEmails := e.db.UserEmails()
 	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, email)
-	if err != nil {
+	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
 	if lastSent != nil &&
