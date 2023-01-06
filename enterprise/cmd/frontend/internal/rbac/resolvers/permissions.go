@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -45,6 +46,11 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 	if args.User != nil {
 		userID, err := gql.UnmarshalUserID(*args.User)
 		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: Only viewable for self or by site admins.
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 
