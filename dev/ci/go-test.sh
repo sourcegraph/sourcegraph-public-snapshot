@@ -45,11 +45,17 @@ function go_test() {
 
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then
+    set -x
     echo "~~~ Creating test failures anotation"
     mkdir -p ./annotations
-    # in $base, because we're running this function with a cwd set to where we 
+    # in $base, because we're running this function with a cwd set to where we
     # found the go.mod.
-    sed '0,/=== Failed$/d'<"$tmpfile" >> "${base}/annotations/go-test"
+    ann_out=$(<"${tmpfile}")
+    if [ "${ann_out}" == " " ]; then
+      echo "No annotations available, check for failures above to determine why this failed."
+    else
+      sed '0,/=== Failed$/d' <"${ann_out}" >>"${base}/annotations/go-test"
+    fi
   fi
 
   return "$test_exit_code"
@@ -114,29 +120,29 @@ find . -name go.mod -type f -exec dirname '{}' \; | while read -r d; do
 
   patterns="${FILTER_TARGETS[*]// /\\|}" # replace spaces with \| to have multiple patterns being matched
   case "$FILTER_ACTION" in
-    exclude)
-      TEST_PACKAGES=$(go list ./... | { grep -v "$patterns" || true; }) # -v to reject
-      if [ -n "$TEST_PACKAGES" ]; then
-        echo "+++ $d go test"
-        go_test "$TEST_PACKAGES"
-      else
-        echo "~~~ $d go test (skipping)"
-      fi
-      ;;
-    only)
-      TEST_PACKAGES=$(go list ./... | { grep "$patterns" || true; }) # select only what we need
-      if [ -n "$TEST_PACKAGES" ]; then
-        echo "+++ $d go test"
-        go_test "$TEST_PACKAGES"
-      else
-        echo "~~~ $d go test (skipping)"
-      fi
-      ;;
-    *)
-      TEST_PACKAGES="./..."
+  exclude)
+    TEST_PACKAGES=$(go list ./... | { grep -v "$patterns" || true; }) # -v to reject
+    if [ -n "$TEST_PACKAGES" ]; then
       echo "+++ $d go test"
       go_test "$TEST_PACKAGES"
-      ;;
+    else
+      echo "~~~ $d go test (skipping)"
+    fi
+    ;;
+  only)
+    TEST_PACKAGES=$(go list ./... | { grep "$patterns" || true; }) # select only what we need
+    if [ -n "$TEST_PACKAGES" ]; then
+      echo "+++ $d go test"
+      go_test "$TEST_PACKAGES"
+    else
+      echo "~~~ $d go test (skipping)"
+    fi
+    ;;
+  *)
+    TEST_PACKAGES="./..."
+    echo "+++ $d go test"
+    go_test "$TEST_PACKAGES"
+    ;;
   esac
 
   popd >/dev/null
