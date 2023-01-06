@@ -1442,10 +1442,14 @@ Referenced by:
 ```
      Column      |           Type           | Collation | Nullable | Default 
 -----------------+--------------------------+-----------+----------+---------
- id              | uuid                     |           | not null | 
+ id              | integer                  |           | not null | 1
  license_key     | text                     |           | not null | 
  license_version | integer                  |           | not null | 
  created_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "free_license_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "single_entry" CHECK (id = 1)
 
 ```
 

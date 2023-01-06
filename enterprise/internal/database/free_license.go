@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -79,8 +78,7 @@ func (s *freeLicenseStore) Init(ctx context.Context) (*FreeLicense, error) {
 		license.Version = freeLicense.Version
 	}
 	err = s.Exec(ctx, sqlf.Sprintf(
-		"INSERT INTO free_license (id, license_key, license_version) VALUES (%s, %s, %d)",
-		uuid.New().String(),
+		"INSERT INTO free_license (license_key, license_version) VALUES (%s, %d)",
 		license.LicenseKey,
 		license.Version,
 	))

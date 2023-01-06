@@ -10438,9 +10438,9 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "uuid",
+          "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
+          "Default": "1",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -10475,8 +10475,27 @@
           "Comment": ""
         }
       ],
-      "Indexes": [],
-      "Constraints": null,
+      "Indexes": [
+        {
+          "Name": "free_license_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX free_license_pkey ON free_license USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "single_entry",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (id = 1)"
+        }
+      ],
       "Triggers": []
     },
     {

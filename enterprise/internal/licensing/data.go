@@ -19,10 +19,10 @@ const (
 	// PlanEnterprise1 is the "Enterprise" plan for 4.0.
 	PlanEnterprise1 Plan = "enterprise-1"
 
-	// PlanFree0 is the default plan before February 2023.
+	// PlanFree0 is the default plan before 4.4.
 	PlanFree0 Plan = "free-0"
 
-	// PlanFree1 is the default plan starting in February 2023.
+	// PlanFree1 is the default plan starting in 4.4.
 	PlanFree1 Plan = "free-1"
 )
 

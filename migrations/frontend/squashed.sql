@@ -2120,10 +2120,11 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
 CREATE TABLE free_license (
-    id uuid NOT NULL,
+    id integer DEFAULT 1 NOT NULL,
     license_key text NOT NULL,
     license_version integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT single_entry CHECK ((id = 1))
 );
 
 CREATE TABLE gitserver_relocator_jobs (
@@ -4177,6 +4178,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY free_license
+    ADD CONSTRAINT free_license_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY gitserver_relocator_jobs
     ADD CONSTRAINT gitserver_relocator_jobs_pkey PRIMARY KEY (id);
