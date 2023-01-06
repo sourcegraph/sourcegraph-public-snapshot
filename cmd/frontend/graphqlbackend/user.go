@@ -484,6 +484,12 @@ func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (RoleConne
 	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
 }
 
+func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error) {
+	id := r.ID()
+	args.User = &id
+	return EnterpriseResolvers.rbacResolver.Permissions(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
