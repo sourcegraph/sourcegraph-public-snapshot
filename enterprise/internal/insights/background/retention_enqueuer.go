@@ -21,7 +21,8 @@ func newRetentionEnqueuer(ctx context.Context, observationCtx *observation.Conte
 		24*time.Hour,
 		goroutine.HandlerFunc(
 			func(ctx context.Context) error {
-				seriesArgs := store.GetDataSeriesArgs{ExcludeJustInTime: true}
+				// Only enqueue series with new data.
+				seriesArgs := store.GetDataSeriesArgs{ExcludeJustInTime: true, NextRecordingBefore: time.Now()}
 				allSeries, err := insightStore.GetDataSeries(ctx, seriesArgs)
 				if err != nil {
 					return errors.Wrap(err, "unable to fetch series for retention")
