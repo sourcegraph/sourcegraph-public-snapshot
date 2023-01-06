@@ -30,6 +30,7 @@ func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (graphqlba
 }
 
 func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs) (gql.PermissionConnectionResolver, error) {
+	var err error
 	var opts = database.PermissionListOpts{}
 
 	if args.Role != nil {
@@ -48,6 +49,11 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		}
 
 		opts.UserID = userID
+	}
+
+	opts.LimitOffset, err = args.LimitOffset()
+	if err != nil {
+		return nil, err
 	}
 
 	return &permissionConnectionResolver{

@@ -26,6 +26,7 @@ func (r *Resolver) Role(ctx context.Context, args *gql.RoleArgs) (gql.RoleResolv
 }
 
 func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleConnectionResolver, error) {
+	var err error
 	var opts = database.RolesListOptions{}
 
 	if args.User != nil {
@@ -35,6 +36,11 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleC
 		}
 
 		opts.UserID = userID
+	}
+
+	opts.LimitOffset, err = args.LimitOffset()
+	if err != nil {
+		return nil, err
 	}
 
 	return &roleConnectionResolver{

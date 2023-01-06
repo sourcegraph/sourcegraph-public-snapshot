@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -59,9 +60,33 @@ type ListRoleArgs struct {
 	After *string
 }
 
+func (l ListRoleArgs) LimitOffset() (*database.LimitOffset, error) {
+	limit := &database.LimitOffset{Limit: int(l.First)}
+	if l.After != nil {
+		offset, err := graphqlutil.DecodeIntCursor(l.After)
+		if err != nil {
+			return nil, err
+		}
+		limit.Offset = offset
+	}
+	return limit, nil
+}
+
 type ListPermissionArgs struct {
 	Role  *graphql.ID
 	User  *graphql.ID
 	First int32
 	After *string
+}
+
+func (l ListPermissionArgs) LimitOffset() (*database.LimitOffset, error) {
+	limit := &database.LimitOffset{Limit: int(l.First)}
+	if l.After != nil {
+		offset, err := graphqlutil.DecodeIntCursor(l.After)
+		if err != nil {
+			return nil, err
+		}
+		limit.Offset = offset
+	}
+	return limit, nil
 }
