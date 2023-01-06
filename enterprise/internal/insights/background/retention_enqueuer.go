@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/retention"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -26,11 +24,15 @@ func newRetentionEnqueuer(ctx context.Context, observationCtx *observation.Conte
 				if err != nil {
 					return errors.Wrap(err, "unable to fetch series for retention")
 				}
+				var multi error
 				for _, series := range allSeries {
 					_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{SeriesID: series.ID})
 					if err != nil {
-						observationCtx.Logger.Error("could not enqueue data retention job", log.Int("seriesID", series.ID), log.Error(err))
+						multi = errors.Append(multi, errors.Wrapf(err, "seriesID: %d", series.ID))
 					}
+				}
+				if multi != nil {
+					return multi
 				}
 				return nil
 			}))
