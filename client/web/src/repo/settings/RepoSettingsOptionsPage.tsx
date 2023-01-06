@@ -112,6 +112,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                 excludingLoading={exclusionInProgress}
                                 updateExclusionLoading={updateExclusion}
                                 repo={repo}
+                                redirectAfterExclusion={services.length < 2}
                                 history={history}
                             />
                         ))}

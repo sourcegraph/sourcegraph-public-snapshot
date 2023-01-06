@@ -5,7 +5,7 @@ import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Alert, Button, ErrorAlert, LoadingSpinner, renderError, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, Link, LoadingSpinner, renderError, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceCard } from '../../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -35,6 +35,11 @@ interface ExternalServiceEntryProps extends Pick<RouteComponentProps, 'history'>
      * @param exclusionInProgress true if GraphQL mutation excluding the repo is in progress.
      */
     updateExclusionLoading: (exclusionInProgress: boolean) => void
+    /**
+     * redirectAfterExclusion is true if the redirect to code host page should happen after
+     * GraphQL mutation is finished.
+     */
+    redirectAfterExclusion: boolean
 }
 
 export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
@@ -43,39 +48,50 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
     excludingDisabled,
     excludingLoading,
     updateExclusionLoading,
+    redirectAfterExclusion,
     history,
 }) => {
     const [ttl, setTtl] = useState<number>(3)
+    const mutationOptions = redirectAfterExclusion
+        ? {
+              onCompleted: () => {
+                  let count = 3
+                  setInterval(() => {
+                      if (count === 0) {
+                          history.push(`/site-admin/external-services/${service.id}`)
+                      }
+                      setTtl(count)
+                      count--
+                  }, 700)
+              },
+          }
+        : undefined
     const [excludeRepo, { data, error, loading: isExcluding }] = useMutation<
         ExcludeRepoFromExternalServicesResult,
         ExcludeRepoFromExternalServicesVariables
-    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, {
-        onCompleted: () => {
-            let count = 3
-            setInterval(() => {
-                if (count === 0) {
-                    history.push(`/site-admin/external-services/${service.id}`)
-                }
-                setTtl(count)
-                count--
-            }, 700)
-        },
-    })
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, mutationOptions)
 
     return (
         <div className={styles.grid} key={service.id}>
             <div className={classNames(styles.card, data ? '' : 'mb-3')}>
-                <ExternalServiceCard
-                    {...defaultExternalServices[service.kind]}
-                    kind={service.kind}
-                    title={service.displayName}
-                    shortDescription="Update this code host configuration to manage repository mirroring."
-                    to={`/site-admin/external-services/${service.id}`}
-                    toIcon={null}
-                    bordered={false}
-                />
+                {data && !redirectAfterExclusion ? (
+                    <Alert variant="success">
+                        Code host configuration updated. Please see the updated code host configuration{' '}
+                        <Link to={`/site-admin/external-services/${service.id}`}>here</Link>
+                    </Alert>
+                ) : (
+                    <ExternalServiceCard
+                        {...defaultExternalServices[service.kind]}
+                        kind={service.kind}
+                        title={service.displayName}
+                        shortDescription="Update this code host configuration to manage repository mirroring."
+                        to={`/site-admin/external-services/${service.id}`}
+                        toIcon={null}
+                        bordered={false}
+                    />
+                )}
                 {error && <ErrorAlert error={`Failed to exclude repository: ${renderError(error)}`} />}
-                {data && (
+                {data && redirectAfterExclusion && (
                     <Alert variant="success">
                         {`Code host configuration updated. You will be redirected in ${ttl}...`}
                     </Alert>
