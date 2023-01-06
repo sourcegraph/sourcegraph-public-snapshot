@@ -247,7 +247,7 @@ async function cloneBoards(keys: string[]): Promise<void> {
 }
 
 /**
- * Usage:
+ * Usage from the observability-server package folder:
  * pnpm honeycomb:clone-boards <fromEnvAPIKey> <toEnvAPIKey>
  */
 cloneBoards(process.argv.slice(2)).catch(signale.error)
