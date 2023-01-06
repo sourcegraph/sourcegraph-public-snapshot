@@ -57,7 +57,7 @@ func checkFeature(info *Info, feature Feature) (Feature, error) {
 		}
 		return nil
 	}
-	planFeature := info.Plan().HasFeature(featureTrimmed)
+	planFeature := info.Plan().GetFeature(featureTrimmed)
 	if planFeature == nil {
 		planFeature = hasFeature(featureTrimmed)
 	}

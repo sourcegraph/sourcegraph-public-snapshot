@@ -9,8 +9,9 @@ import (
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
 
-// HasFeature reports whether the plan has the given feature.
-func (p Plan) HasFeature(feature Feature) Feature {
+// GetFeature returns the plan's configured feature.
+// It returns nil if the feature is not configured for the plan.
+func (p Plan) GetFeature(feature Feature) Feature {
 	for _, f := range planFeatures[p] {
 		if feature.FeatureName() == f.FeatureName() {
 			return f
