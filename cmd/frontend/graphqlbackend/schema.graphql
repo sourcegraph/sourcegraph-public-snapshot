@@ -185,7 +185,7 @@ type Mutation {
         """
         username: String!
         """
-        The new user's optional email address. If given, it is marked as verified.
+        The new user's optional email address. If given, it must be verified by the user.
         """
         email: String
     ): CreateUserResult!
@@ -1135,6 +1135,9 @@ type CreateUserResult {
     """
     The reset password URL that the new user must visit to sign into their account. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance and an email was provided, an email
+    containing this URL will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
 }
