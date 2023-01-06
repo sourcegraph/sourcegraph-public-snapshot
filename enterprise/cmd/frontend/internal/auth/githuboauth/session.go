@@ -113,8 +113,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			UserProps: database.NewUser{
 				Username: login,
 
-				// This email is coming from an external source, so we can safely assume
-				// that the email is verified elsewhere.
+				// We always only take verified emails from an external source.
 				Email:           attempt.email,
 				EmailIsVerified: true,
 
