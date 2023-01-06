@@ -31,9 +31,6 @@ func newRetentionEnqueuer(ctx context.Context, observationCtx *observation.Conte
 						multi = errors.Append(multi, errors.Wrapf(err, "seriesID: %d", series.ID))
 					}
 				}
-				if multi != nil {
-					return multi
-				}
-				return nil
+				return multi
 			}))
 }
