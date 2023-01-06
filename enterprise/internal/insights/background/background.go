@@ -109,10 +109,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore))
 	}
 
-	routines = append(
-		routines,
-	)
-
 	return routines
 }
 
