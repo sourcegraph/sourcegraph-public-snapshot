@@ -50,11 +50,18 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
-		// Register the background goroutine which discovers and enqueues insights work.
+		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-		// Register the background goroutine which runs data retention logic
+		// Enqueues series to be picked up by the retention worker.
 		newRetentionEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-		// TODO(slimsag): future: register another worker here for webhook querying.
+		// Emits backend pings based on insights data.
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		// Cleans up soft-deleted insight series.
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		// Checks for Code Insights license and freezes insights if necessary.
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+		// Stamps backfill completion time.
+		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
@@ -104,10 +111,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	routines = append(
 		routines,
-		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
-		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
-		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
-		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	)
 
 	return routines
