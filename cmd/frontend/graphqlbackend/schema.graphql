@@ -1465,9 +1465,30 @@ type Query {
         query: String = ""
     ): Search
     """
-    All saved searches configured for the current user, merged from all configurations.
+    List of saved searches based on namespace
     """
-    savedSearches: [SavedSearch!]!
+    savedSearches(
+        """
+        The namespace to list the saved searches for.
+        """
+        namespace: ID!
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): SavedSearchesConnection!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -2514,6 +2535,26 @@ type SearchAlert {
     "Did you mean: ____" query proposals
     """
     proposedQueries: [SearchQueryDescription!]
+}
+
+"""
+A paginated connection for saved search queries, defined in settings.
+"""
+type SavedSearchesConnection implements Connection {
+    """
+    A list of saved searches.
+    """
+    nodes: [SavedSearch!]!
+
+    """
+    The total number of saved searches in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
 }
 
 """
@@ -8316,4 +8357,39 @@ type SlowRequest {
     The file path referenced by the request, if any.
     """
     filepath: String
+}
+"""
+An object with totalCount and PageInfo.
+"""
+interface Connection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Pagination information.
+"""
+type ConnectionPageInfo {
+    """
+    When paginating forwards, the cursor to continue.
+    """
+    endCursor: String
+    """
+    When paginating forwards, are there more items?
+    """
+    hasNextPage: Boolean!
+    """
+    When paginating backward, the cursor to continue.
+    """
+    startCursor: String
+    """
+    When paginating backward, are there more items?
+    """
+    hasPreviousPage: Boolean!
 }

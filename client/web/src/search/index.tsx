@@ -205,11 +205,6 @@ export function literalSearchCompatibility({ queryInput, patternTypeInput }: Que
     }
 }
 
-export interface HomePanelsProps {
-    /** Function that returns current time (for stability in visual tests). */
-    now?: () => Date
-}
-
 export interface SearchStreamingProps {
     streamSearch: (
         queryObservable: Observable<string>,

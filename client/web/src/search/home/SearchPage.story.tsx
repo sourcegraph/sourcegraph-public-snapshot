@@ -1,10 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
 
-import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
@@ -16,19 +13,6 @@ import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../theme'
-import {
-    HOME_PANELS_QUERY,
-    RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
-    RECENT_FILES_TO_LOAD,
-    RECENT_SEARCHES_TO_LOAD,
-} from '../panels/HomePanels'
-import {
-    authUser,
-    collaboratorsPayload,
-    recentFilesPayload,
-    recentSearchesPayload,
-    savedSearchesPayload,
-} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -45,14 +29,13 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
-    authenticatedUser: authUser,
+    authenticatedUser: null,
     globbing: false,
     platformContext: {} as any,
     searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     isLightTheme: props.isLightTheme,
-    now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })
@@ -60,7 +43,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
 window.context.allowSignup = true
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+    useExperimentalFeatures.setState({ showSearchContext: false })
     return <Story />
 }
 
@@ -77,59 +60,15 @@ const config: Meta = {
 }
 
 export default config
-
-function getMocks({
-    enableSavedSearches,
-    enableCollaborators,
-}: {
-    enableSavedSearches: boolean
-    enableCollaborators: boolean
-}) {
-    return [
-        {
-            request: {
-                query: getDocumentNode(HOME_PANELS_QUERY),
-                variables: {
-                    userId: '0',
-                    firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
-                    firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
-                    firstRecentFiles: RECENT_FILES_TO_LOAD,
-                    enableSavedSearches,
-                    enableCollaborators,
-                },
-            },
-            result: {
-                data: {
-                    node: {
-                        __typename: 'User',
-                        recentlySearchedRepositoriesLogs: recentSearchesPayload(),
-                        recentSearchesLogs: recentSearchesPayload(),
-                        recentFilesLogs: recentFilesPayload(),
-                        collaborators: enableCollaborators ? collaboratorsPayload() : undefined,
-                    },
-                    savedSearches: enableSavedSearches ? savedSearchesPayload() : undefined,
-                },
-            },
-        },
-    ]
-}
-
 export const CloudAuthedHome: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                mocks={getMocks({
-                    enableSavedSearches: false,
-                    enableCollaborators: false,
-                })}
-            >
-                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
 )
 
 CloudAuthedHome.storyName = 'Cloud authenticated home'
+
+export const ServerHome: Story = () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>
+
+ServerHome.storyName = 'Server home'
 
 export const CloudMarketingHome: Story = () => (
     <WebStory>
@@ -142,20 +81,3 @@ export const CloudMarketingHome: Story = () => (
 )
 
 CloudMarketingHome.storyName = 'Cloud marketing home'
-
-export const ServerHome: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                mocks={getMocks({
-                    enableSavedSearches: true,
-                    enableCollaborators: false,
-                })}
-            >
-                <SearchPage {...defaultProps(webProps)} />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-ServerHome.storyName = 'Server home'

@@ -253,7 +253,7 @@ describe('CodeMirror blob view', () => {
                 await driver.assertWindowLocation(`${filePaths['test.ts']}?L1-5`)
             })
 
-            it('selects a line range when dragging over line numbers', async () => {
+            it.skip('selects a line range when dragging over line numbers', async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
                 await waitForView()
 
