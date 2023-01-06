@@ -13,7 +13,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
-    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'email'> | null
+    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null
     className?: string
 }
 
