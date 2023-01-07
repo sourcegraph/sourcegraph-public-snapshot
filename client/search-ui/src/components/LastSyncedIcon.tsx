@@ -14,9 +14,7 @@ interface Props {
 }
 
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const parsedDate = new Date(Date.parse(props.lastSyncedTime)).setDate(
-        new Date(Date.parse(props.lastSyncedTime)).getDate() - 23
-    )
+    const parsedDate = Date.parse(props.lastSyncedTime)
     const formattedTime = format(parsedDate, 'yyyy-MM-dd pp')
     const oneDayAgo = new Date()
     const oneWeekAgo = new Date()
