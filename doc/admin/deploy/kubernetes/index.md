@@ -5,7 +5,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 </p>
 
 <div class="getting-started">
-  <a href="#prerequisites" class="btn btn-primary" alt="Configure">
+  <a href="./kustomize" class="btn btn-primary" alt="Configure">
    <span>Kustomize</span>
    </br>
    Deploy Sourcegraph with simple kubectl commands
@@ -20,8 +20,8 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 <div class="getting-started">
 <a class="btn btn-primary text-center" href="#installation">★ Installation</a>
-<a class="btn text-center" href="configure">Configuration</a>
-<a class="btn text-center" href="../../instance-size">Instance Size</a>
+<a class="btn text-center" href="kustomize/configure">Configuration</a>
+<a class="btn text-center" href="../instance-size">Instance Sizes</a>
 <a class="btn text-center" href="operations">Operations</a>
 </div>
 
@@ -29,7 +29,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 Not sure if Kubernetes is the right choice for you? Learn more about other [Sourcegraph installation options](../index.md).
 
-1. [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
+1. [Sourcegraph Enterprise license](kustomize/configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
 2. A [Kubernetes](https://kubernetes.io/) cluster
    - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
    - [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
@@ -39,14 +39,23 @@ Not sure if Kubernetes is the right choice for you? Learn more about other [Sour
 
 ### Deployment repository
 
-Sourcegraph for Kubernetes is configured using our [deployment repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [set up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes, including the [Kustomize overlays](kustomize/index.md).
+Sourcegraph for Kubernetes is configured using our [deployment repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph deployment on Kubernetes.
 
 Follow our [deployment repository docs](../repositories.md) to create a private copy of the deployment repository.
 
 
 ## Configure
 
-Further [configuration](kustomize/configure.md) might be required in order to deploy Sourcegraph to your cluster (eg. [update storage class](./configure.md#configure-a-storage-class), [configure network access](./configure.md#configure-network-access), [use external PostgreSQL Database](./configure.md#configure-external-databases) or [update resources](./scale.md#tuning-replica-counts-for-horizontal-scalability)). For more information, please read the [configuration guide](kustomize/configure.md) before installing Sourcegraph.
+The default deployment includes the necessary services to start Sourcegraph. It does not includes services or configurations that your cluster needs to run Sourcegraph successfully. As a result, additional [configuration](kustomize/configure.md) might be required in order to deploy Sourcegraph to your Kubernetes cluster successfully.
+Common configurations include:
+
+- Adjust [resources](kustomize/configure.md#resources-adjustment)
+- Create [storage class](kustomize/configure.md#storage-class)
+- Set up [network access](kustomize/configure.md#network-access)
+- Set up an [external PostgreSQL Database](kustomize/configure.md#external-databases)
+- Set up [SSH connection for cloning repositories](kustomize/configure.md##repository-cloning-via-ssh)
+
+For more information, please read the [configuration guide](kustomize/configure.md) before installing Sourcegraph.
 
 ## Quick start
 
@@ -82,7 +91,7 @@ When the status of all Sourcegraph services are shown to be `Running`, it means 
 kubectl port-forward svc/sourcegraph-frontend 3080:30080
 ```
 
-You can access Sourcegraph in your browser at http://localhost:3080 🎉 If [`ingress-controller`](./configure.md#ingress-controller-recommended) is already configured in your cluster, you can also access your Sourcegraph instance through ingress.
+You can access Sourcegraph in your browser at http://localhost:3080 🎉 You can also access your Sourcegraph instance through ingress if an [`ingress-controller`](kustomize/configure.md#ingress-controller) is available in your cluster.
 
 #### Preview resources
 
