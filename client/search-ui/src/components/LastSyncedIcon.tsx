@@ -31,7 +31,7 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     }
     if (parsedDate < oneWeekAgo) {
         color = 'var(--danger)'
-        status = 'Warning: severely out of date, last synced: ' + formattedTime
+        status = 'Warning: severely out of date, last synced: ' + formattedTime + '. Please contact your administrator.'
         icon = mdiCloudAlert
     }
     return (
