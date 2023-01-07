@@ -24,16 +24,16 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     let color = 'currentColor'
     let status = `Last synced: ${formattedTime}`
     let icon = mdiCloudCheckOutline
-    if (parsedDate < oneDayAgo) {
-        color = 'var(--warning)'
-        status = 'Warning: slightly out of date, last synced: ' + formattedTime
-        icon = mdiCloudClock
-    }
     if (parsedDate < oneWeekAgo) {
         color = 'var(--danger)'
         status = 'Warning: severely out of date, last synced: ' + formattedTime + '. Please contact your administrator.'
         icon = mdiCloudAlert
+    } else if (parsedDate < oneDayAgo) {
+        color = 'var(--warning)'
+        status = 'Warning: slightly out of date, last synced: ' + formattedTime
+        icon = mdiCloudClock
     }
+
     return (
         <Tooltip content={status}>
             <Icon
