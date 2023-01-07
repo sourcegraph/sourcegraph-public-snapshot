@@ -25,7 +25,7 @@ components:
 - ../../components/$COMPONENT_NAME
 ```
 
-## Resources
+## Resources adjustment
 
 We recommend setting up your Sourcegraph deployment usisng resouces configured for your [instance size](../../instance-size.md), and then add the `sizes component` for your instance size to your Overlay:
 
@@ -115,15 +115,15 @@ components:
 - ../../config/storage-class
 ```
 
-## Configure network access
+## Network access
 
 You need to make the main web server accessible over the network to external users.
 
 As part of our base configuration, the [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) has ingress installed with the default ingress rules (see comments to restrict it to a specific host).
 
-### Ingress controller (recommended)
+### Ingress controller
 
-For production environments, we recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/).
+We **recommend** using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) production environments.
 
 To utilize the sourcegraph-frontend ingress, you'll need to install a NGINX ingress controller (ingress-nginx) in your cluster by following the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/.
 
@@ -339,19 +339,7 @@ REDIS_STORE_ENDPOINT=<REDIS_STORE_DSN>
 
 Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
 
-### Configure a tracing backend
-
-Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
-
-By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
-
-1. Modify [base/otel-collector/otel-collector.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml). Make the necessary changes to the `exporters` and `service` blocks to connect to your backend as described in the documentation linked above.
-1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml). Update the `command` of the `otel-collector` container to point to the mounted config by changing the flag to `"--config=/etc/otel-collector/conf/config.yaml"`.
-1. Apply the edited `ConfigMap` and `Deployment` manifests.
-
-#### Enable the bundled Jaeger deployment
-
-If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
+@TODO
 
 ## Install without cluster-wide RBAC
 
