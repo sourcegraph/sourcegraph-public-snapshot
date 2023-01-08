@@ -87,7 +87,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
             <PageHeader
                 className="mb-5"
                 path={[
-                    { icon: BarChartIcon, to: '/insights' },
+                    { icon: BarChartIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
                     { text: 'Create', to: backUrl },
                     { text: 'Group results insight' },
                 ]}

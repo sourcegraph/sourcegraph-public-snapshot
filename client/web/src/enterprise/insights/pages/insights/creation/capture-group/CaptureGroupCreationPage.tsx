@@ -76,7 +76,7 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
             <PageHeader
                 className="mb-5"
                 path={[
-                    { icon: CodeInsightsIcon, to: '/insights' },
+                    { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
                     { text: 'Create', to: backUrl },
                     { text: 'Detect and track patterns insight' },
                 ]}
