@@ -6,7 +6,7 @@ import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 const config: Meta = {
-    title: 'search-ui/results/progress/StreamingProgressSkippedPopover',
+    title: 'branded/search-ui/results/progress/StreamingProgressSkippedPopover',
     parameters: {
         design: {
             type: 'figma',

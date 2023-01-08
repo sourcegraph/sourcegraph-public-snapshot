@@ -9,8 +9,8 @@ import {
     IEditor,
     LazyMonacoQueryInput,
     LazyMonacoQueryInputProps,
-} from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
-import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
+} from '@sourcegraph/branded/src/search-ui/input/LazyMonacoQueryInput'
+import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'

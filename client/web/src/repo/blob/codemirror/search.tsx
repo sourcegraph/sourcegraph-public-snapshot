@@ -22,7 +22,7 @@ import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { QueryInputToggle } from '@sourcegraph/search-ui'
+import { QueryInputToggle } from '@sourcegraph/branded/src/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard'

@@ -12,7 +12,6 @@ client/http-client/node_modules
 client/jetbrains/node_modules
 client/observability-client/node_modules
 client/observability-server/node_modules
-client/search-ui/node_modules
 client/shared/node_modules
 client/storybook/node_modules
 client/template-parser/node_modules

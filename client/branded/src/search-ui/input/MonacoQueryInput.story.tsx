@@ -12,7 +12,7 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'search-ui/input/MonacoQueryInput',
+    title: 'branded/search-ui/input/MonacoQueryInput',
     parameters: {
         chromatic: { viewports: [700] },
     },

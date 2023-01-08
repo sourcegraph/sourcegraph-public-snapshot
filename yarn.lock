@@ -5466,12 +5466,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sourcegraph/search-ui@workspace:client/search-ui":
-  version: 0.0.0-use.local
-  resolution: "@sourcegraph/search-ui@workspace:client/search-ui"
-  languageName: unknown
-  linkType: soft
-
 "@sourcegraph/shared@workspace:client/shared":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/shared@workspace:client/shared"

@@ -829,9 +829,6 @@ importers:
   client/observability-server:
     specifiers: {}
 
-  client/search-ui:
-    specifiers: {}
-
   client/shared:
     specifiers: {}
 

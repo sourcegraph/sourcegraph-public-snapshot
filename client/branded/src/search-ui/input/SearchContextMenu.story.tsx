@@ -19,7 +19,7 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'search-ui/input/SearchContextMenu',
+    title: 'branded/search-ui/input/SearchContextMenu',
     parameters: {
         chromatic: { viewports: [500], disableSnapshot: false },
         design: {

@@ -11,7 +11,6 @@ import React, {
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,6 +26,7 @@ import {
     usePopoverContext,
 } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../components/Timestamp'
 import { SyntaxHighlightedSearchQuery } from '../components'
 
 import styles from './SearchHistoryDropdown.module.scss'

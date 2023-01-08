@@ -3,11 +3,12 @@ import React from 'react'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { Link, Code } from '@sourcegraph/wildcard'
+
+import { Timestamp } from '../../components/Timestamp'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import { ResultContainer } from './ResultContainer'
