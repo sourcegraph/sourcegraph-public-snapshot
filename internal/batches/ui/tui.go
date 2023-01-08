@@ -328,7 +328,7 @@ func prettyPrintBatchUnlicensedError(out *output.Output, err error) error {
 				// characters: having automatic wrapping some day would be nice,
 				// but this should be sufficient for now.
 				block := out.Block(output.Line("🪙", output.StyleWarning, "Batch Changes is a paid feature of Sourcegraph. All users can create sample"))
-				block.WriteLine(output.Linef("", output.StyleWarning, "batch changes with up to 5 changesets without a license. Contact Sourcegraph"))
+				block.WriteLine(output.Linef("", output.StyleWarning, "batch changes with up to 10 changesets without a license. Contact Sourcegraph"))
 				block.WriteLine(output.Linef("", output.StyleWarning, "sales at %shttps://about.sourcegraph.com/contact/sales/%s to obtain a trial", output.StyleSearchLink, output.StyleWarning))
 				block.WriteLine(output.Linef("", output.StyleWarning, "license."))
 				block.Write("")
