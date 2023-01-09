@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL API now supports listing single-file commit history across renames (with `GitCommit.ancestors(follow: true, path: "<some-path>")`). [#45882](https://github.com/sourcegraph/sourcegraph/pull/45882)
 - Added support for receiving Bitbucket Cloud webhook `push` events. [#45960](https://github.com/sourcegraph/sourcegraph/pull/45960)
 - Added a way to test code host connection from the `Manage code hosts` page. [#45972](https://github.com/sourcegraph/sourcegraph/pull/45972)
+- Updates to the site configuration from the site admin panel will now also record the user id of the author in the database in the `critical_and_site_config.author_user_id` column. [#46150](https://github.com/sourcegraph/sourcegraph/pull/46150)
 
 ### Changed
 
