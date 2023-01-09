@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
 import {
     SeriesDisplayOptionsInput,
@@ -167,6 +167,21 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     >
                         {insight.title}
                     </Link>
+                }
+                subtitle={
+                    isFetchingHistoricalData && (
+                        <Text size="small" className="text-muted">
+                            Datapoints shown may be undercounted.{' '}
+                            <Link
+                                to="/help/code_insights/explanations/current_limitations_of_code_insights#performance-speed-considerations-for-a-data-series-running-over-all-repositories"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Processing
+                            </Link>{' '}
+                            time may vary depending on the insight’s scope.
+                        </Text>
+                    )
                 }
             >
                 {isVisible && (
