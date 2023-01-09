@@ -432,6 +432,12 @@
     :why: Used by the `eslint-plugin-jsx-a11y` dependency.
     :versions: []
     :when: 2023-01-09 04:55:27.641853000 Z
+- - :ignore
+  - language-subtag-registry
+  - :who:
+    :why: Used by the `eslint-plugin-jsx-a11y` dependency.
+    :versions: []
+    :when: 2023-01-09 04:55:27.641853000 Z
 - - :license
   - skatejs-template-html
   - MIT
