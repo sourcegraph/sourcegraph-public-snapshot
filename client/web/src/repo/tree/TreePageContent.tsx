@@ -395,6 +395,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         emptyElement={emptyElement}
                         totalCountSummaryComponent={TotalCountSummary}
                         loaderClassName={contributorsStyles.filteredConnectionLoading}
+                        showMoreClassName="mb-0"
                         summaryClassName={contributorsStyles.filteredConnectionSummary}
                     />
                 </Card>
@@ -534,19 +535,18 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
                     <ConnectionLoading />
                 </div>
             )}
-            <SummaryContainer>
+            <SummaryContainer className={styles.contributorsSummary}>
                 {connection && (
-                    <div className="pl-2">
-                        <ConnectionSummary
-                            connection={connection}
-                            first={BATCH_COUNT}
-                            noun="contributor"
-                            pluralNoun="contributors"
-                            hasNextPage={hasNextPage}
-                        />
-                    </div>
+                    <ConnectionSummary
+                        compact={true}
+                        connection={connection}
+                        first={BATCH_COUNT}
+                        noun="contributor"
+                        pluralNoun="contributors"
+                        hasNextPage={hasNextPage}
+                    />
                 )}
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                {hasNextPage && <ShowMoreButton className="m-0 p-1 border-0" onClick={fetchMore} />}
             </SummaryContainer>
         </ConnectionContainer>
     )
