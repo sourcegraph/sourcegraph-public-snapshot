@@ -36,6 +36,9 @@ func Check(feature Feature) error {
 	return checkFeature(info, feature)
 }
 
+// Returns whether or not the target feature is activated based on the current license.
+// If the target parameter is a pointer, the plan's configured feature will be written
+// to the target.
 func FeatureAs(target Feature) bool {
 	if MockFeatureAs != nil {
 		return MockFeatureAs(target)
