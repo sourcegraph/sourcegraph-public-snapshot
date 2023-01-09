@@ -2535,6 +2535,12 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				if !errors.Is(err, ratelimit.ErrBlockAll) {
 					s.Logger.Error("performing background repo update", log.Error(err))
 				}
+
+				// The repo update might have failed due to the repo being corrupt
+				var gitErr *GitCommandError
+				if errors.As(err, &gitErr) {
+					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
+				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
