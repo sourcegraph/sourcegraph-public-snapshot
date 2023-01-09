@@ -3,7 +3,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 
-import { PlatformContext } from '../../platform/context'
+import type { PlatformContext } from '../../platform/context'
 import {
     fetchSearchContexts,
     getUserSearchContextNamespaces,

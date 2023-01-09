@@ -57,12 +57,6 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
-            name: 'zustand',
-            importNames: ['default'],
-            message:
-              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
-          },
-          {
             name: 'chromatic/isChromatic',
             message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
           },

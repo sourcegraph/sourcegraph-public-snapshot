@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -14,55 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestAutoDefinedSearchContexts(t *testing.T) {
-	t.Run("Auto defined search contexts for user without organizations connected to repositories", func(t *testing.T) {
-		key := int32(1)
-		username := "alice"
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		users := database.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
-
-		orgs := database.NewMockOrgStore()
-
-		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-
-		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []graphqlbackend.SearchContextResolver{
-			&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
-			&searchContextResolver{sc: searchcontexts.GetUserSearchContext(key, username), db: db},
-		}
-		if !reflect.DeepEqual(searchContexts, want) {
-			t.Fatalf("got %+v, want %+v", searchContexts, want)
-		}
-
-		for _, resolver := range searchContexts {
-			repositories, err := resolver.Repositories(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(repositories) != 0 {
-				t.Fatal("auto-defined search contexts should not return repositories")
-			}
-		}
-
-		mockrequire.Called(t, users.GetByIDFunc)
-	})
-}
 
 func TestSearchContexts(t *testing.T) {
 	t.Parallel()

@@ -34,18 +34,6 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/.eslintrc.json',
                         },
                     ]}
-                    fileDecorationsByPath={{
-                        src: [
-                            { uri: 'git://github.com/test/test?branch#src', after: { contentText: 'src decoration' } },
-                        ],
-                        testdata: [
-                            {
-                                uri: 'git://github.com/test/test?branch#testdata',
-                                after: { contentText: 'testdata decoration' },
-                            },
-                        ],
-                    }}
-                    isLightTheme={true}
                 />
             ).asFragment()
         ).toMatchSnapshot()
@@ -81,28 +69,6 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/src/helpers.ts',
                         },
                     ]}
-                    fileDecorationsByPath={{
-                        'src/testutils': [
-                            {
-                                uri: 'git://github.com/test/test?branch#src/testutils',
-                                after: { contentText: 'testutils decoration' },
-                            },
-                        ],
-                        'src/typings': [
-                            {
-                                uri: 'git://github.com/test/test?branch#src/typings',
-                                after: { contentText: 'typings decoration' },
-                            },
-                        ],
-                        'src/errors.ts': [
-                            {
-                                uri: 'git://github.com/test/test?branch#src/errors.ts',
-                                where: 'sidebar',
-                                after: { contentText: 'errors decoration' },
-                            }, // This shouldn't be rendered
-                        ],
-                    }}
-                    isLightTheme={true}
                 />
             ).asFragment()
         ).toMatchSnapshot()
@@ -144,21 +110,6 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/vanadium/core/-/blob/x/ref/envvar.go',
                         },
                     ]}
-                    fileDecorationsByPath={{
-                        'x/ref': [
-                            {
-                                uri: 'git://github.com/test/test?branch#x/ref',
-                                after: { contentText: 'ref decoration' },
-                            },
-                        ],
-                        'x/ref/cmd': [
-                            {
-                                uri: 'git://github.com/test/test?branch#x/ref/cmd',
-                                after: { contentText: 'cmd decoration' },
-                            },
-                        ],
-                    }}
-                    isLightTheme={true}
                 />
             ).asFragment()
         ).toMatchSnapshot()

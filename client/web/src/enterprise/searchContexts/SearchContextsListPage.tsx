@@ -4,6 +4,7 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -42,7 +43,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                             </Button>
                             {isSourcegraphDotCom && (
                                 <Button
-                                    to="https://signup.sourcegraph.com/?p=context"
+                                    to={buildCloudTrialURL(authenticatedUser, 'context')}
                                     className="mt-2"
                                     as={Link}
                                     variant="secondary"

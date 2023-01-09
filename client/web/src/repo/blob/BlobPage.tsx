@@ -23,7 +23,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -47,6 +47,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
+import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
@@ -91,7 +92,8 @@ interface BlobPageProps
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'> {
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
+        NotebookProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -118,28 +120,14 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
     const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
 
-    // Before we introduced experimentaFeatures.codeNavigation='link-driven', we
-    // used a non-experimental name codeIntel.blobKeyboardNavigation='token',
-    // which was a mistake because the feature was very experimental in nature.
-    // To correct the mistake, we moved the setting under 'experimentalFeatures'
-    // and updated the description of 'codeIntel.blobKeyboardNavigation' to say
-    // it has moved to experimentaFeatures.codeNavigation='link-driven'.
-    const isLegacyLinkDrivenFeatureFlagEnabled =
-        props.codeIntelligenceEnabled &&
-        isSettingsValid(props.settingsCascade) &&
-        props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
     const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
-    const enableLinkDrivenCodeNavigation =
-        !enableSelectionDrivenCodeNavigation &&
-        (isLegacyLinkDrivenFeatureFlagEnabled || experimentalCodeNavigation === 'link-driven')
+    const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(props.location.search, props.location.hash),
@@ -344,7 +332,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         blobInfoOrError &&
             !isErrorLike(blobInfoOrError) &&
             blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-            showSearchNotebook
+            props.notebooksEnabled
     )
 
     const onCopyNotebook = useCallback(
@@ -516,7 +504,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         {...props}
                         markdown={blobInfoOrError.content}
                         onCopyNotebook={onCopyNotebook}
-                        showSearchContext={showSearchContext}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
                     />
@@ -563,7 +550,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
                         location={props.location}
-                        disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}

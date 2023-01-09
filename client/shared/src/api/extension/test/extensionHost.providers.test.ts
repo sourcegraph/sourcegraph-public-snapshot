@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { DocumentHighlight, Hover } from 'sourcegraph'
 
 import { fromHoverMerged, HoverMerged, TextDocumentIdentifier } from '@sourcegraph/client-api'
 import { LOADING } from '@sourcegraph/codeintellify'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 
+import type { Hover, DocumentHighlight } from '../../../codeintel/legacy-extensions/api'
 import { callProviders, mergeProviderResults, providersForDocument, RegisteredProvider } from '../extensionHostApi'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))

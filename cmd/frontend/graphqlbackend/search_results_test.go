@@ -239,20 +239,16 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			for _, globbing := range []bool{true, false} {
-				globbing := globbing // avoid a reference to the loop variable
-				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
-				actualDynamicFilterStrs := make(map[string]int)
+			actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+			actualDynamicFilterStrs := make(map[string]int)
 
-				for _, filter := range actualDynamicFilters {
-					actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
-				}
+			for _, filter := range actualDynamicFilters {
+				actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
+			}
 
-				expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
-				if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
-					t.Errorf("mismatch (-want, +got):\n%s", diff)
-				}
+			expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
+			if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}

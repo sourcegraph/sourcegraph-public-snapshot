@@ -3,7 +3,7 @@ import React, { FunctionComponent, ReactNode, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { formatDistance } from 'date-fns/esm'
+import { formatDistance } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'

@@ -131,10 +131,20 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 	}
 	group := groups[0]
 
-	project, _, err := g.c.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name:        gitlab.String(name),
-		NamespaceID: &group.ID,
-	})
+	var resp *gitlab.Response
+	var project *gitlab.Project
+	err = nil
+	retries := 0
+	for resp == nil || resp.StatusCode >= 500 {
+		project, resp, err = g.c.Projects.CreateProject(&gitlab.CreateProjectOptions{
+			Name:        gitlab.String(name),
+			NamespaceID: &group.ID,
+		})
+		retries++
+		if retries == 3 && project == nil {
+			return nil, errors.Wrapf(err, "Exceeded retry limit while creating repo")
+		}
+	}
 	if err != nil && strings.Contains(err.Error(), "has already been taken") {
 		// state does not match reality, get existing repo
 		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Name, name), &gitlab.GetProjectOptions{})

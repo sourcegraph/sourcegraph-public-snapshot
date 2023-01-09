@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
+import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -67,7 +67,8 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                        Actions
+                        <Icon aria-hidden={true} data-caret={true} className="ml-1" svgPath={mdiChevronDown} />
                     </MenuButton>
                     <MenuList tabIndex={0} position={Position.bottomEnd} aria-label="Search Actions. Open menu">
                         {resultsFound && (

@@ -3,7 +3,7 @@ import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { WebStory } from '../../../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
 
-import { EmptyInsightDashboard } from './EmptyInsightDashboard'
+import { EmptyCustomDashboard } from './EmptyInsightDashboard'
 
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
@@ -27,7 +27,7 @@ export const EmptyInsightDashboardStory: Story = () => {
         owners: [{ type: InsightsDashboardOwnerType.Personal, id: '101', title: 'Personal ' }],
     }
 
-    return <EmptyInsightDashboard dashboard={dashboard} />
+    return <EmptyCustomDashboard dashboard={dashboard} />
 }
 
 EmptyInsightDashboardStory.storyName = 'EmptyInsightDashboard'

@@ -93,6 +93,11 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		if opts.GrafanaFolder != "" {
 			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
 
+			// we also use the name for the UID
+			if err := grafana.ValidateUID(opts.GrafanaFolder); err != nil {
+				return errors.Wrapf(err, "Grafana folder name %q does not make a valid UID", opts.GrafanaFolder)
+			}
+
 			// try to find existing folder
 			if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
 				gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))

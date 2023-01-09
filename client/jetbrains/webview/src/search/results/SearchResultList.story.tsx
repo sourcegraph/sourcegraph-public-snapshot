@@ -6,7 +6,7 @@ import { useDarkMode } from 'storybook-dark-mode'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-import { usePrependStyles } from '@sourcegraph/storybook'
+import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'

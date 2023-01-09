@@ -10,10 +10,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -85,7 +87,7 @@ func Main() {
 
 	// Initialize sub-repo permissions client
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}

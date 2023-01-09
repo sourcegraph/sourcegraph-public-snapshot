@@ -1,7 +1,7 @@
 /* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
 import * as React from 'react'
 
-import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
+import { merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -15,16 +15,12 @@ import {
 } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
@@ -40,7 +36,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+export interface TreeRootProps extends AbsoluteRepo, TelemetryProps {
     activeNode: TreeNode
     activePath: string
     depth: number
@@ -63,7 +59,6 @@ export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, 
 const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
-    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
@@ -81,9 +76,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             path: '',
             url: '',
         }
-        this.state = {
-            fileDecorationsByPath: {},
-        }
+        this.state = {}
     }
 
     public componentDidMount(): void {
@@ -112,31 +105,10 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.subscriptions.add(
             treeOrErrors.subscribe(
                 treeOrError => {
-                    // clear file decorations before latest file decorations come
-                    this.setState({ treeOrError, fileDecorationsByPath: {} })
+                    this.setState({ treeOrError })
                 },
                 error => logger.error(error)
             )
-        )
-
-        this.subscriptions.add(
-            treeOrErrors
-                .pipe(
-                    switchMap(treeOrError =>
-                        treeOrError !== 'loading' && !isErrorLike(treeOrError)
-                            ? getFileDecorations({
-                                  files: treeOrError.entries,
-                                  repoName: this.props.repoName,
-                                  commitID: this.props.commitID,
-                                  extensionsController: this.props.extensionsController,
-                                  parentNodeUri: treeOrError.url,
-                              })
-                            : EMPTY
-                    )
-                )
-                .subscribe(fileDecorationsByPath => {
-                    this.setState({ fileDecorationsByPath })
-                })
         )
 
         // This handles pre-fetching when a user
@@ -228,7 +200,6 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                     childrenEntries={singleChildTreeEntry.children}
                                                     onHover={this.fetchChildContents}
                                                     setChildNodes={this.setChildNode}
-                                                    fileDecorationsByPath={this.state.fileDecorationsByPath}
                                                     enableMergedFileSymbolSidebar={
                                                         this.props.enableMergedFileSymbolSidebar
                                                     }

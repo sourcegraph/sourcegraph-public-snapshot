@@ -10,9 +10,9 @@ import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
-import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
@@ -20,7 +20,6 @@ import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboard
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { HomePanels } from '../panels/HomePanels'
 
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -36,7 +35,6 @@ export interface SearchPageProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
         SearchContextInputProps,
-        HomePanelsProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -52,7 +50,6 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
-    const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
@@ -74,7 +71,10 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         Search millions of open source repositories
                     </div>
                     <div className="mt-3">
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                        <Link
+                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
                             Search private code
                         </Link>
                     </div>
@@ -108,21 +108,16 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                <>
-                    {showEnterpriseHomePanels && !!props.authenticatedUser && !props.isSourcegraphDotCom && (
-                        <HomePanels showCollaborators={showCollaborators} {...props} />
-                    )}
-
-                    {((!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom) && (
-                        <QueryExamplesHomepage
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            telemetryService={props.telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
-                    )}
-                </>
+                {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
+                    <QueryExamplesHomepage
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        authenticatedUser={props.authenticatedUser}
+                    />
+                )}
             </div>
 
             <SearchPageFooter {...props} />

@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"os"
+	"fmt"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -26,16 +25,38 @@ func newJob(name string, exit int) *Job {
 }
 
 func TestLargeAmountOfFailures(t *testing.T) {
-	f, err := os.Open("testdata/build_golden.json")
-	if err != nil {
-		t.Fatalf("failed to read build.json: %s", err)
+	num := 160000
+	commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
+	url := "http://www.google.com"
+	pipelineID := "sourcegraph"
+	msg := "Large amount of failures test"
+	build := Build{
+		Build: buildkite.Build{
+			Message: &msg,
+			WebURL:  &url,
+			Creator: &buildkite.Creator{
+				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			},
+			Pipeline: &buildkite.Pipeline{
+				ID:   &pipelineID,
+				Name: &pipelineID,
+			},
+			Author: &buildkite.Author{
+				Name:  "William Bezuidenhout",
+				Email: "william.bezuidenhout@sourcegraph.com",
+			},
+			Number: &num,
+			URL:    &url,
+			Commit: &commit,
+		},
+		Pipeline: &Pipeline{buildkite.Pipeline{
+			Name: &pipelineID,
+		}},
+		Jobs: map[string]Job{},
 	}
-	defer f.Close()
-
-	goldenBuild := buildkite.Build{}
-
-	if err := json.NewDecoder(f).Decode(&goldenBuild); err != nil {
-		t.Fatalf("failed to decode build json: %s", err)
+	for i := 1; i <= 30; i++ {
+		job := *newJob(fmt.Sprintf("%d fake step", i), i)
+		build.Jobs[job.name()] = job
 	}
 
 	flag.Parse()
@@ -51,23 +72,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 
 	client := NewNotificationClient(logger, conf.SlackToken, conf.GithubToken, DefaultChannel)
 
-	pipelineID := "sourcegraph"
-	jobs := make(map[string]Job)
-
-	for _, j := range goldenBuild.Jobs {
-		job := Job{*j}
-		jobs[job.name()] = job
-	}
-
-	err = client.sendFailedBuild(
-		&Build{
-			Build: goldenBuild,
-			Pipeline: &Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
-			}},
-			Jobs: jobs,
-		},
-	)
+	err = client.sendFailedBuild(&build)
 	if err != nil {
 		t.Fatalf("failed to send build: %s", err)
 	}

@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -29,10 +29,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
+import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -48,7 +48,7 @@ import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
-import { HomePanelsProps, parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
+import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -69,7 +69,6 @@ export interface LayoutProps
         ExtensionsControllerProps,
         TelemetryProps,
         SearchContextProps,
-        HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
         BatchChangesProps,
@@ -128,6 +127,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
+    const userHistory = useUserHistory(props.history, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -172,22 +172,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     //     setTosAccepted(true)
     // }, [])
 
-    useEffect(() => {
-        if (
-            props.isSourcegraphDotCom &&
-            props.authenticatedUser &&
-            !document.cookie.includes('displayName=' || 'email=')
-        ) {
-            const tomorrow = new Date(Date.now() + 86400 * 1000).toUTCString()
-            // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `displayName=${
-                props.authenticatedUser.displayName || ''
-            }; expires=${tomorrow}; domain=.sourcegraph.com`
-            // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `email=${props.authenticatedUser.email}; expires=${tomorrow}; domain=.sourcegraph.com`
-        }
-    }, [props.authenticatedUser, props.isSourcegraphDotCom])
-
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -217,7 +201,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     onSubmit={handleSubmitFeedback}
                     modal={true}
                     openByDefault={true}
-                    authenticatedUser={props.authenticatedUser}
+                    authenticatedUser={
+                        props.authenticatedUser
+                            ? {
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
+                            : null
+                    }
                     onClose={() => setFeedbackModalOpen(false)}
                 />
             )}
@@ -300,9 +291,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            {props.extensionsController !== null ? (
-                <GlobalDebug {...props} extensionsController={props.extensionsController} />
-            ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
@@ -315,6 +303,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    userHistory={userHistory}
                 />
             )}
         </div>

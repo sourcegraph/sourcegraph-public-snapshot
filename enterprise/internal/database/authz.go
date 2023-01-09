@@ -16,10 +16,11 @@ import (
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
 func NewAuthzStore(logger log.Logger, db database.DB, clock func() time.Time) database.AuthzStore {
+	enterpriseDB := NewEnterpriseDB(db)
 	return &authzStore{
 		logger:   logger,
-		store:    Perms(logger, db, clock),
-		srpStore: database.SubRepoPermsWith(basestore.NewWithHandle(db.Handle())),
+		store:    Perms(logger, enterpriseDB, clock),
+		srpStore: enterpriseDB.SubRepoPerms(),
 	}
 }
 
@@ -27,14 +28,14 @@ func NewAuthzStoreWith(logger log.Logger, other basestore.ShareableStore, clock 
 	return &authzStore{
 		logger:   logger,
 		store:    PermsWith(logger, other, clock),
-		srpStore: database.SubRepoPermsWith(other),
+		srpStore: SubRepoPermsWith(other),
 	}
 }
 
 type authzStore struct {
 	logger   log.Logger
 	store    PermsStore
-	srpStore database.SubRepoPermsStore
+	srpStore SubRepoPermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.

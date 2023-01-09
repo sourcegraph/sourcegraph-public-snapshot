@@ -33,6 +33,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
+import { NotebookProps } from '../notebooks'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
 import { RouteDescriptor } from '../util/contributions'
@@ -115,7 +116,8 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        NotebookProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]

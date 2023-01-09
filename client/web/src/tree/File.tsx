@@ -7,12 +7,10 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
@@ -31,7 +29,6 @@ import {
     TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
-import { FileDecorator } from './FileDecorator'
 import { useTreeRootContext } from './TreeContext'
 import { TreeLayerProps } from './TreeLayer'
 import { TreeEntryInfo, getTreeItemOffset } from './util'
@@ -39,8 +36,7 @@ import { TreeEntryInfo, getTreeItemOffset } from './util'
 import styles from './File.module.scss'
 import treeStyles from './Tree.module.scss'
 
-interface FileProps extends ThemeProps {
-    fileDecorations?: FileDecoration[]
+interface FileProps {
     entryInfo: TreeEntryInfo
     depth: number
     index: number
@@ -64,8 +60,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         entryInfo,
         linkRowClick,
         noopRowClick,
-        fileDecorations,
-        isLightTheme,
         depth,
         index,
         enableMergedFileSymbolSidebar,
@@ -77,15 +71,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         features => features.enableSidebarFilePrefetch ?? false
     )
     const prefetchBlobFormat = usePrefetchBlobFormat()
-
-    const renderedFileDecorations = (
-        <FileDecorator
-            // If component is not specified, or it is 'sidebar', render it.
-            fileDecorations={fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-            isLightTheme={isLightTheme}
-            isActive={isActive}
-        />
-    )
 
     const offsetStyle = getTreeItemOffset(depth)
 
@@ -110,7 +95,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     <TreeRowLabel className="test-file-decorable-name">
                                         {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
-                                    {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContentsLink>
                         ) : (
@@ -122,7 +106,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     <TreeRowLabel className="test-file-decorable-name">
                                         {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
-                                    {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContents>
                         )
@@ -159,7 +142,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">{entryInfo.name}</TreeRowLabel>
-                                {renderedFileDecorations}
                             </TreeLayerRowContentsText>
                         </PrefetchableFile>
                     )}

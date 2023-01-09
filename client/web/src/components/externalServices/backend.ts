@@ -1,9 +1,9 @@
-import { MutationTuple } from '@apollo/client'
+import { QueryTuple, MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -17,6 +17,8 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
+    ExternalServiceCheckConnectionByIdVariables,
+    ExternalServiceCheckConnectionByIdResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
@@ -124,7 +126,81 @@ export async function deleteExternalService(externalService: Scalars['ID']): Pro
     dataOrThrowErrors(result)
 }
 
-export const listExternalServiceFragment = gql`
+export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
+    query ExternalServiceCheckConnectionById($id: ID!) {
+        node(id: $id) {
+            __typename
+            ... on ExternalService {
+                id
+                hasConnectionCheck
+                checkConnection {
+                    __typename
+                    ... on ExternalServiceUnavailable {
+                        suspectedReason
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const useExternalServiceCheckConnectionByIdLazyQuery = (
+    id: string
+): QueryTuple<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables> =>
+    useLazyQuery<ExternalServiceCheckConnectionByIdResult, ExternalServiceCheckConnectionByIdVariables>(
+        EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID,
+        {
+            variables: { id },
+        }
+    )
+
+const EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT = gql`
+    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
+        __typename
+        id
+        state
+        startedAt
+        finishedAt
+        failureMessage
+        reposSynced
+        repoSyncErrors
+        reposAdded
+        reposDeleted
+        reposModified
+        reposUnmodified
+    }
+`
+
+const EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT}
+    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ExternalServiceSyncJobListFields
+        }
+    }
+`
+
+export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
+    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
+        node(id: $externalService) {
+            __typename
+            ... on ExternalService {
+                syncJobs(first: $first) {
+                    ...ExternalServiceSyncJobConnectionFields
+                }
+            }
+        }
+    }
+`
+
+const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
         kind
@@ -138,6 +214,10 @@ export const listExternalServiceFragment = gql`
         updatedAt
         createdAt
         webhookURL
+        hasConnectionCheck
+        syncJobs(first: 1) {
+            ...ExternalServiceSyncJobConnectionFields
+        }
     }
 `
 export const EXTERNAL_SERVICES = gql`
@@ -154,7 +234,7 @@ export const EXTERNAL_SERVICES = gql`
         }
     }
 
-    ${listExternalServiceFragment}
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
 `
 
 export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
@@ -209,45 +289,6 @@ export function useCancelExternalServiceSync(): MutationTuple<
         CANCEL_EXTERNAL_SERVICE_SYNC
     )
 }
-
-export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
-    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
-        node(id: $externalService) {
-            __typename
-            ... on ExternalService {
-                syncJobs(first: $first) {
-                    ...ExternalServiceSyncJobConnectionFields
-                }
-            }
-        }
-    }
-
-    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
-        totalCount
-        pageInfo {
-            endCursor
-            hasNextPage
-        }
-        nodes {
-            ...ExternalServiceSyncJobListFields
-        }
-    }
-
-    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
-        __typename
-        id
-        state
-        startedAt
-        finishedAt
-        failureMessage
-        reposSynced
-        repoSyncErrors
-        reposAdded
-        reposDeleted
-        reposModified
-        reposUnmodified
-    }
-`
 
 export function queryExternalServiceSyncJobs(
     variables: ExternalServiceSyncJobsVariables
