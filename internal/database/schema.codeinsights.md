@@ -26,6 +26,8 @@ Foreign-key constraints:
  capture               | text                     |           |          | 
 Check constraints:
     "check_repo_fields_specifity" CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)
+Foreign-key constraints:
+    "insight_series_series_id_fkey" FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE
 
 ```
 
@@ -202,6 +204,7 @@ Referenced by:
     TABLE "archived_insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_incomplete_points" CONSTRAINT "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "archived_series_points" CONSTRAINT "insight_series_series_id_fkey" FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```

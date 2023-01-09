@@ -759,6 +759,9 @@ ALTER TABLE ONLY archived_insight_series_recording_times
 ALTER TABLE ONLY insight_series_incomplete_points
     ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY archived_series_points
+    ADD CONSTRAINT insight_series_series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
