@@ -1,13 +1,16 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
+import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
-import { useQuery } from '@sourcegraph/http-client'
-import { Container, ErrorAlert, H2, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    ExcludeRepoFromExternalServicesResult,
+    ExcludeRepoFromExternalServicesVariables,
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
@@ -17,8 +20,11 @@ import {
 import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
+import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ExternalServiceEntry } from './components/ExternalServiceEntry'
+import { RedirectionAlert } from './components/RedirectionAlert'
+
+import styles from './RepoSettingsOptionsPage.module.scss'
 
 interface Props extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
@@ -37,8 +43,11 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
         { variables: { name: repo.name } }
     )
 
+    // This state shows that any of possible "exclude" buttons (in this or child components) were pushed.
+    // It is used to disable all the "exclude" buttons except the button which was actually clicked.
     const [exclusionInProgress, setExclusionInProgress] = useState<boolean>(false)
 
+    // Callback used in child components (ExternalServiceEntry) to update the state in current component.
     const updateExclusion = useCallback((updatedExclusionState: boolean) => {
         setExclusionInProgress(updatedExclusionState)
     }, [])
@@ -49,6 +58,11 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
         SiteExternalServiceConfigResult,
         SiteExternalServiceConfigVariables
     >(SITE_EXTERNAL_SERVICE_CONFIG, {})
+
+    const [excludeRepo, { data: excludeData, error: excludeError, loading: isExcluding }] = useMutation<
+        ExcludeRepoFromExternalServicesResult,
+        ExcludeRepoFromExternalServicesVariables
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES)
 
     const excludingDisabled =
         (!siteConfigError &&
@@ -76,17 +90,55 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                 excludingLoading={exclusionInProgress}
                                 updateExclusionLoading={updateExclusion}
                                 repo={repo}
+                                redirectAfterExclusion={services.length < 2}
                                 history={history}
                             />
                         ))}
                         {services.length > 1 && (
                             <>
-                                <Text className="text-muted">
-                                    This repository is mirrored from multiple code hosts. To remove the repository from
-                                    this Sourcegraph instance, all code host configurations need to be updated.
+                                <Text>
+                                    This repository is mirrored by multiple code hosts. To change access, disable, or
+                                    remove this repository, the configuration must be updated on all code hosts.
                                 </Text>
+                                <Button
+                                    variant="primary"
+                                    className={styles.button}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        setExclusionInProgress(true)
+                                        excludeRepo({
+                                            variables: {
+                                                externalServices: services.map(svc => svc.id),
+                                                repo: repo.id,
+                                            },
+                                        })
+                                            .catch(
+                                                // noop here is used because update error is handled directly when useMutation is called
+                                                noop
+                                            )
+                                            .finally(() => {
+                                                setExclusionInProgress(false)
+                                            })
+                                    }}
+                                    disabled={excludingDisabled || (exclusionInProgress && !isExcluding)}
+                                >
+                                    <span className={exclusionInProgress ? styles.invisibleText : ''}>
+                                        Exclude repository from all code hosts
+                                    </span>
+                                    {exclusionInProgress && <LoadingSpinner className={styles.loader} />}
+                                </Button>
+                                {excludeError && (
+                                    <ErrorAlert error={`Failed to exclude repository: ${renderError(excludeError)}`} />
+                                )}
+                                {excludeData && (
+                                    <RedirectionAlert
+                                        to="/site-admin/external-services"
+                                        messagePrefix="Code host configurations updated."
+                                        className="mt-2"
+                                    />
+                                )}
                             </>
-                        )}
+                        )}{' '}
                     </div>
                 )}
             </Container>

@@ -6,8 +6,8 @@ import { useDarkMode } from 'storybook-dark-mode'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { usePrependStyles } from '@sourcegraph/storybook'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'

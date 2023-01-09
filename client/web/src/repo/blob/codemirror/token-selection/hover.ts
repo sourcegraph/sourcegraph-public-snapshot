@@ -104,7 +104,7 @@ export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Pro
     }
     const uri = toURIWithPath(view.state.facet(blobPropsFacet).blobInfo)
     const contents = hoverRequest(view, occurrence, {
-        position: { line: occurrence.range.start.line, character: occurrence.range.start.character + 1 },
+        position: occurrence.range.start,
         textDocument: { uri },
     })
     cache.set(occurrence, contents)

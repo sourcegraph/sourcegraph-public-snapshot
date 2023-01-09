@@ -191,6 +191,74 @@ func TestSetLocal(t *testing.T) {
 	}
 }
 
+func TestScanFirstString(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
+	store := testStore(t, db)
+
+	cases := []struct {
+		name        string
+		query       string
+		expected    string
+		called      bool
+		shouldError bool
+	}{
+		{
+			name:        "multiple rows returned",
+			query:       "SELECT 'A' UNION ALL SELECT 'B'",
+			expected:    "A",
+			called:      true,
+			shouldError: false,
+		},
+		{
+			name:        "single row returned",
+			query:       "SELECT 'A'",
+			expected:    "A",
+			called:      true,
+			shouldError: false,
+		},
+		{
+			name:        "no rows returned",
+			query:       "SELECT 'A' where 1=0",
+			expected:    "",
+			called:      false,
+			shouldError: false,
+		},
+		{
+			name:        "null return",
+			query:       "SELECT null",
+			expected:    "",
+			called:      true,
+			shouldError: true,
+		},
+		{
+			name:        "multiple rows error first row",
+			query:       "SELECT null UNION ALL select 'A'",
+			expected:    "",
+			called:      true,
+			shouldError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, called, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf(tc.query)))
+			if got != tc.expected {
+				t.Fatalf("unexpected value. want=%s got=%s", tc.expected, got)
+			}
+			if called != tc.called {
+				t.Fatalf("unexpected called value. want=%t got=%t", tc.called, called)
+			}
+			if err != nil && !tc.shouldError {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if err == nil && tc.shouldError {
+				t.Fatal("expected error")
+			}
+		})
+	}
+}
+
 func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	if index == 0 {
 		return

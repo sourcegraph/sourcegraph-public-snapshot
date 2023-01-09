@@ -1,5 +1,3 @@
 export * from './fromObservableQuery'
 export * from './client'
 export * from './hooks'
-export * from './persistenceMapper'
-export * from './cache'

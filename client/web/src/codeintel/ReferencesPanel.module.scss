@@ -234,7 +234,7 @@
 // Left side of the panel, including token name, filter, list of locations
 .left-sub-panel {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
     height: 100%;
     background-color: var(--body-bg);
 }

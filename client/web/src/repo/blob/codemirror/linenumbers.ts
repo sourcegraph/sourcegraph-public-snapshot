@@ -360,7 +360,6 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
             '.cm-lineNumbers .cm-gutterElement': {
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
                 alignItems: 'flex-end',
             },
             '.cm-lineNumbers .cm-gutterElement:hover': {

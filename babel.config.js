@@ -1,8 +1,8 @@
 // @ts-check
 const path = require('path')
 
-const logger = require('signale')
 const semver = require('semver')
+const logger = require('signale')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {

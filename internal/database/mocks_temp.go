@@ -3019,7 +3019,7 @@ func NewMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, bool) (r0 *SiteConfig, r1 error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (r0 *SiteConfig, r1 error) {
 				return
 			},
 		},
@@ -3051,7 +3051,7 @@ func NewStrictMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 				panic("unexpected invocation of MockConfStore.SiteCreateIfUpToDate")
 			},
 		},
@@ -3293,24 +3293,24 @@ func (c ConfStoreHandleFuncCall) Results() []interface{} {
 // SiteCreateIfUpToDate method of the parent MockConfStore instance is
 // invoked.
 type ConfStoreSiteCreateIfUpToDateFunc struct {
-	defaultHook func(context.Context, *int32, string, bool) (*SiteConfig, error)
-	hooks       []func(context.Context, *int32, string, bool) (*SiteConfig, error)
+	defaultHook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
+	hooks       []func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
 	history     []ConfStoreSiteCreateIfUpToDateFuncCall
 	mutex       sync.Mutex
 }
 
 // SiteCreateIfUpToDate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 string, v3 bool) (*SiteConfig, error) {
-	r0, r1 := m.SiteCreateIfUpToDateFunc.nextHook()(v0, v1, v2, v3)
-	m.SiteCreateIfUpToDateFunc.appendCall(ConfStoreSiteCreateIfUpToDateFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 int32, v3 string, v4 bool) (*SiteConfig, error) {
+	r0, r1 := m.SiteCreateIfUpToDateFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SiteCreateIfUpToDateFunc.appendCall(ConfStoreSiteCreateIfUpToDateFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SiteCreateIfUpToDate
 // method of the parent MockConfStore instance is invoked and the hook queue
 // is empty.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, string, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -3318,7 +3318,7 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Con
 // SiteCreateIfUpToDate method of the parent MockConfStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, string, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3327,19 +3327,19 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultReturn(r0 *SiteConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+	f.SetDefaultHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) PushReturn(r0 *SiteConfig, r1 error) {
-	f.PushHook(func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+	f.PushHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3381,10 +3381,13 @@ type ConfStoreSiteCreateIfUpToDateFuncCall struct {
 	Arg1 *int32
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 int32
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 bool
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *SiteConfig
@@ -3396,7 +3399,7 @@ type ConfStoreSiteCreateIfUpToDateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ConfStoreSiteCreateIfUpToDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -34770,6 +34773,10 @@ func (c RepoStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockSavedSearchStore struct {
+	// CountSavedSearchesByOrgOrUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CountSavedSearchesByOrgOrUser.
+	CountSavedSearchesByOrgOrUserFunc *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *SavedSearchStoreCreateFunc
@@ -34791,6 +34798,10 @@ type MockSavedSearchStore struct {
 	// ListSavedSearchesByOrgIDFunc is an instance of a mock function object
 	// controlling the behavior of the method ListSavedSearchesByOrgID.
 	ListSavedSearchesByOrgIDFunc *SavedSearchStoreListSavedSearchesByOrgIDFunc
+	// ListSavedSearchesByOrgOrUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListSavedSearchesByOrgOrUser.
+	ListSavedSearchesByOrgOrUserFunc *SavedSearchStoreListSavedSearchesByOrgOrUserFunc
 	// ListSavedSearchesByUserIDFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ListSavedSearchesByUserID.
@@ -34811,6 +34822,11 @@ type MockSavedSearchStore struct {
 // overwritten.
 func NewMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32) (r0 int, r1 error) {
+				return
+			},
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (r0 *types.SavedSearch, r1 error) {
 				return
@@ -34846,6 +34862,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 				return
 			},
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32, *PaginationArgs) (r0 []*types.SavedSearch, r1 error) {
+				return
+			},
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: func(context.Context, int32) (r0 []*types.SavedSearch, r1 error) {
 				return
@@ -34873,6 +34894,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32) (int, error) {
+				panic("unexpected invocation of MockSavedSearchStore.CountSavedSearchesByOrgOrUser")
+			},
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.Create")
@@ -34908,6 +34934,11 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByOrgID")
 			},
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByOrgOrUser")
+			},
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByUserID")
@@ -34936,6 +34967,9 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 // implementation, unless overwritten.
 func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: i.CountSavedSearchesByOrgOrUser,
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -34957,6 +34991,9 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 		ListSavedSearchesByOrgIDFunc: &SavedSearchStoreListSavedSearchesByOrgIDFunc{
 			defaultHook: i.ListSavedSearchesByOrgID,
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: i.ListSavedSearchesByOrgOrUser,
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: i.ListSavedSearchesByUserID,
 		},
@@ -34970,6 +35007,121 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 			defaultHook: i.With,
 		},
 	}
+}
+
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFunc describes the behavior
+// when the CountSavedSearchesByOrgOrUser method of the parent
+// MockSavedSearchStore instance is invoked.
+type SavedSearchStoreCountSavedSearchesByOrgOrUserFunc struct {
+	defaultHook func(context.Context, *int32, *int32) (int, error)
+	hooks       []func(context.Context, *int32, *int32) (int, error)
+	history     []SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall
+	mutex       sync.Mutex
+}
+
+// CountSavedSearchesByOrgOrUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) CountSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32) (int, error) {
+	r0, r1 := m.CountSavedSearchesByOrgOrUserFunc.nextHook()(v0, v1, v2)
+	m.CountSavedSearchesByOrgOrUserFunc.appendCall(SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int32, *int32) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *int32, *int32) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) appendCall(r0 SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall objects describing
+// the invocations of this function.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) History() []SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall is an object that
+// describes an invocation of method CountSavedSearchesByOrgOrUser on an
+// instance of MockSavedSearchStore.
+type SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SavedSearchStoreCreateFunc describes the behavior when the Create method
@@ -35711,6 +35863,124 @@ func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreListSavedSearchesByOrgOrUserFunc describes the behavior
+// when the ListSavedSearchesByOrgOrUser method of the parent
+// MockSavedSearchStore instance is invoked.
+type SavedSearchStoreListSavedSearchesByOrgOrUserFunc struct {
+	defaultHook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)
+	hooks       []func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)
+	history     []SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSavedSearchesByOrgOrUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) ListSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32, v3 *PaginationArgs) ([]*types.SavedSearch, error) {
+	r0, r1 := m.ListSavedSearchesByOrgOrUserFunc.nextHook()(v0, v1, v2, v3)
+	m.ListSavedSearchesByOrgOrUserFunc.appendCall(SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 []*types.SavedSearch, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) PushReturn(r0 []*types.SavedSearch, r1 error) {
+	f.PushHook(func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) appendCall(r0 SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall objects describing
+// the invocations of this function.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) History() []SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall is an object that
+// describes an invocation of method ListSavedSearchesByOrgOrUser on an
+// instance of MockSavedSearchStore.
+type SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int32
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *PaginationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.SavedSearch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -24,13 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
+
+type RepoStore interface {
+	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+}
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
 // called from the worker service.
@@ -45,7 +51,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
-	featureFlagStore := mainAppDB.FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
@@ -96,9 +101,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		// Add the backfill v2 workers
 		monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
 		routines = append(routines, monitor.Routines()...)
-
-		// Add the backfiller v1 workers
-		routines = append(routines, newInsightHistoricalEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore))
 	}
 
 	routines = append(

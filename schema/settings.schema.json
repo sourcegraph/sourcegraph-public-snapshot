@@ -13,25 +13,46 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "homePanelsComputeSuggestions": {
+        "codeInsights": {
+          "description": "Enables code insights on directory pages.",
           "type": "boolean",
           "default": false,
-          "deprecated": false,
-          "description": "Enable the home panels compute suggestions feature."
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsGqlApi": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsAllRepos": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsLandingPage": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",
           "default": "single-search-query",
           "enum": ["old-strict-list", "single-search-query", "search-query-or-strict-list"],
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeMonitoring": {
-          "description": "Enables code monitoring.",
-          "type": "boolean",
-          "default": true,
           "!go": {
             "pointer": true
           }
@@ -44,6 +65,46 @@
             "pointer": true
           }
         },
+        "searchStats": {
+          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "searchStreaming": {
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "copyQueryButton": {
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showRepogroupHomepage": {
+          "description": "Enables the repository group homepage ",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showOnboardingTour": {
+          "description": "REMOVED.",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showSearchContext": {
           "description": "Enables the search context dropdown.",
           "type": "boolean",
@@ -52,8 +113,8 @@
             "pointer": true
           }
         },
-        "showEnterpriseHomePanels": {
-          "description": "Enabled the homepage panels in the Enterprise homepage",
+        "showSearchContextManagement": {
+          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -64,14 +125,6 @@
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchNotebook": {
-          "description": "Enables the search notebook at search/notebook",
-          "type": "boolean",
-          "default": true,
           "!go": {
             "pointer": true
           }

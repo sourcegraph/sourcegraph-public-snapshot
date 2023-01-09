@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/inconshreveable/log15"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -69,7 +67,12 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
 			}
 			inc, exc := plan.ToQ().Repositories()
-			include = append(include, inc...)
+			for _, repoFilter := range inc {
+				if len(repoFilter.Revs) > 0 {
+					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
+				}
+				include = append(include, repoFilter.Repo)
+			}
 			exclude = append(exclude, exc...)
 		}
 	}
@@ -526,58 +529,6 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 			filters:         filters,
 		})
 	}
-	return resolvers, nil
-}
-
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
-}
-
-func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "StreamingQueryExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
 	return resolvers, nil
 }
 

@@ -19,6 +19,7 @@ import {
     canSubmitSearch,
     QueryState,
     SearchModeProps,
+    SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -48,7 +49,8 @@ interface Props
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        SearchContextInputProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -70,7 +72,6 @@ const queryStateSelector = (
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
@@ -129,7 +130,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <SearchBox
             {...props}
             editorComponent={editorComponent}
-            showSearchContext={showSearchContext}
+            showSearchContext={props.searchContextsEnabled}
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}

@@ -38,7 +38,7 @@ export interface SearchResultsInfoBarProps
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'email'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
 
     /**
      * Whether the code insights feature flag is enabled.

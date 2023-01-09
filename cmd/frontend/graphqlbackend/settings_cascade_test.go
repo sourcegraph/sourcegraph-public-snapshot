@@ -78,7 +78,7 @@ func TestMergeSettings(t *testing.T) {
 		name: "deep merge struct pointer",
 		left: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchNotebook: boolPtr(true),
+				CodeMonitoringWebHooks: boolPtr(true),
 			},
 		},
 		right: &schema.Settings{
@@ -88,7 +88,7 @@ func TestMergeSettings(t *testing.T) {
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowSearchNotebook:         boolPtr(true),
+				CodeMonitoringWebHooks:     boolPtr(true),
 				ShowMultilineSearchConsole: boolPtr(false),
 			},
 		},

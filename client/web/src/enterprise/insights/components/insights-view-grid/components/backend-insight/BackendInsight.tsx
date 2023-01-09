@@ -130,10 +130,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
         const { insightName } = values
 
-        if (!currentDashboard) {
-            return
-        }
-
         await saveNewView({
             insight,
             filters,
