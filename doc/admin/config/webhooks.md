@@ -14,7 +14,7 @@ Code host | [Batch changes](../../batch_changes/index.md) | Code push | User per
 GitHub | 🟢 | 🟢 | 🟢
 GitLab | 🟢 | 🟢 | 🔴
 Bitbucket Server / Datacenter | 🟢 | 🟢 | 🔴
-Bitbucket Cloud | 🟢 | 🔴 | 🔴
+Bitbucket Cloud | 🟢 | 🟢 | 🔴
 
 To receive webhooks both Sourcegraph and the code host need to be configured. To configure Sourcegraph, [add an incoming webhook](#adding-an-incoming-webhook). Then [configure webhooks on your code host](#configuring-webhooks-on-the-code-host)
 
@@ -146,6 +146,10 @@ Follow the same steps as above, but ensure you tick the `Push` option. If asked 
 1. Confirm that the new webhook is listed below **Repository hooks**.
 
 Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+
+#### Code push
+
+Follow the same steps as above, but ensure you tick the `Push` option.
 
 ## Webhook logging
 

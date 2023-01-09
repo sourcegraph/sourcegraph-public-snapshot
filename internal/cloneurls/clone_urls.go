@@ -44,6 +44,7 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
+			extsvc.KindBitbucketCloud,
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
 			extsvc.KindPhabricator,
@@ -123,6 +124,9 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 		host = c.Url
 	case *schema.BitbucketServerConnection:
 		rs = reposource.BitbucketServer{BitbucketServerConnection: c}
+		host = c.Url
+	case *schema.BitbucketCloudConnection:
+		rs = reposource.BitbucketCloud{BitbucketCloudConnection: c}
 		host = c.Url
 	case *schema.AWSCodeCommitConnection:
 		rs = reposource.AWS{AWSCodeCommitConnection: c}

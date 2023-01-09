@@ -33,6 +33,8 @@ func ParseWebhookEvent(eventKey string, payload []byte) (any, error) {
 		target = &RepoCommitStatusCreatedEvent{}
 	case "repo:commit_status_updated":
 		target = &RepoCommitStatusUpdatedEvent{}
+	case "repo:push":
+		target = &PushEvent{}
 	default:
 		return nil, UnknownWebhookEventKey(eventKey)
 	}
@@ -45,9 +47,13 @@ func ParseWebhookEvent(eventKey string, payload []byte) (any, error) {
 
 // Types (and subtypes) that we can unmarshal from a webhook payload.
 //
-// This is (intentionally) most, but not all, of the payload types as of April
-// 2022. Some of the repo events are unlikely to ever be useful to us, so we
-// don't even attempt to unmarshal them.
+// This is (intentionally) most, but not all, of the payload types as of December
+// 2022. Some repo events are unlikely to ever be useful to us, so we don't even
+// attempt to unmarshal them.
+
+type PushEvent struct {
+	RepoEvent
+}
 
 type PullRequestEvent struct {
 	RepoEvent

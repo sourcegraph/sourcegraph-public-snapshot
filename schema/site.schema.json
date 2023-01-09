@@ -462,11 +462,6 @@
           "type": "boolean",
           "default": false
         },
-        "hideSourcegraphOperatorLogin": {
-          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
-          "type": "boolean",
-          "default": false
-        },
         "insightsBackfillerV2": {
           "description": "DEPRECATED: Setting any value to this flag has no effect.",
           "type": "boolean",
