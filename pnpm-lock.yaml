@@ -332,6 +332,7 @@ importers:
       react-sticky-box: 1.0.2
       react-visibility-sensor: ^5.1.1
       recharts: ^1.8.5
+      regenerator-runtime: ^0.13.7
       regexpp: ^3.1.0
       resize-observer-polyfill: ^1.5.1
       rimraf: ^3.0.2
@@ -734,6 +735,7 @@ importers:
       prettier: 2.8.1
       process: 0.11.10
       puppeteer: 13.7.0
+      regenerator-runtime: 0.13.11
       rimraf: 3.0.2
       sass: 1.32.4
       sass-loader: 13.2.0_sass@1.32.4+webpack@5.75.0
