@@ -5,7 +5,7 @@ import * as H from 'history'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded/src/search-ui'
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

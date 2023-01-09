@@ -4,7 +4,7 @@ import { EditorView } from '@codemirror/view'
 import { mdiInformationOutline } from '@mdi/js'
 import { debounce } from 'lodash'
 
-import { createDefaultSuggestions } from '@sourcegraph/branded/src/search-ui'
+import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'

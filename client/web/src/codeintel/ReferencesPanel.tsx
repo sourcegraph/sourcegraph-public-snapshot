@@ -8,7 +8,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded/src/search-ui'
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,

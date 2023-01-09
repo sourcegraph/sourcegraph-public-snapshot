@@ -5,7 +5,7 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded/src/search-ui'
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
-import { ModalVideo } from '@sourcegraph/branded/src/search-ui'
+import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'
 import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'

@@ -8,7 +8,7 @@ import { Redirect } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

@@ -22,7 +22,7 @@ import {
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { isMacPlatform } from '@sourcegraph/common'
 import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'

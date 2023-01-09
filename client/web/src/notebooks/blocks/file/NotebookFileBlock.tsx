@@ -6,7 +6,7 @@ import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { CodeExcerpt } from '@sourcegraph/branded/src/search-ui'
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

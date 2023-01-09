@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/branded/src/search-ui'
+import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/branded'
 import styles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection.module.scss'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'

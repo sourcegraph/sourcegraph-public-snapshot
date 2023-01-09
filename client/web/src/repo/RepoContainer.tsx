@@ -9,7 +9,7 @@ import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'

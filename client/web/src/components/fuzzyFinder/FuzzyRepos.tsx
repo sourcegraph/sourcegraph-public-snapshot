@@ -1,7 +1,7 @@
 import { ApolloClient } from '@apollo/client'
 import gql from 'tagged-template-noop'
 
-import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded/src/search-ui'
+import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { getWebGraphQLClient } from '../../backend/graphql'

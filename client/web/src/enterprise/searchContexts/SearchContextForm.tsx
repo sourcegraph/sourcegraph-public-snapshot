@@ -5,7 +5,7 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/branded/src/search-ui'
+import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,

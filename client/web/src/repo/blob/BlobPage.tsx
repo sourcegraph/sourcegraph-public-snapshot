@@ -10,7 +10,7 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import {
     useCurrentSpan,

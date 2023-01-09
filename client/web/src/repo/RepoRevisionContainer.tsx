@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import * as H from 'history'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded/src/search-ui'
+import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
