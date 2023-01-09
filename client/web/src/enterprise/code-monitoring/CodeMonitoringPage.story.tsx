@@ -39,7 +39,11 @@ const generateMockFetchMonitors =
     }
 
 const additionalProps = {
-    authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
+    authenticatedUser: {
+        id: 'foobar',
+        username: 'alice',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
+    } as AuthenticatedUser,
     toggleCodeMonitorEnabled: sinon.fake(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
 }

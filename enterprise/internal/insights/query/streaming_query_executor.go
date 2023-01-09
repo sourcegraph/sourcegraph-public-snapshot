@@ -20,14 +20,14 @@ import (
 )
 
 type StreamingQueryExecutor struct {
-	justInTimeExecutor
+	previewExecutor
 
 	logger log.Logger
 }
 
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
-		justInTimeExecutor: justInTimeExecutor{
+		previewExecutor: previewExecutor{
 			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},

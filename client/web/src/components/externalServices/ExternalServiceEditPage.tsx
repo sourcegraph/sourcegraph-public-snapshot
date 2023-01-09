@@ -46,7 +46,7 @@ import {
 } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
-import styles from './ExternalServicePage.module.scss'
+import styles from './ExternalServiceEditPage.module.scss'
 
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
@@ -75,7 +75,7 @@ function isValidURL(url: string): boolean {
 const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
-export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     externalServiceID,
     history,
     isLightTheme,
