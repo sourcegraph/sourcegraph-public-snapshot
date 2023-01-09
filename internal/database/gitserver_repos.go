@@ -489,7 +489,6 @@ SET
 	last_error = %s,
 	shard_id = %s,
 	updated_at = NOW(),
-	corrupted_at = NULL
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 	AND
