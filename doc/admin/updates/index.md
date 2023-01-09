@@ -23,10 +23,12 @@ Also [check the status out-of-band migrations](../how-to/unfinished_migration.md
 
 To perform a standard upgrade, check the notes and follow the guide for your specific environment:
 
-- [Sourcegraph with Docker Compose](docker_compose.md#upgrade-procedure)
-- [Sourcegraph with Kubernetes](kubernetes.md#upgrade-procedure)
-- [Single-container Sourcegraph with Docker](server.md#upgrade-procedure)
-- [Pure-docker custom deployments](pure_docker.md)
+<div class="getting-started">
+<a class="btn btn-primary text-center" href="#docker_compose#upgrade-procedure">Docker Compose</a>
+<a class="btn btn-primary text-center" href="server#upgrade-procedure">Single Docker</a>
+<a class="btn btn-primary text-center" href="kubernetes#upgrade-procedure">Kubernetes</a>
+<a class="btn btn-primary text-center" href="pure_docker">Pure Docker</a>
+</div>
 
 ### Multi-version upgrades
 

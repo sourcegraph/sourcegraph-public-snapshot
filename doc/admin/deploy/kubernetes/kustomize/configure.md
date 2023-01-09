@@ -107,12 +107,20 @@ components:
 
 ### Other cloud providers
 
-Update the `new/config/storage-class/sourcegraph.StorageClass.yaml` file to create a new StorageClass named `sourcegraph` for your cloud provider before adding the configured component  as a component to your overlay:
+Add the `new/components/storage-class/cloud` to your overlay:
 
 ```yaml
 # new/overlays/deploy/kustomization.yaml
 components:
-- ../../config/storage-class
+- ../../components/storage-class/cloud
+```
+
+Update the following variables inside the kustomize.env config file for your overlay. Replace them with the correct values according to the instruction provided by your cloud provider:
+
+```
+DEPLOY_SOURCEGRAPH_STORAGECLASS_NAME=STORAGECLASS_NAME
+DEPLOY_SOURCEGRAPH_STORAGECLASS_PROVISIONER=STORAGECLASS_PROVISIONER
+DEPLOY_SOURCEGRAPH_STORAGECLASS_PARAM_TYPE=STORAGECLASS_PARAM_TYPE
 ```
 
 ## Network access
@@ -126,6 +134,15 @@ As part of our base configuration, the [sourcegraph-frontend](https://github.com
 We **recommend** using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) production environments.
 
 To utilize the sourcegraph-frontend ingress, you'll need to install a NGINX ingress controller (ingress-nginx) in your cluster by following the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/.
+
+You can also install it using one of our ingress-nginx-controller overlays if applicable:
+
+  ```bash
+  # aws
+  $ kubectl apply -k new/quick-start/ingress-nginx-controller/aws
+  # or other cloud providers
+  $ kubectl apply -k new/quick-start/ingress-nginx-controller/cloud
+  ```
 
 Once the controller has been set up successfully, you can check the external address by running the following command and look for the `LoadBalancer` entry:
 
@@ -150,21 +167,32 @@ sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 
 ### NGINX service
 
-In cases where ingress controllers cannot be created, creating an explicit NGINX service is a viable
-alternative. See the files in the [configure/nginx-svc](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc) folder for an
-example of how to do this via a NodePort service (any other type of Kubernetes service will also
-work):
+In cases where ingress controllers cannot be created, creating an explicit NGINX service and add the TLS certificate and key for your domain is a viable alternative.
 
-- Modify [configure/nginx-svc/nginx.ConfigMap.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml) to
-   contain the TLS certificate and key for your domain.
+Step 1: Move the tls.cert and tls.key to the config directory within your overlay. E.g. `new/overlays/deploy/config`.
 
-- `kubectl apply -f configure/nginx-svc` to create the NGINX service.
+Step 2: Add the files to the ConfigMap for nginx by adding the following lines under `configmapGenerator` in your kustomization file:
 
-- Update [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) with the previous command.
+```yaml
+# new/overlays/deploy/kustomization.yaml
+...
+configMapGenerator:
+...
+  - name: nginx-config
+    behavior: merge
+    files:
+    - config/tls.crt
+    - config/tls.key
+...
+```
 
-   ```
-   echo kubectl apply -f configure/nginx-svc >> create-new-cluster.sh
-   ```
+Step 3: Add the tls component to your kustomization file:
+
+```yaml
+# new/overlays/deploy/kustomization.yaml
+components:
+- ../../components/tls
+```
 
 ### Network rule
 
@@ -303,10 +331,8 @@ To mount the files through Kustomize:
 
 Sourcegraph supports specifying a custom Redis server with these environment variables:
 
-- `REDIS_CACHE_ENDPOINT` for caching information
-  - [default](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal): `redis-cache:6379`
-- `REDIS_STORE_ENDPOINT` for storing information (session data and job queues)
-  - [default](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal): `redis-store:6379`
+- **REDIS_CACHE_ENDPOINT**=[redis-cache:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for caching information.
+- **REDIS_STORE_ENDPOINT**=[redis-store:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for storing information (session data and job queues). 
 
 When using a custom Redis server, the corresponding environment variable must also be added to the following services:
 
@@ -371,13 +397,19 @@ The values will be automatically merge with the environment variables currently 
 Due to how cAdvisor works, Sourcegraph's cAdvisor deployment can pick up metrics for services unrelated to the Sourcegraph deployment running on the same nodes as Sourcegraph services.
 [Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers).
 
-To work around this, please replace `REPLACE_WITH_NAMESPACE` on line 7 with the namespace that is hosting your Sourcegraph instance inside the `prometheus.ConfigMap.yaml` file located in the `config/config-map/prometheus` component. This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
+To work around this:
+1. Ccreate a copy of the `new/base/prometheus/prometheus.ConfigMap.yaml` file inside the config directory of your overlay
+2. In the **new** prometheus.ConfigMap.yaml copy, uncomment the lines highlighted [here](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L262-264).
+3. Replace [ns-sourcegraph](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L263) with your namespace
+4. Add the following to your overlay file:
 
 ```yaml
  # new/overlays/deploy/kustomization.yaml
-components:
-- .../config/config-map/prometheus
+patchesStrategicMerge:
+- config/prometheus.ConfigMap.yaml
 ```
+
+This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
 
 ## Outbound Traffic
 
