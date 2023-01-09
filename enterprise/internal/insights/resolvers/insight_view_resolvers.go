@@ -102,6 +102,12 @@ func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Contex
 	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
 }
 
+func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
+	v := int32(i.seriesDisplayOptions.NumSamples)
+	return &v
+
+}
+
 type insightViewSeriesSortOptionsResolver struct {
 	seriesSortOptions *types.SeriesSortOptions
 }
@@ -201,12 +207,12 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 		}
 		i.totalSeries = len(resolvers)
 
-		sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
+		sortedAndLimitedResolvers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
 		if err != nil {
 			i.seriesErr = errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
 			return
 		}
-		i.seriesResolvers = sortedAndLimitedResovlers
+		i.seriesResolvers = sortedAndLimitedResolvers
 	})
 
 	return i.seriesResolvers, i.seriesErr
@@ -1093,9 +1099,15 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
+			// todo: get maximum from config?
+			numSamples := 90
+			if d.args.SeriesDisplayOptions.NumSamples != nil {
+				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
+			}
 			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
 				Limit:       d.args.SeriesDisplayOptions.Limit,
+				NumSamples:  numSamples,
 			}
 		}
 		resolvers = append(resolvers, resolver)
