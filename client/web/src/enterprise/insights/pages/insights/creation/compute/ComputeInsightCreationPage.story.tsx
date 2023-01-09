@@ -33,6 +33,7 @@ export const ComputeInsightCreationPage: Story = () => {
 
     return (
         <ComputeInsightCreationPageComponent
+            backUrl="/insights/create"
             telemetryService={NOOP_TELEMETRY_SERVICE}
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}
