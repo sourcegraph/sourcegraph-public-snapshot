@@ -8449,7 +8449,9 @@ type SiteConfigChange {
     """
     id: ID!
     """
-    The ID of the previous site config against which this diff is generated.
+    The ID of the previous site config against which this diff is generated. If
+    empty, this indicates that this is the initial config that was applied at
+    instance creation so there is nothing before this to compare to.
     """
     previousID: ID
     """
