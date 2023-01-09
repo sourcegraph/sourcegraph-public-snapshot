@@ -35,7 +35,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 			Username: "mary",
 		})
 		if err != nil {
-			return
+			t.Fatalf("failed to create test user: %v", err)
 		}
 
 		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
