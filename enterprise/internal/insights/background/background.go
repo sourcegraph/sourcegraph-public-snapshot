@@ -58,7 +58,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 		// Enqueues series to be picked up by the retention worker.
-		newRetentionEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
+		newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore),
 		// Emits backend pings based on insights data.
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		// Cleans up soft-deleted insight series.
