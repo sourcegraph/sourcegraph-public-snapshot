@@ -839,6 +839,9 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			cloneStatus := cloneStatus(cloned, cloning)
 			if repo.CloneStatus != cloneStatus {
 				repo.CloneStatus = cloneStatus
+				// Since the repo has been recloned or is being cloned
+				// we can reset the corruption
+				repo.CorruptedAt = time.Time{}
 				shouldUpdate = true
 			}
 
@@ -1771,7 +1774,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	checkMaybeCorruptRepo(s.Logger, req.Repo, dir, stderr)
+	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
@@ -1995,6 +1998,15 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 // setRepoSize calculates the size of the repo and stores it in the database.
 func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+}
+
+func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) {
+	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+		reason := stderr
+		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason); err != nil {
+			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
+		}
+	}
 }
 
 // setGitAttributes writes our global gitattributes to
