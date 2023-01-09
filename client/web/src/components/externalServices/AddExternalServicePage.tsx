@@ -108,7 +108,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                             {...externalService}
                             title={createdExternalService.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdExternalService.id}`}
+                            to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
                         />
                     </div>
                     <Alert variant="warning">
