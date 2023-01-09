@@ -71,7 +71,7 @@ Why: To make sure the popup is discoverable and generally works
     * It should not take more than ~five seconds
 3. Close the popup with ESC
     * The popup should become hidden
-4. Open “Find Action” (⌘⇧A) and search for “open sourcegraph search view” and select the first result
+4. Open “Find Action” (⌘⇧A) and search for “find with sourcegraph” and select the first result
     * The popup should become active
     * The popup should not be in the “loading” state
 5. Click the header of the IDE main window

@@ -70,7 +70,7 @@ function queryProductSubscriptions(args: {
     first?: number
     query?: string
 }): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
-    return queryGraphQL(
+    return queryGraphQL<ProductSubscriptionsDotComResult>(
         gql`
             query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
                 dotcom {

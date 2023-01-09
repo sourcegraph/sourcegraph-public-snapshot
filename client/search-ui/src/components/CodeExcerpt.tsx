@@ -5,14 +5,9 @@ import classNames from 'classnames'
 import { range } from 'lodash'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'
-import { catchError, filter } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { asError, ErrorLike, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Code } from '@sourcegraph/wildcard'
 
@@ -42,8 +37,6 @@ interface Props extends Repo {
     fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
-    viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     visibilityOffset?: Shape
     onCopy?: () => void
 }
@@ -67,38 +60,6 @@ export interface HighlightRange {
     endCharacter: number
 }
 
-const domFunctions: DOMFunctions = {
-    getCodeElementFromTarget: target => {
-        const row = target.closest('tr')
-        if (!row) {
-            return null
-        }
-        return row.cells[1]
-    },
-    getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
-        const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
-        if (!lineElement) {
-            return null
-        }
-        const row = lineElement.closest('tr')
-        if (!row) {
-            return null
-        }
-        return row.cells[1]
-    },
-    getLineNumberFromCodeElement: codeCell => {
-        const row = codeCell.closest('tr')
-        if (!row) {
-            throw new Error('Could not find closest row for codeCell')
-        }
-        const numberCell = row.cells[0]
-        if (!numberCell || !numberCell.dataset.line) {
-            throw new Error('Could not find line number')
-        }
-        return parseInt(numberCell.dataset.line, 10)
-    },
-}
-
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
 const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
 
@@ -112,8 +73,6 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     startLine,
     endLine,
     highlightRanges,
-    viewerUpdates,
-    hoverifier,
     visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
@@ -191,33 +150,6 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
             }
         }
     }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
-
-    // Hook up the hover tooltips
-    useEffect(() => {
-        let hoverifierSubscription: Subscription | null
-
-        const subscription = viewerUpdates?.subscribe(({ viewerId, ...hoverContext }) => {
-            if (hoverifier) {
-                if (hoverifierSubscription) {
-                    hoverifierSubscription.unsubscribe()
-                }
-
-                hoverifierSubscription = hoverifier.hoverify({
-                    positionEvents: tableContainerElements.pipe(
-                        filter(isDefined),
-                        findPositionsFromEvents({ domFunctions })
-                    ),
-                    resolveContext: () => hoverContext,
-                    dom: domFunctions,
-                })
-            }
-        })
-
-        return () => {
-            subscription?.unsubscribe()
-            hoverifierSubscription?.unsubscribe()
-        }
-    }, [hoverifier, tableContainerElements, viewerUpdates])
 
     return (
         <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>

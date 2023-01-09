@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -41,9 +43,9 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 	}
 
 	if documentData.SCIPData != nil {
-		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-		trace.Log(log.Int("numIntersectingOccurrences", len(occurrences)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 		// Make lookup map of symbol information by name
 		symbolMap := map[string]*scip.SymbolInformation{}
@@ -93,14 +95,14 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 
 			monikerData = append(monikerData, occurrenceMonikers)
 		}
-		trace.Log(log.Int("numMonikers", len(monikerData)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
 
 		return monikerData, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingRanges", len(ranges)))
 
 	monikerData := make([][]precise.MonikerData, 0, len(ranges))
 	for _, r := range ranges {
@@ -110,11 +112,11 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 				batch = append(batch, moniker)
 			}
 		}
-		trace.Log(log.Int("numMonikersForRange", len(batch)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikersForRange", len(batch)))
 
 		monikerData = append(monikerData, batch)
 	}
-	trace.Log(log.Int("numMonikers", len(monikerData)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
 
 	return monikerData, nil
 }
@@ -208,20 +210,21 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
 	}
 
-	symbolQueries := make([]*sqlf.Query, 0, len(monikers))
+	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		symbolQueries = append(symbolQueries, sqlf.Sprintf("%s", arg.Identifier))
+		symbolNames = append(symbolNames, arg.Identifier)
 	}
 
 	query := sqlf.Sprintf(
 		bulkMonikerResultsQuery,
+		pq.Array(symbolNames),
+		pq.Array(uploadIDs),
 		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
 		sqlf.Join(idQueries, ", "),
 		sqlf.Join(monikerQueries, ", "),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
-		sqlf.Join(idQueries, ", "),
-		sqlf.Join(symbolQueries, ", "),
 	)
+
 	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
@@ -231,10 +234,9 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	for _, monikerLocations := range locationData {
 		totalCount += len(monikerLocations.Locations)
 	}
-	trace.Log(
-		log.Int("numDumps", len(locationData)),
-		log.Int("totalCount", totalCount),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numDumps", len(locationData)),
+		attribute.Int("totalCount", totalCount))
 
 	max := totalCount
 	if totalCount > limit {
@@ -261,24 +263,43 @@ outer:
 			}
 		}
 	}
-	trace.Log(log.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	return locations, totalCount, nil
 }
 
 const bulkMonikerResultsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
 (
-	SELECT dump_id, scheme, identifier, data, NULL AS scip_payload, '' AS scip_uri
+	SELECT
+		dump_id,
+		scheme,
+		identifier,
+		data,
+		NULL AS scip_payload,
+		'' AS scip_uri
 	FROM %s
-	WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s)
-	ORDER BY (dump_id, scheme, identifier)
-) UNION (
-	SELECT ss.upload_id, 'scip', ss.symbol_name, NULL, %s, document_path
-	FROM codeintel_scip_symbols ss
+	WHERE
+		dump_id IN (%s) AND
+		(scheme, identifier) IN (%s)
+	ORDER BY
+		(dump_id, scheme, identifier)
+) UNION ALL (
+	SELECT
+		ss.upload_id,
+		'scip',
+		msn.symbol_name,
+		NULL,
+		%s,
+		document_path
+	FROM matching_symbol_names msn
+	JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
 	JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-	WHERE ss.upload_id IN (%s) AND ss.symbol_name IN (%s)
-	ORDER BY (ss.upload_id, ss.symbol_name)
+	ORDER BY
+		(ss.upload_id, msn.symbol_name)
 )
+ORDER BY dump_id, scheme, identifier
 `
 
 func monikersToString(vs []precise.MonikerData) string {

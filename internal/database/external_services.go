@@ -1340,7 +1340,7 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	if opt.OrderByDirection != "ASC" {
@@ -1435,7 +1435,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 }
 
 func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos")
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	predicate := sqlf.Sprintf("TRUE")

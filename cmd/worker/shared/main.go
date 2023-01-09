@@ -20,7 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -37,8 +39,10 @@ import (
 
 const addr = ":3189"
 
+type EnterpriseInit = func(ossDB database.DB)
+
 // Start runs the worker.
-func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
+func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc, enterpriseInit EnterpriseInit) error {
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
@@ -65,12 +69,21 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	env.Lock()
 	env.HandleHelpFlag()
 	conf.Init()
-	logging.Init()
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 
 	if err := keyring.Init(context.Background()); err != nil {
 		return errors.Wrap(err, "Failed to intialise keyring")
+	}
+
+	if enterpriseInit != nil {
+		db, err := workerdb.InitDB(observationCtx)
+		if err != nil {
+			return errors.Wrap(err, "Failed to create database connection")
+		}
+
+		enterpriseInit(db)
 	}
 
 	// Start debug server

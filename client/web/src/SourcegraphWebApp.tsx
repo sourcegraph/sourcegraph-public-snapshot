@@ -8,12 +8,21 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
+import { first, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
+import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     getUserSearchContextNamespaces,
     SearchContextProps,
@@ -26,17 +35,7 @@ import {
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
     getDefaultSearchContextSpec,
-} from '@sourcegraph/search'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
-import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
-import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
-import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+} from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
@@ -54,10 +53,6 @@ import { CodeMonitoringProps } from './codeMonitoring'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
-import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import type { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import type { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
@@ -76,7 +71,7 @@ import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURL, getQueryStateFromLocation } from './search'
+import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -85,8 +80,6 @@ import {
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
-    observeStore,
-    useExperimentalFeatures,
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
@@ -106,11 +99,8 @@ export interface SourcegraphWebAppProps
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         NotebookProps,
-        CodeMonitoringProps {
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
+        CodeMonitoringProps,
+        SearchAggregationProps {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -188,7 +178,7 @@ export class SourcegraphWebApp extends React.Component<
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController | null = window.context.enableLegacyExtensions
         ? createExtensionsController(this.platformContext)
-        : createNoopController(this.platformContext)
+        : null
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
@@ -284,13 +274,7 @@ export class SourcegraphWebApp extends React.Component<
         this.subscriptions.add(
             getQueryStateFromLocation({
                 location: observeLocation(history).pipe(startWith(history.location)),
-                showSearchContext: observeStore(useExperimentalFeatures).pipe(
-                    // We use true here because search contexts are enabled by
-                    // default
-                    map(([features]) => features.showSearchContext ?? true),
-                    startWith(true),
-                    distinctUntilChanged()
-                ),
+                showSearchContext: this.props.searchContextsEnabled,
                 isSearchContextAvailable: (searchContext: string) =>
                     this.props.searchContextsEnabled
                         ? isSearchContextSpecAvailable({ spec: searchContext, platformContext: this.platformContext })

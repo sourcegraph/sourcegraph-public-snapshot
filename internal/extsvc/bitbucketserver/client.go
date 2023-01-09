@@ -948,7 +948,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))

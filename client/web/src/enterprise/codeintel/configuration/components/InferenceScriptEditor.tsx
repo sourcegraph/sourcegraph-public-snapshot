@@ -2,9 +2,8 @@ import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { useHistory } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, PageHeader, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'

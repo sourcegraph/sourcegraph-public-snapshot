@@ -11,11 +11,11 @@ import {
     switchMap,
     withLatestFrom,
 } from 'rxjs/operators'
-import type { HoverAlert } from 'sourcegraph'
 
 import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
+import type { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'

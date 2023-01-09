@@ -163,7 +163,10 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	defer func() { finish(alert, err) }()
 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	return nil, repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
+	it := repos.Iterator(ctx, s.RepoOpts)
+
+	for it.Next() {
+		page := it.Current()
 		page.MaybeSendStats(stream)
 
 		indexed, unindexed, err := zoektutil.PartitionRepos(
@@ -176,15 +179,20 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			s.ContainsRefGlobs,
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		repoSet := []repoData{UnindexedList(unindexed)}
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
-	})
+		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, it.Err()
 }
 
 func (*SearchJob) Name() string {

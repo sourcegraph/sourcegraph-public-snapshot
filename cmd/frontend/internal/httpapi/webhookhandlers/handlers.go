@@ -5,7 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
-func Init(w *webhooks.WebhookRouter) {
+func Init(w *webhooks.Router) {
 	// Refer to https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads
 	// for event types
 

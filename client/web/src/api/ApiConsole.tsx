@@ -5,9 +5,8 @@ import * as H from 'history'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -191,7 +190,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    private fetcher = async (graphQLParameters: _graphiqlModule.FetcherParams): Promise<string> => {
+    private fetcher: _graphiqlModule.Fetcher = async graphQLParameters => {
         const headers = new Headers({
             'x-requested-with': 'Sourcegraph GraphQL Explorer',
         })

@@ -68,9 +68,10 @@ type UserResolver struct {
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
-		log.Object("repo",
-			log.String("user", user.Username))),
+	return &UserResolver{
+		db:     db,
+		user:   user,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 	}
 }
 
@@ -358,7 +359,8 @@ func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoReso
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
@@ -382,7 +384,8 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {

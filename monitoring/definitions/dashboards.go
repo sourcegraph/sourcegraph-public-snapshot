@@ -31,6 +31,7 @@ func Default() Dashboards {
 		CodeIntelRanking(),
 		CodeIntelUploads(),
 		Telemetry(),
+		OtelCollector(),
 	}
 }
 

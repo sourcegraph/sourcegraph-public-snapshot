@@ -4,8 +4,13 @@ import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import { SearchBox } from '@sourcegraph/search-ui'
+// The experimental search input should be shown on the search home page
+// eslint-disable-next-line  no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
@@ -14,16 +19,12 @@ import {
     canSubmitSearch,
     QueryState,
     SearchModeProps,
-} from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
-// The experimental search input should be shown on the search home page
-// eslint-disable-next-line  no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+    SearchContextProps,
+} from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
@@ -48,7 +49,8 @@ interface Props
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        SearchContextInputProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -70,7 +72,6 @@ const queryStateSelector = (
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
@@ -129,7 +130,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <SearchBox
             {...props}
             editorComponent={editorComponent}
-            showSearchContext={showSearchContext}
+            showSearchContext={props.searchContextsEnabled}
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}

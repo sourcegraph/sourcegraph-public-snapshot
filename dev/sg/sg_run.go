@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -48,7 +48,7 @@ sg run -describe jaeger
 		},
 	},
 	Action: runExec,
-	BashComplete: cliutil.CompleteOptions(func() (options []string) {
+	BashComplete: completions.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return

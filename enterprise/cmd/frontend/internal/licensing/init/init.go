@@ -136,7 +136,7 @@ func Init(
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
 	goroutine.Go(func() {
-		licensing.StartMaxUserCount(&usersStore{
+		licensing.StartMaxUserCount(logger, &usersStore{
 			db: db,
 		})
 	})

@@ -112,7 +112,7 @@ func (i illFormedJSONError) Error() string {
 }
 
 func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Response, error) {
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
 		nethttp.OperationName("npm"),
 		nethttp.ClientTrace(false))

@@ -3,9 +3,8 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Markdown } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
 import { SiteFlagAlertFields } from '../graphql-operations'

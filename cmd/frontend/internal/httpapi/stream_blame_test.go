@@ -27,10 +27,10 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
+			checker authz.SubRepoPermissionChecker,
 			repoName api.RepoName,
 			commit api.CommitID,
 			opts gitserver.ResolveRevisionOptions,
-			checker authz.SubRepoPermissionChecker,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},

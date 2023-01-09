@@ -11,10 +11,8 @@ const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 
 const {
-  graphQlSchema,
   graphQlOperations,
   schema,
-  watchGraphQlSchema,
   watchGraphQlOperations,
   watchSchema,
   cssModulesTypings,
@@ -73,10 +71,10 @@ async function esbuild() {
 }
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
+const generate = gulp.parallel(schema, graphQlOperations, cssModulesTypings)
 
 // Watches code generation only, rebuilds on file changes
-const watchGenerators = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
+const watchGenerators = gulp.parallel(watchSchema, watchGraphQlOperations, watchCSSModulesTypings)
 
 /**
  * Builds everything.

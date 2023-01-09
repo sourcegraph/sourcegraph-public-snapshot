@@ -2,6 +2,7 @@ package userpasswd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -90,7 +91,8 @@ func TestCheckEmailFormat(t *testing.T) {
 	}{
 		"valid":   {email: "foo@bar.pl", err: nil},
 		"invalid": {email: "foo@", err: errors.Newf("mail: no angle-addr")},
-		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")}} {
+		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")},
+	} {
 		t.Run(name, func(t *testing.T) {
 			err := checkEmailFormat(test.email)
 			if test.err == nil {
@@ -222,5 +224,101 @@ func TestHandleAccount_Unlock(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.Code)
 		assert.Equal(t, "", resp.Body.String())
+	}
+}
+
+func TestHandleAccount_UnlockByAdmin(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Builtin: &schema.BuiltinAuthProvider{
+						Type: providerType,
+					},
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	db := database.NewMockDB()
+	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	users := database.NewMockUserStore()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	lockout := NewMockLockoutStore()
+	logger := logtest.NoOp(t)
+	if testing.Verbose() {
+		logger = logtest.Scoped(t)
+	}
+	h := HandleUnlockUserAccount(logger, db, lockout)
+
+	tests := []struct {
+		name       string
+		username   string
+		userExists bool
+		userLocked bool
+		isAdmin    bool
+		status     int
+		body       string
+	}{
+		{
+			name:    "unauthorized request if not admin",
+			isAdmin: false,
+			status:  http.StatusUnauthorized,
+			body:    "Only site admins can unlock user accounts\n",
+		},
+		{
+			name:    "bad request if missing username",
+			isAdmin: true,
+			status:  http.StatusBadRequest,
+			body:    "Bad request: missing username\n",
+		},
+		{
+			name:     "not found if user does not exist",
+			username: "sguser1",
+			isAdmin:  true,
+			status:   http.StatusNotFound,
+			body:     "Not found: could not find user with username \"sguser1\"\n",
+		},
+		{
+			name:       "bad request if user is not locked",
+			username:   "sguser1",
+			userExists: true,
+			isAdmin:    true,
+			status:     http.StatusBadRequest,
+			body:       "User with username \"sguser1\" is not locked\n",
+		},
+		{
+			name:       "ok result",
+			username:   "sguser1",
+			userExists: true,
+			userLocked: true,
+			isAdmin:    true,
+			status:     http.StatusOK,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: test.isAdmin}, nil)
+
+			if test.userExists {
+				users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: test.username}, nil)
+			} else {
+				users.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
+			}
+
+			lockout.IsLockedOutFunc.SetDefaultReturn("", test.userLocked)
+
+			req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(fmt.Sprintf(`{"username": "%s"}`, test.username)))
+			require.NoError(t, err)
+
+			resp := httptest.NewRecorder()
+			h(resp, req)
+			assert.Equal(t, test.status, resp.Code)
+			assert.Equal(t, test.body, resp.Body.String())
+		})
 	}
 }

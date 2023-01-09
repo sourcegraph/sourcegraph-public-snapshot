@@ -333,12 +333,43 @@ func (s *Store) lockKey() int32 {
 	return locker.StringKey(fmt.Sprintf("%s:migrations", s.schemaName))
 }
 
+type wrappedPgError struct {
+	*pgconn.PgError
+}
+
+func (w wrappedPgError) Error() string {
+	var s strings.Builder
+
+	s.WriteString(w.PgError.Error())
+
+	if w.Detail != "" {
+		s.WriteRune('\n')
+		s.WriteString("DETAIL: ")
+		s.WriteString(w.Detail)
+	}
+
+	if w.Hint != "" {
+		s.WriteRune('\n')
+		s.WriteString("HINT: ")
+		s.WriteString(w.Hint)
+	}
+
+	return s.String()
+}
+
 // Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
 	ctx, _, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.UpQuery)
+	err = s.Exec(ctx, definition.UpQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // Down runs the given definition's down query.
@@ -346,7 +377,14 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, definition.DownQuery)
+	err = s.Exec(ctx, definition.DownQuery)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		return wrappedPgError{pgError}
+	}
+
+	return
 }
 
 // IndexStatus returns an object describing the current validity status and creation progress of the

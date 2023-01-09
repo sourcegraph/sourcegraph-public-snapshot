@@ -6,10 +6,9 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, Link, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'

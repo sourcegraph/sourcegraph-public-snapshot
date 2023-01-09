@@ -51,6 +51,19 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	}
 }
 
+// Visit performs a preorder traversal over the match tree, calling f on each node
+func Visit(mt MatchTree, f func(MatchTree)) {
+	switch v := mt.(type) {
+	case *Operator:
+		f(mt)
+		for _, child := range v.Operands {
+			Visit(child, f)
+		}
+	default:
+		f(mt)
+	}
+}
+
 // MatchTree is an interface representing the queries we can run against a commit.
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
@@ -192,6 +205,23 @@ type DiffModifiesFile struct {
 }
 
 func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	{
+		// This block pre-filters a commit based on the output of the `--name-status` output.
+		// It is significantly cheaper to get the changed file names compared to generating the full
+		// diff, so we try to short-circuit when possible.
+
+		foundMatch := false
+		for _, fileName := range lc.ModifiedFiles() {
+			if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			return filterResult(false), MatchedCommit{}, nil
+		}
+	}
+
 	diff, err := lc.Diff()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err

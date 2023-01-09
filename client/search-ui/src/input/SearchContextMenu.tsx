@@ -7,10 +7,12 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { getDefaultSearchContextSpec, SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getDefaultSearchContextSpec, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
     Button,
@@ -254,7 +256,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                 <Text className="mb-0">
                                     To search across your team's private repositories,{' '}
                                     <Link
-                                        to="https://signup.sourcegraph.com/?p=context"
+                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
                                         onClick={() => telemetryService.log('ClickedOnCloudCTA')}
                                     >
                                         try Sourcegraph Cloud

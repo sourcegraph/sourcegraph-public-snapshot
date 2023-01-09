@@ -8,8 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/monitoring/command"
 )
 
@@ -22,11 +20,7 @@ func main() {
 		os.Setenv(log.EnvLogFormat, "console")
 	}
 
-	liblog := log.Init(log.Resource{
-		Name:       "monitoring-generator",
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	})
+	liblog := log.Init(log.Resource{Name: "monitoring-generator"})
 	defer liblog.Sync()
 	logger := log.Scoped("monitoring", "main Sourcegraph monitoring entrypoint")
 

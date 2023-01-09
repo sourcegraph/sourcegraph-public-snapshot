@@ -20,7 +20,7 @@ import (
 
 const (
 	testLSIFUploadID = 1
-	testSCIPUploadID = 2408551
+	testSCIPUploadID = 2408562
 )
 
 func TestDatabaseDefinitions(t *testing.T) {

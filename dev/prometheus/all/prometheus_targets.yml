@@ -63,3 +63,8 @@
   targets:
     # github proxy
     - host.docker.internal:6090
+- labels:
+    job: otel-collector
+  targets:
+    # opentelemetry collector
+    - host.docker.internal:8888

@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -35,10 +36,6 @@ type batchChangeResolver struct {
 	namespaceOnce sync.Once
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
-
-	batchSpecOnce sync.Once
-	batchSpec     *btypes.BatchSpec
-	batchSpecErr  error
 
 	canAdministerOnce sync.Once
 	canAdminister     bool
@@ -157,16 +154,6 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 	return r.namespace, r.namespaceErr
 }
 
-func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.BatchSpec, error) {
-	r.batchSpecOnce.Do(func() {
-		r.batchSpec, r.batchSpecErr = r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-			ID: r.batchChange.BatchSpecID,
-		})
-	})
-
-	return r.batchSpec, r.batchSpecErr
-}
-
 func (r *batchChangeResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.batchChange.CreatedAt}
 }
@@ -277,9 +264,13 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	batchSpec, err := r.computeBatchSpec(ctx)
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+		ID: r.batchChange.BatchSpecID,
+	})
 	if err != nil {
-		// This spec should always exist, so fail hard on not found errors as well.
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -336,10 +327,6 @@ func (r *batchChangeResolver) BatchSpecs(
 
 	if args.IncludeLocallyExecutedSpecs != nil {
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
-	}
-
-	if args.ExcludeEmptySpecs != nil {
-		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
 	}
 
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {

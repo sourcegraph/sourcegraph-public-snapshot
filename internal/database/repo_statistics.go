@@ -33,6 +33,7 @@ type GitserverReposStatistic struct {
 }
 
 type RepoStatisticsStore interface {
+	basestore.ShareableStore
 	Transact(context.Context) (RepoStatisticsStore, error)
 	With(basestore.ShareableStore) RepoStatisticsStore
 

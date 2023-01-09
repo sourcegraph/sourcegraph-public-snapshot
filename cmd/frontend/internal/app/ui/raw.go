@@ -272,7 +272,7 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := gitserverClient.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
+			f, err := gitserverClient.NewFileReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				return err
 			}

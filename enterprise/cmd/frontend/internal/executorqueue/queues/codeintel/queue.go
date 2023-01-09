@@ -14,7 +14,7 @@ import (
 
 func QueueOptions(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueOptions[types.Index] {
 	recordTransformer := func(ctx context.Context, _ string, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
-		return transformRecord(record, resourceMetadata, accessToken())
+		return transformRecord(ctx, db, record, resourceMetadata, accessToken())
 	}
 
 	store := store.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)

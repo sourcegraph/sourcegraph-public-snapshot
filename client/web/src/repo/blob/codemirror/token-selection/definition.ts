@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { Location } from '@sourcegraph/extension-api-types'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
@@ -24,7 +24,6 @@ export interface DefinitionResult {
     locations: Location[]
     atTheDefinition?: boolean
 }
-const emptyDefinitionResult: DefinitionResult = { handler: () => {}, locations: [] }
 const definitionReady = Decoration.mark({
     class: 'cm-token-selection-definition-ready',
 })
@@ -129,31 +128,26 @@ async function goToDefinition(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    const api = await view.state.facet(blobPropsFacet).extensionsController?.extHostAPI
-    if (!api) {
-        return emptyDefinitionResult
-    }
-    const definition = await api.getDefinition(params)
+    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const definition = await api.getDefinition(params).toPromise()
+    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
-    const result = await wrapRemoteObservable(definition).toPromise()
-    if (!result || result.isLoading) {
-        return emptyDefinitionResult
-    }
-    if (result.result.length === 0) {
+    if (definition.length === 0) {
         return {
             handler: position => showTemporaryTooltip(view, 'No definition found', position, 2000, { arrow: true }),
             locations: [],
         }
     }
-    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
-    for (const location of result.result) {
+
+    for (const location of definition) {
         if (location.uri === params.textDocument.uri && location.range && location.range) {
-            const requestPosition = new Position(params.position.line, params.position.character)
             const {
                 start: { line: startLine, character: startCharacter },
                 end: { line: endLine, character: endCharacter },
             } = location.range
             const resultRange = Range.fromNumbers(startLine, startCharacter, endLine, endCharacter)
+            const requestPosition = new Position(params.position.line, params.position.character)
+
             if (resultRange.contains(requestPosition)) {
                 const refPanelURL = locationToURL(locationFrom, 'references')
                 return {
@@ -166,18 +160,20 @@ async function goToDefinition(
                             history.replace(refPanelURL)
                         }
                     },
-                    locations: result.result,
+                    locations: definition,
                 }
             }
         }
     }
-    if (result.result.length === 1) {
-        const destination = result.result[0]
+
+    if (definition.length === 1) {
+        const destination = definition[0]
         const hrefTo = locationToURL(destination)
-        const { range, uri } = result.result[0]
+        const { range, uri } = definition[0]
+
         if (hrefTo && range) {
             return {
-                locations: result.result,
+                locations: definition,
                 url: hrefTo,
                 handler: () => {
                     interface DefinitionState {
@@ -197,7 +193,7 @@ async function goToDefinition(
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This
                     // happens when the user repeatedly triggers goto-def, which
-                    // is easy to do when the the definition URL is close to
+                    // is easy to do when the definition URL is close to
                     // where the action got triggered.
                     const shouldPushHistory = history.location.state?.previousURL !== hrefFrom
                     if (hrefFrom && shouldPushHistory && history.createHref(history.location) !== hrefFrom) {
@@ -217,8 +213,9 @@ async function goToDefinition(
     // implement a component to resolve ambiguous results inside the blob
     // view similar to how VS Code "Peek definition" works like.
     const refPanelURL = locationToURL(locationFrom, 'def')
+
     return {
-        locations: result.result,
+        locations: definition,
         url: refPanelURL,
         handler: () => {
             if (refPanelURL) {

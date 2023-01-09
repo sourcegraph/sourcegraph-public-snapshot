@@ -29,10 +29,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
-        path: EnterprisePageRoutes.Stats,
-        render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
-    },
-    {
         path: EnterprisePageRoutes.CodeMonitoring,
         render: lazyComponent(
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
@@ -84,13 +80,9 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {
         path: EnterprisePageRoutes.Notebook,
         render: props => {
-            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+            const { showSearchNotebook } = useExperimentalFeatures.getState()
 
-            return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },

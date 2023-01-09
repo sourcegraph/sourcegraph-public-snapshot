@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '../../../testing'
 
 import { RouterLink } from './RouterLink'
 

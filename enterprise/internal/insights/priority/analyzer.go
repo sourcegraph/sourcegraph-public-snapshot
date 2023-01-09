@@ -112,8 +112,8 @@ func RepositoriesCost(o *QueryObject) {
 		o.cost = 1 // if this handler is called on its own we still want it to impact the cost.
 	}
 
-	if o.NumberOfRepositories > 10000 {
-		o.cost *= ManyRepositoriesMultiplier
+	if o.NumberOfRepositories > 100 {
+		o.cost *= float64(o.NumberOfRepositories) / 100.0
 	}
 
 	var megarepo, gigarepo bool

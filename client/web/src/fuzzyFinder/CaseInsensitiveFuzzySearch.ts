@@ -1,9 +1,23 @@
-import { extendedMatch, Fzf } from 'fzf'
+import { extendedMatch, Fzf, FzfResultItem, Tiebreaker } from 'fzf'
 
 import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
-import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { SearchValue } from './SearchValue'
+import { SearchValueRankingCache } from './SearchValueRankingCache'
 import { createUrlFunction } from './WordSensitiveFuzzySearch'
+
+function sortByTiebreakers<T>(values: FzfResultItem<T>[], tiebreakers: Tiebreaker<T>[]): FzfResultItem<T>[] {
+    return values.sort((a, b) => {
+        for (const tiebreaker of tiebreakers) {
+            const compareResult = tiebreaker(a, b, () => '')
+            if (compareResult !== 0) {
+                return compareResult
+            }
+        }
+        return 0
+    })
+}
 
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
@@ -17,21 +31,35 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     }
 
     public search(parameters: FuzzySearchParameters): FuzzySearchResult {
+        const historyCache = parameters.cache ?? new SearchValueRankingCache()
+        const tiebreakers: Tiebreaker<SearchValue>[] = [
+            (a, b) => historyCache.rank(b.item) - historyCache.rank(a.item),
+            (a, b) => (b.item?.ranking ?? 0) - (a.item?.ranking ?? 0),
+        ]
         const fzf = new Fzf<SearchValue[]>(this.values, {
             selector: ({ text }) => text,
             limit: parameters.maxResults,
             match: extendedMatch,
-            tiebreakers: [(a, b) => (b.item?.ranking ?? 0) - (a.item?.ranking ?? 0)],
+            tiebreakers,
         })
-        const candidates = fzf.find(parameters.query)
+        const isEmpty = parameters.query === ''
+        const candidates = isEmpty
+            ? sortByTiebreakers(
+                  this.values
+                      .filter(value => historyCache.rank(value))
+                      .map(value => ({ item: value, positions: new Set(), start: 0, end: 0, score: 0 })),
+                  tiebreakers
+              )
+            : fzf.find(parameters.query)
         // this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates.map(({ item }) => item)]))
         const isComplete = candidates.length < parameters.maxResults
         candidates.slice(0, parameters.maxResults)
 
-        const links: HighlightedLinkProps[] = candidates.map(candidate => {
+        const links: HighlightedLinkProps[] = candidates.map<HighlightedLinkProps>(candidate => {
             const positions = compressedRangePositions([...candidate.positions])
             return {
                 ...candidate.item,
+                score: candidate.score,
                 positions,
                 url: candidate.item.url || this.createUrl?.(candidate.item.text),
             }

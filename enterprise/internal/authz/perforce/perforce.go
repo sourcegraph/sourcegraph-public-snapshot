@@ -11,8 +11,8 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -88,10 +88,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	tr, ctx := trace.New(ctx, "perforce.authz.provider.FetchAccount", "")
 	defer func() {
-		tr.LogFields(
-			otlog.String("user.name", user.Username),
-			otlog.Int32("user.id", user.ID),
-		)
+		tr.SetAttributes(
+			attribute.String("user.name", user.Username),
+			attribute.Int("user.id", int(user.ID)))
 
 		if err != nil {
 			tr.SetError(err)

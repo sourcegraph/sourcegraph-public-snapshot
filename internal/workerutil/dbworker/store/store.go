@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -533,7 +534,7 @@ func (s *store[T]) Dequeue(ctx context.Context, workerHostname string, condition
 	if len(records) == 0 {
 		return ret, false, nil
 	}
-	trace.Log(otlog.Int("recordID", records[0].RecordID()))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("recordID", records[0].RecordID()))
 
 	return records[0], true, nil
 }
@@ -950,7 +951,7 @@ func (s *store[T]) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, 
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -972,7 +973,7 @@ func (s *store[T]) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, 
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }

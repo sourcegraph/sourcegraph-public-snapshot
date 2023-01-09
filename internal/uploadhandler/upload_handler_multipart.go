@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/opentracing/opentracing-go/log"
@@ -42,7 +43,7 @@ func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uplo
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	trace.Log(log.Int("uploadID", id))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
 
 	h.logger.Info(
 		"uploadhandler: enqueued upload",
@@ -74,7 +75,7 @@ func (h *UploadHandler[T]) handleEnqueueMultipartUpload(ctx context.Context, upl
 		h.markUploadAsFailed(context.Background(), h.dbStore, uploadState.uploadID, err)
 		return nil, http.StatusInternalServerError, err
 	}
-	trace.Log(log.Int("gzippedUploadPartSize", int(size)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadPartSize", int(size)))
 
 	if err := h.dbStore.AddUploadPart(ctx, uploadState.uploadID, uploadState.index); err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -108,17 +109,16 @@ func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, u
 	for partNumber := 0; partNumber < uploadState.numParts; partNumber++ {
 		sources = append(sources, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, partNumber))
 	}
-	trace.Log(
-		log.Int("numSources", len(sources)),
-		log.String("sources", strings.Join(sources, ",")),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numSources", len(sources)),
+		attribute.String("sources", strings.Join(sources, ",")))
 
 	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", uploadState.uploadID), sources...)
 	if err != nil {
 		h.markUploadAsFailed(context.Background(), tx, uploadState.uploadID, err)
 		return nil, http.StatusInternalServerError, err
 	}
-	trace.Log(log.Int("composedObjectSize", int(size)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("composedObjectSize", int(size)))
 
 	if err := tx.MarkQueued(ctx, uploadState.uploadID, &size); err != nil {
 		return nil, http.StatusInternalServerError, err

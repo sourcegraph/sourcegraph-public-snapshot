@@ -57,7 +57,7 @@ export const mockBatchChange = (batchChange?: Partial<EditBatchChangeFields>): E
 
 export const mockBatchSpec = (
     batchSpec?: Partial<EditBatchChangeFields['currentSpec']>
-): EditBatchChangeFields['currentSpec'] => ({
+): NonNullable<EditBatchChangeFields['currentSpec']> => ({
     __typename: 'BatchSpec',
     id: '1',
     state: BatchSpecState.PENDING,

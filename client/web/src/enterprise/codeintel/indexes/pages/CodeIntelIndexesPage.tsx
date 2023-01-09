@@ -5,10 +5,9 @@ import classNames from 'classnames'
 import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {

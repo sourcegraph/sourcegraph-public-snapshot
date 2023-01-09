@@ -9,7 +9,6 @@ import {
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
-    HasAvailableCodeInsightResult,
     RemoveInsightViewFromDashboardResult,
     RemoveInsightViewFromDashboardVariables,
 } from 'src/graphql-operations'
@@ -17,8 +16,7 @@ import {
 import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
-import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
+import { Insight, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AssignInsightsToDashboardInput,
@@ -49,23 +47,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = (input: { dashboardId: string; withCompute: boolean }): Observable<Insight[]> => {
         const { dashboardId, withCompute } = input
-
-        // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
-        // we need to use here insightViews query to fetch all available insights
-        if (dashboardId === ALL_INSIGHTS_DASHBOARD.id) {
-            return fromObservableQuery(
-                this.apolloClient.watchQuery<GetInsightsResult>({
-                    query: GET_INSIGHTS_GQL,
-                    // Prevent unnecessary network request after mutation over dashboard or insights within
-                    // current dashboard
-                    nextFetchPolicy: 'cache-first',
-                    errorPolicy: 'all',
-                })
-            ).pipe(
-                map(({ data }) => data.insightViews.nodes.filter(isDefined).map(createInsightView)),
-                map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
-            )
-        }
 
         // Get all insights from the user-created dashboard
         return fromObservableQuery(
@@ -103,23 +84,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             }),
             catchError(() => of(null))
         )
-
-    public hasInsights = (first: number): Observable<boolean> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
-                query: gql`
-                    query HasAvailableCodeInsight($first: Int!) {
-                        insightViews(first: $first) {
-                            nodes {
-                                id
-                            }
-                        }
-                    }
-                `,
-                variables: { first },
-                nextFetchPolicy: 'cache-only',
-            })
-        ).pipe(map(({ data }) => data.insightViews.nodes.length === first))
 
     public getActiveInsightsCount = (first: number): Observable<number> =>
         fromObservableQuery(
@@ -177,10 +141,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
     }
-
-    // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
-    // So we just return null to get the form to always accept.
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
     public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
 

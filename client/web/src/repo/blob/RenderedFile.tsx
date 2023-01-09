@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/wildcard'
 
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 

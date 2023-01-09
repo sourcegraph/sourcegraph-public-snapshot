@@ -3,8 +3,7 @@ import React, { useCallback, useRef } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useAutoFocus, Input } from '@sourcegraph/wildcard'
+import { useAutoFocus, Input, Form } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 

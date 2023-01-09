@@ -23,7 +23,7 @@ import { useExperimentalFeatures } from '../../stores'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-decorations'
+import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines, shouldScrollIntoView } from './codemirror/linenumbers'
@@ -34,6 +34,7 @@ import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
+import { setBlobEditView } from './use-blob-store'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -82,8 +83,6 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame visibility
-const blameVisibilityCompartment = new Compartment()
 // Compartment to update blame decorations
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
@@ -107,8 +106,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
-        disableStatusBar,
-        disableDecorations,
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
@@ -129,13 +126,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
-    const blameVisibility = useMemo(
-        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
-        [isBlameVisible]
-    )
     const blameDecorations = useMemo(
-        () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
-        [isBlameVisible, blameHunks]
+        () =>
+            createBlameDecorationsExtension(
+                !!isBlameVisible,
+                blameHunks?.current,
+                blameHunks?.firstCommitDate,
+                isLightTheme
+            ),
+        [isBlameVisible, blameHunks, isLightTheme]
     )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
@@ -181,7 +180,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
-
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -206,14 +204,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      disableStatusBar,
-                      disableDecorations,
                       enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            blameVisibilityCompartment.of(blameVisibility),
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
@@ -230,7 +225,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView>()
@@ -239,6 +234,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateOnExtensionChange: false,
     })
     editorRef.current = editor
+
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editor ?? null), [editor])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -281,16 +279,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
-
-    // Update blame visibility
-    useEffect(() => {
-        if (editor) {
-            editor.dispatch({ effects: blameVisibilityCompartment.reconfigure(blameVisibility) })
-        }
-        // editor is not provided because this should only be triggered after the
-        // editor was created (i.e. not on first render)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [blameVisibility])
 
     // Update blame decorations
     useLayoutEffect(() => {

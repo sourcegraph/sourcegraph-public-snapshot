@@ -76,17 +76,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: lazyComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
             exact: true,
         },
-        window.context.enableLegacyExtensions
-            ? {
-                  path: '/registry/extensions',
-                  render: lazyComponent(
-                      () => import('./SiteAdminRegistryExtensionsPage'),
-                      'SiteAdminRegistryExtensionsPage'
-                  ),
-                  exact: true,
-              }
-            : undefined,
-
         {
             path: '/batch-changes',
             exact: true,

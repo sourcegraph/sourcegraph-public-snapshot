@@ -5,8 +5,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { H1, H2, H3 } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
 
@@ -31,10 +31,7 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
         isFullPage={false}
         isActivated={true}
         onToggleActivated={action('onToggleActivated')}
-        optionFlags={[
-            { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-            { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-        ]}
+        optionFlags={[{ key: 'allowErrorReporting', label: 'Allow error reporting', value: false }]}
         onChangeOptionFlag={action('onChangeOptionFlag')}
         version=""
         sourcegraphUrl=""
@@ -53,7 +50,6 @@ const Interactive: Story = args => {
 const WithAdvancedSettings: Story = args => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: true },
     ])
     const setOptionFlag = (key: string, value: boolean) => {
         setOptionFlagValues(optionFlagValues.map(flag => (flag.key === key ? { ...flag, value } : flag)))

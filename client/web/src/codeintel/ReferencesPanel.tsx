@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
@@ -62,6 +62,7 @@ import {
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
@@ -85,7 +86,7 @@ interface HighlightedFileLineRangesProps {
 
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
         HoverThresholdProps,
@@ -153,6 +154,12 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     >
 > = props => {
     const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
+
+    // Scroll blob UI to the selected symbol right after the reference panel is rendered
+    // and shifted the blob UI (scroll into view is needed because there are a few cases
+    // when ref panel may overlap with current symbol)
+    useEffect(() => BlobAPI.scrollIntoView({ line: props.line }), [props.line])
+
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
@@ -586,9 +593,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                         ) : (
-                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -743,8 +750,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             nav={props.blobNav}
             history={history}
             location={location}
-            disableStatusBar={true}
-            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
@@ -847,7 +852,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronUp : mdiChevronDown} />
                     <small>
                         <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
                             {displayRepoName(repoLocationGroup.repoName)}
@@ -972,9 +977,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronUp} />
                     ) : (
-                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

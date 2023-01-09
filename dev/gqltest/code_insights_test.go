@@ -1,10 +1,13 @@
 package main
 
 import (
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -239,7 +242,7 @@ func TestUpdateInsight(t *testing.T) {
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries)
+		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -315,7 +318,7 @@ func TestUpdateInsight(t *testing.T) {
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries)
+		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -357,6 +360,65 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	})
 
+	t.Run("time scope change triggers recalculation", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "lang:go select:file",
+			"options": map[string]string{
+				"label":     "go files",
+				"lineColor": "#6495ED",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  "WEEK",
+					"value": 3,
+				},
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		dataSeries["seriesId"] = insight.SeriesId
+		// remove timeScope from series
+		delete(dataSeries, "timeScope")
+		// provide new timeScope on insight
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my gql test insight (needs recalculation)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+			"timeScope": map[string]any{"stepInterval": map[string]any{"unit": "DAY", "value": 99}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId == insight.SeriesId {
+			t.Error("expected new series")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
+		}
+	})
+
 	t.Run("metadata update capture group insight no recalculation", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "todo([a-z])",
@@ -375,7 +437,7 @@ func TestUpdateInsight(t *testing.T) {
 			},
 			"generatedFromCaptureGroups": true,
 		}
-		insight, err := client.CreateSearchInsight("my capture group gqltest", dataSeries)
+		insight, err := client.CreateSearchInsight("my capture group gqltest", dataSeries, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -418,6 +480,85 @@ func TestUpdateInsight(t *testing.T) {
 			t.Error("expected updated series to be attached to same view")
 		}
 	})
+
+	t.Run("metadata update no recalculation view level", func(t *testing.T) {
+		repos := []string{"repo1"}
+		intervalUnit := "MONTH"
+		intervalValue := 4
+		dataSeries := map[string]any{
+			"query": "lang:css",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "#6495ED",
+			},
+		}
+		repoScope := map[string]any{
+			"repositories": repos,
+		}
+		timeScope := map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  intervalUnit,
+				"value": intervalValue,
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, repoScope, timeScope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		if insight.Label != "insights" {
+			t.Errorf("wrong label: %v", insight.Label)
+		}
+		if insight.Color != "#6495ED" {
+			t.Errorf("wrong color: %v", insight.Color)
+		}
+
+		dataSeries["seriesId"] = insight.SeriesId
+		dataSeries["options"] = map[string]any{
+			"label":     "insights 2",
+			"lineColor": "green",
+		}
+
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my gql test insight (modified)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+			"repositoryScope": repoScope,
+			"timeScope":       timeScope,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId != insight.SeriesId {
+			t.Error("expected series to get reused")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
+		}
+		if updatedInsight.Label != "insights 2" {
+			t.Error("expected series label to be updated")
+		}
+		if updatedInsight.Color != "green" {
+			t.Error("expected series color to be updated")
+		}
+	})
+
 }
 
 func TestSaveInsightAsNewView(t *testing.T) {
@@ -437,7 +578,7 @@ func TestSaveInsightAsNewView(t *testing.T) {
 			},
 		},
 	}
-	insight, err := client.CreateSearchInsight("save insight as new view insight", dataSeries)
+	insight, err := client.CreateSearchInsight("save insight as new view insight", dataSeries, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -475,4 +616,177 @@ func TestSaveInsightAsNewView(t *testing.T) {
 	if insightSeries[0].SeriesId != insight.SeriesId {
 		t.Error("same series should be attached to new view")
 	}
+}
+
+func TestCreateInsight(t *testing.T) {
+
+	t.Run("series level repo & time scopes", func(t *testing.T) {
+		repos := []string{"a", "b"}
+		intervalUnit := "MONTH"
+		intervalValue := 4
+		dataSeries := map[string]any{
+			"query": "lang:go",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "blue",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": repos,
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  intervalUnit,
+					"value": intervalValue,
+				},
+			},
+		}
+		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
+		t.Logf("%v", insight)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		sort.SliceStable(insight.Repos, func(i, j int) bool {
+			return insight.Repos[i] < insight.Repos[j]
+		})
+		if !slices.Equal(repos, insight.Repos) {
+			t.Error("should have matching repo scope")
+		}
+		if intervalUnit != insight.IntervalUnit {
+			t.Error("should have matching interval unit")
+		}
+		if intervalValue != int(insight.IntervalValue) {
+			t.Error("should have matching interval value")
+		}
+	})
+
+	t.Run("view level repo & time scopes", func(t *testing.T) {
+		repos := []string{"repo1"}
+		intervalUnit := "MONTH"
+		intervalValue := 4
+		dataSeries := map[string]any{
+			"query": "lang:go",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "blue",
+			},
+		}
+		repoScope := map[string]any{
+			"repositories": repos,
+		}
+		timeScope := map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  intervalUnit,
+				"value": intervalValue,
+			},
+		}
+		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, repoScope, timeScope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		sort.SliceStable(insight.Repos, func(i, j int) bool {
+			return insight.Repos[i] < insight.Repos[j]
+		})
+		if !slices.Equal(repos, insight.Repos) {
+			t.Error("should have matching repo scope")
+		}
+		if intervalUnit != insight.IntervalUnit {
+			t.Error("should have matching interval unit")
+		}
+		if intervalValue != int(insight.IntervalValue) {
+			t.Error("should have matching interval value")
+		}
+
+	})
+
+	t.Run("series level scopes override", func(t *testing.T) {
+		repos := []string{"series1", "series2"}
+		intervalUnit := "MONTH"
+		intervalValue := 4
+		dataSeries := map[string]any{
+			"query": "lang:go",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "blue",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": repos,
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  intervalUnit,
+					"value": intervalValue,
+				},
+			},
+		}
+		repoScope := map[string]any{
+			"repositories": []string{"view1", "view2"},
+		}
+		timeScope := map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  "DAY",
+				"value": 1,
+			},
+		}
+		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, repoScope, timeScope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		sort.SliceStable(insight.Repos, func(i, j int) bool {
+			return insight.Repos[i] < insight.Repos[j]
+		})
+		if !slices.Equal(repos, insight.Repos) {
+			t.Error("should have matching repo scope")
+		}
+		if intervalUnit != insight.IntervalUnit {
+			t.Error("should have matching interval unit")
+		}
+		if intervalValue != int(insight.IntervalValue) {
+			t.Error("should have matching interval value")
+		}
+	})
+
+	t.Run("a repo and time scope are required ", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "lang:go",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "blue",
+			},
+		}
+
+		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
+		assert.Error(t, err)
+		if err == nil {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}
+
+	})
+
 }

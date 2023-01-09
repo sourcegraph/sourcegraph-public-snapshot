@@ -18,6 +18,10 @@ export function useSearchResultsKeyboardNavigation(
             if (!enableKeyboardNavigation) {
                 return
             }
+            // Do not run keyboard shortcuts if any modifier key is pressed to avoid hijacking default browser actions.
+            if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+                return
+            }
 
             const selectableResults = Array.from(
                 root.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
@@ -30,25 +34,7 @@ export function useSearchResultsKeyboardNavigation(
                 case 'j':
                 case 'k': {
                     const direction = event.key === 'ArrowUp' || event.key === 'k' ? 'up' : 'down'
-
-                    const hasSelectedNextResult = isMetaKey(event, isMacPlatform())
-                        ? selectNextHeaderLink(selectableResults, selectedResult, direction)
-                        : selectNextResult(selectableResults, selectedResult, direction)
-
-                    if (hasSelectedNextResult) {
-                        event.stopPropagation()
-                        event.preventDefault()
-                    }
-                    break
-                }
-                case 'n':
-                case 'p': {
-                    const hasSelectedNextResult = selectNextHeaderLink(
-                        selectableResults,
-                        selectedResult,
-                        event.key === 'p' ? 'up' : 'down'
-                    )
-
+                    const hasSelectedNextResult = selectNextResult(selectableResults, selectedResult, direction)
                     if (hasSelectedNextResult) {
                         event.stopPropagation()
                         event.preventDefault()
@@ -69,14 +55,6 @@ export function useSearchResultsKeyboardNavigation(
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
-                        )
-                        event.preventDefault()
-                    }
-                    break
-                case 'e':
-                    if (selectedResult) {
-                        selectedResult.dispatchEvent(
-                            new CustomEvent('toggleSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
                         event.preventDefault()
                     }
@@ -135,7 +113,7 @@ export function useSearchResultsKeyboardNavigation(
                 return
             }
 
-            if (event.key === 'ArrowDown' && isMetaKey(event, isMacPlatform())) {
+            if ((event.key === 'ArrowDown' || event.key === 'j') && isMetaKey(event, isMacPlatform())) {
                 selectFirstResult(root)
                 event.preventDefault()
             }
@@ -187,28 +165,6 @@ function selectNextResult(
     const currentIndex = selectableResults.findIndex(selectable => selectable.isEqualNode(selectedResult))
     const nextIndex = direction === 'down' ? currentIndex + 1 : currentIndex - 1
     const nextSelected = nextIndex >= 0 && nextIndex < selectableResults.length ? selectableResults[nextIndex] : null
-
-    return selectElement(nextSelected)
-}
-
-function selectNextHeaderLink(
-    selectableResults: HTMLElement[],
-    selectedResult: HTMLElement | null,
-    direction: 'up' | 'down'
-): boolean {
-    if (!selectedResult || selectableResults.length === 0) {
-        return false
-    }
-
-    const currentIndex = selectableResults.findIndex(selectable => selectable.isEqualNode(selectedResult))
-    const selectableCandidates =
-        direction === 'down'
-            ? selectableResults.slice(currentIndex + 1)
-            : selectableResults.slice(0, currentIndex).reverse()
-
-    const nextSelected = selectableCandidates.find(
-        selectable => selectable.dataset.selectableSearchResultHeaderLink === 'true'
-    )
 
     return selectElement(nextSelected)
 }

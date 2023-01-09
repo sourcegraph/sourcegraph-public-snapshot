@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"io"
 	"os"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	scip "github.com/sourcegraph/scip/bindings/go/scip"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -180,13 +183,11 @@ func TestHandleSCIP(t *testing.T) {
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Track writes to symbols table
-	symbolWriter := NewMockSymbolWriter()
-	mockLSIFStore.NewSymbolWriterFunc.SetDefaultReturn(symbolWriter, nil)
+	scipWriter := NewMockSCIPWriter()
+	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
-	id := 0
-	mockLSIFStore.InsertSCIPDocumentFunc.SetDefaultHook(func(_ context.Context, _ int, _ string, _ []byte, _ []byte) (int, error) {
-		id++
-		return id, nil
+	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
+		return nil
 	})
 
 	// Give correlation package a valid input dump
@@ -353,53 +354,37 @@ func TestHandleSCIP(t *testing.T) {
 			t.Errorf("unexpected processed metadata args (-want +got):\n%s", diff)
 		}
 	}
-	if len(mockLSIFStore.InsertSCIPDocumentFunc.History()) != 11 {
-		t.Errorf("unexpected number of of InsertSCIPDocumentFunc.History() calls. want=%d have=%d", 11, len(mockLSIFStore.InsertSCIPDocumentFunc.History()))
+	if len(scipWriter.InsertDocumentFunc.History()) != 11 {
+		t.Errorf("unexpected number of of InsertDocumentFunc.History() calls. want=%d have=%d", 11, len(scipWriter.InsertDocumentFunc.History()))
 	} else {
-		found := false
-		for _, call := range mockLSIFStore.InsertSCIPDocumentFunc.History() {
-			if call.Arg1 != 42 {
-				t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
-			}
-			if call.Arg2 != "template/src/util/promise.ts" {
-				continue
-			}
+		foundDocument1 := false
+		foundDocument2 := false
 
-			found = true
-			expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
-			if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(call.Arg3)); diff != "" {
-				t.Errorf("unexpected hash (-want +got):\n%s", diff)
+		for _, call := range scipWriter.InsertDocumentFunc.History() {
+			switch call.Arg1 {
+			case "template/src/util/promise.ts":
+				payload, _ := proto.Marshal(call.Arg2)
+				hash := sha256.New()
+				_, _ = hash.Write(payload)
+
+				foundDocument1 = true
+				expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
+				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(hash.Sum(nil))); diff != "" {
+					t.Errorf("unexpected hash (-want +got):\n%s", diff)
+				}
+
+			case "template/src/util/graphql.ts":
+				foundDocument2 = true
+				if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(call.Arg2)); diff != "" {
+					t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
+				}
 			}
 		}
-		if !found {
-			t.Fatalf("target path not found")
+		if !foundDocument1 {
+			t.Fatalf("target path #1 not found")
 		}
-	}
-	if len(symbolWriter.WriteSCIPSymbolsFunc.History()) != 11 {
-		t.Errorf("unexpected number of of riteSCIPSymbolsFunc.History() calls. want=%d have=%d", 11, len(symbolWriter.WriteSCIPSymbolsFunc.History()))
-	} else {
-		found := false
-		for i, call := range mockLSIFStore.InsertSCIPDocumentFunc.History() {
-			const targetPath = "template/src/util/graphql.ts"
-			if call.Arg2 != targetPath {
-				continue
-			}
-
-			// this path is sixth in order of processing, guaranteed by canonicalization
-			expectedDocumentLookupID := 6
-
-			found = true
-			call := symbolWriter.WriteSCIPSymbolsFunc.History()[i]
-			if call.Arg1 != expectedDocumentLookupID {
-				t.Fatalf("unexpected value for upload id. want=%d have=%d", expectedDocumentLookupID, call.Arg1)
-			}
-			if diff := cmp.Diff(testedInvertedRangeIndex, call.Arg2); diff != "" {
-				t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
-			}
-		}
-
-		if !found {
-			t.Fatalf("target path not found")
+		if !foundDocument2 {
+			t.Fatalf("target path #2 not found")
 		}
 	}
 }
@@ -495,8 +480,8 @@ func TestHandleErrorScip(t *testing.T) {
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Track writes to symbols table
-	symbolWriter := NewMockSymbolWriter()
-	mockLSIFStore.NewSymbolWriterFunc.SetDefaultReturn(symbolWriter, nil)
+	scipWriter := NewMockSCIPWriter()
+	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)

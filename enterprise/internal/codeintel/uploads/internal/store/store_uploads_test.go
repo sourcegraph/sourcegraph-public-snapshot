@@ -2063,6 +2063,28 @@ func TestMarkQueued(t *testing.T) {
 	}
 }
 
+func TestMarkQueuedNoSize(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+
+	if err := store.MarkQueued(context.Background(), 1, nil); err != nil {
+		t.Fatalf("unexpected error marking upload as queued: %s", err)
+	}
+
+	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "queued" {
+		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
+	} else if upload.UploadSize != nil {
+		t.Errorf("unexpected upload size. want=%v have=%v", nil, upload.UploadSize)
+	}
+}
+
 func TestMarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -2159,7 +2181,6 @@ func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, 
 	}
 }
 
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
@@ -2181,7 +2202,6 @@ func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits [
 	return idsByCommit
 }
 
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,

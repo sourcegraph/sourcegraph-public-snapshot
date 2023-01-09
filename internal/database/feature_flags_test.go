@@ -505,6 +505,22 @@ func testUserFlags(t *testing.T) {
 		require.Equal(t, expected, got)
 	})
 
+	t.Run("newer org override beats older org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		o2 := mkOrg("o2")
+		u1 := mkUser("u", o1.ID, o2.ID)
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkOrgOverride(o1.ID, "f2", true)
+		mkOrgOverride(o2.ID, "f2", false)
+
+		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
 	t.Run("delete flag with override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		o1 := mkOrg("o1")

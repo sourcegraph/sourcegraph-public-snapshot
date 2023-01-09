@@ -113,7 +113,7 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Fatal(err)
 		}
 		got = []string{}
-		for r := range rle.Minimal {
+		for r := range rle.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)

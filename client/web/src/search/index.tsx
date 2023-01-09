@@ -1,11 +1,11 @@
 import { Location } from 'history'
 import { escapeRegExp, memoize } from 'lodash'
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { SearchMode } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -13,6 +13,8 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+
+export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -203,11 +205,6 @@ export function literalSearchCompatibility({ queryInput, patternTypeInput }: Que
     }
 }
 
-export interface HomePanelsProps {
-    /** Function that returns current time (for stability in visual tests). */
-    now?: () => Date
-}
-
 export interface SearchStreamingProps {
     streamSearch: (
         queryObservable: Observable<string>,
@@ -243,10 +240,10 @@ export function getQueryStateFromLocation({
 }: {
     location: Observable<Location>
     /**
-     * Whether or not the search context should be shown or not. This is usually
-     * controlled by user settings.
+     * Whether or not the search context should be shown or not.
+     * This is enabled on enterprise instances
      */
-    showSearchContext: Observable<boolean>
+    showSearchContext: boolean
     /**
      * Resolves to true if the provided search context exists for the user.
      */
@@ -270,25 +267,19 @@ export function getQueryStateFromLocation({
 
     // This subscription handles updating the global query state store from
     // the URL.
-    return combineLatest([
-        // Extract information from URL and validate search context if
-        // available.
-        location.pipe(
-            switchMap(
-                (location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
-                    const parsedSearchURL = parseSearchURL(location.search)
-                    if (parsedSearchURL.query !== undefined) {
-                        return memoizedIsSearchContextAvailable(
-                            memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
-                        ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
-                    }
-                    return of({ parsedSearchURL, isSearchContextAvailable: false })
-                }
-            )
-        ),
-        showSearchContext.pipe(distinctUntilChanged()),
-    ]).pipe(
-        map(([locationAndContextInformation, showSearchContext]) => {
+    // Extract information from URL and validate search context if
+    // available.
+    return location.pipe(
+        switchMap((location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
+            const parsedSearchURL = parseSearchURL(location.search)
+            if (parsedSearchURL.query !== undefined) {
+                return memoizedIsSearchContextAvailable(
+                    memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
+                ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
+            }
+            return of({ parsedSearchURL, isSearchContextAvailable: false })
+        }),
+        map(locationAndContextInformation => {
             const { parsedSearchURL, isSearchContextAvailable } = locationAndContextInformation
             const query = parsedSearchURL.query ?? ''
             const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)

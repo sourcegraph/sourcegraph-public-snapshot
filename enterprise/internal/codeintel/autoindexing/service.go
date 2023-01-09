@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
@@ -179,7 +180,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 			return nil, nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 	}
-	trace.Log(otlog.String("commit", commit))
+	trace.AddEvent("found", attribute.String("commit", commit))
 
 	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil {

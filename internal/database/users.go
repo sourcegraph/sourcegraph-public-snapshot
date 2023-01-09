@@ -53,6 +53,7 @@ var (
 //
 // For a detailed overview of the schema, see schema.md.
 type UserStore interface {
+	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
@@ -872,6 +873,7 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+
 const listUsersInactiveCond = `
 (NOT EXISTS (
 	SELECT 1 FROM event_logs
@@ -881,6 +883,7 @@ const listUsersInactiveCond = `
 		timestamp >= %s
 ))
 `
+
 const orgMembershipCond = `
 EXISTS (
 	SELECT 1
@@ -1153,7 +1156,6 @@ WHERE id=%s
       AND expired_at IS NULL
     )
 `, passwd, id, id))
-
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}

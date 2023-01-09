@@ -93,7 +93,7 @@ export class CodeIntelTooltip implements Tooltip {
                     id: 'invokeFunction',
                     title: 'Go to definition',
                     disabledTitle: noDefinitionFound ? 'No definition found' : 'You are at the definition',
-                    command: 'invokeFunction',
+                    command: 'invokeFunction-new',
                     commandArguments: [() => definition.asyncHandler()],
                 },
             },

@@ -6,7 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import {
@@ -20,12 +20,12 @@ import {
     Card,
     Icon,
     H2,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
@@ -243,7 +243,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 function queryProductSubscription(
     uuid: string
 ): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
-    return queryGraphQL(
+    return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
@@ -312,7 +312,7 @@ function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
 ): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
-    return queryGraphQL(
+    return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
                 dotcom {

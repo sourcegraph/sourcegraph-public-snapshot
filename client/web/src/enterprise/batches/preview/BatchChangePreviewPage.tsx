@@ -25,7 +25,7 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
 
-export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'emails'>
 
 export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
@@ -121,7 +121,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
 
     const {
         batchSpecID: specID,
-        isLightTheme,
         expandChangesetDescriptions,
         queryChangesetApplyPreview,
         queryChangesetSpecFileDiffs,
@@ -202,7 +201,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
-                        isLightTheme={isLightTheme}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}

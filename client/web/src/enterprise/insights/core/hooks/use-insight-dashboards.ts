@@ -8,8 +8,12 @@ import {
     InsightsDashboardNode,
     InsightsDashboardsResult,
 } from '../../../../graphql-operations'
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { InsightDashboard, InsightsDashboardOwner, InsightsDashboardOwnerType, InsightsDashboardType } from '../index'
+import {
+    CustomInsightDashboard,
+    InsightsDashboardOwner,
+    InsightsDashboardOwnerType,
+    InsightsDashboardType,
+} from '../index'
 
 export const GET_INSIGHT_DASHBOARDS_GQL = gql`
     query InsightsDashboards($id: ID) {
@@ -45,7 +49,7 @@ export const GET_INSIGHT_DASHBOARDS_GQL = gql`
 `
 
 interface useInsightDashboardsResult {
-    dashboards: InsightDashboard[] | undefined
+    dashboards: CustomInsightDashboard[] | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -62,19 +66,19 @@ export function useInsightDashboards(): useInsightDashboardsResult {
 
     if (data) {
         const { insightsDashboards, currentUser } = data
-        const improvedDashboards = [
-            ALL_INSIGHTS_DASHBOARD,
-            ...makeDashboardTitleUnique(insightsDashboards.nodes).map(
-                (dashboard): InsightDashboard => ({
+
+        return {
+            error,
+            loading,
+            dashboards: makeDashboardTitleUnique(insightsDashboards.nodes).map(
+                (dashboard): CustomInsightDashboard => ({
                     id: dashboard.id,
                     type: InsightsDashboardType.Custom,
                     title: dashboard.title,
                     owners: deserializeDashboardsOwners(dashboard, currentUser),
                 })
             ),
-        ]
-
-        return { dashboards: improvedDashboards, error, loading }
+        }
     }
 
     return { dashboards: undefined, error, loading }
@@ -85,7 +89,7 @@ interface useInsightDashboardProps {
 }
 
 interface useInsightDashboardResult {
-    dashboard: InsightDashboard | null | undefined
+    dashboard: CustomInsightDashboard | null | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -98,27 +102,15 @@ interface useInsightDashboardResult {
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
     const { id } = props
 
-    // Backend GQL API doesn't support non ID like values for id input
-    // Skip any get insight dashboard request in case of virtual dashboard
-    // that has non-ID like id value (id='all')
-    const isVirtualDashboardId = id === ALL_INSIGHTS_DASHBOARD.id
-    const shouldRunQuery = id && !isVirtualDashboardId
     const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
-        skip: !shouldRunQuery,
         variables: { id },
         fetchPolicy: 'cache-first',
     })
 
-    // If query wasn't run return null value as a sign that we couldn't find any
-    // dashboard with the current id
-    if (!shouldRunQuery) {
-        return { dashboard: null, loading, error }
-    }
-
     if (data) {
         const { insightsDashboards, currentUser } = data
         const rawDashboard = insightsDashboards.nodes.find(dashboard => dashboard.id === id)
-        const insightDashboard = rawDashboard
+        const insightDashboard: CustomInsightDashboard | null = rawDashboard
             ? {
                   id: rawDashboard.id,
                   type: InsightsDashboardType.Custom,
@@ -148,7 +140,7 @@ function makeDashboardTitleUnique(dashboards: InsightsDashboardNode[]): Insights
     })
 }
 
-function deserializeDashboardsOwners(
+export function deserializeDashboardsOwners(
     dashboardNode: InsightsDashboardNode,
     userNode: InsightsDashboardCurrentUser | null
 ): InsightsDashboardOwner[] {

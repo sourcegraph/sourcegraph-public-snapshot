@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -263,7 +263,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit in
 // regexSearch concurrently searches files in zr looking for matches using rg.
 func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
-	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
+	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
 		span.SetTag("re", rg.re.String())

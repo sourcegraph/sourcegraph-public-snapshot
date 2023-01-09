@@ -56,13 +56,22 @@ func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 }
 
 type ConnectionResolverOptions struct {
-	maxPageSize *int
+	// The maximum number of nodes that can be returned in a single page.
+	MaxPageSize *int
+	// Used to enable or disable the automatic reversal of nodes in backward
+	// pagination mode.
+	//
+	// Setting this to `false` is useful when the data is not fetched via a SQL
+	// index.
+	//
+	// Defaults to `true` when not set.
+	Reverse *bool
 }
 
 // MaxPageSize returns the configured max page limit for the connection
-func (o *ConnectionResolverOptions) MaxPageSize() int {
-	if o.maxPageSize != nil {
-		return *o.maxPageSize
+func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
+	if o.MaxPageSize != nil {
+		return *o.MaxPageSize
 	}
 
 	return DEFAULT_MAX_PAGE_SIZE
@@ -70,7 +79,7 @@ func (o *ConnectionResolverOptions) MaxPageSize() int {
 
 // ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments
 func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
-	maxPageSize := o.MaxPageSize()
+	maxPageSize := o.MaxPageSizeOrDefault()
 
 	if limit == nil {
 		return maxPageSize
@@ -160,6 +169,10 @@ func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 		}
 
 		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
+
+		if r.options.Reverse != nil && !*r.options.Reverse {
+			return
+		}
 
 		// NOTE(naman): with `last` argument the items are sorted in opposite
 		// direction in the SQL query. Here we are reversing the list to return

@@ -37,7 +37,7 @@ func NewGitHubWebhook(logger log.Logger) *GitHubWebhook {
 	return &GitHubWebhook{logger: logger}
 }
 
-func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
+func (h *GitHubWebhook) Register(router *webhooks.Router) {
 	router.Register(
 		h.handleGitHubWebhook,
 		extsvc.KindGitHub,

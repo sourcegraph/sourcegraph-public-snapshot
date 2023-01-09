@@ -10,7 +10,7 @@ Examples:
 
 ## Overview
 
-A **worker** is an generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
+A **worker** is a generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
 
 The **store** is responsible for selecting the next available job from the backing persistence layer and suitably _locking_ it from other consumers as well as updating the job records as they make progress in the handler. Generally, this will be an instance of [dbworker/store.Store](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/workerutil/dbworker/store/store%5C.go+NewStore&patternType=standard), although there are [other implementations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v4.1.3/-/blob/enterprise/cmd/executor/internal/apiclient/baseclient.go?L47:6).
 

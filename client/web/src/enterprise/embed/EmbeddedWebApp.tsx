@@ -79,13 +79,11 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                         <EmbeddedNotebookPage
                                             notebookId={props.match.params.notebookId}
                                             searchContextsEnabled={true}
-                                            showSearchContext={true}
                                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                             authenticatedUser={null}
                                             isLightTheme={isLightTheme}
                                             settingsCascade={EMPTY_SETTINGS_CASCADE}
                                             platformContext={platformContext}
-                                            extensionsController={extensionsController}
                                         />
                                     )}
                                 />

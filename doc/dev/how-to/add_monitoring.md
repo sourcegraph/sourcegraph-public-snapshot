@@ -162,7 +162,7 @@ It's best if you also add some Markdown documentation with your best guess of wh
 Run the monitoring generator from the root Sourcegraph directory:
 
 ```sh
-go generate ./monitoring/...
+RELOAD=false sg run monitoring-generator
 ```
 
 This will validate your Observable configuration and let you know of any changes you need to make if required.

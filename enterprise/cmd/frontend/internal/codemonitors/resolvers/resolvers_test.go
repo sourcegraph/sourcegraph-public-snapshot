@@ -273,7 +273,6 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
-// nolint:unused
 func graphqlUserID(id int32) graphql.ID {
 	return relay.MarshalID("User", id)
 }

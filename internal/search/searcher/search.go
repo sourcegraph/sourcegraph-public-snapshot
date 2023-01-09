@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -72,10 +73,9 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		fetchTimeout = 500 * time.Millisecond
 	}
 
-	tr.LogFields(
-		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		otlog.Int64("repos_count", int64(len(s.Repos))),
-	)
+	tr.SetAttributes(
+		attribute.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		attribute.Int64("repos_count", int64(len(s.Repos))))
 
 	if len(s.Repos) == 0 {
 		return nil, nil
@@ -111,7 +111,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 
 					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						tr.SetAttributes(
+							attribute.String("repo", string(repo.Name)),
+							attribute.String("error", err.Error()),
+							attribute.Bool("timeout", errcode.IsTimeout(err)),
+							attribute.Bool("temporary", errcode.IsTemporary(err)))
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut

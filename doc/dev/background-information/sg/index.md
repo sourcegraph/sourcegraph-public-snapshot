@@ -191,17 +191,12 @@ further, you *can* develop Sourcegraph with no connectivity by setting the
 OFFLINE=true sg start
 ```
 
-`OFFLINE` support isn't fully baked in to `sg` yet and you might run into some troubles when disconnected from WiFi. If you run into `syntax-highlighter` install issues, such as:
+Ensure that the `sourcegraph/syntax-highlighter:insiders` image is already available locally. If not, pull it with the following command before going offline to ensure that offline mode works seamlessly:
+
 ```bash
-docker pull -q sourcegraph/syntax-highlighter:insiders' failed: Error response from daemon: Get "https://registry-1.docker.io/v2/": Failed to lookup host: registry-1.docker.io: exit status 1:
-Error response from daemon: Get "https://registry-1.docker.io/v2/": Failed to lookup host: registry-1.docker.io
+docker pull -q sourcegraph/syntax-highlighter:insiders
 ```
 
-You can comment out the [following line](https://sourcegraph.sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24+docker+pull+-q+sourcegraph%2Fsyntax-highlighter%3Ainsiders&patternType=standard) in your `sg.config.yaml` for the `syntax-highlighter` install:
-```bash
-      # docker pull -q sourcegraph/syntax-highlighter:insiders
-```
-This will however only work if you have pulled the image in the past.
 
 ## Contributing to `sg`
 

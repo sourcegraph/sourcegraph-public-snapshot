@@ -151,7 +151,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:            "Test batch change",
+		Name:            "Test-batch-change",
 		Description:     "Testing changeset counts",
 		CreatorID:       userID,
 		NamespaceUserID: userID,

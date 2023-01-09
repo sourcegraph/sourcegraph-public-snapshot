@@ -1,8 +1,7 @@
 import { mdiCheckCircle, mdiMagnify, mdiPuzzleOutline, mdiShieldSearch, mdiNotebook, mdiCursorPointer } from '@mdi/js'
 
+import { TourLanguage, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Code, Icon } from '@sourcegraph/wildcard'
-
-import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
 /**
  * Tour tasks for non-authenticated users
@@ -193,7 +192,7 @@ export const visitorsTasks: TourTaskType[] = [
                 label: 'Get free trial',
                 action: {
                     type: 'new-tab-link',
-                    value: 'https://signup.sourcegraph.com?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+                    value: 'https://signup.sourcegraph.com',
                 },
                 // This is done to mimic user creating an account, and signed in there is a different tour
                 completeAfterEvents: ['non-existing-event'],
@@ -287,7 +286,7 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
-                value: 'https://signup.sourcegraph.com?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+                value: 'https://signup.sourcegraph.com',
             },
             // This is done to mimic user creating an account, and signed in there is a different tour
             completeAfterEvents: ['non-existing-event'],

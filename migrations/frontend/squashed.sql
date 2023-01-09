@@ -821,9 +821,10 @@ CREATE TABLE batch_changes (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     closed_at timestamp with time zone,
-    batch_spec_id bigint NOT NULL,
+    batch_spec_id bigint,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
+    CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
     CONSTRAINT batch_changes_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))),
     CONSTRAINT batch_changes_name_not_blank CHECK ((name <> ''::text))
 );
@@ -1903,8 +1904,10 @@ ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 CREATE TABLE executor_secret_access_logs (
     id integer NOT NULL,
     executor_secret_id integer NOT NULL,
-    user_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    machine_user text DEFAULT ''::text NOT NULL,
+    CONSTRAINT user_id_or_machine_user CHECK ((((user_id IS NULL) AND (machine_user <> ''::text)) OR ((user_id IS NOT NULL) AND (machine_user = ''::text))))
 );
 
 CREATE SEQUENCE executor_secret_access_logs_id_seq
@@ -2637,6 +2640,7 @@ CREATE TABLE lsif_indexes (
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
+    requested_envvars text[],
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2690,6 +2694,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -2920,6 +2925,27 @@ CREATE TABLE names (
     org_id integer,
     CONSTRAINT names_check CHECK (((user_id IS NOT NULL) OR (org_id IS NOT NULL)))
 );
+
+CREATE TABLE namespace_permissions (
+    id integer NOT NULL,
+    namespace text NOT NULL,
+    resource_id integer NOT NULL,
+    action text NOT NULL,
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
+    CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
+);
+
+CREATE SEQUENCE namespace_permissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE namespace_permissions_id_seq OWNED BY namespace_permissions.id;
 
 CREATE TABLE notebook_stars (
     notebook_id integer NOT NULL,
@@ -3924,6 +3950,8 @@ ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
+
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
 
 ALTER TABLE ONLY org_invitations ALTER COLUMN id SET DEFAULT nextval('org_invitations_id_seq'::regclass);
@@ -4212,6 +4240,9 @@ ALTER TABLE ONLY lsif_uploads_reference_counts
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_pkey PRIMARY KEY (notebook_id, user_id);
 
@@ -4316,6 +4347,9 @@ ALTER TABLE ONLY temporary_settings
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
+
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
@@ -5057,6 +5091,9 @@ ALTER TABLE ONLY names
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_notebook_id_fkey FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE;

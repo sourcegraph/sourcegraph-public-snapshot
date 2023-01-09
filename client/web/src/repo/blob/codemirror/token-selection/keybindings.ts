@@ -24,7 +24,7 @@ const keybindings: readonly KeyBinding[] = [
                 return true
             }
 
-            const position = view.state.selection.main.from + 1
+            const position = view.state.selection.main.from
             const spinner = new LoadingTooltip(view, position)
             getHoverTooltip(view, position)
                 .then(
@@ -43,9 +43,7 @@ const keybindings: readonly KeyBinding[] = [
             if (!occurrence) {
                 return false
             }
-            const cmLine = view.state.doc.line(occurrence.range.start.line + 1)
-            const cmPos = cmLine.from + occurrence.range.end.character
-            const spinner = new LoadingTooltip(view, cmPos)
+            const spinner = new LoadingTooltip(view, view.state.selection.main.from)
             goToDefinitionAtOccurrence(view, occurrence)
                 .then(
                     ({ handler, url }) => {

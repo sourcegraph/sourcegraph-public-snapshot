@@ -1,7 +1,5 @@
 import { Optional } from 'utility-types'
 
-// eslint-disable-next-line no-restricted-imports
-import { TourListState } from '@sourcegraph/web/src/tour/components/Tour/useTour'
 import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
@@ -9,6 +7,7 @@ import { BatchChangeState } from '../../graphql-operations'
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
 import { SectionID, NoResultsSectionID } from './searchSidebar'
+import { TourListState } from './tourState'
 
 /**
  * Schema for temporary settings.
@@ -24,6 +23,7 @@ export interface TemporarySettingsSchema {
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
+    'insights.lastVisitedDashboardId': string | null
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null

@@ -3,12 +3,11 @@ import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-
 import { Label } from '../..'
 import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
+import { ErrorMessage } from '../../ErrorMessage'
+import { LoaderInput } from '../LoaderInput'
 
 import styles from './Input.module.scss'
 

@@ -149,7 +149,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID: 0,
-						contents: `{"disableBuiltInSearches": true,
+						contents: `{"disableAutoGitUpdates": true,
 
 // This is a comment.
              "defaultRateLimit": 42,
@@ -158,7 +158,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 					},
 					output{
 						ID: 2,
-						contents: `{"disableBuiltInSearches": true,
+						contents: `{"disableAutoGitUpdates": true,
 
 // This is a comment.
              "defaultRateLimit": 42,

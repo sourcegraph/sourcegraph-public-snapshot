@@ -6,15 +6,13 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
@@ -117,7 +115,6 @@ export interface OrgAreaProps
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
@@ -143,8 +140,7 @@ interface State extends BreadcrumbSetters {
  * Properties passed to all page components in the org area.
  */
 export interface OrgAreaRouteContext
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
@@ -280,7 +276,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensionsController: this.props.extensionsController,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,

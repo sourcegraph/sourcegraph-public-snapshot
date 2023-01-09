@@ -65,6 +65,15 @@ describe('Code insights empty dashboard', () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
+                GetAllInsightConfigurations: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 0,
+                    },
+                }),
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
                 GetDashboardAccessibleInsights: () => ALL_AVAILABLE_INSIGHTS_LIST,
@@ -76,11 +85,13 @@ describe('Code insights empty dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[aria-label="Choose a dashboard, All Insights"]')
-        await driver.page.click('[aria-label="Choose a dashboard, All Insights"]')
-        await driver.page.click('[data-value="Empty Dashboard"]')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
+        await driver.page.waitForSelector('button[role="tab"]')
+        await (await driver.page.$x("//button[contains(., 'Dashboards')]"))[0].click()
 
+        // Check that first personal dashboard redirection works as expected (pick first personal dashboard
+        // if URL doesn't have dashboard id
+        await driver.page.waitForSelector('[aria-label="Choose a dashboard, Empty Dashboard"]')
         expect(driver.page.url()).toBe(`${driver.sourcegraphBaseUrl}/insights/dashboards/EMPTY_DASHBOARD`)
 
         await (await driver.page.$x("//button[contains(., 'Add or remove insights')]"))[0].click()

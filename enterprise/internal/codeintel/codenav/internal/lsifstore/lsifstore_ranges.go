@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -61,9 +62,9 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 		return ranges, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRangesInWindow(documentData.LSIFData.Ranges, startLine, endLine)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingRanges", len(ranges)))
 
 	definitionResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.DefinitionResultID })
 	definitionLocations, _, err := s.locations(ctx, bundleID, definitionResultIDs, MaximumRangesDefinitionLocations, 0)
@@ -159,10 +160,9 @@ func (s *store) getLocationsWithinFile(ctx context.Context, bundleID int, ids []
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(
-		log.Int("numIndexes", len(indexes)),
-		log.String("indexes", intsToString(indexes)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numIndexes", len(indexes)),
+		attribute.String("indexes", intsToString(indexes)))
 
 	// Read the result sets and gather the set of range identifiers we need to resolve with
 	// the given document data.
@@ -175,7 +175,7 @@ func (s *store) getLocationsWithinFile(ctx context.Context, bundleID int, ids []
 	// containing document. This refines the map constructed in the previous step.
 	locationsByResultID := make(map[precise.ID][]shared.Location, len(ids))
 	totalCount := s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, documentData, trace)
-	trace.Log(log.Int("numLocations", totalCount))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", totalCount))
 
 	return locationsByResultID, nil
 }

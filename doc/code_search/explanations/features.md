@@ -77,6 +77,25 @@ Every search on Sourcegraph uses a search context. Search contexts can be define
 
 See the [search contexts](../how-to/search_contexts.md) documentation for instructions for using and creating search contexts.
 
+
+## Fuzzy search <span class="badge badge-primary">experimental</span>
+
+> NOTE: This feature is still in active development. If you have any feedback on how we can improve this feature, please [let us know](https://github.com/sourcegraph/sourcegraph/discussions/42874).
+
+Use the fuzzy finder to quickly navigate to a repository, symbol, or file.
+
+To open the fuzzy finder, press `Cmd+K` (macOS) or `Ctrl+K` (Linux/Windows) from any page. Use the dedicated Repos, Symbols, and Files tabs to search only for a repository, symbol, or file. Each tab has a dedicated shortcut:
+
+- Repos: Cmd+I (macOS), Ctrl+K (Linux/Windows)
+- Symbols: Cmd+O (macOS), Cmd+Shift+O (macOS Safari), Ctrl+O (Linux/Windows)
+- Files: Cmd+P (macOS), Ctrl+P (Linux/Windows)
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20All.png" alt="Fuzzy search">
+
+Use the "Searching everywhere" or "Searching in this repo" filter to determine whether to search for results only in the active repository or globally.
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20Search%20Scope.png" alt="Fuzzy search">
+
 ## Multi-branch indexing <span class="badge badge-primary">experimental</span>
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.

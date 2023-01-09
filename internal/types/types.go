@@ -687,6 +687,12 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
+// SupportsRepoExclusion returns true when given external service supports repo
+// exclusion.
+func (e *ExternalService) SupportsRepoExclusion() bool {
+	return extsvc.SupportsRepoExclusion(e.Kind)
+}
+
 // ExternalServices is a utility type with convenience methods for operating on
 // lists of ExternalServices.
 type ExternalServices []*ExternalService
@@ -784,6 +790,33 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+}
+
+type Role struct {
+	ID        int32
+	Name      string
+	ReadOnly  bool
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
+type Permission struct {
+	ID        int32
+	Namespace string
+	Action    string
+	CreatedAt time.Time
+}
+
+type RolePermission struct {
+	RoleID       int32
+	PermissionID int32
+	CreatedAt    time.Time
+}
+
+type UserRole struct {
+	RoleID    int32
+	UserID    int32
+	CreatedAt time.Time
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -1726,4 +1759,17 @@ type OutboundRequestLogItem struct {
 	ErrorMessage       string              `json:"errorMessage"`
 	CreationStackFrame string              `json:"creationStackFrame"`
 	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+}
+
+type SlowRequest struct {
+	Index     string         `json:"index"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
 }

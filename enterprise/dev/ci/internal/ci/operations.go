@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -128,10 +129,22 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
+		lintCachePath := "/root/buildkite/build/sourcegraph/.golangci-lint-cache"
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withYarnCache(),
+			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
+			buildkite.Cache(&bk.CacheOptions{
+				ID:          "golangci-lint",
+				Key:         "golangci-lint-{{ git.branch }}",
+				RestoreKeys: []string{"golangci-lint-{{ git.branch }}", "golangci-lint-main"},
+				Paths:       []string{".golangci-lint-cache"},
+				Compress:    true,
+			}),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{IncludeNames: true},
+				Annotations: &bk.AnnotationOpts{
+					IncludeNames: true,
+					Type:         bk.AnnotationTypeAuto,
+				},
 			}))
 	}
 }
@@ -622,6 +635,27 @@ func codeIntelQA(candidateTag string) operations.Operation {
 	}
 }
 
+func executorsE2E(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::packer: Executors E2E",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			// See enterprise/dev/ci/integration/executors/docker-compose.yaml
+			// This enable the executor to reach the dind container
+			// for docker commands.
+			bk.Env("DOCKER_GATEWAY_HOST", "172.17.0.1"),
+			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
+			bk.ArtifactPaths("./*.log"),
+		)
+	}
+}
+
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
@@ -753,10 +787,13 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
 				folder := app
-				if app == "gitserver-ms-git" {
-					// experimental, build a git-ms fork flavored version
-					// Hack owners: @jhchabran, @varsanojidan
-					folder = "gitserver"
+				if app == "blobstore2" {
+					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// under the same name.
+					// https://github.com/sourcegraph/sourcegraph/issues/45594
+					// TODO(blobstore): remove this when making Go blobstore the default
+					folder = "blobstore"
 				}
 				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
@@ -769,11 +806,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				// Allow all
 				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			if app == "gitserver-ms-git" {
-				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
-			} else {
-				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
-			}
+			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
@@ -833,11 +866,6 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
-
-		if app == "gitserver-ms-git" && !c.RunType.Is(runtype.MainBranch) {
-			// Just NOP if we're not on main, we don't want to publish anything involving this experiment.
-			return
-		}
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {

@@ -15,7 +15,6 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import { InsightsDashboardsResult } from '../../../graphql-operations'
-import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 import { CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards'
 
@@ -125,24 +124,10 @@ describe('CodeInsightsRootPage', () => {
         window.IntersectionObserver = MockIntersectionObserver
     })
 
-    it('should redirect to "All insights" page if no dashboardId is provided', () => {
-        const { testLocation } = renderWithBrandedContext(
-            <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
-                telemetryService={mockTelemetryService}
-            />,
-            {
-                route: '/insights/dashboards/',
-            }
-        )
-
-        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD.id}`)
-    })
-
     it('should render dashboard not found page when id is not found', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {
@@ -156,7 +141,7 @@ describe('CodeInsightsRootPage', () => {
     it('should log events', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {

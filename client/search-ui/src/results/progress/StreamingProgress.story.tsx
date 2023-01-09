@@ -1,8 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import { spy } from 'sinon'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { H2 } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StreamingProgress } from './StreamingProgress'
 

@@ -118,8 +118,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 
 	options := command.Options{
 		ExecutorName:       name,
+		DockerOptions:      h.options.DockerOptions,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
+	}
+	// If the job has docker auth config set, prioritize that over the env var.
+	if len(job.DockerAuthConfig.Auths) > 0 {
+		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
 	}
 	runner := h.runnerFactory(workspace.Path(), commandLogger, options, h.operations)
 

@@ -82,7 +82,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
 }
 
 function queryCustomers(args: Partial<CustomersVariables>): Observable<CustomersResult['users']> {
-    return queryGraphQL(
+    return queryGraphQL<CustomersResult>(
         gql`
             query Customers($first: Int, $query: String) {
                 users(first: $first, query: $query) {

@@ -75,7 +75,7 @@ function queryLicenses(args: {
         licenseKeySubstring: args.query,
     }
     return args.query
-        ? queryGraphQL(
+        ? queryGraphQL<DotComProductLicensesResult>(
               gql`
                   query DotComProductLicenses($first: Int, $licenseKeySubstring: String) {
                       dotcom {

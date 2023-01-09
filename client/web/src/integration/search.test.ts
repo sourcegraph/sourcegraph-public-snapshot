@@ -2,8 +2,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchGraphQlOperations,
     commitHighlightResult,
     commitSearchStreamEvents,
     diffSearchStreamEvents,
@@ -11,8 +11,7 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
-} from '@sourcegraph/search'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -55,16 +54,14 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
     }),
 }
 
-const commonSearchGraphQLResultsWithUser: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonSearchGraphQLResults,
     UserAreaUserProfile: () => ({
         user: {
@@ -221,13 +218,6 @@ describe('Search', () => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                        RegistryExtensions: () => ({
-                            extensionRegistry: {
-                                __typename: 'ExtensionRegistry',
-                                extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
-                            },
-                        }),
                     })
                 })
 
@@ -505,18 +495,28 @@ describe('Search', () => {
         test('is styled correctly, with saved searches', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                savedSearches: () => ({
-                    savedSearches: [
-                        {
-                            description: 'Demo',
-                            id: 'U2F2ZWRTZWFyY2g6NQ==',
-                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
-                            notify: false,
-                            notifySlack: false,
-                            query: 'context:global Batch Change patternType:literal',
-                            slackWebhookURL: null,
+                SavedSearches: () => ({
+                    savedSearches: {
+                        nodes: [
+                            {
+                                __typename: 'SavedSearch',
+                                description: 'Demo',
+                                id: 'U2F2ZWRTZWFyY2g6NQ==',
+                                namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                notify: false,
+                                notifySlack: false,
+                                query: 'context:global Batch Change patternType:literal',
+                                slackWebhookURL: null,
+                            },
+                        ],
+                        totalCount: 1,
+                        pageInfo: {
+                            startCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            endCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            hasNextPage: false,
+                            hasPreviousPage: false,
                         },
-                    ],
+                    },
                 }),
             })
 

@@ -26,7 +26,7 @@ func CheckSourcegraphVersion(version, constraint, minDate string) (bool, error) 
 	// version string, we match on 7 or more characters. Currently, the Sourcegraph version
 	// is expected to return 12:
 	// https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/config.go?L96.
-	buildDate := regexp.MustCompile(`^\d+_(\d{4}-\d{2}-\d{2})_[a-z0-9]{7,}$`)
+	buildDate := regexp.MustCompile(`\d+_(\d{4}-\d{2}-\d{2})_[a-z0-9]{7,}(_patch)?$`)
 	matches := buildDate.FindStringSubmatch(version)
 	if len(matches) > 1 {
 		return matches[1] >= minDate, nil
