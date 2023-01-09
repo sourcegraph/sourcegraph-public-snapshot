@@ -36,6 +36,7 @@ func TestPerformPurge(t *testing.T) {
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
 	insightStore := store.NewInsightStore(insightsDB)
 	workerBaseStore := basestore.NewWithHandle(postgres.Handle())
+	workerInsightsBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 
 	getTimeSeriesCountForSeries := func(ctx context.Context, seriesId string) int {
 		q := sqlf.Sprintf("select count(*) from series_points where series_id = %s;", seriesId)
@@ -56,9 +57,9 @@ func TestPerformPurge(t *testing.T) {
 		return val
 	}
 
-	getRetentionJobCount := func(ctx context.Context) int {
-		q := sqlf.Sprintf("select count(*) from insights_data_retention_jobs;")
-		val, err := basestore.ScanInt(basestore.NewWithHandle(insightsDB.Handle()).QueryRow(ctx, q))
+	getRetentionJobCountForSeries := func(ctx context.Context, seriesId string) int {
+		q := sqlf.Sprintf("select count(*) from insights_data_retention_jobs where series_id_string = %s", seriesId)
+		val, err := basestore.ScanInt(workerInsightsBaseStore.QueryRow(ctx, q))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,14 +180,16 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 	// two data retention jobs: the first one should be deleted.
-	_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{
-		SeriesID: 1,
+	_, err = retention.EnqueueJob(ctx, workerInsightsBaseStore, &retention.DataRetentionJob{
+		SeriesID:        doNotWantSeries,
+		InsightSeriesID: 2,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{
-		SeriesID: 2,
+	_, err = retention.EnqueueJob(ctx, workerInsightsBaseStore, &retention.DataRetentionJob{
+		SeriesID:        wantSeries,
+		InsightSeriesID: 1,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -212,8 +215,11 @@ func TestPerformPurge(t *testing.T) {
 		t.Errorf("unexpected result for deleted series in time series data, got: %d", got)
 	}
 	// check the number of retention jobs
-	if got := getRetentionJobCount(ctx); got != 1 {
-		t.Errorf("expected 1 retetion job remaining, got %v", got)
+	if got := getRetentionJobCountForSeries(ctx, wantSeries); got != 1 {
+		t.Errorf("expected 1 retention job remaining, got %v", got)
+	}
+	if got := getRetentionJobCountForSeries(ctx, doNotWantSeries); got != 0 {
+		t.Errorf("expected 0 retention jobs remaining, got %v", got)
 	}
 	// finally check the metadata table
 	if got := getMetadataCountForSeries(ctx, wantSeries); got != 1 {
