@@ -2841,7 +2841,7 @@ CREATE TABLE lsif_uploads_audit_logs (
     uploaded_at timestamp with time zone NOT NULL,
     indexer text NOT NULL,
     indexer_version text,
-    upload_size integer,
+    upload_size bigint,
     associated_index_id integer,
     transition_columns hstore[],
     reason text DEFAULT ''::text,

@@ -14413,7 +14413,7 @@
         {
           "Name": "upload_size",
           "Index": 10,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
