@@ -4,7 +4,6 @@ package types
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -572,12 +571,6 @@ type RepoCorruptionLog struct {
 	Timestamp time.Time `json:"time"`
 	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
 	Reason string `json:"reason"`
-}
-
-func UnmarshalCorruptionLog(data []byte) ([]RepoCorruptionLog, error) {
-	var logs []RepoCorruptionLog
-	err := json.Unmarshal(data, &logs)
-	return logs, err
 }
 
 // ExternalService is a connection to an external service.
