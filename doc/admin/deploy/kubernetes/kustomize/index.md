@@ -18,41 +18,27 @@ Please refer to our [configuration guides](configure.md) for detailed instructio
 
 ## Deploy
 
+**Step 0:** Install an ingress controller for your cluster as instructed in our [configuration guide](configure.md#ingress-controller) if applicable.
+
 **Step 1:** Follow the instructions below to build an overlay with [custom configurations](configure.md) for your deployment environment. Alternatively, you can use one of our [pre-built overlays](#pre-built-overlays) to deploy Sourcegraph into a pre-configured cluster.
 
 **Step 2:** Build the deployment manifests with the overlay prepared from step 1 for review
 
   ```bash
-  $ kubectl kustomize $PATH_TO_OVERLAY -o new/preview-cluster
+  $ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
   ```
 
-**Step 3:** Make sure the manifests in the output directory `new/preview-cluster` are generated correctly
+**Step 3:** Make sure the manifests in the output file `new/generated-cluster.yaml` are generated correctly
 
-**Step 4:** Run the following command from the root of the cloned repository to apply the manifests generated from step 2 inside the `new/preview-cluster` directory
+**Step 4:** Run the following command from the root of the cloned repository to apply the manifests generated from step 2 inside the `new/generated-cluster.yaml` file
 
   ```bash
-  $ kubectl apply -k --prune -l deploy=sourcegraph -f new/preview-cluster
+  $ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
   ```
 
 ## Upgrade
 
-To upgrade your instance with Kustomize:
-
-**Step 1:** Merge your release branch with the upstream branch
-
-**Step 2:** Build the deployment manifests with an overlay
-
-**Step 3:** Review the output manifests to make sure they reflect the configurations made by the overlay
-
-  ```bash
-  $ kubectl kustomize $PATH_TO_OVERLAY -o new/preview-cluster
-  ```
-
-**Step 4:** Run the following command from the root of your deployment repository to apply the manifests inside the `new/preview-cluster directory` generated from step 2
-
-  ```bash
-  $ kubectl apply -k --prune -l deploy=sourcegraph -f new/preview-cluster
-  ```
+To upgrade your instance with Kustomize, please refer to our [upgrade docs](../update.md#upgrades).
 
 ---
 
@@ -66,28 +52,9 @@ The [new/base](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new
 
 The [new/overlays/deploy](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy) directory is the recommended path to create and store a customized overlay for your deployment. If you would like to set up two seperated instances (ex. create two overlays for `production` and `staging` purposes), it is recommended to create a seperated directory within the [new/overlays/](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy) directory using the files in [new/overlays/template](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy).
 
-### kustomization.yaml template
+### Template
 
-Below is a `kustomization` file we use as a template to deploy the default Sourcegraph instance. You can build on top of this template by adding components listed in our [configuration guides](configure.md) to create a tailored Sourcegraph instance.
-
-```yaml
-# new/overlays/template/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-# update namespace value if needed
-namespace: default
-# Resources for Sourcegraph main stacks
-resources:
-- ../../base/sourcegraph
-# Essential component for updating frontend env vars
-configMapGenerator:
-- name: sourcegraph-frontend-env
-  behavior: merge
-  env: configs/sourcegraph.env
-components:
-# Resources for Sourcegraph monitoring stacks - RBAC required
-- ../../components/monitoring
-```
+The `kustomization` file inside the [new/overlays/template directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/template) is the template you can use to deploy a default Sourcegraph instance. You can build on top of this template file by adding components following our [configuration guides](configure.md) to create a tailored Sourcegraph instance.
 
 ### Overlays
 
@@ -95,7 +62,7 @@ An [overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomiz
 
 #### Pre-built overlays
 
-We have a sets of pre-built overlays that are ready-to-use for clusters that do not require additional configurations for Sourcegraph to be deployed. You can find the complete list of pre-built overlays inside the `new/overlays/quick-start` directory.
+We have a sets of pre-built overlays that are ready-to-use for clusters that do not require additional configurations for Sourcegraph to be deployed. You can find the complete list of pre-built overlays inside the `new/quick-start` directory.
 
 Please see our [configuration docs for Kustomize](./configure.md) on using components to build a overlay that is tailored to your specific need.
 
@@ -111,11 +78,10 @@ If you would like to modify a component from this directory, it is strongly reco
 
 ### Examples
 
-Here is an example `kustomization` file from one of our pre-built overlays:
+Here is an example `kustomization` file from our quick-start overlay that is configured for deploying a size XS instance to a k3s cluster
 
 ```yaml
-# new/overlays/example/kustomization.yaml
-# Note: this is the kustomization.yaml file from our quick-start overlay that is configured for deploying a size XS instance to a k3s cluster
+# new/quick-starts/k3s/xs/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ns-sourcegraph-example
@@ -131,7 +97,7 @@ components:
 - ../../new/components/sizes/xs
 ```
 
-See the complete list of ready-to-use overlays inside the `new/overlays/quick-start` directory to learn more about combining different pre-configured components to build an overlay to configure your Sourcegraph instance to work in your environment.
+See the complete list of ready-to-use overlays inside the `new/quick-start` directory to learn more about combining different pre-configured components to build an overlay to configure your Sourcegraph instance to work in your environment.
 
 ### Remote build
 
@@ -154,10 +120,10 @@ $ kubectl apply -k --prune -l deploy=sourcegraph -f $REMOTE_OVERLAY_URL
 
 Run the following command from the root directory to build a customized deployment using your overlay. 
 
-A new set of manifests with the customization applied using the overlay can then be found inside the [new/preview-cluster](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/preview-cluster) directory.
+A new set of manifests with the customization applied using the overlay can then be found inside the [new/generated-cluster.yaml](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/generated-cluster.yaml) directory.
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/preview-cluster
+$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
 ```
 
 The $PATH_TO_OVERLAY can be a local path or remote path, for example:
@@ -166,7 +132,7 @@ The $PATH_TO_OVERLAY can be a local path or remote path, for example:
 # Local
 $ kubectl kustomize new/overlays/deploy -o preview-cluster.yaml
 # Remote
-$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph/new/overlays/quick-start/k3s/xs?ref=v4.4.0 -o preview-cluster.yaml
+$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/k3s/xs?ref=v4.4.0 -o preview-cluster.yaml
 ```
 
 > NOTE: This command will build a new set of manifests based on your overlay. It does not affect your current deployment until you run the apply command.
@@ -190,8 +156,8 @@ Example 1: compare diff between resources generated by the k3s overlay for size 
 
 ```bash
 $ diff \
-    <(kustomize build new/overlays/quick-start/k3s/xs) \
-    <(kustomize build new/overlays/quick-start/k3s/xl) |\
+    <(kustomize build new/quick-start/k3s/xs) \
+    <(kustomize build new/quick-start/k3s/xl) |\
     more
 ```
 
@@ -199,8 +165,8 @@ Example 2: compare diff between the old base cluster and the old base cluster bu
 
 ```bash
 $ diff \
-    <(kustomize build new/overlays/quick-start/current) \
-    <(kustomize build new/overlays/quick-start/old-base/default) |\
+    <(kustomize build new/quick-start/current) \
+    <(kustomize build new/quick-start/old-base/default) |\
     more
 ```
 
@@ -215,7 +181,7 @@ kubectl kustomize $PATH_TO_OVERLAY | kubectl diff -f  -
 Example: compare diff between the k3s overlay for size xl instance and the instance that is connected with `kubectl`:
 
 ```bash
-kubectl kustomize new/overlays/quick-start/k3s/xl | kubectl diff -f  -
+kubectl kustomize new/quick-start/k3s/xl | kubectl diff -f  -
 ```
 
 ### Kustomize with Helm

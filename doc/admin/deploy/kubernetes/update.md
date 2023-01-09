@@ -30,16 +30,25 @@ git checkout release
 git merge $NEW_VERSION
 ```
 
-Then, deploy the updated version of Sourcegraph to your Kubernetes cluster:
+Then, deploy the updated version of Sourcegraph to your Kubernetes cluster
+
+**Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
-./kubectl-apply-all.sh
+$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
 ```
 
-> NOTE: By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
-> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed. For example, if you use [overlays to make changes to the manifests](./configure.md#overlays), you should modify this script to apply your generated cluster instead.
+**Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
 
-Monitor the status of the deployment to determine its success.
+**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `new/generated-cluster.yaml file` generated from step 2
+
+```bash
+$ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
+```
+
+> NOTE: Using deployment script without Kustomize has been deprecated: `./kubectl-apply-all.sh`
+
+**Step 4:** Monitor the status of the deployment to determine its success.
 
 ```bash
 kubectl get pods -o wide --watch
@@ -99,8 +108,18 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
 
 You can rollback by resetting your `release` branch to the old state and proceeding re-running the following:
 
+**Step 1:** Build the deployment manifests with your deployment overlay
+
+```bash
+$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
 ```
-./kubectl-apply-all.sh
+
+**Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
+
+**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `new/generated-cluster.yaml file` generated from step 2
+
+```bash
+$ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
 ```
 
 If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
