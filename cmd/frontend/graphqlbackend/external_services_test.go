@@ -656,21 +656,18 @@ func TestExternalServices(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	mockLastCheckedAt := time.Now()
-	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceResolver, error) {
-		switch r.externalService.ID {
-		case 2:
-			r.availability.unavailable = &externalServiceUnavailable{
-				suspectedReason: "failed to connect",
-			}
-		case 3:
-			r.availability.available = &externalServiceAvailable{
-				lastCheckedAt: mockLastCheckedAt,
-			}
-		default:
-			r.availability.unknown = &externalServiceUnknown{}
+	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceAvailabilityStateResolver, error) {
+		if r.externalService.ID == 2 {
+			return &externalServiceAvailabilityStateResolver{
+				unavailable: &externalServiceUnavailable{suspectedReason: "failed to connect"},
+			}, nil
+		} else if r.externalService.ID == 3 {
+			return &externalServiceAvailabilityStateResolver{
+				available: &externalServiceAvailable{lastCheckedAt: mockLastCheckedAt},
+			}, nil
 		}
 
-		return r, nil
+		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
 	}
 
 	// NOTE: all these tests are run as site admin
