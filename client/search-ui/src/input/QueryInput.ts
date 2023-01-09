@@ -7,7 +7,7 @@ import {
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { IEditor } from './LazyMonacoQueryInput'
+import { IEditor } from './LazyQueryInput'
 
 /**
  * Props that the Monaco and CodeMirror implementation have in common.

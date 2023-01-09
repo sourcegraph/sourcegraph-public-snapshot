@@ -56,7 +56,6 @@ import {
     parsedQuery,
 } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
-import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
@@ -466,7 +465,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildr
 // Instead of creating a separate field for every handler, all handlers are set
 // via a single field to keep complexity manageable.
 const [callbacksField, setCallbacks] = createUpdateableField<
-    Pick<MonacoQueryInputProps, 'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected'>
+    Pick<CodeMirrorQueryInputFacadeProps, 'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected'>
 >({ onChange: () => {} }, callbacks => [
     Prec.high(
         keymap.of([

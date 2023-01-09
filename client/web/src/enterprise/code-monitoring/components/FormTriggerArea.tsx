@@ -4,7 +4,7 @@ import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/search-ui'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -127,7 +127,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -236,9 +235,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 )}
                                 data-testid="trigger-query-edit"
                             >
-                                <LazyMonacoQueryInput
+                                <LazyQueryInput
                                     className="test-trigger-input"
-                                    editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}

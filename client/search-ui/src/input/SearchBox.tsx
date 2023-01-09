@@ -13,7 +13,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { IEditor, LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
+import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
@@ -29,8 +29,7 @@ export interface SearchBoxProps
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
         Pick<
-            LazyMonacoQueryInputProps,
-            | 'editorComponent'
+            LazyQueryInputProps,
             | 'autoFocus'
             | 'onFocus'
             | 'onSubmit'
@@ -170,7 +169,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     Added role attribute to the following element to satisfy the rule.
                 */}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
-                    <LazyMonacoQueryInput
+                    <LazyQueryInput
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder={
@@ -183,7 +182,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         preventNewLine={true}
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
-                        editorComponent={props.editorComponent}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
                         globbing={props.globbing}
                         interpretComments={props.interpretComments}
