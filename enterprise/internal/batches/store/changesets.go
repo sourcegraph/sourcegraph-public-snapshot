@@ -178,6 +178,8 @@ var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 // changesetInsertStringColumns is the list of column names that are used by Store.CreateChangesets for insertion.
 var changesetInsertStringColumns = []string{
 	"repo_id",
+	"created_at",
+	"updated_at",
 	"metadata",
 	"batch_change_ids",
 	"detached_at",
@@ -238,6 +240,14 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 
 	inserter := func(inserter *batch.Inserter) error {
 		for _, c := range cs {
+			if c.CreatedAt.IsZero() {
+				c.CreatedAt = s.now()
+			}
+
+			if c.UpdatedAt.IsZero() {
+				c.UpdatedAt = c.CreatedAt
+			}
+
 			metadata, err := jsonbColumn(c.Metadata)
 			if err != nil {
 				return err
@@ -261,6 +271,8 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 			if err := inserter.Insert(
 				ctx,
 				c.RepoID,
+				c.CreatedAt,
+				c.UpdatedAt,
 				metadata,
 				batchChanges,
 				dbutil.NullTimeColumn(c.DetachedAt),
