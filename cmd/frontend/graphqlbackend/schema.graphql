@@ -6470,6 +6470,34 @@ type SiteConfiguration {
     on the configuration (that can't be expressed in the JSON Schema).
     """
     validationMessages: [String!]!
+    """
+    A list of diffs to depict what changed since the previous version of this
+    configuration.
+    """
+    diffHistory(
+      """
+      The number of nodes to return starting from the beginning (oldest).
+      Note: Use either first or last (see below) in the query. Setting both will
+      return an error.
+      """
+      first: Int
+      """
+      The number of nodes to return starting from the end (latest).
+      Note: Use either last or first (see above) in the query. Setting both will
+      return an error.
+      """
+      last: Int
+      """
+      Opaque pagination cursor to be used when paginating forwards that may be also used
+      in conjunction with "first" to return the first N nodes.
+      """
+      after: String
+      """
+      Opaque pagination cursor to be used when paginating backwards that may be
+      also used in conjunction with "last" to return the last N nodes.
+      """
+      before: String
+    ): SiteConfigDiffConnection
 }
 
 """
@@ -8397,33 +8425,15 @@ type ConnectionPageInfo {
 """
 A list of site config diffs.
 """
-type siteConfigDiffConnection {
-    """
-    The number of nodes to return starting from the beginning (oldest).
-    Note: Use either first or last (see below) in the query. Setting both will
-    return an error.
-    """
-    first: Int
-    """
-    The number of nodes to return starting from the end (latest).
-    Note: Use either last or first (see above) in the query. Setting both will
-    return an error.
-    """
-    last: Int
-    """
-    Opaque pagination cursor to be used when paginating forwards that may be also used
-    in conjunction with "first" to return the first N nodes.
-    """
-    after: String
-    """
-    Opaque pagination cursor to be used when paginating backwards that may be
-    also used in conjunction with "last" to return the last N nodes.
-    """
-    before: String
+type SiteConfigDiffConnection {
     """
     A list of diffs in the site config
     """
-    nodes: [siteConfigDiff!]!
+    nodes: [SiteConfigDiff!]!
+    """
+    The total number of diffs in the connection.
+    """
+    totalCount: Int
     """
     Pagination information.
     """
@@ -8433,7 +8443,7 @@ type siteConfigDiffConnection {
 """
 A diff representing the change in the site config compared to the previous version.
 """
-type siteConfigDiff {
+type SiteConfigDiff {
     """
     The ID of the site config in the history.
     """
