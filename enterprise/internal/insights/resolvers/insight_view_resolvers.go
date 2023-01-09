@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -197,8 +198,9 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 			seriesOptions = i.view.SeriesOptions
 		}
 
+		fmt.Println("seriesOptions", seriesOptions)
 		for _, current := range i.view.Series {
-			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
 			if err != nil {
 				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 				return
