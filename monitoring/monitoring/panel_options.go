@@ -91,7 +91,7 @@ func (panelOptionsLibrary) basicPanel() ObservablePanelOption {
 				Expr: o.Query,
 			}}
 			h.Color.Mode = "spectrum"
-			h.Color.ColorScheme = "interpolateViridis"
+			h.Color.ColorScheme = "interpolateTurbo"
 			h.YAxis.LogBase = 2
 			h.Tooltip.Show = true
 			h.Tooltip.ShowHistogram = true
