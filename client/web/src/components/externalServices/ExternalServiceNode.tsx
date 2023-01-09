@@ -169,7 +169,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}`}
+                            to={`${routingPrefix}/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}
