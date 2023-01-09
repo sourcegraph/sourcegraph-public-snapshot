@@ -4,7 +4,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -13,7 +13,7 @@ type permissionResolver struct {
 	permission *types.Permission
 }
 
-var _ graphqlbackend.PermissionResolver = &permissionResolver{}
+var _ gql.PermissionResolver = &permissionResolver{}
 
 const permissionIDKind = "Permission"
 
@@ -25,6 +25,7 @@ func unmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
 }
 
 func (r *permissionResolver) ID() graphql.ID {
+	// 🚨 SECURITY: This needs to be the marshalled.
 	return marshalPermissionID(r.permission.ID)
 }
 

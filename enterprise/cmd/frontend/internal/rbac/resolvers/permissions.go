@@ -5,13 +5,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionResolver, error) {
+func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (gql.PermissionResolver, error) {
 	permissionID, err := unmarshalPermissionID(id)
 	if err != nil {
 		return nil, err
@@ -66,4 +65,8 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		db:   r.db,
 		opts: opts,
 	}, nil
+}
+
+func (r *Resolver) Permission(ctx context.Context, args *gql.PermissionArgs) (gql.PermissionResolver, error) {
+	return r.permissionByID(ctx, args.ID)
 }

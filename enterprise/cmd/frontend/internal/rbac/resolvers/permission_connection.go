@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -30,6 +31,7 @@ func (r *permissionConnectionResolver) TotalCount(ctx context.Context) (int32, e
 }
 
 func (r *permissionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	fmt.Println(r.err, "<===", r.permissions)
 	permissions, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -71,6 +73,7 @@ func (r *permissionConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 func (r *permissionConnectionResolver) compute(ctx context.Context) ([]*types.Permission, int, error) {
 	r.once.Do(func() {
 		r.permissions, r.err = r.db.Permissions().List(ctx, r.opts)
+		fmt.Println("computing")
 		if r.err != nil {
 			return
 		}

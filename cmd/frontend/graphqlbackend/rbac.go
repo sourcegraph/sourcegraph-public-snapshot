@@ -15,7 +15,6 @@ type RoleResolver interface {
 	Name() string
 	Readonly() bool
 	CreatedAt() gqlutil.DateTime
-	DeletedAt() gqlutil.DateTime
 	Permissions() (PermissionConnectionResolver, error)
 }
 
@@ -45,12 +44,17 @@ type RBACResolver interface {
 	Role(ctx context.Context, args *RoleArgs) (RoleResolver, error)
 	Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error)
 
+	Permission(ctx context.Context, args *PermissionArgs) (PermissionResolver, error)
 	Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type RoleArgs struct {
+	ID graphql.ID
+}
+
+type PermissionArgs struct {
 	ID graphql.ID
 }
 

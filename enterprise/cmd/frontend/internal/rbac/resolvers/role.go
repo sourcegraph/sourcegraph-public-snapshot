@@ -50,7 +50,3 @@ func (r *roleResolver) Permissions() (graphqlbackend.PermissionConnectionResolve
 func (r *roleResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.role.CreatedAt}
 }
-
-func (r *roleResolver) DeletedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.role.DeletedAt}
-}

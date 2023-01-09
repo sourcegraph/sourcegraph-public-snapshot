@@ -17,7 +17,11 @@ type Role implements Node {
     """
     The list of permissions assigned to any user with this role.
     """
-    permissions: PermissionConnection
+    permissions: PermissionConnection!
+    """
+    The date and time when the permission was created.
+    """
+    createdAt: DateTime!
 }
 
 """
@@ -72,6 +76,10 @@ type Permission implements Node {
     The action in which the bearer of this permission is allowed.
     """
     action: String!
+    """
+    The date and time when the permission was created.
+    """
+    createdAt: DateTime!
 }
 
 extend type Query {
@@ -99,6 +107,13 @@ extend type Query {
         """
         id: ID!
     ): Role
+
+    permission(
+        """
+        ID of the permission to be retrieved
+        """
+        id: ID!
+    ): Permission
 
     """
     All permissions
