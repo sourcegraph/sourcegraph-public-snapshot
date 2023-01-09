@@ -97,7 +97,7 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
             return {
                 state: {
                     status: LivePreviewStatus.Error,
-                    error: new Error('Live preview is not available for this chart as it will take longer to generate'),
+                    error: new Error('Live preview is not available for this chart as it did not complete in the allowed time'),
                 },
                 refetch,
             }
