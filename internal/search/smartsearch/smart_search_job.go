@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/opentracing/opentracing-go/log"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -82,8 +83,8 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
 	alert, err = f.initialJob.Run(ctx, clients, stream)
-	if err != nil {
-		return alert, err
+	if errForReal := errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos)); errForReal != nil {
+		return alert, errForReal
 	}
 	maxAlerter.Add(alert)
 

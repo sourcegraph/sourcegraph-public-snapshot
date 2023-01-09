@@ -463,7 +463,7 @@
           "default": false
         },
         "insightsBackfillerV2": {
-          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
+          "description": "DEPRECATED: Setting any value to this flag has no effect.",
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }

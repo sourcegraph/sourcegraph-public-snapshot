@@ -82,7 +82,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="align-self-start">
-                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs.nodes[0].state) ? (
+                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs.nodes[0]?.state) ? (
                         <Tooltip content="Sync is running">
                             <div aria-label="Sync is running">
                                 <LoadingSpinner className="mr-2" inline={true} />
@@ -169,7 +169,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}`}
+                            to={`${routingPrefix}/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}

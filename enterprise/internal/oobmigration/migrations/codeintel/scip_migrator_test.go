@@ -21,7 +21,9 @@ func init() {
 
 func TestSCIPMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
+	// TODO - use the AtRev constructor after this has been deprecated
 	rawDB := dbtest.NewDB(logger, t)
+	// rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
 	db := database.NewDB(logger, rawDB)
 	codeIntelDB := stores.NewCodeIntelDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())

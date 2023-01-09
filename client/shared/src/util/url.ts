@@ -594,7 +594,7 @@ export function buildGetStartedURL(cloudSignup?: boolean, authenticatedUser?: Au
  * @returns signup UR string with relevant params attached
  */
 export const buildCloudTrialURL = (
-    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'email'> | null | undefined,
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
     product?: string
 ): string => {
     const url = new URL('https://signup.sourcegraph.com/')
@@ -602,8 +602,9 @@ export const buildCloudTrialURL = (
     if (product) {
         url.searchParams.append('p', product)
     }
-    if (authenticatedUser?.email) {
-        url.searchParams.append('email', authenticatedUser.email)
+    const primaryEmail = authenticatedUser?.emails.find(email => email.isPrimary)
+    if (primaryEmail) {
+        url.searchParams.append('email', primaryEmail.email)
     }
     if (authenticatedUser?.displayName) {
         url.searchParams.append('name', authenticatedUser.displayName)
