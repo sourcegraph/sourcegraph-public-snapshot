@@ -36,8 +36,8 @@ import {
     DiffSinceVariables,
     GitCommitFields,
     RepositoryContributorNodeFields,
-    RepositoryContributorsResult,
-    RepositoryContributorsVariables,
+    TreePageRepositoryContributorsResult,
+    TreePageRepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
     TreePageRepositoryFields,
@@ -415,7 +415,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 }
 
 const CONTRIBUTORS_QUERY = gql`
-    query RepositoryContributors($repo: ID!, $first: Int, $revisionRange: String, $afterDate: String, $path: String) {
+    query TreePageRepositoryContributors(
+        $repo: ID!
+        $first: Int
+        $revisionRange: String
+        $afterDate: String
+        $path: String
+    ) {
         node(id: $repo) {
             ... on Repository {
                 contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
@@ -425,7 +431,7 @@ const CONTRIBUTORS_QUERY = gql`
         }
     }
 
-    fragment TreePageRepositoryContributorConnectionFields on TreePageRepositoryContributorConnection {
+    fragment TreePageRepositoryContributorConnectionFields on RepositoryContributorConnection {
         totalCount
         pageInfo {
             hasNextPage
@@ -435,7 +441,7 @@ const CONTRIBUTORS_QUERY = gql`
         }
     }
 
-    fragment TreePageRepositoryContributorNodeFields on TreePageRepositoryContributor {
+    fragment TreePageRepositoryContributorNodeFields on RepositoryContributor {
         person {
             name
             displayName
@@ -472,8 +478,8 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
     }
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
-        RepositoryContributorsResult,
-        RepositoryContributorsVariables,
+        TreePageRepositoryContributorsResult,
+        TreePageRepositoryContributorsVariables,
         RepositoryContributorNodeFields
     >({
         query: CONTRIBUTORS_QUERY,
