@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"internal/reflectlite"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -9,15 +10,28 @@ import (
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
 
-// GetFeature returns the plan's configured feature.
-// It returns nil if the feature is not configured for the plan.
-func (p Plan) GetFeature(feature Feature) Feature {
+// HasFeature returns whether the plan has the given feature.
+// If the target is a pointer, the plan's feature configuration will be
+// set to the target.
+func (p Plan) HasFeature(target Feature) bool {
+	if target == nil {
+		panic("licensing: target cannot be nil")
+	}
+
+	val := reflectlite.ValueOf(target)
+	if val.IsNil() {
+		panic("licensing: target cannot be a nil pointer")
+	}
+
 	for _, f := range planFeatures[p] {
-		if feature.FeatureName() == f.FeatureName() {
-			return f
+		if target.FeatureName() == f.FeatureName() {
+			if val.Kind() == reflectlite.Ptr {
+				val.Elem().Set(reflectlite.ValueOf(f))
+			}
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 const planTagPrefix = "plan:"

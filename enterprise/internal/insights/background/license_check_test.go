@@ -31,11 +31,11 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}()
 
 	setMockLicenseCheck := func(hasCodeInsights bool) {
-		licensing.MockCheckFeature = func(feature licensing.Feature) (licensing.Feature, error) {
+		licensing.MockCheckFeature = func(feature licensing.Feature) error {
 			if hasCodeInsights {
-				return feature, nil
+				return nil
 			}
-			return nil, errors.New("error")
+			return errors.New("error")
 		}
 	}
 

@@ -19,22 +19,22 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	}
 	ctx := actor.WithInternalActor(context.Background())
 
-	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) (licensing.Feature, error) {
-		return func(feature licensing.Feature) (licensing.Feature, error) {
+	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) error {
+		return func(feature licensing.Feature) error {
 			for _, allowed := range allow {
 				if feature.FeatureName() == allowed.FeatureName() {
-					return feature, nil
+					return nil
 				}
 			}
 
-			return nil, licensing.NewFeatureNotActivatedError("feature not allowed")
+			return licensing.NewFeatureNotActivatedError("feature not allowed")
 		}
 	}
 	query := `query HasFeature($feature: String!) { enterpriseLicenseHasFeature(feature: $feature) }`
 
 	for name, tc := range map[string]struct {
 		feature string
-		mock    func(feature licensing.Feature) (licensing.Feature, error)
+		mock    func(feature licensing.Feature) error
 		want    bool
 		wantErr bool
 	}{
@@ -64,8 +64,8 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		},
 		"error from check": {
 			feature: string(licensing.FeatureMonitoring),
-			mock: func(feature licensing.Feature) (licensing.Feature, error) {
-				return nil, errors.New("this is a different error")
+			mock: func(feature licensing.Feature) error {
+				return errors.New("this is a different error")
 			},
 			want:    false,
 			wantErr: true,

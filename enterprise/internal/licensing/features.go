@@ -20,71 +20,82 @@ func (f BasicFeature) FeatureName() string {
 }
 
 // Check checks whether the feature is activated based on the current license. If it is
-// disabled, it returns a non-nil error. If it is enabled, it returns the feature
-// and a nil error.
+// disabled, it returns a non-nil error.
 //
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
-func Check(feature Feature) (Feature, error) {
+func Check(feature Feature) error {
 	if MockCheckFeature != nil {
 		return MockCheckFeature(feature)
 	}
 
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
+		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
 	return checkFeature(info, feature)
 }
 
-func checkFeature(info *Info, feature Feature) (Feature, error) {
+func FeatureAs(target Feature) bool {
+	if MockFeatureAs != nil {
+		return MockFeatureAs(target)
+	}
+
+	info, err := GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return false
+	}
+
+	return info.Plan().HasFeature(target)
+}
+
+func checkFeature(info *Info, feature Feature) error {
 	if info == nil {
-		return nil, NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
 
 	featureTrimmed := BasicFeature(strings.TrimSpace(feature.FeatureName()))
 
 	// Check if the feature is explicitly allowed via license tag.
-	hasFeature := func(want Feature) Feature {
+	hasFeature := func(want Feature) bool {
 		for _, t := range info.Tags {
 			// We have been issuing licenses with trailing spaces in the tags for a while.
 			// Eventually we should be able to remove these `TrimSpace` calls again,
 			// as we now guard against that while generating licenses, but there
 			// are quite a few "wrong" licenses out there as of today (2021-07-19).
-			if BasicFeature(strings.TrimSpace(t)) == want {
-				return want
+			if BasicFeature(strings.TrimSpace(t)).FeatureName() == want.FeatureName() {
+				return true
 			}
 		}
-		return nil
+		return false
 	}
-	planFeature := info.Plan().GetFeature(featureTrimmed)
-	if planFeature == nil {
-		planFeature = hasFeature(featureTrimmed)
+	if !info.Plan().HasFeature(featureTrimmed) && !hasFeature(featureTrimmed) {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
 	}
-	if planFeature == nil {
-		return nil, NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
-	}
-	return planFeature, nil // feature is activated for current license
+	return nil
 }
 
 func MockCheckFeatureError(expectedError string) {
-	MockCheckFeature = func(feature Feature) (Feature, error) {
+	MockCheckFeature = func(feature Feature) error {
 		if expectedError == "" {
-			return feature, nil
+			return nil
 		}
-		return nil, errors.New(expectedError)
+		return errors.New(expectedError)
 	}
 }
 
 // MockCheckFeature is for mocking Check in tests.
-var MockCheckFeature func(feature Feature) (Feature, error)
+var MockCheckFeature func(feature Feature) error
+
+// MockFeatureAs is for mocking FeatureAs in tests.
+var MockFeatureAs func(target Feature) bool
 
 // TestingSkipFeatureChecks is for tests that want to mock Check to always return nil (i.e.,
 // behave as though the current license enables all features).
 //
 // It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
 func TestingSkipFeatureChecks() func() {
-	MockCheckFeature = func(feature Feature) (Feature, error) { return feature, nil }
+	MockCheckFeature = func(feature Feature) error { return nil }
 	return func() { MockCheckFeature = nil }
 }
 
@@ -113,6 +124,5 @@ func IsFeatureNotActivated(err error) bool {
 // prevented from getting to this point if license verification had failed, so it's not necessary to
 // handle license verification errors here).
 func IsFeatureEnabledLenient(feature Feature) bool {
-	_, err := Check(feature)
-	return !IsFeatureNotActivated(err)
+	return !IsFeatureNotActivated(Check(feature))
 }
