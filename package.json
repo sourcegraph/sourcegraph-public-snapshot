@@ -187,6 +187,7 @@
     "@types/lru-cache": "^7.6.1",
     "@types/marked": "4.0.3",
     "@types/mime-types": "2.1.0",
+    "@types/minimatch": "^5.1.2",
     "@types/mocha": "8.2.0",
     "@types/mock-require": "^2.0.1",
     "@types/mockdate": "2.0.0",

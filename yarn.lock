@@ -7954,6 +7954,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/minimatch@npm:^5.1.2":
+  version: 5.1.2
+  resolution: "@types/minimatch@npm:5.1.2"
+  checksum: 0391a282860c7cb6fe262c12b99564732401bdaa5e395bee9ca323c312c1a0f45efbf34dce974682036e857db59a5c9b1da522f3d6055aeead7097264c8705a8
+  languageName: node
+  linkType: hard
+
 "@types/minimist@npm:^1.2.0":
   version: 1.2.0
   resolution: "@types/minimist@npm:1.2.0"
@@ -27570,6 +27577,7 @@ __metadata:
     "@types/lru-cache": ^7.6.1
     "@types/marked": 4.0.3
     "@types/mime-types": 2.1.0
+    "@types/minimatch": ^5.1.2
     "@types/mocha": 8.2.0
     "@types/mock-require": ^2.0.1
     "@types/mockdate": 2.0.0
