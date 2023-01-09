@@ -50,8 +50,9 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 	t.Run("User exists and has an e-mail but doesn't have a display name", func(t *testing.T) {
 
 		user, err := userStore.Create(ctx, database.NewUser{
-			Username: "jane",
-			Email:    "jane@doe.com",
+			Username:        "jane",
+			Email:           "jane1@doe.com",
+			EmailIsVerified: true,
 		})
 		if err != nil {
 			t.Fatalf("failed to create test user: %v", err)
