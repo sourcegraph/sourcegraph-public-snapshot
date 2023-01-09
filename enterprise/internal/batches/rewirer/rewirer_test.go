@@ -432,6 +432,61 @@ func TestRewirer_Rewire(t *testing.T) {
 			})},
 		},
 		// END CHANGESET SPEC AND CHANGESET
+		{
+			name: "new and updated",
+			mappings: btypes.RewirerMappings{
+				{
+					ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+						ID:   testChangesetSpecID,
+						Repo: testRepoID,
+
+						HeadRef: "refs/heads/test-branch",
+						Typ:     btypes.ChangesetSpecTypeBranch,
+					}),
+					Repo: testRepo,
+				},
+				{
+					ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+						ID:   testChangesetSpecID + 1,
+						Repo: testRepoID,
+
+						HeadRef: "refs/heads/test-branch",
+						Typ:     btypes.ChangesetSpecTypeBranch,
+					}),
+					Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+						Repo:               testRepoID,
+						ExternalID:         "123",
+						CurrentSpec:        testChangesetSpecID,
+						BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+						OwnedByBatchChange: testBatchChangeID,
+						PublicationState:   btypes.ChangesetPublicationStatePublished,
+						ReconcilerState:    btypes.ReconcilerStateCompleted,
+					}),
+					Repo: testRepo,
+				},
+			},
+			wantNewChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+				Repo:               testRepoID,
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				AttachedTo:         []int64{testBatchChangeID},
+				OwnedByBatchChange: testBatchChangeID,
+				CurrentSpec:        testChangesetSpecID,
+				// Diff stat is copied over from changeset spec
+				DiffStat: bt.TestChangsetSpecDiffStat,
+			})},
+			wantUpdatedChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+				Repo:               testRepoID,
+				ExternalID:         "123",
+				OwnedByBatchChange: testBatchChangeID,
+				AttachedTo:         []int64{testBatchChangeID},
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				CurrentSpec:        testChangesetSpecID + 1,
+				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
+				PreviousSpec: testChangesetSpecID,
+				// Diff stat is copied over from changeset spec
+				DiffStat: bt.TestChangsetSpecDiffStat,
+			})},
+		},
 	}
 
 	for _, tc := range testCases {
