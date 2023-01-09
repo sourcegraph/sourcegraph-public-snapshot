@@ -169,7 +169,7 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            // map gitlab fields
+                            // map Bitbucket Cloud fields
                             userName: bbCloudExternalData.display_name,
                             userLogin: bbCloudExternalData.username,
                             userUrl: bbCloudExternalData.links.self.href,
