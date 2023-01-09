@@ -64,11 +64,11 @@ try {
         // Run the publish commands
         childProcess.execSync(commands.vscode_publish, { stdio: 'inherit' })
         childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
-        console.log(`The extension has been ${hasTokens ? 'published' : 'packaged'} successfully`)
     } else {
         // Use vsce package command instead without publishing the extension for testing
         childProcess.execSync(commands.vscode_package, { stdio: 'inherit' })
     }
+    console.log(`The extension has been ${hasTokens ? 'published' : 'packaged'} successfully.`)
 } catch (error) {
     console.error('Failed to publish VSCE:', error)
     console.error('You may not run this script locally to publish the extension.')
