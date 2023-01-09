@@ -161,7 +161,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             <InsightCardHeader
                 title={
                     <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        to={`${window.location.origin}/insights/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
