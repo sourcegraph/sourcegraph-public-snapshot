@@ -5,11 +5,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import {
-    IEditor,
-    LazyMonacoQueryInput,
-    LazyMonacoQueryInputProps,
-} from '@sourcegraph/branded'
+import { IEditor, LazyMonacoQueryInput, LazyMonacoQueryInputProps } from '@sourcegraph/branded'
 import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
