@@ -31,6 +31,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var changesetStringColumns = SQLColumns{
+	"id",
+	"repo_id",
+	"created_at",
+	"updated_at",
+	"metadata",
+	"batch_change_ids",
+	"external_id",
+	"external_service_type",
+	"external_branch",
+	"external_fork_namespace",
+	"external_deleted_at",
+	"external_updated_at",
+	"external_state",
+	"external_review_state",
+	"external_check_state",
+	"diff_stat_added",
+	"diff_stat_deleted",
+	"sync_state",
+	"owned_by_batch_change_id",
+	"current_spec_id",
+	"previous_spec_id",
+	"publication_state",
+	"ui_publication_state",
+	"reconciler_state",
+	// computed_state is calculated by a Postgres function called changesets_computed_state_ensure. The value is
+	// determined by the combination of reconciler_state, publication_state, and external_state.
+	"computed_state",
+	"failure_message",
+	"started_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
+	"num_failures",
+	"closing",
+	"syncer_error",
+	"detached_at",
+}
+
 // changesetColumns are used by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
@@ -260,12 +299,19 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 		return nil
 	}
 
-	return batch.WithInserter(
+	i := -1
+	return batch.WithInserterWithReturn(
 		ctx,
 		s.Handle(),
 		"changesets",
 		batch.MaxNumPostgresParameters,
 		changesetInsertStringColumns,
+		"",
+		changesetStringColumns,
+		func(rows dbutil.Scanner) error {
+			i++
+			return scanChangeset(cs[i], rows)
+		},
 		inserter,
 	)
 }
