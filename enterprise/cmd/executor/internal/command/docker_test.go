@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
@@ -47,11 +45,6 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	})
 
 	t.Run("docker with host gateway", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-			ExecutorsFrontendURL: "http://host.docker.internal:3080",
-		}})
-		defer conf.Mock(nil)
-
 		actual := formatRawOrDockerCommand(
 			CommandSpec{
 				Image:     "sourcegraph/sourcegraph",
@@ -59,7 +52,11 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 				Operation: makeTestOperation(),
 			},
 			"/proj/src",
-			Options{},
+			Options{
+				DockerOptions: DockerOptions{
+					AddHostGateway: true,
+				},
+			},
 			"",
 		)
 

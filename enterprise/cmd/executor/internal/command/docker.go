@@ -2,12 +2,8 @@ package command
 
 import (
 	"fmt"
-	"net/url"
 	"path/filepath"
 	"strconv"
-	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // ScriptsPath is the location relative to the executor workspace where the executor
@@ -46,7 +42,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 			"docker",
 			dockerConfigFlag(dockerConfigPath),
 			"run", "--rm",
-			dockerHostGatewayFlag(),
+			dockerHostGatewayFlag(options.DockerOptions.AddHostGateway),
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
@@ -64,10 +60,8 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 // running uncontainerized in the Docker host. This *only* takes effect if the site config
 // `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
 // unexpected compatibility or security issues with using --add-host=...  when it is not needed.
-func dockerHostGatewayFlag() []string {
-	const hostDockerInternal = "host.docker.internal"
-	frontendURL, _ := url.Parse(conf.ExecutorsFrontendURL())
-	if frontendURL != nil && frontendURL.Host == hostDockerInternal || strings.HasPrefix(frontendURL.Host, hostDockerInternal+":") {
+func dockerHostGatewayFlag(shouldAdd bool) []string {
+	if shouldAdd {
 		return []string{"--add-host=host.docker.internal:host-gateway"}
 	}
 	return nil
