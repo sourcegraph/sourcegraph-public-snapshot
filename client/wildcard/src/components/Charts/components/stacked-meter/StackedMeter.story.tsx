@@ -1,8 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import ParentSize from '@visx/responsive/lib/components/ParentSizeModern'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StackedMeter } from '.'
 
