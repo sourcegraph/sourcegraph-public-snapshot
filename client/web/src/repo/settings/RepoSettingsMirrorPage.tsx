@@ -218,17 +218,15 @@ interface CorruptionLogProps {
 
 const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
     const health = props.repo.mirrorInfo.isCorrupted ? (
-        <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-            The repository is corrupt, check the log entries below for more info and consider recloning.
-        </Alert>
-    ) : (
-        <Alert className={classNames('mb-0', styles.alert)} variant="success">
-            The repository is currently not corrupt
-        </Alert>
-    )
-
-    const logEvents: any[] = props.repo.mirrorInfo.corruptionLogs.map((log, index) => (
-        <li key={`${props.repo.name}#${index}`} className="list-group-item px-2 py-1">
+        <>
+            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                The repository is corrupt, check the log entries below for more info and consider recloning.
+            </Alert>
+            <br />
+        </>
+    ) : null
+    const logEvents: JSX.Element[] = props.repo.mirrorInfo.corruptionLogs.map(log => (
+        <li key={`${props.repo.name}#${log.timestamp}`} className="list-group-item px-2 py-1">
             <div className="d-flex flex-column align-items-center justify-content-between">
                 <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
                 <small className="text-muted mb-0">
@@ -239,6 +237,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
     ))
 
     const [isOpened, setIsOpened] = useState(false)
+    const hasLogs = logEvents.length !== 0
 
     return (
         <BaseActionContainer
@@ -247,22 +246,27 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
             details={
                 <div className="flex-1">
                     {health}
-                    <br />
                     <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
                         <CollapseHeader
                             as={Button}
                             outline={true}
                             focusLocked={true}
                             variant="secondary"
-                            className="w-100"
-                            disabled={logEvents.length === 0}
+                            className="w-100 my-2"
+                            disabled={!hasLogs}
                         >
-                            Show log entries
-                            <Icon
-                                aria-hidden={true}
-                                svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
-                                className="mr-1"
-                            />
+                            {hasLogs ? (
+                                <>
+                                    Show corruption history
+                                    <Icon
+                                        aria-hidden={true}
+                                        svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
+                                        className="mr-1"
+                                    />
+                                </>
+                            ) : (
+                                'No corruption history'
+                            )}
                         </CollapseHeader>
                         <CollapsePanel>
                             <ul className="list-group">{logEvents}</ul>
