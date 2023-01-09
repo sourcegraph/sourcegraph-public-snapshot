@@ -10,7 +10,7 @@ import { PageTitle } from '../../../components/PageTitle'
 
 interface Props {
     telemetryService: TelemetryService
-    authenticatedUser: Pick<AuthenticatedUser, 'email'>
+    authenticatedUser: Pick<AuthenticatedUser, 'emails'>
 }
 
 const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
@@ -24,7 +24,10 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
     }, [telemetryService])
 
     const signUpForm = new URL(SIGN_UP_FORM_URL)
-    signUpForm.searchParams.set('email', authenticatedUser.email)
+    const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)
+    if (primaryEmail) {
+        signUpForm.searchParams.set('email', primaryEmail.email)
+    }
 
     return (
         <>

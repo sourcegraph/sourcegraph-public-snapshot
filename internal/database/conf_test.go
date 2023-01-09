@@ -43,7 +43,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON, false)
+	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, 0, malformedJSON, false)
 
 	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
@@ -55,14 +55,16 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	type input struct {
-		lastID   int32
-		contents string
+		lastID         int32
+		author_user_id int32
+		contents       string
 	}
 
 	type output struct {
-		ID       int32
-		contents string
-		err      error
+		ID             int32
+		author_user_id int32
+		contents       string
+		err            error
 	}
 
 	type pair struct {
@@ -76,6 +78,23 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	}
 
 	for _, test := range []test{
+		{
+			name: "create_with_author_user_id",
+			sequence: []pair{
+				{
+					input{
+						lastID:         0,
+						author_user_id: 1,
+						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+					},
+					output{
+						ID:             2,
+						author_user_id: 1,
+						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+					},
+				},
+			},
+		},
 		{
 			name: "create_one",
 			sequence: []pair{
@@ -177,7 +196,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents, false)
+				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, 0, p.input.contents, false)
 				if err != nil {
 					if errors.Is(err, p.expected.err) {
 						continue

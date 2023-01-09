@@ -182,8 +182,8 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
             if (confirm('Are you sure you want to reset the selected user password?')) {
                 randomizeUserPassword(user.id)
                     .toPromise()
-                    .then(({ resetPasswordURL }) => {
-                        if (resetPasswordURL === null) {
+                    .then(({ resetPasswordURL, emailSent }) => {
+                        if (resetPasswordURL === null || emailSent) {
                             createOnSuccess(
                                 <Text as="span">
                                     Password was reset. The reset link was sent to the primary email of the user:{' '}
