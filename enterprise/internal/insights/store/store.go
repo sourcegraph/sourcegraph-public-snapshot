@@ -10,6 +10,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -680,6 +681,17 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	series.RecordingTimes = recordingTimes
 
 	return series, nil
+}
+
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int) (time.Time, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("select recording_time from insight_series_recording_times where insight_series_id = %s and snapshot is false order by recording_time desc offset %s limit 1", seriesId, n))
+
+	temp := pq.NullTime{}
+	err := row.Scan(&temp)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return temp.Time, nil
 }
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
