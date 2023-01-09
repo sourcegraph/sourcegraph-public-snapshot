@@ -42,6 +42,10 @@ type validationSpec struct {
 		Config         map[string]interface{} `yaml:"config"`
 		DeleteWhenDone bool                   `yaml:"deleteWhenDone"`
 	} `yaml:"externalService"`
+	CreateInsight struct {
+		Title      string                   `yaml:"title"`
+		DataSeries []map[string]interface{} `yaml:"dataSeries"`
+	} `yaml:"createInsight"`
 }
 
 type validator struct {
@@ -68,7 +72,28 @@ const defaultVspec = `{
 		"maxTries": 5,
 		"sleepBetweenTriesSeconds": 5
 	},
-	"searchQuery": ["repo:^github.com/gorilla/mux$ Router", "repo:^github.com/gorilla/mux$@v1.8.0 Router"]
+	"searchQuery": ["repo:^github.com/gorilla/mux$ Router", "repo:^github.com/gorilla/mux$@v1.8.0 Router"],
+	"createInsight": {
+		"title": "test insight",
+		"dataSeries": [
+			{
+				"query": "lang:javascript",
+				"label": "javascript",
+				"repositoryScope": [],
+				"lineColor": "#6495ED",
+				"timeScopeUnit": "MONTH",
+				"timeScopeValue": 1
+			  },
+			 {
+				"query": "lang:typescript",
+				"label": "typescript",
+				"lineColor": "#DE3163",
+				"repositoryScope": [],
+				"timeScopeUnit": "MONTH",
+				"timeScopeValue": 1
+			 }
+		]
+	}
 }`
 
 func init() {
@@ -275,6 +300,15 @@ func (vd *validator) validate(script []byte, scriptContext map[string]string, is
 		}
 	}
 
+	if vspec.CreateInsight.Title != "" {
+		id, err := vd.createInsight(vspec.CreateInsight.Title, vspec.CreateInsight.DataSeries)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("insight %s(%s) is being added \n", vspec.CreateInsight.Title, id)
+	}
+
 	return nil
 }
 
@@ -404,6 +438,54 @@ func (vd *validator) waitRepoCloned(repoName string, sleepSeconds int, maxTries 
 		time.Sleep(time.Second * time.Duration(sleepSeconds))
 	}
 	return false, nil
+}
+
+const vdAddCodeInsight = `
+mutation CreateLineChartSearchInsight($input: LineChartSearchInsightInput!) {
+	createLineChartSearchInsight(input: $input) {
+	  view {
+		id
+	  }
+	}
+}`
+
+func (vd *validator) createInsight(title string, dataseries []map[string]interface{}) (string, error) {
+	var resp struct {
+		CreateLineChartSearchInsight struct {
+			View struct {
+				ID string `json:"id"`
+			} `json:"view"`
+		} `json:"createLineChartSearchInsight"`
+	}
+	var ds []map[string]interface{}
+	for _, d := range dataseries {
+		var series = map[string]interface{}{
+			"query": d["query"],
+			"options": map[string]interface{}{
+				"label":     d["label"],
+				"lineColor": d["lineColor"],
+			},
+			"repositoryScope": map[string]interface{}{
+				"repositories": d["repositoryScope"],
+			},
+			"timeScope": map[string]interface{}{
+				"stepInterval": map[string]interface{}{
+					"unit":  d["timeScopeUnit"],
+					"value": d["timeScopeValue"],
+				},
+			},
+		}
+		ds = append(ds, series)
+	}
+	err := vd.graphQL(vdAddCodeInsight,
+		map[string]interface{}{"input": map[string]interface{}{
+			"options":    map[string]interface{}{"title": title},
+			"dataSeries": ds}}, &resp)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.CreateLineChartSearchInsight.View.ID, nil
 }
 
 const vdUserQuery = `

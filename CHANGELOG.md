@@ -10,7 +10,7 @@
 All notable changes to `src-cli` are documented in this file.
 
 ## Unreleased
-
+* `src validate` has an added check to determine if an instance is able to create a basic code insight.
 ### Added
 
 ### Changed
