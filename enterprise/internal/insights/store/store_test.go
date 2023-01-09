@@ -529,7 +529,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	}
 	autogold.Equal(t, points, autogold.ExportedOnly())
 
-	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,7 +788,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, tc.getFrom, tc.getTo)
+			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, SeriesPointsOpts{From: tc.getFrom, To: tc.getTo})
 			if err != nil {
 				t.Fatal(err)
 			}

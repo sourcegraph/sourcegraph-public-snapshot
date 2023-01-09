@@ -30,7 +30,7 @@ type Interface interface {
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
-	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
