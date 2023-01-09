@@ -569,7 +569,7 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("Setting clone status should set corrupt_at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
-	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
+	t.Run("setting last error does not clear corruptedAt time", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
 			Name:          "github.com/sourcegraph/repo3",
 			RepoSizeBytes: 100,
@@ -587,9 +587,27 @@ func TestLogCorruption(t *testing.T) {
 			t.Errorf("Setting Last Changed should set corrupted at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
 		}
 	})
+	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
+		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "github.com/sourcegraph/repo4",
+			RepoSizeBytes: 100,
+			CloneStatus:   types.CloneStatusNotCloned,
+		})
+		logRepoCorruption(t, db, repo.Name, "test 3")
+
+		setGitserverRepoLastError(t, db, repo.Name, "This is a TEST ERAWR")
+
+		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
+		if err != nil {
+			t.Fatalf("failed to get repo by id: %s", err)
+		}
+		if fromDB.CorruptedAt.IsZero() {
+			t.Errorf("Setting Last Error should not clear the corruptedAt value")
+		}
+	})
 	t.Run("consecutive corruption logs appends", func(t *testing.T) {
 		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo4",
+			Name:          "github.com/sourcegraph/repo5",
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
@@ -628,7 +646,7 @@ func TestLogCorruption(t *testing.T) {
 	})
 	t.Run("large reason gets truncated", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo5",
+			Name:          "github.com/sourcegraph/repo6",
 			RepoSizeBytes: 100,
 			CloneStatus:   types.CloneStatusNotCloned,
 		})
