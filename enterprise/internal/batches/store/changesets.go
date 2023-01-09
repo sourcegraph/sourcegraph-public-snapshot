@@ -215,7 +215,6 @@ var changesetInsertStringColumns = []string{
 var temporaryChangesetInsertColumns = []string{
 	"id",
 	"batch_change_ids",
-	"updated_at",
 	"detached_at",
 	"diff_stat_added",
 	"diff_stat_deleted",
