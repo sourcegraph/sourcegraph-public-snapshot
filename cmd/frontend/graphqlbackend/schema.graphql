@@ -8433,7 +8433,7 @@ type SiteConfigHistoryConnection {
     """
     The total number of diffs in the connection.
     """
-    totalCount: Int
+    totalCount: Int!
     """
     Pagination information.
     """
