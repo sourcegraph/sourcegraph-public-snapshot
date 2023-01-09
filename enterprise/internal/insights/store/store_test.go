@@ -744,11 +744,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	afterNow := now.AddDate(0, 0, 1)
 
 	testCases := []struct {
-		insert  *types.InsightSeriesRecordingTimes
-		getFor  int
-		getFrom *time.Time
-		getTo   *time.Time
-		want    autogold.Value
+		insert   *types.InsightSeriesRecordingTimes
+		getFor   int
+		getFrom  *time.Time
+		getTo    *time.Time
+		getAfter *time.Time
+		want     autogold.Value
 	}{
 		{
 			getFor: 1,
@@ -780,6 +781,11 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			getTo:   &afterNow,
 			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
 		},
+		{
+			getFor:   1,
+			getAfter: &now,
+			want:     autogold.Want("gets all times after", stringifyTimes(series1Times[1:])),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
@@ -788,7 +794,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, SeriesPointsOpts{From: tc.getFrom, To: tc.getTo})
+			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, SeriesPointsOpts{From: tc.getFrom, To: tc.getTo, After: tc.getAfter})
 			if err != nil {
 				t.Fatal(err)
 			}
