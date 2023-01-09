@@ -34,11 +34,9 @@ type externalServiceResolver struct {
 	webhookURLOnce sync.Once
 	webhookURL     string
 	webhookErr     error
-
-	availability availabilityState
 }
 
-type availabilityState struct {
+type externalServiceAvailabilityStateResolver struct {
 	available   *externalServiceAvailable
 	unavailable *externalServiceUnavailable
 	unknown     *externalServiceUnknown
@@ -218,19 +216,15 @@ func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*
 }
 
 // mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
-var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceResolver, error)
+var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceAvailabilityStateResolver, error)
 
-func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceResolver, error) {
+func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvailabilityStateResolver, error) {
 	if mockCheckConnection != nil {
 		return mockCheckConnection(ctx, r)
 	}
 
 	if !r.HasConnectionCheck() {
-		r.availability = availabilityState{
-			unknown: &externalServiceUnknown{},
-		}
-
-		return r, nil
+		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
 	}
 
 	source, err := repos.NewSource(
@@ -241,54 +235,48 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		httpcli.ExternalClientFactory,
 	)
 	if err != nil {
-		return r, errors.Wrap(err, "failed to create source")
+		return nil, errors.Wrap(err, "failed to create source")
 	}
 
 	if err := source.CheckConnection(ctx); err != nil {
-		r.availability = availabilityState{
-			unavailable: &externalServiceUnavailable{
-				suspectedReason: err.Error(),
-			},
-		}
-
-		return r, nil
+		return &externalServiceAvailabilityStateResolver{
+			unavailable: &externalServiceUnavailable{suspectedReason: err.Error()},
+		}, nil
 	}
 
-	r.availability = availabilityState{
+	return &externalServiceAvailabilityStateResolver{
 		available: &externalServiceAvailable{
 			lastCheckedAt: time.Now(),
 		},
-	}
-
-	return r, nil
+	}, nil
 }
 
 func (r *externalServiceResolver) HasConnectionCheck() bool {
 	return availabilityCheck[r.externalService.Kind]
 }
 
-func (r *externalServiceResolver) ToExternalServiceAvailable() (*externalServiceResolver, bool) {
-	return r, r.availability.available != nil
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailable() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.available != nil
 }
 
-func (r *externalServiceResolver) ToExternalServiceUnavailable() (*externalServiceResolver, bool) {
-	return r, r.availability.unavailable != nil
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceUnavailable() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.unavailable != nil
 
 }
 
-func (r *externalServiceResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceResolver, bool) {
-	return r, r.availability.unknown != nil
+func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityStateResolver, bool) {
+	return r, r.unknown != nil
 }
 
-func (r *externalServiceResolver) LastCheckedAt() (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: r.availability.available.lastCheckedAt}, nil
+func (r *externalServiceAvailabilityStateResolver) LastCheckedAt() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.available.lastCheckedAt}, nil
 }
 
-func (r *externalServiceResolver) SuspectedReason() (string, error) {
-	return r.availability.unavailable.suspectedReason, nil
+func (r *externalServiceAvailabilityStateResolver) SuspectedReason() (string, error) {
+	return r.unavailable.suspectedReason, nil
 }
 
-func (r *externalServiceResolver) ImplementationNote() string {
+func (r *externalServiceAvailabilityStateResolver) ImplementationNote() string {
 	return "not implemented"
 }
 
