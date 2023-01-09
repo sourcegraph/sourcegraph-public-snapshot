@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights no longer uses a custom index of commits to compress historical backfill and instead queries the repository log directly. This allows the compression algorithm to span any arbitrary time frame, and should improve the reliability of the compression in general. [#45644](https://github.com/sourcegraph/sourcegraph/pull/45644)
 - GitHub code host configuration: The error message for non-existent organizations has been clarified to indicate that the organization is one that the user manually specified in their code host configuration. [#45918](https://github.com/sourcegraph/sourcegraph/pull/45918)
 - Git blame view got a user-interface overhaul and now shows data in a more structured way with additional visual hints. [#44397](https://github.com/sourcegraph/sourcegraph/issues/44397)
+- Zoekt by default eagerly unmarshals the symbol index into memory. Previously we would unmarshal on every request for the purposes of symbol searches or ranking. This lead to pressure on the Go garbage collector. On sourcegraph.com we have noticed time spent in the garbage collector halved. In the unlikely event this leads to more OOMs in zoekt-webserver, you can disable by setting the environment variable `ZOEKT_ENABLE_LAZY_DOC_SECTIONS=t`. [zoekt#503](https://github.com/sourcegraph/zoekt/pull/503)
 
 ### Fixed
 
