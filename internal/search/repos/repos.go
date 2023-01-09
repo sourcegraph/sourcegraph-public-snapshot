@@ -122,10 +122,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs, errs := findPatternRevs(op.RepoFilters)
-	if errs != nil {
-		return Resolved{}, errs
-	}
+	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -746,10 +743,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, _, err := findPatternRevs(op.RepoFilters)
-	if err != nil {
-		return ExcludedRepos{}, err
-	}
+	includePatterns, _ := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -923,7 +917,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 // findPatternRevs separates out each repo filter into its repository name
 // pattern and its revision specs (if any). It also applies small optimizations
 // to the repository name.
-func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
