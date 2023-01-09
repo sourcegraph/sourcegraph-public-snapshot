@@ -1,7 +1,7 @@
 package licensing
 
 import (
-	"internal/reflectlite"
+	"reflect"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,15 +18,15 @@ func (p Plan) HasFeature(target Feature) bool {
 		panic("licensing: target cannot be nil")
 	}
 
-	val := reflectlite.ValueOf(target)
+	val := reflect.ValueOf(target)
 	if val.IsNil() {
 		panic("licensing: target cannot be a nil pointer")
 	}
 
 	for _, f := range planFeatures[p] {
 		if target.FeatureName() == f.FeatureName() {
-			if val.Kind() == reflectlite.Ptr {
-				val.Elem().Set(reflectlite.ValueOf(f))
+			if val.Kind() == reflect.Ptr {
+				val.Elem().Set(reflect.ValueOf(f))
 			}
 			return true
 		}
