@@ -443,14 +443,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-
-						// The repo regexes are already validated (through query.ParseRepositoryRevisions), so
-						// we know this won't error out.
-						if repoOptions.CaseSensitiveRepoFilters {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter.Repo))
-						} else {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilter.Repo))
-						}
+						repoNamePatterns = append(repoNamePatterns, repoFilter.RepoRegex)
 					}
 
 					addJob(&RepoSearchJob{

@@ -921,15 +921,13 @@ func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns [
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
-	for _, includePattern := range includePatterns {
-		repoPattern, revs := includePattern.Repo, includePattern.Revs
-		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+	for _, pattern := range includePatterns {
+		repo, repoRegex, revs := pattern.Repo, pattern.RepoRegex, pattern.Revs
+		repo = optimizeRepoPatternWithHeuristics(repo)
+		outputPatterns = append(outputPatterns, repo)
 
-		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			// The repo pattern is already validated, so this shouldn't error
-			p := regexp.MustCompile("(?i:" + repoPattern + ")")
-			patternRev := patternRevspec{includePattern: p, revs: revs}
+			patternRev := patternRevspec{includePattern: repoRegex, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
 		}
 	}

@@ -52,9 +52,9 @@ func (r1 RevisionSpecifier) HasRefGlob() bool {
 }
 
 type ParsedRepoFilter struct {
-	// A repo pattern, which is guaranteed to be a valid regex
-	Repo string
-	Revs []RevisionSpecifier
+	Repo      string
+	RepoRegex *regexp.Regexp // A case-insensitive regex matching the Repo pattern
+	Revs      []RevisionSpecifier
 }
 
 func (p ParsedRepoFilter) String() string {
@@ -116,11 +116,15 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 		}
 	}
 
-	if _, err := regexp.Compile(repo); err != nil {
+	// Repo filters don't currently support case sensitivity, so we use a
+	// case-insensitive regex here to match as widely as possible during
+	// highlighting and other post-processing.
+	repoRegex, err := regexp.Compile("(?i)" + repo)
+	if err != nil {
 		return ParsedRepoFilter{}, err
 	}
 
-	return ParsedRepoFilter{Repo: repo, Revs: revs}, nil
+	return ParsedRepoFilter{Repo: repo, RepoRegex: repoRegex, Revs: revs}, nil
 }
 
 func parseRev(spec string) RevisionSpecifier {
