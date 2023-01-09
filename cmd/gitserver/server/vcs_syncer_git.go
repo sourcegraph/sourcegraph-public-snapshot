@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitCommandError is a Git command that encountered an error.
+// GitCommandError is an error of a failed Git command.
 type GitCommandError struct {
-	// Err is the original error produced by the git command that failed
+	// Err is the original error produced by the git command that failed.
 	Err error
 	// Output is the std error output of the command that failed.
 	Output string
