@@ -341,7 +341,7 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
  * be used with {@link enableEditor} and {@link createEditorAPI}.
  */
 export const withSearchQueryInput = (callback: (editorName: Editor) => void): void => {
-    const editorNames: Editor[] = ['monaco', 'codemirror6']
+    const editorNames: Editor[] = ['codemirror6']
     for (const editor of editorNames) {
         // This callback is supposed to be called multiple times
         // eslint-disable-next-line callback-return
