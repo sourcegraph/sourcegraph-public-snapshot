@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
+import { ApolloError, gql, useQuery } from '@apollo/client'
 import { Duration } from 'date-fns'
 
+import { HTTPStatusError } from '@sourcegraph/http-client'
 import { Series } from '@sourcegraph/wildcard'
 
 import {
@@ -92,6 +93,18 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
     }
 
     if (error) {
+        if (isGatewayTimeoutError(error)) {
+            return {
+                state: {
+                    status: LivePreviewStatus.Error,
+                    error: new Error(
+                        'Live preview is not available for this chart as it did not complete in the allowed time'
+                    ),
+                },
+                refetch,
+            }
+        }
+
         return { state: { status: LivePreviewStatus.Error, error }, refetch }
     }
 
@@ -153,4 +166,8 @@ function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
         getYValue: datum => datum.value,
         getXValue: datum => datum.dateTime,
     }))
+}
+
+function isGatewayTimeoutError(error: ApolloError): boolean {
+    return error.networkError instanceof HTTPStatusError && error.networkError.status === 504
 }
