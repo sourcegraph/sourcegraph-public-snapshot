@@ -419,23 +419,23 @@ const CONTRIBUTORS_QUERY = gql`
         node(id: $repo) {
             ... on Repository {
                 contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
-                    ...RepositoryContributorConnectionFields
+                    ...TreePageRepositoryContributorConnectionFields
                 }
             }
         }
     }
 
-    fragment RepositoryContributorConnectionFields on RepositoryContributorConnection {
+    fragment TreePageRepositoryContributorConnectionFields on TreePageRepositoryContributorConnection {
         totalCount
         pageInfo {
             hasNextPage
         }
         nodes {
-            ...RepositoryContributorNodeFields
+            ...TreePageRepositoryContributorNodeFields
         }
     }
 
-    fragment RepositoryContributorNodeFields on RepositoryContributor {
+    fragment TreePageRepositoryContributorNodeFields on TreePageRepositoryContributor {
         person {
             name
             displayName
