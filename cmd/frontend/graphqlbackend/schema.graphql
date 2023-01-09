@@ -8400,14 +8400,26 @@ A list of site config diffs.
 type siteConfigDiffConnection {
     """
     The number of nodes to return starting from the beginning (oldest).
-    Note: Use either first or last (see below) in the query. Setting both will return an error.
+    Note: Use either first or last (see below) in the query. Setting both will
+    return an error.
     """
     first: Int
     """
     The number of nodes to return starting from the end (latest).
-    Note: Use either last or first (see above) in the query. Setting both will return an error.
+    Note: Use either last or first (see above) in the query. Setting both will
+    return an error.
     """
     last: Int
+    """
+    Opaque pagination cursor to be used when paginating forwards that may be also used
+    in conjunction with "first" to return the first N nodes.
+    """
+    after: String
+    """
+    Opaque pagination cursor to be used when paginating backwards that may be
+    also used in conjunction with "last" to return the last N nodes.
+    """
+    before: String
     """
     A list of diffs in the site config
     """
