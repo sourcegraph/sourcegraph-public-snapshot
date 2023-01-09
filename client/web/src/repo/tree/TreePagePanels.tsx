@@ -4,13 +4,13 @@ import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
     CardHeader,
     Icon,
     Link,
+    LinkOrSpan,
     ParentSize,
     StackedMeter,
     Tooltip,
