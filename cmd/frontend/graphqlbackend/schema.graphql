@@ -6471,10 +6471,10 @@ type SiteConfiguration {
     """
     validationMessages: [String!]!
     """
-    A list of diffs to depict what changed since the previous version of this
+    EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
     configuration.
     """
-    diffHistory(
+    history(
       """
       The number of nodes to return starting from the beginning (oldest).
       Note: Use either first or last (see below) in the query. Setting both will
@@ -6497,7 +6497,7 @@ type SiteConfiguration {
       also used in conjunction with "last" to return the last N nodes.
       """
       before: String
-    ): SiteConfigDiffConnection
+    ): SiteConfigHistoryConnection
 }
 
 """
@@ -8425,11 +8425,11 @@ type ConnectionPageInfo {
 """
 A list of site config diffs.
 """
-type SiteConfigDiffConnection {
+type SiteConfigHistoryConnection {
     """
     A list of diffs in the site config
     """
-    nodes: [SiteConfigDiff!]!
+    nodes: [SiteConfigChange!]!
     """
     The total number of diffs in the connection.
     """
@@ -8437,13 +8437,13 @@ type SiteConfigDiffConnection {
     """
     Pagination information.
     """
-    pageInfo: BidirectionalPageInfo!
+    pageInfo: ConnectionPageInfo!
 }
 
 """
 A diff representing the change in the site config compared to the previous version.
 """
-type SiteConfigDiff {
+type SiteConfigChange {
     """
     The ID of the site config in the history.
     """
@@ -8451,7 +8451,7 @@ type SiteConfigDiff {
     """
     The ID of the previous site config against which this diff is generated.
     """
-    previousID: ID!
+    previousID: ID
     """
     The user who made this change. If empty, it indicates that either the
     author's information is not available or the change in the site config was applied
