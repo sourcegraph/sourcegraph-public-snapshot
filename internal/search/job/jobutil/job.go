@@ -407,16 +407,9 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
-				if len(patternPrefix) == 1 {
-					// No "@" in pattern? We're good.
-					repoFilter := query.ParseRepositoryRevisions(pattern)
-					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
-					return opts, true
-				}
-
-				if patternPrefix[0] != "" {
+				if len(patternPrefix) == 1 || patternPrefix[0] != "" {
 					// Extend the repo search using the pattern value, but
-					// since the pattern contains @, only search the part
+					// if the pattern contains @, only search the part
 					// prefixed by the first @. This because downstream
 					// logic will get confused by the presence of @ and try
 					// to resolve repo revisions. See #27816.
