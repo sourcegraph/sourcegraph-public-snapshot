@@ -46,12 +46,6 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 nodes: [],
             },
         }),
-        HasAvailableCodeInsight: () => ({
-            insightViews: {
-                __typename: 'InsightViewConnection',
-                nodes: [{ id: '001', isFrozen: false }],
-            },
-        }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
         InsightsDashboards: () => ({
             currentUser: {
@@ -70,6 +64,16 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
             insightsDashboards: {
                 __typename: 'InsightsDashboardConnection',
                 nodes: [],
+            },
+        }),
+
+        GetAllInsightConfigurations: () => ({
+            __typename: 'Query',
+            insightViews: {
+                __typename: 'InsightViewConnection',
+                nodes: [],
+                pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                totalCount: 0,
             },
         }),
 
@@ -103,6 +107,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 viewerCanAdminister: true,
                 searchable: true,
                 emails: [],
+                latestSettings: null,
             },
         }),
         ...overrides,

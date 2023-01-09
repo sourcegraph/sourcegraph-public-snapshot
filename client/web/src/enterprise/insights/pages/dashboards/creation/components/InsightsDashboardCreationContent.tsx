@@ -2,8 +2,7 @@ import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     FormGroup,

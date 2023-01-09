@@ -168,12 +168,6 @@ const (
 	Pie  PresentationType = "PIE"
 )
 
-type Frame struct {
-	From   time.Time
-	To     time.Time
-	Commit string
-}
-
 type SeriesSortMode string
 
 const (

@@ -12,7 +12,6 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable, logger } from '@sourcegraph/common'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     ButtonProps,
     ForwardReferenceComponent,
@@ -35,6 +34,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
+import { Shortcut } from '../react-shortcuts'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -261,10 +261,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                         ) : query.length > 0 ? (
                             <li className={this.props.noResultsClassName}>No matching commands</li>
                         ) : (
-                            <EmptyCommandList
-                                settingsCascade={this.state.settingsCascade}
-                                sourcegraphURL={this.props.platformContext.sourcegraphURL}
-                            />
+                            <EmptyCommandList settingsCascade={this.state.settingsCascade} />
                         )}
                     </ul>
                 </div>

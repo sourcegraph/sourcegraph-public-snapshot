@@ -24,6 +24,7 @@ export const CaptureGroupCreationPage: Story = () => {
 
     return (
         <CaptureGroupCreationPageComponent
+            backUrl="/insights/create"
             telemetryService={NOOP_TELEMETRY_SERVICE}
             onSuccessfulCreation={noop}
             onInsightCreateRequest={() => Promise.resolve()}

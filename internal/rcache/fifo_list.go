@@ -11,15 +11,15 @@ import (
 
 // FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
 type FIFOList struct {
-	key  string
-	size int
+	key     string
+	maxSize int
 }
 
 // NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
 func NewFIFOList(key string, size int) *FIFOList {
 	return &FIFOList{
-		key:  key,
-		size: size,
+		key:     key,
+		maxSize: size,
 	}
 }
 
@@ -40,7 +40,7 @@ func (l *FIFOList) Insert(b []byte) error {
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	_, err = c.Do("LTRIM", key, 0, l.size-1)
+	_, err = c.Do("LTRIM", key, 0, l.maxSize-1)
 	if err != nil {
 		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
@@ -57,6 +57,10 @@ func (l *FIFOList) Size() (int, error) {
 		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
 	}
 	return n, nil
+}
+
+func (l *FIFOList) MaxSize() int {
+	return l.maxSize
 }
 
 // All return all items stored in the FIFOList.
@@ -90,8 +94,8 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(bs) > l.size {
-		bs = bs[:l.size]
+	if len(bs) > l.maxSize {
+		bs = bs[:l.maxSize]
 	}
 	return bs, nil
 }

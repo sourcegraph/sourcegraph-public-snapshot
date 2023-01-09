@@ -2,10 +2,8 @@ import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { Observable, of } from 'rxjs'
 
-import { ExecutorCompatibility } from '@sourcegraph/search'
-
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorConnectionFields } from '../../../graphql-operations'
+import { ExecutorCompatibility, ExecutorConnectionFields } from '../../../graphql-operations'
 
 import { ExecutorsListPage } from './ExecutorsListPage'
 

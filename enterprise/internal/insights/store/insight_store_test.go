@@ -1756,6 +1756,28 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	repoScope := "repo:scope"
+	repoScopedSeries := types.InsightSeries{
+		SeriesID:           "repoScoped",
+		Query:              "query-2",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+		RepositoryCriteria: &repoScope,
+	}
+	repoScopedSeries, err = store.CreateSeries(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.StampBackfill(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("test only incomplete", func(t *testing.T) {
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
@@ -1767,7 +1789,7 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 
 		want := 0
 		if diff := cmp.Diff(want, len(got)); diff != "" {
-			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+			t.Errorf("mismatched not queued backfill_stamp count want/got: %v", diff)
 		}
 	})
 	t.Run("test get all", func(t *testing.T) {
@@ -1776,9 +1798,26 @@ func TestInsightStore_StampBackfillQueued(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := 1
+		want := 2
 		if diff := cmp.Diff(want, len(got)); diff != "" {
-			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+			t.Errorf("mismatched get all count want/got: %v", diff)
+		}
+	})
+	t.Run("test global only", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			GlobalOnly: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantCount := 1
+		want := series.SeriesID
+		if diff := cmp.Diff(wantCount, len(got)); diff != "" {
+			t.Errorf("mismatched global only count want/got: %v", diff)
+		}
+		if diff := cmp.Diff(want, got[0].SeriesID); diff != "" {
+			t.Errorf("mismatched global only seriesID want/got: %v", diff)
 		}
 	})
 }

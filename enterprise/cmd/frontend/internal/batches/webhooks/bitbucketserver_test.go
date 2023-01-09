@@ -121,7 +121,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:            "Test batch change",
+			Name:            "Test-batch-change",
 			Description:     "Testing THE WEBHOOKS",
 			CreatorID:       userID,
 			NamespaceUserID: userID,

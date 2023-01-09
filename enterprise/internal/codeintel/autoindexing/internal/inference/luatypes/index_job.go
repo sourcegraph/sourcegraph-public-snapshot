@@ -33,12 +33,13 @@ func indexJobFromTable(value lua.LValue) (config.IndexJob, error) {
 
 	job := config.IndexJob{}
 	if err := util.DecodeTable(table, map[string]func(lua.LValue) error{
-		"steps":        setDockerSteps(&job.Steps),
-		"local_steps":  util.SetStrings(&job.LocalSteps),
-		"root":         util.SetString(&job.Root),
-		"indexer":      util.SetString(&job.Indexer),
-		"indexer_args": util.SetStrings(&job.IndexerArgs),
-		"outfile":      util.SetString(&job.Outfile),
+		"steps":             setDockerSteps(&job.Steps),
+		"local_steps":       util.SetStrings(&job.LocalSteps),
+		"root":              util.SetString(&job.Root),
+		"indexer":           util.SetString(&job.Indexer),
+		"indexer_args":      util.SetStrings(&job.IndexerArgs),
+		"outfile":           util.SetString(&job.Outfile),
+		"requested_envvars": util.SetStrings(&job.RequestedEnvVars),
 	}); err != nil {
 		return config.IndexJob{}, err
 	}

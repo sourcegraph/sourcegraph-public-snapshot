@@ -1,6 +1,6 @@
 import { cleanup, fireEvent } from '@testing-library/react'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { TabbedPanelContent } from './TabbedPanelContent'
 import { panels, panelProps } from './TabbedPanelContent.fixtures'

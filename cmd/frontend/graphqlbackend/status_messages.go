@@ -35,6 +35,10 @@ type statusMessageResolver struct {
 	db      database.DB
 }
 
+func (r *statusMessageResolver) ToGitUpdatesDisabled() (*statusMessageResolver, bool) {
+	return r, r.message.GitUpdatesDisabled != nil
+}
+
 func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
 	return r, r.message.Cloning != nil
 }
@@ -55,6 +59,9 @@ func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageRe
 }
 
 func (r *statusMessageResolver) Message() (string, error) {
+	if r.message.GitUpdatesDisabled != nil {
+		return r.message.GitUpdatesDisabled.Message, nil
+	}
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
 	}

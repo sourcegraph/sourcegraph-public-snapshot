@@ -2,13 +2,7 @@
 
 const gulp = require('gulp')
 
-const {
-  graphQlSchema,
-  graphQlOperations,
-  schema,
-  watchGraphQlSchema,
-  watchGraphQlOperations,
-} = require('./client/shared/gulpfile')
+const { graphQlOperations, schema, watchGraphQlOperations } = require('./client/shared/gulpfile')
 const { webpack: webWebpack, developmentServer, generate, watchGenerators } = require('./client/web/gulpfile')
 
 /**
@@ -32,8 +26,6 @@ module.exports = {
   build,
   dev: development,
   schema,
-  graphQlSchema,
-  watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
 }

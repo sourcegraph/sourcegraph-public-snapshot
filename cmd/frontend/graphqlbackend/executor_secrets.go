@@ -1,7 +1,9 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -62,16 +64,17 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 		return nil, errors.New("invalid key format, should be a valid env var name")
 	}
 
-	if len(args.Value) == 0 {
-		return nil, errors.New("value cannot be empty string")
-	}
-
 	secret := &database.ExecutorSecret{
 		Key:             args.Key,
 		CreatorID:       a.UID,
 		NamespaceUserID: userID,
 		NamespaceOrgID:  orgID,
 	}
+
+	if err := validateExecutorSecret(secret, args.Value); err != nil {
+		return nil, err
+	}
+
 	if err := store.Create(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
 		if err == database.ErrDuplicateExecutorSecret {
 			return nil, &ErrDuplicateExecutorSecret{}
@@ -113,10 +116,6 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 		return nil, errors.New("scope mismatch")
 	}
 
-	if len(args.Value) == 0 {
-		return nil, errors.New("value cannot be empty string")
-	}
-
 	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
 	tx, err := store.Transact(ctx)
@@ -132,6 +131,10 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 
 	// 🚨 SECURITY: Check namespace access.
 	if err := checkNamespaceAccess(ctx, r.db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
+		return nil, err
+	}
+
+	if err := validateExecutorSecret(secret, args.Value); err != nil {
 		return nil, err
 	}
 
@@ -282,4 +285,47 @@ func checkNamespaceAccess(ctx context.Context, db database.DB, namespaceUserID, 
 	}
 
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, db)
+}
+
+// validateExecutorSecret validates that the secret value is non-empty and if the
+// secret key is DOCKER_AUTH_CONFIG that the value is acceptable.
+func validateExecutorSecret(secret *database.ExecutorSecret, value string) error {
+	if len(value) == 0 {
+		return errors.New("value cannot be empty string")
+	}
+	// Validate a docker auth config is correctly formatted before storing it to avoid
+	// confusion and broken config.
+	if secret.Key == "DOCKER_AUTH_CONFIG" {
+		var dac dockerAuthConfig
+		dec := json.NewDecoder(strings.NewReader(value))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&dac); err != nil {
+			return errors.Wrap(err, "failed to unmarshal docker auth config for validation")
+		}
+		if len(dac.CredHelpers) > 0 {
+			return errors.New("cannot use credential helpers in docker auth config set via secrets")
+		}
+		if dac.CredsStore != "" {
+			return errors.New("cannot use credential stores in docker auth config set via secrets")
+		}
+		for key, auth := range dac.Auths {
+			if !bytes.Contains(auth.Auth, []byte(":")) {
+				return errors.Newf("invalid credential in auths section for %q format has to be base64(username:password)", key)
+			}
+		}
+	}
+
+	return nil
+}
+
+type dockerAuthConfig struct {
+	Auths       dockerAuthConfigAuths `json:"auths"`
+	CredsStore  string                `json:"credsStore"`
+	CredHelpers map[string]string     `json:"credHelpers"`
+}
+
+type dockerAuthConfigAuths map[string]dockerAuthConfigAuth
+
+type dockerAuthConfigAuth struct {
+	Auth []byte `json:"auth"`
 }

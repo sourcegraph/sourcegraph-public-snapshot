@@ -6,13 +6,8 @@ import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
@@ -20,7 +15,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
@@ -40,9 +34,7 @@ interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
         ThemeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     isSourcegraphDotCom: boolean
     globbing: boolean
 }
@@ -65,8 +57,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
             isSelected,
             showMenu,
             isReadOnly,
-            hoverifier,
-            extensionsController,
             isLightTheme,
             onRunBlock,
             onBlockInputChange,
@@ -151,20 +141,9 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                 [isReadOnly, linkMenuAction, toggleEditMenuAction, commonMenuActions]
             )
 
-            const codeIntelViewerUpdatesProps = useMemo(
-                () => ({
-                    extensionsController,
-                    ...input,
-                    revision: isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision : input.revision,
-                }),
-                [symbolOutput, extensionsController, input]
-            )
-
             const logEventOnCopy = useCallback(() => {
                 telemetryService.log(...codeCopiedEvent('notebook-symbols'))
             }, [telemetryService])
-
-            const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
             return (
                 <NotebookBlock
@@ -226,8 +205,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                                 highlightRanges={[symbolOutput.highlightSymbolRange]}
                                 {...symbolOutput.highlightLineRange}
                                 fetchHighlightedFileRangeLines={() => of([])}
-                                hoverifier={hoverifier}
-                                viewerUpdates={viewerUpdates}
                                 onCopy={logEventOnCopy}
                             />
                         </div>

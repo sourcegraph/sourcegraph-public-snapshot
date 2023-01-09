@@ -6,19 +6,13 @@ import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
@@ -35,14 +29,9 @@ import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
 import styles from './NotebookFileBlock.module.scss'
 
-interface NotebookFileBlockProps
-    extends BlockProps<FileBlock>,
-        TelemetryProps,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        ThemeProps {
+interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps, ThemeProps {
     isSourcegraphDotCom: boolean
     globbing: boolean
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 const LOADING = 'loading' as const
@@ -56,8 +45,6 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         isSelected,
         showMenu,
         isReadOnly,
-        hoverifier,
-        extensionsController,
         onRunBlock,
         onBlockInputChange,
         ...props
@@ -167,16 +154,9 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             return () => document.removeEventListener('paste', onFileURLPaste)
         }, [isSelected, onFileURLPaste])
 
-        const codeIntelViewerUpdatesProps = useMemo(
-            () => ({ extensionsController, ...input }),
-            [extensionsController, input]
-        )
-
         const logEventOnCopy = useCallback(() => {
             telemetryService.log(...codeCopiedEvent('notebook-file-block'))
         }, [telemetryService])
-
-        const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
         return (
             <NotebookBlock
@@ -225,8 +205,6 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                             startLine={input.lineRange?.startLine ?? 0}
                             endLine={input.lineRange?.endLine ?? 1}
                             fetchHighlightedFileRangeLines={() => of([])}
-                            hoverifier={hoverifier}
-                            viewerUpdates={viewerUpdates}
                             onCopy={logEventOnCopy}
                         />
                     </div>

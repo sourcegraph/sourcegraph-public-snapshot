@@ -108,6 +108,9 @@ Available commands in `sg.config.yaml`:
 * loki
 * monitoring-generator
 * oss-frontend
+* oss-gitserver-0
+* oss-gitserver-1
+* oss-gitserver-template
 * oss-repo-updater
 * oss-symbols
 * oss-web: Open source version of the web app
@@ -484,6 +487,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--quiet, -q`: Suppress all output but errors from generate tasks
+
+### sg generate buf
+
+Re-generate protcol buffer bindings using buf.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg generate go
 
@@ -1429,6 +1441,28 @@ Flags:
 * `--opsgenie.token="<value>"`: OpsGenie token
 * `--priority, -p="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
 * `--url="<value>"`: URL field for alert details (optional)
+
+## sg cloud
+
+Install and work with Sourcegraph Cloud tools.
+
+Learn more about Sourcegraph Cloud:
+
+- Product: https://docs.sourcegraph.com/cloud
+- Handbook: https://handbook.sourcegraph.com/departments/cloud/
+
+
+
+### sg cloud install
+
+Install or upgrade local `mi2` CLI (for Cloud V2).
+
+To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg help
 

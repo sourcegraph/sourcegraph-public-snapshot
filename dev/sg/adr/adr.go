@@ -48,8 +48,10 @@ var (
 //
 // Must be kept in sync with the generator in Create.
 func VisitAll(adrDir string, visit func(adr ArchitectureDecisionRecord) error) error {
-	// nolint:staticcheck,gosimple
 	return filepath.WalkDir(adrDir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if entry.IsDir() {
 			return nil
 		}

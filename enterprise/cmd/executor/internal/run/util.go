@@ -96,6 +96,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
 		WorkerOptions:      workerOptions(c),
+		DockerOptions:      dockerOptions(c),
 		FirecrackerOptions: firecrackerOptions(c),
 		ResourceOptions:    resourceOptions(c),
 		GitServicePath:     "/.executors/git",
@@ -123,6 +124,12 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
+	}
+}
+
+func dockerOptions(c *config.Config) command.DockerOptions {
+	return command.DockerOptions{
+		DockerAuthConfig: c.DockerAuthConfig,
 	}
 }
 

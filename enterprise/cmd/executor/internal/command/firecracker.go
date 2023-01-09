@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,7 +24,10 @@ type commandRunner interface {
 	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
-const firecrackerContainerDir = "/work"
+const (
+	firecrackerContainerDir  = "/work"
+	firecrackerDockerConfDir = "/etc/docker/cli"
+)
 
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
@@ -34,8 +38,8 @@ const firecrackerContainerDir = "/work"
 // The name value supplied here refers to the Firecracker virtual machine, which must have
 // also been the name supplied to a successful invocation of setupFirecracker. Additionally,
 // the virtual machine must not yet have been torn down (via teardownFirecracker).
-func formatFirecrackerCommand(spec CommandSpec, name string, options Options) command {
-	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
+func formatFirecrackerCommand(spec CommandSpec, name string, options Options, dockerConfigPath string) command {
+	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options, dockerConfigPath)
 
 	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
 
@@ -141,27 +145,43 @@ func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, e
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) (_ string, err error) {
 	var daemonConfigFile string
 	if len(options.FirecrackerOptions.DockerRegistryMirrorURLs) > 0 {
 		var err error
 		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURLs)
 		if err != nil {
-			return err
+			return "", err
+		}
+	}
+
+	// If docker auth config is present, write it.
+	var dockerConfigPath string
+	if len(options.DockerOptions.DockerAuthConfig.Auths) > 0 {
+		d, err := json.Marshal(options.DockerOptions.DockerAuthConfig)
+		if err != nil {
+			return "", err
+		}
+		dockerConfigPath, err = os.MkdirTemp(tmpDir, "docker_auth")
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
+			return "", err
 		}
 	}
 
 	// Make subdirectory called "cni" to store CNI config in. All files from a directory
 	// will be considered so this has to be it's own directory with just our config file.
 	cniConfigDir := path.Join(tmpDir, "cni")
-	err := os.Mkdir(cniConfigDir, os.ModePerm)
+	err = os.Mkdir(cniConfigDir, os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 	cniConfigFile := path.Join(cniConfigDir, "10-sourcegraph-executors.conflist")
 	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.ResourceOptions.MaxIngressBandwidth, options.ResourceOptions.MaxEgressBandwidth)), os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Start the VM and wait for the SSH server to become available.
@@ -175,7 +195,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
 			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
@@ -188,7 +208,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	}
 
 	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
-		return errors.Wrap(err, "failed to start firecracker vm")
+		return "", errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if options.FirecrackerOptions.VMStartupScriptPath != "" {
@@ -198,11 +218,15 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			Operation: operations.SetupStartupScript,
 		}
 		if err := runner.RunCommand(ctx, startupScriptCommand, logger); err != nil {
-			return errors.Wrap(err, "failed to run startup script")
+			return "", errors.Wrap(err, "failed to run startup script")
 		}
 	}
 
-	return nil
+	if dockerConfigPath != "" {
+		return firecrackerDockerConfDir, nil
+	}
+
+	return "", nil
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
@@ -232,7 +256,7 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []string {
+func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile, dockerConfigPath string) []string {
 	copyfiles := make([]string, 0, 2)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
@@ -240,6 +264,10 @@ func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []st
 
 	if daemonConfigFile != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
+	}
+
+	if dockerConfigPath != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, firecrackerDockerConfDir))
 	}
 
 	sort.Strings(copyfiles)

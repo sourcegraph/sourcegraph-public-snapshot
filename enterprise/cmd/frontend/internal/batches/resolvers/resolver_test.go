@@ -1222,11 +1222,11 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 		},
 		{
 			name:          "ApplyBatchChange at limit",
-			numChangesets: 5,
+			numChangesets: 10,
 		},
 		{
 			name:          "ApplyBatchChange over limit",
-			numChangesets: 6,
+			numChangesets: 11,
 		},
 	}
 	for _, test := range tests {
@@ -2458,7 +2458,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `

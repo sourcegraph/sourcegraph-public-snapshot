@@ -32,7 +32,7 @@ type TabulationResult struct {
 	TotalCount int
 }
 
-type SelectRepoResult struct {
+type RepoResult struct {
 	StreamDecoderEvents
 	Repos []itypes.MinimalRepo
 }
@@ -244,8 +244,8 @@ func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulat
 	}, ctr
 }
 
-func SelectRepoDecoder() (streamhttp.FrontendStreamDecoder, *SelectRepoResult) {
-	repoResult := &SelectRepoResult{
+func RepoDecoder() (streamhttp.FrontendStreamDecoder, *RepoResult) {
+	repoResult := &RepoResult{
 		Repos: []itypes.MinimalRepo{},
 	}
 

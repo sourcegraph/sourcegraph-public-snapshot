@@ -1,7 +1,6 @@
 import { HTMLAttributes, FC } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce } from '@sourcegraph/wildcard'
+import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { GroupByField } from '../../../../../../../graphql-operations'
 import {

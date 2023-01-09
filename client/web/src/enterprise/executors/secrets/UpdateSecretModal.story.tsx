@@ -51,3 +51,35 @@ export const Update: Story = () => (
         )}
     </WebStory>
 )
+
+export const DockerAuthConfig: Story = () => (
+    <WebStory>
+        {props => (
+            <UpdateSecretModal
+                {...props}
+                secret={{
+                    __typename: 'ExecutorSecret',
+                    id: 'secret1',
+                    creator: {
+                        __typename: 'User',
+                        username: 'test',
+                        displayName: 'Test user',
+                        id: 'testID',
+                        url: '/users/test',
+                    },
+                    key: 'DOCKER_AUTH_CONFIG',
+                    scope: ExecutorSecretScope.BATCHES,
+                    overwritesGlobalSecret: false,
+                    // Global secret.
+                    namespace: null,
+                    createdAt: subDays(new Date(), 1).toISOString(),
+                    updatedAt: subHours(new Date(), 12).toISOString(),
+                }}
+                onCancel={noop}
+                afterUpdate={noop}
+            />
+        )}
+    </WebStory>
+)
+
+DockerAuthConfig.storyName = 'Docker auth config'

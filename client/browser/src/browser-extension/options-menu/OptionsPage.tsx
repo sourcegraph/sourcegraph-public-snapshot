@@ -5,12 +5,11 @@ import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList 
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text, LoaderInput } from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'

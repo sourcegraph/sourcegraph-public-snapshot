@@ -3,10 +3,9 @@ import React, { useEffect, useCallback, useState } from 'react'
 import * as H from 'history'
 
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, H2, H3, H4 } from '@sourcegraph/wildcard'
+import { Alert, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -109,7 +108,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                             {...externalService}
                             title={createdExternalService.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdExternalService.id}`}
+                            to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
                         />
                     </div>
                     <Alert variant="warning">

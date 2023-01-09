@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -85,10 +85,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.FetchAccount", "")
 	defer func() {
-		tr.LogFields(
-			otlog.String("user.name", user.Username),
-			otlog.Int32("user.id", user.ID),
-		)
+		tr.SetAttributes(
+			attribute.String("user.name", user.Username),
+			attribute.Int64("user.id", int64(user.ID)))
 
 		if err != nil {
 			tr.SetError(err)

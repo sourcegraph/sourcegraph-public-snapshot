@@ -111,7 +111,6 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/schema.ts
 client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
@@ -171,6 +170,9 @@ annotations/
 
 # Buildkite analytics files
 test-reports/
+
+# CI linter cache (used only in CI)
+.golangci-lint-cache
 
 # go workspace files shouldn't be committed
 go.work

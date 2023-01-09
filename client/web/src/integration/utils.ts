@@ -1,7 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings, SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
@@ -9,9 +8,11 @@ import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-const CODE_HIGHLIGHTING_QUERIES: Partial<
-    keyof (WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations)
->[] = ['highlightCode', 'Blob', 'HighlightedFile']
+const CODE_HIGHLIGHTING_QUERIES: Partial<keyof (WebGraphQlOperations & SharedGraphQlOperations)>[] = [
+    'highlightCode',
+    'Blob',
+    'HighlightedFile',
+]
 
 /**
  * Matches a URL against an expected query that will handle code highlighting.

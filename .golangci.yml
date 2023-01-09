@@ -10,15 +10,11 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    # this is flakey: https://github.com/sourcegraph/sourcegraph/issues/34304
-    # - nolintlint
+    - nolintlint
     - staticcheck
     - typecheck
     - unconvert
-    # Both of these are disabled because they produce a lot of errors. The issues below address these errors
-    # https://github.com/sourcegraph/sourcegraph/issues/43753
-    # https://github.com/sourcegraph/sourcegraph/issues/43755
-    #- unused
+    # - unused
     - unparam
     - exportloopref
 
@@ -53,7 +49,6 @@ linters-settings:
   staticcheck:
     checks:
       - "all"
-      - "-SA1019" #TODO(burmudar): Mostly because of opentracing deprecatio
   forbidigo:
     forbid:
       # Use errors.Newf instead

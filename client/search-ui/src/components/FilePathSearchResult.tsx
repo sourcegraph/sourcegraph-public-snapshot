@@ -59,6 +59,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
+            rankingDebug={result.debug}
             className={classNames(styles.copyButtonContainer, containerClassName)}
         >
             <div className={classNames(styles.searchResultMatch, 'p-2')}>

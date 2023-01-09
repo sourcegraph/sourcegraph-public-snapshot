@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -48,7 +48,7 @@ func AuthMiddleware(next http.Handler, userStore UserStore, authValidators AuthV
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
 			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, userStore, operation.Logger) || hasQuery(r, "uploadId") {
-				trace.Log(log.Event("bypassing code host auth check"))
+				trace.AddEvent("bypassing code host auth check")
 				return 0, nil
 			}
 
@@ -59,7 +59,7 @@ func AuthMiddleware(next http.Handler, userStore UserStore, authValidators AuthV
 				if !strings.HasPrefix(repositoryName, codeHost) {
 					continue
 				}
-				trace.Log(log.String("codeHost", codeHost))
+				trace.AddEvent("TODO Domain Owner", attribute.String("codeHost", codeHost))
 
 				return validator(ctx, query, repositoryName)
 			}

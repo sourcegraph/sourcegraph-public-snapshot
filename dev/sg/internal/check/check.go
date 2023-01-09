@@ -55,7 +55,7 @@ func CommandOutputContains(cmd, contains string) CheckFunc {
 
 func FileExists(path string) func(context.Context) error {
 	return func(_ context.Context) error {
-		if filepath.HasPrefix(path, "~/") {
+		if strings.HasPrefix(path, "~/") {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return err

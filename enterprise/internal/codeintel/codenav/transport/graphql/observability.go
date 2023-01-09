@@ -60,7 +60,7 @@ func observeResolver(
 	operation *observation.Operation,
 	threshold time.Duration, //nolint:unparam // same value everywhere but probably want to keep this
 	observationArgs observation.Args,
-) (context.Context, observation.TraceLogger, func()) { // nolint:unparam // observation.TraceLogger is never used, but it makes sense API wise
+) (context.Context, observation.TraceLogger, func()) { //nolint:unparam // observation.TraceLogger is never used, but it makes sense API wise
 	start := time.Now()
 	ctx, trace, endObservation := operation.With(ctx, err, observationArgs)
 

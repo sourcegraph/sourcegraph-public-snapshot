@@ -1,6 +1,6 @@
 # Testing web code
 
-This is the implementation of our [Testing Principles](testing_principles.md) for all code (TypeScript, stylesheets, ...) used on the web, such as our webapp, browser extension, shared code, or Sourcegraph extensions.
+This is the implementation of our [Testing Principles](testing_principles.md) for all code (TypeScript, stylesheets, ...) used on the web, such as our webapp, browser extension, or shared code.
 
 ## General Goals
 

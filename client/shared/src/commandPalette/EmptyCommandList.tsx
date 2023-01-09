@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ButtonLink, Text } from '@sourcegraph/wildcard'
+import { Text } from '@sourcegraph/wildcard'
 
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { SettingsCascadeOrError } from '../settings/settings'
@@ -11,13 +11,9 @@ import styles from './EmptyCommandList.module.scss'
 
 interface Props {
     settingsCascade?: SettingsCascadeOrError
-    sourcegraphURL: string
 }
 
-export const EmptyCommandList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    settingsCascade,
-    sourcegraphURL,
-}) => {
+export const EmptyCommandList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ settingsCascade }) => {
     // if no settings cascade, default to 'no active extensions'
     const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
 
@@ -31,10 +27,6 @@ export const EmptyCommandList: React.FunctionComponent<React.PropsWithChildren<P
                     ? 'Enable Sourcegraph extensions to get additional functionality, integrations, and make special actions available from this menu.'
                     : 'Commands from your installed extensions will be shown when you navigate to certain pages.'}
             </Text>
-
-            <ButtonLink to={sourcegraphURL + '/extensions'} variant="primary">
-                Explore extensions
-            </ButtonLink>
 
             <PuzzleIllustration className={styles.illustration} />
         </EmptyCommandListContainer>

@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+
 import { LsifIndexFields, LsifUploadFields } from '../../../../graphql-operations'
 
 export interface CodeIntelUploadOrIndexLastActivityProps {

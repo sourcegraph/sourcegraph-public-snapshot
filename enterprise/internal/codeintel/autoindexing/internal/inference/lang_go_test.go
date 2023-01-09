@@ -7,6 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+const netrcString = `if [ "$NETRC_DATA" ]; then
+  echo "Writing netrc config to $HOME/.netrc"
+  echo "$NETRC_DATA" > ~/.netrc
+else
+  echo "No netrc config set, continuing"
+fi
+`
+
 func TestGoGenerator(t *testing.T) {
 	expectedIndexerImage, _ := libs.DefaultIndexerForLang("go")
 
@@ -23,28 +31,30 @@ func TestGoGenerator(t *testing.T) {
 						{
 							Root:     "foo/bar",
 							Image:    expectedIndexerImage,
-							Commands: []string{"go mod download"},
+							Commands: []string{netrcString, "go mod download"},
 						},
 					},
-					LocalSteps:  nil,
-					Root:        "foo/bar",
-					Indexer:     expectedIndexerImage,
-					IndexerArgs: []string{"lsif-go", "--no-animation"},
-					Outfile:     "",
+					LocalSteps:       []string{netrcString},
+					Root:             "foo/bar",
+					Indexer:          expectedIndexerImage,
+					IndexerArgs:      []string{"lsif-go", "--no-animation"},
+					Outfile:          "",
+					RequestedEnvVars: []string{"GOPRIVATE", "GOPROXY", "GONOPROXY", "GOSUMDB", "GONOSUMDB", "NETRC_DATA"},
 				},
 				{
 					Steps: []config.DockerStep{
 						{
 							Root:     "foo/baz",
 							Image:    expectedIndexerImage,
-							Commands: []string{"go mod download"},
+							Commands: []string{netrcString, "go mod download"},
 						},
 					},
-					LocalSteps:  nil,
-					Root:        "foo/baz",
-					Indexer:     expectedIndexerImage,
-					IndexerArgs: []string{"lsif-go", "--no-animation"},
-					Outfile:     "",
+					LocalSteps:       []string{netrcString},
+					Root:             "foo/baz",
+					Indexer:          expectedIndexerImage,
+					IndexerArgs:      []string{"lsif-go", "--no-animation"},
+					Outfile:          "",
+					RequestedEnvVars: []string{"GOPRIVATE", "GOPROXY", "GONOPROXY", "GOSUMDB", "GONOSUMDB", "NETRC_DATA"},
 				},
 			},
 		},
@@ -57,12 +67,13 @@ func TestGoGenerator(t *testing.T) {
 			},
 			expected: []config.IndexJob{
 				{
-					Steps:       nil,
-					LocalSteps:  nil,
-					Root:        "",
-					Indexer:     expectedIndexerImage,
-					IndexerArgs: []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
-					Outfile:     "",
+					Steps:            nil,
+					LocalSteps:       []string{netrcString},
+					Root:             "",
+					Indexer:          expectedIndexerImage,
+					IndexerArgs:      []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
+					Outfile:          "",
+					RequestedEnvVars: []string{"GOPRIVATE", "GOPROXY", "GONOPROXY", "GOSUMDB", "GONOSUMDB", "NETRC_DATA"},
 				},
 			},
 		},

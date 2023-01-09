@@ -2,8 +2,7 @@ import React from 'react'
 
 import { mdiImport } from '@mdi/js'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Icon, H3, H4, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {

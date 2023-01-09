@@ -13,7 +13,7 @@ RUN mvn package -DskipTests && \
     cp src/main/resources/run-docker-container.sh /opt/s3proxy
 
 # Build our final Alpine-based image
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
+FROM sourcegraph/alpine-3.14:190630_2022-12-22_6988b6221a72@sha256:782f094e3a6397a5f57305efac7b3f0e8c992eece31c98f93c1a518cc6c876e5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

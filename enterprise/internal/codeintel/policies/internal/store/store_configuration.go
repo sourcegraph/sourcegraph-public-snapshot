@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -68,7 +69,7 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshare
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
 	configurationPolicies, err := scanConfigurationPolicies(tx.Query(ctx, sqlf.Sprintf(
 		getConfigurationPoliciesLimitedQuery,
@@ -79,7 +80,7 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshare
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numConfigurationPolicies", len(configurationPolicies)))
 
 	return configurationPolicies, totalCount, nil
 }

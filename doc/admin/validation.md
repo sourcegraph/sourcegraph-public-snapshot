@@ -14,6 +14,7 @@ The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental comm
 * wait for a repository to be cloned
 * perform a search on the cloned repo
 * perform a search on a non-indexed branch of the cloned repo
+* creates basic code insight
 * remove the added external service
 
 ### Validation specification
@@ -52,6 +53,30 @@ waitRepoCloned:
 searchQuery: 
   - repo:^github.com/sourcegraph-testing/zap$ test
   - repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test
+
+# checks to see if instance can create code insights
+createInsight:
+  title: "Javascript to Typescript migration" 
+  dataSeries:
+    [ {
+        "query": "lang:javascript",
+        "label": "javascript",
+        "repositoryScope": [], # e.g. ["github.com/sourcegraph-testing/zap"]
+        "lineColor": "#6495ED",
+        "timeScopeUnit": "MONTH",
+        "timeScopeValue": 1
+      },
+     {
+        "query": "lang:typescript",
+        "label": "typescript",
+        "lineColor": "#DE3163",
+        "repositoryScope": [
+            "github.com/sourcegraph/sourcegraph"
+          ],
+        "timeScopeUnit": "MONTH",
+        "timeScopeValue": 1
+      }
+    ]
 ```
 #### JSON File Specification
 
@@ -83,7 +108,27 @@ searchQuery:
     "searchQuery": [
         "repo:^github.com/sourcegraph-testing/zap$ test",
         "repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test"
-    ]
+    ],
+   
+    "createInsight": {
+        "title": "Javascript to Typescript migration", 
+        "dataSeries" : [ {
+            "query": "lang:javascript",
+            "label": "javascript",
+            "repositoryScope": [],
+            "lineColor": "#6495ED",
+            "timeScopeUnit": "MONTH",
+            "timeScopeValue": 1
+          },
+          {
+            "query": "lang:typescript",
+            "label": "typescript",
+            "lineColor": "#DE3163",
+            "repositoryScope": [],
+            "timeScopeUnit": "MONTH",
+            "timeScopeValue": 1
+          }
+       ]
 }
 ```
 
@@ -93,6 +138,7 @@ With this configuration, the validation command executes the following steps:
 * add an external service
 * wait for a repository to be cloned
 * perform a search
+* creates a code insight ( will need to be manually removed )
  
 >NOTE: Every step is optional (if the corresponding top-level key is not present then the step is skipped).
 > 

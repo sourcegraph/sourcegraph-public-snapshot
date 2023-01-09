@@ -52,6 +52,22 @@ In this case, you may want to try:
 * Using a more granular query
 * Changing your site configuration so that the timeout is increased, provided your instance setup allows it. [More information on timeouts](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts).
 
+## General scale limitations 
+
+Note: We are working on improvements for the items below in FY23Q4.
+
+Code Insights is disabled by default on single-docker deployment methods.
+
+There are a few factors to consider with respect to scale and expected performance.
+1. General permissiveness - instances that are more open (users can see most repos) will perform better than instances that are more restricted. It is possible to have enough restricted repositories that users cannot render Code Insights.
+2. Number of repositories - Code Insights is well tested to ~35,000 repositories. Users should expect at least linear degredation as repository count grows in both time to calcluate insights, and render performance.
+3. Large monorepos - Code Insights allocates a fixed amount of time for each query, so large repositories that cause query timeouts will likely not have exhaustive (and therefore accurate) results. Until we add more visibility to this state, a heuristic indicator for if this is a problem is seeing values "jump" (either a significant increase or decrease) between the backfilled datapoints on creation and the up-to-date datatpoints added after creation. 
+4. High cardinaltiy capture groups - When using a capture group insight, high cardinality matches (for example 1000 distinct matches per repository) will cause significant increase in loading times of charts. It is possible to exceed request timeouts if there are too many distinct matches.
+5. Concurrent usage
+  1. If there are many insight creators the insights will take longer to calculate.
+  2. If there are more insight viewers loading times of charts may be impacted.
+
+
 ## Creating insights over specific branches and revisions
 
 Code Insights does not yet support running over specific revisions. 

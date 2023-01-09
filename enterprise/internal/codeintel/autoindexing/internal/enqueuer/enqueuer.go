@@ -4,6 +4,7 @@ import (
 	"context"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
@@ -63,7 +64,7 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	trace.Log(otlog.String("commit", commit))
+	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit)
 }
@@ -85,8 +86,9 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	trace.Log(otlog.String("repoName", string(repoName)))
-	trace.Log(otlog.String("revision", revision))
+	trace.AddEvent("InferRepositoryAndRevision",
+		attribute.String("repoName", string(repoName)),
+		attribute.String("revision", revision))
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {

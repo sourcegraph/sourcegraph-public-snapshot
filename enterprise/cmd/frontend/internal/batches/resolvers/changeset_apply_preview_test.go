@@ -349,7 +349,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// The set up on this is pretty similar to the previous test case, but
 		// with the extra step of then modifying the relevant changeset to make
 		// it look like it's been published.
-		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// Apply the batch spec so we have an existing batch change.
 		svc := service.New(bstore)
@@ -376,7 +376,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		}
 
 		// Now we need a fresh batch spec.
-		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// We need to modify the changeset spec to not have a published field.
 		newFx.specPublished.Published = batches.PublishedValue{Val: nil}

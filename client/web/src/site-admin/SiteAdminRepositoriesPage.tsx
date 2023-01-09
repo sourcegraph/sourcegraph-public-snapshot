@@ -4,7 +4,6 @@ import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -21,8 +20,11 @@ import {
     PageHeader,
     Text,
     Tooltip,
+    ErrorAlert,
+    LinkOrSpan,
 } from '@sourcegraph/wildcard'
 
+import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -33,6 +35,8 @@ import {
     RepositoriesResult,
     RepositoryOrderBy,
     RepositoryStatsResult,
+    ExternalServiceIDsAndNamesVariables,
+    ExternalServiceIDsAndNamesResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
@@ -81,6 +85,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
                     <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
+        {node.mirrorInfo.isCorrupted && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="danger">
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}
@@ -208,10 +219,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
     }, [])
 
-    const { data, loading, error, startPolling, stopPolling } = useQuery<
-        RepositoryStatsResult,
-        RepositoryStatsVariables
-    >(REPOSITORY_STATS, {})
+    const {
+        data,
+        loading: repoStatsLoading,
+        error: repoStatsError,
+        startPolling,
+        stopPolling,
+    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -276,6 +290,48 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         ]
     }, [data])
 
+    const {
+        loading: extSvcLoading,
+        data: extSvcs,
+        error: extSvcError,
+    } = useQuery<ExternalServiceIDsAndNamesResult, ExternalServiceIDsAndNamesVariables>(
+        EXTERNAL_SERVICE_IDS_AND_NAMES,
+        {}
+    )
+
+    const filters = useMemo(() => {
+        if (!extSvcs) {
+            return FILTERS
+        }
+
+        const values = [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all repositories',
+                args: {},
+            },
+        ]
+
+        for (const extSvc of extSvcs.externalServices.nodes) {
+            values.push({
+                label: extSvc.displayName,
+                value: extSvc.id,
+                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                args: { externalService: extSvc.id },
+            })
+        }
+
+        const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
+        filtersWithExternalServices.push({
+            id: 'codeHost',
+            label: 'Code Host',
+            type: 'select',
+            values,
+        })
+        return filtersWithExternalServices
+    }, [extSvcs])
+
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
@@ -284,6 +340,9 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
     const licenseInfo = window.context.licenseInfo
+
+    const error = repoStatsError || extSvcError
+    const loading = repoStatsLoading || extSvcLoading
 
     return (
         <div className="site-admin-repositories-page">
@@ -339,8 +398,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
-                    inputClassName="flex-1"
-                    filters={FILTERS}
+                    inputClassName="ml-2 flex-1"
+                    filters={filters}
                     history={history}
                     location={location}
                 />

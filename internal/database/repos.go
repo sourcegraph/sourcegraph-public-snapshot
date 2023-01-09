@@ -15,9 +15,9 @@ import (
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -903,7 +903,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		return err
 	}
 
-	tr.LogFields(trace.SQL(q))
+	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -1612,12 +1612,12 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parsePattern", p),
-		otlog.Bool("caseSensitive", caseSensitive),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parsePattern", p),
+		attribute.Bool("caseSensitive", caseSensitive),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if exact != nil {
@@ -1650,11 +1650,11 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parseDescriptionPattern", p),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parseDescriptionPattern", p),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if len(exact) > 0 {

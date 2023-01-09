@@ -1,7 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 

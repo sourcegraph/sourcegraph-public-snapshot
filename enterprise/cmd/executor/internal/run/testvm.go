@@ -97,6 +97,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
 		ExecutorName:       name,
 		ResourceOptions:    resourceOptions(config),
+		DockerOptions:      dockerOptions(config),
 		FirecrackerOptions: fopts,
 	}, operations)
 

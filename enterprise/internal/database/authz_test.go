@@ -320,16 +320,26 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}
+	if err := db.Repos().Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
 	// Set both effective and pending permissions for a user
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:  1,
+		RepoID:  int32(repo.ID),
 		Perm:    authz.Read,
-		UserIDs: toMapset(1),
+		UserIDs: toMapset(user.ID),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -340,28 +350,43 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 		AccountIDs:  []string{"alice", "alice@example.com"},
 	}
 	if err := s.store.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
-		RepoID: 1,
+		RepoID: int32(repo.ID),
 		Perm:   authz.Read,
 	}); err != nil {
 		t.Fatal(err)
 	}
 
+	if err := db.SubRepoPerms().Upsert(
+		ctx, user.ID, repo.ID, authz.SubRepoPermissions{Paths: []string{"**"}},
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	// Revoke all of them
 	if err := s.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
-		UserID:   1,
+		UserID:   user.ID,
 		Accounts: []*extsvc.Accounts{accounts},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
 	// The user should not have any permissions now
-	err := s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
-		UserID: 1,
+	err = s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
+		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
 	})
 	if err != authz.ErrPermsNotFound {
 		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
+	}
+
+	srpMap, err := db.SubRepoPerms().GetByUser(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if numPerms := len(srpMap); numPerms != 0 {
+		t.Fatalf("expected no sub-repo perms, got %d", numPerms)
 	}
 
 	for _, bindID := range accounts.AccountIDs {

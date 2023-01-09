@@ -3,10 +3,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5, Button } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5, Button, Form } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,

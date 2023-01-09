@@ -4,11 +4,10 @@ import { useApolloClient } from '@apollo/client'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { takeWhile } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, LoadingSpinner, useObservable, H3 } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, H3, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'

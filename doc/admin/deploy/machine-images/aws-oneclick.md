@@ -19,48 +19,58 @@ title: AWS one-click
 
 # AWS One-Click Installation for Sourcegraph
 
-Launch a verified and pre-configured Sourcegraph instance with the following:
+To learn more about Sourcegraph, check out [Sourcegraph 101](../../../getting-started/index.md) and the [tour of features](../../../getting-started/tour.md) using real-world examples.
 
-- Root EBS volume with 50GB of storage
-- Additional EBS volume with 500GB of storage, for storing code and search indices
-- AWS Security Group
-- The latest version of Sourcegraph
+This page describes how to launch a verified and pre-configured Sourcegraph instance in just ~10 minutes using our one-click CloudFormation template and standard AMIs.
+
+<small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
+
+<small>Prefer manually installing on AWS yourself? See our [AMI installation options](aws-ami.md) and [script installation options](../single-node/script.md).</small>
 
 ---
 
-## Instance Size Chart
+## Prerequisites
 
-Determine the instance type required to support the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
+* An AWS account <small>(most regions are supported, see our [Launcher](#deploy-sourcegraph) below for a complete list)</small>
+* General familiarity with AWS
+* An [EC2 keypair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html) for SSH access
+* (optional) A Sourcegraph license to unlock features ([view plans](https://about.sourcegraph.com/pricing) or [learn how licenses work](../../subscriptions/index.md))
 
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should go with size **M**.
+## What will be created
+
+Using our wizard, a single EC2 instance will be created with the following:
+
+- EBS root volume: 50GB
+- EBS data volume: 500GB - your Sourcegraph data (code and search indices.)
+- AWS Network Security Group
+- The latest version of Sourcegraph
+- (optional) DNS and TLS via AWS Load Balancer and AWS Certificate Manager
+
+> NOTE: The instance will launch in the default VPC. If your AWS user does not have a default VPC, or the option `Auto-assign public IPv4 address` is not enabled for a subnet within that VPC, please see our [Manual AMI](aws-ami.md) instructions instead.
+
+<a href="aws-diagram.svg"><img src="aws-diagram.svg" height="100%"></img></a>
+
+## Determine your instance size
+
+The number of users and repositories you will use with Sourcegraph determines your instance size. If you fall between two sizes, choose the larger of the two.
+
+<small>Example: With 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, then size **M**.</small>
 
 |                      | **XS**      | **S**       | **M**       | **L**        | **XL**       |
-|----------------------|-------------|-------------|-------------|--------------|--------------|
+| -------------------- | ----------- | ----------- | ----------- | ------------ | ------------ |
 | **Users**            | _<=_ 500    | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000  | _<=_ 20,000  |
 | **Repositories**     | _<=_ 5,000  | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000 | _<=_ 250,000 |
 | **Recommended Type** | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge |
 | **Minimum Type**     | m6a.2xlarge | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge |
 
-Click [here](https://github.com/sourcegraph/deploy#amazon-ec2-amis) to see the completed list of AMI IDs published in each region.
+## Deploy Sourcegraph 🎉
 
-## Deploy Sourcegraph
+> NOTE: For security, please follow [Amazon best practices](https://docs.aws.amazon.com/accounts/latest/reference/best-practices-root-user.html) and _do not deploy Sourcegraph using your AWS root user IAM account._
 
-### Prerequisites
+> NOTE: By default the CloudFormation template will create standard EBS volumes. If you have special EBS volume encryption requirements, please see the [AWS EBS Encryption guide](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html) and install Sourcegraph using our [Manual AMI](aws-ami.md) instructions instead.
 
-1. Create an [EC2 Key Pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html)
+Choose an AWS Region in the launcher below and click **Launch Stack**. When prompted, choose your **SSH Keypair** and **Sourcegraph Instance Size** per the chart above, then **Create Stack**.
 
->NOTE: The instance will launch in the default configured VPC. If your AWS user does not have a default VPC, or the `Auto-assign public IPv4 address` option is not enabled for a subnet within that VPC, please see the [Manual AMI](aws-ami.md) instructions
-
-### Steps
-
-1. Choose an AWS Region in the launcher below
-2. Click on the `Launch Stack` button
-3. Select an `SSH Keypair`
-4. Select a `Sourcegraph Instance Size` according to [the sizing chart](#instance-size-chart).
-
- 🎉 You can now start a Sourcegraph instance by clicking on the `Create Stack` button 🎉
-
-### Launcher
 <!-- ref: https://aws.amazon.com/blogs/devops/construct-your-own-launch-stack-url/ -->
 <form class="launcher" name="launcher" action="" target="_blank" >
   <select name="region">
@@ -90,16 +100,42 @@ Click [here](https://github.com/sourcegraph/deploy#amazon-ec2-amis) to see the c
   <input class="submit-btn" formaction="https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=Sourcegraph&templateURL=https://sourcegraph-cloudformation.s3.us-west-2.amazonaws.com/sg-basic.yaml" type="image" alt="aws-oneclick-button" src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png"/>
 </form>
 
-> NOTE: Once the instance has been created, Sourcegraph will be running at your server’s IP address, which allows you to navigate to your newly created Sourcegraph instance in your browser. You can also find the URL for your Sourcegraph instance in the 'Outputs' section of the Stack. Sourcegraph may take a few minutes initialize on first launch!
+<small>Problem? See our <a href="/admin/troubleshooting">Troubleshooting guide</a></small>
 
-### Networking
+### Confirm you can access Sourcegraph
 
-Follow the [manual ami networking](aws-ami.md#networking) instructions to configure a domain and SSL.
+Find the URL of your Sourcegraph instance in the **Outputs** section of the AWS Stack. On first launch, Sourcegraph may take ~5 minutes to start and may display a `404 not found` page temporarily.
 
-## Upgrade
+### Secure your instance
 
-Follow the [manual ami](aws-ami.md#upgrade) instructions to upgrade your instance.
+By default Sourcegraph will be available over HTTP on the public internet. To secure it you should now perform the following:
 
-## Manual deploy on AWS EC2
+1. [Configure DNS and HTTPS/TLS](aws-ami.md#networking) using an AWS Load Balancer and AWS Certificate Manager.
+2. [Configure user authentication](../../../admin/auth/index.md) (SSO, SAML, OpenID Connect, etc.)
+3. [Review the new Network Security Group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to prevent access from the public internet and follow the principle of least privilege.
 
-Click [here](aws-ami.md) to view install instructions for deploying on AWS EC2 manually.
+### Share with your team
+
+[See here](/adopt/trial#3-share-with-the-trial-team) for some tips on how to share Sourcegraph with your team!
+
+## Managing Sourcegraph
+
+### Backup and restore
+
+We strongly recommend you taking [snapshots of the entire Sourcegraph data EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html). Only the Sourcegraph data volume (500G) needs to be backed up.
+
+To restore from a backup, simply follow our [upgrade instructions](http://localhost:5080/admin/deploy/machine-images/aws-ami#upgrade) and skip directly to **Step 2: Launch a new instance** - choosing your desired Sourcegraph version and your backed up data volume.
+
+### Upgrading your Sourcegraph instance
+
+Updates are released every month, and upgrading is a simple process: backup your instance, detach the Sourcegraph data volume, and start a new instance using the latest AMI with your data volume attached. For step-by-step instructions [see here](aws-ami.md#upgrade).
+
+### Monitoring & alerting
+
+Sourcegraph comes with extensive built-in monitoring dashboards & the ability to configure alerts. Please see our [monitoring guide](../../how-to/monitoring-guide.md) for more information.
+
+### Get Support
+
+Feel free to reach out to support@sourcegraph.com if you have any questions.
+
+Business support, training, Slack support, SLAs, and dedicated Technical Advisors are all available through [Business and Enterprise plans](https://about.sourcegraph.com/pricing).

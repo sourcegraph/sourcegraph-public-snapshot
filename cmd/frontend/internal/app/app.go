@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/sourcegraph/log"
@@ -54,18 +53,14 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 
 	r.Get(router.UI).Handler(ui.Router())
 
-	lockoutOptions := conf.AuthLockout()
-	lockoutStore := userpasswd.NewLockoutStore(
-		lockoutOptions.FailedAttemptThreshold,
-		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
-		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
-		nil,
-	)
+	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
+
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
 	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
 	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
+	r.Get(router.UnlockUserAccount).Handler(trace.Route(userpasswd.HandleUnlockUserAccount(logger, db, lockoutStore)))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(logger, db)))
 	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))

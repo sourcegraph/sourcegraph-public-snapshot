@@ -15,7 +15,6 @@ import (
 	uuid "github.com/google/uuid"
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	conf "github.com/sourcegraph/sourcegraph/internal/conf"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -3020,7 +3019,7 @@ func NewMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, bool) (r0 *SiteConfig, r1 error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (r0 *SiteConfig, r1 error) {
 				return
 			},
 		},
@@ -3052,7 +3051,7 @@ func NewStrictMockConfStore() *MockConfStore {
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
-			defaultHook: func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+			defaultHook: func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 				panic("unexpected invocation of MockConfStore.SiteCreateIfUpToDate")
 			},
 		},
@@ -3294,24 +3293,24 @@ func (c ConfStoreHandleFuncCall) Results() []interface{} {
 // SiteCreateIfUpToDate method of the parent MockConfStore instance is
 // invoked.
 type ConfStoreSiteCreateIfUpToDateFunc struct {
-	defaultHook func(context.Context, *int32, string, bool) (*SiteConfig, error)
-	hooks       []func(context.Context, *int32, string, bool) (*SiteConfig, error)
+	defaultHook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
+	hooks       []func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)
 	history     []ConfStoreSiteCreateIfUpToDateFuncCall
 	mutex       sync.Mutex
 }
 
 // SiteCreateIfUpToDate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 string, v3 bool) (*SiteConfig, error) {
-	r0, r1 := m.SiteCreateIfUpToDateFunc.nextHook()(v0, v1, v2, v3)
-	m.SiteCreateIfUpToDateFunc.appendCall(ConfStoreSiteCreateIfUpToDateFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockConfStore) SiteCreateIfUpToDate(v0 context.Context, v1 *int32, v2 int32, v3 string, v4 bool) (*SiteConfig, error) {
+	r0, r1 := m.SiteCreateIfUpToDateFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SiteCreateIfUpToDateFunc.appendCall(ConfStoreSiteCreateIfUpToDateFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SiteCreateIfUpToDate
 // method of the parent MockConfStore instance is invoked and the hook queue
 // is empty.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, string, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -3319,7 +3318,7 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultHook(hook func(context.Con
 // SiteCreateIfUpToDate method of the parent MockConfStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, string, bool) (*SiteConfig, error)) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, *int32, int32, string, bool) (*SiteConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3328,19 +3327,19 @@ func (f *ConfStoreSiteCreateIfUpToDateFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) SetDefaultReturn(r0 *SiteConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+	f.SetDefaultHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ConfStoreSiteCreateIfUpToDateFunc) PushReturn(r0 *SiteConfig, r1 error) {
-	f.PushHook(func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+	f.PushHook(func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, string, bool) (*SiteConfig, error) {
+func (f *ConfStoreSiteCreateIfUpToDateFunc) nextHook() func(context.Context, *int32, int32, string, bool) (*SiteConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3382,10 +3381,13 @@ type ConfStoreSiteCreateIfUpToDateFuncCall struct {
 	Arg1 *int32
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 int32
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 bool
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *SiteConfig
@@ -3397,7 +3399,7 @@ type ConfStoreSiteCreateIfUpToDateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ConfStoreSiteCreateIfUpToDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -3683,6 +3685,9 @@ type MockDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
+	// PermissionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Permissions.
+	PermissionsFunc *DBPermissionsFunc
 	// PhabricatorFunc is an instance of a mock function object controlling
 	// the behavior of the method Phabricator.
 	PhabricatorFunc *DBPhabricatorFunc
@@ -3701,6 +3706,12 @@ type MockDB struct {
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
+	// RolePermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method RolePermissions.
+	RolePermissionsFunc *DBRolePermissionsFunc
+	// RolesFunc is an instance of a mock function object controlling the
+	// behavior of the method Roles.
+	RolesFunc *DBRolesFunc
 	// SavedSearchesFunc is an instance of a mock function object
 	// controlling the behavior of the method SavedSearches.
 	SavedSearchesFunc *DBSavedSearchesFunc
@@ -3713,9 +3724,6 @@ type MockDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
-	// SubRepoPermsFunc is an instance of a mock function object controlling
-	// the behavior of the method SubRepoPerms.
-	SubRepoPermsFunc *DBSubRepoPermsFunc
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
@@ -3731,6 +3739,9 @@ type MockDB struct {
 	// UserExternalAccountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserExternalAccounts.
 	UserExternalAccountsFunc *DBUserExternalAccountsFunc
+	// UserRolesFunc is an instance of a mock function object controlling
+	// the behavior of the method UserRoles.
+	UserRolesFunc *DBUserRolesFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -3854,6 +3865,11 @@ func NewMockDB() *MockDB {
 				return
 			},
 		},
+		PermissionsFunc: &DBPermissionsFunc{
+			defaultHook: func() (r0 PermissionStore) {
+				return
+			},
+		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: func() (r0 PhabricatorStore) {
 				return
@@ -3884,6 +3900,16 @@ func NewMockDB() *MockDB {
 				return
 			},
 		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: func() (r0 RolePermissionStore) {
+				return
+			},
+		},
+		RolesFunc: &DBRolesFunc{
+			defaultHook: func() (r0 RoleStore) {
+				return
+			},
+		},
 		SavedSearchesFunc: &DBSavedSearchesFunc{
 			defaultHook: func() (r0 SavedSearchStore) {
 				return
@@ -3901,11 +3927,6 @@ func NewMockDB() *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() (r0 SettingsStore) {
-				return
-			},
-		},
-		SubRepoPermsFunc: &DBSubRepoPermsFunc{
-			defaultHook: func() (r0 SubRepoPermsStore) {
 				return
 			},
 		},
@@ -3931,6 +3952,11 @@ func NewMockDB() *MockDB {
 		},
 		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
 			defaultHook: func() (r0 UserExternalAccountsStore) {
+				return
+			},
+		},
+		UserRolesFunc: &DBUserRolesFunc{
+			defaultHook: func() (r0 UserRoleStore) {
 				return
 			},
 		},
@@ -4066,6 +4092,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Orgs")
 			},
 		},
+		PermissionsFunc: &DBPermissionsFunc{
+			defaultHook: func() PermissionStore {
+				panic("unexpected invocation of MockDB.Permissions")
+			},
+		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: func() PhabricatorStore {
 				panic("unexpected invocation of MockDB.Phabricator")
@@ -4096,6 +4127,16 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Repos")
 			},
 		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: func() RolePermissionStore {
+				panic("unexpected invocation of MockDB.RolePermissions")
+			},
+		},
+		RolesFunc: &DBRolesFunc{
+			defaultHook: func() RoleStore {
+				panic("unexpected invocation of MockDB.Roles")
+			},
+		},
 		SavedSearchesFunc: &DBSavedSearchesFunc{
 			defaultHook: func() SavedSearchStore {
 				panic("unexpected invocation of MockDB.SavedSearches")
@@ -4114,11 +4155,6 @@ func NewStrictMockDB() *MockDB {
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() SettingsStore {
 				panic("unexpected invocation of MockDB.Settings")
-			},
-		},
-		SubRepoPermsFunc: &DBSubRepoPermsFunc{
-			defaultHook: func() SubRepoPermsStore {
-				panic("unexpected invocation of MockDB.SubRepoPerms")
 			},
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
@@ -4144,6 +4180,11 @@ func NewStrictMockDB() *MockDB {
 		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
 			defaultHook: func() UserExternalAccountsStore {
 				panic("unexpected invocation of MockDB.UserExternalAccounts")
+			},
+		},
+		UserRolesFunc: &DBUserRolesFunc{
+			defaultHook: func() UserRoleStore {
+				panic("unexpected invocation of MockDB.UserRoles")
 			},
 		},
 		UsersFunc: &DBUsersFunc{
@@ -4236,6 +4277,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
 		},
+		PermissionsFunc: &DBPermissionsFunc{
+			defaultHook: i.Permissions,
+		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: i.Phabricator,
 		},
@@ -4254,6 +4298,12 @@ func NewMockDBFrom(i DB) *MockDB {
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
 		},
+		RolePermissionsFunc: &DBRolePermissionsFunc{
+			defaultHook: i.RolePermissions,
+		},
+		RolesFunc: &DBRolesFunc{
+			defaultHook: i.Roles,
+		},
 		SavedSearchesFunc: &DBSavedSearchesFunc{
 			defaultHook: i.SavedSearches,
 		},
@@ -4265,9 +4315,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
-		},
-		SubRepoPermsFunc: &DBSubRepoPermsFunc{
-			defaultHook: i.SubRepoPerms,
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
@@ -4283,6 +4330,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
 			defaultHook: i.UserExternalAccounts,
+		},
+		UserRolesFunc: &DBUserRolesFunc{
+			defaultHook: i.UserRoles,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -6391,6 +6441,104 @@ func (c DBOrgsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBPermissionsFunc describes the behavior when the Permissions method of
+// the parent MockDB instance is invoked.
+type DBPermissionsFunc struct {
+	defaultHook func() PermissionStore
+	hooks       []func() PermissionStore
+	history     []DBPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// Permissions delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) Permissions() PermissionStore {
+	r0 := m.PermissionsFunc.nextHook()()
+	m.PermissionsFunc.appendCall(DBPermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Permissions method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBPermissionsFunc) SetDefaultHook(hook func() PermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Permissions method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBPermissionsFunc) PushHook(hook func() PermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBPermissionsFunc) SetDefaultReturn(r0 PermissionStore) {
+	f.SetDefaultHook(func() PermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBPermissionsFunc) PushReturn(r0 PermissionStore) {
+	f.PushHook(func() PermissionStore {
+		return r0
+	})
+}
+
+func (f *DBPermissionsFunc) nextHook() func() PermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBPermissionsFunc) appendCall(r0 DBPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBPermissionsFuncCall objects describing
+// the invocations of this function.
+func (f *DBPermissionsFunc) History() []DBPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBPermissionsFuncCall is an object that describes an invocation of method
+// Permissions on an instance of MockDB.
+type DBPermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBPhabricatorFunc describes the behavior when the Phabricator method of
 // the parent MockDB instance is invoked.
 type DBPhabricatorFunc struct {
@@ -7016,6 +7164,203 @@ func (c DBReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBRolePermissionsFunc describes the behavior when the RolePermissions
+// method of the parent MockDB instance is invoked.
+type DBRolePermissionsFunc struct {
+	defaultHook func() RolePermissionStore
+	hooks       []func() RolePermissionStore
+	history     []DBRolePermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// RolePermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RolePermissions() RolePermissionStore {
+	r0 := m.RolePermissionsFunc.nextHook()()
+	m.RolePermissionsFunc.appendCall(DBRolePermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RolePermissions
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRolePermissionsFunc) SetDefaultHook(hook func() RolePermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RolePermissions method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRolePermissionsFunc) PushHook(hook func() RolePermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRolePermissionsFunc) SetDefaultReturn(r0 RolePermissionStore) {
+	f.SetDefaultHook(func() RolePermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRolePermissionsFunc) PushReturn(r0 RolePermissionStore) {
+	f.PushHook(func() RolePermissionStore {
+		return r0
+	})
+}
+
+func (f *DBRolePermissionsFunc) nextHook() func() RolePermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRolePermissionsFunc) appendCall(r0 DBRolePermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRolePermissionsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRolePermissionsFunc) History() []DBRolePermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRolePermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRolePermissionsFuncCall is an object that describes an invocation of
+// method RolePermissions on an instance of MockDB.
+type DBRolePermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RolePermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRolePermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRolePermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRolesFunc describes the behavior when the Roles method of the parent
+// MockDB instance is invoked.
+type DBRolesFunc struct {
+	defaultHook func() RoleStore
+	hooks       []func() RoleStore
+	history     []DBRolesFuncCall
+	mutex       sync.Mutex
+}
+
+// Roles delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Roles() RoleStore {
+	r0 := m.RolesFunc.nextHook()()
+	m.RolesFunc.appendCall(DBRolesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Roles method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRolesFunc) SetDefaultHook(hook func() RoleStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Roles method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBRolesFunc) PushHook(hook func() RoleStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRolesFunc) SetDefaultReturn(r0 RoleStore) {
+	f.SetDefaultHook(func() RoleStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRolesFunc) PushReturn(r0 RoleStore) {
+	f.PushHook(func() RoleStore {
+		return r0
+	})
+}
+
+func (f *DBRolesFunc) nextHook() func() RoleStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRolesFunc) appendCall(r0 DBRolesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRolesFuncCall objects describing the
+// invocations of this function.
+func (f *DBRolesFunc) History() []DBRolesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRolesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRolesFuncCall is an object that describes an invocation of method Roles
+// on an instance of MockDB.
+type DBRolesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RoleStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRolesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRolesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBSavedSearchesFunc describes the behavior when the SavedSearches method
 // of the parent MockDB instance is invoked.
 type DBSavedSearchesFunc struct {
@@ -7407,104 +7752,6 @@ func (c DBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSettingsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBSubRepoPermsFunc describes the behavior when the SubRepoPerms method of
-// the parent MockDB instance is invoked.
-type DBSubRepoPermsFunc struct {
-	defaultHook func() SubRepoPermsStore
-	hooks       []func() SubRepoPermsStore
-	history     []DBSubRepoPermsFuncCall
-	mutex       sync.Mutex
-}
-
-// SubRepoPerms delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDB) SubRepoPerms() SubRepoPermsStore {
-	r0 := m.SubRepoPermsFunc.nextHook()()
-	m.SubRepoPermsFunc.appendCall(DBSubRepoPermsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SubRepoPerms method
-// of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBSubRepoPermsFunc) SetDefaultHook(hook func() SubRepoPermsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SubRepoPerms method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBSubRepoPermsFunc) PushHook(hook func() SubRepoPermsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBSubRepoPermsFunc) SetDefaultReturn(r0 SubRepoPermsStore) {
-	f.SetDefaultHook(func() SubRepoPermsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBSubRepoPermsFunc) PushReturn(r0 SubRepoPermsStore) {
-	f.PushHook(func() SubRepoPermsStore {
-		return r0
-	})
-}
-
-func (f *DBSubRepoPermsFunc) nextHook() func() SubRepoPermsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBSubRepoPermsFunc) appendCall(r0 DBSubRepoPermsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBSubRepoPermsFuncCall objects describing
-// the invocations of this function.
-func (f *DBSubRepoPermsFunc) History() []DBSubRepoPermsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBSubRepoPermsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBSubRepoPermsFuncCall is an object that describes an invocation of
-// method SubRepoPerms on an instance of MockDB.
-type DBSubRepoPermsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 SubRepoPermsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBSubRepoPermsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBSubRepoPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -8007,6 +8254,104 @@ func (c DBUserExternalAccountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUserExternalAccountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUserRolesFunc describes the behavior when the UserRoles method of the
+// parent MockDB instance is invoked.
+type DBUserRolesFunc struct {
+	defaultHook func() UserRoleStore
+	hooks       []func() UserRoleStore
+	history     []DBUserRolesFuncCall
+	mutex       sync.Mutex
+}
+
+// UserRoles delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) UserRoles() UserRoleStore {
+	r0 := m.UserRolesFunc.nextHook()()
+	m.UserRolesFunc.appendCall(DBUserRolesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserRoles method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBUserRolesFunc) SetDefaultHook(hook func() UserRoleStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserRoles method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBUserRolesFunc) PushHook(hook func() UserRoleStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBUserRolesFunc) SetDefaultReturn(r0 UserRoleStore) {
+	f.SetDefaultHook(func() UserRoleStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBUserRolesFunc) PushReturn(r0 UserRoleStore) {
+	f.PushHook(func() UserRoleStore {
+		return r0
+	})
+}
+
+func (f *DBUserRolesFunc) nextHook() func() UserRoleStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUserRolesFunc) appendCall(r0 DBUserRolesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUserRolesFuncCall objects describing the
+// invocations of this function.
+func (f *DBUserRolesFunc) History() []DBUserRolesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUserRolesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUserRolesFuncCall is an object that describes an invocation of method
+// UserRoles on an instance of MockDB.
+type DBUserRolesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 UserRoleStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUserRolesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUserRolesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -15445,6 +15790,9 @@ type MockExecutorStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *ExecutorStoreGetByIDFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *ExecutorStoreHandleFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExecutorStoreListFunc
@@ -15488,6 +15836,11 @@ func NewMockExecutorStore() *MockExecutorStore {
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: func(context.Context, int) (r0 types.Executor, r1 bool, r2 error) {
+				return
+			},
+		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -15548,6 +15901,11 @@ func NewStrictMockExecutorStore() *MockExecutorStore {
 				panic("unexpected invocation of MockExecutorStore.GetByID")
 			},
 		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockExecutorStore.Handle")
+			},
+		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
 				panic("unexpected invocation of MockExecutorStore.List")
@@ -15595,6 +15953,9 @@ func NewMockExecutorStoreFrom(i ExecutorStore) *MockExecutorStore {
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: i.GetByID,
+		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: i.List,
@@ -16151,6 +16512,104 @@ func (c ExecutorStoreGetByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c ExecutorStoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ExecutorStoreHandleFunc describes the behavior when the Handle method of
+// the parent MockExecutorStore instance is invoked.
+type ExecutorStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []ExecutorStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(ExecutorStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockExecutorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreHandleFunc) appendCall(r0 ExecutorStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreHandleFunc) History() []ExecutorStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockExecutorStore.
+type ExecutorStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ExecutorStoreListFunc describes the behavior when the List method of the
@@ -22673,6 +23132,9 @@ type MockGitserverRepoStore struct {
 	// ListReposWithoutSizeFunc is an instance of a mock function object
 	// controlling the behavior of the method ListReposWithoutSize.
 	ListReposWithoutSizeFunc *GitserverRepoStoreListReposWithoutSizeFunc
+	// LogCorruptionFunc is an instance of a mock function object
+	// controlling the behavior of the method LogCorruption.
+	LogCorruptionFunc *GitserverRepoStoreLogCorruptionFunc
 	// SetCloneStatusFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCloneStatus.
 	SetCloneStatusFunc *GitserverRepoStoreSetCloneStatusFunc
@@ -22742,6 +23204,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
 			defaultHook: func(context.Context) (r0 map[api.RepoName]api.RepoID, r1 error) {
+				return
+			},
+		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
 				return
 			},
 		},
@@ -22833,6 +23300,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithoutSize")
 			},
 		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.LogCorruption")
+			},
+		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: func(context.Context, api.RepoName, types.CloneStatus, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloneStatus")
@@ -22904,6 +23376,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
 			defaultHook: i.ListReposWithoutSize,
+		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: i.LogCorruption,
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: i.SetCloneStatus,
@@ -23806,6 +24281,117 @@ func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverRepoStoreLogCorruptionFunc describes the behavior when the
+// LogCorruption method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreLogCorruptionFunc struct {
+	defaultHook func(context.Context, api.RepoName, string) error
+	hooks       []func(context.Context, api.RepoName, string) error
+	history     []GitserverRepoStoreLogCorruptionFuncCall
+	mutex       sync.Mutex
+}
+
+// LogCorruption delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) LogCorruption(v0 context.Context, v1 api.RepoName, v2 string) error {
+	r0 := m.LogCorruptionFunc.nextHook()(v0, v1, v2)
+	m.LogCorruptionFunc.appendCall(GitserverRepoStoreLogCorruptionFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the LogCorruption method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LogCorruption method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreLogCorruptionFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreLogCorruptionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreLogCorruptionFunc) nextHook() func(context.Context, api.RepoName, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreLogCorruptionFunc) appendCall(r0 GitserverRepoStoreLogCorruptionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreLogCorruptionFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreLogCorruptionFunc) History() []GitserverRepoStoreLogCorruptionFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreLogCorruptionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreLogCorruptionFuncCall is an object that describes an
+// invocation of method LogCorruption on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreLogCorruptionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreLogCorruptionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreLogCorruptionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitserverRepoStoreSetCloneStatusFunc describes the behavior when the
@@ -34314,6 +34900,10 @@ func (c RepoStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockSavedSearchStore struct {
+	// CountSavedSearchesByOrgOrUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CountSavedSearchesByOrgOrUser.
+	CountSavedSearchesByOrgOrUserFunc *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *SavedSearchStoreCreateFunc
@@ -34335,6 +34925,10 @@ type MockSavedSearchStore struct {
 	// ListSavedSearchesByOrgIDFunc is an instance of a mock function object
 	// controlling the behavior of the method ListSavedSearchesByOrgID.
 	ListSavedSearchesByOrgIDFunc *SavedSearchStoreListSavedSearchesByOrgIDFunc
+	// ListSavedSearchesByOrgOrUserFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListSavedSearchesByOrgOrUser.
+	ListSavedSearchesByOrgOrUserFunc *SavedSearchStoreListSavedSearchesByOrgOrUserFunc
 	// ListSavedSearchesByUserIDFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ListSavedSearchesByUserID.
@@ -34355,6 +34949,11 @@ type MockSavedSearchStore struct {
 // overwritten.
 func NewMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32) (r0 int, r1 error) {
+				return
+			},
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (r0 *types.SavedSearch, r1 error) {
 				return
@@ -34390,6 +34989,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 				return
 			},
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32, *PaginationArgs) (r0 []*types.SavedSearch, r1 error) {
+				return
+			},
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: func(context.Context, int32) (r0 []*types.SavedSearch, r1 error) {
 				return
@@ -34417,6 +35021,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32) (int, error) {
+				panic("unexpected invocation of MockSavedSearchStore.CountSavedSearchesByOrgOrUser")
+			},
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.Create")
@@ -34452,6 +35061,11 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByOrgID")
 			},
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByOrgOrUser")
+			},
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByUserID")
@@ -34480,6 +35094,9 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 // implementation, unless overwritten.
 func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 	return &MockSavedSearchStore{
+		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
+			defaultHook: i.CountSavedSearchesByOrgOrUser,
+		},
 		CreateFunc: &SavedSearchStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -34501,6 +35118,9 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 		ListSavedSearchesByOrgIDFunc: &SavedSearchStoreListSavedSearchesByOrgIDFunc{
 			defaultHook: i.ListSavedSearchesByOrgID,
 		},
+		ListSavedSearchesByOrgOrUserFunc: &SavedSearchStoreListSavedSearchesByOrgOrUserFunc{
+			defaultHook: i.ListSavedSearchesByOrgOrUser,
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: i.ListSavedSearchesByUserID,
 		},
@@ -34514,6 +35134,121 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 			defaultHook: i.With,
 		},
 	}
+}
+
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFunc describes the behavior
+// when the CountSavedSearchesByOrgOrUser method of the parent
+// MockSavedSearchStore instance is invoked.
+type SavedSearchStoreCountSavedSearchesByOrgOrUserFunc struct {
+	defaultHook func(context.Context, *int32, *int32) (int, error)
+	hooks       []func(context.Context, *int32, *int32) (int, error)
+	history     []SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall
+	mutex       sync.Mutex
+}
+
+// CountSavedSearchesByOrgOrUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) CountSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32) (int, error) {
+	r0, r1 := m.CountSavedSearchesByOrgOrUserFunc.nextHook()(v0, v1, v2)
+	m.CountSavedSearchesByOrgOrUserFunc.appendCall(SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int32, *int32) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *int32, *int32) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) appendCall(r0 SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall objects describing
+// the invocations of this function.
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) History() []SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall is an object that
+// describes an invocation of method CountSavedSearchesByOrgOrUser on an
+// instance of MockSavedSearchStore.
+type SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SavedSearchStoreCreateFunc describes the behavior when the Create method
@@ -35255,6 +35990,124 @@ func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreListSavedSearchesByOrgOrUserFunc describes the behavior
+// when the ListSavedSearchesByOrgOrUser method of the parent
+// MockSavedSearchStore instance is invoked.
+type SavedSearchStoreListSavedSearchesByOrgOrUserFunc struct {
+	defaultHook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)
+	hooks       []func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)
+	history     []SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSavedSearchesByOrgOrUser delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) ListSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32, v3 *PaginationArgs) ([]*types.SavedSearch, error) {
+	r0, r1 := m.ListSavedSearchesByOrgOrUserFunc.nextHook()(v0, v1, v2, v3)
+	m.ListSavedSearchesByOrgOrUserFunc.appendCall(SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 []*types.SavedSearch, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) PushReturn(r0 []*types.SavedSearch, r1 error) {
+	f.PushHook(func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32, *PaginationArgs) ([]*types.SavedSearch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) appendCall(r0 SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall objects describing
+// the invocations of this function.
+func (f *SavedSearchStoreListSavedSearchesByOrgOrUserFunc) History() []SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall is an object that
+// describes an invocation of method ListSavedSearchesByOrgOrUser on an
+// instance of MockSavedSearchStore.
+type SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int32
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *PaginationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.SavedSearch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgOrUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -39638,1289 +40491,6 @@ func (c SettingsStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SettingsStoreWithFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// MockSubRepoPermsStore is a mock implementation of the SubRepoPermsStore
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/database) used for unit
-// testing.
-type MockSubRepoPermsStore struct {
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *SubRepoPermsStoreDoneFunc
-	// GetFunc is an instance of a mock function object controlling the
-	// behavior of the method Get.
-	GetFunc *SubRepoPermsStoreGetFunc
-	// GetByUserFunc is an instance of a mock function object controlling
-	// the behavior of the method GetByUser.
-	GetByUserFunc *SubRepoPermsStoreGetByUserFunc
-	// GetByUserAndServiceFunc is an instance of a mock function object
-	// controlling the behavior of the method GetByUserAndService.
-	GetByUserAndServiceFunc *SubRepoPermsStoreGetByUserAndServiceFunc
-	// RepoIDSupportedFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoIDSupported.
-	RepoIDSupportedFunc *SubRepoPermsStoreRepoIDSupportedFunc
-	// RepoSupportedFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoSupported.
-	RepoSupportedFunc *SubRepoPermsStoreRepoSupportedFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *SubRepoPermsStoreTransactFunc
-	// UpsertFunc is an instance of a mock function object controlling the
-	// behavior of the method Upsert.
-	UpsertFunc *SubRepoPermsStoreUpsertFunc
-	// UpsertWithSpecFunc is an instance of a mock function object
-	// controlling the behavior of the method UpsertWithSpec.
-	UpsertWithSpecFunc *SubRepoPermsStoreUpsertWithSpecFunc
-	// WithFunc is an instance of a mock function object controlling the
-	// behavior of the method With.
-	WithFunc *SubRepoPermsStoreWithFunc
-}
-
-// NewMockSubRepoPermsStore creates a new mock of the SubRepoPermsStore
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
-	return &MockSubRepoPermsStore{
-		DoneFunc: &SubRepoPermsStoreDoneFunc{
-			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
-		GetFunc: &SubRepoPermsStoreGetFunc{
-			defaultHook: func(context.Context, int32, api.RepoID) (r0 *authz.SubRepoPermissions, r1 error) {
-				return
-			},
-		},
-		GetByUserFunc: &SubRepoPermsStoreGetByUserFunc{
-			defaultHook: func(context.Context, int32) (r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
-				return
-			},
-		},
-		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
-			defaultHook: func(context.Context, int32, string, string) (r0 map[api.ExternalRepoSpec]authz.SubRepoPermissions, r1 error) {
-				return
-			},
-		},
-		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
-			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
-				return
-			},
-		},
-		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 bool, r1 error) {
-				return
-			},
-		},
-		TransactFunc: &SubRepoPermsStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 SubRepoPermsStore, r1 error) {
-				return
-			},
-		},
-		UpsertFunc: &SubRepoPermsStoreUpsertFunc{
-			defaultHook: func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) (r0 error) {
-				return
-			},
-		},
-		UpsertWithSpecFunc: &SubRepoPermsStoreUpsertWithSpecFunc{
-			defaultHook: func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) (r0 error) {
-				return
-			},
-		},
-		WithFunc: &SubRepoPermsStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 SubRepoPermsStore) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockSubRepoPermsStore creates a new mock of the
-// SubRepoPermsStore interface. All methods panic on invocation, unless
-// overwritten.
-func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
-	return &MockSubRepoPermsStore{
-		DoneFunc: &SubRepoPermsStoreDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockSubRepoPermsStore.Done")
-			},
-		},
-		GetFunc: &SubRepoPermsStoreGetFunc{
-			defaultHook: func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.Get")
-			},
-		},
-		GetByUserFunc: &SubRepoPermsStoreGetByUserFunc{
-			defaultHook: func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.GetByUser")
-			},
-		},
-		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
-			defaultHook: func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.GetByUserAndService")
-			},
-		},
-		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
-			defaultHook: func(context.Context, api.RepoID) (bool, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.RepoIDSupported")
-			},
-		},
-		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
-			defaultHook: func(context.Context, api.RepoName) (bool, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.RepoSupported")
-			},
-		},
-		TransactFunc: &SubRepoPermsStoreTransactFunc{
-			defaultHook: func(context.Context) (SubRepoPermsStore, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.Transact")
-			},
-		},
-		UpsertFunc: &SubRepoPermsStoreUpsertFunc{
-			defaultHook: func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error {
-				panic("unexpected invocation of MockSubRepoPermsStore.Upsert")
-			},
-		},
-		UpsertWithSpecFunc: &SubRepoPermsStoreUpsertWithSpecFunc{
-			defaultHook: func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error {
-				panic("unexpected invocation of MockSubRepoPermsStore.UpsertWithSpec")
-			},
-		},
-		WithFunc: &SubRepoPermsStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) SubRepoPermsStore {
-				panic("unexpected invocation of MockSubRepoPermsStore.With")
-			},
-		},
-	}
-}
-
-// NewMockSubRepoPermsStoreFrom creates a new mock of the
-// MockSubRepoPermsStore interface. All methods delegate to the given
-// implementation, unless overwritten.
-func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
-	return &MockSubRepoPermsStore{
-		DoneFunc: &SubRepoPermsStoreDoneFunc{
-			defaultHook: i.Done,
-		},
-		GetFunc: &SubRepoPermsStoreGetFunc{
-			defaultHook: i.Get,
-		},
-		GetByUserFunc: &SubRepoPermsStoreGetByUserFunc{
-			defaultHook: i.GetByUser,
-		},
-		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
-			defaultHook: i.GetByUserAndService,
-		},
-		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
-			defaultHook: i.RepoIDSupported,
-		},
-		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
-			defaultHook: i.RepoSupported,
-		},
-		TransactFunc: &SubRepoPermsStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
-		UpsertFunc: &SubRepoPermsStoreUpsertFunc{
-			defaultHook: i.Upsert,
-		},
-		UpsertWithSpecFunc: &SubRepoPermsStoreUpsertWithSpecFunc{
-			defaultHook: i.UpsertWithSpec,
-		},
-		WithFunc: &SubRepoPermsStoreWithFunc{
-			defaultHook: i.With,
-		},
-	}
-}
-
-// SubRepoPermsStoreDoneFunc describes the behavior when the Done method of
-// the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []SubRepoPermsStoreDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(SubRepoPermsStoreDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockSubRepoPermsStore instance is invoked and the hook queue is
-// empty.
-func (f *SubRepoPermsStoreDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockSubRepoPermsStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *SubRepoPermsStoreDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreDoneFunc) appendCall(r0 SubRepoPermsStoreDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreDoneFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreDoneFunc) History() []SubRepoPermsStoreDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreDoneFuncCall is an object that describes an invocation
-// of method Done on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreDoneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// SubRepoPermsStoreGetFunc describes the behavior when the Get method of
-// the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreGetFunc struct {
-	defaultHook func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error)
-	hooks       []func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error)
-	history     []SubRepoPermsStoreGetFuncCall
-	mutex       sync.Mutex
-}
-
-// Get delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) Get(v0 context.Context, v1 int32, v2 api.RepoID) (*authz.SubRepoPermissions, error) {
-	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2)
-	m.GetFunc.appendCall(SubRepoPermsStoreGetFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Get method of the
-// parent MockSubRepoPermsStore instance is invoked and the hook queue is
-// empty.
-func (f *SubRepoPermsStoreGetFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockSubRepoPermsStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreGetFunc) PushHook(hook func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreGetFunc) SetDefaultReturn(r0 *authz.SubRepoPermissions, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreGetFunc) PushReturn(r0 *authz.SubRepoPermissions, r1 error) {
-	f.PushHook(func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreGetFunc) nextHook() func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreGetFunc) appendCall(r0 SubRepoPermsStoreGetFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreGetFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreGetFunc) History() []SubRepoPermsStoreGetFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreGetFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreGetFuncCall is an object that describes an invocation of
-// method Get on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreGetFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *authz.SubRepoPermissions
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreGetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreGetFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreGetByUserFunc describes the behavior when the GetByUser
-// method of the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreGetByUserFunc struct {
-	defaultHook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	hooks       []func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	history     []SubRepoPermsStoreGetByUserFuncCall
-	mutex       sync.Mutex
-}
-
-// GetByUser delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) GetByUser(v0 context.Context, v1 int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-	r0, r1 := m.GetByUserFunc.nextHook()(v0, v1)
-	m.GetByUserFunc.appendCall(SubRepoPermsStoreGetByUserFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetByUser method of
-// the parent MockSubRepoPermsStore instance is invoked and the hook queue
-// is empty.
-func (f *SubRepoPermsStoreGetByUserFunc) SetDefaultHook(hook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByUser method of the parent MockSubRepoPermsStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreGetByUserFunc) PushHook(hook func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreGetByUserFunc) SetDefaultReturn(r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreGetByUserFunc) PushReturn(r0 map[api.RepoName]authz.SubRepoPermissions, r1 error) {
-	f.PushHook(func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreGetByUserFunc) nextHook() func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreGetByUserFunc) appendCall(r0 SubRepoPermsStoreGetByUserFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreGetByUserFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreGetByUserFunc) History() []SubRepoPermsStoreGetByUserFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreGetByUserFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreGetByUserFuncCall is an object that describes an
-// invocation of method GetByUser on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreGetByUserFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[api.RepoName]authz.SubRepoPermissions
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreGetByUserFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreGetByUserFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreGetByUserAndServiceFunc describes the behavior when the
-// GetByUserAndService method of the parent MockSubRepoPermsStore instance
-// is invoked.
-type SubRepoPermsStoreGetByUserAndServiceFunc struct {
-	defaultHook func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
-	hooks       []func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
-	history     []SubRepoPermsStoreGetByUserAndServiceFuncCall
-	mutex       sync.Mutex
-}
-
-// GetByUserAndService delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) GetByUserAndService(v0 context.Context, v1 int32, v2 string, v3 string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
-	r0, r1 := m.GetByUserAndServiceFunc.nextHook()(v0, v1, v2, v3)
-	m.GetByUserAndServiceFunc.appendCall(SubRepoPermsStoreGetByUserAndServiceFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetByUserAndService
-// method of the parent MockSubRepoPermsStore instance is invoked and the
-// hook queue is empty.
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) SetDefaultHook(hook func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByUserAndService method of the parent MockSubRepoPermsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) PushHook(hook func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) SetDefaultReturn(r0 map[api.ExternalRepoSpec]authz.SubRepoPermissions, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) PushReturn(r0 map[api.ExternalRepoSpec]authz.SubRepoPermissions, r1 error) {
-	f.PushHook(func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) nextHook() func(context.Context, int32, string, string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) appendCall(r0 SubRepoPermsStoreGetByUserAndServiceFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SubRepoPermsStoreGetByUserAndServiceFuncCall objects describing the
-// invocations of this function.
-func (f *SubRepoPermsStoreGetByUserAndServiceFunc) History() []SubRepoPermsStoreGetByUserAndServiceFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreGetByUserAndServiceFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreGetByUserAndServiceFuncCall is an object that describes
-// an invocation of method GetByUserAndService on an instance of
-// MockSubRepoPermsStore.
-type SubRepoPermsStoreGetByUserAndServiceFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[api.ExternalRepoSpec]authz.SubRepoPermissions
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreRepoIDSupportedFunc describes the behavior when the
-// RepoIDSupported method of the parent MockSubRepoPermsStore instance is
-// invoked.
-type SubRepoPermsStoreRepoIDSupportedFunc struct {
-	defaultHook func(context.Context, api.RepoID) (bool, error)
-	hooks       []func(context.Context, api.RepoID) (bool, error)
-	history     []SubRepoPermsStoreRepoIDSupportedFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoIDSupported delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) RepoIDSupported(v0 context.Context, v1 api.RepoID) (bool, error) {
-	r0, r1 := m.RepoIDSupportedFunc.nextHook()(v0, v1)
-	m.RepoIDSupportedFunc.appendCall(SubRepoPermsStoreRepoIDSupportedFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoIDSupported
-// method of the parent MockSubRepoPermsStore instance is invoked and the
-// hook queue is empty.
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoIDSupported method of the parent MockSubRepoPermsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoIDSupportedFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreRepoIDSupportedFuncCall
-// objects describing the invocations of this function.
-func (f *SubRepoPermsStoreRepoIDSupportedFunc) History() []SubRepoPermsStoreRepoIDSupportedFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreRepoIDSupportedFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreRepoIDSupportedFuncCall is an object that describes an
-// invocation of method RepoIDSupported on an instance of
-// MockSubRepoPermsStore.
-type SubRepoPermsStoreRepoIDSupportedFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreRepoSupportedFunc describes the behavior when the
-// RepoSupported method of the parent MockSubRepoPermsStore instance is
-// invoked.
-type SubRepoPermsStoreRepoSupportedFunc struct {
-	defaultHook func(context.Context, api.RepoName) (bool, error)
-	hooks       []func(context.Context, api.RepoName) (bool, error)
-	history     []SubRepoPermsStoreRepoSupportedFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoSupported delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) RepoSupported(v0 context.Context, v1 api.RepoName) (bool, error) {
-	r0, r1 := m.RepoSupportedFunc.nextHook()(v0, v1)
-	m.RepoSupportedFunc.appendCall(SubRepoPermsStoreRepoSupportedFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoSupported method
-// of the parent MockSubRepoPermsStore instance is invoked and the hook
-// queue is empty.
-func (f *SubRepoPermsStoreRepoSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoSupported method of the parent MockSubRepoPermsStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreRepoSupportedFunc) PushHook(hook func(context.Context, api.RepoName) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreRepoSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreRepoSupportedFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreRepoSupportedFunc) nextHook() func(context.Context, api.RepoName) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreRepoSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoSupportedFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreRepoSupportedFuncCall
-// objects describing the invocations of this function.
-func (f *SubRepoPermsStoreRepoSupportedFunc) History() []SubRepoPermsStoreRepoSupportedFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreRepoSupportedFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreRepoSupportedFuncCall is an object that describes an
-// invocation of method RepoSupported on an instance of
-// MockSubRepoPermsStore.
-type SubRepoPermsStoreRepoSupportedFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreRepoSupportedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreRepoSupportedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreTransactFunc struct {
-	defaultHook func(context.Context) (SubRepoPermsStore, error)
-	hooks       []func(context.Context) (SubRepoPermsStore, error)
-	history     []SubRepoPermsStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) Transact(v0 context.Context) (SubRepoPermsStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(SubRepoPermsStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockSubRepoPermsStore instance is invoked and the hook queue
-// is empty.
-func (f *SubRepoPermsStoreTransactFunc) SetDefaultHook(hook func(context.Context) (SubRepoPermsStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockSubRepoPermsStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreTransactFunc) PushHook(hook func(context.Context) (SubRepoPermsStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreTransactFunc) SetDefaultReturn(r0 SubRepoPermsStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (SubRepoPermsStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreTransactFunc) PushReturn(r0 SubRepoPermsStore, r1 error) {
-	f.PushHook(func(context.Context) (SubRepoPermsStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *SubRepoPermsStoreTransactFunc) nextHook() func(context.Context) (SubRepoPermsStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreTransactFunc) appendCall(r0 SubRepoPermsStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreTransactFunc) History() []SubRepoPermsStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 SubRepoPermsStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SubRepoPermsStoreUpsertFunc describes the behavior when the Upsert method
-// of the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreUpsertFunc struct {
-	defaultHook func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error
-	hooks       []func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error
-	history     []SubRepoPermsStoreUpsertFuncCall
-	mutex       sync.Mutex
-}
-
-// Upsert delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) Upsert(v0 context.Context, v1 int32, v2 api.RepoID, v3 authz.SubRepoPermissions) error {
-	r0 := m.UpsertFunc.nextHook()(v0, v1, v2, v3)
-	m.UpsertFunc.appendCall(SubRepoPermsStoreUpsertFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Upsert method of the
-// parent MockSubRepoPermsStore instance is invoked and the hook queue is
-// empty.
-func (f *SubRepoPermsStoreUpsertFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Upsert method of the parent MockSubRepoPermsStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreUpsertFunc) PushHook(hook func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreUpsertFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreUpsertFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error {
-		return r0
-	})
-}
-
-func (f *SubRepoPermsStoreUpsertFunc) nextHook() func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreUpsertFunc) appendCall(r0 SubRepoPermsStoreUpsertFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreUpsertFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreUpsertFunc) History() []SubRepoPermsStoreUpsertFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreUpsertFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreUpsertFuncCall is an object that describes an invocation
-// of method Upsert on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreUpsertFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 authz.SubRepoPermissions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreUpsertFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreUpsertFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// SubRepoPermsStoreUpsertWithSpecFunc describes the behavior when the
-// UpsertWithSpec method of the parent MockSubRepoPermsStore instance is
-// invoked.
-type SubRepoPermsStoreUpsertWithSpecFunc struct {
-	defaultHook func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error
-	hooks       []func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error
-	history     []SubRepoPermsStoreUpsertWithSpecFuncCall
-	mutex       sync.Mutex
-}
-
-// UpsertWithSpec delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) UpsertWithSpec(v0 context.Context, v1 int32, v2 api.ExternalRepoSpec, v3 authz.SubRepoPermissions) error {
-	r0 := m.UpsertWithSpecFunc.nextHook()(v0, v1, v2, v3)
-	m.UpsertWithSpecFunc.appendCall(SubRepoPermsStoreUpsertWithSpecFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UpsertWithSpec
-// method of the parent MockSubRepoPermsStore instance is invoked and the
-// hook queue is empty.
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) SetDefaultHook(hook func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpsertWithSpec method of the parent MockSubRepoPermsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) PushHook(hook func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error {
-		return r0
-	})
-}
-
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) nextHook() func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) appendCall(r0 SubRepoPermsStoreUpsertWithSpecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreUpsertWithSpecFuncCall
-// objects describing the invocations of this function.
-func (f *SubRepoPermsStoreUpsertWithSpecFunc) History() []SubRepoPermsStoreUpsertWithSpecFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreUpsertWithSpecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreUpsertWithSpecFuncCall is an object that describes an
-// invocation of method UpsertWithSpec on an instance of
-// MockSubRepoPermsStore.
-type SubRepoPermsStoreUpsertWithSpecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.ExternalRepoSpec
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 authz.SubRepoPermissions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreUpsertWithSpecFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreUpsertWithSpecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// SubRepoPermsStoreWithFunc describes the behavior when the With method of
-// the parent MockSubRepoPermsStore instance is invoked.
-type SubRepoPermsStoreWithFunc struct {
-	defaultHook func(basestore.ShareableStore) SubRepoPermsStore
-	hooks       []func(basestore.ShareableStore) SubRepoPermsStore
-	history     []SubRepoPermsStoreWithFuncCall
-	mutex       sync.Mutex
-}
-
-// With delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) With(v0 basestore.ShareableStore) SubRepoPermsStore {
-	r0 := m.WithFunc.nextHook()(v0)
-	m.WithFunc.appendCall(SubRepoPermsStoreWithFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the With method of the
-// parent MockSubRepoPermsStore instance is invoked and the hook queue is
-// empty.
-func (f *SubRepoPermsStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) SubRepoPermsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// With method of the parent MockSubRepoPermsStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *SubRepoPermsStoreWithFunc) PushHook(hook func(basestore.ShareableStore) SubRepoPermsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SubRepoPermsStoreWithFunc) SetDefaultReturn(r0 SubRepoPermsStore) {
-	f.SetDefaultHook(func(basestore.ShareableStore) SubRepoPermsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreWithFunc) PushReturn(r0 SubRepoPermsStore) {
-	f.PushHook(func(basestore.ShareableStore) SubRepoPermsStore {
-		return r0
-	})
-}
-
-func (f *SubRepoPermsStoreWithFunc) nextHook() func(basestore.ShareableStore) SubRepoPermsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SubRepoPermsStoreWithFunc) appendCall(r0 SubRepoPermsStoreWithFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SubRepoPermsStoreWithFuncCall objects
-// describing the invocations of this function.
-func (f *SubRepoPermsStoreWithFunc) History() []SubRepoPermsStoreWithFuncCall {
-	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreWithFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SubRepoPermsStoreWithFuncCall is an object that describes an invocation
-// of method With on an instance of MockSubRepoPermsStore.
-type SubRepoPermsStoreWithFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 basestore.ShareableStore
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 SubRepoPermsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SubRepoPermsStoreWithFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SubRepoPermsStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -46848,6 +46418,9 @@ type MockUserStore struct {
 	// GetByVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByVerifiedEmail.
 	GetByVerifiedEmailFunc *UserStoreGetByVerifiedEmailFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *UserStoreHandleFunc
 	// HardDeleteFunc is an instance of a mock function object controlling
 	// the behavior of the method HardDelete.
 	HardDeleteFunc *UserStoreHardDeleteFunc
@@ -46986,6 +46559,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: func(context.Context, string) (r0 *types.User, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -47166,6 +46744,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
 			},
 		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserStore.Handle")
+			},
+		},
 		HardDeleteFunc: &UserStoreHardDeleteFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.HardDelete")
@@ -47310,6 +46893,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: i.GetByVerifiedEmail,
+		},
+		HandleFunc: &UserStoreHandleFunc{
+			defaultHook: i.Handle,
 		},
 		HardDeleteFunc: &UserStoreHardDeleteFunc{
 			defaultHook: i.HardDelete,
@@ -49086,6 +48672,104 @@ func (c UserStoreGetByVerifiedEmailFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreGetByVerifiedEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreHandleFunc describes the behavior when the Handle method of the
+// parent MockUserStore instance is invoked.
+type UserStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []UserStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(UserStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockUserStore instance is invoked and the hook queue is empty.
+func (f *UserStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockUserStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *UserStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreHandleFunc) appendCall(r0 UserStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreHandleFuncCall objects describing
+// the invocations of this function.
+func (f *UserStoreHandleFunc) History() []UserStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockUserStore.
+type UserStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UserStoreHardDeleteFunc describes the behavior when the HardDelete method

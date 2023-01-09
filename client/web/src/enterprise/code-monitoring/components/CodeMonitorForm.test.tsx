@@ -2,9 +2,9 @@ import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
-import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 

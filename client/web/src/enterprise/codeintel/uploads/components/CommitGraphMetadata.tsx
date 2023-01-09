@@ -1,8 +1,7 @@
 import { FunctionComponent } from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Alert } from '@sourcegraph/wildcard'
-
-import { Timestamp } from '../../../../components/time/Timestamp'
 
 export interface CommitGraphMetadataProps {
     stale: boolean

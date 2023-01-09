@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -29,6 +30,8 @@ type repositoryArgs struct {
 
 	CloneStatus *string
 	FailedFetch bool
+
+	ExternalService *graphql.ID
 
 	OrderBy    string
 	Descending bool
@@ -96,6 +99,14 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 	}
 	if !args.NotIndexed {
 		opt.OnlyIndexed = true
+	}
+
+	if args.ExternalService != nil {
+		extSvcID, err := UnmarshalExternalServiceID(*args.ExternalService)
+		if err != nil {
+			return opt, err
+		}
+		opt.ExternalServiceIDs = append(opt.ExternalServiceIDs, extSvcID)
 	}
 
 	return opt, nil

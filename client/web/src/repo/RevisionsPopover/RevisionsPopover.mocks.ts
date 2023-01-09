@@ -55,11 +55,11 @@ const generateGitReferenceNodes = (nodeCount: number, variant: GitRefType): GitR
                         date: yesterday,
                         person: commitPerson,
                     },
-                    behindAhead: null,
+                    behindAhead: {},
                 },
             },
         }
-    })
+    }) as GitRefConnectionFields['nodes']
 
 const generateGitCommitNodes = (nodeCount: number): GitCommitAncestorsConnectionFields['nodes'] =>
     new Array(nodeCount).fill(null).map((_value, index) => ({

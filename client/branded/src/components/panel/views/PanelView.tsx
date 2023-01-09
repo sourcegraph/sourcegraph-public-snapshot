@@ -5,10 +5,10 @@ import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Markdown } from '@sourcegraph/wildcard'
 
 import { PanelViewWithComponent } from '../TabbedPanelContent'
 

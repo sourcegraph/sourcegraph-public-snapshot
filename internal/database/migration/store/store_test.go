@@ -389,7 +389,7 @@ func TestWrappedUp(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: relation"
 
 		definition := definition.Definition{
 			ID: 17,
@@ -522,7 +522,7 @@ func TestWrappedDown(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: syntax error at or near"
 
 		definition := definition.Definition{
 			ID: 13,

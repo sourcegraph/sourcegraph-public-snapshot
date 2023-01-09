@@ -7,15 +7,13 @@ import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError } from '@sourcegraph/common'
 import {
     useInputValidation,
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Link, Icon, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
+import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'

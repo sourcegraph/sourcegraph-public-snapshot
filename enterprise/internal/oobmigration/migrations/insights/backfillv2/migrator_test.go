@@ -10,8 +10,9 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -123,7 +124,7 @@ func createSeries(ctx context.Context, store basestore.ShareableStore, series In
 	if !interval.IsValid() {
 		interval = timeseries.DefaultInterval
 	}
-	series.NextSnapshotAfter = series.CreatedAt.Truncate(24*time.Hour).AddDate(0, 0, 1)
+	series.NextSnapshotAfter = series.CreatedAt.Truncate(time.Minute).AddDate(0, 0, 1)
 	series.NextRecordingAfter = series.CreatedAt.AddDate(0, 0, 2)
 	q := sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
@@ -277,7 +278,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Not backfilled all repos search insight", SeriesValidate{
 				SeriesID: "a", CreatedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 00:00:00",
+				NextSnapshotAfter:  "2022-04-16 01:00:00",
 				BackfillQueuedAt:   "2022-04-15 01:00:00",
 				BackfillState:      "new",
 			}),
@@ -287,7 +288,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Not backfilled named repos search insight", SeriesValidate{
 				SeriesID: "b", CreatedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 00:00:00",
+				NextSnapshotAfter:  "2022-04-16 01:00:00",
 				BackfillQueuedAt:   "2022-04-15 01:00:00",
 				BackfillState:      "new",
 			}),
@@ -297,7 +298,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent Backfilled all repos search insight", SeriesValidate{
 				SeriesID: "c", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 				BackfillState:      "completed",
 			}),
@@ -307,7 +308,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent Backfilled named repos search insight", SeriesValidate{
 				SeriesID: "d", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 				BackfillState:      "completed",
 			}),
@@ -317,7 +318,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Older Backfilled all repos search insight", SeriesValidate{
 				SeriesID: "e", CreatedAt: "2021-04-15 01:00:00",
 				NextRecordingAfter: "2021-04-17 01:00:00",
-				NextSnapshotAfter:  "2021-04-16 00:00:00",
+				NextSnapshotAfter:  "2021-04-16 01:00:00",
 				BackfillQueuedAt:   "2021-04-15 01:00:00",
 				BackfillState:      "completed",
 			}),
@@ -357,7 +358,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent backfilled capture group insight", SeriesValidate{
 				SeriesID: "i", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 				BackfillState:      "completed",
 			}),
@@ -367,7 +368,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent search insight with new backfill completed", SeriesValidate{
 				SeriesID: "m", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 				BackfillState:      "complete",
 			}),
@@ -377,7 +378,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent search insight with new backfill new", SeriesValidate{
 				SeriesID: "n", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 				BackfillState:      "new",
 			}),
@@ -389,7 +390,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent Lang Stats insight", SeriesValidate{
 				SeriesID: "j", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				JustInTime:         true,
 			}),
 		},
@@ -398,7 +399,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Recent Group By insight", SeriesValidate{
 				SeriesID: "k", CreatedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				NextSnapshotAfter:  "2022-04-06 01:00:00",
 				BackfillQueuedAt:   "2022-04-05 01:00:00",
 			}),
 		},
@@ -407,7 +408,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			want: autogold.Want("Older Group By insight", SeriesValidate{
 				SeriesID: "l", CreatedAt: "2021-04-15 01:00:00",
 				NextRecordingAfter: "2021-04-17 01:00:00",
-				NextSnapshotAfter:  "2021-04-16 00:00:00",
+				NextSnapshotAfter:  "2021-04-16 01:00:00",
 				BackfillQueuedAt:   "2021-04-15 01:00:00",
 			}),
 		},

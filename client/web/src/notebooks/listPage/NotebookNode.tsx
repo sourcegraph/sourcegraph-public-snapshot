@@ -4,10 +4,10 @@ import { mdiStar, mdiStarOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
 

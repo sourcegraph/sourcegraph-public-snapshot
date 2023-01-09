@@ -38,11 +38,13 @@ describe('Backend insight drill down filters', () => {
             testContext,
             overrides: {
                 // Mock back-end insights with standard gql API handler
-                GetInsights: () => ({
+                GetAllInsightConfigurations: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
                     },
                 }),
 
@@ -83,7 +85,7 @@ describe('Backend insight drill down filters', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
@@ -146,11 +148,13 @@ describe('Backend insight drill down filters', () => {
             testContext,
             overrides: {
                 // Mock back-end insights with standard gql API handler
-                GetInsights: () => ({
+                GetAllInsightConfigurations: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [insightWithFilters],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
                     },
                 }),
 
@@ -184,7 +188,7 @@ describe('Backend insight drill down filters', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Active filters"]')

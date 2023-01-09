@@ -1,8 +1,7 @@
 import { FunctionComponent } from 'react'
 
+import { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 import { ButtonLink, Link } from '@sourcegraph/wildcard'
-
-import { TourTaskStepType } from './types'
 
 export interface NewTabLinkProps {
     step: TourTaskStepType

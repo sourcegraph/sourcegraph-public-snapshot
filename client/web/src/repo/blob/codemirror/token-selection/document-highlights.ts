@@ -2,7 +2,7 @@ import { Extension, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
@@ -25,15 +25,14 @@ async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): 
         return fromCache
     }
     const blobProps = view.state.facet(blobPropsFacet)
-    const api = await blobProps.extensionsController?.extHostAPI
-    if (!api) {
-        return []
-    }
-    const result = await api.getDocumentHighlights({
-        textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
-        position: occurrence.range.start,
-    })
-    const promise = wrapRemoteObservable(result).toPromise()
+
+    const api = await getOrCreateCodeIntelAPI(blobProps.platformContext)
+    const promise = api
+        .getDocumentHighlights({
+            textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
+            position: occurrence.range.start,
+        })
+        .toPromise()
     cache.set(occurrence, promise)
     return promise
 }

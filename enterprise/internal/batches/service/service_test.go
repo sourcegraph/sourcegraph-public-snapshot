@@ -2219,14 +2219,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			spec := testBatchSpec(admin.ID)
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			batchChange := testDraftBatchChange(admin.ID)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
-			// Associate with draft batch change
-			batchChange := testDraftBatchChange(spec.UserID, spec)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			spec.BatchChangeID = batchChange.ID
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2518,14 +2518,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			spec := testBatchSpec(admin.ID)
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			batchChange := testDraftBatchChange(admin.ID)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
-			// Associate with draft batch change
-			batchChange := testDraftBatchChange(spec.UserID, spec)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			spec.BatchChangeID = batchChange.ID
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
@@ -3121,8 +3121,8 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	return c
 }
 
-func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
-	bc := testBatchChange(user, spec)
+func testDraftBatchChange(user int32) *btypes.BatchChange {
+	bc := testBatchChange(user, &btypes.BatchSpec{})
 	bc.LastAppliedAt = time.Time{}
 	bc.CreatorID = 0
 	bc.LastApplierID = 0
@@ -3137,7 +3137,6 @@ func testBatchSpec(user int32) *btypes.BatchSpec {
 	}
 }
 
-//nolint:unparam // unparam complains that `extState` always has same value across call-sites, but that's OK
 func testChangeset(repoID api.RepoID, batchChange int64, extState btypes.ChangesetExternalState) *btypes.Changeset {
 	changeset := &btypes.Changeset{
 		RepoID:              repoID,

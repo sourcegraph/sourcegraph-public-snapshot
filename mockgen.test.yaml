@@ -170,7 +170,7 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
       interfaces:
         - LSIFStore
-        - SymbolWriter
+        - SCIPWriter
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
@@ -224,6 +224,10 @@
   path: github.com/sourcegraph/zoekt
   interfaces:
     - Streamer
+- filename: internal/search/symbol/mocks_test.go
+  path: github.com/sourcegraph/zoekt
+  interfaces:
+    - Streamer
 - filename: enterprise/cmd/worker/internal/telemetry/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry
   interfaces:
@@ -274,7 +278,11 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
   interfaces:
     - RepoStore
-- filename: enterprise/internal/insights/compression/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
+- filename: enterprise/internal/insights/discovery/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
-    - CommitStore
+    - RepoQueryExecutor
+- filename: enterprise/internal/insights/scheduler/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler
+  interfaces:
+    - RepoQueryExecutor

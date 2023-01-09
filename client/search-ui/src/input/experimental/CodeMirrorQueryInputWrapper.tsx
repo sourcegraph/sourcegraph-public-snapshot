@@ -10,8 +10,9 @@ import { useHistory } from 'react-router'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 
-import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { singleLine } from '../codemirror'

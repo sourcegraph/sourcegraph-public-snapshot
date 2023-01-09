@@ -186,7 +186,6 @@ type CountBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
-	ExcludeEmptySpecs                   bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -228,11 +227,6 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
-	}
-
-	if opts.ExcludeEmptySpecs {
-		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
-		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if len(preds) == 0 {
@@ -387,7 +381,6 @@ type ListBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
-	ExcludeEmptySpecs                   bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -445,11 +438,6 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
-	}
-
-	if opts.ExcludeEmptySpecs {
-		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
-		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if opts.NewestFirst {

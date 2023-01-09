@@ -2,10 +2,10 @@ import { MockedResponse } from '@apollo/client/testing/core'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { GetSearchAggregationResult, SearchAggregationMode, SearchPatternType } from '../../../../graphql-operations'
 

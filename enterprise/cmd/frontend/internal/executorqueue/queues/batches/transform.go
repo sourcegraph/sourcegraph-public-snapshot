@@ -319,5 +319,25 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		}
 	}
 
+	// Append docker auth config.
+	esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		NamespaceUserID: batchSpec.NamespaceUserID,
+		NamespaceOrgID:  batchSpec.NamespaceOrgID,
+		Keys:            []string{"DOCKER_AUTH_CONFIG"},
+	})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	if len(secrets) == 1 {
+		val, err := secrets[0].Value(ctx, s.DatabaseDB().ExecutorSecretAccessLogs())
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
+			return aj, err
+		}
+	}
+
 	return aj, nil
 }
