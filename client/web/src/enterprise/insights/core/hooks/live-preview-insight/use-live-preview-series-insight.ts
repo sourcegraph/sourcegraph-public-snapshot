@@ -167,5 +167,5 @@ function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
 }
 
 function isGatewayTimeoutError(error: ApolloError): boolean {
-    return error.networkError instanceof HTTPStatusError && error.networkError.status === 504;
+    return error.networkError instanceof HTTPStatusError && error.networkError.status === 504
 }
