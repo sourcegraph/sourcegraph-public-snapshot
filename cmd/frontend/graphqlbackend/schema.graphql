@@ -6497,7 +6497,7 @@ type SiteConfiguration {
       also used in conjunction with "last" to return the last N nodes.
       """
       before: String
-    ): SiteConfigHistoryConnection
+    ): SiteConfigChangeConnection
 }
 
 """
@@ -8425,7 +8425,7 @@ type ConnectionPageInfo {
 """
 A list of site config diffs.
 """
-type SiteConfigHistoryConnection {
+type SiteConfigChangeConnection {
     """
     A list of diffs in the site config
     """
