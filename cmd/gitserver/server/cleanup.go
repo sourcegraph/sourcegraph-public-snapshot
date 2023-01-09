@@ -1043,12 +1043,11 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 }
 
 func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
-	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
-
 	if !stdErrIndicatesCorruption(stderr) {
 		return false
 	}
 
+	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
 		log.String("stderr", stderr))
 

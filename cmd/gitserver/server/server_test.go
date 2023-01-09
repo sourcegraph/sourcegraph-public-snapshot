@@ -1761,25 +1761,18 @@ func TestLogIfCorrupt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
+		t.Cleanup(func() {
 			db.Repos().Delete(ctx, dbRepo.ID)
-		}()
+		})
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
 		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
-		if err != nil {
-			t.Fatalf("failed to retrieve repo %q from db: %s", repoName, err)
-		}
-
-		if len(fromDB.CorruptionLogs) != 1 {
-			t.Fatalf("got %d CorruptionLogs, wanted %d", len(fromDB.CorruptionLogs), 1)
-		}
-		if !strings.Contains(fromDB.CorruptionLogs[0].Reason, stdErr) {
-			t.Errorf("corruption log reason does not contain git corruption output - got %q, wanted %q", fromDB.CorruptionLogs[0].Reason, stdErr)
-		}
+		assert.NoError(t, err)
+		assert.Len(t, fromDB.CorruptionLogs, 1)
+		assert.Contains(t, fromDB.CorruptionLogs[0].Reason, stdErr)
 	})
 
 	t.Run("non corruption output does not create corruption log", func(t *testing.T) {
@@ -1794,22 +1787,17 @@ func TestLogIfCorrupt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
+		t.Cleanup(func() {
 			db.Repos().Delete(ctx, dbRepo.ID)
-		}()
+		})
 
 		stdErr := "Brought to you by Horsegraph"
 
 		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
-		if err != nil {
-			t.Fatalf("failed to retrieve repo %q from db: %s", repoName, err)
-		}
-
-		if len(fromDB.CorruptionLogs) != 0 {
-			t.Fatalf("got %d CorruptionLogs, wanted %d", len(fromDB.CorruptionLogs), 1)
-		}
+		assert.NoError(t, err)
+		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
 }
 
