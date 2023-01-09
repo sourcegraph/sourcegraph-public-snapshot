@@ -37,12 +37,7 @@ type ChangesetSpecInput struct {
 	Result execution.AfterStepResult
 }
 
-type ChangesetSpecAuthor struct {
-	Name  string
-	Email string
-}
-
-func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAuthor *ChangesetSpecAuthor) ([]*ChangesetSpec, error) {
+func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool) ([]*ChangesetSpec, error) {
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
@@ -57,25 +52,20 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAu
 		},
 	}
 
-	var author ChangesetSpecAuthor
+	var authorName string
+	var authorEmail string
 
 	if input.Template.Commit.Author == nil {
-		if fallbackAuthor != nil {
-			author = *fallbackAuthor
-		} else {
-			// user did not provide author info, so use defaults
-			author = ChangesetSpecAuthor{
-				Name:  "Sourcegraph",
-				Email: "batch-changes@sourcegraph.com",
-			}
-		}
+		// user did not provide author info, so use defaults
+		authorName = "Sourcegraph"
+		authorEmail = "batch-changes@sourcegraph.com"
 	} else {
 		var err error
-		author.Name, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
+		authorName, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
-		author.Email, err = template.RenderChangesetTemplateField("authorEmail", input.Template.Commit.Author.Email, tmplCtx)
+		authorEmail, err = template.RenderChangesetTemplateField("authorEmail", input.Template.Commit.Author.Email, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -128,8 +118,8 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAu
 				{
 					Version:     version,
 					Message:     message,
-					AuthorName:  author.Name,
-					AuthorEmail: author.Email,
+					AuthorName:  authorName,
+					AuthorEmail: authorEmail,
 					Diff:        diff,
 				},
 			},
