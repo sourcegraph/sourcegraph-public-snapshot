@@ -11,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/retention"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -49,6 +50,15 @@ func TestPerformPurge(t *testing.T) {
 	getWorkerQueueForSeries := func(ctx context.Context, seriesId string) int {
 		q := sqlf.Sprintf("select count(*) from insights_query_runner_jobs where series_id = %s", seriesId)
 		val, err := basestore.ScanInt(workerBaseStore.QueryRow(ctx, q))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val
+	}
+
+	getRetentionJobCount := func(ctx context.Context) int {
+		q := sqlf.Sprintf("select count(*) from insights_data_retention_jobs;")
+		val, err := basestore.ScanInt(basestore.NewWithHandle(insightsDB.Handle()).QueryRow(ctx, q))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -168,6 +178,19 @@ func TestPerformPurge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// two data retention jobs: the first one should be deleted.
+	_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{
+		SeriesID: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{
+		SeriesID: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	err = performPurge(ctx, postgres, insightsDB, logger, time.Now())
 	if err != nil {
@@ -187,6 +210,10 @@ func TestPerformPurge(t *testing.T) {
 	}
 	if got := getTimeSeriesCountForSeries(ctx, doNotWantSeries); got != 0 {
 		t.Errorf("unexpected result for deleted series in time series data, got: %d", got)
+	}
+	// check the number of retention jobs
+	if got := getRetentionJobCount(ctx); got != 1 {
+		t.Errorf("expected 1 retetion job remaining, got %v", got)
 	}
 	// finally check the metadata table
 	if got := getMetadataCountForSeries(ctx, wantSeries); got != 1 {
