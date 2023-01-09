@@ -1697,8 +1697,11 @@ CREATE TABLE critical_and_site_config (
     type critical_or_site NOT NULL,
     contents text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    author_user_id integer
 );
+
+COMMENT ON COLUMN critical_and_site_config.author_user_id IS 'A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.';
 
 CREATE SEQUENCE critical_and_site_config_id_seq
     START WITH 1
@@ -2175,8 +2178,14 @@ CREATE TABLE gitserver_repos (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_fetched timestamp with time zone DEFAULT now() NOT NULL,
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
-    repo_size_bytes bigint
+    repo_size_bytes bigint,
+    corrupted_at timestamp with time zone,
+    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL
 );
+
+COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
+
+COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -2838,7 +2847,7 @@ CREATE TABLE lsif_uploads_audit_logs (
     uploaded_at timestamp with time zone NOT NULL,
     indexer text NOT NULL,
     indexer_version text,
-    upload_size integer,
+    upload_size bigint,
     associated_index_id integer,
     transition_columns hstore[],
     reason text DEFAULT ''::text,

@@ -7372,6 +7372,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "author_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user."
+        },
+        {
           "Name": "contents",
           "Index": 3,
           "TypeName": "text",
@@ -10672,6 +10685,32 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "corrupted_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Timestamp of when repo corruption was detected"
+        },
+        {
+          "Name": "corruption_logs",
+          "Index": 11,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'[]'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Log output of repo corruptions that have been detected - encoded as json"
         },
         {
           "Name": "last_changed",
@@ -14400,7 +14439,7 @@
         {
           "Name": "upload_size",
           "Index": 10,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,

@@ -3428,6 +3428,15 @@ type MirrorRepositoryInfo {
     """
     cloned: Boolean!
     """
+    Whether the repository is currently corrupt.
+    """
+    isCorrupted: Boolean!
+    """
+    A Log of the corruption events that have been detected on this repository. Only 10 events are kept and the events
+    are ordered from most recent to least.
+    """
+    corruptionLogs: [RepoCorruptionLog!]!
+    """
     When the repository was last successfully updated from the remote source repository..
     """
     updatedAt: DateTime
@@ -3452,6 +3461,21 @@ type MirrorRepositoryInfo {
     Only site admins can access this field.
     """
     shard: String
+}
+
+"""
+A corruption log entry that that records the time of when corruption was detected and a reason why the repo is regarded
+as corrupt
+"""
+type RepoCorruptionLog {
+    """
+    The time at which the repository was detected to be corrupt
+    """
+    timestamp: DateTime!
+    """
+    The reason why this repository was regarded as corrupt
+    """
+    reason: String!
 }
 
 """

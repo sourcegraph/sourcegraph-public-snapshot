@@ -121,6 +121,10 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        isCorrupted
+        corruptionLogs {
+            timestamp
+        }
         lastError
         byteSize
         shard

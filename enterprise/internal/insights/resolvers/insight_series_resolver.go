@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -69,12 +68,10 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 			}
 			inc, exc := plan.ToQ().Repositories()
 			for _, repoFilter := range inc {
-				repo, repoRevs := search.ParseRepositoryRevisions(repoFilter)
-
-				if len(repoRevs) > 0 {
+				if len(repoFilter.Revs) > 0 {
 					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
 				}
-				include = append(include, repo)
+				include = append(include, repoFilter.Repo)
 			}
 			exclude = append(exclude, exc...)
 		}
