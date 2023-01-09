@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
+import { formatISO, subYears } from 'date-fns'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
@@ -16,7 +17,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, CardHeader, Link, Tooltip, Text } from '@sourcegraph/wildcard'
 
-import { queryGraphQL, requestGraphQL } from '../../backend/graphql'
+import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -41,6 +42,7 @@ import {
     Scalars,
     TreeCommitsResult,
     TreePageRepositoryFields,
+    TreeCommitsVariables,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
@@ -68,7 +70,7 @@ export const fetchTreeCommits = memoizeObservable(
         filePath?: string
         after?: string
     }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
-        queryGraphQL(
+        requestGraphQL<TreeCommitsResult, TreeCommitsVariables>(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {
@@ -89,7 +91,12 @@ export const fetchTreeCommits = memoizeObservable(
                 }
                 ${gitCommitFragment}
             `,
-            args
+            {
+                ...args,
+                first: args.first || null,
+                filePath: args.filePath || null,
+                after: args.after || null,
+            }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {
