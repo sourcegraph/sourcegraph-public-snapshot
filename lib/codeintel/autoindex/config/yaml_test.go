@@ -11,7 +11,7 @@ shared_steps:
   - root: /
     image: node:12
     commands:
-      - pnpm install --frozen-lockfile
+      - yarn install --frozen-lockfile --non-interactive
 
 index_jobs:
   -
@@ -40,7 +40,7 @@ func TestUnmarshalYAML(t *testing.T) {
 			{
 				Root:     "/",
 				Image:    "node:12",
-				Commands: []string{"pnpm install --frozen-lockfile"},
+				Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
 			},
 		},
 		IndexJobs: []IndexJob{

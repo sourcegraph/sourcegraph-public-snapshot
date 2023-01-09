@@ -41,7 +41,7 @@ func TestInsertIndexes(t *testing.T) {
 			DockerSteps: []types.DockerStep{
 				{
 					Image:    "cimg/node:12.16",
-					Commands: []string{"pnpm install --frozen-lockfile"},
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 				},
 			},
 			LocalSteps:  []string{"echo hello"},
@@ -98,7 +98,7 @@ func TestInsertIndexes(t *testing.T) {
 			DockerSteps: []types.DockerStep{
 				{
 					Image:    "cimg/node:12.16",
-					Commands: []string{"pnpm install --frozen-lockfile"},
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 				},
 			},
 			LocalSteps:  []string{"echo hello"},
@@ -300,7 +300,7 @@ func TestGetIndexByID(t *testing.T) {
 		DockerSteps: []types.DockerStep{
 			{
 				Image:    "cimg/node:12.16",
-				Commands: []string{"pnpm install --frozen-lockfile"},
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
 		LocalSteps:  []string{"echo hello"},
