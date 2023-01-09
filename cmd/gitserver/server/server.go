@@ -119,7 +119,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 		span.Finish()
 	}()
 
-	err = cmd.Run()
+	err = vcs.NewGitExec(cmd).Run()
 	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
@@ -154,7 +154,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		err = cmd.Wait()
+		err = vcs.GitExec(cmd).Wait()
 		if err != nil {
 			logger.Error("running command", log.Error(err))
 		}
@@ -2736,7 +2736,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
 	dir.Set(cmd)
-	if output, err := cmd.CombinedOutput(); err != nil {
+	if output, err := (vcs.NewGitExec(cmd).CombinedOutput()); err != nil {
 		logger.Error("Failed to set HEAD", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "Failed to set HEAD")
 	}
