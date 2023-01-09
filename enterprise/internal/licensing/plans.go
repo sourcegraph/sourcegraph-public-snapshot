@@ -19,7 +19,7 @@ func (p Plan) HasFeature(target Feature) bool {
 	}
 
 	val := reflect.ValueOf(target)
-	if val.IsNil() {
+	if val.Kind() == reflect.Ptr && val.IsNil() {
 		panic("licensing: target cannot be a nil pointer")
 	}
 
