@@ -413,7 +413,8 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					// prefixed by the first @. This because downstream
 					// logic will get confused by the presence of @ and try
 					// to resolve repo revisions. See #27816.
-					if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+					repoFilter, err := query.ParseRepositoryRevisions(patternPrefix[0])
+					if err != nil {
 						// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
 						// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
 						// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
@@ -421,7 +422,6 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					repoFilter := query.ParseRepositoryRevisions(patternPrefix[0])
 					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
@@ -444,9 +444,8 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
 
-						// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
-						// above, regexp meta characters in literal patterns are already escaped before the
-						// pattern is added to repoOptions, so no need to check that before compiling to regex
+						// The repo regexes are already validated (through query.ParseRepositoryRevisions), so
+						// we know this won't error out.
 						if repoOptions.CaseSensitiveRepoFilters {
 							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilter.Repo))
 						} else {

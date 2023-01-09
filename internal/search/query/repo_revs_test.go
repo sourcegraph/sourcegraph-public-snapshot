@@ -31,7 +31,10 @@ func TestParseRepositoryRevisions(t *testing.T) {
 	}
 	for input, want := range tests {
 		t.Run(input, func(t *testing.T) {
-			repoRevs := ParseRepositoryRevisions(input)
+			repoRevs, err := ParseRepositoryRevisions(input)
+			if err != nil {
+				t.Fatalf("unexpected error parsing repo filter %s", input)
+			}
 			if diff := cmp.Diff(want, repoRevs); diff != "" {
 				t.Fatalf("(-want +got):\n%s", diff)
 			}

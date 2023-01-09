@@ -40,7 +40,11 @@ func TestMain(m *testing.M) {
 func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
 	repoFilters := make([]query.ParsedRepoFilter, len(repoRevs))
 	for i, r := range repoRevs {
-		repoFilters[i] = query.ParseRepositoryRevisions(r)
+		parsedFilter, err := query.ParseRepositoryRevisions(r)
+		if err != nil {
+			panic(errors.Errorf("unexpected error parsing repo filter %s", r))
+		}
+		repoFilters[i] = parsedFilter
 	}
 	return repoFilters
 }
@@ -224,14 +228,6 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  []query.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
-			clashing: nil,
-		},
-		{
-			descr:    "invalid regexp",
-			specs:    []string{"*o@a:b"},
-			repo:     "foo",
-			err:      errors.Errorf("%s", "bad request: in findPatternRevs: error parsing regexp: missing argument to repetition operator: `*`"),
-			matched:  nil,
 			clashing: nil,
 		},
 	}

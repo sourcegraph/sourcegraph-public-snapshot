@@ -921,27 +921,20 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 }
 
 // findPatternRevs separates out each repo filter into its repository name
-// pattern and its revision specs (if any). It validates each repository name
-// pattern and applies some small optimizations.
+// pattern and its revision specs (if any). It also applies small optimizations
+// to the repository name.
 func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
 	for _, includePattern := range includePatterns {
 		repoPattern, revs := includePattern.Repo, includePattern.Revs
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
-		}
 		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
 
 		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + repoPattern + ")")
-			if err != nil {
-				return nil, nil, &badRequestError{err}
-			}
+			// The repo pattern is already validated, so this shouldn't error
+			p := regexp.MustCompile("(?i:" + repoPattern + ")")
 			patternRev := patternRevspec{includePattern: p, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
 		}
