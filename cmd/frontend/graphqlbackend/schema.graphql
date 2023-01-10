@@ -7320,7 +7320,10 @@ type MonitoringStatistics {
     """
     Alerts fired in this time span.
     """
-    alerts: [MonitoringAlert!]! @deprecated(reason: "No longer supported - will be removed after Sourcegraph 4.5")
+    alerts: [MonitoringAlert!]!
+        @deprecated(
+            reason: "No longer supported, and will no longer return data - query will be removed after Sourcegraph 4.5"
+        )
 }
 
 """
