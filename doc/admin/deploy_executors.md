@@ -24,9 +24,20 @@ Optionally, executors can be run without using KVM-based isolation, which is les
 
 ### Resource Recommendations
 
+It is recommended to set the resources based on the number of jobs an instance will process in parallel.
+
+A single job should have the following resources available.
+
 - **CPU:** 4
-- **Memory:** 15GB
-- **Disk:** 100GB
+- **Memory:** 12GB
+- **Disk:** 20GB
+
+So, if you expect an Executor instance to process up to 4 jobs in parallel, the recommended resources for the machine
+are
+
+- **CPU:** 16
+- **Memory:** 48GB
+- **Disk:** 80GB
 
 <sub>Note: the smallest machine type on AWS that can support Executors with Firecracker is `c5n.metal` (72 vCPU and
 192GB of Memory).</sub>
@@ -35,7 +46,7 @@ Optionally, executors can be run without using KVM-based isolation, which is les
 
 It is recommended to add the following **Disk** configuration in AWS.
 
-- **IOPS:** 500
+- **IOPS:** Equal to the Disk Size (so if **Disk** is 100GB, then IOPS is 100)
 - **Throughput:** 125MiB/s
 
 ### Supported Infrastructures
