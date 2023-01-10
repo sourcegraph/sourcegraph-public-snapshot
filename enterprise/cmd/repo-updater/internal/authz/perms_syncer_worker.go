@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func MakePermsSyncerWorker(ctx context.Context, observationCtx *observation.Context, syncer *PermsSyncer) *permsSyncerWorker {
+func MakePermsSyncerWorker(ctx context.Context, observationCtx *observation.Context, syncer permsSyncer) *permsSyncerWorker {
 	syncGroups := map[requestType]group.ContextGroup{
 		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(syncUsersMaxConcurrency()),
 		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
@@ -31,9 +31,13 @@ func MakePermsSyncerWorker(ctx context.Context, observationCtx *observation.Cont
 	}
 }
 
+type permsSyncer interface {
+	syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest)
+}
+
 type permsSyncerWorker struct {
 	logger     log.Logger
-	syncer     *PermsSyncer
+	syncer     permsSyncer
 	syncGroups map[requestType]group.ContextGroup
 }
 
