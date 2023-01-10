@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	bitbucketlogin "github.com/dghubble/gologin/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
@@ -23,12 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func init() {
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-}
 
 type emailResponse struct {
 	Values []bitbucketcloud.UserEmail `json:"values"`

@@ -50,7 +50,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		s.client = bbClient
 	}
 
-	auther := &esauth.OAuthBearerToken{Token: token.AccessToken, RefreshToken: token.RefreshToken, Expiry: token.Expiry}
+	// Since the user account does not yet exist at this point, we do not
+	// care about token refreshing.
+	auther := &esauth.OAuthBearerToken{Token: token.AccessToken}
 	s.client = s.client.WithAuthenticator(auther)
 	bbUser, err := s.client.CurrentUser(ctx)
 	if err != nil {

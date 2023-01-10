@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -69,6 +70,8 @@ func newAuthzProvider(
 	db database.DB,
 	c *types.BitbucketCloudConnection,
 ) (authz.Provider, error) {
+	// If authorization is not set for this connection, we do not need an
+	// authz provider.
 	if c.Authorization == nil {
 		return nil, nil
 	}
@@ -76,7 +79,14 @@ func newAuthzProvider(
 		return nil, err
 	}
 
-	return NewProvider(db, c, ProviderOptions{}), nil
+	bbClient, err := bitbucketcloud.NewClient(c.URN, c.BitbucketCloudConnection, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewProvider(db, c, ProviderOptions{
+		BitbucketCloudClient: bbClient,
+	}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
