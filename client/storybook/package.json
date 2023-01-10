@@ -24,7 +24,6 @@
     "@sourcegraph/shared": "workspace:*"
   },
   "devDependencies": {
-    "@sourcegraph/build-config": "workspace:*",
-    "@storybook/react": "^6.5.14"
+    "@sourcegraph/build-config": "workspace:*"
   }
 }
