@@ -1185,6 +1185,12 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
+		// TODO: Yes, you're right. This is obviously spaghetti code:
+		// `PermsSyncer` creates jobs that a worker picks up and then hands to
+		// PermSyncer.
+		// The idea is that once the worker becomes the default then this whole
+		// method, `runSchedule`, will disappear and become a background
+		// routine being run in `cmd/worker`.
 		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx)
 		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("databased-backed perm syncer", workerEnabled))
 

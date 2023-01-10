@@ -30,6 +30,8 @@ type PermissionSyncJobStore interface {
 
 	CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error
 	CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error
+
+	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 }
 
 type permissionSyncJobStore struct {
@@ -115,6 +117,69 @@ func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *Permiss
 
 	return scanPermissionSyncJob(job, s.QueryRow(ctx, q))
 }
+
+type ListPermissionSyncJobOpts struct {
+	ID     int
+	UserID int
+	RepoID int
+}
+
+func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
+	conds := []*sqlf.Query{}
+
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
+	}
+	if opts.RepoID != 0 {
+		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+	}
+
+	return conds
+}
+
+func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+	conds := opts.sqlConds()
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(
+		listPermissionSyncJobQueryFmtstr,
+		sqlf.Join(PermissionSyncJobColumns, ", "),
+		whereClause,
+	)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var syncJobs []*PermissionSyncJob
+	for rows.Next() {
+		job, err := ScanPermissionSyncJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		syncJobs = append(syncJobs, job)
+	}
+
+	return syncJobs, nil
+}
+
+const listPermissionSyncJobQueryFmtstr = `
+SELECT %s
+FROM permission_sync_jobs
+%s -- whereClause
+ORDER BY id ASC
+`
 
 type PermissionSyncJob struct {
 	ID              int
