@@ -5,7 +5,14 @@
 .routine {
     display: grid;
     margin-bottom: 1rem;
-    grid-template-columns: 80px auto 100px 100px 200px;
+    grid-template-columns: 80px auto 60px 60px 175px;
+    grid-gap: 0.25rem;
+    align-items: center;
+}
+
+.name-and-description {
+    display: grid;
+    grid-template-columns: 16px auto;
     grid-gap: 0.25rem;
     align-items: center;
 }
