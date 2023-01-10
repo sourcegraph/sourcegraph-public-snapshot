@@ -1283,6 +1283,8 @@ extend type Mutation {
     ): ChangesetSpec!
 
     """
+    FOR INTERNAL USE ONLY.
+
     Upload multiple changeset specs that will be used in a future update to a batch change. The changeset specs
     are stored and can be referenced by their ID in the applyBatchChange mutation. Just uploading the
     changeset specs does not result in changes to the batch change or any of its changesets; you need
