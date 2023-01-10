@@ -293,7 +293,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
                 />
             </div>
             <div className={styles.nameAndDescription}>
-                <Tooltip content={routine.type.toLowerCase()} placement="top">
+                <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
                     {routineIcon}
                 </Tooltip>
                 <Text className="mb-0 ml-2">
