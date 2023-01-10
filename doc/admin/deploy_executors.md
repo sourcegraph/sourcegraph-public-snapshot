@@ -39,8 +39,21 @@ are
 - **Memory:** 48GB
 - **Disk:** 80GB
 
+The above recommended resources can be changed to fit your constraints. See below for configuring resources for a Job.
+
 <sub>Note: the smallest machine type on AWS that can support Executors with Firecracker is `c5n.metal` (72 vCPU and
-192GB of Memory).</sub>
+192GB of Memory), but concurrency can be turned up for the additional cost.</sub>
+
+#### Job Configuration
+
+The maximum number of Jobs an Executor instance can run in parallel is configured by the Environment
+Variable `EXECUTOR_MAXIMUM_NUM_JOBS`.
+
+The CPU and Memory usage of an individual Job is configured by the Environment Variables `EXECUTOR_JOB_NUM_CPUS`
+and `EXECUTOR_JOB_MEMORY`. See [Environment Variables](./deploy_executors_binary.md#step-2-setup-environment-variables)
+for additional Environment Variables.
+
+<sub>Note: changing CPU and Memory for jobs will affect the overall requirements for an Executor instance.</sub>
 
 #### AWS
 
@@ -62,7 +75,7 @@ See [deploying Executors binary](./deploy_executors_binary.md) for additional in
 
 ##### Cloud Providers
 
-Machines on Cloud Providers have additional constraints.
+Machines on Cloud Providers have additional constraints for use with firecracker.
 
 - **AWS:** machine type must be
   a [metal instance (`.metal`)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
