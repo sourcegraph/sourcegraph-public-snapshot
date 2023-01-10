@@ -914,8 +914,14 @@ func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Chang
 	}})
 	defer endObservation(1, observation.Args{})
 
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Create the temporary table
-	if err = s.Exec(ctx, sqlf.Sprintf(updateChangesetsTemporaryTableQuery)); err != nil {
+	if err = tx.Exec(ctx, sqlf.Sprintf(updateChangesetsTemporaryTableQuery)); err != nil {
 		return err
 	}
 
@@ -954,7 +960,7 @@ func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Chang
 	// Bulk insert all the unique column values into the temporary table
 	if err := batch.WithInserter(
 		ctx,
-		s.Handle(),
+		tx.Handle(),
 		"temp_changesets",
 		batch.MaxNumPostgresParameters,
 		temporaryChangesetInsertColumns,
@@ -964,7 +970,7 @@ func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Chang
 	}
 
 	// Insert the values from the temporary table into the target table.
-	return s.Exec(ctx, sqlf.Sprintf(updateChangesetsInsertQuery))
+	return tx.Exec(ctx, sqlf.Sprintf(updateChangesetsInsertQuery))
 }
 
 const updateChangesetsTemporaryTableQuery = `
