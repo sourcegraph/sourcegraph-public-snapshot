@@ -34,7 +34,7 @@ type JobLogger struct {
 // After this time, we consider them nonexistent, and they'll be removed
 const seenTimeout = 5 * 24 * time.Hour // 5 days
 
-const keyPrefix = "background-job-logger:"
+const keyPrefix = "background-job-logger"
 
 // backgroundRoutine represents a single routine in a background job, and is used for serialization to/from Redis.
 type backgroundRoutine struct {
