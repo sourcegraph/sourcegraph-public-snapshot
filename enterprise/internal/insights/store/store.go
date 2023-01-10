@@ -688,9 +688,14 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts
 	return series, nil
 }
 
-func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int) (time.Time, error) {
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int, excludeSnapshot bool) (time.Time, error) {
+	preds := []*sqlf.Query{sqlf.Sprintf("insight_series_id = %s", seriesId)}
+	if excludeSnapshot {
+		preds = append(preds, sqlf.Sprintf("snapshot is false"))
+	}
+
 	var tempTime time.Time
-	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, seriesId, n)))
+	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, sqlf.Join(preds, "and"), n)))
 	if err != nil {
 		return tempTime, err
 	}
@@ -701,7 +706,7 @@ func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int) (t
 }
 
 const getOffsetNRecordingTimeSql = `
-select recording_time from insight_series_recording_times where insight_series_id = %s and snapshot is false order by recording_time desc offset %s limit 1
+select recording_time from insight_series_recording_times where %s order by recording_time desc offset %s limit 1
 `
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
