@@ -16,11 +16,11 @@
     // Release versions
     "previousRelease": "4.3.0",
     "upcomingRelease": "4.4.0",
-    "oneWorkingWeekBeforeRelease": "13 January 2022 10:00 PST",
-    "threeWorkingDaysBeforeRelease": "17 January 2022 10:00 PST",
+    "oneWorkingWeekBeforeRelease": "13 January 2023 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "17 January 2023 10:00 PST",
     "releaseDate": "20 January 2023 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 January 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "27 January 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "23 January 2023 10:00 PST",
+    "oneWorkingWeekAfterRelease": "27 January 2023 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

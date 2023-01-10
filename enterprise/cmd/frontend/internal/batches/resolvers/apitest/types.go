@@ -93,6 +93,7 @@ type BatchChange struct {
 	DiffStat                DiffStat
 	BulkOperations          BulkOperationConnection
 	BatchSpecs              BatchSpecConnection
+	CurrentSpec             *BatchSpec
 }
 
 type BatchChangeConnection struct {

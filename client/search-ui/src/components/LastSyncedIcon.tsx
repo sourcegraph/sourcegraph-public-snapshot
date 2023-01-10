@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiWeatherCloudyClock } from '@mdi/js'
+import { mdiCloudAlert, mdiCloudClock, mdiCloudCheckOutline } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 
@@ -14,15 +14,36 @@ interface Props {
 }
 
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const formattedTime = format(Date.parse(props.lastSyncedTime), 'yyyy-MM-dd pp')
+    const parsedDate = new Date(Date.parse(props.lastSyncedTime))
+    const formattedTime = format(parsedDate, 'yyyy-MM-dd pp')
+
+    const oneDayAgo = new Date()
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
+    let color = 'currentColor'
+    let status = `Last synced: ${formattedTime}`
+    let icon = mdiCloudCheckOutline
+    if (parsedDate < oneWeekAgo) {
+        color = 'var(--danger)'
+        status = `Warning: severely out of date, last synced:  ${formattedTime}. Please contact your administrator.`
+        icon = mdiCloudAlert
+    } else if (parsedDate < oneDayAgo) {
+        color = 'var(--warning)'
+        status = `Warning: out of date, last synced: ${formattedTime}.`
+        icon = mdiCloudClock
+    }
 
     return (
-        <Tooltip content={`Last synced: ${formattedTime}`}>
+        <Tooltip content={status}>
             <Icon
                 tabIndex={0}
                 className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
-                aria-label={`Last synced: ${formattedTime}`}
-                svgPath={mdiWeatherCloudyClock}
+                aria-label={status}
+                svgPath={icon}
+                style={{ fill: color }}
             />
         </Tooltip>
     )
