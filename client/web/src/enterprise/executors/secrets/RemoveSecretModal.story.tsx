@@ -34,7 +34,7 @@ const secret: ExecutorSecretFields = {
         id: 'testID',
         url: '/users/test',
     },
-    key: 'SG_TOKEN',
+    key: 'GITHUB_TOKEN',
     scope: ExecutorSecretScope.BATCHES,
     // Global secret.
     namespace: null,
