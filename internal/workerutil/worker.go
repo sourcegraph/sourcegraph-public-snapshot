@@ -8,8 +8,9 @@ import (
 
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -39,7 +40,15 @@ type Worker[T Record] struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
+	jobName          string
+	jobLogger        *goroutine.JobLogger
 }
+
+type DummyType struct{}
+
+func (d DummyType) RecordID() int { return 0 }
+
+var _ goroutine.Loggable = &Worker[DummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
@@ -131,6 +140,9 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker[T]) Start() {
+	if w.jobLogger != nil {
+		go (*w.jobLogger).LogStart(w)
+	}
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -241,6 +253,9 @@ loop:
 // context passed to the dequeue operations (but not the handler perations). This method blocks until
 // all handler goroutines have exited.
 func (w *Worker[T]) Stop() {
+	if w.jobLogger != nil {
+		go (*w.jobLogger).LogStop(w)
+	}
 	w.dequeueCancel()
 	w.Wait()
 }
@@ -418,3 +433,32 @@ func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeueable bool, extra
 
 	return true, nil, nil
 }
+
+func (w *Worker[T]) Name() string {
+	return w.options.Name
+}
+
+func (w *Worker[T]) Type() types.BackgroundRoutineType {
+	return types.BackgroundRoutineDBBackedWorker
+}
+
+func (w *Worker[T]) JobName() string {
+	return w.jobName
+}
+
+func (w *Worker[T]) SetJobName(jobName string) {
+	w.jobName = jobName
+}
+
+func (w *Worker[T]) Description() string {
+	return w.options.Description
+}
+
+func (w *Worker[T]) Interval() time.Duration {
+	return w.options.Interval
+}
+
+func (w *Worker[T]) RegisterJobLogger(jobLogger *goroutine.JobLogger) {
+	w.jobLogger = jobLogger
+}
+

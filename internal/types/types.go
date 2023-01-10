@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1840,4 +1839,6 @@ type BackgroundRoutineType string
 const (
 	BackgroundRoutinePeriodic            BackgroundRoutineType = "PERIODIC"
 	BackgroundRoutinePeriodicWithMetrics BackgroundRoutineType = "PERIODIC_WITH_METRICS"
+	BackgroundRoutineDBBackedWorker      BackgroundRoutineType = "DB_BACKED_WORKER"
+	BackgroundRoutineCustom              BackgroundRoutineType = "CUSTOM"
 )

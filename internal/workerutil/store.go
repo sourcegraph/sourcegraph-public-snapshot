@@ -70,6 +70,6 @@ func (e *ExecutionLogEntry) Scan(value any) error {
 	return json.Unmarshal(b, &e)
 }
 
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
+func (e *ExecutionLogEntry) Value() (driver.Value, error) {
 	return json.Marshal(e)
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { mdiAccountHardHat, mdiAlert, mdiCached, mdiHelp, mdiNumeric } from '@mdi/js'
+import { mdiAccountHardHat, mdiAlert, mdiCached, mdiDatabase, mdiHelp, mdiNumeric, mdiShape } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -196,11 +196,15 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
             <Icon aria-hidden={true} svgPath={mdiCached} />
         ) : routine.type === 'PERIODIC_WITH_METRICS' ? (
             <Icon aria-hidden={true} svgPath={mdiNumeric} />
+        ) : routine.type === 'DB_BACKED_WORKER' ? (
+            <Icon aria-hidden={true} svgPath={mdiDatabase} />
+        ) : routine.type === 'CUSTOM' ? (
+            <Icon aria-hidden={true} svgPath={mdiShape} />
         ) : (
             <Icon aria-hidden={true} svgPath={mdiHelp} />
         )
 
-    const roughInterval = formatDurationStructured(routine.intervalMs)[0]
+    const roughInterval = formatDurationStructured(routine.intervalMs)[0] || { amount: 0, unit: 'millisecond' }
     const intervalUnitToColor: { [key: StructuredDuration['unit']]: string } = {
         millisecond: 'var(--orange)',
         second: 'var(--yellow)',
@@ -213,6 +217,9 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
     // Contains some magic numbers
     const categorizeRunDuration: (durationMs: number) => RunLengthCategory = useCallback(
         (durationMs: number) => {
+            if (!routine.intervalMs) {
+                return durationMs > 5000 ? 'long' : 'short'
+            }
             if (durationMs > routine.intervalMs * 0.7) {
                 return 'dangerous'
             }
@@ -285,10 +292,14 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
         <div className={styles.routine}>
             <div>
                 <ValueLegendItem
-                    value={roughInterval.amount}
-                    description={roughInterval.unit}
+                    value={routine.intervalMs ? roughInterval.amount : 'NaN'}
+                    description={routine.intervalMs ? roughInterval.unit : 'Non-periodic'}
                     color={intervalColor}
-                    tooltip={`Runs every ${formatDurationLong(routine.intervalMs)}`}
+                    tooltip={
+                        routine.intervalMs
+                            ? `Runs every ${formatDurationLong(routine.intervalMs)}`
+                            : 'This routine is not periodic.'
+                    }
                     className={styles.legendItem}
                 />
             </div>

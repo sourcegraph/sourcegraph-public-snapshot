@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,7 +30,7 @@ type PeriodicGoroutine struct {
 	ctx         context.Context    // root context passed to the handler
 	cancel      context.CancelFunc // cancels the root context
 	finished    chan struct{}      // signals that Start has finished
-	monitor *JobLogger
+	jobLogger *JobLogger
 }
 
 var _ Loggable = &PeriodicGoroutine{}
@@ -135,8 +134,8 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
 func (r *PeriodicGoroutine) Start() {
-	if r.monitor != nil {
-		go (*r.monitor).LogStart(r)
+	if r.jobLogger != nil {
+		go (*r.jobLogger).LogStart(r)
 	}
 	defer close(r.finished)
 
@@ -145,8 +144,8 @@ loop:
 		start := time.Now()
 		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
-		if r.monitor != nil {
-			go (*r.monitor).LogRun(r, duration, err)
+		if r.jobLogger != nil {
+			go (*r.jobLogger).LogRun(r, duration, err)
 		}
 
 		if shutdown {
@@ -171,8 +170,8 @@ loop:
 // iteration of work, then break the loop in the Start method so that no new work
 // is accepted. This method blocks until Start has returned.
 func (r *PeriodicGoroutine) Stop() {
-	if r.monitor != nil {
-		go (*r.monitor).LogStop(r)
+	if r.jobLogger != nil {
+		go (*r.jobLogger).LogStop(r)
 	}
 	r.cancel()
 	<-r.finished
@@ -206,8 +205,8 @@ func (r *PeriodicGoroutine) SetJobName(jobName string) {
 	r.jobName = jobName
 }
 
-func (r *PeriodicGoroutine) RegisterJobLogger(monitor *JobLogger) {
-	r.monitor = monitor
+func (r *PeriodicGoroutine) RegisterJobLogger(jobLogger *JobLogger) {
+	r.jobLogger = jobLogger
 }
 
 func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {

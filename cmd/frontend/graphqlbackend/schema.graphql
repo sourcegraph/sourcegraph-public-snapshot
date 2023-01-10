@@ -8278,6 +8278,16 @@ enum BackgroundRoutineType {
     Periodic routine with metrics set up
     """
     PERIODIC_WITH_METRICS
+
+    """
+    DB-backed worker
+    """
+    DB_BACKED_WORKER
+
+    """
+    Custom routine
+    """
+    CUSTOM
 }
 
 """
