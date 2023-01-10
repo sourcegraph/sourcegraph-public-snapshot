@@ -11,15 +11,18 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -195,6 +198,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
+	grpcServer := grpc.NewServer()
+	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{})
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -207,7 +213,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: grpcHandlerFunc(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -215,7 +221,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				return
 			}
 			handler.ServeHTTP(w, r)
-		}),
+		})),
 	}
 
 	// Listen
@@ -233,4 +239,16 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	})
 
 	return g.Wait()
+}
+
+// grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
+// connections or otherHandler otherwise. Copied from cockroachdb.
+func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			otherHandler.ServeHTTP(w, r)
+		}
+	})
 }
