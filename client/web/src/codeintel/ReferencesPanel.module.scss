@@ -110,13 +110,13 @@
     }
 
     &--active-icon {
-        width: 20px;
-        height: 18px;
+        width: 1.25rem;
+        height: 100%;
         position: absolute;
         right: 0;
         top: 0;
         background-color: var(--color-bg-1);
-        padding-left: 2px;
+        padding-left: 0.25rem;
     }
 
     &--link:hover {
