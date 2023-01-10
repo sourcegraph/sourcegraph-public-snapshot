@@ -13,6 +13,18 @@ const path = require('path')
 // ugly side effect. (This is especially evident when running tests in-band.)
 process.env.LANG = 'en_US.UTF-8'
 
+const esmModules = [
+  'abortable-rx',
+  '@sourcegraph/comlink',
+  'monaco-editor',
+  'monaco-yaml',
+  'marked',
+  'date-fns',
+  'react-sticky-box',
+  'uuid',
+  'vscode-languageserver-types',
+]
+
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
@@ -32,9 +44,7 @@ const config = {
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: [
-    '/node_modules/(?!(?:.pnpm/)?(abortable-rx|@sourcegraph/comlink|monaco-editor|monaco-yaml|marked|date-fns|react-sticky-box|uuid))',
-  ],
+  transformIgnorePatterns: [`node_modules/(?!(?:.pnpm/)?(${esmModules.join('|')}))`],
 
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
