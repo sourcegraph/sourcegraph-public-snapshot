@@ -5,7 +5,7 @@ package searcher
 import (
 	"context"
 	"io"
-	// "net/url"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
@@ -60,26 +60,26 @@ func SearchGRPC(
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
-	// consistentHashKey := string(repo) + "@" + string(commit)
+	consistentHashKey := string(repo) + "@" + string(commit)
 
-	// nodes, err := searcherURLs.Endpoints()
-	// if err != nil {
-	// 	return false, err
-	// }
+	nodes, err := searcherURLs.Endpoints()
+	if err != nil {
+		return false, err
+	}
 
-	// urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
-	// if err != nil {
-	// 	return false, err
-	// }
+	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	if err != nil {
+		return false, err
+	}
 
 	for attempt := 0; attempt < 2; attempt++ {
-		// parsed, err := url.Parse(urls[attempt%len(urls)])
-		// if err != nil {
-		// 	return false, err
-		// }
-		clientConn, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		parsed, err := url.Parse(urls[attempt%len(urls)])
 		if err != nil {
-			return false, errors.Wrap(err, "dial")
+			return false, err
+		}
+		clientConn, err := grpc.Dial(parsed.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return false, err
 		}
 		client := proto.NewSearcherClient(clientConn)
 
