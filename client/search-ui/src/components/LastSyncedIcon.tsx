@@ -16,9 +16,11 @@ interface Props {
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const parsedDate = new Date(Date.parse(props.lastSyncedTime))
     const formattedTime = format(parsedDate, 'yyyy-MM-dd pp')
+
     const oneDayAgo = new Date()
-    const oneWeekAgo = new Date()
     oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+    const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
     let color = 'currentColor'
@@ -26,11 +28,11 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     let icon = mdiCloudCheckOutline
     if (parsedDate < oneWeekAgo) {
         color = 'var(--danger)'
-        status = 'Warning: severely out of date, last synced: ' + formattedTime + '. Please contact your administrator.'
+        status = `Warning: severely out of date, last synced:  ${formattedTime}. Please contact your administrator.`
         icon = mdiCloudAlert
     } else if (parsedDate < oneDayAgo) {
         color = 'var(--warning)'
-        status = 'Warning: slightly out of date, last synced: ' + formattedTime
+        status = `Warning: out of date, last synced: ${formattedTime}.`
         icon = mdiCloudClock
     }
 
