@@ -22,6 +22,42 @@ This requires executors to be run on machines capable of running Linux KVM exten
 
 Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.
 
+### Resource Recommendations
+
+- **CPU:** 4
+- **Memory:** 15GB
+- **Disk:** 100GB
+
+<sub>Note: the smallest machine type on AWS that can support Executors with Firecracker is `c5n.metal` (72 vCPU and
+192GB of Memory).</sub>
+
+#### AWS
+
+It is recommended to add the following **Disk** configuration in AWS.
+
+- **IOPS:** 500
+- **Throughput:** 125MiB/s
+
+### Supported Infrastructures
+
+- **Operating System:** Linux-based
+- **Architecture:** AMD64
+
+#### Firecracker Requirements
+
+To run Executors with Firecracker enabled requires the machine to
+support [Kernel-based Virtual Machine](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine).
+See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines.
+
+##### Cloud Providers
+
+Machines on Cloud Providers have additional constraints.
+
+- **AWS:** machine type must be
+  a [metal instance (`.metal`)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
+- **GCP:** the instance
+  must [enable nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling)
+
 ## Configure Sourcegraph
 
 Executors must be run separately from your Sourcegraph instance.
