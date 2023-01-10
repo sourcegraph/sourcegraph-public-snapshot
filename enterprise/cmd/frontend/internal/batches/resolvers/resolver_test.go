@@ -214,10 +214,10 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
 			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if _, ok := tc.hasLicenseFor[feature.FeatureName()]; ok {
-					return nil
+				if _, ok := tc.hasLicenseFor[feature.FeatureName()]; !ok {
+					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
 				}
-				return licensing.NewFeatureNotActivatedError("no batch changes for you!")
+				return nil
 			}
 
 			defer func() {
@@ -512,17 +512,13 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
-	oldMock := licensing.MockFeatureAs
-	licensing.MockFeatureAs = func(target licensing.Feature) bool {
-		if bcFeature, ok := target.(*licensing.FeatureBatchChanges); ok {
-			bcFeature.Unrestricted = true
-			return true
-		}
-		return false
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		return nil
 	}
 
 	defer func() {
-		licensing.MockFeatureAs = oldMock
+		licensing.MockCheckFeature = oldMock
 	}()
 
 	logger := logtest.Scoped(t)
@@ -909,17 +905,13 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
-	oldMock := licensing.MockFeatureAs
-	licensing.MockFeatureAs = func(target licensing.Feature) bool {
-		if bcFeature, ok := target.(*licensing.FeatureBatchChanges); ok {
-			bcFeature.Unrestricted = true
-			return true
-		}
-		return false
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		return nil
 	}
 
 	defer func() {
-		licensing.MockFeatureAs = oldMock
+		licensing.MockCheckFeature = oldMock
 	}()
 
 	logger := logtest.Scoped(t)

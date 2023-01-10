@@ -84,29 +84,6 @@ func TestingSkipFeatureChecks() func() {
 	return func() { MockCheckFeature = nil }
 }
 
-// Returns whether or not the target feature is activated based on the current license.
-// If the target parameter is a pointer, the plan's configured feature will be written
-// to the target.
-func FeatureAs(target Feature) bool {
-	if MockFeatureAs != nil {
-		return MockFeatureAs(target)
-	}
-
-	info, err := GetConfiguredProductLicenseInfo()
-	if err != nil {
-		return false
-	}
-
-	return featureAs(info, target)
-}
-
-func featureAs(info *Info, target Feature) bool {
-	return info.Plan().HasFeature(target)
-}
-
-// MockFeatureAs is for mocking FeatureAs in tests.
-var MockFeatureAs func(target Feature) bool
-
 func NewFeatureNotActivatedError(message string) featureNotActivatedError {
 	e := errcode.NewPresentationError(message).(errcode.PresentationError)
 	return featureNotActivatedError{e}

@@ -1975,14 +1975,9 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// DEPRECATED
 func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
-	featureBatchChanges, err := checkLicense()
-	if err != nil {
-		// If we can't check the license, we assume that the feature is not enabled.
-		// All default licenses should have the feature enabled.
-		return 0
-	}
-	return int32(featureBatchChanges.MaxNumChangesets)
+	return 10
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
