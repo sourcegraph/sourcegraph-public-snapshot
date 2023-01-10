@@ -22,5 +22,5 @@ CREATE TABLE IF NOT EXISTS permission_sync_jobs (
 
 CREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);
 CREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);
-
--- TODO: create indexes for repository_id and user_id?
+CREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);
+CREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);

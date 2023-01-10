@@ -16547,12 +16547,32 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "permission_sync_jobs_repository_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING btree (repository_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "permission_sync_jobs_state",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "permission_sync_jobs_user_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

@@ -2557,7 +2557,9 @@ Stores errors that occurred while performing an out-of-band migration.
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_process_after" btree (process_after)
+    "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
+    "permission_sync_jobs_user_id" btree (user_id)
 
 ```
 

@@ -4724,7 +4724,11 @@ CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NU
 
 CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
 
+CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING btree (repository_id);
+
 CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
+
+CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
