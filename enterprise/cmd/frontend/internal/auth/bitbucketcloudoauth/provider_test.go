@@ -21,12 +21,12 @@ func TestRequestedScopes(t *testing.T) {
 		{
 			dotComMode: false,
 			schema:     &schema.BitbucketCloudAuthProvider{},
-			expScopes:  []string{"email", "repository"},
+			expScopes:  []string{"account", "email", "repository"},
 		},
 		{
 			dotComMode: true,
 			schema:     &schema.BitbucketCloudAuthProvider{},
-			expScopes:  []string{"email"},
+			expScopes:  []string{"account", "email"},
 		},
 	}
 	for _, test := range tests {
