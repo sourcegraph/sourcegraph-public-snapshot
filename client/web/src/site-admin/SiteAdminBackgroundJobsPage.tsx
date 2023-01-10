@@ -37,7 +37,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     })
 
     return (
-        <div className={styles.page}>
+        <div>
             <PageTitle title="Background jobs - Admin" />
             <PageHeader
                 path={[{ text: 'Background jobs' }]}
