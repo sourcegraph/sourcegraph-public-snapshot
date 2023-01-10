@@ -24416,7 +24416,7 @@ Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^${so
 
 ### Code Intelligence > Uploads: Codeintel: Uploads > Expiration task
 
-#### codeintel-uploads: codeintel_background_repositories_scanned_total_total
+#### codeintel-uploads: codeintel_background_repositories_scanned_total
 
 <p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
 
@@ -24431,13 +24431,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_upload_records_scanned_total_total
+#### codeintel-uploads: codeintel_background_upload_records_scanned_total
 
 <p class="subtitle">Lsif upload records scan records scanned every 5m</p>
 
@@ -24452,13 +24452,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_commits_scanned_total_total
+#### codeintel-uploads: codeintel_background_commits_scanned_total
 
 <p class="subtitle">Lsif upload commits scanned commits scanned every 5m</p>
 
@@ -24473,13 +24473,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_upload_records_expired_total_total
+#### codeintel-uploads: codeintel_background_upload_records_expired_total
 
 <p class="subtitle">Lsif upload records expired uploads scanned every 5m</p>
 
@@ -24494,7 +24494,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 

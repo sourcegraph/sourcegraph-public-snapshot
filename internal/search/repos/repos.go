@@ -43,8 +43,6 @@ import (
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
-	MissingRepoRevs []RepoRevSpecs
-
 	// BackendsMissing is the number of search backends that failed to be
 	// searched. This is due to it being unreachable. The most common reason
 	// for this is during zoekt rollout.
@@ -68,7 +66,7 @@ func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), len(r.MissingRepoRevs), r.BackendsMissing)
+	return fmt.Sprintf("Resolved{RepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), r.BackendsMissing)
 }
 
 func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
@@ -275,7 +273,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
-		MissingRepoRevs: missingRepoRevs,
 		BackendsMissing: backendsMissing,
 		Next:            next,
 	}, err

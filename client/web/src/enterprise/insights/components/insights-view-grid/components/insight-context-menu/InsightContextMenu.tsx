@@ -89,7 +89,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 as={Link}
                                 data-testid="InsightContextMenuEditLink"
                                 className={styles.item}
-                                to={encodeDashboardIdQueryParam(`/insights/edit/${insight.id}`, currentDashboard?.id)}
+                                to={encodeDashboardIdQueryParam(`/insights/${insight.id}/edit`, currentDashboard?.id)}
                             >
                                 Edit
                             </MenuLink>

@@ -122,10 +122,10 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                     }}
                                     disabled={excludingDisabled || (exclusionInProgress && !isExcluding)}
                                 >
-                                    <span className={exclusionInProgress ? styles.invisibleText : ''}>
+                                    <span className={exclusionInProgress && isExcluding ? styles.invisibleText : ''}>
                                         Exclude repository from all code hosts
                                     </span>
-                                    {exclusionInProgress && <LoadingSpinner className={styles.loader} />}
+                                    {exclusionInProgress && isExcluding && <LoadingSpinner className={styles.loader} />}
                                 </Button>
                                 {excludeError && (
                                     <ErrorAlert error={`Failed to exclude repository: ${renderError(excludeError)}`} />
