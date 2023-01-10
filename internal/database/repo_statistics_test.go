@@ -47,7 +47,7 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: "", Total: 6, NotCloned: 6},
 	})
 
-	// Move to to shards[0] as cloning
+	// Move to shards[0] as cloning
 	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
 
@@ -139,6 +139,32 @@ func TestRepoStatistics(t *testing.T) {
 		{ShardID: shards[0], Total: 1, Cloning: 1, FailedFetch: 1},
 		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 1},
 		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1, FailedFetch: 1},
+	})
+
+	// Two repos got cloned again
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
+	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloned)
+	// One repo gets corrupted
+	logCorruption(t, db, repos[1].Name, shards[1], "internet corrupted repo")
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		// Total, Cloning changed. Added Cloned and Corrupted
+		Total: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FailedFetch: 3, Corrupted: 1,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 1, Cloned: 1, Cloning: 0, FailedFetch: 1, NotCloned: 0, Corrupted: 0},
+		{ShardID: shards[1], Total: 2, Cloned: 1, Cloning: 1, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShardID: shards[2], Total: 3, Cloned: 0, Cloning: 2, FailedFetch: 1, NotCloned: 1, Corrupted: 0},
+	})
+	// Another repo gets corrupted!
+	logCorruption(t, db, repos[0].Name, shards[0], "corrupted! the internet is unhinged")
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		// Only Corrupted changed
+		Total: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FailedFetch: 3, Corrupted: 2,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 1, Cloned: 1, Cloning: 0, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShardID: shards[1], Total: 2, Cloned: 1, Cloning: 1, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShardID: shards[2], Total: 3, Cloned: 0, Cloning: 2, FailedFetch: 1, NotCloned: 1, Corrupted: 0},
 	})
 }
 
@@ -317,7 +343,7 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 		&types.Repo{Name: "repo6"},
 	}
 
-	// Trigger 9 insertions into repo_statistics table:
+	// Trigger 10 insertions into repo_statistics table:
 	createTestRepos(ctx, t, db, repos)
 	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
@@ -326,21 +352,22 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
 	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
 	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
-	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-3")
+	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-5")
+	logCorruption(t, db, repos[2].Name, shards[1], "runaway corruption repo-3")
 	// Safety check that the counts are right:
 	wantRepoStatistics := RepoStatistics{
-		Total: 6, Cloning: 6, FailedFetch: 2,
+		Total: 6, Cloning: 6, FailedFetch: 2, Corrupted: 1,
 	}
 	wantGitserverReposStatistics := []GitserverReposStatistic{
 		{ShardID: ""},
 		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
-		{ShardID: shards[1], Total: 2, Cloning: 2},
+		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 0, Corrupted: 1},
 		{ShardID: shards[2], Total: 2, Cloning: 2, FailedFetch: 1},
 	}
 	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
 
 	// The initial insert in the migration also added a row, which means we want:
-	wantCount := 10
+	wantCount := 11
 	count := queryRepoStatisticsCount(t, ctx, s)
 	if count != wantCount {
 		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
@@ -402,6 +429,14 @@ func setLastError(t *testing.T, db DB, repoName api.RepoName, shard string, msg 
 	if err := db.GitserverRepos().SetLastError(context.Background(), repoName, msg, shard); err != nil {
 		t.Fatalf("failed to set clone status for repo %s: %s", repoName, err)
 	}
+}
+
+func logCorruption(t *testing.T, db DB, repoName api.RepoName, shard string, msg string) {
+	t.Helper()
+	if err := db.GitserverRepos().LogCorruption(context.Background(), repoName, msg, shard); err != nil {
+		t.Fatalf("failed to log corruption for repo %s: %s", repoName, err)
+	}
+
 }
 
 func assertRepoStatistics(t *testing.T, ctx context.Context, s RepoStatisticsStore, wantRepoStats RepoStatistics, wantGitserverStats []GitserverReposStatistic) {
