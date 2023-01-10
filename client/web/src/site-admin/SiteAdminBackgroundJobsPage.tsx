@@ -294,7 +294,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
                 <ValueLegendItem
                     value={routine.intervalMs ? roughInterval.amount : 'NaN'}
                     description={routine.intervalMs ? roughInterval.unit : 'Non-periodic'}
-                    color={intervalColor}
+                    color={routine.intervalMs ? intervalColor : 'var(--gray)'}
                     tooltip={
                         routine.intervalMs
                             ? `Runs every ${formatDurationLong(routine.intervalMs)}`
