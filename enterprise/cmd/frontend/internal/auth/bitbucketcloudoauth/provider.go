@@ -30,10 +30,10 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 		messages = append(messages, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
 		return nil, messages
 	}
-	if !validateClientIDAndSecret(p.ClientKey) {
+	if !validateClientKeyOrSecret(p.ClientKey) {
 		messages = append(messages, "Bitbucket Cloud key contains unexpected characters, possibly hidden")
 	}
-	if !validateClientIDAndSecret(p.ClientSecret) {
+	if !validateClientKeyOrSecret(p.ClientSecret) {
 		messages = append(messages, "Bitbucket Cloud secret contains unexpected characters, possibly hidden")
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeBitbucketCloud)
@@ -96,14 +96,14 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 }
 
-var clientIDSecretValidator = lazyregexp.New("^[a-zA-Z0-9.]*$")
+var clientKeySecretValidator = lazyregexp.New("^[a-zA-Z0-9.]*$")
 
-func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
-	return clientIDSecretValidator.MatchString(clientIDOrSecret)
+func validateClientKeyOrSecret(clientKeyOrSecret string) (valid bool) {
+	return clientKeySecretValidator.MatchString(clientKeyOrSecret)
 }
 
 func requestedScopes() []string {
-	scopes := []string{"email"}
+	scopes := []string{"account", "email"}
 	if !envvar.SourcegraphDotComMode() {
 		scopes = append(scopes, "repository")
 	}

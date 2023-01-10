@@ -119,7 +119,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				Email:           attempt.email,
 				EmailIsVerified: true,
 				DisplayName:     bbUser.Nickname,
-				AvatarURL:       "",
+				AvatarURL:       bbUser.Links["avatar"].Href,
 			},
 			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,

@@ -3,7 +3,6 @@ package bitbucketcloudoauth
 import (
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 
@@ -20,10 +19,6 @@ import (
 func TestParseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
 
 	type args struct {
 		cfg *conf.Unified
