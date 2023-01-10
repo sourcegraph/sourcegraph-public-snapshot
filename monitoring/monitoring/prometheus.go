@@ -23,14 +23,14 @@ func prometheusAlertName(level, service, name string) string {
 // PrometheusRule is a subset of a Prometheus recording or alert rule definition.
 type PrometheusRule struct {
 	// either Record or Alert
-	Record string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-	Alert  string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+	Record string `yaml:",omitempty" json:"record,omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
+	Alert  string `yaml:",omitempty" json:"alert,omitempty"`  // https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
 
-	Labels map[string]string `yaml:",omitempty"`
-	Expr   string
+	Labels map[string]string `yaml:",omitempty" json:"labels,omitempty"`
+	Expr   string            `json:"expr,omitempty"`
 
 	// for Alert only
-	For *model.Duration `yaml:",omitempty"`
+	For *model.Duration `yaml:",omitempty" json:"for,omitempty"`
 }
 
 func (r *PrometheusRule) validate() error {
@@ -48,12 +48,12 @@ func (r *PrometheusRule) validate() error {
 //
 // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
 type PrometheusRules struct {
-	Groups []PrometheusGroup
+	Groups []PrometheusGroup `json:"groups"`
 }
 
 type PrometheusGroup struct {
-	Name  string
-	Rules []PrometheusRule
+	Name  string           `json:"name"`
+	Rules []PrometheusRule `json:"rules"`
 }
 
 func (g *PrometheusGroup) validate() error {
