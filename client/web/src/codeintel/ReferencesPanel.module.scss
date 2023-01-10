@@ -99,6 +99,7 @@
     display: flex;
     flex-direction: column;
     min-height: 18px;
+    position: relative;
 
     &:not(:last-child) > &--link {
         border-bottom: 1px solid var(--body-bg);
@@ -106,6 +107,16 @@
 
     &--active {
         background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 20px;
+        height: 18px;
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-1);
+        padding-left: 2px;
     }
 
     &--link:hover {

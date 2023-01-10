@@ -7,6 +7,7 @@ import { capitalize, uniqBy } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { mdiOpenInNew } from '@mdi/js'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
@@ -1013,6 +1014,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         <ul className="list-unstyled mb-0">
                             {group.locations.map((reference, index) => {
                                 const isActive = isActiveLocation(reference)
+                                const isFirstInActive =
+                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const selectReference = (
                                     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
@@ -1061,6 +1064,20 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
+                                            {isFirstInActive ? (
+                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                    <Tooltip
+                                                        content="Click again to open line in full view"
+                                                        placement="left"
+                                                    >
+                                                        <Icon
+                                                            aria-label="Open line in full view"
+                                                            size="sm"
+                                                            svgPath={mdiOpenInNew}
+                                                        />
+                                                    </Tooltip>
+                                                </span>
+                                            ) : null}
                                         </div>
                                     </li>
                                 )
