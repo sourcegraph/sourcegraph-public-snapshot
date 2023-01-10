@@ -1,7 +1,7 @@
 .routine {
     display: grid;
     margin-bottom: 1rem;
-    grid-template-columns: 80px auto 60px 60px 175px;
+    grid-template-columns: 80px auto 60px 60px minmax(0, 175px);
     grid-gap: 0.25rem;
     align-items: center;
 }
@@ -11,6 +11,7 @@
     grid-template-columns: 16px auto;
     grid-gap: 0.25rem;
     align-items: center;
+    overflow-wrap: anywhere;
 }
 
 .legend-item {
