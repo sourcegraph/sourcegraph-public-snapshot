@@ -26,9 +26,13 @@ type dataRetentionHandler struct {
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
 	// Default should match what is shown in the schema not to be confusing
-	maximumSampleSize := 90
+	maximumSampleSize := 30
 	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
 		maximumSampleSize = configured
+	}
+	if maximumSampleSize > 90 {
+		logger.Info("code insights maximum sample size was set over allowed maximum, setting to 90", log.Int("disallowed maximum setting", maximumSampleSize))
+		maximumSampleSize = 90
 	}
 
 	// All the retention operations need to be completed in the same transaction
