@@ -20,8 +20,8 @@ func prometheusAlertName(level, service, name string) string {
 	return fmt.Sprintf("%s_%s_%s", level, service, name)
 }
 
-// promRule is a subset of a Prometheus recording or alert rule definition.
-type promRule struct {
+// PrometheusRule is a subset of a Prometheus recording or alert rule definition.
+type PrometheusRule struct {
 	// either Record or Alert
 	Record string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
 	Alert  string `yaml:",omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
@@ -33,7 +33,7 @@ type promRule struct {
 	For *model.Duration `yaml:",omitempty"`
 }
 
-func (r *promRule) validate() error {
+func (r *PrometheusRule) validate() error {
 	if r.Record != "" && r.Alert != "" {
 		return errors.Errorf("promRule cannot be both a record (%q) and an alert (%q)", r.Record, r.Alert)
 	}
@@ -43,20 +43,20 @@ func (r *promRule) validate() error {
 	return nil
 }
 
-// prometheusRules represents a Prometheus recording rules file (which we use for defining our alerts)
+// PrometheusRules represents a Prometheus recording rules file (which we use for defining our alerts)
 // see:
 //
 // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-type prometheusRules struct {
-	Groups []prometheusGroup
+type PrometheusRules struct {
+	Groups []PrometheusGroup
 }
 
-type prometheusGroup struct {
+type PrometheusGroup struct {
 	Name  string
-	Rules []promRule
+	Rules []PrometheusRule
 }
 
-func (g *prometheusGroup) validate() error {
+func (g *PrometheusGroup) validate() error {
 	if g.Name == "" {
 		return errors.New("promGroup requires name")
 	}
@@ -68,7 +68,7 @@ func (g *prometheusGroup) validate() error {
 	return nil
 }
 
-func (g *prometheusGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
+func (g *PrometheusGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
 	labels["alert_type"] = "builtin" // indicate alert is generated
 	var forDuration *model.Duration
 	if duration > 0 {
@@ -79,7 +79,7 @@ func (g *prometheusGroup) appendRow(alertQuery string, labels map[string]string,
 	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
 	g.Rules = append(g.Rules,
 		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
-		promRule{
+		PrometheusRule{
 			Alert:  alertName,
 			Labels: labels,
 			Expr:   alertQuery,
@@ -90,14 +90,14 @@ func (g *prometheusGroup) appendRow(alertQuery string, labels map[string]string,
 		//
 		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
 		// the series to vector(0) instead.
-		promRule{
+		PrometheusRule{
 			Record: "alert_count",
 			Labels: labels,
 			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
 		})
 }
 
-func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*prometheusRules, error) {
+func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
 	// Hardcode the desired label matcher values as labels
 	labels := make(map[string]string)
 	for _, matcher := range injectLabelMatchers {
@@ -113,10 +113,10 @@ func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*prometheusRu
 		return injected
 	}
 
-	rulesFile := &prometheusRules{
-		Groups: []prometheusGroup{{
+	rulesFile := &PrometheusRules{
+		Groups: []PrometheusGroup{{
 			Name: "cadvisor.rules",
-			Rules: []promRule{{
+			Rules: []PrometheusRule{{
 				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
 				Record: "cadvisor_container_cpu_limit",
 				Expr:   injectExpr("avg by (name)(container_spec_cpu_quota) / avg by (name)(container_spec_cpu_period)"),
