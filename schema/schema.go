@@ -230,9 +230,7 @@ type BitbucketCloudAuthProvider struct {
 	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
-	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
-	Type                      string `json:"type"`
+	Type         string `json:"type"`
 	// Url description: URL of the Bitbucket Cloud instance.
 	Url string `json:"url,omitempty"`
 }
