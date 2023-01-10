@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -198,7 +197,6 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 			seriesOptions = i.view.SeriesOptions
 		}
 
-		fmt.Println("seriesOptions", seriesOptions)
 		for _, current := range i.view.Series {
 			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
 			if err != nil {
@@ -1101,8 +1099,7 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
-			// todo: get maximum from config?
-			numSamples := 90
+			numSamples := 30
 			if d.args.SeriesDisplayOptions.NumSamples != nil {
 				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
 			}
