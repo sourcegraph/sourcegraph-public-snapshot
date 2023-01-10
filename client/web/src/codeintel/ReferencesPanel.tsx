@@ -1,13 +1,12 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { mdiOpenInNew } from '@mdi/js'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
