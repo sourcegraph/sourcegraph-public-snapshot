@@ -36,26 +36,19 @@ export const FileOwnership: React.FunctionComponent<
 
     if (data?.node && data.node.__typename === 'Repository' && data.node.commit) {
         return (
-            <table className={styles.table}>
+            <Accordion as="table" collapsible={true} multiple={true} className={styles.table}>
                 <thead className="sr-only">
                     <tr>
+                        <th>Show details</th>
                         <th>Contact</th>
                         <th>Owner</th>
-                        <th>Email</th>
                         <th>Reason</th>
                     </tr>
                 </thead>
-                <Accordion as="tbody" collapsible={true} multiple={true}>
-                    {data.node.commit.blob?.ownership.map(own => (
-                        <FileOwnershipReasons
-                            key={own.handle}
-                            email={own.person.email}
-                            handle={own.handle}
-                            reasons={own.reasons}
-                        />
-                    ))}
-                </Accordion>
-            </table>
+                {data.node.commit.blob?.ownership.map(own => (
+                    <FileOwnershipReasons key={own.handle} person={own.person} reasons={own.reasons} />
+                ))}
+            </Accordion>
         )
     }
 
@@ -73,6 +66,13 @@ export const FETCH_OWNERS = gql`
                                 handle
                                 person {
                                     email
+                                    avatarURL
+                                    displayName
+                                    user {
+                                        username
+                                        displayName
+                                        url
+                                    }
                                 }
                                 reasons {
                                     ... on CodeownersFileEntry {

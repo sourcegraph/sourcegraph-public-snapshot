@@ -3,11 +3,25 @@ import React, { useCallback, useState } from 'react'
 import { mdiChat, mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
-interface Props {
-    handle: string
+import { PersonLink } from '../../person/PersonLink'
+import { UserAvatar } from '../../user/UserAvatar'
+
+interface OwnerPerson {
     email: string
+    displayName: string
+    avatarURL: Maybe<string>
+    user: Maybe<{
+        username: string
+        displayName: Maybe<string>
+        url: string
+    }>
+}
+
+interface Props {
+    person: OwnerPerson
     reasons: OwnershipReasonDetails[]
 }
 
@@ -16,25 +30,27 @@ interface OwnershipReasonDetails {
     description: string
 }
 
-export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ handle, email, reasons }) => {
+export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ person, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
     return (
-        <AccordionItem as={React.Fragment}>
+        <AccordionItem as="tbody">
             <tr>
                 <td>
+                    <AccordionButton
+                        as={Button}
+                        variant="icon"
+                        className="d-none d-sm-block mr-2"
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        onClick={toggleIsExpanded}
+                    >
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
+                    </AccordionButton>
+                </td>
+                <td>
                     <div className="d-flex">
-                        <AccordionButton
-                            as={Button}
-                            variant="icon"
-                            className="d-none d-sm-block mx-1"
-                            aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                            onClick={toggleIsExpanded}
-                        >
-                            <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
-                        </AccordionButton>
                         <Button variant="icon" className="mr-2">
                             <Icon svgPath={mdiEmail} aria-label="email" />
                         </Button>
@@ -43,8 +59,10 @@ export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ handle, e
                         </Button>
                     </div>
                 </td>
-                <td>{handle}</td>
-                <td>{email}</td>
+                <td>
+                    <UserAvatar user={person} className="mx-2" />
+                    <PersonLink person={person} />
+                </td>
                 <td>
                     {reasons.map(reason => (
                         <Badge key={reason.title} tooltip={reason.description}>
