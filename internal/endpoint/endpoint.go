@@ -15,6 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
+// EmptyError is returned when looking up an endpoint on an empty map.
+type EmptyError struct {
+	URLSpec string
+}
+
+func (e *EmptyError) Error() string {
+	return fmt.Sprintf("endpoint.Map(%s) is empty", e.URLSpec)
+}
+
 // Map is a consistent hash map to URLs. It uses the kubernetes API to
 // watch the endpoints for a service and update the map when they change. It
 // can also fallback to static URLs if not configured for kubernetes.
@@ -105,7 +114,12 @@ func (m *Map) Get(key string) (string, error) {
 		return "", m.err
 	}
 
-	return m.hm.Lookup(key), nil
+	v := m.hm.Lookup(key)
+	if v == "" {
+		return "", &EmptyError{URLSpec: m.urlspec}
+	}
+
+	return v, nil
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
@@ -117,6 +131,16 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// LookupN can fail if n > len(nodes), but the client code will have a
+	// race. So double check while we hold the lock.
+	nodes := len(m.hm.Nodes())
+	if nodes == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
+	}
+	if n > nodes {
+		n = nodes
 	}
 
 	return m.hm.LookupN(key, n), nil
@@ -134,6 +158,11 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 	defer m.mu.RUnlock()
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// If we are doing a lookup ensure we are not empty.
+	if len(keys) > 0 && len(m.hm.Nodes()) == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
 	}
 
 	vals := make([]string, len(keys))
