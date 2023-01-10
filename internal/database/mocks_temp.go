@@ -23132,6 +23132,9 @@ type MockGitserverRepoStore struct {
 	// ListReposWithoutSizeFunc is an instance of a mock function object
 	// controlling the behavior of the method ListReposWithoutSize.
 	ListReposWithoutSizeFunc *GitserverRepoStoreListReposWithoutSizeFunc
+	// LogCorruptionFunc is an instance of a mock function object
+	// controlling the behavior of the method LogCorruption.
+	LogCorruptionFunc *GitserverRepoStoreLogCorruptionFunc
 	// SetCloneStatusFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCloneStatus.
 	SetCloneStatusFunc *GitserverRepoStoreSetCloneStatusFunc
@@ -23201,6 +23204,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
 			defaultHook: func(context.Context) (r0 map[api.RepoName]api.RepoID, r1 error) {
+				return
+			},
+		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
 				return
 			},
 		},
@@ -23292,6 +23300,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithoutSize")
 			},
 		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: func(context.Context, api.RepoName, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.LogCorruption")
+			},
+		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: func(context.Context, api.RepoName, types.CloneStatus, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloneStatus")
@@ -23363,6 +23376,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
 			defaultHook: i.ListReposWithoutSize,
+		},
+		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
+			defaultHook: i.LogCorruption,
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
 			defaultHook: i.SetCloneStatus,
@@ -24265,6 +24281,117 @@ func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverRepoStoreLogCorruptionFunc describes the behavior when the
+// LogCorruption method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreLogCorruptionFunc struct {
+	defaultHook func(context.Context, api.RepoName, string) error
+	hooks       []func(context.Context, api.RepoName, string) error
+	history     []GitserverRepoStoreLogCorruptionFuncCall
+	mutex       sync.Mutex
+}
+
+// LogCorruption delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) LogCorruption(v0 context.Context, v1 api.RepoName, v2 string) error {
+	r0 := m.LogCorruptionFunc.nextHook()(v0, v1, v2)
+	m.LogCorruptionFunc.appendCall(GitserverRepoStoreLogCorruptionFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the LogCorruption method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LogCorruption method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreLogCorruptionFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreLogCorruptionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreLogCorruptionFunc) nextHook() func(context.Context, api.RepoName, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreLogCorruptionFunc) appendCall(r0 GitserverRepoStoreLogCorruptionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreLogCorruptionFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreLogCorruptionFunc) History() []GitserverRepoStoreLogCorruptionFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreLogCorruptionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreLogCorruptionFuncCall is an object that describes an
+// invocation of method LogCorruption on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreLogCorruptionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreLogCorruptionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreLogCorruptionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitserverRepoStoreSetCloneStatusFunc describes the behavior when the
