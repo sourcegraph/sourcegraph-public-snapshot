@@ -57,11 +57,6 @@ Currently available in the following hosts:
 
 ### [Kubernetes](kubernetes/index.md)
 
-<div class="getting-started">
-  <a class="btn btn-secondary text-center" href="kubernetes/kustomize/index"><span>Kustomize</span></a>
-  <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
-</div>
-
 Kubernetes is recommended for non-standard deployments where our Machine Images or install-script is not a viable option.
 
 We do not recommend this method if you do not have an established infrastructure that is built on Kubernetes.
@@ -73,13 +68,24 @@ There are two ways to deploy Sourcegraph to a Kubernetes cluster:
 
 Both paths require extensive Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
 
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="kubernetes/kustomize/index"><span>Kustomize</span></a>
+  <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
+</div>
+
 ---
 
 ## Reference repositories
 
-Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
+| **Deployment type**       | **Link to reference repository**                         |
+|---------------------------|----------------------------------------------------------|
+| Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
+| Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
+| Kubernetes                | https://github.com/deploy-sourcegraph                    |
 
-For more information, follow the installation and configuration docs for your specific deployment type.
+Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy for each supported deployment type. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
+
+For more information, please read [our docs on setting up your own copy of the reference repository](repositories.md) for deploying purpose, and then follow the installation and configuration docs for your specific deployment type.
 
 ## Configuration
 

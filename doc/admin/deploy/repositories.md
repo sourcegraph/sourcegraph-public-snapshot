@@ -1,4 +1,14 @@
-# Deployment Repositories
+# Reference Repositories
+
+Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy for each supported deployment type. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
+
+## List
+
+| **Deployment type**       | **Link to reference repository**                         |
+|:--------------------------|:---------------------------------------------------------|
+| Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
+| Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
+| Kubernetes                | https://github.com/deploy-sourcegraph                    |
 
 ## Create a private copy
 
@@ -23,7 +33,7 @@ Update the environment variables in the command below before running it in your 
 export DEPLOY_GITHUB_USERNAME="YOUR_USERNAME"
 export DEPLOY_REPO_NAME="deploy-sourcegraph"
 export PRIVATE_DEPLOY_REPO_NAME="$DEPLOY_REPO_NAME"
-export SOURCEGRAPH_VERSION="v4.3.0"
+export SOURCEGRAPH_VERSION="v4.3.1"
 ```
 
 ### Step 3: Create remote and local copies
@@ -37,8 +47,6 @@ git push --mirror https://github.com/$DEPLOY_GITHUB_USERNAME/$PRIVATE_DEPLOY_REP
 cd ..
 rm -rf $DEPLOY_REPO.git
 git clone https://github.com/$DEPLOY_GITHUB_USERNAME/$PRIVATE_DEPLOY_REPO_NAME.git
-cd $PRIVATE_DEPLOY_REPO_NAME
-
 ```
 
 ### Step 4: Create a release branch
@@ -46,5 +54,27 @@ cd $PRIVATE_DEPLOY_REPO_NAME
 Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
 ```bash
+cd $PRIVATE_DEPLOY_REPO_NAME
 git checkout $SOURCEGRAPH_VERSION -b release-$SOURCEGRAPH_VERSION
 ```
+
+You can now deploy using your private copy of the repository you've just created. Please follow the installation and configuration docs for your specific deployment type for next steps.
+
+## Update your private copy
+
+Before you can upgrade Sourcegraph, you will first update your private copy with the upstream branch, and then merge the upstream release tag for the next minor version into your release branch. 
+
+In the following example, the release branch is being upgraded to v4.3.1.
+
+```bash
+# first, checkout the release branch
+git checkout $YOUR_RELEASE_BRANCH
+# fetch updates
+git fetch upstream
+# merge the upstream release tag into your release branch
+git checkout $YOUR_RELEASE_BRANCH
+git merge v3.43.2
+```
+
+A [standard upgrade](../updates.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](../updates.md#multi-version-upgrades) instead.
+
