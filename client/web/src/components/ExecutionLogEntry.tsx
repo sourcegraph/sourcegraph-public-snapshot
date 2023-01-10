@@ -5,7 +5,7 @@ import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Card, CardBody, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { formatMilliseconds } from '../util/time'
+import { formatDurationLong } from '../util/time'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -63,7 +63,7 @@ export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<
                 {logEntry.exitCode !== null && logEntry.durationMilliseconds !== null && (
                     <>
                         <span className="text-muted">, ran for</span>{' '}
-                        {formatMilliseconds(logEntry.durationMilliseconds)}
+                        {formatDurationLong(logEntry.durationMilliseconds)}
                     </>
                 )}
             </div>
