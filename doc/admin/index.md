@@ -5,6 +5,8 @@ Administration is usually handled by site administrators are the admins responsi
 ## [Deploy and Configure Sourcegraph](deploy/index.md)
 
 - [Deployment overview](deploy/index.md)
+  - [Machine Images](deploy/machine-images/index.md)
+  - [Kubernetes](deploy/kubernetes/index.md)
   - [Kubernetes with Helm](deploy/kubernetes/helm.md)
   - [Docker Compose](deploy/docker-compose/index.md)
   - [See all deployment options](deploy/index.md#deployment-types)

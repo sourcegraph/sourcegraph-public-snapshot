@@ -1,22 +1,20 @@
 # Kustomize
 
-[Kustomize](https://kustomize.io) is a tool that is integrated with kubectl, which enables users to customize Kubernetes objects using [kustomization.yaml files](#kustomization-yaml-template). These files allow users to configure untemplated YAML files by providing instructions defined in [overlays](#overlays), resulting in the generation of a new set of resources without changing the original source files. 
+[Kustomize](https://kustomize.io) is a tool that is integrated with kubectl, which enables users to customize Kubernetes objects using configuration files named `kustomization.yaml`. These files can be found in all [overlays](#overlays). They contain a set of instructions for Kustomize to to configure untemplated YAML files, resulting in the generation of a new set of resources without changing the original source files. 
 
-During its build process, Kustomize will first build the resources from the base layer of the application. If generators are used, it will then create ConfigMaps and Secrets. Next, Kustomize will apply patches specified by the components to selectively overwrite resources in the base layer. Finally, it will perform validation to create a customized deployment.
+During its build process, Kustomize will first build the **resources** from the base layer of the application. If generators are used, it will then create ConfigMaps and Secrets. Next, Kustomize will apply patches specified by the components to selectively overwrite resources in the base layer. Finally, it will perform validation to create a customized deployment.
 
 ## Prerequisites
 
-- [Kubernetes cluster access](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`
-- A [private clone](../../repositories.md) of the [Sourcegraph Kubernetes deployment repository](./index.md#deployment-repository)
-- Determine your instance size using our [instance size chart](../../instance-size.md)
-- A [configured](configure.md) Sourcegraph Kustomize Overlay
-  - see details below to learn more about building a customized Overlay that can be reused across updates
+See [prerequisites for Kubernetes](../index.md#prerequisites).
 
 ## Configure
 
-Please refer to our [configuration guides](configure.md) for detailed instructions on building an overlay for Sourcegraph.
+Please refer to our [configuration guides](configure.md) for detailed instructions on building an overlay for a tailored Sourcegraph deployment.
 
 ## Deploy
+
+Once you have met all the [prerequisites](../index.md#prerequisites):
 
 **Step 0:** Install an ingress controller for your cluster as instructed in our [configuration guide](configure.md#ingress-controller) if applicable.
 
@@ -48,13 +46,24 @@ _Components are evaluated after the resources of the parent kustomization (overl
 
 ### Deployment repository
 
+Here is the layout of our **new** kustomize directory within our reference repository:
+
+```txt
+new
+├── base
+  └── sourcegraph
+  └── monitoring
+├── components
+└── overlays
+  └── template
+    └── config
+    ├── utils
+    └── frontend.env
+    └── kustomize.env
+    └── kustomization.yaml
+```
+
 The [new/base](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/base) directory in our [deployment repository](https://github.com/sourcegraph/deploy-sourcegraph) contains the Kubernetes manifests for Sourcegraph that form the **base** layer, which is maintained by Sourcegraph. The [new/components](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/base) directory contains various pre-configured reusable components that can be used to customize the base for different purposes while leaving the base files untouched. These components include additional resources and patches that can be applied to the base component to customize for a particular environment or use case. Most of the components can be used together to create a customized deployment on top of the original files for different environments based on where and how they will be deployed. 
-
-The [new/overlays/deploy](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy) directory is the recommended path to create and store a customized overlay for your deployment. If you would like to set up two seperated instances (ex. create two overlays for `production` and `staging` purposes), it is recommended to create a seperated directory within the [new/overlays/](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy) directory using the files in [new/overlays/template](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/deploy).
-
-### Template
-
-The `kustomization` file inside the [new/overlays/template directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/template) is the template you can use to deploy a default Sourcegraph instance. You can build on top of this template file by adding components following our [configuration guides](configure.md) to create a tailored Sourcegraph instance.
 
 ### Overlays
 
@@ -64,17 +73,36 @@ An [overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomiz
 
 We have a sets of pre-built overlays that are ready-to-use for clusters that do not require additional configurations for Sourcegraph to be deployed. You can find the complete list of pre-built overlays inside the `new/quick-start` directory.
 
-Please see our [configuration docs for Kustomize](./configure.md) on using components to build a overlay that is tailored to your specific need.
+### Overlay
+
+#### Template
+
+An overlay is a directory containing various files to configure your deployment for a specific scenario. The overlays should be stored in the `new/overlays directory`, where you can find the [new/overlays/template folder](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/template) containing a selection of necessary files to construct an overlay for Sourcegraph. The [new/overlays/template folder](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/template) can be duplicated as needed to create new overlays for deploying Sourcegraph.
+
+#### Configuration files
+
+Below are the configuration files defined by Kustomize and Sourcegraph:
+
+##### kustomization.yaml
+
+A kustomization.yaml file located in an overlay directory is used to specify how the resources defined in the base manifests should be customized or configured, following the instructions detailed in the [configuration docs for Kustomize](./configure.md).
+
+##### frontend.env
+
+The frontend.env is used to update environment variables for sourcegraph-frontend.
+
+Update the file only if instructed by the component defined in your overlay.
+
+##### kustomize.env
+
+Certain components necessitate additional input from users to construct the overlay. The `kustomize.env` file is where the configurations needed by these components should be inputted.
+
+Update the file only if instructed by the component defined in your overlay.
+
 
 ### Components
 
 To understand an overlay is to examine its components, which listed under the `components` field inside the `kustomization` file of an overlay. Our Kustomize components are a set of configurations that utilize [transformers](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/#everything-is-a-transformer) to apply customization to the base layers. Some of them are designed to be reusable for different environments and use cases.
-
-#### Pre-built components
-
-The components located inside the [new/components](ttps://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/components) directory are pre-configured and ready-to-use.
-
-If you would like to modify a component from this directory, it is strongly recommend to do it in a duplicate of the said component inside the [new/config directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/config). which is the destinated directory for components that require additional configurations. Adding them to your overlay without following the instructions listed in our configuration docs could result in errors during the build stage or deploy stage.
 
 ### Examples
 
@@ -199,10 +227,34 @@ The previous version of the Sourcegraph Kustomize Overlays are still supported b
 ❌ See the [docs for the soon-to-be-deprecated version of Kustomize for Sourcegraph](deprecated.md).
 
 
-### Migration from the old Kustomize
+### Migration from deploy scripts
 
-@TODO
+Prior to v4.4.0, custom scripts are used for deploying Sourcegraph with Kubernetes, which is now [deprecated](deprecated.md). 
 
-## RBAC
+The transition from the older deployment scripts to the new Sourcegraph Kustomize setup is straightforward, since the older scripts utilize Kustomize internally. However, it's crucial to note that both tools are utilized for generating manifests for deployment and **do not alter existing resources in an active cluster**. Therefore, the objective is to produce a new overlay that generates a similar set of resources as the ones currently utilized in the running cluster.
 
-@TODO
+#### Old overlays vs new overlays
+
+The new Sourcegraph base cluster now runs in `non-privileged` mode by default. It was created using the previous [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/tree/v4.3.0/overlays/non-privileged) and [non-privileged-create-cluster](https://github.com/sourcegraph/deploy-sourcegraph/tree/v4.3.0/overlays/non-privileged-create-cluster) overlays with other improvement.
+
+If RBAC is currently enabled in your cluster, please refer to the configuration docs on how to deploy Sourcegraph with privileged access. 
+
+#### Migration process
+
+Step 1: Create a new release branch from your current release branch.
+
+Step 2: Start creating a new overlay for Sourcegraph using the instructions detailed in our [configuration docs for Kustomize](./configure.md).
+
+Step 3: [Compare the manifests](#between-an-overlay-and-a-running-cluster) generated by your new overlay with the ones in your running cluster:
+
+```bash
+kubectl kustomize $PATH_TO_OVERLAY | kubectl diff -f  -
+```
+
+Review the changes to make sure the manifests generated with your new overlay is similiar to the ones that are being used by your active cluster. 
+
+Step 4: Once you are satisfy with the overlay output, you can now deploy using the new overlay:
+
+```bash
+kustomize build $PATH_TO_OVERLAY/. | kubectl apply --prune -l deploy=sourcegraph -f -
+```

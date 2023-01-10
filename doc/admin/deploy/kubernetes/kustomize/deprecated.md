@@ -1,4 +1,4 @@
-# Kustomize
+# Kustomize - deprecated version
 
 > WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations.
 > If you have yet to deploy Sourcegraph, it is highly recommended to use Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
