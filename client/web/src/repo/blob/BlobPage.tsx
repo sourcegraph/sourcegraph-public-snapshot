@@ -45,6 +45,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
@@ -126,6 +127,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
+    const [enableOwnershipPanel] = useFeatureFlag('ownership-panel')
 
     const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
     const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
@@ -401,14 +403,16 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     />
                 )}
             </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={20}
-                id="toggle-ownership-panel"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
-            </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={20}
+                    id="toggle-ownership-panel"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
+                </RepoHeaderContributionPortal>
+            )}
         </>
     )
 

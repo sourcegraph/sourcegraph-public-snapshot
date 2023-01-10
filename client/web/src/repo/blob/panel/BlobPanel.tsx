@@ -27,6 +27,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { FileOwnership } from '../FileOwnership'
 
@@ -109,6 +110,7 @@ function useBlobPanelViews({
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final !== null &&
         settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
+    const [enableOwnershipPanel] = useFeatureFlag('ownership-panel')
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
@@ -200,27 +202,34 @@ function useBlobPanelViews({
                         }))
                     ),
                 },
-                {
-                    id: 'ownership',
-                    provider: panelSubjectChanges.pipe(
-                        map(({ repoID, revision, filePath, history, location }) => ({
-                            title: 'Ownership',
-                            content: '',
-                            priority: 150,
-                            selector: null,
-                            locationProvider: undefined,
-                            reactElement: (
-                                <FileOwnership
-                                    key="ownership"
-                                    repoID={repoID}
-                                    revision={revision}
-                                    filePath={filePath}
-                                />
-                            ),
-                        }))
-                    ),
-                },
             ]
+
+            if (enableOwnershipPanel) {
+                panelDefinitions.push(
+                    ...[
+                        {
+                            id: 'ownership',
+                            provider: panelSubjectChanges.pipe(
+                                map(({ repoID, revision, filePath }) => ({
+                                    title: 'Ownership',
+                                    content: '',
+                                    priority: 150,
+                                    selector: null,
+                                    locationProvider: undefined,
+                                    reactElement: (
+                                        <FileOwnership
+                                            key="ownership"
+                                            repoID={repoID}
+                                            revision={revision}
+                                            filePath={filePath}
+                                        />
+                                    ),
+                                }))
+                            ),
+                        },
+                    ]
+                )
+            }
 
             if (isTabbedReferencesPanelEnabled && extensionsController !== null) {
                 panelDefinitions.push(
@@ -295,6 +304,7 @@ function useBlobPanelViews({
             return panelDefinitions
         }, [
             panelSubjectChanges,
+            enableOwnershipPanel,
             isTabbedReferencesPanelEnabled,
             extensionsController,
             preferAbsoluteTimestamps,

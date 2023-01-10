@@ -16,6 +16,7 @@ export type FeatureFlagName =
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
     | 'enable-rbac'
+    | 'ownership-panel'
 
 interface OrgFlagOverride {
     orgID: string
