@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .tree-page {
     // For the other sub-pages in the RepoArea, we use a child selector to add the
     // border and radius to the sub-page containers. Since we use the Container
@@ -15,6 +17,18 @@
 .header {
     width: 100%;
     max-width: var(--media-xl);
+    padding-left: 0;
+    flex: 1 1 auto;
+}
+
+.menu {
+    .text {
+        @media (--lg-breakpoint-down) {
+            display: none;
+        }
+    }
+    flex-shrink: 0;
+    padding-right: 0;
 }
 
 .container {
@@ -22,9 +36,4 @@
     height: 100%;
     flex: 1;
     background-color: var(--code-bg);
-}
-
-.section {
-    width: 100%;
-    max-width: var(--media-xl);
 }
