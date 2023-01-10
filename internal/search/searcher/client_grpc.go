@@ -5,6 +5,7 @@ package searcher
 import (
 	"context"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Search searches repo@commit with p.
@@ -71,8 +73,11 @@ func SearchGRPC(
 	}
 
 	for attempt := 0; attempt < 2; attempt++ {
-		url := urls[attempt%len(urls)]
-		clientConn, err := grpc.Dial(url)
+		parsed, err := url.Parse(urls[attempt%len(urls)])
+		if err != nil {
+			return false, err
+		}
+		clientConn, err := grpc.Dial(parsed.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return false, err
 		}
