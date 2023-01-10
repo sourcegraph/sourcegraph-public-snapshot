@@ -2290,7 +2290,7 @@
       }
     },
     "BitbucketCloudAuthProvider": {
-      "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have TODO scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
+      "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "clientKey", "clientSecret"],
