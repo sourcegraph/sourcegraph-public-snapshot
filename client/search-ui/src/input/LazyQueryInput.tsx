@@ -24,7 +24,7 @@ const CodeMirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInput'
  */
 export const PlainQueryInput: React.FunctionComponent<
     React.PropsWithChildren<
-        Pick<QueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className' | 'placeholder'>
+        Pick<LazyQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className' | 'placeholder'>
     >
 > = ({ queryState, autoFocus, onChange, className, placeholder }) => {
     const onInputChange = React.useCallback(
@@ -46,16 +46,12 @@ export const PlainQueryInput: React.FunctionComponent<
     )
 }
 
-type QueryInputProps = CodeMirrorQueryInputFacadeProps
-
-export interface LazyQueryInputProps extends QueryInputProps { }
+export type LazyQueryInputProps = CodeMirrorQueryInputFacadeProps
 
 /**
  * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
  */
-export const LazyQueryInput: React.FunctionComponent<React.PropsWithChildren<LazyQueryInputProps>> = ({
-    ...props
-}) => {
+export const LazyQueryInput: React.FunctionComponent<LazyQueryInputProps> = ({ ...props }) => {
     return (
         <Suspense fallback={<PlainQueryInput {...props} placeholder={props.placeholder} />}>
             <CodeMirrorQueryInput {...props} />
