@@ -91,7 +91,7 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
                     />
                 </Tooltip>
             </div>
-            <div className="overflow-hidden">
+            <div className="text-truncate">
                 {!compact && (
                     <>
                         {messageElement}
