@@ -656,7 +656,7 @@ type Mutation {
     a format that is readable by the previous Sourcegraph instance. Recently introduced migrations
     should be applied in reverse prior to downgrading the instance.
     """
-    SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
+    setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
