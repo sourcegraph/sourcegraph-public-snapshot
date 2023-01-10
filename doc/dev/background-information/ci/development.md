@@ -167,7 +167,7 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
   ```go
   pipeline.AddStep(":jest::globe_with_meridians: Test",
-    withYarnCache(),
+    withPnpmCache(),
     bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/web", bk.AnnotatedCmdOpts{
       TestReports: &bk.TestReportOpts{/* ... */},
     }),

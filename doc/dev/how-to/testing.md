@@ -155,7 +155,7 @@ it.only('widgetizes quuxinators', async () => {
 })
 ```
 
-Alternatively, you can use `-g` to filter tests, e.g. `env ... yarn test-e2e -g "some test name"`.
+Alternatively, you can use `-g` to filter tests, e.g. `env ... pnpm test-e2e -g "some test name"`.
 
 You can find a complete list of all possible options in the [Mocha documentation](https://mochajs.org/#command-line-usage).
 

@@ -131,7 +131,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		lintCachePath := "/root/buildkite/build/sourcegraph/.golangci-lint-cache"
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
-			withYarnCache(),
+			withPnpmCache(),
 			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
 			buildkite.Cache(&bk.CacheOptions{
 				ID:          "golangci-lint",
@@ -172,39 +172,39 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //		bk.SoftFail(222))
 //}
 
-// yarn ~41s + ~1s
+// pnpm ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
 }
 
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
 }
 
 // Adds client linters to check all files.
 func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
 
 	pipeline.AddStep(":stylelint: Stylelint (all)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
 // Adds client linters to check changed in PR files.
 func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (changed)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:changed"))
 
 	pipeline.AddStep(":stylelint: Stylelint (changed)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:changed"))
 }
 
@@ -213,7 +213,7 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp build
 		pipeline.AddStep(":webpack::globe_with_meridians: Build",
-			withYarnCache(),
+			withPnpmCache(),
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""))
@@ -222,7 +222,7 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 
 		// Webapp tests
 		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
-			withYarnCache(),
+			withPnpmCache(),
 			bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/web", bk.AnnotatedCmdOpts{
 				TestReports: &bk.TestReportOpts{
 					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
@@ -238,7 +238,7 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions
 	branch := os.Getenv("BUILDKITE_BRANCH")
 
 	cmds := []bk.StepOpt{
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
@@ -277,7 +277,7 @@ func getParallelTestCount(webParallelTestCount int) int {
 func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
@@ -292,7 +292,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 		for _, browser := range browsers {
 			pipeline.AddStep(
 				fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-				withYarnCache(),
+				withPnpmCache(),
 				bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 				bk.Env("BROWSER", browser),
 				bk.Env("LOG_BROWSER_CONSOLE", "false"),
@@ -315,7 +315,7 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 	for _, browser := range browsers {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			withYarnCache(),
+			withPnpmCache(),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "false"),
@@ -333,7 +333,7 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 
 func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/browser", bk.AnnotatedCmdOpts{
 			TestReports: &bk.TestReportOpts{
 				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
@@ -344,7 +344,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/jetbrains run build"),
@@ -361,7 +361,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Build web application used for integration tests to share it between multiple parallel steps.
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("INTEGRATION_TESTS", "true"),
@@ -381,7 +381,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
 
 		pipeline.AddStep(stepLabel,
-			withYarnCache(),
+			withPnpmCache(),
 			bk.DependsOn(prepStepKey),
 			bk.DisableManualRetry("The Percy build is not finalized if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
 			bk.Env("PERCY_ON", "true"),
@@ -396,7 +396,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			withYarnCache(),
+			withPnpmCache(),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
 			bk.Cmd("pnpm gulp generate"),
@@ -423,7 +423,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest: Test (all)",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web client/browser", bk.AnnotatedCmdOpts{
 			TestReports: &bk.TestReportOpts{
 				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
@@ -519,7 +519,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			withYarnCache(),
+			withPnpmCache(),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -539,20 +539,20 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:npm"))
@@ -562,7 +562,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 	// Publish extension to the VS Code Marketplace
 	pipeline.AddStep(":vscode: Extension release",
-		withYarnCache(),
+		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))

@@ -2,7 +2,7 @@ package ci
 
 import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
-func withYarnCache() buildkite.StepOpt {
+func withPnpmCache() buildkite.StepOpt {
 	return buildkite.Cache(&buildkite.CacheOptions{
 		ID:          "node_modules_pnpm",
 		Key:         "cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}",
