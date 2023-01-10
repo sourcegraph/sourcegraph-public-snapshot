@@ -102,8 +102,10 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 
 // uploadIndexFile uploads the contents available via the given reader to a
 // Sourcegraph instance with the given request options.i
-func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
-	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func(attempt int) (_ bool, err error) {
+func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry onRetryLogFn, barIndex int, numParts int) error {
+	retrier := makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)
+
+	errs := retrier(func(attempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
 				progress.SetValue(barIndex, 0)
@@ -131,6 +133,8 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 		// Perform upload
 		return performUploadRequest(ctx, httpClient, requestOptions)
 	})
+
+	return errors.Append(nil, errs...)
 }
 
 // uploadMultipartIndex uploads the index file described by the given options to a
@@ -174,7 +178,7 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	)
 	defer func() { complete(err) }()
 
-	err = makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+	errs := makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
 		if attempt != 0 {
 			retry(fmt.Sprintf("Failed to prepare multipart upload (will retry; attempt #%d)", attempt))
 		}
@@ -188,7 +192,7 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 		})
 	})
 
-	return id, err
+	return id, errors.Append(nil, errs...)
 }
 
 // uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
@@ -266,17 +270,20 @@ func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts U
 	)
 	defer func() { complete(err) }()
 
-	return makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+	errs := makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
 		if attempt != 0 {
 			retry(fmt.Sprintf("Failed to finalize multipart upload (will retry; attempt #%d)", attempt))
 		}
 
-		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
+		retry, err := performUploadRequest(ctx, httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			UploadID:      id,
 			Done:          true,
 		})
+		return retry, err
 	})
+
+	return errors.Append(nil, errs...)
 }
 
 // splitReader returns a slice of read-seekers into the input ReaderAt, each of max size maxPayloadSize.
@@ -337,13 +344,15 @@ func logPending(out *output.Output, pendingMessage, successMessage, failureMessa
 	return retry, complete
 }
 
+type onRetryLogFn func(message string) output.Progress
+
 // logProgress creates and returns a progress from the given output value and bars configuration.
 // This function also returns a retry function that can be called to print a message then reset the
 // progress bar display, and a complete function that should be called once the work attached to
 // this log call has completed. This complete function takes an error value that determines whether
 // the success or failure message is displayed. If the given output value is nil then a no-op complete
 // function is returned.
-func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, func(message string) output.Progress, func(error)) {
+func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, onRetryLogFn, func(error)) {
 	if out == nil {
 		return nil, func(message string) output.Progress { return nil }, func(err error) {}
 	}
