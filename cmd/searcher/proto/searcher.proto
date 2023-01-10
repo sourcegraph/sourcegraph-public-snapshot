@@ -36,7 +36,7 @@ message FileMatch {
 };
 
 message ChunkMatch {
-    bytes content = 1;
+    string content = 1;
     Location content_start = 2;
     repeated Range ranges = 3;
 };
