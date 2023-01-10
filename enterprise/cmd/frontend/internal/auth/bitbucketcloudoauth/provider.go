@@ -27,7 +27,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 	rawURL := p.Url
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		messages = append(messages, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
+		messages = append(messages, fmt.Sprintf("Could not parse Bitbucket Cloud URL %q. You will not be able to login via Bitbucket Cloud.", rawURL))
 		return nil, messages
 	}
 	if !validateClientKeyOrSecret(p.ClientKey) {
