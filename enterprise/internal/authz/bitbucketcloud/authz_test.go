@@ -19,10 +19,8 @@ func TestNewAuthzProviders(t *testing.T) {
 		providers, problems, warnings, invalidConnections := NewAuthzProviders(
 			db,
 			[]*types.BitbucketCloudConnection{{
-				URN: "",
 				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
-					Url:           schema.DefaultBitbucketCloudURL,
-					Authorization: nil,
+					Url: schema.DefaultBitbucketCloudURL,
 				},
 			}},
 			[]schema.AuthProviders{},
@@ -42,7 +40,6 @@ func TestNewAuthzProviders(t *testing.T) {
 			db,
 			[]*types.BitbucketCloudConnection{
 				{
-					URN: "",
 					BitbucketCloudConnection: &schema.BitbucketCloudConnection{
 						Url:           "https://bitbucket.org/my-org", // incorrect
 						Authorization: &schema.BitbucketCloudAuthorization{},
@@ -69,7 +66,6 @@ func TestNewAuthzProviders(t *testing.T) {
 				db,
 				[]*types.BitbucketCloudConnection{
 					{
-						URN: "",
 						BitbucketCloudConnection: &schema.BitbucketCloudConnection{
 							Url:           schema.DefaultBitbucketCloudURL,
 							Authorization: &schema.BitbucketCloudAuthorization{},
@@ -93,7 +89,6 @@ func TestNewAuthzProviders(t *testing.T) {
 				db,
 				[]*types.BitbucketCloudConnection{
 					{
-						URN: "",
 						BitbucketCloudConnection: &schema.BitbucketCloudConnection{
 							Url:           schema.DefaultBitbucketCloudURL,
 							Authorization: &schema.BitbucketCloudAuthorization{},
