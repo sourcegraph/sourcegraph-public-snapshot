@@ -10,12 +10,15 @@
 All notable changes to `src-cli` are documented in this file.
 
 ## Unreleased
-* `src validate` has an added check to determine if an instance is able to create a basic code insight.
+
 ### Added
+
+- `src validate` has an added check to determine if an instance is able to create a basic code insight. [#912](https://github.com/sourcegraph/src-cli/pull/912)
 
 ### Changed
 
 - Renamed `src users clean` command to `src users prune` [#901](https://github.com/sourcegraph/src-cli/pull/901)
+- Failed code-intel uploads now print every error encountered while retrying instead of only the error encountered in the final retry attempt. [#46281](https://github.com/sourcegraph/sourcegraph/pull/46281)
 
 ### Fixed
 
