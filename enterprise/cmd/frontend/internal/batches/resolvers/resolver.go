@@ -62,12 +62,13 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 // checkLicense returns the current plan's configured Batch Changes feature.
 // Returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
-func checkLicense() (bcFeature *licensing.FeatureBatchChanges, err error) {
-	if err = licensing.Check(bcFeature); err != nil {
-		err = errors.New("Unable to check license feature, please refer to logs for actual error message.")
+func checkLicense() (*licensing.FeatureBatchChanges, error) {
+	bcFeature := &licensing.FeatureBatchChanges{}
+	if err := licensing.Check(bcFeature); err != nil {
+		return nil, err
 	}
 
-	return
+	return bcFeature, nil
 }
 
 type batchSpecCreatedArg struct {

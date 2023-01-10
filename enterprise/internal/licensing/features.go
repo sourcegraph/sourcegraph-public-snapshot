@@ -10,6 +10,9 @@ import (
 
 type Feature interface {
 	FeatureName() string
+	// Check checks whether the feature is activated on the provided license info.
+	// If applicable, it is recommended that Check modifies the feature in-place
+	// to reflect the license info (e.g., to set a limit on the number of changesets)
 	Check(*Info) error
 }
 
