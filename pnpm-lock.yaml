@@ -325,6 +325,7 @@ importers:
       pretty-bytes: ^5.3.0
       process: ^0.11.10
       prop-types: ^15.7.2
+      punycode: 2.1.1
       puppeteer: ^13.5.1
       react: 18.1.0
       react-calendar: ^3.7.0
@@ -756,6 +757,7 @@ importers:
       postcss-modules: 6.0.0_postcss@8.4.19
       prettier: 2.8.1
       process: 0.11.10
+      punycode: 2.1.1
       puppeteer: 13.7.0
       react-refresh: 0.10.0
       regenerator-runtime: 0.13.11
@@ -8162,7 +8164,7 @@ packages:
       react-docgen-typescript: 2.2.2_typescript@4.9.3
       tslib: 2.1.0
       typescript: 4.9.3
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -12816,7 +12818,7 @@ packages:
       postcss-value-parser: 4.2.0
       schema-utils: 2.7.0
       semver: 6.3.0
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /css-loader/5.2.6_webpack@5.75.0:
@@ -15537,7 +15539,7 @@ packages:
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.1.1
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /file-system-cache/1.0.5:
@@ -22308,7 +22310,7 @@ packages:
       postcss: 7.0.39
       schema-utils: 3.1.1
       semver: 7.3.8
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /postcss-loader/7.0.2_upg3rk2kpasnbk27hkqapxaxfq:
@@ -23135,7 +23137,7 @@ packages:
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.1.1
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /rc/1.2.8:
@@ -25669,7 +25671,7 @@ packages:
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 2.7.0
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /style-loader/2.0.0_webpack@5.75.0:
@@ -26111,7 +26113,7 @@ packages:
       serialize-javascript: 5.0.1
       source-map: 0.6.1
       terser: 5.16.1
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
       webpack-sources: 1.4.3
     transitivePeerDependencies:
       - bluebird
@@ -27104,7 +27106,7 @@ packages:
       loader-utils: 2.0.4
       mime-types: 2.1.35
       schema-utils: 3.1.1
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /url-parse-lax/1.0.0:
@@ -27633,7 +27635,7 @@ packages:
       mime: 2.6.0
       mkdirp: 0.5.5
       range-parser: 1.2.1
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
       webpack-log: 2.0.0
     dev: true
 
@@ -27719,7 +27721,7 @@ packages:
     peerDependencies:
       webpack: ^2.0.0 || ^3.0.0 || ^4.0.0
     dependencies:
-      webpack: 5.75.0
+      webpack: 5.75.0_oo63t3us67g6w4zg54gqorhf2i
     dev: true
 
   /webpack-hot-middleware/2.25.1:
