@@ -461,4 +461,3 @@ func (w *Worker[T]) Interval() time.Duration {
 func (w *Worker[T]) RegisterJobLogger(jobLogger *goroutine.JobLogger) {
 	w.jobLogger = jobLogger
 }
-

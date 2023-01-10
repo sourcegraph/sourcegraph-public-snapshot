@@ -8255,12 +8255,12 @@ type BackgroundRoutine {
     instances: [BackgroundRoutineInstance!]!
 
     """
-
+    The recent runs of this routine.
     """
     recentRuns: [BackgroundRoutineRecentRun!]!
 
     """
-    TODO: Document me
+    Some stats of the runs of this routine in the past few days.
     """
     stats: BackgroundRoutineStats!
 }
@@ -8291,7 +8291,7 @@ enum BackgroundRoutineType {
 }
 
 """
-TODO: Document
+One instance of the background routine, running on a host.
 """
 type BackgroundRoutineInstance {
     """
@@ -8336,7 +8336,7 @@ type BackgroundRoutineRecentRun {
 }
 
 """
-TODO: Document
+An error that occurred during a background routine run.
 """
 type BackgroundRoutineRunError {
     """

@@ -23,6 +23,7 @@ type PeriodicGoroutine struct {
 	routineType types.BackgroundRoutineType
 	description string
 	jobName     string
+	jobLogger   *JobLogger
 	interval    time.Duration
 	handler     unifiedHandler
 	operation   *observation.Operation
@@ -30,7 +31,6 @@ type PeriodicGoroutine struct {
 	ctx         context.Context    // root context passed to the handler
 	cancel      context.CancelFunc // cancels the root context
 	finished    chan struct{}      // signals that Start has finished
-	jobLogger *JobLogger
 }
 
 var _ Loggable = &PeriodicGoroutine{}
