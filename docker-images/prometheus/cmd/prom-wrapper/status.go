@@ -8,25 +8,25 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/alert"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"github.com/sourcegraph/log"
 
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
 // AlertsStatusReporter summarizes alert activity from Alertmanager
 type AlertsStatusReporter struct {
-	log          log15.Logger
+	log          log.Logger
 	alertmanager *amclient.Alertmanager
 	prometheus   prometheus.API
 }
 
-func NewAlertsStatusReporter(logger log15.Logger, alertmanager *amclient.Alertmanager, prom prometheus.API) *AlertsStatusReporter {
+func NewAlertsStatusReporter(logger log.Logger, alertmanager *amclient.Alertmanager, prom prometheus.API) *AlertsStatusReporter {
 	return &AlertsStatusReporter{
-		log:          logger.New("logger", "alerts-status"),
+		log:          logger.Scoped("alerts-status", "alerts status reporter"),
 		alertmanager: alertmanager,
 		prometheus:   prom,
 	}
@@ -61,8 +61,8 @@ func (s *AlertsStatusReporter) Handler() http.Handler {
 		}
 		if len(warn) > 0 {
 			s.log.Warn("site.monitoring.alerts: warnings encountered on prometheus query",
-				"timespan", timespan.String(),
-				"warnings", warn)
+				log.String("timespan", timespan.String()),
+				log.Strings("warnings", warn))
 		}
 		if results.Type() != model.ValMatrix {
 			w.WriteHeader(http.StatusInternalServerError)
