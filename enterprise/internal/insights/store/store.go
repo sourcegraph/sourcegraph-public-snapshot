@@ -688,7 +688,7 @@ func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int) (t
 	if err != nil {
 		return tempTime, err
 	}
-	if !got || oldestTime.IsZero() {
+	if !got {
 		return tempTime, nil
 	}
 	return oldestTime, nil
