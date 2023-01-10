@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to
@@ -186,28 +185,17 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			log.Error(eps.Error),
 		)
 
-		switch {
-		case eps.Error != nil:
-			m.mu.Lock()
-			m.err = eps.Error
-			m.mu.Unlock()
-		case len(eps.Endpoints) > 0:
-			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
+		metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
-			hm := newConsistentHash(eps.Endpoints)
-			m.mu.Lock()
-			m.hm = hm
-			m.err = nil
-			m.mu.Unlock()
-		default:
-			m.mu.Lock()
-			m.err = errors.Errorf(
-				"no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)",
-				eps.Service,
-				eps.Service,
-			)
-			m.mu.Unlock()
+		var hm *rendezvous.Rendezvous
+		if eps.Error == nil {
+			hm = newConsistentHash(eps.Endpoints)
 		}
+
+		m.mu.Lock()
+		m.hm = hm
+		m.err = eps.Error
+		m.mu.Unlock()
 
 		select {
 		case <-ready:
