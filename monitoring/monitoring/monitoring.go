@@ -339,7 +339,7 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
-	group := PrometheusGroup{Name: c.Name}
+	group := newPrometheusRuleGroup(c.Name)
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
 			for observableIndex, o := range r {
@@ -390,7 +390,7 @@ func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher)
 		return nil, err
 	}
 	return &PrometheusRules{
-		Groups: []PrometheusGroup{group},
+		Groups: []PrometheusRuleGroup{group},
 	}, nil
 }
 

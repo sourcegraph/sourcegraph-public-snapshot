@@ -265,7 +265,7 @@ func generateAll(
 
 	// Generate additional Prometheus assets
 	if opts.PrometheusDir != "" {
-		customRules, err := customPrometheusRules(opts.InjectLabelMatchers)
+		customRules, err := CustomPrometheusRules(opts.InjectLabelMatchers)
 		if err != nil {
 			return generatedAssets, errors.Wrap(err, "failed to generate custom rules")
 		}

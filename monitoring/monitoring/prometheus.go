@@ -15,6 +15,8 @@ const (
 	alertRulesFileSuffix = "_alert_rules.yml"
 )
 
+var defaultRuleEvaluationInterval = 30 * time.Second
+
 // prometheusAlertName creates an alertname that is unique given the combination of parameters
 func prometheusAlertName(level, service, name string) string {
 	return fmt.Sprintf("%s_%s_%s", level, service, name)
@@ -48,27 +50,35 @@ func (r *PrometheusRule) validate() error {
 //
 // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
 type PrometheusRules struct {
-	Groups []PrometheusGroup `json:"groups"`
+	Groups []PrometheusRuleGroup `json:"groups"`
 }
 
-type PrometheusGroup struct {
-	Name  string           `json:"name"`
-	Rules []PrometheusRule `json:"rules"`
+type PrometheusRuleGroup struct {
+	Name     string           `json:"name"`
+	Rules    []PrometheusRule `json:"rules"`
+	Interval *time.Duration   `json:"interval"`
 }
 
-func (g *PrometheusGroup) validate() error {
+func newPrometheusRuleGroup(name string) PrometheusRuleGroup {
+	return PrometheusRuleGroup{Name: name, Interval: &defaultRuleEvaluationInterval}
+}
+
+func (g *PrometheusRuleGroup) validate() error {
 	if g.Name == "" {
-		return errors.New("promGroup requires name")
+		return errors.New("PrometheusRuleGroup requires name")
+	}
+	if g.Interval == nil {
+		return errors.New("PrometheusRuleGroup requires evaluation interval")
 	}
 	for _, r := range g.Rules {
 		if err := r.validate(); err != nil {
-			return errors.Errorf("promGroup has invalid rule: %w", err)
+			return errors.Errorf("PrometheusRuleGroup has invalid rule: %w", err)
 		}
 	}
 	return nil
 }
 
-func (g *PrometheusGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
+func (g *PrometheusRuleGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
 	labels["alert_type"] = "builtin" // indicate alert is generated
 	var forDuration *model.Duration
 	if duration > 0 {
@@ -97,7 +107,7 @@ func (g *PrometheusGroup) appendRow(alertQuery string, labels map[string]string,
 		})
 }
 
-func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
+func CustomPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
 	// Hardcode the desired label matcher values as labels
 	labels := make(map[string]string)
 	for _, matcher := range injectLabelMatchers {
@@ -114,8 +124,9 @@ func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRu
 	}
 
 	rulesFile := &PrometheusRules{
-		Groups: []PrometheusGroup{{
-			Name: "cadvisor.rules",
+		Groups: []PrometheusRuleGroup{{
+			Name:     "cadvisor.rules",
+			Interval: &defaultRuleEvaluationInterval,
 			Rules: []PrometheusRule{{
 				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
 				Record: "cadvisor_container_cpu_limit",
