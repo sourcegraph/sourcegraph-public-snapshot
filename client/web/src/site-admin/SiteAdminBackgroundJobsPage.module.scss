@@ -2,6 +2,14 @@
 
 }
 
-.grid {
+.routine {
+    display: grid;
+    margin-bottom: 1rem;
+    grid-template-columns: 80px auto 100px 100px 200px;
+    grid-gap: 0.25rem;
+    align-items: center;
+}
 
+.legend-item {
+    margin-right: 0 !important;
 }
